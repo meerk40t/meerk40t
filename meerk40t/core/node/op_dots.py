@@ -16,48 +16,30 @@ class DotsOpNode(Node, Parameters):
     This is a Node of type "op dots".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op dots", id=id, label=label, lock=lock, **kwargs)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
-        self.settings.update(kwargs)
-
+    def __init__(self, *args, **kwargs):
         if len(args) == 1:
             obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+            Parameters.__init__(self, obj)
+        else:
+            Parameters.__init__(self)
+        Node.__init__(self, type="op dots", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
+
         self._allowed_elements_dnd = ("elem point",)
         self._allowed_elements = ("elem point",)
         self.allowed_attributes = []
+
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "DotsOpNode()"
 
-    def __copy__(self):
-        return DotsOpNode(self, id=self.id, label=self.label, lock=self.lock)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super(DotsOpNode, self).default_map(default_map=default_map)
+        default_map.update(self.__dict__)
         default_map["element_type"] = "Dots"
-        default_map["power"] = "default"
-        default_map["frequency"] = "default"
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -68,7 +50,6 @@ class DotsOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        default_map["dwell_time"] = "default"
         ct = 0
         t = ""
         s = ""
@@ -80,7 +61,6 @@ class DotsOpNode(Node, Parameters):
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
         default_map["opstop"] = "(stop)" if self.stopop else ""
-        default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
@@ -194,19 +174,16 @@ class DotsOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-        hexa = self.settings.get("hex_color")
+        super().load(settings, section)
+        hexa = getattr(self, "hex_color", None)
         if hexa is not None:
+            delattr(self, "hex_color")
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
-        settings.write_persistent(section, "hex_color", self.color.hexa)
-        settings.write_persistent_dict(section, self.settings)
+        super().save(settings, section)
+        settings.write_persistent(section, "hex_color", Color(self.color).hexa)
 
     def copy_children(self, obj):
         for element in obj.children:
@@ -244,18 +221,18 @@ class DotsOpNode(Node, Parameters):
         @return:
         """
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
-        self.settings["native_mm"] = native_mm
-        self.settings["native_speed"] = self.speed * native_mm
-        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+        self.native_mm = native_mm
+        self.native_speed = self.speed * native_mm
+        self.native_rapid_speed = self.rapid_speed * native_mm
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
+        parameter_object = self.derive()
         for point_node in self.children:
             if point_node.type != "elem point":
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
-                settings=settings,
+                settings=parameter_object,
                 passes=passes,
             )

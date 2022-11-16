@@ -16,48 +16,31 @@ class ImageOpNode(Node, Parameters):
     This is a Node of type "op image".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op image", id=id, label=label, lock=lock, **kwargs)
-        # Is this op out of useful bounds?
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
-        self.settings.update(kwargs)
-        self.dangerous = False
-        # self.settings["stopop"] = True
-
+    def __init__(self, *args, **kwargs):
         if len(args) == 1:
             obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+            Parameters.__init__(self, obj)
+        else:
+            Parameters.__init__(self)
+        # Is this op out of useful bounds?
+        self.dangerous = False
+        Node.__init__(self, type="op image", **kwargs)
+
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self._allowed_elements = ("elem image",)
+
         self.stopop = True
         self.allowed_attributes = []
 
     def __repr__(self):
         return "ImageOpNode()"
 
-    def __copy__(self):
-        return ImageOpNode(self, id=self.id, label=self.label, lock=self.lock)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
+        default_map.update(self.__dict__)
         default_map["element_type"] = "Image"
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
@@ -86,11 +69,7 @@ class ImageOpNode(Node, Parameters):
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
-        default_map["speed"] = "default"
-        default_map["power"] = "default"
-        default_map["frequency"] = "default"
         default_map["opstop"] = "<stop>" if self.stopop else ""
-        default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
@@ -150,19 +129,16 @@ class ImageOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-        hexa = self.settings.get("hex_color")
+        super().load(settings, section)
+        hexa = getattr(self, "hex_color", None)
         if hexa is not None:
+            delattr(self, "hex_color")
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
-        settings.write_persistent(section, "hex_color", self.color.hexa)
-        settings.write_persistent_dict(section, self.settings)
+        super().save(settings, section)
+        settings.write_persistent(section, "hex_color", Color(self.color).hexa)
 
     def copy_children(self, obj):
         for element in obj.children:
@@ -228,7 +204,10 @@ class ImageOpNode(Node, Parameters):
         @param plan:
         @return:
         """
-        overscan = float(Length(self.settings.get("overscan", "1mm")))
+        overscan = self.overscan
+        if overscan is None:
+            overscan = "1mm"
+        overscan = float(Length(overscan))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
 
@@ -254,7 +233,7 @@ class ImageOpNode(Node, Parameters):
 
             if image_node.type != "elem image":
                 continue
-            settings = self.derive()
+            parameter_object = self.derive()
 
             # Set overscan
             overscan = self.overscan
@@ -287,8 +266,8 @@ class ImageOpNode(Node, Parameters):
             step_x = image_node.step_x
             step_y = image_node.step_y
 
-            settings["raster_step_x"] = step_x
-            settings["raster_step_x"] = step_y
+            parameter_object.raster_step_x = step_x
+            parameter_object.raster_step_x = step_y
 
             # Set variables
             matrix = image_node.active_matrix
@@ -323,7 +302,7 @@ class ImageOpNode(Node, Parameters):
                 start_on_top=start_on_top,
                 start_on_left=start_on_left,
                 overscan=overscan,
-                settings=settings,
+                settings=parameter_object,
                 passes=passes,
             )
             cut.path = path
@@ -345,7 +324,7 @@ class ImageOpNode(Node, Parameters):
                     start_on_top=start_on_top,
                     start_on_left=start_on_left,
                     overscan=overscan,
-                    settings=settings,
+                    settings=parameter_object,
                     passes=passes,
                 )
                 cut.path = path

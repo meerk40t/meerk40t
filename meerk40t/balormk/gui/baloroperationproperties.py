@@ -18,6 +18,7 @@ class BalorOperationPanel(ScrolledPanel):
         self.context = context
         self.parent = args[0]
         self.operation = node
+        # TODO: Balor params works on a blank dictionary and sets all the relevant parts
         params = Parameters(self.operation.settings)
         params.validate()
 

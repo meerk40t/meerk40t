@@ -96,10 +96,11 @@ class Parameters:
         self.output_mask = 0
         self.output_message = None
 
-        for k, v in obj.__dict__.items():
-            if k.startswith("_"):
-                continue
-            self.__dict__[k] = v
+        if obj is not None:
+            for k, v in obj.__dict__.items():
+                if k.startswith("_"):
+                    continue
+                self.__dict__[k] = v
 
     def __copy__(self):
         return Parameters(self)

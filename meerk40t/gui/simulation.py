@@ -1523,6 +1523,7 @@ class SimulationPanel(wx.Panel, Job):
         # UPDATE POSITIONAL
         ###################
 
+        # TODO: Cutcode.settings would be getattr()
         mm = self.cutcode.settings.get("native_mm", 39.3701)
         # item = (i, distance_travel, distance_cut, extra, duration_travel, duration_cut)
         travel_mm = (

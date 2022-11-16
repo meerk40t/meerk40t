@@ -30,6 +30,7 @@ STRING_PARAMETERS = ("wobble_type", "wobble_radius", "wobble_interval")
 
 class Parameters:
     def __init__(self, settings: Dict = None, **kwargs):
+        # TODO: Update scheme to use newer coding. Perhaps simple object with settings set
         self.settings = settings
         if self.settings is None:
             self.settings = dict()

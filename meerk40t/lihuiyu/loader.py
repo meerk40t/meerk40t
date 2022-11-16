@@ -28,6 +28,7 @@ class EGVBlob:
             if self._cut is not None and len(self._cut):
                 self._cutcode.append(self._cut)
             self._cut = RawCut()
+            # TODO: The Rawcut tries to duplicate a dict parser.settings?
             self._cut.settings = dict(parser.settings)
 
         def position(p):

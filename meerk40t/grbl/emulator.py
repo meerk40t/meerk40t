@@ -101,6 +101,7 @@ class GRBLEmulator(Module):
 
     def new_plot_cut(self):
         if len(self.plotcut):
+            # TODO: Create derived settings for plotcut based on current settings in the parser. GRBL Parser uses .settings as dict.
             self.plotcut.settings = dict(self.parser.settings)
             self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)

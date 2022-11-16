@@ -19,23 +19,17 @@ class RasterOpNode(Node, Parameters):
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
+        if len(args) == 1:
+            obj = args[0]
+            Parameters.__init__(self, obj)
+        else:
+            Parameters.__init__(self)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Node.__init__(self, type="op raster", id=id, label=label, lock=lock, **kwargs)
-        Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
-
-        if len(args) == 1:
-            obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
         self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
@@ -60,15 +54,10 @@ class RasterOpNode(Node, Parameters):
         # An empty set indicates all nodes will be allowed
         self.allowed_attributes = []
         # self.allowed_attributes.append("fill")
-        # Is this op out of useful bounds?
-        self.dangerous = False
         self.stopop = False
 
     def __repr__(self):
         return "RasterOp()"
-
-    def __copy__(self):
-        return RasterOpNode(self, id=self.id, label=self.label, lock=self.lock)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -80,6 +69,7 @@ class RasterOpNode(Node, Parameters):
 
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
+        default_map.update(self.__dict__)
         default_map["element_type"] = "Raster"
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
@@ -108,9 +98,6 @@ class RasterOpNode(Node, Parameters):
         else:
             raster_dir = str(self.raster_direction)
         default_map["direction"] = f"{raster_swing}{raster_dir} "
-        default_map["speed"] = "default"
-        default_map["power"] = "default"
-        default_map["frequency"] = "default"
         ct = 0
         t = ""
         s = ""
@@ -122,7 +109,6 @@ class RasterOpNode(Node, Parameters):
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
         default_map["opstop"] = "(stop)" if self.stopop else ""
-        default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
         return default_map
@@ -266,19 +252,16 @@ class RasterOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-        hexa = self.settings.get("hex_color")
+        super().load(settings, section)
+        hexa = getattr(self, "hex_color", None)
         if hexa is not None:
+            delattr(self, "hex_color")
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
-        settings.write_persistent(section, "hex_color", self.color.hexa)
-        settings.write_persistent_dict(section, self.settings)
+        super().save(settings, section)
+        settings.write_persistent(section, "hex_color", Color(self.color).hexa)
 
     def copy_children(self, obj):
         for element in obj.children:

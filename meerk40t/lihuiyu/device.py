@@ -253,6 +253,7 @@ class LihuiyuDevice(Service, ViewPort):
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
+                    # TODO: Driver settings.speed is used in lhy-speed command
                     channel(
                         _("Speed set at: {speed} mm/s").format(
                             speed=driver.settings.speed

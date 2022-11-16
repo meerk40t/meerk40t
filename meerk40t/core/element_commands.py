@@ -477,6 +477,7 @@ def init_commands(kernel):
                     channel("----------")
                     for op in data:
                         try:
+                            #TODO: use op.penbox_pass if it exists on the op.
                             key = op.settings.get("penbox_pass")
                             if key is None:
                                 channel(f"{str(op)} penbox_pass is not set.")

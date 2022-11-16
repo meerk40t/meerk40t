@@ -941,7 +941,7 @@ class Elemental(Service):
                             break
                         if node is not None:
                             break
-
+        # TODO: Use op speed, power, dpi etc based on operation more dynmaically
         for opatt in ("speed", "power", "dpi", "passes"):
             skey = f"op_{opatt}"
             found = False

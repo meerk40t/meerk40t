@@ -17,17 +17,20 @@ class HatchOpNode(Node, Parameters):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op hatch", id=id, label=label, lock=lock, **kwargs)
-        Parameters.__init__(self, None, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            obj = args[0]
+            Parameters.__init__(self, obj)
+        else:
+            Parameters.__init__(self)
+
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        Node.__init__(self, type="op hatch", **kwargs)
         self._formatter = (
             "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
         self._hatch_distance_native = None
 
         if len(args) == 1:
@@ -55,26 +58,14 @@ class HatchOpNode(Node, Parameters):
         self.allowed_attributes = [
             "stroke",
         ]  # comma is relevant
-        # Is this op out of useful bounds?
-        self.dangerous = False
         self.stopop = True
 
     def __repr__(self):
         return "HatchOpNode()"
 
-    def __copy__(self):
-        return HatchOpNode(self, id=self.id, label=self.label, lock=self.lock)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
+        default_map.update(self.__dict__)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["danger"] = "❌" if self.dangerous else ""
@@ -86,11 +77,6 @@ class HatchOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        default_map["speed"] = "default"
-        default_map["power"] = "default"
-        default_map["frequency"] = "default"
-        default_map["hatch_angle"] = "default"
-        default_map["hatch_distance"] = "default"
         ct = 0
         t = ""
         s = ""
@@ -102,7 +88,6 @@ class HatchOpNode(Node, Parameters):
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
         default_map["opstop"] = "(stop)" if self.stopop else ""
-        default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
@@ -238,19 +223,16 @@ class HatchOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-        hexa = self.settings.get("hex_color")
+        super().load(settings, section)
+        hexa = getattr(self, "hex_color", None)
         if hexa is not None:
+            delattr(self, "hex_color")
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
-        settings.write_persistent(section, "hex_color", self.color.hexa)
-        settings.write_persistent_dict(section, self.settings)
+        super().save(settings, section)
+        settings.write_persistent(section, "hex_color", Color(self.color).hexa)
 
     def copy_children(self, obj):
         for element in obj.children:
@@ -293,12 +275,15 @@ class HatchOpNode(Node, Parameters):
         @return:
         """
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
-        self.settings["native_mm"] = native_mm
-        self.settings["native_speed"] = self.speed * native_mm
-        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+        self.native_mm = native_mm
+        self.native_speed = self.speed * native_mm
+        self.native_rapid_speed = self.rapid_speed * native_mm
 
         def hatch():
-            settings = self.settings
+            """
+            Hatch is to be called during the process stage.
+            """
+            parameter_object = self
             outlines = list()
             for node in self.children:
                 try:
@@ -306,7 +291,7 @@ class HatchOpNode(Node, Parameters):
                 except AttributeError:
                     continue
                 path.approximate_arcs_with_cubics()
-                self.settings["line_color"] = path.stroke
+                self.line_color = path.stroke
                 for subpath in path.as_subpaths():
                     if len(subpath) == 0:
                         continue
@@ -315,7 +300,7 @@ class HatchOpNode(Node, Parameters):
                     outlines.append(points)
             self.remove_all_children()
             fills = list(context.match("hatch", suffix=True))
-            penbox_pass = self.settings.get("penbox_pass")
+            penbox_pass = getattr(self, "penbox_pass", None)
             if penbox_pass is not None:
                 try:
                     penbox_pass = context.elements.penbox[penbox_pass]
@@ -323,19 +308,19 @@ class HatchOpNode(Node, Parameters):
                     penbox_pass = None
             hatch_cache = dict()
             for p in range(self.implicit_passes):
-                chain_settings = dict(settings)
+                chain_param_obj = parameter_object.derive()
                 if penbox_pass is not None:
                     try:
-                        chain_settings.update(penbox_pass[p])
+                        chain_param_obj.update(penbox_pass[p])
                     except IndexError:
                         pass
 
                 # Create cache key.
-                h_dist = chain_settings.get("hatch_distance", "1mm")
-                h_angle = chain_settings.get("hatch_angle", "0deg")
+                h_dist = chain_param_obj.hatch_distance
+                h_angle = chain_param_obj.hatch_angle
                 if isinstance(h_angle, float):
                     h_angle = str(h_angle)
-                hatch_type = chain_settings.get("hatch_type")
+                hatch_type = chain_param_obj.hatch_type
                 if hatch_type not in fills:
                     hatch_type = fills[0]
                 key = f"{hatch_type};{h_angle},{h_dist}"
@@ -346,22 +331,20 @@ class HatchOpNode(Node, Parameters):
                     # Create new hatch.
                     algorithm = context.lookup(f"hatch/{hatch_type}")
                     hatches = list(
+                        # TODO: Algorithm here must take in proper chained param object
                         algorithm(
-                            settings=chain_settings, outlines=outlines, matrix=matrix
+                            settings=chain_param_obj, outlines=outlines, matrix=matrix
                         )
                     )
                     hatch_cache[key] = hatches
+                # TODO: Colors must be dealt with correctly here for hatch objects.
                 if (
-                    "line_color" not in chain_settings
-                    or chain_settings["line_color"] is None
-                    or chain_settings["line_color"].value is None
+                    chain_param_obj.line_color is None
+                    or chain_param_obj.line_color.value is None
                 ):
-                    chain_settings["line_color"] = Color(
-                        chain_settings.get("color", "black")
-                    )
+                    chain_param_obj.line_color = Color(chain_param_obj.color)
                 for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline, **chain_settings))
-                    node.settings.update(chain_settings)
+                    node = PolylineNode(shape=Polyline(*polyline, **chain_param_obj.__dict__))
                     self.add_node(node)
 
         if self.children:
@@ -373,8 +356,8 @@ class HatchOpNode(Node, Parameters):
         for node in self.children:
             if node.type != "elem polyline":
                 continue
-            settings = node.settings
-            plot = PlotCut(settings=settings)
+            parameter_object = node
+            plot = PlotCut(settings=parameter_object)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)

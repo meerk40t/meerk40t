@@ -36,10 +36,8 @@ class GRBLDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
-
-        self.plot_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
-        )
+        # TODO: Update self.settings to use updated parameters values.
+        self.plot_planner = PlotPlanner(single=True, smooth=False, ppi=False, shift=False, group=True)
         self.queue = []
         self.plot_data = None
 
@@ -212,6 +210,7 @@ class GRBLDriver(Parameters):
                 or q.raster_step_y != self.raster_step_y
             ):
                 self.set("speed", q.speed)
+            # TODO: Update method of q.settings to match.
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
                 self.move_mode = 1
@@ -257,6 +256,7 @@ class GRBLDriver(Parameters):
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            # TODO: Create copy of dict with corrected attributes.
                             p_set = Parameters(self.plot_planner.settings)
                             if p_set.power != self.power:
                                 self.set("power", p_set.power)

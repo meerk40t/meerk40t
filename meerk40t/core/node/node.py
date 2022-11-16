@@ -154,7 +154,6 @@ class Node:
             nd[k] = v
         return nd
 
-
     @property
     def children(self):
         return self._children

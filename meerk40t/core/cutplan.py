@@ -250,15 +250,13 @@ class CutPlan:
         context = self.context
         for pass_idx in range(copies):
             # If passes isn't equal to implicit passes then we need a different settings to permit change
-            settings = (
-                op.settings if op.implicit_passes == passes else dict(op.settings)
-            )
+            parameter_object = op if op.implicit_passes == passes else copy(op)
             cutcode = CutCode(
                 op.as_cutobjects(
                     closed_distance=context.opt_closed_distance,
                     passes=passes,
                 ),
-                settings=settings,
+                settings=parameter_object,
             )
             if len(cutcode) == 0:
                 break

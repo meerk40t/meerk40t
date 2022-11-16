@@ -25,18 +25,19 @@ class CutOpNode(Node, Parameters):
     This is a Node of type "op cut".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
-        Node.__init__(self, type="op cut", id=id, label=label, lock=lock, **kwargs)
-        Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
-        self.settings.update(kwargs)
-
+    def __init__(self, *args, **kwargs):
         if len(args) == 1:
             obj = args[0]
-            if hasattr(obj, "settings"):
-                self.settings = dict(obj.settings)
-            elif isinstance(obj, dict):
-                self.settings.update(obj)
+            Parameters.__init__(self, obj)
+        else:
+            Parameters.__init__(self)
+
+        # Is this op out of useful bounds?
+        self.dangerous = False
+
+        Node.__init__(self, type="op cut", **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+
         # Which elements can be added to an operation (manually via DND)?
         self._allowed_elements_dnd = (
             "elem ellipse",
@@ -57,29 +58,14 @@ class CutOpNode(Node, Parameters):
         self.allowed_attributes = [
             "stroke",
         ]
-        # Is this op out of useful bounds?
-        self.dangerous = False
 
     def __repr__(self):
         return "CutOpNode()"
 
-    def __copy__(self):
-        return CutOpNode(self, id=self.id, label=self.label, lock=self.lock)
-
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super(CutOpNode, self).default_map(default_map=default_map)
+        default_map.update(self.__dict__)
         default_map["element_type"] = "Cut"
-        default_map["speed"] = "default"
-        default_map["power"] = "default"
-        default_map["frequency"] = "default"
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -101,7 +87,6 @@ class CutOpNode(Node, Parameters):
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
         default_map["opstop"] = "(stop)" if self.stopop else ""
-        default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
@@ -216,19 +201,16 @@ class CutOpNode(Node, Parameters):
         return False, False, None
 
     def load(self, settings, section):
-        settings.read_persistent_attributes(section, self)
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-        hexa = self.settings.get("hex_color")
+        super().load(settings, section)
+        hexa = getattr(self, "hex_color", None)
         if hexa is not None:
+            delattr(self, "hex_color")
             self.color = Color(hexa)
         self.updated()
 
     def save(self, settings, section):
-        settings.write_persistent_attributes(section, self)
-        settings.write_persistent(section, "hex_color", self.color.hexa)
-        settings.write_persistent_dict(section, self.settings)
+        super().save(settings, section)
+        settings.write_persistent(section, "hex_color", Color(self.color).hexa)
 
     def copy_children(self, obj):
         for node in obj.children:
@@ -275,13 +257,13 @@ class CutOpNode(Node, Parameters):
         @return:
         """
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
-        self.settings["native_mm"] = native_mm
-        self.settings["native_speed"] = self.speed * native_mm
-        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+        self.native_mm = native_mm
+        self.native_speed = self.speed * native_mm
+        self.native_rapid_speed = self.rapid_speed * native_mm
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
-        settings = self.derive()
+        parameter_object = self.derive()
         for node in self.children:
             if node.type == "reference":
                 node = node.node
@@ -306,7 +288,7 @@ class CutOpNode(Node, Parameters):
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
 
-            settings["line_color"] = node.stroke
+            parameter_object.line_color = node.stroke
             for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
@@ -318,7 +300,7 @@ class CutOpNode(Node, Parameters):
                 group = CutGroup(
                     None,
                     closed=closed,
-                    settings=settings,
+                    settings=parameter_object,
                     passes=passes,
                 )
                 group.path = Path(subpath)
@@ -332,7 +314,7 @@ class CutOpNode(Node, Parameters):
                                 LineCut(
                                     seg.start,
                                     seg.end,
-                                    settings=settings,
+                                    settings=parameter_object,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -343,7 +325,7 @@ class CutOpNode(Node, Parameters):
                                 LineCut(
                                     seg.start,
                                     seg.end,
-                                    settings=settings,
+                                    settings=parameter_object,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -354,7 +336,7 @@ class CutOpNode(Node, Parameters):
                                 seg.start,
                                 seg.control,
                                 seg.end,
-                                settings=settings,
+                                settings=parameter_object,
                                 passes=passes,
                                 parent=group,
                             )
@@ -366,7 +348,7 @@ class CutOpNode(Node, Parameters):
                                 seg.control1,
                                 seg.control2,
                                 seg.end,
-                                settings=settings,
+                                settings=parameter_object,
                                 passes=passes,
                                 parent=group,
                             )

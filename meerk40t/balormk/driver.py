@@ -42,9 +42,7 @@ class BalorDriver:
         self._shutdown = False
 
         self.queue = list()
-        self.plot_planner = PlotPlanner(
-            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
-        )
+        self.plot_planner = PlotPlanner(single=True, smooth=False, ppi=False, shift=False, group=True)
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
         self._aborting = False
@@ -257,6 +255,7 @@ class BalorDriver:
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            # TODO: Updating settings changes when plot_planner.settings is not a dictionary.
                             settings = self.plot_planner.settings
                             penbox = settings.get("penbox_value")
                             if penbox is not None:

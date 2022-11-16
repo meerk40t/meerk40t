@@ -1547,6 +1547,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         matrix = Matrix.scale(0.018)
         hatch = list(
+            # TODO: Update the hatch algorithms so deal with just self.operations without settinsg.
             hatch_algorithm(
                 settings=self.operation.settings,
                 outlines=paths,

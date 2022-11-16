@@ -573,6 +573,7 @@ class SVGProcessor:
         self.parse(svg, file_node, self.element_list)
         if self.operations_cleared:
             for op in self.elements.ops():
+                # TODO: LOAD References out of ops without settings
                 if not hasattr(op, "settings"):
                     # Some special nodes might lack settings these can't have references.
                     continue

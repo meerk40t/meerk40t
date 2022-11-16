@@ -199,6 +199,7 @@ class Driver:
         @param value:
         @return:
         """
+        # TODO: Update the attribute map with the sat
         self.settings[key] = value
 
     def set_origin(self, x, y):
@@ -309,6 +310,7 @@ class Driver:
         @return:
         """
         parts = list()
+        # TODO: Settings for speed and power, Access setting
         parts.append(f"x={self.native_x}")
         parts.append(f"y={self.native_y}")
         parts.append(f"speed={self.settings.get('speed', 0.0)}")

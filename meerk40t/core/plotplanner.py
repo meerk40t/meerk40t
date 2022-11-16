@@ -41,15 +41,13 @@ of zero will remain zero.
 class PlotPlanner(Parameters):
     def __init__(
         self,
-        settings,
         single=True,
         smooth=True,
         ppi=True,
         shift=True,
         group=True,
-        **kwargs,
     ):
-        super().__init__(settings, **kwargs)
+        super().__init__()
         self.debug = False
 
         self.abort = False

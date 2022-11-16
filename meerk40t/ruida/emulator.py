@@ -123,6 +123,7 @@ class RuidaEmulator(Module, Parameters):
 
     def new_plot_cut(self):
         if len(self.plotcut):
+            # TODO: Ruida new plot cut sets the plotcut to cutset which is derived settings.
             self.plotcut.settings = self.cutset()
             self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)

@@ -160,7 +160,7 @@ class GRBLDevice(Service, ViewPort):
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
         )
-
+        # TODO: Check settings see if they have meaning.
         self.settings = dict()
         self.state = 0
 

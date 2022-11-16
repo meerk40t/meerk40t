@@ -139,7 +139,8 @@ class LihuiyuDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
 
-        self.plot_planner = PlotPlanner(self.settings)
+        # TODO: Does lhysettings have a .settings value anymore?
+        self.plot_planner = PlotPlanner()
         self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
 

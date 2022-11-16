@@ -356,6 +356,7 @@ class TemplatePanel(wx.Panel):
             self.callback(self.default_op[idx])
 
     def set_param_according_to_op(self, event):
+        #TODO: This may need to be better understood to be corrected.
         def preset_passes(node=None):
             # Will be called ahead of the modification of the passes variable
             node.passes_custom = True
