@@ -159,7 +159,7 @@ class CutObject(Parameters):
         if self.contains is None:
             return False
         for c in self.contains:
-            if isinstance(c, CutGroup):
+            if isinstance(c, list):
                 if c.burn_started:
                     return True
             elif c.burns_done == c.implicit_passes:
