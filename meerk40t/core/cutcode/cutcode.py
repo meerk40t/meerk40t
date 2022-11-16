@@ -40,7 +40,7 @@ class CutCode(CutGroup):
     def as_elements(self):
         last = None
         path = None
-        previous_settings = None
+        previous_parameter_object = None
         for e in self.flat():
             start = e.start
             end = e.end
@@ -69,12 +69,14 @@ class CutCode(CutGroup):
                         path.line((x, y))
                     else:
                         path.move((x, y))
-            # TODO: Settings for different cut objects must be the creating op
-            if previous_settings is not e.settings and previous_settings is not None:
+            if (
+                previous_parameter_object is not e.parameter_object
+                and previous_parameter_object is not None
+            ):
                 if path is not None and len(path) != 0:
                     yield path
                     path = None
-            previous_settings = e.settings
+            previous_parameter_object = e.parameter_object
             last = end
         if path is not None and len(path) != 0:
             yield path
@@ -149,7 +151,7 @@ class CutCode(CutGroup):
             distance_cut += curr.length()
             this_extra = curr.extra()
             extra += this_extra
-            native_speed = curr.settings.get("native_speed", curr.speed)
+            native_speed = getattr(curr.parameter_object, "native_speed", curr.speed)
             if native_speed != 0:
                 duration_of_this_burn = curr.length() / native_speed
                 total_duration_cut += duration_of_this_burn
@@ -246,7 +248,14 @@ class CutCode(CutGroup):
         if stop_at is None or stop_at < 0 or stop_at > len(cutcode):
             stop_at = len(cutcode)
         for current in cutcode[0:stop_at]:
-            native_speed = current.settings.get("native_speed", current.speed)
+            native_speed = getattr(
+                current.parameter_object, "native_speed", None
+            )
+            if native_speed is None:
+                if current.parameter_object is not None:
+                    native_speed = current.parameter_object.speed
+                else:
+                    native_speed = 0
             if native_speed != 0:
                 duration += current.length() / native_speed
         return duration
@@ -254,15 +263,19 @@ class CutCode(CutGroup):
     def _native_speed(self, cutcode):
         if cutcode:
             for current in cutcode:
-                native_speed = current.settings.get(
+                native_speed = getattr(
+                    current.parameter_object,
                     "native_rapid_speed",
-                    current.settings.get("native_speed", None),
+                    getattr(current.parameter_object, "native_speed", None),
                 )
                 if native_speed is not None:
                     return native_speed
+
         # No element had a rapid speed value.
-        native_speed = self.settings.get(
-            "native_rapid_speed", self.settings.get("native_speed", None)
+        native_speed = getattr(
+            self.parameter_object,
+            "native_rapid_speed",
+            getattr(self.parameter_object, "native_speed", None),
         )
         return native_speed
 
@@ -285,7 +298,6 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
