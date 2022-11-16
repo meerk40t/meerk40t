@@ -21,8 +21,8 @@ are references to settings which may be shared by all CutObjects created by a La
 
 
 class CutCode(CutGroup):
-    def __init__(self, seq=(), settings=None):
-        CutGroup.__init__(self, None, seq, settings=settings)
+    def __init__(self, seq=(), parameter_object=None):
+        CutGroup.__init__(self, None, seq, parameter_object=parameter_object)
         self.output = True
         self.mode = None
 
@@ -318,7 +318,7 @@ class CutCode(CutGroup):
             elif cmd == "cut_abs":
                 nx = code[1]
                 ny = code[2]
-                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
+                cut = LineCut(Point(x, y), Point(nx, ny), parameter_object=settings)
                 cutcode.append(cut)
                 x = nx
                 y = ny
@@ -327,7 +327,7 @@ class CutCode(CutGroup):
                 ny = code[2]
                 nx = x + nx
                 ny = y + ny
-                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
+                cut = LineCut(Point(x, y), Point(nx, ny), parameter_object=settings)
                 cutcode.append(cut)
                 x = nx
                 y = ny

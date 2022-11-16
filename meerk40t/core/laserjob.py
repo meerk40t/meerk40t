@@ -1,7 +1,7 @@
 import time
 from math import isinf
 
-from meerk40t.core.cutcode import CutCode
+from meerk40t.core.cutcode.cutcode import CutCode
 
 
 class LaserJob:

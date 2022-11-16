@@ -2,7 +2,7 @@ from .cutobject import CutObject
 
 
 class SetOriginCut(CutObject):
-    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+    def __init__(self, offset_point=None, parameter_object=None, passes=1, parent=None):
         self.set_current = False
         if offset_point is None:
             offset_point = (0, 0)
@@ -12,7 +12,7 @@ class SetOriginCut(CutObject):
             self,
             offset_point,
             offset_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

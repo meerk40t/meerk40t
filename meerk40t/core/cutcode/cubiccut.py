@@ -10,7 +10,7 @@ class CubicCut(CutObject):
         control1,
         control2,
         end_point,
-        settings=None,
+        parameter_object=None,
         passes=1,
         parent=None,
     ):
@@ -18,7 +18,7 @@ class CubicCut(CutObject):
             self,
             start_point,
             end_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

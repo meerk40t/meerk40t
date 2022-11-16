@@ -2,11 +2,11 @@ from .cutobject import CutObject
 
 
 class WaitCut(CutObject):
-    def __init__(self, wait, settings=None, passes=1, parent=None):
+    def __init__(self, wait, parameter_object=None, passes=1, parent=None):
         """
         Establish a wait cut.
         @param wait: wait time in ms.
-        @param settings: Settings for wait cut.
+        @param parameter_object: Settings for wait cut.
         @param passes: Number of passes.
         @param parent: CutObject parent.
         """
@@ -14,7 +14,7 @@ class WaitCut(CutObject):
             self,
             (0, 0),
             (0, 0),
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

@@ -9,7 +9,7 @@ class QuadCut(CutObject):
         start_point,
         control_point,
         end_point,
-        settings=None,
+        parameter_object=None,
         passes=1,
         parent=None,
     ):
@@ -17,7 +17,7 @@ class QuadCut(CutObject):
             self,
             start_point,
             end_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

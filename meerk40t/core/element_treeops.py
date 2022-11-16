@@ -2,9 +2,9 @@ import os.path
 from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
+from .cutcode.cutcode import CutCode
 
 from ..svgelements import Matrix
-from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node

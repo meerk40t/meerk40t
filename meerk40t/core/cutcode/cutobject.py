@@ -1,8 +1,6 @@
 from ...svgelements import Point
-from ..parameters import Parameters
 
-
-class CutObject(Parameters):
+class CutObject():
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or
@@ -10,9 +8,9 @@ class CutObject(Parameters):
     """
 
     def __init__(
-        self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
+        self, start=None, end=None, parameter_object=None, parent=None, passes=1, **kwargs
     ):
-        super().__init__(settings)
+        super().__init__(parameter_object)
         if start is not None:
             self._start_x = int(round(start[0]))
             self._start_y = int(round(start[1]))

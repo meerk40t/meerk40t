@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
@@ -382,21 +382,21 @@ class RasterOpNode(Node, Parameters):
         """
         if len(self.children) == 0:
             return
-        settings = self.derive()
+        parameter_object = self.derive()
 
         # Set overscan
         overscan = self.overscan
         if not isinstance(overscan, float):
             overscan = float(Length(overscan))
-        settings["overscan"] = overscan
+        parameter_object.overscan = overscan
 
         # Set steps
         step_x = self.raster_step_x
         step_y = self.raster_step_y
         assert step_x != 0
         assert step_y != 0
-        settings["raster_step_x"] = step_x
-        settings["raster_step_x"] = step_y
+        parameter_object.raster_step_x = step_x
+        parameter_object.raster_step_x = step_y
 
         # Set variables by direction
         direction = self.raster_direction
@@ -461,7 +461,7 @@ class RasterOpNode(Node, Parameters):
                 start_on_top=start_on_top,
                 start_on_left=start_on_left,
                 overscan=overscan,
-                settings=settings,
+                parameter_object=parameter_object,
                 passes=passes,
             )
             cut.path = path
@@ -483,7 +483,7 @@ class RasterOpNode(Node, Parameters):
                     start_on_top=start_on_top,
                     start_on_left=start_on_left,
                     overscan=overscan,
-                    settings=settings,
+                    parameter_object=parameter_object,
                     passes=passes,
                 )
                 cut.path = path

@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import DwellCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -233,6 +233,7 @@ class DotsOpNode(Node, Parameters):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
-                settings=parameter_object,
+                wait=parameter_object.dwell_time,
+                parameter_object=parameter_object,
                 passes=passes,
             )

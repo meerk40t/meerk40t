@@ -14,13 +14,13 @@ class CutGroup(list, CutObject, ABC):
         self,
         parent,
         children=(),
-        settings=None,
+        parameter_object=None,
         passes=1,
         constrained=False,
         closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
+        CutObject.__init__(self, parent=parent, parameter_object=parameter_object, passes=passes)
         self.closed = closed
         self.constrained = constrained
         self.burn_started = False

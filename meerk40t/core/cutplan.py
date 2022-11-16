@@ -19,10 +19,14 @@ from os import times
 from time import time
 from typing import Optional
 
+from .cutcode.cutcode import CutCode
+from .cutcode.cutgroup import CutGroup
+from .cutcode.cutobject import CutObject
+from .cutcode.rastercut import RasterCut
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
-from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 from .units import Length
+
 
 class CutPlanningFailedError(Exception):
     pass
@@ -256,7 +260,7 @@ class CutPlan:
                     closed_distance=context.opt_closed_distance,
                     passes=passes,
                 ),
-                settings=parameter_object,
+                parameter_object=parameter_object,
             )
             if len(cutcode) == 0:
                 break

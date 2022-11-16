@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import PlotCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
@@ -357,7 +357,7 @@ class HatchOpNode(Node, Parameters):
             if node.type != "elem polyline":
                 continue
             parameter_object = node
-            plot = PlotCut(settings=parameter_object)
+            plot = PlotCut(parameter_object=parameter_object)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)

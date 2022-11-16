@@ -2,14 +2,14 @@ from .cutobject import CutObject
 
 
 class HomeCut(CutObject):
-    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+    def __init__(self, offset_point=None, parameter_object=None, passes=1, parent=None):
         if offset_point is None:
             offset_point = (0, 0)
         CutObject.__init__(
             self,
             offset_point,
             offset_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

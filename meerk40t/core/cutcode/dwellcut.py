@@ -2,15 +2,16 @@ from .cutobject import CutObject
 
 
 class DwellCut(CutObject):
-    def __init__(self, start_point, settings=None, passes=1, parent=None):
+    def __init__(self, start_point, wait, parameter_object=None, passes=1, parent=None):
         CutObject.__init__(
             self,
             start_point,
             start_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )
+        self.dwell_time = wait
         self.first = True  # Dwell cuts are standalone
         self.last = True
         self.raster_step = 0

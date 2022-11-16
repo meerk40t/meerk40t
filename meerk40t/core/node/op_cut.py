@@ -1,7 +1,10 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.cutgroup import CutGroup
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -300,7 +303,7 @@ class CutOpNode(Node, Parameters):
                 group = CutGroup(
                     None,
                     closed=closed,
-                    settings=parameter_object,
+                    parameter_object=parameter_object,
                     passes=passes,
                 )
                 group.path = Path(subpath)
@@ -314,7 +317,7 @@ class CutOpNode(Node, Parameters):
                                 LineCut(
                                     seg.start,
                                     seg.end,
-                                    settings=parameter_object,
+                                    parameter_object=parameter_object,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -325,7 +328,7 @@ class CutOpNode(Node, Parameters):
                                 LineCut(
                                     seg.start,
                                     seg.end,
-                                    settings=parameter_object,
+                                    parameter_object=parameter_object,
                                     passes=passes,
                                     parent=group,
                                 )
@@ -336,7 +339,7 @@ class CutOpNode(Node, Parameters):
                                 seg.start,
                                 seg.control,
                                 seg.end,
-                                settings=parameter_object,
+                                parameter_object=parameter_object,
                                 passes=passes,
                                 parent=group,
                             )
@@ -348,7 +351,7 @@ class CutOpNode(Node, Parameters):
                                 seg.control1,
                                 seg.control2,
                                 seg.end,
-                                settings=parameter_object,
+                                parameter_object=parameter_object,
                                 passes=passes,
                                 parent=group,
                             )

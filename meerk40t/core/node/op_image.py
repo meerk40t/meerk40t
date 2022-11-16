@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -302,7 +302,7 @@ class ImageOpNode(Node, Parameters):
                 start_on_top=start_on_top,
                 start_on_left=start_on_left,
                 overscan=overscan,
-                settings=parameter_object,
+                parameter_object=parameter_object,
                 passes=passes,
             )
             cut.path = path
@@ -324,7 +324,7 @@ class ImageOpNode(Node, Parameters):
                     start_on_top=start_on_top,
                     start_on_left=start_on_left,
                     overscan=overscan,
-                    settings=parameter_object,
+                    parameter_object=parameter_object,
                     passes=passes,
                 )
                 cut.path = path

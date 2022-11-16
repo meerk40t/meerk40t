@@ -7,7 +7,7 @@ class InputCut(CutObject):
         input_mask,
         input_value,
         input_message=None,
-        settings=None,
+        parameter_object=None,
         passes=1,
         parent=None,
     ):
@@ -15,7 +15,7 @@ class InputCut(CutObject):
             self,
             (0, 0),
             (0, 0),
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )

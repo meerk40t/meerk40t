@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import OutputCut
+from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 

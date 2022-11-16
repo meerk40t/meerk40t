@@ -3,12 +3,12 @@ from .cutobject import CutObject
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+    def __init__(self, start_point, end_point, parameter_object=None, passes=1, parent=None):
         CutObject.__init__(
             self,
             start_point,
             end_point,
-            settings=settings,
+            parameter_object=parameter_object,
             passes=passes,
             parent=parent,
         )
