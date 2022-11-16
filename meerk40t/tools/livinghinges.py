@@ -10,276 +10,16 @@ from meerk40t.svgelements import Color, Path, Point, Matrix
 
 _ = wx.GetTranslation
 
+"""
+TODO:
+a) get rid of row / col range limitation and iterate until boundary exceeds frame
+b) Fix circle arc invocation
+c) Create proper bowlingpin shape
+d) Proper clipping
+e) Save presets per patterntype / or allow save / load of patternset
+f) Labels for additional parameters?!
 
-class Generator:
-    """A generic generator, subclassed for each different lattice style."""
-
-    def __init__(self, x, y, width, height, stroke_width, e_length, p_spacing):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.stroke_width = stroke_width
-        self.e_length = e_length
-        self.e_height = 0  # Provided by sub-classes.
-        self.p_spacing = p_spacing
-        self.fixed_commands = ""
-
-    def draw_one(self, x, y):
-        return "M %f,%f %s" % (x, y, self.fixed_commands)
-
-    def generate(self):
-        # Round width/height to integer number of patterns.
-        self.e_length = self.width / max(round(self.width / self.e_length), 1.0)
-        self.e_height = self.height / max(round(self.height / self.e_height), 1.0)
-        self.prerender()
-        path_command = ""
-        y = self.y
-        while y < self.y + self.height:
-            x = self.x
-            while x < self.x + self.width:
-                path_command = "%s %s " % (path_command, self.draw_one(x, y))
-                x += self.e_length
-            y += self.e_height
-
-
-class StraightLatticeGenerator(Generator):
-    def __init__(self, *args, **kwargs):
-        super(StraightLatticeGenerator, self).__init__(*args)
-        self.link_gap = kwargs["link_gap"]
-        self.e_height = 2 * self.p_spacing
-        self.name = "straight"
-
-    def prerender(self):
-        self.e_height = 2 * self.p_spacing
-        w = self.e_length
-        lg = self.link_gap
-
-        if lg < 0.1:
-            # Single line for 0 height gap.
-            self.fixed_commands = " m %f,%f h %f m %f,%f h %f m %f,%f h %f" % (
-                0,
-                self.e_height / 2,
-                w * 2 / 5,
-                0 - w / 5,
-                0 - self.e_height / 2,
-                w * 3 / 5,
-                0 - w / 5,
-                self.e_height / 2,
-                w * 2 / 5,
-            )
-        else:
-            self.fixed_commands = (
-                " m %f,%f h %f v %f h %f"
-                " m %f,%f h %f v %f h %f v %f"
-                " m %f,%f h %f v %f h %f "
-            ) % (
-                0,
-                self.e_height / 2,
-                w * 2 / 5,
-                lg,
-                0 - w * 2 / 5,
-                w / 8,
-                0 - lg - self.e_height / 2,
-                w * 3 / 4,
-                lg,
-                0 - w * 3 / 4,
-                0 - lg,
-                w * 7 / 8,
-                lg + self.e_height / 2,
-                0 - w * 2 / 5,
-                0 - lg,
-                w * 2 / 5,
-            )
-
-
-class DiamondLatticeGenerator(Generator):
-    def __init__(self, *args, **kwargs):
-        super(DiamondLatticeGenerator, self).__init__(*args)
-        self.e_height = self.p_spacing
-        self.diamond_curve = kwargs["diamond_curve"]
-        self.name = "diamond"
-
-    def prerender(self):
-        h = self.e_height
-        w = self.e_length
-        # Diamond curve
-        dc = 0 - self.diamond_curve
-        # Horiz handle length.
-        hhl = abs(dc * w * 0.2)
-        # Endpoint horiz handle length
-        ehhl = hhl if dc > 0 else 0
-        # Vert handle length
-        vhl = abs(dc * h / 8) if dc < 0 else 0
-        # Left
-        self.fixed_commands = " m %f,%f c %f,%f %f,%f %f,%f c %f,%f %f,%f %f,%f " % (
-            0,
-            h / 4,
-            hhl,
-            0,
-            w * 0.4 - ehhl,
-            h / 4 - vhl,
-            w * 0.4,
-            h / 4,
-            0 - ehhl,
-            vhl,
-            0 - (w * 0.4 - hhl),
-            h / 4,
-            0 - w * 0.4,
-            h / 4,
-        )
-
-        # Bottom
-        self.fixed_commands = "%s m %f,%f c %f,%f %f,%f %f,%f s %f,%f %f,%f " % (
-            self.fixed_commands,
-            w * 0.1,
-            h / 4,
-            ehhl,
-            0 - vhl,
-            w * 0.4 - hhl,
-            0 - h / 4,
-            w * 0.4,
-            0 - h / 4,
-            w * 0.4 - ehhl,
-            h / 4 - vhl,
-            w * 0.4,
-            h / 4,
-        )
-
-        # Top
-        self.fixed_commands = "%s m %f,%f c %f,%f %f,%f %f,%f s %f,%f %f,%f " % (
-            self.fixed_commands,
-            0 - w * 0.8,
-            0 - h,
-            ehhl,
-            vhl,
-            w * 0.4 - hhl,
-            h / 4,
-            w * 0.4,
-            h / 4,
-            w * 0.4 - ehhl,
-            0 - h / 4 + vhl,
-            w * 0.4,
-            0 - h / 4,
-        )
-
-        # Right
-        self.fixed_commands = "%s m %f,%f c %f,%f %f,%f %f,%f c %f,%f %f,%f %f,%f " % (
-            self.fixed_commands,
-            w * 0.1,
-            h * 0.75,
-            0 - hhl,
-            0,
-            (0 - w * 0.4) + ehhl,
-            0 - h / 4 + vhl,
-            0 - w * 0.4,
-            0 - h / 4,
-            ehhl,
-            0 - vhl,
-            w * 0.4 - hhl,
-            0 - h / 4,
-            w * 0.4,
-            0 - h / 4,
-        )
-
-    def draw_one(self, x, y):
-        return "M %f,%f %s" % (x, y, self.fixed_commands)
-
-
-class CrossLatticeGenerator(Generator):
-    def __init__(self, *args):
-        super(CrossLatticeGenerator, self).__init__(*args)
-        self.e_height = self.p_spacing
-        self.name = "cross"
-
-    def prerender(self):
-        l = self.e_length
-        h = self.e_height
-        self.fixed_commands = (
-            "m %f,%f l %f,%f l %f,%f m %f,%f l %f,%f"
-            "m %f,%f l %f,%f l %f,%f l %f,%f "
-            "m %f,%f l %f,%f l %f,%f l %f,%f "
-            "m %f,%f l %f,%f l %f,%f m %f,%f l %f,%f"
-        ) % (
-            # Left
-            0,
-            h * 0.5,
-            l * 0.2,
-            0,
-            l * 0.2,
-            0 - h * 0.3,
-            0 - l * 0.2,
-            h * 0.3,
-            l * 0.2,
-            h * 0.3,
-            # Top
-            0 - l * 0.3,
-            0 - h * 0.5,
-            l * 0.2,
-            0 - h * 0.3,
-            l * 0.4,
-            0,
-            l * 0.2,
-            h * 0.3,
-            # Bottom
-            0,
-            h * 0.4,
-            0 - l * 0.2,
-            h * 0.3,
-            0 - l * 0.4,
-            0,
-            0 - l * 0.2,
-            0 - h * 0.3,
-            # Right
-            l * 0.5,
-            0 - h * 0.5,
-            l * 0.2,
-            h * 0.3,
-            0 - l * 0.2,
-            h * 0.3,
-            l * 0.2,
-            0 - h * 0.3,
-            l * 0.2,
-            0,
-        )
-
-
-class WavyLatticeGenerator(Generator):
-    def __init__(self, *args, **kwargs):
-        super(WavyLatticeGenerator, self).__init__(*args)
-        self.e_height = self.p_spacing
-        self.name = "wavy"
-
-    def prerender(self):
-        h = self.e_height
-        w = self.e_length
-        self.fixed_commands = (
-            " m %f,%f h %f c %f,%f %f,%f %f,%f h %f "
-            "m %f,%f h %f c %f,%f %f,%f %f,%f h %f "
-        ) % (
-            0,
-            h,  # Start of element (left)
-            w * 0.1,  # Short horiz line.
-            w * 0.1,
-            0,  # Control 1
-            w * 3 / 40,
-            0 - h / 2,  # Control 2
-            w * 0.2,
-            0 - h / 2,  # Curve top.
-            w * 0.175,  # Top horiz line.
-            0 - w * 0.1,
-            0 - h / 2,  # Move to higher line.
-            w * 0.3,  # Long higher horiz line.
-            w / 5,
-            0,  # Control 1
-            w / 10,
-            h,  # Control 2
-            w * 0.25,
-            h,  # Curve down.
-            w * 0.075,  # End horiz line.
-        )
-
-
+"""
 class LivingHinges:
     """
     This class generates a predefined pattern in a *rectangular* area
@@ -287,20 +27,22 @@ class LivingHinges:
 
     def __init__(self, xpos, ypos, width, height):
         self.pattern = None
-        self.cols = 0
-        self.rows = 0
         self.start_x = xpos
         self.start_y = ypos
         self.width = width
         self.height = height
         # We set it off somewhat...
-        self.x0 = width / 4
-        self.y0 = height / 4
-        self.x1 = width * 3 / 4
-        self.y1 = height * 3 / 4
+        self.gap = 0
+        self.x0 = width * self.gap
+        self.y0 = height * self.gap
+        self.x1 = width * (1 - self.gap)
+        self.y1 = height * (1 - self.gap)
+        self.param_a = 0.7
+        self.param_b = 0.7
         # Requires recalculation
         self.path = None
         self.pattern = []
+        self.cutshape = ""
         self.set_cell_values(10, 10)
         self.set_padding_values(5, 5)
         self.set_predefined_pattern("line")
@@ -309,14 +51,22 @@ class LivingHinges:
         yield "line"
         yield "fishbone"
         yield "diagonal"
-        yield "diamond"
+        yield "diamond1"
+        yield "diamond2"
         yield "cross"
-        yield "wavy"
-        yield "empty"
+        yield "bezier"
+        yield "wave"
+        yield "bowlingpin"
+        yield "beehive"
+        yield "fabric"
+        yield "brackets"
+        yield "circle"
 
     def set_predefined_pattern(self, cutshape):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
         #
+        additional_parameter = False
+        self.cutshape = cutshape
         self.pattern = []
         if cutshape == "line":
             self.pattern.append(("M", 0, 0.5))
@@ -329,35 +79,142 @@ class LivingHinges:
         elif cutshape == "diagonal":
             self.pattern.append(("M", 0, 1))
             self.pattern.append(("L", 1, 0))
-        elif cutshape == "diamond":
+        elif cutshape == "diamond1":
             self.pattern.append(("M", 0, 0.5))
             self.pattern.append(("L", 0.5, 0))
             self.pattern.append(("L", 1, 0.5))
             self.pattern.append(("L", 0.5, 1))
             self.pattern.append(("L", 0, 0.5))
+        elif cutshape == "diamond2":
+            self.pattern.append(("M", 0, 0))
+            self.pattern.append(("L", 0.5, 0.4))
+            self.pattern.append(("L", 1, 0))
+            self.pattern.append(("M", 0, 1))
+            self.pattern.append(("L", 0.5, 0.6))
+            self.pattern.append(("L", 1, 1))
         elif cutshape == "cross":
-            self.pattern.append(("M", 0.00, 0.50))
-            self.pattern.append(("L", 0.20, 0.00))
-            self.pattern.append(("L", 0.20, -0.30))
-            self.pattern.append(("M", -0.20, 0.30))
-            self.pattern.append(("L", 0.20, 0.30))
-            self.pattern.append(("M", -0.30, -0.50))
-            self.pattern.append(("L", 0.20, -0.30))
-            self.pattern.append(("L", 0.40, 0.00))
-            self.pattern.append(("L", 0.20, 0.30))
-            self.pattern.append(("M", 0.00, 0.40))
-            self.pattern.append(("L", -0.20, 0.30))
-            self.pattern.append(("L", -0.40, 0.00))
-            self.pattern.append(("L", -0.20, -0.30))
-            self.pattern.append(("M", 0.50, -0.50))
-            self.pattern.append(("L", 0.20, 0.30))
-            self.pattern.append(("L", -0.20, 0.30))
-            self.pattern.append(("M", 0.20, -0.30))
-            self.pattern.append(("L", 0.20, 0.00))
+            # Pattern: cross
+            self.pattern.append(("M", 0.0, 0.25))
+            self.pattern.append(("L", 0.25, 0.50))
+            self.pattern.append(("L", 0.0, 0.75))
+            self.pattern.append(("M", 0.25, 0.50))
+            self.pattern.append(("L", 0.75, 0.50))
+            self.pattern.append(("M", 1, 0.25))
+            self.pattern.append(("L", 0.75, 0.50))
+            self.pattern.append(("L", 1, 0.75))
+        elif cutshape == "fabric":
+            self.pattern.append(("M", 0.25, 0.25))
+            self.pattern.append(("L", 0, 0.25))
+            self.pattern.append(("L", 0, 0))
+            self.pattern.append(("L", 0.5, 0))
+            self.pattern.append(("L", 0.5, 1))
+            self.pattern.append(("L", 1, 1))
+            self.pattern.append(("L", 1, 0.75))
+            self.pattern.append(("L", 0.75, 0.75))
 
-        elif cutshape == "wavy":
-            pass
+            self.pattern.append(("M", 0.75, 0.25))
+            self.pattern.append(("L", 0.75, 0))
+            self.pattern.append(("L", 1, 0))
+            self.pattern.append(("L", 1, 0.5))
+            self.pattern.append(("L", 0, 0.5))
+            self.pattern.append(("L", 0, 1))
+            self.pattern.append(("L", 0.25, 1))
+            self.pattern.append(("L", 0.25, 0.75))
+
+        elif cutshape == "beehive":
+            dx = self.param_a / 5.0 * 0.5
+            dy = self.param_b / 5.0 * 0.5
+            # top
+            self.pattern.append(("M", 0, 0.5 - dy))
+            self.pattern.append(("L", dx, dy))
+            self.pattern.append(("L", 1 - dx, dy))
+            self.pattern.append(("L", 1, 0.5 - dy))
+            # inner
+            self.pattern.append(("M", 0, 0.5))
+            self.pattern.append(("L", dx, 2 * dy))
+            self.pattern.append(("L", 1 - dx, 2 * dy))
+            self.pattern.append(("L", 1, 0.5))
+            self.pattern.append(("L", 1 - dx, 1 - 2 * dy))
+            self.pattern.append(("L", dx, 1 - 2 * dy))
+            self.pattern.append(("L", 0, 0.5))
+            # bottom
+            self.pattern.append(("M", 0, 0.5 + dy))
+            self.pattern.append(("L", dx, 1 - dy))
+            self.pattern.append(("L", 1 - dx, 1 - dy))
+            self.pattern.append(("L", 1, 0.5 + dy))
+
+            additional_parameter = True
+
+        elif cutshape == "bowlingpin":
+            self.pattern.append(("M", 0.0, 0.25))
+            self.pattern.append(("L", 0.25, 0.25))
+            ctrl_x = 0.5 + self.param_a
+            ctrl_y = 0.25 + self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.5, 0.5))
+            ctrl_x = 0.5 - self.param_a
+            ctrl_y = 0.75 - self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.75, 0.75))
+            self.pattern.append(("L", 1, 0.75))
+            additional_parameter = True
+        elif cutshape == "wave":
+            self.pattern.append(("M", 0.0, 0.25))
+            self.pattern.append(("L", 0.25, 0.25))
+            ctrl_x = 0.5 + self.param_a
+            ctrl_y = 0.25 + self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.5, 0.5))
+            ctrl_x = 0.5 - self.param_a
+            ctrl_y = 0.75 - self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.75, 0.75))
+            self.pattern.append(("L", 1, 0.75))
+            additional_parameter = True
+        elif cutshape == "bezier":
+            # Pattern: wavy
+            anchor_tip = (
+                self.param_a
+            )  # distance factor from anchor to place control point
+            anchor_center = self.param_b
+            self.pattern.append(("M", 0, 0))
+            self.pattern.append(
+                ("C", 1 * anchor_tip, 0, 1 / 2 - (1 * anchor_center), 1, 1 / 2, 1)
+            )
+            self.pattern.append(
+                ("C", 1 / 2 + (1 * anchor_center), 1, 1 * (1 - anchor_tip), 0, 1, 0)
+            )
+            additional_parameter = True
+        elif cutshape == "brackets":
+            additional_parameter = True
+            p_a = self.param_a
+            p_b = self.param_b
+            self.pattern.append(("M", 0.0, 0.5))
+            self.pattern.append(("C", 0.0, p_a, 1.0, p_b, 1.0, 0.5))
+            self.pattern.append(("C", 1.0, 1 - p_a, 0.0, 1 - p_b, 0.0, 0.5))
+        elif cutshape == "circle":
+            # concentric circles
+            additional_parameter = True
+            amount = int(abs(10 * self.param_a)) + 1  # (1 to 50)
+            gap = abs(self.param_b)
+            dx = 0.5 / amount
+            cx = 0.5
+            cy = 0.5
+            rotation = 0
+            sweep = 0
+            arc = 0
+            for i in range(amount):
+                # A move-to command to the point cx+rx,cy;
+                # arc to cx,cy+ry;
+                # arc to cx-rx,cy;
+                # arc to cx,cy-ry;
+                # arc with a segment-completing close path operation.
+                radius = i * dx
+
+                self.pattern.append(("M", cx + radius, cy))
+                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy + radius))
+                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx - radius, cy))
+                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy - radius))
+                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx + radius, cy))
+
         self.path = None
+        return additional_parameter
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -374,41 +231,91 @@ class LivingHinges:
 
     def draw_trace(self, offset_x, offset_y, width, height):
         # Draw the pattern
-        # The extents of the cell will be (x0, y0)
-        # in the upper-left corner and (cellWidth,cellHeight) in the bottom-right corner
+        # The extents of the cell will be at (offset_x, offset_y)
+        # in the upper-left corner and (width, height) in the bottom-right corner
 
         def create_point(x, y):
             return Point(x * width + offset_x, y * height + offset_y)
 
-        self.path.move(offset_x, offset_y)
+        def inside(x, y):
+            outside = (
+                x < 0
+                or x > self.width
+                or y < 0
+                or y > self.height
+            )
+            return not outside
+
+        # self.path.move(offset_x, offset_y)
+        # print (f"After initial move: {str(self.path)}")
+        current_x = 0
+        current_y = 0
+        s_left = self.start_x
+        s_right = s_left + self.width
+        s_top = self.start_y
+        s_bottom = s_top + self.height
         for entry in self.pattern:
+            old_x = current_x
+            old_y = current_y
             key = entry[0].lower()
             if key == "m":
                 endpoint = create_point(entry[1], entry[2])
                 self.path.move(endpoint)
+                current_x = entry[1]
+                current_y = entry[2]
             elif key == "h":
-                self.path.horizontal(entry[1], relative=True)
+                current_x += entry[1]
+                dx = entry[1]
+                if inside(current_x, current_y):
+                    self.path.horizontal(dx, relative=True)
             elif key == "v":
-                self.path.vertical(entry[1], relative=True)
+                current_y += entry[1]
+                dy = entry[1]
+                if inside(current_x, current_y):
+                    self.path.vertical(dy, relative=True)
             elif key == "l":
                 # Line to...
+                current_x = entry[1]
+                current_y = entry[2]
                 endpoint = create_point(entry[1], entry[2])
-                self.path.line(endpoint)
+                if inside(current_x, current_y):
+                    self.path.line(endpoint)
+            elif key == "a":
+                current_x = entry[6]
+                current_y = entry[7]
+                rx = entry[1]
+                ry = entry[2]
+                rotation = entry[3]
+                arc = entry[4]
+                sweep = entry[5]
+                endpoint = create_point(current_x, current_y)
+                if inside(current_x, current_y):
+                    self.path.arc(rx, ry, rotation, arc, sweep, endpoint)
             elif key == "c":
+                current_x = entry[5]
+                current_y = entry[6]
                 control1 = create_point(entry[1], entry[2])
                 control2 = create_point(entry[3], entry[4])
                 endpoint = create_point(entry[5], entry[6])
-                self.path.cubic(control1, control2, endpoint)
+                if inside(current_x, current_y):
+                    self.path.cubic(control1, control2, endpoint)
             elif key == "q":
+                current_x = entry[3]
+                current_y = entry[4]
                 control1 = create_point(entry[1], entry[2])
                 endpoint = create_point(entry[3], entry[4])
-                self.path.quad(control1, endpoint)
+                if inside(current_x, current_y):
+                    self.path.quad(control1, endpoint)
 
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
         self.start_x = hinge_left
         self.start_y = hinge_top
         self.width = hinge_width
         self.height = hinge_height
+        self.x0 = hinge_width * self.gap
+        self.y0 = hinge_height * self.gap
+        self.x1 = hinge_width * (1 - self.gap)
+        self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
         self.path = None
 
@@ -424,6 +331,12 @@ class LivingHinges:
         # Requires recalculation
         self.path = None
 
+    def set_additional_parameters(self, param_a, param_b):
+        self.param_a = param_a
+        self.param_b = param_b
+        # Make sure pattern is updated with additional parameter
+        __ = self.set_predefined_pattern(self.cutshape)
+
     def generate(self, show_outline=False, force=False):
         if self.path is not None and not force:
             # No need to recalculate...
@@ -433,9 +346,6 @@ class LivingHinges:
         self.cell_height = self.height * self.cell_height_percentage / 100
         self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / 100
         self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
-        # print (f"Area: {self.width:.1f}, {self.height:.1f}, Cell: {self.cell_width:.1f}, {self.cell_height:.1f}")
-        # print (f"Ratios: {self.cell_width_percentage}, {self.cell_height_percentage}")
-        # print (f"Padding: {self.cell_padding_h_percentage}, {self.cell_padding_v_percentage}")
         self.path = Path(stroke=Color("red"), stroke_width=500)
 
         if show_outline:
@@ -443,14 +353,14 @@ class LivingHinges:
 
         #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
-        self.cols = (
+        cols = (
             int(
                 ((self.x1 - self.x0) + self.cell_width)
                 / (self.cell_width + (2 * self.cell_padding_h))
             )
             + 1
         )
-        self.rows = (
+        rows = (
             int(
                 ((self.y1 - self.y0) + self.cell_height)
                 / (self.cell_height + (2 * self.cell_padding_v))
@@ -458,22 +368,20 @@ class LivingHinges:
             + 1
         )
 
-        for col in range(self.cols):
-            for row in range(self.rows):
-
-                # logic for X and Y is to find upper-left corner of upper-left cell
-                # and then use col- and row-based offsets
-                top_left_x = self.x0 - (self.cell_width / 2)
-                x_offset = col * (self.cell_width + (2 * self.cell_padding_h))
-                x_current = top_left_x + x_offset
-
+        # print (f"Area: {self.width:.1f}, {self.height:.1f}, Cell: {self.cell_width:.1f}, {self.cell_height:.1f}")
+        # print (f"Rows: {rows}, Cols={cols}")
+        # print (f"Ratios: {self.cell_width_percentage}, {self.cell_height_percentage}")
+        # print (f"Padding: {self.cell_padding_h_percentage}, {self.cell_padding_v_percentage}")
+        for col in range(cols):
+            top_left_x = self.x0 - (self.cell_width / 2)
+            x_offset = col * (self.cell_width + (2 * self.cell_padding_h))
+            x_current = top_left_x + x_offset
+            for row in range(rows):
                 top_left_y = self.y0
                 y_offset = row * (self.cell_height + (2 * self.cell_padding_v)) + (
                     (self.cell_height + (2 * self.cell_padding_v)) / 2
                 ) * (col % 2)
                 y_current = top_left_y + y_offset
-
-                # print (f"{col},{row}: {x_current:.1f}, {y_current:.1f}")
 
                 if x_current < self.x1 and y_current < self.y1:
                     # Don't call draw if outside of hinge area
@@ -500,11 +408,14 @@ class HingePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.renderer = LaserRender(context)
+        self.in_event = False
         self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_origin_y = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.combo_style = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
+        self.combo_style = wx.ComboBox(
+            self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
+        )
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
@@ -537,18 +448,39 @@ class HingePanel(wx.Panel):
             50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        # Slider times ten
+        self.slider_param_a = wx.Slider(
+            self,
+            wx.ID_ANY,
+            7,
+            -50,
+            50,
+            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+        )
+        self.slider_param_b = wx.Slider(
+            self,
+            wx.ID_ANY,
+            7,
+            -50,
+            +50,
+            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+        )
 
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
         )
+
+        #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
+
         self.patterns = list(self.hinge_generator.get_patterns())
         self.combo_style.Set(self.patterns)
         self.combo_style.SetSelection(0)
+        # self.check_debug_outline.SetValue(True)
         self._set_layout()
         self._set_logic()
 
         self._setup_settings()
-        self._restore_settings(True)
+        self._restore_settings()
 
         self.Layout()
 
@@ -564,7 +496,10 @@ class HingePanel(wx.Panel):
         self.slider_height.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_offset_x.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_offset_y.Bind(wx.EVT_SLIDER, self.on_option_update)
+        self.slider_param_a.Bind(wx.EVT_SLIDER, self.on_option_update)
+        self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_option_update)
+        # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
 
     def _set_layout(self):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -623,21 +558,19 @@ class HingePanel(wx.Panel):
         main_left.Add(vsizer_options, 0, wx.EXPAND, 0)
 
         hsizer_pattern = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_options.Add(hsizer_pattern, 1, wx.EXPAND, 0)
+        vsizer_options.Add(hsizer_pattern, 0, wx.EXPAND, 0)
 
         label_pattern = wx.StaticText(self, wx.ID_ANY, _("Pattern:"))
         label_pattern.SetMinSize((90, -1))
         hsizer_pattern.Add(label_pattern, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.combo_style.SetToolTip(_("Choose the hinge pattern"))
-        hsizer_pattern.Add(self.combo_style, 1, 0, 0)
+        hsizer_pattern.Add(self.combo_style, 1, wx.EXPAND, 0)
 
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
 
-        label_cell_width = wx.StaticText(
-            self, wx.ID_ANY, _("Cell-Width:")
-        )
+        label_cell_width = wx.StaticText(self, wx.ID_ANY, _("Cell-Width:"))
         label_cell_width.SetMinSize((90, -1))
         hsizer_cellwidth.Add(label_cell_width, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -649,9 +582,7 @@ class HingePanel(wx.Panel):
         hsizer_cellheight = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellheight, 1, wx.EXPAND, 0)
 
-        label_cell_height = wx.StaticText(
-            self, wx.ID_ANY, _("Cell-Height:")
-        )
+        label_cell_height = wx.StaticText(self, wx.ID_ANY, _("Cell-Height:"))
         label_cell_height.SetMinSize((90, -1))
         hsizer_cellheight.Add(label_cell_height, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -673,7 +604,7 @@ class HingePanel(wx.Panel):
         hsizer_offsetx.Add(self.slider_offset_x, 1, wx.EXPAND, 0)
 
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_options.Add(hsizer_offsety, 1, wx.EXPAND, 0)
+        vsizer_options.Add(hsizer_offsety, 0, wx.EXPAND, 0)
 
         label_offset_y = wx.StaticText(self, wx.ID_ANY, _("Offset Y:"))
         label_offset_y.SetMinSize((90, -1))
@@ -684,8 +615,16 @@ class HingePanel(wx.Panel):
         )
         hsizer_offsety.Add(self.slider_offset_y, 1, wx.EXPAND, 0)
 
+        self.slider_param_a.SetToolTip(_("Change the shape appearance"))
+        self.slider_param_b.SetToolTip(_("Change the shape appearance"))
+        hsizer_param_a = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer_param_a.Add(self.slider_param_a, 1, wx.EXPAND, 0)
+        hsizer_param_a.Add(self.slider_param_b, 1, wx.EXPAND, 0)
+        vsizer_options.Add(hsizer_param_a, 0, wx.EXPAND, 0)
+        # main_left.Add(self.check_debug_outline, 0, wx.EXPAND, 0)
+
         hsizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        main_left.Add(hsizer_buttons, 1, wx.EXPAND, 0)
+        main_left.Add(hsizer_buttons, 0, wx.EXPAND, 0)
 
         self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
         self.button_generate.SetToolTip(_("Generates the hinge"))
@@ -697,7 +636,7 @@ class HingePanel(wx.Panel):
         main_right = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Preview"), wx.VERTICAL
         )
-        main_sizer.Add(main_right, 1, wx.EXPAND, 0)
+        main_sizer.Add(main_right, 2, wx.EXPAND, 0)
 
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         main_right.Add(self.panel_preview, 1, wx.EXPAND, 0)
@@ -713,10 +652,19 @@ class HingePanel(wx.Panel):
 
         if gc:
             wd, ht = self.panel_preview.GetSize()
-            ratio = min(wd / self.hinge_generator.width, ht / self.hinge_generator.height)
+            ratio = min(
+                wd / self.hinge_generator.width, ht / self.hinge_generator.height
+            )
             matrix = gc.CreateMatrix(a=ratio, b=0, c=0, d=ratio, tx=0, ty=0)
             gc.SetTransform(matrix)
-            self.hinge_generator.generate(True)
+            # Draw the hinge area:
+            gc.SetPen(wx.BLUE_PEN)
+            gc.DrawRectangle(
+                0, 0, self.hinge_generator.width, self.hinge_generator.height
+            )
+            # flag = self.check_debug_outline.GetValue()
+            flag = False
+            self.hinge_generator.generate(flag)
             gc.SetPen(wx.RED_PEN)
             gcpath = self.renderer.make_path(gc, self.hinge_generator.path)
             gc.StrokePath(gcpath)
@@ -725,19 +673,24 @@ class HingePanel(wx.Panel):
         self.context("window toggle Hingetool\n")
 
     def on_button_generate(self, event):
-        self.hinge_generator.generate(show_outline=True)
-        self.context.elements.elem_branch.add(
+        self.hinge_generator.generate(show_outline=False)
+        node = self.context.elements.elem_branch.add(
             path=abs(self.hinge_generator.path),
             stroke_width=500,
             color=Color("red"),
             type="elem path",
         )
+        self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
 
     def on_option_update(self, event):
+        if self.in_event:
+            return
+        self.in_event = True
         flag = True
         idx = self.combo_style.GetSelection()
-        if idx < 0: idx = 0
+        if idx < 0:
+            idx = 0
         style = self.patterns[idx]
         self.context.hinge_type = style
         try:
@@ -762,11 +715,15 @@ class HingePanel(wx.Panel):
         offset_y = self.slider_offset_y.GetValue()
         self.context.hinge_padding_x = offset_x
         self.context.hinge_padding_y = offset_y
-        print(f"Settings: Width={self.text_width.GetValue()} - {wd:.1f}, Width={self.text_height.GetValue()} - {ht:.1f}")
+
+        p_a = self.slider_param_a.GetValue() / 10.0
+        p_b = self.slider_param_b.GetValue() / 10.0
+        self.context.hinge_param_a = p_a
+        self.context.hinge_param_b = p_b
         # Restore settings will call the LivingHinge class
-        self._restore_settings(True)
+        self._restore_settings()
         self.panel_preview.Refresh()
-        self.button_generate.Enable(flag)
+        self.in_event = False
 
     def _setup_settings(self):
         self.context.setting(str, "hinge_type", "line")
@@ -778,29 +735,43 @@ class HingePanel(wx.Panel):
         self.context.setting(int, "hinge_cells_y", 20)
         self.context.setting(int, "hinge_padding_x", 10)
         self.context.setting(int, "hinge_padding_y", 10)
+        self.context.setting(float, "hinge_param_a", 0.7)
+        self.context.setting(float, "hinge_param_b", 0.7)
 
-    def _restore_settings(self, just_internal=False):
+    def _restore_settings(self):
         if self.context.hinge_type not in self.patterns:
             self.context.hinge_type = self.patterns[0]
-        self.hinge_generator.set_predefined_pattern(self.context.hinge_type)
+        flag = self.hinge_generator.set_predefined_pattern(self.context.hinge_type)
         x = float(Length(self.context.hinge_origin_x))
         y = float(Length(self.context.hinge_origin_y))
         wd = float(Length(self.context.hinge_width))
         ht = float(Length(self.context.hinge_height))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
-        self.hinge_generator.set_cell_values(self.context.hinge_cells_x, self.context.hinge_cells_y)
-        self.hinge_generator.set_padding_values(self.context.hinge_padding_x, self.context.hinge_padding_y)
-        if just_internal:
-            return
-        self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
+        self.hinge_generator.set_cell_values(
+            self.context.hinge_cells_x, self.context.hinge_cells_y
+        )
+        self.hinge_generator.set_padding_values(
+            self.context.hinge_padding_x, self.context.hinge_padding_y
+        )
+        self.hinge_generator.set_additional_parameters(
+            self.context.hinge_param_a, self.context.hinge_param_b
+        )
+        self.slider_param_a.Enable(flag)
+        self.slider_param_b.Enable(flag)
+        self.slider_param_a.Show(flag)
+        self.slider_param_b.Show(flag)
+        if self.combo_style.GetSelection() != self.patterns.index(
+            self.context.hinge_type
+        ):
+            self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
         if self.text_origin_x.GetValue() != self.context.hinge_origin_x:
-            self.text_origin_x.SetValue(self.context.hinge_origin_x)
+            self.text_origin_x.ChangeValue(self.context.hinge_origin_x)
         if self.text_origin_y.GetValue() != self.context.hinge_origin_y:
             self.text_origin_y.ChangeValue(self.context.hinge_origin_y)
         if self.text_width.GetValue() != self.context.hinge_width:
-            self.text_width.SetValue(self.context.hinge_width)
+            self.text_width.ChangeValue(self.context.hinge_width)
         if self.text_height.GetValue() != self.context.hinge_height:
-            self.text_height.SetValue(self.context.hinge_height)
+            self.text_height.ChangeValue(self.context.hinge_height)
         if self.slider_width.GetValue() != self.context.hinge_cells_x:
             self.slider_width.SetValue(self.context.hinge_cells_x)
         if self.slider_height.GetValue() != self.context.hinge_cells_y:
@@ -809,6 +780,13 @@ class HingePanel(wx.Panel):
             self.slider_offset_x.SetValue(self.context.hinge_padding_x)
         if self.slider_offset_y.GetValue() != self.context.hinge_padding_y:
             self.slider_offset_y.SetValue(self.context.hinge_padding_y)
+        if self.slider_param_a.GetValue() != int(10 * self.context.hinge_param_a):
+            self.slider_param_a.SetValue(int(10 * self.context.hinge_param_a))
+        if self.slider_param_b.GetValue() != int(10 * self.context.hinge_param_b):
+            self.slider_param_b.SetValue(int(10 * self.context.hinge_param_b))
+        flag = wd > 0 and ht > 0
+        self.button_generate.Enable(flag)
+        self.Layout()
 
     def pane_show(self):
         bounds = self.context.elements._emphasized_bounds
@@ -818,11 +796,20 @@ class HingePanel(wx.Panel):
             start_y = bounds[1]
             wd = bounds[2] - bounds[0]
             ht = bounds[3] - bounds[1]
-            self.text_origin_x.SetValue(Length(amount=start_x, digits=2, preferred_units=units).preferred_length)
-            self.text_origin_y.SetValue(Length(amount=start_y, digits=2, preferred_units=units).preferred_length)
-            self.text_width.SetValue(Length(amount=wd, digits=2, preferred_units=units).preferred_length)
-            self.text_height.SetValue(Length(amount=ht, digits=2, preferred_units=units).preferred_length)
+            self.text_origin_x.ChangeValue(
+                Length(amount=start_x, digits=2, preferred_units=units).preferred_length
+            )
+            self.text_origin_y.ChangeValue(
+                Length(amount=start_y, digits=2, preferred_units=units).preferred_length
+            )
+            self.text_width.ChangeValue(
+                Length(amount=wd, digits=2, preferred_units=units).preferred_length
+            )
+            self.text_height.ChangeValue(
+                Length(amount=ht, digits=2, preferred_units=units).preferred_length
+            )
             self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
+
 
 class LivingHingeTool(MWindow):
     def __init__(self, *args, **kwds):
@@ -837,7 +824,6 @@ class LivingHingeTool(MWindow):
         _icon.CopyFromBitmap(icons8_hinges_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Living Hinges"))
-
         self.Layout()
 
     def window_open(self):
