@@ -123,7 +123,7 @@ class Node:
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        return self.create(self.type, **self.node_dict)
+        return self.__class__(**self.node_dict)
 
     def __str__(self):
         text = self._formatter
@@ -761,7 +761,7 @@ class Node:
 
     def create(self, type, **kwargs):
         """
-        Create node of type with attributes via node bootstrapping.
+        Create node of type with attributes via node bootstrapping. Apply node defaults to values with defaults.
 
         @param type:
         @param kwargs:
