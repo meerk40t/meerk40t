@@ -46,11 +46,7 @@ class NumpathNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(NumpathNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Numpath"
-        default_map.update(self.settings)
-        default_map["stroke"] = self.stroke
-        default_map["fill"] = self.fill
-        default_map["stroke-width"] = self.stroke_width
-        default_map["matrix"] = self.matrix
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
