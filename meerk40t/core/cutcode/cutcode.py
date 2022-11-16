@@ -327,22 +327,6 @@ class CutCode(CutGroup):
             elif cmd == "home":
                 x = 0
                 y = 0
-            elif cmd == "cut_abs":
-                nx = code[1]
-                ny = code[2]
-                cut = LineCut(Point(x, y), Point(nx, ny), parameter_object=settings)
-                cutcode.append(cut)
-                x = nx
-                y = ny
-            elif cmd == "cut_rel":
-                nx = code[1]
-                ny = code[2]
-                nx = x + nx
-                ny = y + ny
-                cut = LineCut(Point(x, y), Point(nx, ny), parameter_object=settings)
-                cutcode.append(cut)
-                x = nx
-                y = ny
             elif cmd == "dwell":
                 time = code[1]
                 cut = DwellCut((x, y), time)
