@@ -292,8 +292,8 @@ class SVGWriter:
                 )
             elif c.type == "elem point":
                 element = Point(c.point)
-                c.settings["x"] = element.x
-                c.settings["y"] = element.y
+                c.x = element.x
+                c.y = element.y
                 subelement = SubElement(xml_tree, "element")
                 t = c.matrix
                 subelement.set(
@@ -519,15 +519,14 @@ class SVGWriter:
     def _write_custom(subelement, node):
         subelement.set("type", node.type)
         try:
-            settings = node.settings
-            for key in settings:
+            nd = node.node_dict
+            for key, value in nd.items():
                 if not key:
                     # If key is None, do not save.
                     continue
                 if key in ("references", "tag"):
-                    # References key is obsolete
+                    # References key from previous loaded version (filter out, rebuild)
                     continue
-                value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
