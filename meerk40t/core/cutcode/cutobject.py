@@ -1,4 +1,3 @@
-from .cutgroup import CutGroup
 from ...svgelements import Point
 
 
@@ -156,7 +155,7 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            if isinstance(c, CutGroup):
+            if isinstance(c, list):
                 if c.burn_started:
                     return True
             elif c.burns_done == c.passes:
