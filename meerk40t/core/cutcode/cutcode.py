@@ -14,7 +14,7 @@ should be toggled and move by anything executing these in the planning process. 
 be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
 to LaserCode.
 
-All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
+All CutObjects have a .start .end and .generator() functions. They also have a paramater_object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """

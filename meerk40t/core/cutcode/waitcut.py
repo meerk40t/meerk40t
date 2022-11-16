@@ -6,7 +6,7 @@ class WaitCut(CutObject):
         """
         Establish a wait cut.
         @param wait: wait time in ms.
-        @param parameter_object: Settings for wait cut.
+        @param parameter_object: parameter_object for wait cut.
         @param passes: Number of passes.
         @param parent: CutObject parent.
         """

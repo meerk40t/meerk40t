@@ -3,7 +3,7 @@ from ...svgelements import Point
 
 class CutObject:
     """
-    CutObjects are small vector cuts which have on them a laser settings object.
+    CutObjects are small vector cuts which have parameter object.
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
