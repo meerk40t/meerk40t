@@ -285,7 +285,6 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
