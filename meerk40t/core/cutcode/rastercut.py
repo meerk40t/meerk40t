@@ -97,8 +97,8 @@ class RasterCut(CutObject):
     def length(self):
         return (
             self.width * self.height
-            + (self.overscan * self.height)
-            + (self.height * self.raster_step_y)
+            + (self.parameter_object.overscan * self.height)
+            + (self.height * self.parameter_object.raster_step_y)
         )
 
     def extra(self):
