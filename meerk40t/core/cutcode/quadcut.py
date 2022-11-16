@@ -25,10 +25,10 @@ class QuadCut(CutObject):
         self._control = control_point
 
     def __repr__(self):
-        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.parameter_object}", passes={self.passes})'
 
     def __str__(self):
-        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.passes})"
 
     def c(self):
         return self._control

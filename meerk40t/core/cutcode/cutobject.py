@@ -1,6 +1,8 @@
+from .cutgroup import CutGroup
 from ...svgelements import Point
 
-class CutObject():
+
+class CutObject:
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or
@@ -10,7 +12,7 @@ class CutObject():
     def __init__(
         self, start=None, end=None, parameter_object=None, parent=None, passes=1, **kwargs
     ):
-        super().__init__(parameter_object)
+        self.parameter_object = parameter_object
         if start is not None:
             self._start_x = int(round(start[0]))
             self._start_y = int(round(start[1]))
@@ -28,9 +30,6 @@ class CutObject():
         self.next = None
         self.previous = None
         self.passes = passes
-        if passes != 1:
-            # If passes is greater than 1 we must flag custom passes as on.
-            self.passes_custom = True
         self._burns_done = 0
         self.highlighted = False
 
@@ -160,7 +159,7 @@ class CutObject():
             if isinstance(c, CutGroup):
                 if c.burn_started:
                     return True
-            elif c.burns_done == c.implicit_passes:
+            elif c.burns_done == c.passes:
                 return True
         return False
 
@@ -168,7 +167,7 @@ class CutObject():
         if self.contains is None:
             return False
         for c in self.contains:
-            if c.burns_done < c.implicit_passes:
+            if c.burns_done < c.passes:
                 return True
         return False
 
@@ -176,8 +175,8 @@ class CutObject():
         yield self
 
     def candidate(self):
-        if self.burns_done < self.implicit_passes:
+        if self.burns_done < self.passes:
             yield self
 
     def is_burned(self):
-        return self.burns_done == self.implicit_passes
+        return self.burns_done == self.passes
