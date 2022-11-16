@@ -382,6 +382,7 @@ class CutCode(CutGroup):
                         path.line((x, y))
                     else:
                         path.move((x, y))
+            # TODO: Settings for different cut objects must be the creating op
             if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
