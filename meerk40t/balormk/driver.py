@@ -7,19 +7,17 @@ driver.
 import time
 
 from meerk40t.balormk.controller import GalvoController
-from meerk40t.core.cutcode import (
-    CubicCut,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    SetOriginCut,
-    WaitCut,
-)
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.setorigincut import SetOriginCut
+from meerk40t.core.cutcode.waitcut import WaitCut
+
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 
