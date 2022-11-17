@@ -35,7 +35,6 @@ class GRBLDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
-        # TODO: Update self.settings to use updated parameters values.
         self.plot_planner = PlotPlanner(single=True, smooth=False, ppi=False, shift=False, group=True)
         self.queue = []
         self.plot_data = None

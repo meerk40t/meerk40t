@@ -48,12 +48,13 @@ class PlotPlanner:
         group=True,
     ):
         self.parameter_object = None
+        self.jog_enable = None
         self.jog_distance = None
         self.raster_step_x = None
-        self.jog_enable = None
         self._constant_move_x = None
         self._constant_move_y = None
         self.set_settings(parameter_object)
+
         self.debug = False
 
         self.abort = False
@@ -88,9 +89,9 @@ class PlotPlanner:
         if parameter_object is None:
             return
         self.parameter_object = parameter_object
+        self.jog_enable = getattr(parameter_object, "jog_enable", True)
         self.jog_distance = getattr(parameter_object, "jog_distance", 15.0)
         self.raster_step_x = getattr(parameter_object, "raster_step_x", 0)
-        self.jog_enable = getattr(parameter_object, "jog_enable", True)
         self._constant_move_x = getattr(parameter_object, "_constant_move_x", False)
         self._constant_move_y = getattr(parameter_object, "_constant_move_y", False)
 

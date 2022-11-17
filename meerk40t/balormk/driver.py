@@ -14,6 +14,7 @@ from meerk40t.core.cutcode.homecut import HomeCut
 from meerk40t.core.cutcode.inputcut import InputCut
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
