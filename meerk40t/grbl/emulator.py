@@ -4,8 +4,10 @@ GRBL Emulator
 Provides Emulation for GRBL devices. Allows MeerK40t to pretend to be a GRBL device and accept data from other programs
 and treat that data as commands to control the current device.
 """
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.waitcut import WaitCut
 
-from meerk40t.core.cutcode import CutCode, PlotCut, WaitCut
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.parameters import Parameters
 from meerk40t.grbl.parser import GRBLParser

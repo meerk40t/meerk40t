@@ -6,18 +6,16 @@ Governs the generic commands issued by laserjob and spooler and converts that in
 
 import time
 
-from ..core.cutcode import (
-    CubicCut,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    QuadCut,
-    SetOriginCut,
-    WaitCut,
-)
+from ..core.cutcode.cubiccut import CubicCut
+from ..core.cutcode.dwellcut import DwellCut
+from ..core.cutcode.gotocut import GotoCut
+from ..core.cutcode.homecut import HomeCut
+from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
+from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.quadcut import QuadCut
+from ..core.cutcode.setorigincut import SetOriginCut
+from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..device.basedevice import (

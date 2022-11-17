@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters

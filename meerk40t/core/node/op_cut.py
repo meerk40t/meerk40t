@@ -1,7 +1,10 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.cutgroup import CutGroup
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
