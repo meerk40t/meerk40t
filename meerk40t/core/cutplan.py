@@ -253,11 +253,12 @@ class CutPlan:
         """
         context = self.context
         for pass_idx in range(copies):
-            # If passes isn't equal to implicit passes then we need a different settings to permit change
+            # if the settings dictionary doesn't exist we use the defined instance dictionary
             try:
                 settings_dict = op.settings
             except AttributeError:
                 settings_dict = op.__dict__
+            # If passes isn't equal to implicit passes then we need a different settings to permit change
             settings = (
                 settings_dict if op.implicit_passes == passes else dict(settings_dict)
             )

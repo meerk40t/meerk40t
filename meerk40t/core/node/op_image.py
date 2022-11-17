@@ -35,7 +35,7 @@ class ImageOpNode(Node, Parameters):
         self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self._allowed_elements = ("elem image",)
-        self.stopop = True
+        self.settings["stopop"] = True
         self.allowed_attributes = []
 
     def __repr__(self):
