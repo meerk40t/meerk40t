@@ -2969,15 +2969,15 @@ def init_commands(kernel):
                 )
 
         poly_path = Polygon(star_points)
+        if data is None:
+            data = list()
         node = self.elem_branch.add(shape=poly_path, type="elem polyline")
         node.stroke = self.default_stroke
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
         node.focus()
-        if data is None:
-            data = list()
-        data.append(poly_path)
+        data.append(node)
         # Newly created! Classification needed?
         self.signal("classify_new", data)
         return "elements", data
