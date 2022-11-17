@@ -113,10 +113,8 @@ class Node:
         self._paint_bounds = None
         self._paint_bounds_dirty = True
 
-        # These are direct maps for gui values
-        self.item = None
-        self.icon = None
-        self.cache = None
+        self._item = None
+        self._cache = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -691,30 +689,24 @@ class Node:
         The data structure was changed. Any assumptions about what this object is/was are void.
         """
         try:
-            self.cache.UnGetNativePath(self.cache.NativePath)
+            self._cache.UnGetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
-            del self.icon
+            del self._cache
         except AttributeError:
             pass
-        self.cache = None
-        self.icon = None
+        self._cache = None
         self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
         try:
-            self.cache.UngetNativePath(self.cache.NativePath)
+            self._cache.UngetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
-        except AttributeError:
-            pass
-        try:
-            del self.icon
+            del self._cache
         except AttributeError:
             pass
 
@@ -935,7 +927,7 @@ class Node:
                 ref._parent = node
                 # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None
@@ -955,7 +947,7 @@ class Node:
         if references:
             for ref in list(self._references):
                 ref.remove_node()
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None

@@ -223,8 +223,7 @@ class ImageNode(Node):
             step_y = step
             self.process_image(step_x, step_y)
             # Unset cache.
-            self.wx_bitmap_image = None
-            self.cache = None
+            self._cache = None
 
     def process_image(self, step_x=None, step_y=None, crop=True):
         """
