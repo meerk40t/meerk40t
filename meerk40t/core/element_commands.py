@@ -1811,8 +1811,9 @@ def init_commands(kernel):
         node = self.elem_branch.add(path=super_element, type="elem path")
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
-        self.signal("classify_new", node)
-        return "elements", [node]
+        data = [node]
+        self.signal("classify_new", data)
+        return "elements", data
 
     @self.console_command(
         "subpath",
