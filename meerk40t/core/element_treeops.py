@@ -260,13 +260,25 @@ def init_tree(kernel):
 
     @tree_submenu(_("Speed"))
     @tree_radio(radio_match)
-    @tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
+    @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op cut", "op engrave", "op hatch"),
+        node_type=("op engrave", "op hatch"),
         help="",
     )
     def set_speed_vector(node, speed=35, **kwargs):
+        node.speed = float(speed)
+        self.signal("element_property_reload", node)
+
+    @tree_submenu(_("Speed"))
+    @tree_radio(radio_match)
+    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
+    @tree_operation(
+        _("{speed}mm/s"),
+        node_type="op cut",
+        help="",
+    )
+    def set_speed_vector_cut(node, speed=20, **kwargs):
         node.speed = float(speed)
         self.signal("element_property_reload", node)
 
