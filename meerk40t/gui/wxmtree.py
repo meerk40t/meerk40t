@@ -270,8 +270,8 @@ class TreePanel(wx.Panel):
                 node = nodes
                 self.shadow_tree.set_icon(node, force=True)
             rootitem = self.shadow_tree.wxtree.GetRootItem()
-            if not node is None and not node.item is None and node.item != rootitem:
-                self.shadow_tree.wxtree.EnsureVisible(node.item)
+            if not node is None and not node._item is None and node._item != rootitem:
+                self.shadow_tree.wxtree.EnsureVisible(node._item)
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
