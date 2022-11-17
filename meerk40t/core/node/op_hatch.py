@@ -357,8 +357,8 @@ class HatchOpNode(Node, Parameters):
                         chain_settings.get("color", "black")
                     )
                 for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline, **chain_settings))
-                    node.settings.update(chain_settings)
+                    node = PolylineNode(shape=Polyline(*polyline), **chain_settings)
+                    # node.settings.update(chain_settings)
                     self.add_node(node)
 
         if self.children:
