@@ -52,7 +52,7 @@ class HatchOpNode(Node, Parameters):
         ]  # comma is relevant
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "HatchOpNode()"

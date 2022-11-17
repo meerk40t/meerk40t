@@ -57,7 +57,7 @@ class RasterOpNode(Node, Parameters):
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "RasterOp()"

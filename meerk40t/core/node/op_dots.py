@@ -32,7 +32,7 @@ class DotsOpNode(Node, Parameters):
         self.allowed_attributes = []
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "DotsOpNode()"

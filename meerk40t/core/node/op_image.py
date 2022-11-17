@@ -21,10 +21,6 @@ class ImageOpNode(Node, Parameters):
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
 
-        # Is this op out of useful bounds?
-        self.dangerous = False
-        # self.settings["stopop"] = True
-
         if len(args) == 1:
             obj = args[0]
             if hasattr(obj, "settings"):
@@ -35,7 +31,10 @@ class ImageOpNode(Node, Parameters):
         self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self._allowed_elements = ("elem image",)
-        self.settings["stopop"] = True
+
+        # Is this op out of useful bounds?
+        self.dangerous = False
+        self.stopop = True
         self.allowed_attributes = []
 
     def __repr__(self):
