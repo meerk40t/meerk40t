@@ -10,7 +10,9 @@ class PathNode(Node):
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            kwargs["path"] = args[0]
         self.path = None
         self.matrix = None
         self.fill = None
