@@ -11,6 +11,7 @@ import math
 import time
 
 from meerk40t.tools.zinglplotter import ZinglPlotter
+
 from ..core.cutcode.dwellcut import DwellCut
 from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
@@ -18,7 +19,6 @@ from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..device.basedevice import (
