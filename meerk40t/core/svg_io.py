@@ -547,7 +547,9 @@ class SVGWriter:
                 continue
             if key.startswith("_"):
                 continue
-            if key in ("references", "tag", "type"):
+            if value is None:
+                continue
+            if key in ("references", "tag", "type", "draw", "stroke_width", "matrix"):
                 # References key from previous loaded version (filter out, rebuild)
                 continue
             subelement.set(key, str(value))
