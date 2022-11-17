@@ -1,5 +1,7 @@
-import wx
 from math import sqrt
+
+import wx
+
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, TextCtrl

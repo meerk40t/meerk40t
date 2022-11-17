@@ -9,7 +9,7 @@ Registers relevant commands and options.
 from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
 
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, ViewPort, Length
+from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import MoshiController
 from .driver import MoshiDriver
 
