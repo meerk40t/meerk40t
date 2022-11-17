@@ -76,5 +76,5 @@ class ConsolePropertiesPanel(wx.Panel):
         command = raw.replace("“", '"').replace("”", '"')
         # TODO: It would be really nice to do some validation on here,
         # to catch mistakes.
-        self.console_operation.set_command(command)
+        self.console_operation.command = command
         self.context.signal("element_property_update", self.console_operation)

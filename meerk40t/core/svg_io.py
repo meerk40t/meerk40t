@@ -292,8 +292,8 @@ class SVGWriter:
                 )
             elif c.type == "elem point":
                 element = Point(c.point)
-                c.settings["x"] = element.x
-                c.settings["y"] = element.y
+                c.x = element.x
+                c.y = element.y
                 subelement = SubElement(xml_tree, "element")
                 t = c.matrix
                 subelement.set(
@@ -513,21 +513,19 @@ class SVGWriter:
         @return:
         """
         subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-        SVGWriter._write_custom(subelement, node)
-
-    @staticmethod
-    def _write_custom(subelement, node):
-        subelement.set("type", node.type)
+        subelement.set("type", str(node.type))
+        if node.label is not None:
+            subelement.set("label", str(node.label))
+        if node.lock is not None:
+            subelement.set("lock", str(node.lock))
         try:
-            settings = node.settings
-            for key in settings:
+            for key, value in node.settings.items():
                 if not key:
                     # If key is None, do not save.
                     continue
-                if key in ("references", "tag"):
-                    # References key is obsolete
+                if key in ("references", "tag", "type"):
+                    # References key from previous loaded version (filter out, rebuild)
                     continue
-                value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
@@ -538,6 +536,32 @@ class SVGWriter:
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+    @staticmethod
+    def _write_custom(subelement, node):
+        subelement.set("type", node.type)
+        for key, value in node.__dict__.items():
+            if not key:
+                # If key is None, do not save.
+                continue
+            if key.startswith("_"):
+                continue
+            if value is None:
+                continue
+            if key in ("references", "tag", "type", "draw", "stroke_width", "matrix"):
+                # References key from previous loaded version (filter out, rebuild)
+                continue
+            subelement.set(key, str(value))
+
+        contains = list()
+        for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
+            contains.append(c.id)
+        if contains:
+            subelement.set("references", " ".join(contains))
+
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod

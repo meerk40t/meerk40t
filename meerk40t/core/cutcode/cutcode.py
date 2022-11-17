@@ -69,7 +69,6 @@ class CutCode(CutGroup):
                         path.line((x, y))
                     else:
                         path.move((x, y))
-            # TODO: Settings for different cut objects must be the creating op
             if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
@@ -285,7 +284,6 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
@@ -315,22 +313,6 @@ class CutCode(CutGroup):
             elif cmd == "home":
                 x = 0
                 y = 0
-            elif cmd == "cut_abs":
-                nx = code[1]
-                ny = code[2]
-                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
-                cutcode.append(cut)
-                x = nx
-                y = ny
-            elif cmd == "cut_rel":
-                nx = code[1]
-                ny = code[2]
-                nx = x + nx
-                ny = y + ny
-                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
-                cutcode.append(cut)
-                x = nx
-                y = ny
             elif cmd == "dwell":
                 time = code[1]
                 cut = DwellCut((x, y), time)

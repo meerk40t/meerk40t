@@ -858,32 +858,32 @@ def init_tree(kernel):
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Image"), node_type="branch ops", help="")
     def append_operation_image(node, pos=None, **kwargs):
-        self.add_op(ImageOpNode(), pos=pos)
+        self.op_branch.add("op image", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Raster"), node_type="branch ops", help="")
     def append_operation_raster(node, pos=None, **kwargs):
-        self.add_op(RasterOpNode(), pos=pos)
+        self.op_branch.add("op raster", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Engrave"), node_type="branch ops", help="")
     def append_operation_engrave(node, pos=None, **kwargs):
-        self.add_op(EngraveOpNode(), pos=pos)
+        self.op_branch.add("op engrave", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Cut"), node_type="branch ops", help="")
     def append_operation_cut(node, pos=None, **kwargs):
-        self.add_op(CutOpNode(), pos=pos)
+        self.op_branch.add("op cut", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Hatch"), node_type="branch ops", help="")
     def append_operation_hatch(node, pos=None, **kwargs):
-        self.add_op(HatchOpNode(), pos=pos)
+        self.op_branch.add("op hatch", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Dots"), node_type="branch ops", help="")
     def append_operation_dots(node, pos=None, **kwargs):
-        self.add_op(DotsOpNode(), pos=pos)
+        self.op_branch.add("op dots", pos=pos)
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home"), node_type="branch ops", help="")

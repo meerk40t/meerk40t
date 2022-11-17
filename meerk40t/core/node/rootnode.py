@@ -47,6 +47,7 @@ class RootNode(Node):
         self.context = context
         self.listeners = []
         self.bootstrap = bootstrap
+        self.defaults = defaults
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
@@ -195,6 +196,42 @@ class RootNode(Node):
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
 
+
+defaults = {
+    "root": {},
+    "op cut": {"speed": 12.0, "color": "red", "frequency": 30.0},
+    "op engrave": {"speed": 35.0, "color": "blue", "frequency": 30.0},
+    "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
+    "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
+    "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
+    "op hatch": {"speed": 35.0, "color": "lime", "frequency": 30.0},
+    "util console": {},
+    "util wait": {},
+    "util origin": {},
+    "util home": {},
+    "util goto": {},
+    "util input": {},
+    "util output": {},
+    "lasercode": {},
+    "blob": {},
+    "group": {},
+    "layer": {},
+    "elem ellipse": {},
+    "elem line": {},
+    "elem rect": {},
+    "elem path": {},
+    "elem point": {},
+    "elem polyline": {},
+    "elem image": {"dpi": 500},
+    "elem text": {},
+    "elem numpath": {},
+    "reference": {},
+    "cutcode": {},
+    "branch ops": {},
+    "branch elems": {},
+    "branch reg": {},
+    "file": {},
+}
 
 bootstrap = {
     "root": RootNode,

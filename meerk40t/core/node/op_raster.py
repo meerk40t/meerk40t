@@ -18,17 +18,12 @@ class RasterOpNode(Node, Parameters):
     This is a Node of type "op raster".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op raster", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
