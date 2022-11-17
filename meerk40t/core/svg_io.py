@@ -545,6 +545,8 @@ class SVGWriter:
             if not key:
                 # If key is None, do not save.
                 continue
+            if key.startswith("_"):
+                continue
             if key in ("references", "tag", "type"):
                 # References key from previous loaded version (filter out, rebuild)
                 continue
