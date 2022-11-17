@@ -115,7 +115,6 @@ class Node:
         self._paint_bounds_dirty = True
 
         self._item = None
-        self.icon = None
         self._cache = None
 
     def __repr__(self):
@@ -696,11 +695,9 @@ class Node:
             pass
         try:
             del self._cache
-            del self.icon
         except AttributeError:
             pass
         self._cache = None
-        self.icon = None
         self.invalidated()
         self.notify_altered(self)
 
@@ -711,10 +708,6 @@ class Node:
             pass
         try:
             del self._cache
-        except AttributeError:
-            pass
-        try:
-            del self.icon
         except AttributeError:
             pass
 
