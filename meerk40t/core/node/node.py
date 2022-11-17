@@ -114,7 +114,7 @@ class Node:
         self._paint_bounds = None
         self._paint_bounds_dirty = True
 
-        self.item = None
+        self._item = None
         self.icon = None
         self.cache = None
 
@@ -935,7 +935,7 @@ class Node:
                 ref._parent = node
                 # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None
@@ -955,7 +955,7 @@ class Node:
         if references:
             for ref in list(self._references):
                 ref.remove_node()
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None

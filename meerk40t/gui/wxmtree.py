@@ -249,14 +249,14 @@ class TreePanel(wx.Panel):
             if isinstance(nodes, (tuple, list)):
                 # All Standard nodes first
                 for node in nodes:
-                    if node is None or node.item is None:
+                    if node is None or node._item is None:
                         pass
                     else:
                         if node.type.startswith("elem "):
                             self.shadow_tree.set_icon(node, force=True)
                 # Then all others
                 for node in nodes:
-                    if node is None or node.item is None:
+                    if node is None or node._item is None:
                         pass
                     else:
                         if not node.type.startswith("elem "):
@@ -432,7 +432,7 @@ class ShadowTree:
         @param node: Node that was changed.
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         try:
@@ -449,7 +449,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         # self.update_decorations(node)
@@ -464,7 +464,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         # self.update_decorations(node)
@@ -479,7 +479,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.update_decorations(node)
@@ -495,7 +495,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         # self.update_decorations(node)
@@ -509,7 +509,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         try:
@@ -531,7 +531,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         try:
@@ -553,7 +553,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.ExpandAllChildren(item)
@@ -563,7 +563,7 @@ class ShadowTree:
         # Tries to collapse children first, if there were any open,
         # return TRUE, if all were already collapsed, return FALSE
         result = False
-        startnode = node.item
+        startnode = node._item
         try:
             pnode, cookie = self.wxtree.GetFirstChild(startnode)
         except:
@@ -587,7 +587,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         # Special treatment for branches, they only collapse fully,
@@ -600,9 +600,9 @@ class ShadowTree:
             item is self.wxtree.GetRootItem()
             or self.wxtree.GetItemParent(item) is self.wxtree.GetRootItem()
         ):
-            self.wxtree.Expand(self.elements.get(type="branch ops").item)
-            self.wxtree.Expand(self.elements.get(type="branch elems").item)
-            self.wxtree.Expand(self.elements.get(type="branch reg").item)
+            self.wxtree.Expand(self.elements.get(type="branch ops")._item)
+            self.wxtree.Expand(self.elements.get(type="branch elems")._item)
+            self.wxtree.Expand(self.elements.get(type="branch reg")._item)
 
     def reorder(self, node):
         """
@@ -621,7 +621,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if item is None:
             # Could be a faulty refresh during an undo.
             return
@@ -638,7 +638,7 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node.item
+        item = node._item
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.wxtree.EnsureVisible(item)
@@ -699,7 +699,7 @@ class ShadowTree:
         if node is None:
             # print ("refresh tree called: %s" % source)
             elemtree = self.elements._tree
-            node = elemtree.item
+            node = elemtree._item
             level = 0
         if node is None:
             return
@@ -721,9 +721,9 @@ class ShadowTree:
             child, cookie = tree.GetNextChild(node, cookie)
         if level == 0:
             self.update_op_labels()
-        self.wxtree.Expand(self.elements.get(type="branch ops").item)
-        self.wxtree.Expand(self.elements.get(type="branch elems").item)
-        self.wxtree.Expand(self.elements.get(type="branch reg").item)
+        self.wxtree.Expand(self.elements.get(type="branch ops")._item)
+        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
+        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -808,9 +808,9 @@ class ShadowTree:
         self.tree_images.Create(width=self.iconsize, height=self.iconsize)
 
         self.wxtree.SetImageList(self.tree_images)
-        elemtree.item = self.wxtree.AddRoot(self.name)
+        elemtree._item = self.wxtree.AddRoot(self.name)
 
-        self.wxtree.SetItemData(elemtree.item, elemtree)
+        self.wxtree.SetItemData(elemtree._item, elemtree)
 
         self.set_icon(
             elemtree,
@@ -849,9 +849,9 @@ class ShadowTree:
         self.update_op_labels()
         # Expand Ops, Element, and Regmarks nodes only
         self.wxtree.CollapseAll()
-        self.wxtree.Expand(node_operations.item)
-        self.wxtree.Expand(node_elements.item)
-        self.wxtree.Expand(node_registration.item)
+        self.wxtree.Expand(node_operations._item)
+        self.wxtree.Expand(node_elements._item)
+        self.wxtree.Expand(node_registration._item)
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
@@ -889,7 +889,7 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        item = node.item
+        item = node._item
         if item is None:
             raise ValueError("Item was None for node " + repr(node))
         if not item.IsOk():
@@ -904,7 +904,7 @@ class ShadowTree:
             e = e.parent
 
         node.unregister_object()
-        self.wxtree.Delete(node.item)
+        self.wxtree.Delete(node._item)
         for i in self.wxtree.GetSelections():
             self.wxtree.SelectItem(i, False)
 
@@ -932,13 +932,13 @@ class ShadowTree:
         @return:
         """
         parent = node.parent
-        parent_item = parent.item
+        parent_item = parent._item
         tree = self.wxtree
         if pos is None:
-            node.item = tree.AppendItem(parent_item, self.name)
+            node._item = tree.AppendItem(parent_item, self.name)
         else:
-            node.item = tree.InsertItem(parent_item, pos, self.name)
-        tree.SetItemData(node.item, node)
+            node._item = tree.InsertItem(parent_item, pos, self.name)
+        tree.SetItemData(node._item, node)
         self.update_decorations(node)
         wxcolor = self.wxtree.GetForegroundColour()
         if node.type == "elem text":
@@ -962,7 +962,7 @@ class ShadowTree:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
         try:
-            tree.SetItemTextColour(node.item, wxcolor)
+            tree.SetItemTextColour(node._item, wxcolor)
         except (AttributeError, KeyError, TypeError):
             pass
         # We might need to update the decorations for all parent objects
@@ -981,7 +981,7 @@ class ShadowTree:
         @return:
         """
         tree = self.wxtree
-        node_item = node.item
+        node_item = node._item
         if node_item is None:
             return
         if self._freeze:
@@ -1005,7 +1005,7 @@ class ShadowTree:
         @param color: Color to be set.
         @return:
         """
-        item = node.item
+        item = node._item
         if item is None:
             return
         if self._freeze:
@@ -1127,7 +1127,7 @@ class ShadowTree:
                 # Lets have a look at all references....
                 for subnode in node._references:
                     try:
-                        subitem = subnode.item
+                        subitem = subnode._item
                     except AttributeError:
                         subitem = None
                     if subitem is None:
@@ -1151,7 +1151,7 @@ class ShadowTree:
         return image_id
 
     def update_op_labels(self):
-        startnode = self.elements.get(type="branch ops").item
+        startnode = self.elements.get(type="branch ops")._item
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
             node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
@@ -1208,7 +1208,7 @@ class ShadowTree:
 
         if force is None:
             force = False
-        if node.item is None:
+        if node._item is None:
             # This node is not registered the tree has desynced.
             self.rebuild_tree()
             return
@@ -1300,7 +1300,7 @@ class ShadowTree:
             # label = node.create_label(formatter)
             label = my_create_label(node, formatter)
 
-        self.wxtree.SetItemText(node.item, label)
+        self.wxtree.SetItemText(node._item, label)
         if node.type == "elem text":
             attribute_to_try = "fill"
         else:
@@ -1323,7 +1323,7 @@ class ShadowTree:
                     textcolor = c2
                 wxcolor = wx.Colour(swizzlecolor(textcolor))
         try:
-            self.wxtree.SetItemTextColour(node.item, wxcolor)
+            self.wxtree.SetItemTextColour(node._item, wxcolor)
         except (AttributeError, KeyError, TypeError):
             pass
 
@@ -1341,9 +1341,9 @@ class ShadowTree:
             if node == scene.reference_object:
                 state_num = 1
         if state_num >= 0:
-            self.wxtree.SetItemState(node.item, state_num)
+            self.wxtree.SetItemState(node._item, state_num)
         else:
-            self.wxtree.SetItemState(node.item, wx.TREE_ITEMSTATE_NONE)
+            self.wxtree.SetItemState(node._item, wx.TREE_ITEMSTATE_NONE)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1519,5 +1519,5 @@ class ShadowTree:
         self.wxtree.UnselectAll()
 
         for e in self.elements.elems_nodes(emphasized=True):
-            self.wxtree.SelectItem(e.item, True)
+            self.wxtree.SelectItem(e._item, True)
         self.do_not_select = False
