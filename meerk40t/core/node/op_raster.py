@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode

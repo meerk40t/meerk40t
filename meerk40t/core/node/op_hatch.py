@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import PlotCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node

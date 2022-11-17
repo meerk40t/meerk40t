@@ -4,7 +4,7 @@ from copy import copy
 from meerk40t.kernel import CommandSyntaxError
 
 from ..svgelements import Matrix
-from .cutcode import CutCode
+from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node

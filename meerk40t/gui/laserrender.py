@@ -1,25 +1,9 @@
-import platform
 from math import ceil, isnan, sqrt
 
 import wx
 from PIL import Image
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutCode,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-    RawCut,
-    SetOriginCut,
-    WaitCut,
-)
+
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -32,6 +16,20 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+from ..core.cutcode.cubiccut import CubicCut
+from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.dwellcut import DwellCut
+from ..core.cutcode.gotocut import GotoCut
+from ..core.cutcode.homecut import HomeCut
+from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
+from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
+from ..core.cutcode.rastercut import RasterCut
+from ..core.cutcode.rawcut import RawCut
+from ..core.cutcode.setorigincut import SetOriginCut
+from ..core.cutcode.waitcut import WaitCut
 
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .fonts import wxfont_to_svg

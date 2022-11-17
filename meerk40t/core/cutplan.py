@@ -21,7 +21,10 @@ from typing import Optional
 
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
-from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .cutcode.cutcode import CutCode
+from .cutcode.cutgroup import CutGroup
+from .cutcode.cutobject import CutObject
+from .cutcode.rastercut import RasterCut
 from .units import Length
 
 class CutPlanningFailedError(Exception):

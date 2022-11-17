@@ -1,28 +1,24 @@
 import math
 import platform
-import re
 
 import wx
 
 from meerk40t.kernel import Job, signal_listener
+from ..core.cutcode.cubiccut import CubicCut
+from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.dwellcut import DwellCut
+from ..core.cutcode.gotocut import GotoCut
+from ..core.cutcode.homecut import HomeCut
+from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
+from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
+from ..core.cutcode.rastercut import RasterCut
+from ..core.cutcode.rawcut import RawCut
+from ..core.cutcode.setorigincut import SetOriginCut
+from ..core.cutcode.waitcut import WaitCut
 
-from ..core.cutcode import (
-    CubicCut,
-    CutCode,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    # InfoCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-    RawCut,
-    WaitCut,
-    SetOriginCut,
-)
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
@@ -176,7 +172,7 @@ class OperationsPanel(wx.Panel):
                 changes = False  # Prove me wrong...
                 for idx, cut in enumerate(self.cutplan.plan):
                     if isinstance(cut, CutCode):
-                        # Lets have a look at the beginning
+                        # Let's have a look at the beginning
                         myidx = idx
                         while len(cut) > 0:
                             entry = cut[0]
