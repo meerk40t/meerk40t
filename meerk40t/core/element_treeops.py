@@ -252,7 +252,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Speed"))
     @tree_radio(radio_match)
-    @tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
+    @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
         node.speed = float(speed)
