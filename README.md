@@ -13,7 +13,7 @@ Alternatively you can run MeerK40t directly from Python. `pip install meerk40t[a
 ### GUI
 ![meerk40t8](https://user-images.githubusercontent.com/3302478/196283699-745d0616-5e74-49b3-ba95-f4902061584b.png)
 
-The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow highly you to have a very highly configurable UI. We can easily add panes and tools and there are quite a few available already.
+The wxMeerK40t is the GUI and is written in wxPython. We use AUI to allow to have a very highly configurable UI. We can easily add panes and tools and there are quite a few available already.
 
 ### Command Line Interface
 
