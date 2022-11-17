@@ -1771,7 +1771,7 @@ class SimulationWidget(Widget):
                     )
                     try:
                         cache = cut._cache
-                        cache_id = cut.cache_id
+                        cache_id = cut._cache_id
                     except AttributeError:
                         cache = None
                         cache_id = -1
@@ -1787,7 +1787,7 @@ class SimulationWidget(Widget):
                             )
                         except (MemoryError, RuntimeError):
                             cut._cache = None
-                        cut.cache_id = id(image)
+                        cut._cache_id = id(image)
                     # Set draw - constraint
                     clip_x = 0
                     clip_y = 0

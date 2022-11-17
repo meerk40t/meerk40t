@@ -483,8 +483,8 @@ class LaserRender:
                 )  # Adjust image xy
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
-                    cache = cut.cache
-                    cache_id = cut.cache_id
+                    cache = cut._cache
+                    cache_id = cut._cache_id
                 except AttributeError:
                     cache = None
                     cache_id = -1
@@ -495,13 +495,13 @@ class LaserRender:
                     # No valid cache. Generate.
                     cut._cache_width, cut._cache_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=5000)
+                        cut._cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
-                        cut.cache = None
-                    cut.cache_id = id(image)
-                if cut.cache is not None:
+                        cut._cache = None
+                    cut._cache_id = id(image)
+                if cut._cache is not None:
                     # Cache exists and is valid.
-                    gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
+                    gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
                     if cut.highlighted:
                         # gc.SetBrush(wx.RED_BRUSH)
                         gc.SetPen(highlight_pen)
@@ -553,7 +553,7 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node._cache is None:
+        if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_path(gc, Path(node.shape))
             node._cache = cache
         self._set_linecap_by_node(node)
@@ -585,7 +585,7 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node._cache is None:
+        if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_path(gc, node.path)
             node._cache = cache
         self._set_linecap_by_node(node)
@@ -617,7 +617,7 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node._cache is None:
+        if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_numpath(gc, node.path)
             node._cache = cache
         self._set_linecap_by_node(node)

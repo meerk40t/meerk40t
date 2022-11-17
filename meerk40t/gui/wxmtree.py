@@ -1100,10 +1100,10 @@ class ShadowTree:
         if node is None:
             return
         try:
-            item = node.item
+            item = node._item
         except AttributeError:
             return  # Node.item can be none if launched from ExecuteJob where the nodes are not part of the tree.
-        if node.item is None:
+        if node._item is None:
             return
         tree = root.wxtree
         if icon is None:
@@ -1124,7 +1124,7 @@ class ShadowTree:
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
-                # Lets have a look at all references....
+                # Let's have a look at all references....
                 for subnode in node._references:
                     try:
                         subitem = subnode._item
