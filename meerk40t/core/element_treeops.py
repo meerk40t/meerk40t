@@ -175,60 +175,42 @@ def init_tree(kernel):
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op image"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op image", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
     def convert_operation_raster(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op raster"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op raster", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Engrave"), node_type=op_parent_nodes, help="")
     def convert_operation_engrave(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op engrave"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op engrave", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
     def convert_operation_cut(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op cut"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op cut", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
     def convert_operation_hatch(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op hatch"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op hatch", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
     def convert_operation_dots(node, **kwargs):
         for n in list(self.ops(emphasized=True)):
-            # TODO: Fix operation conversion
-            new_settings = dict(n.settings)
-            new_settings["type"] = "op dots"
-            n.replace_node(keep_children=True, **new_settings)
+            n.replace_node(keep_children=True, type="op dots", **n.node_dict)
         self.signal("rebuild_tree")
 
     @tree_submenu(_("RasterWizard"))
