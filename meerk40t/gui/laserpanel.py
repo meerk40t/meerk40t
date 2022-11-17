@@ -21,6 +21,7 @@ _ = wx.GetTranslation
 def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
     from copy import copy
+
     prechoices = context.lookup("choices/optimize")
     choices = list(map(copy, prechoices))
     # Clear the page-entry

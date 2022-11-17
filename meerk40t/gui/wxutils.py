@@ -514,7 +514,7 @@ class TextCtrl(wx.TextCtrl):
             try:
                 v1 = float(current)
                 v2 = float(newvalue)
-                if v1==v2:
+                if v1 == v2:
                     identical = True
             except ValueError:
                 pass

@@ -27,6 +27,7 @@ from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
 from .units import Length
 
+
 class CutPlanningFailedError(Exception):
     pass
 
@@ -429,7 +430,14 @@ class CutPlan:
         if self.context.opt_inner_first:
             stol = self.context.opt_inner_tolerance
             try:
-                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
             except ValueError:
                 pass
         # print(f"Tolerance: {tolerance}")
@@ -439,7 +447,9 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -460,7 +470,14 @@ class CutPlan:
         if self.context.opt_inner_first:
             stol = self.context.opt_inner_tolerance
             try:
-                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
             except ValueError:
                 pass
         # print(f"Tolerance: {tolerance}")
@@ -470,7 +487,9 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last

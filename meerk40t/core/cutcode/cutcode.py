@@ -1,3 +1,4 @@
+from ...svgelements import Color, Path, Point
 from .cubiccut import CubicCut
 from .cutgroup import CutGroup
 from .dwellcut import DwellCut
@@ -5,7 +6,6 @@ from .linecut import LineCut
 from .plotcut import PlotCut
 from .quadcut import QuadCut
 from .rawcut import RawCut
-from ...svgelements import Color, Path, Point
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be

@@ -3,7 +3,6 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
-from .undos import Undo
 
 from ..svgelements import Color, SVGElement
 from .element_types import *
@@ -13,6 +12,7 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .undos import Undo
 from .units import Length
 from .wordlist import Wordlist
 
@@ -1710,7 +1710,7 @@ class Elemental(Service):
         # "circle 1cm 1cm 1cm stroke red"
         if not isinstance(data, (list, tuple)):
             data = [data]
-        if self.classify_new and len(data)>0:
+        if self.classify_new and len(data) > 0:
             self.classify(data)
             self.signal("tree_changed")
 
