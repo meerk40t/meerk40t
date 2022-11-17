@@ -1770,7 +1770,7 @@ class SimulationWidget(Widget):
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
                     )
                     try:
-                        cache = cut.cache
+                        cache = cut._cache
                         cache_id = cut.cache_id
                     except AttributeError:
                         cache = None
@@ -1782,11 +1782,11 @@ class SimulationWidget(Widget):
                         # No valid cache. Generate.
                         cut._cache_width, cut._cache_height = image.size
                         try:
-                            cut.cache = self.renderer.make_thumbnail(
+                            cut._cache = self.renderer.make_thumbnail(
                                 image, maximum=5000
                             )
                         except (MemoryError, RuntimeError):
-                            cut.cache = None
+                            cut._cache = None
                         cut.cache_id = id(image)
                     # Set draw - constraint
                     clip_x = 0
@@ -1830,10 +1830,10 @@ class SimulationWidget(Widget):
                         clip_x = cut._cache_width - clip_w
                         clip_y = 0
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
-                    if cut.cache is not None:
+                    if cut._cache is not None:
                         # Cache exists and is valid.
                         gc.DrawBitmap(
-                            cut.cache, 0, 0, cut._cache_width, cut._cache_height
+                            cut._cache, 0, 0, cut._cache_width, cut._cache_height
                         )
                         # gc.SetBrush(wx.RED_BRUSH)
                         # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)

@@ -115,7 +115,7 @@ class Node:
         self._paint_bounds_dirty = True
 
         self._item = None
-        self.cache = None
+        self._cache = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -690,24 +690,24 @@ class Node:
         The data structure was changed. Any assumptions about what this object is/was are void.
         """
         try:
-            self.cache.UnGetNativePath(self.cache.NativePath)
+            self._cache.UnGetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
+            del self._cache
         except AttributeError:
             pass
-        self.cache = None
+        self._cache = None
         self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
         try:
-            self.cache.UngetNativePath(self.cache.NativePath)
+            self._cache.UngetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
+            del self._cache
         except AttributeError:
             pass
 

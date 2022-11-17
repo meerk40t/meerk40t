@@ -553,9 +553,9 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
+        if not hasattr(node, "cache") or node._cache is None:
             cache = self.make_path(gc, Path(node.shape))
-            node.cache = cache
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -574,9 +574,9 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -585,9 +585,9 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
+        if not hasattr(node, "cache") or node._cache is None:
             cache = self.make_path(gc, node.path)
-            node.cache = cache
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -606,9 +606,9 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -617,9 +617,9 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
+        if not hasattr(node, "cache") or node._cache is None:
             cache = self.make_numpath(gc, node.path)
-            node.cache = cache
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -638,9 +638,9 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -741,7 +741,7 @@ class LaserRender:
             if draw_mode & DRAW_MODE_CACHE == 0:
                 cache = None
                 try:
-                    cache = node.cache
+                    cache = node._cache
                 except AttributeError:
                     pass
                 if cache is None:
@@ -750,12 +750,12 @@ class LaserRender:
                     except AttributeError:
                         max_allowed = 2048
                     node._cache_width, node._cache_height = image.size
-                    node.cache = self.make_thumbnail(
+                    node._cache = self.make_thumbnail(
                         image,
                         maximum=max_allowed,
                         alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
                     )
-                gc.DrawBitmap(node.cache, 0, 0, node._cache_width, node._cache_height)
+                gc.DrawBitmap(node._cache, 0, 0, node._cache_width, node._cache_height)
             else:
                 node._cache_width, node._cache_height = image.size
                 try:
