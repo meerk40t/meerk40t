@@ -223,6 +223,50 @@ class Node:
         return self._root
 
     @property
+    def can_emphasize(self):
+        return not self.lock
+
+    @property
+    def can_highlight(self):
+        return not self.lock
+
+    @property
+    def can_target(self):
+        return not self.lock
+
+    @property
+    def can_move(self):
+        return not self.lock
+
+    @property
+    def can_scale(self):
+        return not self.lock
+
+    @property
+    def can_rotate(self):
+        return not self.lock
+
+    @property
+    def can_skew(self):
+        return not self.lock
+
+    @property
+    def can_modify(self):
+        return not self.lock
+
+    @property
+    def can_alter(self):
+        return not self.lock
+
+    @property
+    def can_update(self):
+        return not self.lock
+
+    @property
+    def can_remove(self):
+        return not self.lock
+
+    @property
     def bounds(self):
         if not self._bounds_dirty:
             return self._bounds
