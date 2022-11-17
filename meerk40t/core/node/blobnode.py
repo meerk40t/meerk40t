@@ -8,9 +8,7 @@ class BlobNode(Node):
     Node type "blob"
     """
 
-    def __init__(
-        self, **kwargs
-    ):
+    def __init__(self, **kwargs):
         self.data = None
         self.data_type = None
         self.label = "Blob"

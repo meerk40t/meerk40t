@@ -7,7 +7,9 @@ class RawCut(CutObject):
     """
 
     def __init__(self, parameter_object=None, passes=1, parent=None):
-        CutObject.__init__(self, parameter_object=parameter_object, passes=passes, parent=parent)
+        CutObject.__init__(
+            self, parameter_object=parameter_object, passes=passes, parent=parent
+        )
         self.plot = []
         self.first = True  # Raw cuts are standalone
         self.last = True

@@ -204,7 +204,7 @@ defaults = {
     "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
     "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
     "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
-    "op hatch":  {"speed": 35.0, "color": "lime", "frequency": 30.0},
+    "op hatch": {"speed": 35.0, "color": "lime", "frequency": 30.0},
     "util console": {},
     "util wait": {},
     "util origin": {},

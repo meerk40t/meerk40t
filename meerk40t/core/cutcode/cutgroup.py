@@ -20,7 +20,9 @@ class CutGroup(list, CutObject, ABC):
         closed=False,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, parameter_object=parameter_object, passes=passes)
+        CutObject.__init__(
+            self, parent=parent, parameter_object=parameter_object, passes=passes
+        )
         self.closed = closed
         self.constrained = constrained
         self.burn_started = False

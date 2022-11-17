@@ -18,7 +18,6 @@ from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
-
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 
@@ -41,7 +40,9 @@ class BalorDriver:
         self._shutdown = False
 
         self.queue = list()
-        self.plot_planner = PlotPlanner(single=True, smooth=False, ppi=False, shift=False, group=True)
+        self.plot_planner = PlotPlanner(
+            single=True, smooth=False, ppi=False, shift=False, group=True
+        )
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
         self._aborting = False

@@ -266,7 +266,9 @@ class ImageOpNode(Node, Parameters):
             step_x = image_node.step_x
             step_y = image_node.step_y
 
-            parameter_object.raster_step_x = step_x  # TODO: Unknown set of the raster_step_x, y
+            parameter_object.raster_step_x = (
+                step_x  # TODO: Unknown set of the raster_step_x, y
+            )
             parameter_object.raster_step_x = step_y
 
             # Set variables

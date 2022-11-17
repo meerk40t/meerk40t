@@ -4,6 +4,7 @@ import platform
 import wx
 
 from meerk40t.kernel import Job, signal_listener
+
 from ..core.cutcode.cubiccut import CubicCut
 from ..core.cutcode.cutcode import CutCode
 from ..core.cutcode.dwellcut import DwellCut
@@ -18,7 +19,6 @@ from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
@@ -29,17 +29,17 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
-    icons8_image_50,
-    icons8_laser_beam_hazard2_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_route_50,
     icons8_bell_20,
     icons8_close_window_20,
     icons8_home_20,
+    icons8_image_50,
     icons8_input_20,
+    icons8_laser_beam_hazard2_50,
     icons8_output_20,
+    icons8_pause_50,
+    icons8_play_50,
     icons8_return_20,
+    icons8_route_50,
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
@@ -51,7 +51,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import disable_window, ScrolledPanel
+from .wxutils import ScrolledPanel, disable_window
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -140,7 +140,7 @@ class OperationsPanel(wx.Panel):
             if tofind.startswith(entry[0]):
                 stateidx = idx
                 break
-        if stateidx<0 and typename == "ConsoleOperation":
+        if stateidx < 0 and typename == "ConsoleOperation":
             stateidx = len(self.default_images) - 1
         # print(f"opname={opname}, parameter={parameter}, state={stateidx}")
         return stateidx

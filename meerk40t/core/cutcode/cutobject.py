@@ -9,7 +9,13 @@ class CutObject:
     """
 
     def __init__(
-        self, start=None, end=None, parameter_object=None, parent=None, passes=1, **kwargs
+        self,
+        start=None,
+        end=None,
+        parameter_object=None,
+        parent=None,
+        passes=1,
+        **kwargs,
     ):
         self.parameter_object = parameter_object
         if start is not None:

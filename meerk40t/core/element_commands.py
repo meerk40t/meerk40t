@@ -32,7 +32,13 @@ from .node.util_console import ConsoleOperation
 from .node.util_input import InputOperation
 from .node.util_output import OutputOperation
 from .node.util_wait import WaitOperation
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, UNITS_PER_POINT, UNITS_PER_MM, Length
+from .units import (
+    UNITS_PER_INCH,
+    UNITS_PER_MM,
+    UNITS_PER_PIXEL,
+    UNITS_PER_POINT,
+    Length,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -477,7 +483,7 @@ def init_commands(kernel):
                     channel("----------")
                     for op in data:
                         try:
-                            #TODO: use op.penbox_pass if it exists on the op.
+                            # TODO: use op.penbox_pass if it exists on the op.
                             key = op.settings.get("penbox_pass")
                             if key is None:
                                 channel(f"{str(op)} penbox_pass is not set.")
@@ -1005,9 +1011,13 @@ def init_commands(kernel):
         **kwargs,
     ):
         if command == "inputop":
-            op = self.op_branch.add(type="util input", input_mask=mask, input_value=value)
+            op = self.op_branch.add(
+                type="util input", input_mask=mask, input_value=value
+            )
         else:
-            op = self.op_branch.add(type="util output", output_mask=mask, output_value=value)
+            op = self.op_branch.add(
+                type="util output", output_mask=mask, output_value=value
+            )
         return "ops", [op]
 
     @self.console_command(
@@ -4099,10 +4109,10 @@ def init_commands(kernel):
                     )
                 else:
                     if e.stroke_scaled:
-                        typename="scaled-stroke"
+                        typename = "scaled-stroke"
                         factor = sqrt(e.matrix.determinant)
                     else:
-                        typename="non-scaling-stroke"
+                        typename = "non-scaling-stroke"
                         factor = 1.0
                     implied_value = factor * e.stroke_width
                     channel(
@@ -4127,9 +4137,7 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_scale = (
-                sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
-            )
+            stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
             e.stroke_width = stroke_width / stroke_scale
             e.altered()
         return "elements", data

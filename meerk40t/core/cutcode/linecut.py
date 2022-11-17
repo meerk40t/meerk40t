@@ -3,7 +3,9 @@ from .cutobject import CutObject
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, parameter_object=None, passes=1, parent=None):
+    def __init__(
+        self, start_point, end_point, parameter_object=None, passes=1, parent=None
+    ):
         CutObject.__init__(
             self,
             start_point,

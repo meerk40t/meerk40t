@@ -344,7 +344,9 @@ class HatchOpNode(Node, Parameters):
                 ):
                     chain_param_obj.line_color = Color(chain_param_obj.color)
                 for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline), **chain_param_obj.__dict__)
+                    node = PolylineNode(
+                        shape=Polyline(*polyline), **chain_param_obj.__dict__
+                    )
                     self.add_node(node)
 
         if self.children:

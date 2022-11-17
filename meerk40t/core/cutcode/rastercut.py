@@ -24,7 +24,9 @@ class RasterCut(CutObject):
         passes=1,
         parent=None,
     ):
-        CutObject.__init__(self, parameter_object=parameter_object, passes=passes, parent=parent)
+        CutObject.__init__(
+            self, parameter_object=parameter_object, passes=passes, parent=parent
+        )
         assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
         self.image = image

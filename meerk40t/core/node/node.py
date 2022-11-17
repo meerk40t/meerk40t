@@ -146,7 +146,7 @@ class Node:
     def node_dict(self):
         nd = dict()
         for k, v in self.__dict__.items():
-            if k.startswith('_'):
+            if k.startswith("_"):
                 continue
             if k == "type":
                 continue

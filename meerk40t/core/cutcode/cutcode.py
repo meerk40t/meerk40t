@@ -1,3 +1,4 @@
+from ...svgelements import Color, Path, Point
 from .cubiccut import CubicCut
 from .cutgroup import CutGroup
 from .dwellcut import DwellCut
@@ -5,7 +6,6 @@ from .linecut import LineCut
 from .plotcut import PlotCut
 from .quadcut import QuadCut
 from .rawcut import RawCut
-from ...svgelements import Color, Path, Point
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -248,9 +248,7 @@ class CutCode(CutGroup):
         if stop_at is None or stop_at < 0 or stop_at > len(cutcode):
             stop_at = len(cutcode)
         for current in cutcode[0:stop_at]:
-            native_speed = getattr(
-                current.parameter_object, "native_speed", None
-            )
+            native_speed = getattr(current.parameter_object, "native_speed", None)
             if native_speed is None:
                 if current.parameter_object is not None:
                     native_speed = current.parameter_object.speed

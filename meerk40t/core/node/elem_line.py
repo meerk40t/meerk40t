@@ -25,9 +25,7 @@ class LineNode(Node):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        super(LineNode, self).__init__(
-            type="elem line", **kwargs
-        )
+        super(LineNode, self).__init__(type="elem line", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, SimpleLine)
         if self.matrix is None:
@@ -39,15 +37,18 @@ class LineNode(Node):
         if self.stroke_width is None:
             self.stroke_width = self.shape.stroke_width
         if self.stroke_scale is None:
-            self.stroke_scale = self.shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+            self.stroke_scale = (
+                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                != SVG_VALUE_NON_SCALING_STROKE
+            )
         self.set_dirty_bounds()
 
     def __copy__(self):
         nd = self.node_dict
-        nd['shape'] = copy(self.shape)
-        nd['matrix'] = copy(self.matrix)
-        nd['fill'] = copy(self.fill)
-        nd['stroke_width'] = copy(self.stroke_width)
+        nd["shape"] = copy(self.shape)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
         return LineNode(**nd)
 
     def __repr__(self):
