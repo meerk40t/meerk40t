@@ -3,7 +3,8 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import CutCode, LineCut
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
