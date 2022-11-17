@@ -101,9 +101,9 @@ class TextNode(Node):
 
     def __copy__(self):
         nd = self.node_dict
-        nd['matrix'] = copy(self.matrix)
-        nd['fill'] = copy(self.fill)
-        nd['stroke_width'] = copy(self.stroke_width)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
         return TextNode(**nd)
 
     @property

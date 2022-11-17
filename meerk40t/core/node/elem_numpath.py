@@ -26,10 +26,10 @@ class NumpathNode(Node, Parameters):
 
     def __copy__(self):
         nd = self.node_dict
-        nd['path'] = copy(self.path)
-        nd['matrix'] = copy(self.matrix)
-        nd['fill'] = copy(self.fill)
-        nd['stroke_width'] = copy(self.stroke_width)
+        nd["path"] = copy(self.path)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
         return NumpathNode(**nd)
 
     def __repr__(self):

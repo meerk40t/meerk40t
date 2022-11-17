@@ -22,10 +22,10 @@ class PointNode(Node):
 
     def __copy__(self):
         nd = self.node_dict
-        nd['point'] = copy(self.point)
-        nd['matrix'] = copy(self.matrix)
-        nd['fill'] = copy(self.fill)
-        nd['stroke_width'] = copy(self.stroke_width)
+        nd["point"] = copy(self.point)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
         return PointNode(**nd)
 
     def validate(self):

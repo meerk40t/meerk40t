@@ -17,7 +17,7 @@ class OutputOperation(Node):
         self.output = True
         super().__init__(type="util output", **kwargs)
         self._formatter = "{enabled}{element_type} {bits}"
-        
+
     def __repr__(self):
         return f"OutputOperation('{self.output_mask}')"
 

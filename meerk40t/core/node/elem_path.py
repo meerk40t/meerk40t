@@ -2,7 +2,11 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE, Path
+from meerk40t.svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Path,
+)
 
 
 class PathNode(Node):
@@ -35,15 +39,18 @@ class PathNode(Node):
         if self.stroke_width is None:
             self.stroke_width = self.path.stroke_width
         if self.stroke_scale is None:
-            self.stroke_scale = self.path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+            self.stroke_scale = (
+                self.path.values.get(SVG_ATTR_VECTOR_EFFECT)
+                != SVG_VALUE_NON_SCALING_STROKE
+            )
         self.set_dirty_bounds()
 
     def __copy__(self):
         nd = self.node_dict
-        nd['path'] = copy(self.path)
-        nd['matrix'] = copy(self.matrix)
-        nd['fill'] = copy(self.fill)
-        nd['stroke_width'] = copy(self.stroke_width)
+        nd["path"] = copy(self.path)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
         return PathNode(**nd)
 
     def __repr__(self):
