@@ -1526,6 +1526,8 @@ def init_commands(kernel):
                     newnode, "mktext"
                 ):
                     newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
+            # Newly created! Classification needed?
+            self.signal("classify_new", add_elem)
             self.signal("refresh_scene", "Scene")
             return "elements", add_elem
 
@@ -1805,8 +1807,8 @@ def init_commands(kernel):
         self.remove_elements(data)
         node = self.elem_branch.add(path=super_element, type="elem path")
         self.set_node_emphasis(node, True)
-        if self.classify_new:
-            self.classify([node])
+        # Newly created! Classification needed?
+        self.signal("classify_new", node)
         return "elements", [node]
 
     @self.console_command(
@@ -2554,6 +2556,8 @@ def init_commands(kernel):
                     data_out.extend(add_elem)
                 x_pos += x
             y_pos += y
+        # Newly created! Classification needed?
+        self.signal("classify_new", data_out)
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
@@ -2655,6 +2659,8 @@ def init_commands(kernel):
 
             currentangle += segment_len
 
+        # Newly created! Classification needed?
+        self.signal("classify_new", data_out)
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
@@ -2968,6 +2974,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(poly_path)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_option("dpi", "d", default=500, type=float)
@@ -3018,7 +3026,9 @@ def init_commands(kernel):
         image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
         self.elem_branch.add_node(image_node)
         self.signal("refresh_scene", "Scene")
-
+        data = [image_node]
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "image", [image_node]
 
     @self.console_option(
@@ -3184,6 +3194,8 @@ def init_commands(kernel):
             fillrule=Fillrule.FILLRULE_NONZERO,
             linejoin=Linejoin.JOIN_ROUND,
         )
+        # Newly created! Classification needed?
+        self.signal("classify_new", node)
         self.signal("refresh_scene", "Scene")
 
         return "elements", [node]
@@ -3594,6 +3606,8 @@ def init_commands(kernel):
             outline_node.fill = None
             outputdata.append(outline_node)
 
+        # Newly created! Classification needed?
+        self.signal("classify_new", outputdata)
         self.signal("refresh_scene", "Scene")
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
@@ -3628,6 +3642,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument("r_pos", type=Length)
@@ -3652,6 +3668,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument("x_pos", type=Length)
@@ -3681,6 +3699,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument(
@@ -3740,6 +3760,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument("x0", type=self.length_x, help=_("start x position"))
@@ -3766,6 +3788,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_option(
@@ -3794,6 +3818,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument(
@@ -3862,6 +3888,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_command(
@@ -4008,6 +4036,8 @@ def init_commands(kernel):
         if data is None:
             data = list()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument(
@@ -4596,7 +4626,9 @@ def init_commands(kernel):
 
         if data is None:
             data = list()
-        data.append(_element)
+        data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
@@ -5638,6 +5670,7 @@ def init_commands(kernel):
             # At bottom of stack.
             channel("No undo available.")
             return
+        self.validate_selected_area()
         channel(f"Undo: {self.undo}")
         self.signal("refresh_scene")
         self.signal("rebuild_tree")
@@ -5726,6 +5759,8 @@ def init_commands(kernel):
             group.add_node(copy(p))
         self.set_emphasis([group])
         self.signal("refresh_tree", group)
+        # Newly created! Classification needed?
+        self.signal("classify_new", pasted)
         return "elements", pasted
 
     @self.console_command(
@@ -6131,6 +6166,8 @@ def init_commands(kernel):
         self.set_emphasis([node])
         node.focus()
         data.append(node)
+        # Newly created! Classification needed?
+        self.signal("classify_new", data)
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

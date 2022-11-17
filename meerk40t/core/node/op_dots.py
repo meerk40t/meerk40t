@@ -236,4 +236,4 @@ class DotsOpNode(Node, Parameters):
                 wait=parameter_object.dwell_time,
                 parameter_object=parameter_object,
                 passes=passes,
-            )
+            )  # TODO: Dwell Time passed from settings.
