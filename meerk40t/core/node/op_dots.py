@@ -16,15 +16,10 @@ class DotsOpNode(Node, Parameters):
     This is a Node of type "op dots".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op dots", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op dots", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]

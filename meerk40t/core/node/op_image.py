@@ -16,16 +16,12 @@ class ImageOpNode(Node, Parameters):
     This is a Node of type "op image".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op image", **kwargs)
-        # Is this op out of useful bounds?
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op image", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
-        self.settings.update(kwargs)
+
+        # Is this op out of useful bounds?
         self.dangerous = False
         # self.settings["stopop"] = True
 

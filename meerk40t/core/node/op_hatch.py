@@ -17,17 +17,12 @@ class HatchOpNode(Node, Parameters):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op hatch", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op hatch", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
         self._hatch_distance_native = None
 
         if len(args) == 1:
