@@ -4,7 +4,6 @@ from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
@@ -419,6 +418,7 @@ class LivingHinges:
             ymax : Lower side of the rectangular area
 
         """
+        from numpy import linspace
 
         def outside(bb_to_check, master_bb):
             out_x = "inside"
@@ -434,17 +434,110 @@ class LivingHinges:
                 out_x = "cross"
             return out_x, out_y
 
+        def approximate_line(part_of_path, current_x, current_y):
+            # print(f"Check: {type(part_of_path).__name__} {part_of_path.bbox()} {clipbb}")
+            added = 0
+            partial = 0
+            ignored = 0
+            subj = part_of_path.npoint(linspace(0, 1, interpolation))
+            subj.reshape((2, interpolation))
+            iterated_points = list(map(Point, subj))
+            for p in iterated_points:
+                segbb = (
+                    min(current_x, p[0]),
+                    min(current_y, p[1]),
+                    max(current_x, p[0]),
+                    max(current_y, p[1])
+                )
+                sx, sy = outside(segbb, clipbb)
+                # print(f"{segbb} - {clipbb} {sx} - {sy}")
+                if sx == "outside" or sy == "outside":
+                    # Fully outside, so drop
+                    ignored += 1
+                elif statex == "inside" and statey == "inside":
+                    # Fully inside, so append
+                    if current_x != new_cx or current_y != new_cy:
+                        add_move(newpath, Point(current_x, current_y))
+                    newpath.line(p)
+                    added += 1
+                else:
+                    dx = p[0] - current_x
+                    dy = p[1] - current_y
+                    new_cx = current_x
+                    new_cy = current_y
+                    new_ex = p[0]
+                    new_ey = p[1]
+                    if dx == 0:
+                        # Vertical line needs special treatment
+                        if new_cx >= xmin and new_cx<=xmax:
+                            new_cy = min(max(new_cy, ymin), ymax)
+                            new_ey = min(max(new_ey, ymin), ymax)
+                            if new_cx != current_x or new_cy != current_y:
+                                # Needs a move
+                                add_move(newpath, Point(new_cx, new_cy))
+                            newpath.line(Point(new_ex, new_ey))
+                            partial += 1
+                        else:
+                            ignored += 1
+                    else:
+                        # regular line, so lets establish x0 x1
+                        # could still be an outward pointing line....
+                        new_cx = min(max(new_cx, xmin), xmax)
+                        new_ex = min(max(new_ex, xmin), xmax)
+                        # corresponding y values...
+                        new_cy = current_y + (new_cx - current_x) / (p[0] - current_x) * (p[1] - current_y)
+                        new_ey = current_y + (new_ex - current_x) / (p[0] - current_x) * (p[1] - current_y)
+                        # Y can still cross...
+                        new_cx_clipped = new_cx
+                        new_ex_clipped = new_ex
+                        new_cy_clipped = min(max(new_cy, ymin), ymax)
+                        new_ey_clipped = min(max(new_ey, ymin), ymax)
+                        # Adjust x - value
+                        if dy != 0:
+                            new_cx_clipped = new_cx + dx / dy * (new_cy_clipped - new_cy)
+                            new_ex_clipped = new_ex + dx / dy * (new_ey_clipped - new_ey)
+
+                        new_cx = new_cx_clipped
+                        new_cy = new_cy_clipped
+                        new_ex = new_ex_clipped
+                        new_ey = new_ey_clipped
+                        if min(new_cy, new_ey) == ymax and dy != 0:
+                            # Outward...
+                            ignored
+                        elif max(new_cy, new_ey) == ymin and dy != 0:
+                            # Outward...
+                            ignored += 1
+                        else:
+                            if new_cx != current_x or new_cy != current_y:
+                                # Needs a move
+                                add_move(newpath, Point(new_cx, new_cy))
+                            newpath.line(Point(new_ex, new_ey))
+                            partial += 1
+                current_x= p[0]
+                current_y = p[1]
+            if current_x != part_of_path.end[0] or current_y != part_of_path.end[1]:
+                add_move(newpath, part_of_path.end)
+            # print (f"From iterated line: added={added}, partial={partial}, ignored={ignored}")
+
+        def add_move(addpath, destination):
+            # Was the last segment as well a move? Then just update the coords...
+            if len(addpath._segments)>0:
+                if isinstance(addpath._segments[-1], Move):
+                    addpath._segments[-1].end = destination
+                    return
+            addpath.move(destination)
+
+        interpolation = 50
         fully_deleted = 0
         partial_deleted = 0
         not_deleted = 0
         clipbb = (xmin, ymin, xmax, ymax)
+        current_x = 0
+        current_y = 0
         first_point = path.first_point
         if first_point is not None:
             current_x = first_point[0]
             current_y = first_point[1]
-        else:
-            current_x = 0
-            current_y = 0
         newpath = Path(
             stroke=path.stroke, stroke_width=path.stroke_width, transform=path.transform
         )
@@ -461,7 +554,7 @@ class LivingHinges:
             else:
                 segbb = (xmin, ymin, 0, 0)
             if isinstance(e, Move):
-                newpath.move(e.end)
+                add_move(newpath, e.end)
                 current_x = e.end[0]
                 current_y = e.end[1]
                 not_deleted += 1
@@ -472,7 +565,7 @@ class LivingHinges:
                 if statex == "outside" or statey == "outside":
                     # Fully outside, so drop
                     if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
+                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -491,7 +584,7 @@ class LivingHinges:
                             new_ey = min(max(new_ey, ymin), ymax)
                             if new_cx != current_x or new_cy != current_y:
                                 # Needs a move
-                                newpath.move(Point(new_cx, new_cy))
+                                add_move(newpath, Point(new_cx, new_cy))
                             newpath.line(Point(new_ex, new_ey))
                     else:
                         # regular line, so lets establish x0 x1
@@ -524,10 +617,10 @@ class LivingHinges:
                         else:
                             if new_cx != current_x or new_cy != current_y:
                                 # Needs a move
-                                newpath.move(Point(new_cx, new_cy))
+                                add_move(newpath, Point(new_cx, new_cy))
                             newpath.line(Point(new_ex, new_ey))
                     if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
+                        add_move(newpath, e.end)
                     partial_deleted += 1
                 current_x = e.end[0]
                 current_y = e.end[1]
@@ -539,17 +632,14 @@ class LivingHinges:
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
                     if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
+                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
                     newpath.quad(e.control, e.end)
                     not_deleted += 1
                 else:
-                    # needs dealing for the time being, just ignored...
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
-                    partial_deleted += 1
+                    approximate_line(e, current_x, current_y)
                 current_x = e.end[0]
                 current_y = e.end[1]
             elif isinstance(e, CubicBezier):
@@ -557,35 +647,35 @@ class LivingHinges:
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
                     if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
+                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
                     newpath.cubic(e.control1, e.control2, e.end)
                     not_deleted += 1
                 else:
-                    # needs dealing for the time being, just ignored...
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
+                    approximate_line(e, current_x, current_y)
                     partial_deleted += 1
                 current_x = e.end[0]
                 current_y = e.end[1]
             elif isinstance(e, Arc):
-                statex, statey = outside(segbb, clipbb)
-                if statex == "outside" and statey == "outside":
-                    # Fully outside, so drop
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
-                    fully_deleted += 1
-                elif statex == "inside" and statey == "inside":
-                    # Fully inside, so append
-                    newpath.arc(e.center.x, e.center.y, e.get_rotation(), e.arc, e.sweep, e.end)
-                    not_deleted += 1
-                else:
-                    # needs dealing for the time being, just ignored...
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        newpath.move(e.end)
-                    partial_deleted += 1
+                for e_cubic in e.as_cubic_curves():
+                    segbb = e_cubic.bbox()
+                    statex, statey = outside(segbb, clipbb)
+                    if statex == "outside" and statey == "outside":
+                        # Fully outside, so drop
+                        if current_x != e_cubic.end[0] or current_y != e_cubic.end[1]:
+                            add_move(newpath, e_cubic.end)
+                        fully_deleted += 1
+                    elif statex == "inside" and statey == "inside":
+                        # Fully inside, so append
+                        newpath.cubic(e_cubic.control1, e_cubic.control2, e_cubic.end)
+                        not_deleted += 1
+                    else:
+                        approximate_line(e_cubic, current_x, current_y)
+                        partial_deleted += 1
+                    current_x = e_cubic.end[0]
+                    current_y = e_cubic.end[1]
                 current_x = e.end[0]
                 current_y = e.end[1]
 
@@ -705,45 +795,42 @@ class HingePanel(wx.Panel):
         )
         main_left.Add(vsizer_dimension, 0, wx.EXPAND, 0)
 
-        hsizer_originx = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_originx, 0, wx.EXPAND, 0)
+        hsizer_origin = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer_dimension.Add(hsizer_origin, 0, wx.EXPAND, 0)
 
-        label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
-        label_x.SetMinSize((90, -1))
-        hsizer_originx.Add(label_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
+        hsizer_originx = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.VERTICAL
+        )
         self.text_origin_x.SetToolTip(_("X-Coordinate of the hinge area"))
-        hsizer_originx.Add(self.text_origin_x, 0, 0, 0)
+        hsizer_originx.Add(self.text_origin_x, 1, wx.EXPAND, 0)
 
-        hsizer_originy = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_originy, 0, wx.EXPAND, 0)
-
-        label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
-        label_y.SetMinSize((90, -1))
-        hsizer_originy.Add(label_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
+        hsizer_originy = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.VERTICAL
+        )
         self.text_origin_y.SetToolTip(_("Y-Coordinate of the hinge area"))
-        hsizer_originy.Add(self.text_origin_y, 0, 0, 0)
+        hsizer_originy.Add(self.text_origin_y, 1, wx.EXPAND, 0)
 
-        hsizer_width = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_width, 0, wx.EXPAND, 0)
+        hsizer_origin.Add(hsizer_originx, 1, wx.EXPAND, 0)
+        hsizer_origin.Add(hsizer_originy, 1, wx.EXPAND, 0)
 
-        label_width = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        label_width.SetMinSize((90, -1))
-        hsizer_width.Add(label_width, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer_wh = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer_dimension.Add(hsizer_wh, 0, wx.EXPAND, 0)
 
+        hsizer_width = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.VERTICAL
+        )
         self.text_width.SetToolTip(_("Width of the hinge area"))
-        hsizer_width.Add(self.text_width, 0, 0, 0)
+        hsizer_width.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        hsizer_height = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_height, 0, wx.EXPAND, 0)
-
-        label_height = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        label_height.SetMinSize((90, -1))
-        hsizer_height.Add(label_height, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer_height = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.VERTICAL
+        )
 
         self.text_height.SetToolTip(_("Height of the hinge area"))
-        hsizer_height.Add(self.text_height, 0, 0, 0)
+        hsizer_height.Add(self.text_height, 1, wx.EXPAND, 0)
+
+        hsizer_wh.Add(hsizer_width, 1, wx.EXPAND, 0)
+        hsizer_wh.Add(hsizer_height, 1, wx.EXPAND, 0)
 
         vsizer_options = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
