@@ -223,22 +223,22 @@ class CutPlan:
                 ):
                     yield op
                     continue
+                if op.type == "op hatch":
+                    # hatch passes duplicated sub-objects, while pre-processing
+                    yield from self._blob_convert(op, copies=1, passes=1)
+                    continue
+                passes = op.implicit_passes
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first
                 ):
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
+
                     # So, we only need 1 copy and to set the passes.
-                    passes = op.implicit_passes
-                    copies = 1
+                    yield from self._blob_convert(op, copies=1, passes=passes)
                 else:
-                    passes = 1
-                    copies = op.implicit_passes
-                if op.type == "op hatch":
-                    # hatch duplicates sub-objects, within convert to blob.
-                    passes = 1
-                    copies = 1
-                yield from self._blob_convert(op, copies, passes)
+                    # We do passes by making copies of the cutcode.
+                    yield from self._blob_convert(op, copies=passes, passes=1)
 
     def _blob_convert(self, op, copies, passes, force_idx=None):
         """
