@@ -46,7 +46,7 @@ class CutCode(CutGroup):
             end = e.end
             if path is None:
                 path = Path()
-                c = e.line_color if e.line_color is not None else "blue"
+                c = e.color if e.color is not None else "blue"
                 path.stroke = Color(c)
 
             if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:

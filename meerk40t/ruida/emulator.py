@@ -700,7 +700,6 @@ class RuidaEmulator(Module, Parameters):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                self.line_color = c
                 self._use_set = None
                 desc = f"Layer Color {str(self.color)}"
             elif array[1] == 0x06:

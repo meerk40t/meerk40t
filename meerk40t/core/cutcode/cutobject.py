@@ -11,6 +11,8 @@ class CutObject:
     def __init__(
         self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
     ):
+        if settings is None:
+            settings = dict()
         self.settings = settings
         self.parent = parent
         self.passes = passes
@@ -40,6 +42,7 @@ class CutObject:
         self.closed = False
         self.original_op = None
         self.pass_index = -1
+        self.color = None
 
     @property
     def burns_done(self):
