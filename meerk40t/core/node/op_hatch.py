@@ -301,7 +301,6 @@ class HatchOpNode(Node, Parameters):
                 except AttributeError:
                     continue
                 path.approximate_arcs_with_cubics()
-                self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
                     if len(subpath) == 0:
                         continue
@@ -369,7 +368,7 @@ class HatchOpNode(Node, Parameters):
             if node.type != "elem polyline":
                 continue
             settings = node.settings
-            plot = PlotCut(settings=settings)
+            plot = PlotCut(settings=settings, color=node.stroke)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)

@@ -265,9 +265,7 @@ class CutCode(CutGroup):
 
         # No element had a rapid speed value.
         cs = self.settings
-        native_speed = cs.get(
-            "native_rapid_speed", cs.get("native_speed", None)
-        )
+        native_speed = cs.get("native_rapid_speed", cs.get("native_speed", None))
         return native_speed
 
     def duration_travel(self, stop_at=None):

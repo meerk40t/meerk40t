@@ -12,6 +12,7 @@ class QuadCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
         CutObject.__init__(
             self,
@@ -20,6 +21,7 @@ class QuadCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.raster_step = 0
         self._control = control_point

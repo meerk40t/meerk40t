@@ -3,7 +3,9 @@ from .cutobject import CutObject
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+    def __init__(
+        self, start_point, end_point, settings=None, passes=1, parent=None, color=None
+    ):
         CutObject.__init__(
             self,
             start_point,
@@ -11,6 +13,7 @@ class LineCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.raster_step = 0
 

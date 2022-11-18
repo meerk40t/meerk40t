@@ -9,13 +9,14 @@ class CutObject:
     """
 
     def __init__(
-        self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
+        self, start=None, end=None, settings=None, parent=None, passes=1, color=None
     ):
         if settings is None:
             settings = dict()
         self.settings = settings
         self.parent = parent
         self.passes = passes
+        self.color = color
         if start is not None:
             self._start_x = int(round(start[0]))
             self._start_y = int(round(start[1]))
@@ -42,7 +43,6 @@ class CutObject:
         self.closed = False
         self.original_op = None
         self.pass_index = -1
-        self.color = None
 
     @property
     def burns_done(self):

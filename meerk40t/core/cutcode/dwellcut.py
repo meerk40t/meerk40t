@@ -2,7 +2,15 @@ from .cutobject import CutObject
 
 
 class DwellCut(CutObject):
-    def __init__(self, start_point, dwell_time=None, settings=None, passes=1, parent=None):
+    def __init__(
+        self,
+        start_point,
+        dwell_time=None,
+        settings=None,
+        passes=1,
+        parent=None,
+        color=None,
+    ):
         CutObject.__init__(
             self,
             start_point,
@@ -10,6 +18,7 @@ class DwellCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.dwell_time = dwell_time
         self.first = True  # Dwell cuts are standalone

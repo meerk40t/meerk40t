@@ -18,9 +18,12 @@ class CutGroup(list, CutObject, ABC):
         passes=1,
         constrained=False,
         closed=False,
+        color=None,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
+        CutObject.__init__(
+            self, parent=parent, settings=settings, passes=passes, color=color
+        )
         self.closed = closed
         self.constrained = constrained
         self.burn_started = False

@@ -10,6 +10,7 @@ class OutputCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
         CutObject.__init__(
             self,
@@ -18,6 +19,7 @@ class OutputCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.output_mask = output_mask
         self.output_value = output_value

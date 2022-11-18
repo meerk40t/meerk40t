@@ -2,7 +2,7 @@ from .cutobject import CutObject
 
 
 class WaitCut(CutObject):
-    def __init__(self, wait, settings=None, passes=1, parent=None):
+    def __init__(self, wait, settings=None, passes=1, parent=None, color=None):
         """
         Establish a wait cut.
         @param wait: wait time in ms.
@@ -17,6 +17,7 @@ class WaitCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.dwell_time = wait
         self.first = True  # Wait cuts are standalone

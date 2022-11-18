@@ -2,7 +2,9 @@ from .cutobject import CutObject
 
 
 class HomeCut(CutObject):
-    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+    def __init__(
+        self, offset_point=None, settings=None, passes=1, parent=None, color=None
+    ):
         if offset_point is None:
             offset_point = (0, 0)
         CutObject.__init__(
@@ -12,6 +14,7 @@ class HomeCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.first = True  # Dwell cuts are standalone
         self.last = True

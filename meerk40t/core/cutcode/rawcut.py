@@ -6,8 +6,10 @@ class RawCut(CutObject):
     Raw cuts are non-shape based cut objects with location and laser amount.
     """
 
-    def __init__(self, settings=None, passes=1, parent=None):
-        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
+    def __init__(self, settings=None, passes=1, parent=None, color=None):
+        CutObject.__init__(
+            self, settings=settings, passes=passes, parent=parent, color=color
+        )
         self.plot = []
         self.first = True  # Raw cuts are standalone
         self.last = True
