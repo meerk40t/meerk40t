@@ -40,9 +40,13 @@ class Undo:
         self._undo_index += 1
         if message is None:
             message = self.message
-        self._undo_stack.insert(
-            self._undo_index, UndoState(self.tree.backup_tree(), message=message)
-        )
+        try:
+            self._undo_stack.insert(
+                self._undo_index, UndoState(self.tree.backup_tree(), message=message)
+            )
+        except KeyError:
+            # Hit a concurrent issue.
+            pass
         del self._undo_stack[self._undo_index + 1 :]
         self.message = None
 
@@ -60,7 +64,10 @@ class Undo:
         self._undo_index -= 1
         undo = self._undo_stack[self._undo_index]
         self.tree.restore_tree(undo.state)
-        undo.state = self.tree.backup_tree()  # Get unused copy
+        try:
+            undo.state = self.tree.backup_tree()  # Get unused copy
+        except KeyError:
+            pass
         return True
 
     def redo(self):
@@ -72,7 +79,10 @@ class Undo:
         self._undo_index += 1
         redo = self._undo_stack[self._undo_index]
         self.tree.restore_tree(redo.state)
-        redo.state = self.tree.backup_tree()  # Get unused copy
+        try:
+            redo.state = self.tree.backup_tree()  # Get unused copy
+        except KeyError:
+            pass
         return True
 
     def undolist(self):
