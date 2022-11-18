@@ -23,8 +23,11 @@ class RasterCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
-        CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
+        CutObject.__init__(
+            self, settings=settings, passes=passes, parent=parent, color=color
+        )
         assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
         self.image = image
@@ -95,11 +98,18 @@ class RasterCut(CutObject):
         return self.plot.offset_x
 
     def length(self):
-        return (
-            self.width * self.height
-            + (self.overscan * self.height)
-            + (self.height * self.raster_step_y)
-        )
+        if self.horizontal:
+            return (
+                self.width * self.height
+                + (2 * self.scan * self.height)
+                + (self.height * self.step_y)
+            )
+        else:
+            return (
+                self.width * self.height
+                + (2 * self.scan * self.height)
+                + (self.width * self.step_x)
+            )
 
     def extra(self):
         return self.width * 0.105  # 105ms for the turnaround.

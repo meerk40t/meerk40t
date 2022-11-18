@@ -18,9 +18,12 @@ class CutGroup(list, CutObject, ABC):
         passes=1,
         constrained=False,
         closed=False,
+        color=None,
     ):
         list.__init__(self, children)
-        CutObject.__init__(self, parent=parent, settings=settings, passes=passes)
+        CutObject.__init__(
+            self, parent=parent, settings=settings, passes=passes, color=color
+        )
         self.closed = closed
         self.constrained = constrained
         self.burn_started = False
@@ -121,15 +124,15 @@ class CutGroup(list, CutObject, ABC):
             # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
             if complete_path and not grp.closed and isinstance(grp, CutGroup):
-                if grp[0].burns_done < grp[0].implicit_passes:
+                if grp[0].burns_done < grp[0].passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
-                if len(grp) > 1 and grp[-1].burns_done < grp[-1].implicit_passes:
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
                     yield grp[-1]
                 continue
             # If we are either burning any path segment
             # or this is a closed path
             # then we should yield all segments.
             for seg in grp.flat():
-                if seg is not None and seg.burns_done < seg.implicit_passes:
+                if seg is not None and seg.burns_done < seg.passes:
                     yield seg

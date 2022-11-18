@@ -308,7 +308,6 @@ class CutOpNode(Node, Parameters):
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
 
-            settings["line_color"] = node.stroke
             for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
@@ -322,6 +321,7 @@ class CutOpNode(Node, Parameters):
                     closed=closed,
                     settings=settings,
                     passes=passes,
+                    color=node.stroke,
                 )
                 group.path = Path(subpath)
                 group.original_op = self.type
@@ -337,6 +337,7 @@ class CutOpNode(Node, Parameters):
                                     settings=settings,
                                     passes=passes,
                                     parent=group,
+                                    color=node.stroke,
                                 )
                             )
                     elif isinstance(seg, Line):
@@ -348,6 +349,7 @@ class CutOpNode(Node, Parameters):
                                     settings=settings,
                                     passes=passes,
                                     parent=group,
+                                    color=node.stroke,
                                 )
                             )
                     elif isinstance(seg, QuadraticBezier):
@@ -359,6 +361,7 @@ class CutOpNode(Node, Parameters):
                                 settings=settings,
                                 passes=passes,
                                 parent=group,
+                                color=node.stroke,
                             )
                         )
                     elif isinstance(seg, CubicBezier):
@@ -371,6 +374,7 @@ class CutOpNode(Node, Parameters):
                                 settings=settings,
                                 passes=passes,
                                 parent=group,
+                                color=node.stroke,
                             )
                         )
                 if len(group) > 0:

@@ -251,6 +251,7 @@ class DotsOpNode(Node, Parameters):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
+                dwell_time=self.dwell_time,
                 settings=settings,
                 passes=passes,
-            )  # TODO: Dwell Time passed from settings.
+            )

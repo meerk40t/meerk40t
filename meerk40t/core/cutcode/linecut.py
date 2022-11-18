@@ -3,7 +3,9 @@ from .cutobject import CutObject
 
 
 class LineCut(CutObject):
-    def __init__(self, start_point, end_point, settings=None, passes=1, parent=None):
+    def __init__(
+        self, start_point, end_point, settings=None, passes=1, parent=None, color=None
+    ):
         CutObject.__init__(
             self,
             start_point,
@@ -11,11 +13,12 @@ class LineCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.raster_step = 0
 
     def __repr__(self):
-        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
 
     def generator(self):
         # pylint: disable=unsubscriptable-object

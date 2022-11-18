@@ -13,6 +13,7 @@ class CubicCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
         CutObject.__init__(
             self,
@@ -21,16 +22,17 @@ class CubicCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
 
     def __repr__(self):
-        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
 
     def __str__(self):
-        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.implicit_passes})"
+        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.passes})"
 
     def c1(self):
         return self._control1 if self.normal else self._control2

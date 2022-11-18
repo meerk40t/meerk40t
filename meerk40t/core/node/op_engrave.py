@@ -305,7 +305,6 @@ class EngraveOpNode(Node, Parameters):
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
-            settings["line_color"] = path.stroke
             for subpath in path.as_subpaths():
                 sp = Path(subpath)
                 if len(sp) == 0:
@@ -319,6 +318,7 @@ class EngraveOpNode(Node, Parameters):
                     closed=closed,
                     settings=settings,
                     passes=passes,
+                    color=node.stroke,
                 )
                 group.path = Path(subpath)
                 group.original_op = self.type
@@ -334,6 +334,7 @@ class EngraveOpNode(Node, Parameters):
                                     settings=settings,
                                     passes=passes,
                                     parent=group,
+                                    color=node.stroke,
                                 )
                             )
                     elif isinstance(seg, Line):
@@ -345,6 +346,7 @@ class EngraveOpNode(Node, Parameters):
                                     settings=settings,
                                     passes=passes,
                                     parent=group,
+                                    color=node.stroke,
                                 )
                             )
                     elif isinstance(seg, QuadraticBezier):
@@ -356,6 +358,7 @@ class EngraveOpNode(Node, Parameters):
                                 settings=settings,
                                 passes=passes,
                                 parent=group,
+                                color=node.stroke,
                             )
                         )
                     elif isinstance(seg, CubicBezier):
@@ -368,6 +371,7 @@ class EngraveOpNode(Node, Parameters):
                                 settings=settings,
                                 passes=passes,
                                 parent=group,
+                                color=node.stroke,
                             )
                         )
                 if len(group) > 0:

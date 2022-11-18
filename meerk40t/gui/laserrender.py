@@ -432,7 +432,7 @@ class LaserRender:
             if cut.highlighted:
                 c = highlight_color
             else:
-                c = cut.line_color
+                c = cut.color
             if c is None:
                 c = 0
             try:

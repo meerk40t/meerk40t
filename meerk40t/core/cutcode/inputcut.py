@@ -10,6 +10,7 @@ class InputCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
         CutObject.__init__(
             self,
@@ -18,6 +19,7 @@ class InputCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.input_mask = input_mask
         self.input_value = input_value

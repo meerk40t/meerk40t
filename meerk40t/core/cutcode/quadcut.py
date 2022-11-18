@@ -12,6 +12,7 @@ class QuadCut(CutObject):
         settings=None,
         passes=1,
         parent=None,
+        color=None,
     ):
         CutObject.__init__(
             self,
@@ -20,15 +21,16 @@ class QuadCut(CutObject):
             settings=settings,
             passes=passes,
             parent=parent,
+            color=color,
         )
         self.raster_step = 0
         self._control = control_point
 
     def __repr__(self):
-        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'
 
     def __str__(self):
-        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.passes})"
 
     def c(self):
         return self._control
