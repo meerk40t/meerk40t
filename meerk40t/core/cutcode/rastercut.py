@@ -95,11 +95,18 @@ class RasterCut(CutObject):
         return self.plot.offset_x
 
     def length(self):
-        return (
-            self.width * self.height
-            + (self.overscan * self.height)
-            + (self.height * self.raster_step_y)
-        )
+        if self.horizontal:
+            return (
+                self.width * self.height
+                + (2 * self.scan * self.height)
+                + (self.height * self.step_y)
+            )
+        else:
+            return (
+                self.width * self.height
+                + (2 * self.scan * self.height)
+                + (self.width * self.step_x)
+            )
 
     def extra(self):
         return self.width * 0.105  # 105ms for the turnaround.

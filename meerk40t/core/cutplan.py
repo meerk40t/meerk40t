@@ -755,7 +755,7 @@ def short_travel_cutcode(
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
                     start = closest.start
@@ -763,7 +763,7 @@ def short_travel_cutcode(
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
                     end = closest.end
@@ -771,7 +771,7 @@ def short_travel_cutcode(
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
-                and last_segment.burns_done < last_segment.implicit_passes
+                and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):

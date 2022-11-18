@@ -148,7 +148,8 @@ class CutCode(CutGroup):
             distance_cut += curr.length()
             this_extra = curr.extra()
             extra += this_extra
-            native_speed = curr.settings.get("native_speed", curr.speed)
+            cs = curr.settings
+            native_speed = cs.get("native_speed", cs.get("speed", 0))
             if native_speed != 0:
                 duration_of_this_burn = curr.length() / native_speed
                 total_duration_cut += duration_of_this_burn
@@ -245,7 +246,8 @@ class CutCode(CutGroup):
         if stop_at is None or stop_at < 0 or stop_at > len(cutcode):
             stop_at = len(cutcode)
         for current in cutcode[0:stop_at]:
-            native_speed = current.settings.get("native_speed", current.speed)
+            cs = current.settings
+            native_speed = cs.get("native_speed", cs.get("speed", 0))
             if native_speed != 0:
                 duration += current.length() / native_speed
         return duration
@@ -253,15 +255,18 @@ class CutCode(CutGroup):
     def _native_speed(self, cutcode):
         if cutcode:
             for current in cutcode:
-                native_speed = current.settings.get(
+                cs = current.settings
+                native_speed = cs.get(
                     "native_rapid_speed",
-                    current.settings.get("native_speed", None),
+                    cs.get("native_speed", None),
                 )
                 if native_speed is not None:
                     return native_speed
+
         # No element had a rapid speed value.
-        native_speed = self.settings.get(
-            "native_rapid_speed", self.settings.get("native_speed", None)
+        cs = self.settings
+        native_speed = cs.get(
+            "native_rapid_speed", cs.get("native_speed", None)
         )
         return native_speed
 
