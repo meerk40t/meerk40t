@@ -1,12 +1,23 @@
 import wx
 
-from meerk40t.kernel import signal_listener
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.svgelements import Color, Path, Point, Matrix
+from meerk40t.kernel import signal_listener
+from meerk40t.svgelements import (
+    Arc,
+    Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    Point,
+    QuadraticBezier,
+)
 
 _ = wx.GetTranslation
 
@@ -20,6 +31,8 @@ e) Save presets per patterntype / or allow save / load of patternset
 f) Labels for additional parameters?!
 
 """
+
+
 class LivingHinges:
     """
     This class generates a predefined pattern in a *rectangular* area
@@ -208,10 +221,18 @@ class LivingHinges:
                 radius = i * dx
 
                 self.pattern.append(("M", cx + radius, cy))
-                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy + radius))
-                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx - radius, cy))
-                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy - radius))
-                self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx + radius, cy))
+                self.pattern.append(
+                    ("A", cx, cy, rotation, arc, sweep, cx, cy + radius)
+                )
+                self.pattern.append(
+                    ("A", cx, cy, rotation, arc, sweep, cx - radius, cy)
+                )
+                self.pattern.append(
+                    ("A", cx, cy, rotation, arc, sweep, cx, cy - radius)
+                )
+                self.pattern.append(
+                    ("A", cx, cy, rotation, arc, sweep, cx + radius, cy)
+                )
 
         self.path = None
         return additional_parameter
@@ -237,15 +258,6 @@ class LivingHinges:
         def create_point(x, y):
             return Point(x * width + offset_x, y * height + offset_y)
 
-        def inside(x, y):
-            outside = (
-                x < 0
-                or x > self.width
-                or y < 0
-                or y > self.height
-            )
-            return not outside
-
         # self.path.move(offset_x, offset_y)
         # print (f"After initial move: {str(self.path)}")
         current_x = 0
@@ -266,20 +278,17 @@ class LivingHinges:
             elif key == "h":
                 current_x += entry[1]
                 dx = entry[1]
-                if inside(current_x, current_y):
-                    self.path.horizontal(dx, relative=True)
+                self.path.horizontal(dx, relative=True)
             elif key == "v":
                 current_y += entry[1]
                 dy = entry[1]
-                if inside(current_x, current_y):
-                    self.path.vertical(dy, relative=True)
+                self.path.vertical(dy, relative=True)
             elif key == "l":
                 # Line to...
                 current_x = entry[1]
                 current_y = entry[2]
                 endpoint = create_point(entry[1], entry[2])
-                if inside(current_x, current_y):
-                    self.path.line(endpoint)
+                self.path.line(endpoint)
             elif key == "a":
                 current_x = entry[6]
                 current_y = entry[7]
@@ -289,23 +298,20 @@ class LivingHinges:
                 arc = entry[4]
                 sweep = entry[5]
                 endpoint = create_point(current_x, current_y)
-                if inside(current_x, current_y):
-                    self.path.arc(rx, ry, rotation, arc, sweep, endpoint)
+                self.path.arc(rx, ry, rotation, arc, sweep, endpoint)
             elif key == "c":
                 current_x = entry[5]
                 current_y = entry[6]
                 control1 = create_point(entry[1], entry[2])
                 control2 = create_point(entry[3], entry[4])
                 endpoint = create_point(entry[5], entry[6])
-                if inside(current_x, current_y):
-                    self.path.cubic(control1, control2, endpoint)
+                self.path.cubic(control1, control2, endpoint)
             elif key == "q":
                 current_x = entry[3]
                 current_y = entry[4]
                 control1 = create_point(entry[1], entry[2])
                 endpoint = create_point(entry[3], entry[4])
-                if inside(current_x, current_y):
-                    self.path.quad(control1, endpoint)
+                self.path.quad(control1, endpoint)
 
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
         self.start_x = hinge_left
@@ -372,11 +378,11 @@ class LivingHinges:
         # print (f"Rows: {rows}, Cols={cols}")
         # print (f"Ratios: {self.cell_width_percentage}, {self.cell_height_percentage}")
         # print (f"Padding: {self.cell_padding_h_percentage}, {self.cell_padding_v_percentage}")
-        for col in range(cols):
+        for col in range(-2, cols + 1, 1):
             top_left_x = self.x0 - (self.cell_width / 2)
             x_offset = col * (self.cell_width + (2 * self.cell_padding_h))
             x_current = top_left_x + x_offset
-            for row in range(rows):
+            for row in range(-2, rows + 1, 1):
                 top_left_y = self.y0
                 y_offset = row * (self.cell_height + (2 * self.cell_padding_v)) + (
                     (self.cell_height + (2 * self.cell_padding_v)) / 2
@@ -398,8 +404,195 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
+        self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
         self.path.transform *= Matrix.translate(self.start_x, self.start_y)
 
+    def clip_path(self, path, xmin, ymin, xmax, ymax):
+        """
+        Clip a path at a rectangular area, will return the clipped path
+
+        Args:
+            path : The path to clip
+            xmin : Left side of the rectangular area
+            ymin : Upper side of the rectangular area
+            xmax : Right side of the rectangular area
+            ymax : Lower side of the rectangular area
+
+        """
+
+        def outside(bb_to_check, master_bb):
+            out_x = "inside"
+            out_y = "inside"
+            if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
+                # fully out on x
+                out_x = "outside"
+            elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
+                out_x = "cross"
+            if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
+                out_y = "outside"
+            elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
+                out_x = "cross"
+            return out_x, out_y
+
+        fully_deleted = 0
+        partial_deleted = 0
+        not_deleted = 0
+        clipbb = (xmin, ymin, xmax, ymax)
+        first_point = path.first_point
+        if first_point is not None:
+            current_x = first_point[0]
+            current_y = first_point[1]
+        else:
+            current_x = 0
+            current_y = 0
+        newpath = Path(
+            stroke=path.stroke, stroke_width=path.stroke_width, transform=path.transform
+        )
+        for e in path:
+            if hasattr(e, "bbox"):
+                segbb = e.bbox()
+            elif hasattr(e, "end"):
+                segbb = (
+                    min(current_x, e.end[0]),
+                    min(current_y, e.end[1]),
+                    max(current_x, e.end[0]),
+                    max(current_y, e.end[1]),
+                )
+            else:
+                segbb = (xmin, ymin, 0, 0)
+            if isinstance(e, Move):
+                newpath.move(e.end)
+                current_x = e.end[0]
+                current_y = e.end[1]
+                not_deleted += 1
+            elif isinstance(e, Line):
+                statex, statey = outside(segbb, clipbb)
+                dx = e.end[0] - current_x
+                dy = e.end[1] - current_y
+                if statex == "outside" or statey == "outside":
+                    # Fully outside, so drop
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    fully_deleted += 1
+                elif statex == "inside" and statey == "inside":
+                    # Fully inside, so append
+                    newpath.line(e.end)
+                    not_deleted += 1
+                else:
+                    # needs dealing, its either for the time being, just ignored...
+                    new_cx = current_x
+                    new_cy = current_y
+                    new_ex = e.end[0]
+                    new_ey = e.end[1]
+                    if dx == 0:
+                        # Vertical line needs special treatment
+                        if new_cx >= xmin and new_cx<=xmax:
+                            new_cy = min(max(new_cy, ymin), ymax)
+                            new_ey = min(max(new_ey, ymin), ymax)
+                            if new_cx != current_x or new_cy != current_y:
+                                # Needs a move
+                                newpath.move(Point(new_cx, new_cy))
+                            newpath.line(Point(new_ex, new_ey))
+                    else:
+                        # regular line, so lets establish x0 x1
+                        # could still be an outward pointing line....
+                        new_cx = min(max(new_cx, xmin), xmax)
+                        new_ex = min(max(new_ex, xmin), xmax)
+                        # corresponding y values...
+                        new_cy = current_y + (new_cx - current_x) / (e.end[0] - current_x) * (e.end[1] - current_y)
+                        new_ey = current_y + (new_ex - current_x) / (e.end[0] - current_x) * (e.end[1] - current_y)
+                        # Y can still cross...
+                        new_cx_clipped = new_cx
+                        new_ex_clipped = new_ex
+                        new_cy_clipped = min(max(new_cy, ymin), ymax)
+                        new_ey_clipped = min(max(new_ey, ymin), ymax)
+                        # Adjust x - value
+                        if dy != 0:
+                            new_cx_clipped = new_cx + dx / dy * (new_cy_clipped - new_cy)
+                            new_ex_clipped = new_ex + dx / dy * (new_ey_clipped - new_ey)
+
+                        new_cx = new_cx_clipped
+                        new_cy = new_cy_clipped
+                        new_ex = new_ex_clipped
+                        new_ey = new_ey_clipped
+                        if min(new_cy, new_ey) == ymax and dy != 0:
+                            # Outward...
+                            pass
+                        elif max(new_cy, new_ey) == ymin and dy != 0:
+                            # Outward...
+                            pass
+                        else:
+                            if new_cx != current_x or new_cy != current_y:
+                                # Needs a move
+                                newpath.move(Point(new_cx, new_cy))
+                            newpath.line(Point(new_ex, new_ey))
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    partial_deleted += 1
+                current_x = e.end[0]
+                current_y = e.end[1]
+            elif isinstance(e, Close):
+                newpath.closed()
+                not_deleted += 1
+            elif isinstance(e, QuadraticBezier):
+                statex, statey = outside(segbb, clipbb)
+                if statex == "outside" and statey == "outside":
+                    # Fully outside, so drop
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    fully_deleted += 1
+                elif statex == "inside" and statey == "inside":
+                    # Fully inside, so append
+                    newpath.quad(e.control, e.end)
+                    not_deleted += 1
+                else:
+                    # needs dealing for the time being, just ignored...
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    partial_deleted += 1
+                current_x = e.end[0]
+                current_y = e.end[1]
+            elif isinstance(e, CubicBezier):
+                statex, statey = outside(segbb, clipbb)
+                if statex == "outside" and statey == "outside":
+                    # Fully outside, so drop
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    fully_deleted += 1
+                elif statex == "inside" and statey == "inside":
+                    # Fully inside, so append
+                    newpath.cubic(e.control1, e.control2, e.end)
+                    not_deleted += 1
+                else:
+                    # needs dealing for the time being, just ignored...
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    partial_deleted += 1
+                current_x = e.end[0]
+                current_y = e.end[1]
+            elif isinstance(e, Arc):
+                statex, statey = outside(segbb, clipbb)
+                if statex == "outside" and statey == "outside":
+                    # Fully outside, so drop
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    fully_deleted += 1
+                elif statex == "inside" and statey == "inside":
+                    # Fully inside, so append
+                    newpath.arc(e.center.x, e.center.y, e.get_rotation(), e.arc, e.sweep, e.end)
+                    not_deleted += 1
+                else:
+                    # needs dealing for the time being, just ignored...
+                    if current_x != e.end[0] or current_y != e.end[1]:
+                        newpath.move(e.end)
+                    partial_deleted += 1
+                current_x = e.end[0]
+                current_y = e.end[1]
+
+        # print(
+        #     f"Ready: left untouched: {not_deleted}, fully deleted={fully_deleted}, partial deletion:{partial_deleted}"
+        # )
+        return newpath
 
 class HingePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -655,7 +848,15 @@ class HingePanel(wx.Panel):
             ratio = min(
                 wd / self.hinge_generator.width, ht / self.hinge_generator.height
             )
-            matrix = gc.CreateMatrix(a=ratio, b=0, c=0, d=ratio, tx=0, ty=0)
+            ratio *= 0.9
+            matrix = gc.CreateMatrix(
+                a=ratio,
+                b=0,
+                c=0,
+                d=ratio,
+                tx=0.05 * ratio * self.hinge_generator.width,
+                ty=0.05 * ratio * self.hinge_generator.height,
+            )
             gc.SetTransform(matrix)
             # Draw the hinge area:
             gc.SetPen(wx.BLUE_PEN)
