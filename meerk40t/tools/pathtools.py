@@ -154,17 +154,17 @@ class Graph:
         """
         crawler = VectorMontonizer(low_value=min, high_value=max, start=min)
         for outline in outlines:
-            crawler.add_segments(outline.links)
+            crawler.add_segment_events(outline.links)
         itr = 0
-        while crawler.valid_range():
-            crawler.next_intercept(distance)
-            crawler.sort_actives()
-            y = crawler.current
-            for i in range(1, len(crawler.actives), 2):
-                left_segment = crawler.actives[i - 1]
-                right_segment = crawler.actives[i]
-                left_segment_x = crawler.intercept(left_segment, y)
-                right_segment_x = crawler.intercept(right_segment, y)
+        while crawler.current_is_valid_range():
+            crawler.scanline_increment(distance)
+            y = crawler.scanline
+            actives = crawler.actives()
+            for i in range(1, len(actives), 2):
+                left_segment = actives[i - 1]
+                right_segment = actives[i]
+                left_segment_x = crawler.intercept(left_segment)
+                right_segment_x = crawler.intercept(right_segment)
                 left_node = graph.new_node((left_segment_x, y))
                 right_node = graph.new_node((right_segment_x, y))
                 row = graph.link(left_node, right_node)
@@ -662,33 +662,46 @@ class VectorMontonizer:
     def __init__(
         self, low_value=-float("inf"), high_value=float("inf"), start=-float("inf")
     ):
-        self.clusters = []
-        self.dirty_cluster_sort = True
+        self._event_index = 0
+        self._events = []
+        self._dirty_event_sort = True
 
-        self.actives = []
-        self.dirty_actives_sort = True
+        self._actives = []
+        self._dirty_actives_sort = True
 
-        self.current = start
-        self.dirty_cluster_position = True
+        self._dirty_scanline = True
 
-        self.valid_low_value = low_value
-        self.valid_high_value = high_value
-        self.cluster_range_index = 0
-        self.cluster_low_value = float("inf")
-        self.cluster_high_value = -float("inf")
+        self.scanline = start
+        self.valid_low = low_value
+        self.valid_high = high_value
 
-    def add_segments(self, links):
-        self.dirty_cluster_position = True
-        self.dirty_cluster_sort = True
-        self.dirty_actives_sort = True
+        self.scanbeam_low = float("inf")
+        self.scanbeam_high = -float("inf")
+
+    def add_segment_events(self, links):
+        """
+        Add segment to be processed. This segment should already exist and have the correct type
+        @param links:
+        @return:
+        """
+        self._dirty_scanline = True
+        self._dirty_event_sort = True
+        self._dirty_actives_sort = True
         for s in links:
-            self.clusters.append((s[4].y, s))  # High
-            self.clusters.append((s[5].y, s))  # Low
+            self._events.append((s[4].y, s))  # High
+            self._events.append((s[5].y, s))  # Low
 
-    def add_cluster(self, path):
-        self.dirty_cluster_position = True
-        self.dirty_cluster_sort = True
-        self.dirty_actives_sort = True
+    def add_polyline(self, path):
+        """
+        Add segments in the form of a connected path. These positions are read and segments are created for these
+        points.
+
+        @param path:
+        @return:
+        """
+        self._dirty_scanline = True
+        self._dirty_event_sort = True
+        self._dirty_actives_sort = True
         for i in range(len(path) - 1):
             p0 = path[i]
             p1 = path[i + 1]
@@ -698,107 +711,77 @@ class VectorMontonizer:
             else:
                 high = p1
                 low = p0
-            # try:
-            #     m = (high.y - low.y) / (high.x - low.x)
-            # except ZeroDivisionError:
-            #     m = float("inf")
 
             # b = low.y - (m * low.x)
-            if self.valid_low_value > high.y:
-                continue  # Cluster before range.
-            if self.valid_high_value < low.y:
-                continue  # Cluster after range.
-            cluster = Segment(p0, p1)
+            if self.valid_low > high.y:
+                # Cluster before range.
+                continue
+            if self.valid_high < low.y:
+                # Cluster after range.
+                continue
+            seg = Segment(p0, p1)
             # cluster = [False, i, p0, p1, high, low, m, b, path]
-            if self.valid_low_value < low.y:
-                self.clusters.append((low.y, cluster))
-            if self.valid_high_value > high.y:
-                self.clusters.append((high.y, cluster))
-            if high.y >= self.current >= low.y:
-                cluster.active = True
-                self.actives.append(cluster)
+            if self.valid_low < low.y:
+                self._events.append((low.y, seg))
+            if self.valid_high > high.y:
+                self._events.append((high.y, seg))
+            if high.y >= self.scanline >= low.y:
+                seg.active = True
+                self._actives.append(seg)
 
-    def valid_range(self):
-        return self.valid_high_value >= self.current >= self.valid_low_value
+    def current_is_valid_range(self):
+        return self.valid_high >= self.scanline >= self.valid_low
 
-    def next_intercept(self, delta):
-        self.scanline(self.current + delta)
-        self.sort_actives()
-        return self.valid_range()
+    def scanline_increment(self, delta):
+        self.scanline_to(self.scanline + delta)
+        self._sort_actives()
+        return self.current_is_valid_range()
 
-    def sort_clusters(self):
-        if not self.dirty_cluster_sort:
-            return
-        self.clusters.sort(key=lambda e: e[0])
-        self.dirty_cluster_sort = False
+    def scanline_to(self, scan):
+        """
+        Move the scanline to the scan position.
+        @param scan:
+        @return:
+        """
+        self._dirty_actives_sort = True
+        self._sort_events()
+        self._find_scanbeam()
 
-    def sort_actives(self):
-        if not self.dirty_actives_sort:
-            return
-        self.actives.sort(key=self.intercept)
-        self.dirty_actives_sort = False
+        while self._below_scanbeam(scan):
+            c = self.scanbeam_higher()
+            if c.active:
+                c.active = False
+                self._actives.remove(c)
+            else:
+                c.active = True
+                self._actives.append(c)
 
-    def intercept(self, e, y=None):
-        if y is None:
-            y = self.current
-        m = e[6]
-        b = e[7]
-        if m == float("nan") or m == float("inf"):
-            low = e[5]
-            return low.x
-        return (y - b) / m
+        while self._above_scanbeam(scan):
+            c = self.scanbeam_lower()
+            if c.active:
+                c.active = False
+                self._actives.remove(c)
+            else:
+                c.active = True
+                self._actives.append(c)
 
-    def find_cluster_position(self):
-        if not self.dirty_cluster_position:
-            return
-        self.dirty_cluster_position = False
-        self.sort_clusters()
-
-        self.cluster_range_index = -1
-        self.cluster_high_value = -float("inf")
-        self.increment_cluster()
-
-        while self.is_higher_than_cluster_range(self.current):
-            self.increment_cluster()
-
-    def in_cluster_range(self, v):
-        return not self.is_lower_than_cluster_range(
-            v
-        ) and not self.is_higher_than_cluster_range(v)
-
-    def is_lower_than_cluster_range(self, v):
-        return v < self.cluster_low_value
-
-    def is_higher_than_cluster_range(self, v):
-        return v > self.cluster_high_value
-
-    def increment_cluster(self):
-        self.cluster_range_index += 1
-        self.cluster_low_value = self.cluster_high_value
-        if self.cluster_range_index < len(self.clusters):
-            self.cluster_high_value = self.clusters[self.cluster_range_index][0]
-        else:
-            self.cluster_high_value = float("inf")
-        if self.cluster_range_index > 0:
-            return self.clusters[self.cluster_range_index - 1][1]
-        else:
-            return None
-
-    def decrement_cluster(self):
-        self.cluster_range_index -= 1
-        self.cluster_high_value = self.cluster_low_value
-        if self.cluster_range_index > 0:
-            self.cluster_low_value = self.clusters[self.cluster_range_index - 1][0]
-        else:
-            self.cluster_low_value = -float("inf")
-        return self.clusters[self.cluster_range_index][1]
+        self.scanline = scan
 
     def is_point_inside(self, x, y, tolerance=0):
-        self.scanline(y)
-        self.sort_actives()
-        for i in range(1, len(self.actives), 2):
-            prior = self.actives[i - 1]
-            after = self.actives[i]
+        """
+        Determine if the x/y point is with the segments of a closed shape polygon.
+
+        This assumes that add_polyline added a closed point class.
+        @param x: x location of point
+        @param y: y location of point
+        @param tolerance: wiggle room
+        @return:
+        """
+        self.scanline_to(y)
+        self._sort_actives()
+        for i in range(1, len(self._actives), 2):
+            prior = self._actives[i - 1]
+            after = self._actives[i]
             if (
                 self.intercept(prior, y) - tolerance
                 <= x
@@ -807,30 +790,117 @@ class VectorMontonizer:
                 return True
         return False
 
-    def scanline(self, scan):
-        self.dirty_actives_sort = True
-        self.sort_clusters()
-        self.find_cluster_position()
+    def actives(self):
+        """
+        Get the active list at the current scanline.
 
-        while self.is_lower_than_cluster_range(scan):
-            c = self.decrement_cluster()
-            if c.active:
-                c.active = False
-                self.actives.remove(c)
-            else:
-                c.active = True
-                self.actives.append(c)
+        @return:
+        """
+        self._sort_actives()
+        return self._actives
 
-        while self.is_higher_than_cluster_range(scan):
-            c = self.increment_cluster()
-            if c.active:
-                c.active = False
-                self.actives.remove(c)
-            else:
-                c.active = True
-                self.actives.append(c)
+    def event_range(self):
+        """
+        Returns the range of events from the lowest to the highest in y-value.
 
-        self.current = scan
+        @return:
+        """
+        self._sort_events()
+        y_min = self._events[0][0]
+        y_max = self._events[-1][0]
+        return y_min, y_max
+
+    def _sort_events(self):
+        if not self._dirty_event_sort:
+            return
+        self._events.sort(key=lambda e: e[0])
+        self._dirty_event_sort = False
+
+    def _sort_actives(self):
+        if not self._dirty_actives_sort:
+            return
+        self._actives.sort(key=self.intercept)
+        self._dirty_actives_sort = False
+
+    def intercept(self, e, y=None):
+        if y is None:
+            y = self.scanline
+        m = e[6]
+        b = e[7]
+        if m == float("nan") or m == float("inf"):
+            low = e[5]
+            return low.x
+        return (y - b) / m
+
+    def _find_scanbeam(self):
+        if not self._dirty_scanline:
+            return
+        self._dirty_scanline = False
+        self._sort_events()
+
+        self._event_index = -1
+        self.scanbeam_high = -float("inf")
+        self.scanbeam_lower()
+
+        while self._above_scanbeam(self.scanline):
+            self.scanbeam_lower()
+
+    def within_scanbeam(self, v):
+        """
+        Is the value within the current scanbeam?
+        @param v:
+        @return:
+        """
+
+        return not self._below_scanbeam(v) and not self._above_scanbeam(v)
+
+    def _below_scanbeam(self, v):
+        """
+        Is the value below the current scanbeam?
+        @param v:
+        @return:
+        """
+        return v < self.scanbeam_low
+
+    def _above_scanbeam(self, v):
+        """
+        Is the value above the current scanbeam?
+
+        @param v:
+        @return:
+        """
+        return v > self.scanbeam_high
+
+    def scanbeam_lower(self):
+        """
+        Move the scanbeam lower through the events.
+
+        @return:
+        """
+        self._event_index += 1
+        self.scanbeam_low = self.scanbeam_high
+        if self._event_index < len(self._events):
+            self.scanbeam_high = self._events[self._event_index][0]
+        else:
+            self.scanbeam_high = float("inf")
+        if self._event_index > 0:
+            return self._events[self._event_index - 1][1]
+        else:
+            return None
+
+    def scanbeam_higher(self):
+        """
+        Move the scanbeam higher in the events.
+
+        @return:
+        """
+        self._event_index -= 1
+        self.scanbeam_high = self.scanbeam_low
+        if self._event_index > 0:
+            self.scanbeam_low = self._events[self._event_index - 1][0]
+        else:
+            self.scanbeam_low = -float("inf")
+        return self._events[self._event_index][1]
 
 
 class EulerianFill:
