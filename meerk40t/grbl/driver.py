@@ -6,18 +6,17 @@ Governs the generic commands issued by laserjob and spooler and converts that in
 
 import time
 
-from ..core.cutcode import (
-    CubicCut,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    QuadCut,
-    SetOriginCut,
-    WaitCut,
-)
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.setorigincut import SetOriginCut
+from meerk40t.core.cutcode.waitcut import WaitCut
+
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM

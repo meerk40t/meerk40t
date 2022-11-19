@@ -32,7 +32,13 @@ from .node.util_console import ConsoleOperation
 from .node.util_input import InputOperation
 from .node.util_output import OutputOperation
 from .node.util_wait import WaitOperation
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, UNITS_PER_POINT, UNITS_PER_MM, Length
+from .units import (
+    UNITS_PER_INCH,
+    UNITS_PER_MM,
+    UNITS_PER_PIXEL,
+    UNITS_PER_POINT,
+    Length,
+)
 
 
 def plugin(kernel, lifecycle=None):
@@ -45,6 +51,26 @@ def init_commands(kernel):
     self = kernel.elements
 
     _ = kernel.translation
+
+    def classify_new(data):
+        """
+        Why are we doing it here? An immediate classification
+        at the end of the element creation might not provide
+        the right assignment as additional commands might be
+        chained to it:
+
+        e.g. "circle 1cm 1cm 1cm" will classify differently than
+        "circle 1cm 1cm 1cm stroke red"
+
+        So we apply the classify_new to the post commands.
+
+        @return: post classification function.
+        """
+        def post_classify_function(**kwargs):
+            if self.classify_new and len(data) > 0:
+                self.classify(data)
+                self.signal("tree_changed")
+        return post_classify_function
 
     @self.console_argument("filename")
     @self.console_command(
@@ -976,8 +1002,7 @@ def init_commands(kernel):
         time=None,
         **kwargs,
     ):
-        op = WaitOperation(wait=time)
-        self.add_op(op)
+        op = self.op_branch.add(type="util wait", wait=time)
         return "ops", [op]
 
     @self.console_argument(
@@ -1005,11 +1030,13 @@ def init_commands(kernel):
         **kwargs,
     ):
         if command == "inputop":
-            op = InputOperation(mask=mask, value=value)
+            op = self.op_branch.add(
+                type="util input", input_mask=mask, input_value=value
+            )
         else:
-            op = OutputOperation(mask=mask, value=value)
-
-        self.add_op(op)
+            op = self.op_branch.add(
+                type="util output", output_mask=mask, output_value=value
+            )
         return "ops", [op]
 
     @self.console_command(
@@ -1022,8 +1049,7 @@ def init_commands(kernel):
         **kwargs,
     ):
         if remainder is not None:
-            op = ConsoleOperation(command=remainder)
-            self.add_op(op)
+            op = self.op_branch.add(type="util console", command=remainder)
             return "ops", [op]
 
     @self.console_argument("dpi", type=int, help=_("raster dpi"))
@@ -1493,7 +1519,7 @@ def init_commands(kernel):
         input_type=("elements", "ops"),
         output_type=("elements", "ops"),
     )
-    def e_copy(data=None, data_type=None, dx=None, dy=None, **kwargs):
+    def e_copy(data=None, data_type=None, post=None, dx=None, dy=None, **kwargs):
         if data is None:
             # Take tree selection for ops, scene selection for elements
             if data_type == "ops":
@@ -1530,7 +1556,7 @@ def init_commands(kernel):
                 ):
                     newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
             # Newly created! Classification needed?
-            self.signal("classify_new", add_elem)
+            post.append(classify_new(add_elem))
             self.signal("refresh_scene", "Scene")
             return "elements", add_elem
 
@@ -1789,7 +1815,7 @@ def init_commands(kernel):
         input_type="elements",
         output_type="elements",
     )
-    def element_merge(data=None, **kwargs):
+    def element_merge(data=None, post=None, **kwargs):
         super_element = Path()
         for e in data:
             try:
@@ -1811,8 +1837,9 @@ def init_commands(kernel):
         node = self.elem_branch.add(path=super_element, type="elem path")
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
-        self.signal("classify_new", node)
-        return "elements", [node]
+        data = [node]
+        post.append(classify_new(data))
+        return "elements", data
 
     @self.console_command(
         "subpath",
@@ -1820,7 +1847,7 @@ def init_commands(kernel):
         input_type="elements",
         output_type="elements",
     )
-    def element_subpath(data=None, **kwargs):
+    def element_subpath(data=None, post=None, **kwargs):
         if not isinstance(data, list):
             data = list(data)
         elements_nodes = []
@@ -1843,8 +1870,7 @@ def init_commands(kernel):
                     setattr(subnode, item[0], item[1])
                 elements.append(subnode)
             elements_nodes.append(group_node)
-            if self.classify_new:
-                self.classify(elements)
+        post.append(classify_new(elements))
         return "elements", elements_nodes
 
     # ==========
@@ -2516,6 +2542,7 @@ def init_commands(kernel):
         y: str,
         origin=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         if r is None:
@@ -2560,7 +2587,7 @@ def init_commands(kernel):
                 x_pos += x
             y_pos += y
         # Newly created! Classification needed?
-        self.signal("classify_new", data_out)
+        post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
@@ -2598,6 +2625,7 @@ def init_commands(kernel):
         rotate=None,
         deltaangle=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         if data is None:
@@ -2663,7 +2691,7 @@ def init_commands(kernel):
             currentangle += segment_len
 
         # Newly created! Classification needed?
-        self.signal("classify_new", data_out)
+        post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
@@ -2829,6 +2857,7 @@ def init_commands(kernel):
         alternate_seq=None,
         density=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         if corners is None:
@@ -2968,17 +2997,17 @@ def init_commands(kernel):
                 )
 
         poly_path = Polygon(star_points)
+        if data is None:
+            data = list()
         node = self.elem_branch.add(shape=poly_path, type="elem polyline")
         node.stroke = self.default_stroke
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
         node.focus()
-        if data is None:
-            data = list()
-        data.append(poly_path)
+        data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_option("dpi", "d", default=500, type=float)
@@ -2988,7 +3017,7 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="image",
     )
-    def render_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
+    def render_elements(command, channel, _, dpi=500.0, data=None, post=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         reverse = self.classify_reverse
@@ -3031,7 +3060,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         data = [image_node]
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "image", [image_node]
 
     @self.console_option(
@@ -3108,6 +3137,7 @@ def init_commands(kernel):
         invert=None,
         blacklevel=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         if data is None:
@@ -3198,7 +3228,7 @@ def init_commands(kernel):
             linejoin=Linejoin.JOIN_ROUND,
         )
         # Newly created! Classification needed?
-        self.signal("classify_new", node)
+        post.append(classify_new(node))
         self.signal("refresh_scene", "Scene")
 
         return "elements", [node]
@@ -3295,6 +3325,7 @@ def init_commands(kernel):
         outer=None,
         steps=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         """
@@ -3610,7 +3641,7 @@ def init_commands(kernel):
             outputdata.append(outline_node)
 
         # Newly created! Classification needed?
-        self.signal("classify_new", outputdata)
+        post.append(classify_new(outputdata))
         self.signal("refresh_scene", "Scene")
         if len(outputdata) > 0:
             self.signal("element_property_update", outputdata)
@@ -3629,7 +3660,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, **kwargs):
+    def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
         circ = Ellipse(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
         if circ.is_degenerate():
             channel(_("Shape is degenerate."))
@@ -3646,7 +3677,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument("r_pos", type=Length)
@@ -3657,7 +3688,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_circle_r(channel, _, r_pos, data=None, **kwargs):
+    def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
         circ = Ellipse(r=float(r_pos))
         if circ.is_degenerate():
             channel(_("Shape is degenerate."))
@@ -3672,7 +3703,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument("x_pos", type=Length)
@@ -3686,7 +3717,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
+    def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs):
         ellip = Ellipse(
             cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
         )
@@ -3703,7 +3734,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument(
@@ -3745,6 +3776,7 @@ def init_commands(kernel):
         rx=None,
         ry=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         """
@@ -3764,7 +3796,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument("x0", type=self.length_x, help=_("start x position"))
@@ -3778,7 +3810,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_line(command, x0, y0, x1, y1, data=None, **kwargs):
+    def element_line(command, x0, y0, x1, y1, data=None, post=None, **kwargs):
         """
         Draws a svg line in the scene.
         """
@@ -3792,7 +3824,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_option(
@@ -3805,7 +3837,7 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
+    def element_text(command, channel, _, data=None, text=None, size=None, post=None,  **kwargs):
         if text is None:
             channel(_("No text specified"))
             return
@@ -3822,7 +3854,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument(
@@ -3860,6 +3892,40 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
+    @self.console_command("polycut", input_type=("elements", None), output_type="elements")
+    def create_pattern(command, channel, _,  data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) <= 1:
+            channel("Requires a selected cutter polygon")
+            return None
+        data.sort(key=lambda n: n.emphasized_time)
+        outer_path = data[0].as_path()
+        inner_path = data[1].as_path()
+        data[1].remove_node()
+
+        from meerk40t.tools.pathtools import VectorMontonizer
+        import numpy as np
+        vm = VectorMontonizer()
+        outer_path = Polygon(
+            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+        )
+        vm.add_polyline(outer_path)
+        path = Path()
+        for sub_inner in inner_path.as_subpaths():
+            sub_inner = Path(sub_inner)
+            pts_sub = sub_inner.npoint(np.linspace(0, 1, 1000))
+            good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
+            path.move(*good_pts)
+        node = self.elem_branch.add(path=path, type="elem path")
+        data.append(node)
+        node.stroke = self.default_stroke
+        node.fill = self.default_fill
+        node.altered()
+        node.focus()
+        post.append(classify_new(data))
+        return "elements", data
+
     @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
@@ -3868,7 +3934,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_poly(command, channel, _, mlist, data=None, **kwargs):
+    def element_poly(command, channel, _, mlist, data=None, post=None, **kwargs):
         try:
             pts = [float(Length(p)) for p in mlist]
             if command == "polygon":
@@ -3892,7 +3958,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_command(
@@ -4021,7 +4087,7 @@ def init_commands(kernel):
         help=_("path <svg path>"),
         output_type="elements",
     )
-    def element_path(path_d, data, **kwargs):
+    def element_path(path_d, data, post=None, **kwargs):
         if path_d is None:
             raise CommandSyntaxError(_("Not a valid path_d string"))
         try:
@@ -4040,7 +4106,7 @@ def init_commands(kernel):
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument(
@@ -4101,10 +4167,10 @@ def init_commands(kernel):
                     )
                 else:
                     if e.stroke_scaled:
-                        typename="scaled-stroke"
+                        typename = "scaled-stroke"
                         factor = sqrt(e.matrix.determinant)
                     else:
-                        typename="non-scaling-stroke"
+                        typename = "non-scaling-stroke"
                         factor = 1.0
                     implied_value = factor * e.stroke_width
                     channel(
@@ -4129,9 +4195,7 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_scale = (
-                sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
-            )
+            stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
             e.stroke_width = stroke_width / stroke_scale
             e.altered()
         return "elements", data
@@ -4601,6 +4665,7 @@ def init_commands(kernel):
         x_offset=None,
         y_offset=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         """
@@ -4624,14 +4689,11 @@ def init_commands(kernel):
         node.altered()
         self.set_emphasis([node])
         node.focus()
-        if self.classify_new:
-            self.classify([node])
-
         if data is None:
             data = list()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
@@ -5746,7 +5808,7 @@ def init_commands(kernel):
         input_type="clipboard",
         output_type="elements",
     )
-    def clipboard_paste(command, channel, _, data=None, dx=None, dy=None, **kwargs):
+    def clipboard_paste(command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs):
         destination = self._clipboard_default
         try:
             pasted = [copy(e) for e in self._clipboard[destination]]
@@ -5763,7 +5825,7 @@ def init_commands(kernel):
         self.set_emphasis([group])
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
-        self.signal("classify_new", pasted)
+        post.append(classify_new(pasted))
         return "elements", pasted
 
     @self.console_command(
@@ -6139,7 +6201,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def trace_trace_generator(
-        command, channel, _, method=None, resolution=None, data=None, **kwargs
+        command, channel, _, method=None, resolution=None, data=None, post=None, **kwargs
     ):
         if method is None:
             method = "quick"
@@ -6170,7 +6232,7 @@ def init_commands(kernel):
         node.focus()
         data.append(node)
         # Newly created! Classification needed?
-        self.signal("classify_new", data)
+        post.append(classify_new(data))
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------

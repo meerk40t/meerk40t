@@ -17,8 +17,8 @@ class OutputPropertyPanel(wx.Panel):
 
         self.choices = [
             {
-                "attr": "value",
-                "mask": "mask",
+                "attr": "output_value",
+                "mask": "output_mask",
                 "object": self.operation,
                 "default": 0,
                 "type": int,
@@ -35,8 +35,8 @@ class OutputPropertyPanel(wx.Panel):
         self.SetSizer(main_sizer)
         self.Layout()
 
-    @signal_listener("mask")
-    @signal_listener("value")
+    @signal_listener("output_mask")
+    @signal_listener("output_value")
     def wait_changed(self, *args):
         self.context.elements.signal("element_property_update", self.operation)
 

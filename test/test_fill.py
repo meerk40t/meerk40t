@@ -79,8 +79,9 @@ class TestFill(unittest.TestCase):
     def test_fill_hatch(self):
         kernel = bootstrap.bootstrap()
         try:
-            kernel.console("operation* delete\n")
+
             kernel.console("rect 0 0 1in 1in\n")
+            kernel.console("operation* delete\n")
             kernel.console("hatch\n")
             hatch = list(kernel.elements.ops())[0]
             rect = list(kernel.elements.elems())[0]
@@ -101,11 +102,13 @@ class TestFill(unittest.TestCase):
     def test_fill_hatch2(self):
         kernel = bootstrap.bootstrap()
         try:
-            kernel.console("operation* delete\n")
+
             kernel.console("rect 0 0 1in 1in\n")
             kernel.console("rect 3in 0 1in 1in\n")
+            kernel.console("operation* delete\n")
             kernel.console("hatch\n")
-            hatch = list(kernel.elements.ops())[0]
+            ops = list(kernel.elements.ops())
+            hatch = ops[0]
             hatch.hatch_type = "eulerian"
             rect0 = list(kernel.elements.elems())[0]
             hatch.add_node(copy(rect0))

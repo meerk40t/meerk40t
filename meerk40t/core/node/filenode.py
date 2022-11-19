@@ -9,9 +9,9 @@ class FileNode(Node):
     Bootstrapped type: 'file'
     """
 
-    def __init__(self, filepath=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.filepath = None
         super(FileNode, self).__init__(type="file", **kwargs)
-        self._filepath = filepath
         self._formatter = "{element_type}: {filename}"
 
     def default_map(self, default_map=None):
@@ -20,8 +20,8 @@ class FileNode(Node):
         if self.filepath is None:
             s = "None"
         else:
-            s = os.path.basename(self._filepath)
-        default_map["full_filename"] = self._filepath
+            s = os.path.basename(self.filepath)
+        default_map["full_filename"] = self.filepath
         default_map["filename"] = s
         return default_map
 
@@ -32,17 +32,9 @@ class FileNode(Node):
         return False
 
     @property
-    def filepath(self):
-        return self._filepath
-
-    @filepath.setter
-    def filepath(self, value):
-        self._filepath = value
-
-    @property
     def name(self):
         if self.filepath is None:
             s = None
         else:
-            s = os.path.basename(self._filepath)
+            s = os.path.basename(self.filepath)
         return s

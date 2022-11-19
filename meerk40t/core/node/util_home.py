@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import HomeCut
+from meerk40t.core.cutcode.homecut import HomeCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -11,40 +11,15 @@ class HomeOperation(Node):
     """
 
     def __init__(self, **kwargs):
+        self.output = True
         super().__init__(type="util home", **kwargs)
-        self.settings = {"output": True}
         self._formatter = "{enabled}{element_type}"
 
     def __repr__(self):
         return "HomeOperation()"
 
-    def __copy__(self):
-        return HomeOperation()
-
     def __len__(self):
         return 1
-
-    def validate(self):
-        parameters = [
-            ("output", lambda v: str(v).lower() == "true"),
-        ]
-        settings = self.settings
-        for param, cast in parameters:
-            try:
-                if param in settings and settings[param] is not None:
-                    settings[param] = (
-                        cast(settings[param]) if settings[param] != "None" else None
-                    )
-            except (KeyError, ValueError):
-                pass
-
-    @property
-    def output(self):
-        return self.settings.get("output", True)
-
-    @output.setter
-    def output(self, v):
-        self.settings["output"] = v
 
     @property
     def implicit_passes(self):
@@ -54,7 +29,7 @@ class HomeOperation(Node):
         default_map = super(HomeOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Home"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -69,14 +44,6 @@ class HomeOperation(Node):
                 drop_node.append_child(drag_node)
             return True
         return False
-
-    def load(self, settings, section):
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-
-    def save(self, settings, section):
-        settings.write_persistent_dict(section, self.settings)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """

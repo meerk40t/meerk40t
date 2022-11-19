@@ -7,9 +7,9 @@ Registers relevant commands and options.
 
 from meerk40t.kernel import CommandSyntaxError, Service
 
-from ..core.spoolers import Spooler
 from ..core.laserjob import LaserJob
-from ..core.units import UNITS_PER_MIL, ViewPort, Length
+from ..core.spoolers import Spooler
+from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import GrblController
 from .driver import GRBLDriver
 

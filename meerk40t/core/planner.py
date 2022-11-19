@@ -2,7 +2,7 @@ from copy import copy
 
 from meerk40t.kernel import Service
 
-from ..core.cutcode import CutCode
+from ..core.cutcode.cutcode import CutCode
 from .cutplan import CutPlan, CutPlanningFailedError
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode

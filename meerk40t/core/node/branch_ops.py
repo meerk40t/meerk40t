@@ -8,10 +8,10 @@ class BranchOperationsNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(BranchOperationsNode, self).__init__(**kwargs)
         self.loop_enabled = False
         self.loop_continuous = False
         self.loop_n = 1
+        super(BranchOperationsNode, self).__init__(type="branch ops", **kwargs)
         self._formatter = "{element_type} {loops}"
 
     def default_map(self, default_map=None):
@@ -36,5 +36,5 @@ class BranchOperationsNode(Node):
             return True
         return False
 
-    def is_movable(self):
+    def is_draggable(self):
         return False

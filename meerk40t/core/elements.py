@@ -3,7 +3,6 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
-from .undos import Undo
 
 from ..svgelements import Color, SVGElement
 from .element_types import *
@@ -13,6 +12,7 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .undos import Undo
 from .units import Length
 from .wordlist import Wordlist
 
@@ -1057,38 +1057,37 @@ class Elemental(Service):
 
     def load_default(self, performclassify=True):
         self.clear_operations()
-        self.add_op(
-            ImageOpNode(
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
+        self.op_branch.add(
+            type="op image",
+            color="black",
+            speed=140.0,
+            power=1000.0,
+            raster_step=3,
         )
-        self.add_op(RasterOpNode())
-        self.add_op(EngraveOpNode())
-        self.add_op(CutOpNode())
+        self.op_branch.add(type="op raster")
+        self.op_branch.add(type="op engrave")
+        self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
         self.signal("tree_changed")
 
     def load_default2(self, performclassify=True):
         self.clear_operations()
-        self.add_op(
-            ImageOpNode(
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
+        self.op_branch.add(
+            type="op image",
+            color="black",
+            speed=140.0,
+            power=1000.0,
+            raster_step=3,
         )
-        self.add_op(RasterOpNode())
-        self.add_op(EngraveOpNode(color="blue"))
-        self.add_op(EngraveOpNode(color="green"))
-        self.add_op(EngraveOpNode(color="magenta"))
-        self.add_op(EngraveOpNode(color="cyan"))
-        self.add_op(EngraveOpNode(color="yellow"))
-        self.add_op(CutOpNode())
+        self.op_branch.add(type="op raster")
+        self.op_branch.add(type="op engrave")
+        self.op_branch.add(type="op engrave", color="blue")
+        self.op_branch.add(type="op engrave", color="green")
+        self.op_branch.add(type="op engrave", color="magenta")
+        self.op_branch.add(type="op engrave", color="cyan")
+        self.op_branch.add(type="op engrave", color="yellow")
+        self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
         self.signal("tree_changed")
@@ -1699,20 +1698,6 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
-
-    @signal_listener("classify_new")
-    def ask_for_classification(self, origin, data, *args):
-        # Why are we doing it here? An immediate classification
-        # at the end of the element creation might not provide
-        # the right assignment as additional commands might be
-        # chained to it:
-        # e.g. "circle 1cm 1cm 1cm" will classify differently than
-        # "circle 1cm 1cm 1cm stroke red"
-        if not isinstance(data, (list, tuple)):
-            data = [data]
-        if self.classify_new and len(data)>0:
-            self.classify(data)
-            self.signal("tree_changed")
 
     def classify(self, elements, operations=None, add_op_function=None):
         """

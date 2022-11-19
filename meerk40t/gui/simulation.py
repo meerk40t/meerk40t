@@ -1,28 +1,24 @@
 import math
 import platform
-import re
 
 import wx
 
 from meerk40t.kernel import Job, signal_listener
 
-from ..core.cutcode import (
-    CubicCut,
-    CutCode,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    # InfoCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-    RawCut,
-    WaitCut,
-    SetOriginCut,
-)
+from ..core.cutcode.cubiccut import CubicCut
+from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.dwellcut import DwellCut
+from ..core.cutcode.gotocut import GotoCut
+from ..core.cutcode.homecut import HomeCut
+from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
+from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
+from ..core.cutcode.rastercut import RasterCut
+from ..core.cutcode.rawcut import RawCut
+from ..core.cutcode.setorigincut import SetOriginCut
+from ..core.cutcode.waitcut import WaitCut
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
@@ -33,17 +29,17 @@ from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
-    icons8_image_50,
-    icons8_laser_beam_hazard2_50,
-    icons8_pause_50,
-    icons8_play_50,
-    icons8_route_50,
     icons8_bell_20,
     icons8_close_window_20,
     icons8_home_20,
+    icons8_image_50,
     icons8_input_20,
+    icons8_laser_beam_hazard2_50,
     icons8_output_20,
+    icons8_pause_50,
+    icons8_play_50,
     icons8_return_20,
+    icons8_route_50,
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
@@ -55,7 +51,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import disable_window, ScrolledPanel
+from .wxutils import ScrolledPanel, disable_window
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -144,7 +140,7 @@ class OperationsPanel(wx.Panel):
             if tofind.startswith(entry[0]):
                 stateidx = idx
                 break
-        if stateidx<0 and typename == "ConsoleOperation":
+        if stateidx < 0 and typename == "ConsoleOperation":
             stateidx = len(self.default_images) - 1
         # print(f"opname={opname}, parameter={parameter}, state={stateidx}")
         return stateidx
@@ -176,7 +172,7 @@ class OperationsPanel(wx.Panel):
                 changes = False  # Prove me wrong...
                 for idx, cut in enumerate(self.cutplan.plan):
                     if isinstance(cut, CutCode):
-                        # Lets have a look at the beginning
+                        # Let's have a look at the beginning
                         myidx = idx
                         while len(cut) > 0:
                             entry = cut[0]
@@ -1774,8 +1770,8 @@ class SimulationWidget(Widget):
                         wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
                     )
                     try:
-                        cache = cut.cache
-                        cache_id = cut.cache_id
+                        cache = cut._cache
+                        cache_id = cut._cache_id
                     except AttributeError:
                         cache = None
                         cache_id = -1
@@ -1786,12 +1782,12 @@ class SimulationWidget(Widget):
                         # No valid cache. Generate.
                         cut._cache_width, cut._cache_height = image.size
                         try:
-                            cut.cache = self.renderer.make_thumbnail(
+                            cut._cache = self.renderer.make_thumbnail(
                                 image, maximum=5000
                             )
                         except (MemoryError, RuntimeError):
-                            cut.cache = None
-                        cut.cache_id = id(image)
+                            cut._cache = None
+                        cut._cache_id = id(image)
                     # Set draw - constraint
                     clip_x = 0
                     clip_y = 0
@@ -1834,10 +1830,10 @@ class SimulationWidget(Widget):
                         clip_x = cut._cache_width - clip_w
                         clip_y = 0
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
-                    if cut.cache is not None:
+                    if cut._cache is not None:
                         # Cache exists and is valid.
                         gc.DrawBitmap(
-                            cut.cache, 0, 0, cut._cache_width, cut._cache_height
+                            cut._cache, 0, 0, cut._cache_width, cut._cache_height
                         )
                         # gc.SetBrush(wx.RED_BRUSH)
                         # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)

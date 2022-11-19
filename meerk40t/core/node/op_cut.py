@@ -1,20 +1,15 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import (
-    Close,
     Color,
-    CubicBezier,
-    Line,
-    Move,
     Path,
     Polygon,
-    QuadraticBezier,
 )
 
 
@@ -25,11 +20,10 @@ class CutOpNode(Node, Parameters):
     This is a Node of type "op cut".
     """
 
-    def __init__(self, *args, **kwargs):
-        Node.__init__(self, type="op cut", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
@@ -108,7 +102,10 @@ class CutOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -302,80 +299,11 @@ class CutOpNode(Node, Parameters):
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
-
-            settings["line_color"] = node.stroke
-            for subpath in path.as_subpaths():
-                sp = Path(subpath)
-                if len(sp) == 0:
-                    continue
-                closed = (
-                    isinstance(sp[-1], Close)
-                    or abs(sp.z_point - sp.current_point) <= closed_distance
-                )
-                group = CutGroup(
-                    None,
-                    closed=closed,
-                    settings=settings,
-                    passes=passes,
-                )
-                group.path = Path(subpath)
-                group.original_op = self.type
-                for seg in subpath:
-                    if isinstance(seg, Move):
-                        pass  # Move operations are ignored.
-                    elif isinstance(seg, Close):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                    elif isinstance(seg, Line):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                )
-                            )
-                    elif isinstance(seg, QuadraticBezier):
-                        group.append(
-                            QuadCut(
-                                seg.start,
-                                seg.control,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                            )
-                        )
-                    elif isinstance(seg, CubicBezier):
-                        group.append(
-                            CubicCut(
-                                seg.start,
-                                seg.control1,
-                                seg.control2,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                            )
-                        )
-                if len(group) > 0:
-                    group[0].first = True
-                for i, cut_obj in enumerate(group):
-                    cut_obj.closed = closed
-                    try:
-                        cut_obj.next = group[i + 1]
-                    except IndexError:
-                        cut_obj.last = True
-                        cut_obj.next = group[0]
-                    cut_obj.previous = group[i - 1]
-                yield group
+            yield from path_to_cutobjects(
+                path,
+                settings=settings,
+                closed_distance=closed_distance,
+                passes=passes,
+                original_op=self.type,
+                color=node.stroke,
+            )

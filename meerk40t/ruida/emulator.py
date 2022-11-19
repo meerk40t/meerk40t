@@ -24,7 +24,8 @@ from meerk40t.kernel import (
     signal_listener,
 )
 
-from ..core.cutcode import CutCode, PlotCut
+from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.plotcut import PlotCut
 from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.units import UNITS_PER_MM, UNITS_PER_uM
@@ -699,7 +700,6 @@ class RuidaEmulator(Module, Parameters):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                self.line_color = c
                 self._use_set = None
                 desc = f"Layer Color {str(self.color)}"
             elif array[1] == 0x06:

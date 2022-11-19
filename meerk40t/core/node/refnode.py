@@ -6,16 +6,13 @@ class ReferenceNode(Node):
     ReferenceNode is the bootstrapped node type for the reference type.
     """
 
-    def __init__(self, node, **kwargs):
+    def __init__(self, **kwargs):
+        self.node = None
         super(ReferenceNode, self).__init__(type="reference", **kwargs)
         self._formatter = "*{reference}"
-        self.node = node
 
     def __repr__(self):
         return f"ReferenceNode('{self.type}', {str(self.node)}, {str(self._parent)})"
-
-    def __copy__(self):
-        return ReferenceNode(self.node)
 
     @property
     def bounds(self):

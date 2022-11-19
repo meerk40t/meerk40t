@@ -4,7 +4,7 @@ from copy import copy
 from meerk40t.kernel import CommandSyntaxError
 
 from ..svgelements import Matrix
-from .cutcode import CutCode
+from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node
@@ -252,7 +252,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("Speed"))
     @tree_radio(radio_match)
-    @tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
+    @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
         node.speed = float(speed)
@@ -260,13 +260,25 @@ def init_tree(kernel):
 
     @tree_submenu(_("Speed"))
     @tree_radio(radio_match)
-    @tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
+    @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op cut", "op engrave", "op hatch"),
+        node_type=("op engrave", "op hatch"),
         help="",
     )
     def set_speed_vector(node, speed=35, **kwargs):
+        node.speed = float(speed)
+        self.signal("element_property_reload", node)
+
+    @tree_submenu(_("Speed"))
+    @tree_radio(radio_match)
+    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
+    @tree_operation(
+        _("{speed}mm/s"),
+        node_type="op cut",
+        help="",
+    )
+    def set_speed_vector_cut(node, speed=20, **kwargs):
         node.speed = float(speed)
         self.signal("element_property_reload", node)
 
@@ -858,32 +870,32 @@ def init_tree(kernel):
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Image"), node_type="branch ops", help="")
     def append_operation_image(node, pos=None, **kwargs):
-        self.add_op(ImageOpNode(), pos=pos)
+        self.op_branch.add("op image", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Raster"), node_type="branch ops", help="")
     def append_operation_raster(node, pos=None, **kwargs):
-        self.add_op(RasterOpNode(), pos=pos)
+        self.op_branch.add("op raster", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Engrave"), node_type="branch ops", help="")
     def append_operation_engrave(node, pos=None, **kwargs):
-        self.add_op(EngraveOpNode(), pos=pos)
+        self.op_branch.add("op engrave", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Cut"), node_type="branch ops", help="")
     def append_operation_cut(node, pos=None, **kwargs):
-        self.add_op(CutOpNode(), pos=pos)
+        self.op_branch.add("op cut", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Hatch"), node_type="branch ops", help="")
     def append_operation_hatch(node, pos=None, **kwargs):
-        self.add_op(HatchOpNode(), pos=pos)
+        self.op_branch.add("op hatch", pos=pos)
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Dots"), node_type="branch ops", help="")
     def append_operation_dots(node, pos=None, **kwargs):
-        self.add_op(DotsOpNode(), pos=pos)
+        self.op_branch.add("op dots", pos=pos)
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home"), node_type="branch ops", help="")

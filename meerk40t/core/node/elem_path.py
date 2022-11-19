@@ -2,7 +2,11 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
+from meerk40t.svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Path,
+)
 
 
 class PathNode(Node):
@@ -10,79 +14,61 @@ class PathNode(Node):
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
 
-    def __init__(
-        self,
-        path=None,
-        matrix=None,
-        fill=None,
-        stroke=None,
-        stroke_width=None,
-        stroke_scale=None,
-        linecap=None,
-        linejoin=None,
-        fillrule=None,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-        super(PathNode, self).__init__(type="elem path")
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            kwargs["path"] = args[0]
+        self.path = None
+        self.matrix = None
+        self.fill = None
+        self.stroke = None
+        self.stroke_width = None
+        self.stroke_scale = None
+        self.linecap = Linecap.CAP_BUTT
+        self.linejoin = Linejoin.JOIN_MITER
+        self.fillrule = Fillrule.FILLRULE_EVENODD
+        super(PathNode, self).__init__(type="elem path", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
-        self.path = path
-        self.settings = settings
-        self.matrix = path.transform if matrix is None else matrix
-        self.fill = path.fill if fill is None else fill
-        self.stroke = path.stroke if stroke is None else stroke
-        self.stroke_width = path.stroke_width if stroke_width is None else stroke_width
-        self._stroke_scaled = (
-            (path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
-            if stroke_scale is None
-            else stroke_scale
-        )
+        assert isinstance(self.path, Path)
+
+        if self.matrix is None:
+            self.matrix = self.path.transform
+        if self.fill is None:
+            self.fill = self.path.fill
+        if self.stroke is None:
+            self.stroke = self.path.stroke
+        if self.stroke_width is None:
+            self.stroke_width = self.path.stroke_width
+        if self.stroke_scale is None:
+            self.stroke_scale = (
+                self.path.values.get(SVG_ATTR_VECTOR_EFFECT)
+                != SVG_VALUE_NON_SCALING_STROKE
+            )
         self.set_dirty_bounds()
-        self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
-        self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
-        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
-        self.label = label
-        self.lock = lock
 
     def __copy__(self):
-        return PathNode(
-            path=copy(self.path),
-            matrix=copy(self.matrix),
-            fill=copy(self.fill),
-            stroke=copy(self.stroke),
-            stroke_width=self.stroke_width,
-            stroke_scale=self._stroke_scaled,
-            linecap=self.linecap,
-            linejoin=self.linejoin,
-            fillrule=self.fillrule,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd["path"] = copy(self.path)
+        nd["matrix"] = copy(self.matrix)
+        nd["fill"] = copy(self.fill)
+        nd["stroke_width"] = copy(self.stroke_width)
+        return PathNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
     @property
     def stroke_scaled(self):
-        return self._stroke_scaled
+        return self.stroke_scale
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
-        if not v and self._stroke_scaled:
+        if not v and self.stroke_scale:
             matrix = self.matrix
             self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self._stroke_scaled:
+        if v and not self.stroke_scale:
             matrix = self.matrix
             self.stroke_width /= sqrt(abs(matrix.determinant))
-        self._stroke_scaled = v
+        self.stroke_scale = v
 
     def implied_stroke_width(self, zoomscale=1.0):
         """If the stroke is not scaled, the matrix scale will scale the stroke, and we
@@ -110,11 +96,7 @@ class PathNode(Node):
     def default_map(self, default_map=None):
         default_map = super(PathNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Path"
-        default_map.update(self.settings)
-        default_map["stroke"] = self.stroke
-        default_map["fill"] = self.fill
-        default_map["stroke-width"] = self.stroke_width
-        default_map["matrix"] = self.matrix
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -159,7 +141,7 @@ class PathNode(Node):
 
     def _sync_svg(self):
         self.path.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width

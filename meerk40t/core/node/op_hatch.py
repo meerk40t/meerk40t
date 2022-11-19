@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import PlotCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
@@ -17,17 +17,12 @@ class HatchOpNode(Node, Parameters):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op hatch", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op hatch", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
         self._hatch_distance_native = None
 
         if len(args) == 1:
@@ -109,7 +104,10 @@ class HatchOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -303,7 +301,6 @@ class HatchOpNode(Node, Parameters):
                 except AttributeError:
                     continue
                 path.approximate_arcs_with_cubics()
-                self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
                     if len(subpath) == 0:
                         continue
@@ -357,8 +354,8 @@ class HatchOpNode(Node, Parameters):
                         chain_settings.get("color", "black")
                     )
                 for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline, **chain_settings))
-                    node.settings.update(chain_settings)
+                    node = PolylineNode(shape=Polyline(*polyline), **chain_settings)
+                    # node.settings.update(chain_settings)
                     self.add_node(node)
 
         if self.children:
@@ -371,7 +368,7 @@ class HatchOpNode(Node, Parameters):
             if node.type != "elem polyline":
                 continue
             settings = node.settings
-            plot = PlotCut(settings=settings)
+            plot = PlotCut(settings=settings, color=node.stroke)
             for p in node.shape:
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)

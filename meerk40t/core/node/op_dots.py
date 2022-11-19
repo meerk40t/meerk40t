@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import DwellCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -16,15 +16,10 @@ class DotsOpNode(Node, Parameters):
     This is a Node of type "op dots".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op dots", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op dots", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
@@ -37,7 +32,7 @@ class DotsOpNode(Node, Parameters):
         self.allowed_attributes = []
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "DotsOpNode()"
@@ -87,7 +82,10 @@ class DotsOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -253,6 +251,7 @@ class DotsOpNode(Node, Parameters):
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
+                dwell_time=self.dwell_time,
                 settings=settings,
                 passes=passes,
             )

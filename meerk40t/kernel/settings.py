@@ -135,6 +135,22 @@ class Settings:
             except AttributeError:
                 pass
 
+    def read_persistent_object(self, section: str, obj: object) -> None:
+        """
+        Updates the objects instance dictionary with literal read values.
+
+        @param section: section to load into string dict
+        @param obj: object to apply read values.
+        @return: object
+        """
+        for k in list(self.keylist(section)):
+            item = self._config_dict[section][k]
+            try:
+                item = ast.literal_eval(item)
+            except (ValueError, SyntaxError):
+                pass
+            obj.__dict__[k] = item
+
     def read_persistent_string_dict(
         self, section: str, dictionary: Optional[Dict] = None, suffix: bool = False
     ) -> Dict:

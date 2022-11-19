@@ -238,10 +238,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
                 subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
                 t = Matrix(c.matrix)
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem image":
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
@@ -262,10 +263,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem line":
                 element = c.shape
                 copy_attributes(c, element)
@@ -275,10 +277,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_X2, str(element.x2))
                 subelement.set(SVG_ATTR_Y2, str(element.y2))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
 
             elif c.type == "elem path":
                 element = c.path
@@ -286,20 +289,22 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem point":
                 element = Point(c.point)
-                c.settings["x"] = element.x
-                c.settings["y"] = element.y
+                c.x = element.x
+                c.y = element.y
                 subelement = SubElement(xml_tree, "element")
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
                 SVGWriter._write_custom(subelement, c)
             elif c.type == "elem polyline":
                 element = c.shape
@@ -310,10 +315,11 @@ class SVGWriter:
                     " ".join([f"{e[0]} {e[1]}" for e in element.points]),
                 )
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem rect":
                 element = c.shape
                 copy_attributes(c, element)
@@ -325,18 +331,20 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_WIDTH, str(element.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(element.height))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem text":
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = c.text
                 t = c.matrix
-                subelement.set(
-                    SVG_ATTR_TRANSFORM,
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        SVG_ATTR_TRANSFORM,
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
                 # Font features are covered by the `font` value shorthand
                 if c.font_family:
                     subelement.set(SVG_ATTR_FONT_FAMILY, c.font_family)
@@ -513,21 +521,19 @@ class SVGWriter:
         @return:
         """
         subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-        SVGWriter._write_custom(subelement, node)
-
-    @staticmethod
-    def _write_custom(subelement, node):
-        subelement.set("type", node.type)
+        subelement.set("type", str(node.type))
+        if node.label is not None:
+            subelement.set("label", str(node.label))
+        if node.lock is not None:
+            subelement.set("lock", str(node.lock))
         try:
-            settings = node.settings
-            for key in settings:
+            for key, value in node.settings.items():
                 if not key:
                     # If key is None, do not save.
                     continue
-                if key in ("references", "tag"):
-                    # References key is obsolete
+                if key in ("references", "tag", "type"):
+                    # References key from previous loaded version (filter out, rebuild)
                     continue
-                value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
@@ -538,6 +544,32 @@ class SVGWriter:
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+    @staticmethod
+    def _write_custom(subelement, node):
+        subelement.set("type", node.type)
+        for key, value in node.__dict__.items():
+            if not key:
+                # If key is None, do not save.
+                continue
+            if key.startswith("_"):
+                continue
+            if value is None:
+                continue
+            if key in ("references", "tag", "type", "draw", "stroke_width", "matrix"):
+                # References key from previous loaded version (filter out, rebuild)
+                continue
+            subelement.set(key, str(value))
+
+        contains = list()
+        for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
+            contains.append(c.id)
+        if contains:
+            subelement.set("references", " ".join(contains))
+
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod

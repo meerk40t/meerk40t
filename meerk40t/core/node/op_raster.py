@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
@@ -18,17 +18,12 @@ class RasterOpNode(Node, Parameters):
     This is a Node of type "op raster".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op raster", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
@@ -131,7 +126,10 @@ class RasterOpNode(Node, Parameters):
         count = 0
         existing = 0
         result = False
-        if drag_node.type.startswith("elem") and not drag_node._parent.type == "branch reg":
+        if (
+            drag_node.type.startswith("elem")
+            and not drag_node._parent.type == "branch reg"
+        ):
             existing += 1
             # if drag_node.type == "elem image":
             #     return False

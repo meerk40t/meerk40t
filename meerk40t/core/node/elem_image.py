@@ -16,85 +16,59 @@ class ImageNode(Node):
     The processed matrix must be concatenated with the main matrix to be accurate.
     """
 
-    def __init__(
-        self,
-        image=None,
-        matrix=None,
-        overscan=None,
-        direction=None,
-        dpi=500,
-        operations=None,
-        invert=None,
-        dither=None,
-        dither_type=None,
-        red=None,
-        green=None,
-        blue=None,
-        lightness=None,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-        super(ImageNode, self).__init__(type="elem image", **settings)
-        self.__formatter = "{element_type} {id} {width}x{height}"
-        if matrix is None:
-            matrix = Matrix()
+    def __init__(self, **kwargs):
+        self.image = None
+        self.matrix = None
+        self.overscan = None
+        self.direction = None
+        self.dpi = 500
+        self.operations = list()
+        self.invert = None
+        self.dither = True
+        self.dither_type = "Floyd-Steinberg"
+        self.red = 1.0
+        self.green = 1.0
+        self.blue = 1.0
+        self.lightness = 1.0
+        self.view_invert = False
 
-        self.matrix = matrix
-        if "href" in settings:
+        self.passthrough = False
+        super(ImageNode, self).__init__(type="elem image", **kwargs)
+
+        self.__formatter = "{element_type} {id} {width}x{height}"
+        if self.matrix is None:
+            self.matrix = Matrix()
+        if hasattr(self, "href"):
             try:
                 from PIL import Image as PILImage
 
-                self.image = PILImage.open(settings["href"])
-                if "x" in settings:
-                    self.matrix.post_translate_x(settings["x"])
-                if "y" in settings:
-                    self.matrix.post_translate_x(settings["y"])
+                self.image = PILImage.open(self.href)
+                if hasattr(self, "x"):
+                    self.matrix.post_translate_x(self.x)
+                if hasattr(self, "y"):
+                    self.matrix.post_translate_x(self.y)
                 real_width, real_height = self.image.size
                 declared_width, declared_height = real_width, real_height
-                if "width" in settings:
-                    declared_width = settings["width"]
-                if "height" in settings:
-                    declared_height = settings["height"]
+                if hasattr(self, "width"):
+                    declared_width = self.width
+                if hasattr(self, "height"):
+                    declared_height = self.height
                 try:
                     sx = declared_width / real_width
                     sy = declared_height / real_height
                     self.matrix.post_scale(sx, sy)
                 except ZeroDivisionError:
                     pass
+                delattr(self, "href")
+                delattr(self, "x")
+                delattr(self, "y")
+                delattr(self, "height")
+                delattr(self, "width")
             except ImportError:
                 self.image = None
-        else:
-            self.image = image
 
-        self.settings = settings
-
-        self.overscan = overscan
-        self.direction = direction
-        self.dpi = dpi
         self.step_x = None
         self.step_y = None
-        self.label = label
-        self.lock = lock
-
-        self.invert = False if invert is None else invert
-        self.red = 1.0 if red is None else red
-        self.green = 1.0 if green is None else green
-        self.blue = 1.0 if blue is None else blue
-        self.lightness = 1.0 if lightness is None else lightness
-        self.dither = True if dither is None else dither
-        self.dither_type = "Floyd-Steinberg" if dither_type is None else dither_type
-
-        if operations is None:
-            operations = list()
-        self.operations = operations
-        self.view_invert = False
 
         self._needs_update = False
         self._update_thread = None
@@ -110,24 +84,10 @@ class ImageNode(Node):
             self.process_image(step_x, step_y)
 
     def __copy__(self):
-        return ImageNode(
-            image=self.image,
-            matrix=copy(self.matrix),
-            overscan=self.overscan,
-            direction=self.direction,
-            dpi=self.dpi,
-            operations=self.operations,
-            invert=self.invert,
-            dither=self.dither,
-            dither_type=self.dither_type,
-            red=self.red,
-            green=self.green,
-            blue=self.blue,
-            lightness=self.lightness,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd["matrix"] = copy(self.matrix)
+        nd["operations"] = copy(self.operations)
+        return ImageNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
@@ -177,15 +137,11 @@ class ImageNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         image = self.active_image
         default_map["width"] = image.width
         default_map["height"] = image.height
         default_map["element_type"] = "Image"
-        default_map["matrix"] = self.matrix
-        default_map["dpi"] = self.dpi
-        default_map["overscan"] = self.overscan
-        default_map["direction"] = self.direction
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -267,8 +223,7 @@ class ImageNode(Node):
             step_y = step
             self.process_image(step_x, step_y)
             # Unset cache.
-            self.wx_bitmap_image = None
-            self.cache = None
+            self._cache = None
 
     def process_image(self, step_x=None, step_y=None, crop=True):
         """

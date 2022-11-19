@@ -21,8 +21,12 @@ from typing import Optional
 
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
-from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .cutcode.cutcode import CutCode
+from .cutcode.cutgroup import CutGroup
+from .cutcode.cutobject import CutObject
+from .cutcode.rastercut import RasterCut
 from .units import Length
+
 
 class CutPlanningFailedError(Exception):
     pass
@@ -219,22 +223,22 @@ class CutPlan:
                 ):
                     yield op
                     continue
+                if op.type == "op hatch":
+                    # hatch passes duplicated sub-objects, while pre-processing
+                    yield from self._blob_convert(op, copies=1, passes=1)
+                    continue
+                passes = op.implicit_passes
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first
                 ):
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
+
                     # So, we only need 1 copy and to set the passes.
-                    passes = op.implicit_passes
-                    copies = 1
+                    yield from self._blob_convert(op, copies=1, passes=passes)
                 else:
-                    passes = 1
-                    copies = op.implicit_passes
-                if op.type == "op hatch":
-                    # hatch duplicates sub-objects, within convert to blob.
-                    passes = 1
-                    copies = 1
-                yield from self._blob_convert(op, copies, passes)
+                    # We do passes by making copies of the cutcode.
+                    yield from self._blob_convert(op, copies=passes, passes=1)
 
     def _blob_convert(self, op, copies, passes, force_idx=None):
         """
@@ -249,9 +253,14 @@ class CutPlan:
         """
         context = self.context
         for pass_idx in range(copies):
+            # if the settings dictionary doesn't exist we use the defined instance dictionary
+            try:
+                settings_dict = op.settings
+            except AttributeError:
+                settings_dict = op.__dict__
             # If passes isn't equal to implicit passes then we need a different settings to permit change
             settings = (
-                op.settings if op.implicit_passes == passes else dict(op.settings)
+                settings_dict if op.implicit_passes == passes else dict(settings_dict)
             )
             cutcode = CutCode(
                 op.as_cutobjects(
@@ -426,7 +435,14 @@ class CutPlan:
         if self.context.opt_inner_first:
             stol = self.context.opt_inner_tolerance
             try:
-                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
             except ValueError:
                 pass
         # print(f"Tolerance: {tolerance}")
@@ -436,7 +452,9 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -457,7 +475,14 @@ class CutPlan:
         if self.context.opt_inner_first:
             stol = self.context.opt_inner_tolerance
             try:
-                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
             except ValueError:
                 pass
         # print(f"Tolerance: {tolerance}")
@@ -467,7 +492,9 @@ class CutPlan:
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
@@ -561,7 +588,7 @@ def is_inside(inner, outer, tolerance=0):
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
-        vm.add_cluster(outer_path)
+        vm.add_polyline(outer_path)
         outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
@@ -728,7 +755,7 @@ def short_travel_cutcode(
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
                     start = closest.start
@@ -736,7 +763,7 @@ def short_travel_cutcode(
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
                     end = closest.end
@@ -744,7 +771,7 @@ def short_travel_cutcode(
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
-                and last_segment.burns_done < last_segment.implicit_passes
+                and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):
