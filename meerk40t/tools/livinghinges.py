@@ -1,3 +1,4 @@
+from math import isnan
 import wx
 
 from meerk40t.core.units import Length
@@ -924,6 +925,17 @@ class HingePanel(wx.Panel):
         self.SetSizer(main_sizer)
 
     def on_paint(self, event):
+        def _set_penwidth(pen, width):
+            try:
+                if isnan(width):
+                    width = 1.0
+                try:
+                    pen.SetWidth(width)
+                except TypeError:
+                    pen.SetWidth(int(width))
+            except OverflowError:
+                pass  # Exceeds 32 bit signed integer.
+
         # Create paint DC
         dc = wx.PaintDC(self.panel_preview)
 
@@ -946,14 +958,16 @@ class HingePanel(wx.Panel):
             )
             gc.SetTransform(matrix)
             # Draw the hinge area:
-            gc.SetPen(wx.BLUE_PEN)
+            mypen_border = wx.Pen(wx.BLUE, 1, wx.PENSTYLE_SOLID)
+            mypen_path = wx.Pen(wx.RED, 1, wx.PENSTYLE_SOLID)
+            gc.SetPen(mypen_border)
             gc.DrawRectangle(
                 0, 0, self.hinge_generator.width, self.hinge_generator.height
             )
             # flag = self.check_debug_outline.GetValue()
             flag = False
             self.hinge_generator.generate(flag)
-            gc.SetPen(wx.RED_PEN)
+            gc.SetPen(mypen_path)
             gcpath = self.renderer.make_path(gc, self.hinge_generator.path)
             gc.StrokePath(gcpath)
 
@@ -1101,7 +1115,7 @@ class HingePanel(wx.Panel):
 
 class LivingHingeTool(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(500, 360, submenu="Laser-Tools", *args, **kwds)
+        super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
         self.panel_template = HingePanel(
             self,
             wx.ID_ANY,
