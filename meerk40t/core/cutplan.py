@@ -588,7 +588,7 @@ def is_inside(inner, outer, tolerance=0):
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
-        vm.add_cluster(outer_path)
+        vm.add_polyline(outer_path)
         outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
