@@ -1029,8 +1029,10 @@ class HingePanel(wx.Panel):
             )
             gc.SetTransform(matrix)
             # Draw the hinge area:
-            mypen_border = wx.Pen(wx.BLUE, 1, wx.PENSTYLE_SOLID)
-            mypen_path = wx.Pen(wx.RED, 1, wx.PENSTYLE_SOLID)
+            linewidth = max(int(1 / ratio), 1)
+            # print (linewidth)
+            mypen_border = wx.Pen(wx.BLUE, linewidth, wx.PENSTYLE_SOLID)
+            mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
             gc.SetPen(mypen_border)
             gc.DrawRectangle(
                 0, 0, self.hinge_generator.width, self.hinge_generator.height
