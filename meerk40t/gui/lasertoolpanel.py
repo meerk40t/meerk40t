@@ -754,7 +754,7 @@ class LaserTool(MWindow):
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Laser-Tools"))
+        self.SetTitle(_("Place Template"))
 
     def window_open(self):
         pass
@@ -767,4 +767,4 @@ class LaserTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Laser-Tools")
+        return ("Laser-Tools", "Place Template")
