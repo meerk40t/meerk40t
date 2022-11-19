@@ -1,6 +1,7 @@
 from math import isnan
 
 import wx
+from numpy import linspace
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_hinges_50
@@ -17,8 +18,10 @@ from meerk40t.svgelements import (
     Move,
     Path,
     Point,
+    Polygon,
     QuadraticBezier,
 )
+from meerk40t.tools.pathtools import VectorMontonizer
 
 _ = wx.GetTranslation
 
@@ -55,6 +58,7 @@ class LivingHinges:
         self.param_b = 0.7
         # Requires recalculation
         self.path = None
+        self.outershape = None
         self.pattern = []
         self.cutshape = ""
         self.set_cell_values(10, 10)
@@ -322,6 +326,9 @@ class LivingHinges:
                 endpoint = create_point(entry[3], entry[4])
                 self.path.quad(control1, endpoint)
 
+    def set_hinge_shape(self, shapenode):
+        self.outershape = shapenode
+
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
         self.start_x = hinge_left
         self.start_y = hinge_top
@@ -352,7 +359,7 @@ class LivingHinges:
         # Make sure pattern is updated with additional parameter
         __ = self.set_predefined_pattern(self.cutshape)
 
-    def generate(self, show_outline=False, force=False):
+    def generate(self, show_outline=False, force=False, final=False):
         if self.path is not None and not force:
             # No need to recalculate...
             return
@@ -413,8 +420,40 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
-        self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
-        self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+        if final:
+            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            vm = VectorMontonizer()
+            if self.outershape is None:
+                outer_poly = Polygon(
+                    (
+                        Point(self.x0, self.y0),
+                        Point(self.x1, self.y0),
+                        Point(self.x1, self.y1),
+                        Point(self.x0, self.y1),
+                        Point(self.x0, self.y0),
+                    )
+                )
+            else:
+                outer_path = self.outershape.as_path()
+                outer_poly = Polygon(
+                    [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+                )
+            vm.add_polyline(outer_poly)
+            path = Path()
+            for sub_inner in self.path.as_subpaths():
+                sub_inner = Path(sub_inner)
+                pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
+                good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
+                if len(good_pts)>0:
+                    path.move(*good_pts)
+            self.path = path
+        else:
+            # Former method....
+            # is limited to rectangular area but maintains inner cubics, quads and arcs
+            # while the vectormontonizer is more versatile when it comes to the
+            # surrounding shape but transforms all path elements to lines
+             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
+             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
 
     def clip_path(self, path, xmin, ymin, xmax, ymax):
         """
@@ -428,7 +467,6 @@ class LivingHinges:
             ymax : Lower side of the rectangular area
 
         """
-        from numpy import linspace
 
         def outside(bb_to_check, master_bb):
             out_x = "inside"
@@ -998,8 +1036,7 @@ class HingePanel(wx.Panel):
                 0, 0, self.hinge_generator.width, self.hinge_generator.height
             )
             # flag = self.check_debug_outline.GetValue()
-            flag = False
-            self.hinge_generator.generate(flag)
+            self.hinge_generator.generate(show_outline=False, force=False, final=False)
             gc.SetPen(mypen_path)
             gcpath = self.renderer.make_path(gc, self.hinge_generator.path)
             gc.StrokePath(gcpath)
@@ -1008,7 +1045,8 @@ class HingePanel(wx.Panel):
         self.context("window toggle Hingetool\n")
 
     def on_button_generate(self, event):
-        self.hinge_generator.generate(show_outline=False)
+        # Polycut algorithm does not work for me (yet), final=False still
+        self.hinge_generator.generate(show_outline=False, force=False, final=False)
         node = self.context.elements.elem_branch.add(
             path=abs(self.hinge_generator.path),
             stroke_width=500,
@@ -1124,8 +1162,13 @@ class HingePanel(wx.Panel):
         self.Layout()
 
     def pane_show(self):
+        first_selected = None
         bounds = self.context.elements._emphasized_bounds
         if bounds is not None:
+            for node in self.context.elements.elems(emphasized=True):
+                first_selected = node
+                break
+            self.hinge_generator.set_hinge_shape(first_selected)
             units = self.context.units_name
             start_x = bounds[0]
             start_y = bounds[1]
