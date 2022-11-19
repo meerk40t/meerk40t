@@ -3892,6 +3892,41 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
+    @self.console_command("polycut", input_type=("elements", None), output_type="elements")
+    def create_pattern(command, channel, _,  data=None, post=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) <= 1:
+            channel("Requires a selected cutter polygon")
+            return None
+        data.sort(key=lambda n: n.emphasized_time)
+        outer_path = data[0].as_path()
+        inner_path = data[1].as_path()
+        data[1].remove_node()
+
+        from meerk40t.tools.pathtools import VectorMontonizer
+        vm = VectorMontonizer()
+        outer_path = Polygon(
+            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+        )
+        inner_path = [inner_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+        vm.add_polyline(outer_path)
+
+        for i in range(len(inner_path)-1, -1, -1):
+            pt = inner_path[i]
+            if not vm.is_point_inside(pt[0], pt[1]):
+                del inner_path[i]
+        node = self.elem_branch.add(shape=Polyline(inner_path), type="elem polyline")
+        node.stroke = self.default_stroke
+        node.fill = self.default_fill
+        node.altered()
+        node.focus()
+        if data is None:
+            data = list()
+        data.append(node)
+        post.append(classify_new(data))
+        return "elements", data
+
     @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
