@@ -3909,21 +3909,22 @@ def init_commands(kernel):
         outer_path = Polygon(
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
-        inner_path = [inner_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         vm.add_polyline(outer_path)
-
-        for i in range(len(inner_path)-1, -1, -1):
-            pt = inner_path[i]
-            if not vm.is_point_inside(pt[0], pt[1]):
-                del inner_path[i]
-        node = self.elem_branch.add(shape=Polyline(inner_path), type="elem polyline")
+        path = Path()
+        for sub_inner in inner_path.as_subpaths():
+            sub_inner = Path(sub_inner)
+            pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+            for i in range(len(pts_sub)-1, -1, -1):
+                pt = pts_sub[i]
+                if not vm.is_point_inside(pt[0], pt[1]):
+                    del pts_sub[i]
+            path += Path(Polyline(pts_sub))
+        node = self.elem_branch.add(path=path, type="elem path")
+        data.append(node)
         node.stroke = self.default_stroke
         node.fill = self.default_fill
         node.altered()
         node.focus()
-        if data is None:
-            data = list()
-        data.append(node)
         post.append(classify_new(data))
         return "elements", data
 
