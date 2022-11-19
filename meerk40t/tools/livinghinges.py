@@ -444,7 +444,7 @@ class LivingHinges:
                 sub_inner = Path(sub_inner)
                 pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
                 good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
-                if len(good_pts)>0:
+                if len(good_pts) > 0:
                     path.move(*good_pts)
             self.path = path
         else:
@@ -452,8 +452,8 @@ class LivingHinges:
             # is limited to rectangular area but maintains inner cubics, quads and arcs
             # while the vectormontonizer is more versatile when it comes to the
             # surrounding shape but transforms all path elements to lines
-             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
-             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
+            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
 
     def clip_path(self, path, xmin, ymin, xmax, ymax):
         """
@@ -1080,6 +1080,18 @@ class HingePanel(wx.Panel):
         except ValueError:
             ht = 0
             flag = False
+        try:
+            x = float(Length(self.text_origin_x.GetValue()))
+            self.context.hinge_origin_x = self.text_origin_x.GetValue()
+        except ValueError:
+            x = 0
+            flag = False
+        try:
+            y = float(Length(self.text_origin_y.GetValue()))
+            self.context.hinge_origin_y = self.text_origin_y.GetValue()
+        except ValueError:
+            y = 0
+            flag = False
         cell_x = self.slider_width.GetValue()
         cell_y = self.slider_height.GetValue()
         self.context.hinge_cells_x = cell_x
@@ -1186,6 +1198,10 @@ class HingePanel(wx.Panel):
             self.text_height.ChangeValue(
                 Length(amount=ht, digits=2, preferred_units=units).preferred_length
             )
+            self.context.hinge_origin_x = self.text_origin_x.GetValue()
+            self.context.hinge_origin_y = self.text_origin_y.GetValue()
+            self.context.hinge_width = self.text_width.GetValue()
+            self.context.hinge_height = self.text_height.GetValue()
             self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
 
 
