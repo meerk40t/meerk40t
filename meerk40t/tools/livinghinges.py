@@ -73,7 +73,7 @@ class LivingHinges:
         yield "beehive"
         yield "fabric"
         yield "brackets"
-        yield "circle"
+        # yield "circle"
 
     def set_predefined_pattern(self, cutshape):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
@@ -159,15 +159,23 @@ class LivingHinges:
             additional_parameter = True
 
         elif cutshape == "bowlingpin":
-            self.pattern.append(("M", 0.0, 0.25))
-            self.pattern.append(("L", 0.25, 0.25))
-            ctrl_x = 0.5 + self.param_a
-            ctrl_y = 0.25 + self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.5, 0.5))
-            ctrl_x = 0.5 - self.param_a
-            ctrl_y = 0.75 - self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.75, 0.75))
-            self.pattern.append(("L", 1, 0.75))
+            self.pattern.append(("M", 0.2, 0.6))
+            ctrl_x = 0.1 + self.param_a
+            ctrl_y = 0.5
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.4))
+
+            ctrl_x = 0.5
+            ctrl_y = 0.1 - self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.4))
+
+            ctrl_x = 0.9 - self.param_a
+            ctrl_y = 0.5
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.6))
+
+            ctrl_x = 0.5
+            ctrl_y = 0.9 + self.param_b
+            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.6))
+
             additional_parameter = True
         elif cutshape == "wave":
             self.pattern.append(("M", 0.0, 0.25))
@@ -522,6 +530,8 @@ class LivingHinges:
 
         def add_move(addpath, destination):
             # Was the last segment as well a move? Then just update the coords...
+            if destination[0]<xmin or destination[0]>xmax or destination[1]<ymin or destination[1]>ymax:
+                return
             if len(addpath._segments)>0:
                 if isinstance(addpath._segments[-1], Move):
                     addpath._segments[-1].end = destination
@@ -565,8 +575,6 @@ class LivingHinges:
                 dy = e.end[1] - current_y
                 if statex == "outside" or statey == "outside":
                     # Fully outside, so drop
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -632,8 +640,6 @@ class LivingHinges:
                 statex, statey = outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -647,8 +653,6 @@ class LivingHinges:
                 statex, statey = outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
-                    if current_x != e.end[0] or current_y != e.end[1]:
-                        add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -665,8 +669,8 @@ class LivingHinges:
                     statex, statey = outside(segbb, clipbb)
                     if statex == "outside" and statey == "outside":
                         # Fully outside, so drop
-                        if current_x != e_cubic.end[0] or current_y != e_cubic.end[1]:
-                            add_move(newpath, e_cubic.end)
+                        current_x = e.end[0]
+                        current_y = e.end[1]
                         fully_deleted += 1
                     elif statex == "inside" and statey == "inside":
                         # Fully inside, so append
