@@ -1,23 +1,15 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode.cubiccut import CubicCut
-from meerk40t.core.cutcode.cutgroup import CutGroup
-from meerk40t.core.cutcode.linecut import LineCut
-from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import (
-    Close,
     Color,
-    CubicBezier,
-    Line,
-    Move,
     Path,
     Polygon,
-    QuadraticBezier,
 )
 
 
@@ -307,84 +299,11 @@ class CutOpNode(Node, Parameters):
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
-
-            for subpath in path.as_subpaths():
-                sp = Path(subpath)
-                if len(sp) == 0:
-                    continue
-                closed = (
-                    isinstance(sp[-1], Close)
-                    or abs(sp.z_point - sp.current_point) <= closed_distance
-                )
-                group = CutGroup(
-                    None,
-                    closed=closed,
-                    settings=settings,
-                    passes=passes,
-                    color=node.stroke,
-                )
-                group.path = Path(subpath)
-                group.original_op = self.type
-                for seg in subpath:
-                    if isinstance(seg, Move):
-                        pass  # Move operations are ignored.
-                    elif isinstance(seg, Close):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                    color=node.stroke,
-                                )
-                            )
-                    elif isinstance(seg, Line):
-                        if seg.start != seg.end:
-                            group.append(
-                                LineCut(
-                                    seg.start,
-                                    seg.end,
-                                    settings=settings,
-                                    passes=passes,
-                                    parent=group,
-                                    color=node.stroke,
-                                )
-                            )
-                    elif isinstance(seg, QuadraticBezier):
-                        group.append(
-                            QuadCut(
-                                seg.start,
-                                seg.control,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                                color=node.stroke,
-                            )
-                        )
-                    elif isinstance(seg, CubicBezier):
-                        group.append(
-                            CubicCut(
-                                seg.start,
-                                seg.control1,
-                                seg.control2,
-                                seg.end,
-                                settings=settings,
-                                passes=passes,
-                                parent=group,
-                                color=node.stroke,
-                            )
-                        )
-                if len(group) > 0:
-                    group[0].first = True
-                for i, cut_obj in enumerate(group):
-                    cut_obj.closed = closed
-                    try:
-                        cut_obj.next = group[i + 1]
-                    except IndexError:
-                        cut_obj.last = True
-                        cut_obj.next = group[0]
-                    cut_obj.previous = group[i - 1]
-                yield group
+            yield from path_to_cutobjects(
+                path,
+                settings=settings,
+                closed_distance=closed_distance,
+                passes=passes,
+                original_op=self.type,
+                color=node.stroke,
+            )
