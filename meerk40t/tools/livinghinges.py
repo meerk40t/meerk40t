@@ -1,4 +1,5 @@
 from math import isnan
+
 import wx
 
 from meerk40t.core.units import Length
@@ -456,12 +457,13 @@ class LivingHinges:
                     min(current_x, p[0]),
                     min(current_y, p[1]),
                     max(current_x, p[0]),
-                    max(current_y, p[1])
+                    max(current_y, p[1]),
                 )
                 sx, sy = outside(segbb, clipbb)
                 # print(f"{segbb} - {clipbb} {sx} - {sy}")
                 if sx == "outside" or sy == "outside":
                     # Fully outside, so drop
+                    add_move(newpath, e.end)
                     ignored += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -478,7 +480,7 @@ class LivingHinges:
                     new_ey = p[1]
                     if dx == 0:
                         # Vertical line needs special treatment
-                        if new_cx >= xmin and new_cx<=xmax:
+                        if new_cx >= xmin and new_cx <= xmax:
                             new_cy = min(max(new_cy, ymin), ymax)
                             new_ey = min(max(new_ey, ymin), ymax)
                             if new_cx != current_x or new_cy != current_y:
@@ -494,8 +496,12 @@ class LivingHinges:
                         new_cx = min(max(new_cx, xmin), xmax)
                         new_ex = min(max(new_ex, xmin), xmax)
                         # corresponding y values...
-                        new_cy = current_y + (new_cx - current_x) / (p[0] - current_x) * (p[1] - current_y)
-                        new_ey = current_y + (new_ex - current_x) / (p[0] - current_x) * (p[1] - current_y)
+                        new_cy = current_y + (new_cx - current_x) / (
+                            p[0] - current_x
+                        ) * (p[1] - current_y)
+                        new_ey = current_y + (new_ex - current_x) / (
+                            p[0] - current_x
+                        ) * (p[1] - current_y)
                         # Y can still cross...
                         new_cx_clipped = new_cx
                         new_ex_clipped = new_ex
@@ -503,8 +509,12 @@ class LivingHinges:
                         new_ey_clipped = min(max(new_ey, ymin), ymax)
                         # Adjust x - value
                         if dy != 0:
-                            new_cx_clipped = new_cx + dx / dy * (new_cy_clipped - new_cy)
-                            new_ex_clipped = new_ex + dx / dy * (new_ey_clipped - new_ey)
+                            new_cx_clipped = new_cx + dx / dy * (
+                                new_cy_clipped - new_cy
+                            )
+                            new_ex_clipped = new_ex + dx / dy * (
+                                new_ey_clipped - new_ey
+                            )
 
                         new_cx = new_cx_clipped
                         new_cy = new_cy_clipped
@@ -522,7 +532,7 @@ class LivingHinges:
                                 add_move(newpath, Point(new_cx, new_cy))
                             newpath.line(Point(new_ex, new_ey))
                             partial += 1
-                current_x= p[0]
+                current_x = p[0]
                 current_y = p[1]
             if current_x != part_of_path.end[0] or current_y != part_of_path.end[1]:
                 add_move(newpath, part_of_path.end)
@@ -530,11 +540,11 @@ class LivingHinges:
 
         def add_move(addpath, destination):
             # Was the last segment as well a move? Then just update the coords...
-            if destination[0]<xmin or destination[0]>xmax or destination[1]<ymin or destination[1]>ymax:
-                return
-            if len(addpath._segments)>0:
-                if isinstance(addpath._segments[-1], Move):
-                    addpath._segments[-1].end = destination
+            # if destination[0]<xmin or destination[0]>xmax or destination[1]<ymin or destination[1]>ymax:
+            #     return
+            if len(addpath) > 0:
+                if isinstance(addpath[-1], Move):
+                    addpath[-1].end = destination
                     return
             addpath.move(destination)
 
@@ -575,6 +585,7 @@ class LivingHinges:
                 dy = e.end[1] - current_y
                 if statex == "outside" or statey == "outside":
                     # Fully outside, so drop
+                    add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -588,7 +599,7 @@ class LivingHinges:
                     new_ey = e.end[1]
                     if dx == 0:
                         # Vertical line needs special treatment
-                        if new_cx >= xmin and new_cx<=xmax:
+                        if new_cx >= xmin and new_cx <= xmax:
                             new_cy = min(max(new_cy, ymin), ymax)
                             new_ey = min(max(new_ey, ymin), ymax)
                             if new_cx != current_x or new_cy != current_y:
@@ -601,8 +612,12 @@ class LivingHinges:
                         new_cx = min(max(new_cx, xmin), xmax)
                         new_ex = min(max(new_ex, xmin), xmax)
                         # corresponding y values...
-                        new_cy = current_y + (new_cx - current_x) / (e.end[0] - current_x) * (e.end[1] - current_y)
-                        new_ey = current_y + (new_ex - current_x) / (e.end[0] - current_x) * (e.end[1] - current_y)
+                        new_cy = current_y + (new_cx - current_x) / (
+                            e.end[0] - current_x
+                        ) * (e.end[1] - current_y)
+                        new_ey = current_y + (new_ex - current_x) / (
+                            e.end[0] - current_x
+                        ) * (e.end[1] - current_y)
                         # Y can still cross...
                         new_cx_clipped = new_cx
                         new_ex_clipped = new_ex
@@ -610,8 +625,12 @@ class LivingHinges:
                         new_ey_clipped = min(max(new_ey, ymin), ymax)
                         # Adjust x - value
                         if dy != 0:
-                            new_cx_clipped = new_cx + dx / dy * (new_cy_clipped - new_cy)
-                            new_ex_clipped = new_ex + dx / dy * (new_ey_clipped - new_ey)
+                            new_cx_clipped = new_cx + dx / dy * (
+                                new_cy_clipped - new_cy
+                            )
+                            new_ex_clipped = new_ex + dx / dy * (
+                                new_ey_clipped - new_ey
+                            )
 
                         new_cx = new_cx_clipped
                         new_cy = new_cy_clipped
@@ -640,6 +659,7 @@ class LivingHinges:
                 statex, statey = outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
+                    add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -653,6 +673,7 @@ class LivingHinges:
                 statex, statey = outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
+                    add_move(newpath, e.end)
                     fully_deleted += 1
                 elif statex == "inside" and statey == "inside":
                     # Fully inside, so append
@@ -669,8 +690,7 @@ class LivingHinges:
                     statex, statey = outside(segbb, clipbb)
                     if statex == "outside" and statey == "outside":
                         # Fully outside, so drop
-                        current_x = e.end[0]
-                        current_y = e.end[1]
+                        add_move(newpath, e.end)
                         fully_deleted += 1
                     elif statex == "inside" and statey == "inside":
                         # Fully inside, so append
@@ -684,10 +704,19 @@ class LivingHinges:
                 current_x = e.end[0]
                 current_y = e.end[1]
 
+        flag = True
+        while flag:
+            flag = False
+            if len(newpath) > 0 and isinstance(newpath[-1], Move):
+                # We dont need a move at the end of the path...
+                newpath._segments.pop(-1)
+                flag = True
+
         # print(
         #     f"Ready: left untouched: {not_deleted}, fully deleted={fully_deleted}, partial deletion:{partial_deleted}"
         # )
         return newpath
+
 
 class HingePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
