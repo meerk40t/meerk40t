@@ -1,5 +1,3 @@
-from math import isnan
-
 import wx
 from numpy import linspace
 
@@ -61,194 +59,216 @@ class LivingHinges:
         self.outershape = None
         self.pattern = []
         self.cutshape = ""
+        self._defined_patterns = {}
+        self._defined_patterns["line"] = (self.set_line, False, "", "", (-20, -35, 0, 0))
+        self._defined_patterns["fishbone"] = (self.set_fishbone, False, "", "", (10, 10, 0, 0))
+        self._defined_patterns["diagonal"] = (self.set_diagonal, False, "", "", (-10, -10, 0, 0))
+        self._defined_patterns["diamond1"] = (self.set_diamond1, False, "", "", (-15, 10, 0, 0))
+        self._defined_patterns["diamond2"] = (self.set_diamond2, False, "", "", (-12, 6, 0, 0))
+        self._defined_patterns["cross"] = (self.set_cross, False, "", "", (-15, -4, 0, 0))
+        self._defined_patterns["bezier"] = (self.set_bezier, True, "", "", (-2, -16, 0.4, 0.3))
+        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
+        self._defined_patterns["bowlingpin"] = (self.set_bowlingpin, True, "Left/right bowl", "Top/bottom bowl", (-21, -5, -0.3, 0))
+        self._defined_patterns["beehive"] = (
+            self.set_beehive, True, "Position of left side", "Distance of second line", (-1, 6, 1.4, 0)
+        )
+        self._defined_patterns["fabric"] = (self.set_fabric, False, "", "", (-18, 13, 0, 0))
+        self._defined_patterns["brackets"] = (self.set_brackets, True, "", "", (-14, -11, 0.7, 0.7))
+        # self._defined_patterns["circle"] = (self.set_circle, True, "", "", (10, 10, 0.7, 0.7))
+
         self.set_cell_values(10, 10)
         self.set_padding_values(5, 5)
         self.set_predefined_pattern("line")
 
     def get_patterns(self):
-        yield "line"
-        yield "fishbone"
-        yield "diagonal"
-        yield "diamond1"
-        yield "diamond2"
-        yield "cross"
-        yield "bezier"
-        yield "wave"
-        yield "bowlingpin"
-        yield "beehive"
-        yield "fabric"
-        yield "brackets"
+        for entry in self._defined_patterns:
+            yield entry, self._defined_patterns[entry][4]
         # yield "circle"
+
+    def get_default(self, pattern):
+        if pattern in self._defined_patterns:
+            return self._defined_patterns[pattern][4]
+        else:
+            return (0, 0, 0, 0)
 
     def set_predefined_pattern(self, cutshape):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
         #
-        additional_parameter = False
+        if cutshape not in self._defined_patterns:
+            return
+        entry = self._defined_patterns[cutshape]
+        additional_parameter = entry[1]
+        info1 = entry[2]
+        info2 = entry[3]
         self.cutshape = cutshape
         self.pattern = []
-        if cutshape == "line":
-            self.pattern.append(("M", 0, 0.5))
-            self.pattern.append(("L", 1, 0.5))
-        elif cutshape == "fishbone":
-            self.pattern.append(("M", 0, 1))
-            self.pattern.append(("L", 0.5, 0))
-            self.pattern.append(("M", 0.5, 0))
-            self.pattern.append(("L", 1, 1))
-        elif cutshape == "diagonal":
-            self.pattern.append(("M", 0, 1))
-            self.pattern.append(("L", 1, 0))
-        elif cutshape == "diamond1":
-            self.pattern.append(("M", 0, 0.5))
-            self.pattern.append(("L", 0.5, 0))
-            self.pattern.append(("L", 1, 0.5))
-            self.pattern.append(("L", 0.5, 1))
-            self.pattern.append(("L", 0, 0.5))
-        elif cutshape == "diamond2":
-            self.pattern.append(("M", 0, 0))
-            self.pattern.append(("L", 0.5, 0.4))
-            self.pattern.append(("L", 1, 0))
-            self.pattern.append(("M", 0, 1))
-            self.pattern.append(("L", 0.5, 0.6))
-            self.pattern.append(("L", 1, 1))
-        elif cutshape == "cross":
-            # Pattern: cross
-            self.pattern.append(("M", 0.0, 0.25))
-            self.pattern.append(("L", 0.25, 0.50))
-            self.pattern.append(("L", 0.0, 0.75))
-            self.pattern.append(("M", 0.25, 0.50))
-            self.pattern.append(("L", 0.75, 0.50))
-            self.pattern.append(("M", 1, 0.25))
-            self.pattern.append(("L", 0.75, 0.50))
-            self.pattern.append(("L", 1, 0.75))
-        elif cutshape == "fabric":
-            self.pattern.append(("M", 0.25, 0.25))
-            self.pattern.append(("L", 0, 0.25))
-            self.pattern.append(("L", 0, 0))
-            self.pattern.append(("L", 0.5, 0))
-            self.pattern.append(("L", 0.5, 1))
-            self.pattern.append(("L", 1, 1))
-            self.pattern.append(("L", 1, 0.75))
-            self.pattern.append(("L", 0.75, 0.75))
-
-            self.pattern.append(("M", 0.75, 0.25))
-            self.pattern.append(("L", 0.75, 0))
-            self.pattern.append(("L", 1, 0))
-            self.pattern.append(("L", 1, 0.5))
-            self.pattern.append(("L", 0, 0.5))
-            self.pattern.append(("L", 0, 1))
-            self.pattern.append(("L", 0.25, 1))
-            self.pattern.append(("L", 0.25, 0.75))
-
-        elif cutshape == "beehive":
-            dx = self.param_a / 5.0 * 0.5
-            dy = self.param_b / 5.0 * 0.5
-            # top
-            self.pattern.append(("M", 0, 0.5 - dy))
-            self.pattern.append(("L", dx, dy))
-            self.pattern.append(("L", 1 - dx, dy))
-            self.pattern.append(("L", 1, 0.5 - dy))
-            # inner
-            self.pattern.append(("M", 0, 0.5))
-            self.pattern.append(("L", dx, 2 * dy))
-            self.pattern.append(("L", 1 - dx, 2 * dy))
-            self.pattern.append(("L", 1, 0.5))
-            self.pattern.append(("L", 1 - dx, 1 - 2 * dy))
-            self.pattern.append(("L", dx, 1 - 2 * dy))
-            self.pattern.append(("L", 0, 0.5))
-            # bottom
-            self.pattern.append(("M", 0, 0.5 + dy))
-            self.pattern.append(("L", dx, 1 - dy))
-            self.pattern.append(("L", 1 - dx, 1 - dy))
-            self.pattern.append(("L", 1, 0.5 + dy))
-
-            additional_parameter = True
-
-        elif cutshape == "bowlingpin":
-            self.pattern.append(("M", 0.2, 0.6))
-            ctrl_x = 0.1 + self.param_a
-            ctrl_y = 0.5
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.4))
-
-            ctrl_x = 0.5
-            ctrl_y = 0.1 - self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.4))
-
-            ctrl_x = 0.9 - self.param_a
-            ctrl_y = 0.5
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.6))
-
-            ctrl_x = 0.5
-            ctrl_y = 0.9 + self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.6))
-
-            additional_parameter = True
-        elif cutshape == "wave":
-            self.pattern.append(("M", 0.0, 0.25))
-            self.pattern.append(("L", 0.25, 0.25))
-            ctrl_x = 0.5 + self.param_a
-            ctrl_y = 0.25 + self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.5, 0.5))
-            ctrl_x = 0.5 - self.param_a
-            ctrl_y = 0.75 - self.param_b
-            self.pattern.append(("Q", ctrl_x, ctrl_y, 0.75, 0.75))
-            self.pattern.append(("L", 1, 0.75))
-            additional_parameter = True
-        elif cutshape == "bezier":
-            # Pattern: wavy
-            anchor_tip = (
-                self.param_a
-            )  # distance factor from anchor to place control point
-            anchor_center = self.param_b
-            self.pattern.append(("M", 0, 0))
-            self.pattern.append(
-                ("C", 1 * anchor_tip, 0, 1 / 2 - (1 * anchor_center), 1, 1 / 2, 1)
-            )
-            self.pattern.append(
-                ("C", 1 / 2 + (1 * anchor_center), 1, 1 * (1 - anchor_tip), 0, 1, 0)
-            )
-            additional_parameter = True
-        elif cutshape == "brackets":
-            additional_parameter = True
-            p_a = self.param_a
-            p_b = self.param_b
-            self.pattern.append(("M", 0.0, 0.5))
-            self.pattern.append(("C", 0.0, p_a, 1.0, p_b, 1.0, 0.5))
-            self.pattern.append(("C", 1.0, 1 - p_a, 0.0, 1 - p_b, 0.0, 0.5))
-        elif cutshape == "circle":
-            # concentric circles
-            additional_parameter = True
-            amount = int(abs(10 * self.param_a)) + 1  # (1 to 50)
-            gap = abs(self.param_b)
-            dx = 0.5 / amount
-            cx = 0.5
-            cy = 0.5
-            rotation = 0
-            sweep = 0
-            arc = 0
-            for i in range(amount):
-                # A move-to command to the point cx+rx,cy;
-                # arc to cx,cy+ry;
-                # arc to cx-rx,cy;
-                # arc to cx,cy-ry;
-                # arc with a segment-completing close path operation.
-                radius = i * dx
-
-                self.pattern.append(("M", cx + radius, cy))
-                self.pattern.append(
-                    ("A", cx, cy, rotation, arc, sweep, cx, cy + radius)
-                )
-                self.pattern.append(
-                    ("A", cx, cy, rotation, arc, sweep, cx - radius, cy)
-                )
-                self.pattern.append(
-                    ("A", cx, cy, rotation, arc, sweep, cx, cy - radius)
-                )
-                self.pattern.append(
-                    ("A", cx, cy, rotation, arc, sweep, cx + radius, cy)
-                )
-
+        entry[0]()
         self.path = None
-        return additional_parameter
+        return additional_parameter, info1, info2
+
+    def set_line(self):
+        self.pattern.append(("M", 0, 0.5))
+        self.pattern.append(("L", 1, 0.5))
+
+    def set_fishbone(self):
+        self.pattern.append(("M", 0, 1))
+        self.pattern.append(("L", 0.5, 0))
+        self.pattern.append(("M", 0.5, 0))
+        self.pattern.append(("L", 1, 1))
+
+    def set_diagonal(self):
+        self.pattern.append(("M", 0, 1))
+        self.pattern.append(("L", 1, 0))
+
+    def set_diamond1(self):
+        self.pattern.append(("M", 0, 0.5))
+        self.pattern.append(("L", 0.5, 0))
+        self.pattern.append(("L", 1, 0.5))
+        self.pattern.append(("L", 0.5, 1))
+        self.pattern.append(("L", 0, 0.5))
+
+    def set_diamond2(self):
+        self.pattern.append(("M", 0, 0))
+        self.pattern.append(("L", 0.5, 0.4))
+        self.pattern.append(("L", 1, 0))
+        self.pattern.append(("M", 0, 1))
+        self.pattern.append(("L", 0.5, 0.6))
+        self.pattern.append(("L", 1, 1))
+
+    def set_cross(self):
+        # Pattern: cross
+        self.pattern.append(("M", 0.0, 0.25))
+        self.pattern.append(("L", 0.25, 0.50))
+        self.pattern.append(("L", 0.0, 0.75))
+        self.pattern.append(("M", 0.25, 0.50))
+        self.pattern.append(("L", 0.75, 0.50))
+        self.pattern.append(("M", 1, 0.25))
+        self.pattern.append(("L", 0.75, 0.50))
+        self.pattern.append(("L", 1, 0.75))
+
+    def set_fabric(self):
+        self.pattern.append(("M", 0.25, 0.25))
+        self.pattern.append(("L", 0, 0.25))
+        self.pattern.append(("L", 0, 0))
+        self.pattern.append(("L", 0.5, 0))
+        self.pattern.append(("L", 0.5, 1))
+        self.pattern.append(("L", 1, 1))
+        self.pattern.append(("L", 1, 0.75))
+        self.pattern.append(("L", 0.75, 0.75))
+
+        self.pattern.append(("M", 0.75, 0.25))
+        self.pattern.append(("L", 0.75, 0))
+        self.pattern.append(("L", 1, 0))
+        self.pattern.append(("L", 1, 0.5))
+        self.pattern.append(("L", 0, 0.5))
+        self.pattern.append(("L", 0, 1))
+        self.pattern.append(("L", 0.25, 1))
+        self.pattern.append(("L", 0.25, 0.75))
+
+    def set_beehive(self):
+        dx = self.param_a / 5.0 * 0.5
+        dy = self.param_b / 5.0 * 0.5
+        # top
+        self.pattern.append(("M", 0, 0.5 - dy))
+        self.pattern.append(("L", dx, dy))
+        self.pattern.append(("L", 1 - dx, dy))
+        self.pattern.append(("L", 1, 0.5 - dy))
+        # inner
+        self.pattern.append(("M", 0, 0.5))
+        self.pattern.append(("L", dx, 2 * dy))
+        self.pattern.append(("L", 1 - dx, 2 * dy))
+        self.pattern.append(("L", 1, 0.5))
+        self.pattern.append(("L", 1 - dx, 1 - 2 * dy))
+        self.pattern.append(("L", dx, 1 - 2 * dy))
+        self.pattern.append(("L", 0, 0.5))
+        # bottom
+        self.pattern.append(("M", 0, 0.5 + dy))
+        self.pattern.append(("L", dx, 1 - dy))
+        self.pattern.append(("L", 1 - dx, 1 - dy))
+        self.pattern.append(("L", 1, 0.5 + dy))
+
+    def set_bowlingpin(self):
+        self.pattern.append(("M", 0.2, 0.6))
+        ctrl_x = 0.1 + self.param_a
+        ctrl_y = 0.5
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.4))
+
+        ctrl_x = 0.5
+        ctrl_y = 0.1 - self.param_b
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.4))
+
+        ctrl_x = 0.9 - self.param_a
+        ctrl_y = 0.5
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.8, 0.6))
+
+        ctrl_x = 0.5
+        ctrl_y = 0.9 + self.param_b
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.2, 0.6))
+
+    def set_wave(self):
+        # Pattern: wavy
+        self.pattern.append(("M", 0.0, 0.25))
+        self.pattern.append(("L", 0.25, 0.25))
+        ctrl_x = 0.5 + self.param_a
+        ctrl_y = 0.25 + self.param_b
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.5, 0.5))
+        ctrl_x = 0.5 - self.param_a
+        ctrl_y = 0.75 - self.param_b
+        self.pattern.append(("Q", ctrl_x, ctrl_y, 0.75, 0.75))
+        self.pattern.append(("L", 1, 0.75))
+
+    def set_bezier(self):
+        anchor_tip = (
+            self.param_a
+        )  # distance factor from anchor to place control point
+        anchor_center = self.param_b
+        self.pattern.append(("M", 0, 0))
+        self.pattern.append(
+            ("C", 1 * anchor_tip, 0, 1 / 2 - (1 * anchor_center), 1, 1 / 2, 1)
+        )
+        self.pattern.append(
+            ("C", 1 / 2 + (1 * anchor_center), 1, 1 * (1 - anchor_tip), 0, 1, 0)
+        )
+
+    def set_brackets(self):
+        p_a = self.param_a
+        p_b = self.param_b
+        self.pattern.append(("M", 0.0, 0.5))
+        self.pattern.append(("C", 0.0, p_a, 1.0, p_b, 1.0, 0.5))
+        self.pattern.append(("C", 1.0, 1 - p_a, 0.0, 1 - p_b, 0.0, 0.5))
+
+    def set_circle(self):
+        # concentric circles
+        amount = int(abs(10 * self.param_a)) + 1  # (1 to 50)
+        gap = abs(self.param_b)
+        dx = 0.5 / amount
+        cx = 0.5
+        cy = 0.5
+        rotation = 0
+        sweep = 0
+        arc = 0
+        for i in range(amount):
+            # A move-to command to the point cx+rx,cy;
+            # arc to cx,cy+ry;
+            # arc to cx-rx,cy;
+            # arc to cx,cy-ry;
+            # arc with a segment-completing close path operation.
+            radius = i * dx
+
+            self.pattern.append(("M", cx + radius, cy))
+            self.pattern.append(
+                ("A", cx, cy, rotation, arc, sweep, cx, cy + radius)
+            )
+            self.pattern.append(
+                ("A", cx, cy, rotation, arc, sweep, cx - radius, cy)
+            )
+            self.pattern.append(
+                ("A", cx, cy, rotation, arc, sweep, cx, cy - radius)
+            )
+            self.pattern.append(
+                ("A", cx, cy, rotation, arc, sweep, cx + radius, cy)
+            )
+
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -357,7 +377,7 @@ class LivingHinges:
         self.param_a = param_a
         self.param_b = param_b
         # Make sure pattern is updated with additional parameter
-        __ = self.set_predefined_pattern(self.cutshape)
+        self.set_predefined_pattern(self.cutshape)
 
     def generate(self, show_outline=False, force=False, final=False):
         if self.path is not None and not force:
@@ -534,12 +554,10 @@ class LivingHinges:
                         new_cx = min(max(new_cx, xmin), xmax)
                         new_ex = min(max(new_ex, xmin), xmax)
                         # corresponding y values...
-                        new_cy = current_y + (new_cx - current_x) / (
-                            p[0] - current_x
-                        ) * (p[1] - current_y)
-                        new_ey = current_y + (new_ex - current_x) / (
-                            p[0] - current_x
-                        ) * (p[1] - current_y)
+                        edx = p[0] - current_x
+                        edy = p[1] - current_y
+                        new_cy = current_y + (new_cx - current_x) / edx * edy
+                        new_ey = current_y + (new_ex - current_x) / edx * edy
                         # Y can still cross...
                         new_cx_clipped = new_cx
                         new_ex_clipped = new_ex
@@ -650,12 +668,10 @@ class LivingHinges:
                         new_cx = min(max(new_cx, xmin), xmax)
                         new_ex = min(max(new_ex, xmin), xmax)
                         # corresponding y values...
-                        new_cy = current_y + (new_cx - current_x) / (
-                            e.end[0] - current_x
-                        ) * (e.end[1] - current_y)
-                        new_ey = current_y + (new_ex - current_x) / (
-                            e.end[0] - current_x
-                        ) * (e.end[1] - current_y)
+                        edx = e.end[0] - current_x
+                        edy = e.end[1] - current_y
+                        new_cy = current_y + (new_cx - current_x) / edx * edy
+                        new_ey = current_y + (new_ex - current_x) / edx * edy
                         # Y can still cross...
                         new_cx_clipped = new_cx
                         new_ex_clipped = new_ex
@@ -762,6 +778,17 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.hinge_origin_x ="0cm"
+        self.hinge_origin_y ="0cm"
+        self.hinge_width ="5cm"
+        self.hinge_height ="5cm"
+        self.hinge_cells_x= 20
+        self.hinge_cells_y = 20
+        self.hinge_padding_x = 10
+        self.hinge_padding_y = 10
+        self.hinge_param_a = 0.7
+        self.hinge_param_b= 0.7
+
         self.renderer = LaserRender(context)
         self.in_event = False
         self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -771,6 +798,7 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
+        self.button_default = wx.Button(self, wx.ID_ANY, "D")
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
@@ -827,7 +855,11 @@ class HingePanel(wx.Panel):
 
         #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
 
-        self.patterns = list(self.hinge_generator.get_patterns())
+        self.patterns = list()
+        self.defaults = list()
+        for pattern, default in self.hinge_generator.get_patterns():
+            self.patterns.append(pattern)
+            self.defaults.append(default)
         self.combo_style.Set(self.patterns)
         self.combo_style.SetSelection(0)
         # self.check_debug_outline.SetValue(True)
@@ -853,7 +885,8 @@ class HingePanel(wx.Panel):
         self.slider_offset_y.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_param_a.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
-        self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_option_update)
+        self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
+        self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
         # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
 
     def _set_layout(self):
@@ -919,6 +952,10 @@ class HingePanel(wx.Panel):
         self.combo_style.SetToolTip(_("Choose the hinge pattern"))
         hsizer_pattern.Add(self.combo_style, 1, wx.EXPAND, 0)
 
+        self.button_default.SetToolTip(_("Default Values"))
+        self.button_default.SetMinSize((30, -1))
+        hsizer_pattern.Add(self.button_default, 0, wx.EXPAND, 0)
+
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellwidth, 1, wx.EXPAND, 0)
 
@@ -951,7 +988,7 @@ class HingePanel(wx.Panel):
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_x.SetToolTip(
-            _("Select the offset of one pattern in X-direction")
+            _("Select the pattern-offset in X-direction")
         )
         hsizer_offsetx.Add(self.slider_offset_x, 1, wx.EXPAND, 0)
 
@@ -963,7 +1000,7 @@ class HingePanel(wx.Panel):
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_y.SetToolTip(
-            _("Select the offset of one pattern in X-direction")
+            _("Select the pattern-offset in Y-direction")
         )
         hsizer_offsety.Add(self.slider_offset_y, 1, wx.EXPAND, 0)
 
@@ -996,20 +1033,8 @@ class HingePanel(wx.Panel):
         self.SetSizer(main_sizer)
 
     def on_paint(self, event):
-        def _set_penwidth(pen, width):
-            try:
-                if isnan(width):
-                    width = 1.0
-                try:
-                    pen.SetWidth(width)
-                except TypeError:
-                    pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
-
         # Create paint DC
         dc = wx.PaintDC(self.panel_preview)
-
         # Create graphics context from it
         gc = wx.GraphicsContext.Create(dc)
 
@@ -1046,6 +1071,20 @@ class HingePanel(wx.Panel):
     def on_button_close(self, event):
         self.context("window toggle Hingetool\n")
 
+    def on_default_button(self, event):
+        idx = self.combo_style.GetSelection()
+        if idx<0:
+            return
+        pattern = self.patterns[idx]
+        default = self.hinge_generator.get_default(pattern)
+        self.slider_width.SetValue(20)
+        self.slider_height.SetValue(20)
+        self.slider_offset_x.SetValue(default[0])
+        self.slider_offset_y.SetValue(default[1])
+        self.slider_param_a.SetValue(int(10*default[2]))
+        self.slider_param_b.SetValue(int(10*default[3]))
+        self.on_option_update(None)
+
     def on_button_generate(self, event):
         # Polycut algorithm does not work for me (yet), final=False still
         self.hinge_generator.generate(show_outline=False, force=False, final=False)
@@ -1058,119 +1097,155 @@ class HingePanel(wx.Panel):
         self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
 
-    def on_option_update(self, event):
-        if self.in_event:
-            return
-        self.in_event = True
-        flag = True
+    def on_pattern_update(self, event):
+        # Save the old values...
+        # self._save_settings()
         idx = self.combo_style.GetSelection()
         if idx < 0:
             idx = 0
         style = self.patterns[idx]
         self.context.hinge_type = style
+        # Load new set of values...
+        self._restore_settings(reload=True)
+        self.apply()
+
+    def on_option_update(self, event):
+        # Generic update within a pattern
+        flag = True
         try:
             wd = float(Length(self.text_width.GetValue()))
             if wd > 0:
-                self.context.hinge_width = self.text_width.GetValue()
+                self.hinge_width = self.text_width.GetValue()
         except ValueError:
             wd = 0
             flag = False
         try:
             ht = float(Length(self.text_height.GetValue()))
             if ht > 0:
-                self.context.hinge_height = self.text_height.GetValue()
+                self.hinge_height = self.text_height.GetValue()
         except ValueError:
             ht = 0
             flag = False
         try:
             x = float(Length(self.text_origin_x.GetValue()))
-            self.context.hinge_origin_x = self.text_origin_x.GetValue()
+            self.hinge_origin_x = self.text_origin_x.GetValue()
         except ValueError:
             x = 0
             flag = False
         try:
             y = float(Length(self.text_origin_y.GetValue()))
-            self.context.hinge_origin_y = self.text_origin_y.GetValue()
+            self.hinge_origin_y = self.text_origin_y.GetValue()
         except ValueError:
             y = 0
             flag = False
         cell_x = self.slider_width.GetValue()
         cell_y = self.slider_height.GetValue()
-        self.context.hinge_cells_x = cell_x
-        self.context.hinge_cells_y = cell_y
+        self.hinge_cells_x = cell_x
+        self.hinge_cells_y = cell_y
         offset_x = self.slider_offset_x.GetValue()
         offset_y = self.slider_offset_y.GetValue()
-        self.context.hinge_padding_x = offset_x
-        self.context.hinge_padding_y = offset_y
+        self.hinge_padding_x = offset_x
+        self.hinge_padding_y = offset_y
 
         p_a = self.slider_param_a.GetValue() / 10.0
         p_b = self.slider_param_b.GetValue() / 10.0
-        self.context.hinge_param_a = p_a
-        self.context.hinge_param_b = p_b
-        # Restore settings will call the LivingHinge class
-        self._restore_settings()
-        self.panel_preview.Refresh()
-        self.in_event = False
+        self.hinge_param_a = p_a
+        self.hinge_param_b = p_b
+        self._save_settings()
+        self.apply()
 
     def _setup_settings(self):
-        self.context.setting(str, "hinge_type", "line")
-        self.context.setting(str, "hinge_origin_x", "0cm")
-        self.context.setting(str, "hinge_origin_y", "0cm")
-        self.context.setting(str, "hinge_width", "5cm")
-        self.context.setting(str, "hinge_height", "5cm")
-        self.context.setting(int, "hinge_cells_x", 20)
-        self.context.setting(int, "hinge_cells_y", 20)
-        self.context.setting(int, "hinge_padding_x", 10)
-        self.context.setting(int, "hinge_padding_y", 10)
-        self.context.setting(float, "hinge_param_a", 0.7)
-        self.context.setting(float, "hinge_param_b", 0.7)
+        firstpattern = self.patterns[0]
+        for (pattern, recommended) in zip(self.patterns, self.defaults):
+            default = (pattern, 20, 20, recommended[0], recommended[1], recommended[2], recommended[3])
+            self.context.setting(list, f"hinge_{pattern}", default)
+        self.context.setting(str, "hinge_type", firstpattern)
 
-    def _restore_settings(self):
-        if self.context.hinge_type not in self.patterns:
-            self.context.hinge_type = self.patterns[0]
-        flag = self.hinge_generator.set_predefined_pattern(self.context.hinge_type)
-        x = float(Length(self.context.hinge_origin_x))
-        y = float(Length(self.context.hinge_origin_y))
-        wd = float(Length(self.context.hinge_width))
-        ht = float(Length(self.context.hinge_height))
+    def apply(self):
+        # Restore settings will call the LivingHinge class
+        self._restore_settings(reload=False)
+        self.panel_preview.Refresh()
+
+    def _save_settings(self):
+        pattern = self.context.hinge_type
+        default = (
+            pattern,
+            self.hinge_cells_x, self.hinge_cells_y,
+            self.hinge_padding_x, self.hinge_padding_y,
+            self.hinge_param_a, self.hinge_param_b
+        )
+        setattr(self.context, f"hinge_{pattern}", default)
+        # print (f"Stored defaults for {pattern}: {default}")
+
+    def _restore_settings(self, reload=False):
+        pattern = self.context.hinge_type
+        if pattern not in self.patterns:
+            pattern = self.patterns[0]
+            self.context.hinge_type = pattern
+
+        if reload:
+            default = getattr(self.context, f"hinge_{pattern}", None)
+            # print (f"Got defaults for {pattern}: {default}")
+            if default is None or len(default) < 7:
+                # strange
+                # print(f"Could not get a setting for {pattern}: {default}")
+                return
+            self.hinge_cells_x= default[1]
+            self.hinge_cells_y= default[2]
+            self.hinge_padding_x= default[3]
+            self.hinge_padding_y= default[4]
+            self.hinge_param_a= default[5]
+            self.hinge_param_b= default[6]
+
+        flag, info1, info2 = self.hinge_generator.set_predefined_pattern(pattern)
+        x = float(Length(self.hinge_origin_x))
+        y = float(Length(self.hinge_origin_y))
+        wd = float(Length(self.hinge_width))
+        ht = float(Length(self.hinge_height))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
         self.hinge_generator.set_cell_values(
-            self.context.hinge_cells_x, self.context.hinge_cells_y
+            self.hinge_cells_x, self.hinge_cells_y
         )
         self.hinge_generator.set_padding_values(
-            self.context.hinge_padding_x, self.context.hinge_padding_y
+            self.hinge_padding_x, self.hinge_padding_y
         )
         self.hinge_generator.set_additional_parameters(
-            self.context.hinge_param_a, self.context.hinge_param_b
+            self.hinge_param_a, self.hinge_param_b
         )
         self.slider_param_a.Enable(flag)
         self.slider_param_b.Enable(flag)
         self.slider_param_a.Show(flag)
         self.slider_param_b.Show(flag)
+        if not info1:
+            info1 = "Change the shape appearance"
+        if not info2:
+            info2 = "Change the shape appearance"
+        self.slider_param_a.SetToolTip(_(info1))
+        self.slider_param_b.SetToolTip(_(info2))
         if self.combo_style.GetSelection() != self.patterns.index(
             self.context.hinge_type
         ):
             self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
-        if self.text_origin_x.GetValue() != self.context.hinge_origin_x:
-            self.text_origin_x.ChangeValue(self.context.hinge_origin_x)
-        if self.text_origin_y.GetValue() != self.context.hinge_origin_y:
-            self.text_origin_y.ChangeValue(self.context.hinge_origin_y)
-        if self.text_width.GetValue() != self.context.hinge_width:
-            self.text_width.ChangeValue(self.context.hinge_width)
-        if self.text_height.GetValue() != self.context.hinge_height:
-            self.text_height.ChangeValue(self.context.hinge_height)
-        if self.slider_width.GetValue() != self.context.hinge_cells_x:
-            self.slider_width.SetValue(self.context.hinge_cells_x)
-        if self.slider_height.GetValue() != self.context.hinge_cells_y:
-            self.slider_height.SetValue(self.context.hinge_cells_y)
-        if self.slider_offset_x.GetValue() != self.context.hinge_padding_x:
-            self.slider_offset_x.SetValue(self.context.hinge_padding_x)
-        if self.slider_offset_y.GetValue() != self.context.hinge_padding_y:
-            self.slider_offset_y.SetValue(self.context.hinge_padding_y)
-        if self.slider_param_a.GetValue() != int(10 * self.context.hinge_param_a):
-            self.slider_param_a.SetValue(int(10 * self.context.hinge_param_a))
-        if self.slider_param_b.GetValue() != int(10 * self.context.hinge_param_b):
-            self.slider_param_b.SetValue(int(10 * self.context.hinge_param_b))
+        # if self.text_origin_x.GetValue() != self.hinge_origin_x:
+        #     self.text_origin_x.ChangeValue(self.hinge_origin_x)
+        # if self.text_origin_y.GetValue() != self.hinge_origin_y:
+        #     self.text_origin_y.ChangeValue(self.hinge_origin_y)
+        # if self.text_width.GetValue() != self.hinge_width:
+        #     self.text_width.ChangeValue(self.hinge_width)
+        # if self.text_height.GetValue() != self.hinge_height:
+        #     self.text_height.ChangeValue(self.hinge_height)
+        if self.slider_width.GetValue() != self.hinge_cells_x:
+            self.slider_width.SetValue(self.hinge_cells_x)
+        if self.slider_height.GetValue() != self.hinge_cells_y:
+            self.slider_height.SetValue(self.hinge_cells_y)
+        if self.slider_offset_x.GetValue() != self.hinge_padding_x:
+            self.slider_offset_x.SetValue(self.hinge_padding_x)
+        if self.slider_offset_y.GetValue() != self.hinge_padding_y:
+            self.slider_offset_y.SetValue(self.hinge_padding_y)
+        if self.slider_param_a.GetValue() != int(10 * self.hinge_param_a):
+            self.slider_param_a.SetValue(int(10 * self.hinge_param_a))
+        if self.slider_param_b.GetValue() != int(10 * self.hinge_param_b):
+            self.slider_param_b.SetValue(int(10 * self.hinge_param_b))
         flag = wd > 0 and ht > 0
         self.button_generate.Enable(flag)
         self.Layout()
@@ -1178,35 +1253,33 @@ class HingePanel(wx.Panel):
     def pane_show(self):
         first_selected = None
         bounds = self.context.elements._emphasized_bounds
+        units = self.context.units_name
         if bounds is not None:
             for node in self.context.elements.elems(emphasized=True):
                 first_selected = node
                 break
             self.hinge_generator.set_hinge_shape(first_selected)
-            units = self.context.units_name
-            start_x = bounds[0]
-            start_y = bounds[1]
-            wd = bounds[2] - bounds[0]
-            ht = bounds[3] - bounds[1]
-            self.text_origin_x.ChangeValue(
-                Length(amount=start_x, digits=2, preferred_units=units).preferred_length
-            )
-            self.text_origin_y.ChangeValue(
-                Length(amount=start_y, digits=2, preferred_units=units).preferred_length
-            )
-            self.text_width.ChangeValue(
-                Length(amount=wd, digits=2, preferred_units=units).preferred_length
-            )
-            self.text_height.ChangeValue(
-                Length(amount=ht, digits=2, preferred_units=units).preferred_length
-            )
-            self.context.hinge_origin_x = self.text_origin_x.GetValue()
-            self.context.hinge_origin_y = self.text_origin_y.GetValue()
-            self.context.hinge_width = self.text_width.GetValue()
-            self.context.hinge_height = self.text_height.GetValue()
-            self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
-
-
+        else:
+            if units in ("in", "inch"):
+                s = "2in"
+            else:
+                s = "5cm"
+            bounds = (0, 0, float(Length(s)), float(Length(s)))
+        self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
+        start_x = bounds[0]
+        start_y = bounds[1]
+        wd = bounds[2] - bounds[0]
+        ht = bounds[3] - bounds[1]
+        self.hinge_origin_x = Length(amount=start_x, digits=3, preferred_units=units).preferred_length
+        self.hinge_origin_y = Length(amount=start_y, digits=3, preferred_units=units).preferred_length
+        self.hinge_width = Length(amount=wd, digits=2, preferred_units=units).preferred_length
+        self.hinge_height = Length(amount=ht, digits=2, preferred_units=units).preferred_length
+        self.text_origin_x.ChangeValue(self.hinge_origin_x)
+        self.text_origin_y.ChangeValue(self.hinge_origin_y)
+        self.text_width.ChangeValue(self.hinge_width)
+        self.text_height.ChangeValue(self.hinge_height)
+        self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
+        self.on_pattern_update(None)
 class LivingHingeTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
