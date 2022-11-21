@@ -1,4 +1,5 @@
 import wx
+from copy import copy
 from numpy import linspace
 
 from meerk40t.core.units import Length
@@ -66,6 +67,7 @@ class LivingHinges:
         self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
         # Requires recalculation
         self.path = None
+        self.previewpath = None
         self.outershape = None
         self.pattern = []
         self.cutshape = ""
@@ -179,6 +181,7 @@ class LivingHinges:
         self.pattern = []
         entry[0]()
         self.path = None
+        self.previewpath = None
         return additional_parameter, info1, info2
 
     def set_line(self):
@@ -424,18 +427,21 @@ class LivingHinges:
         self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
         self.path = None
+        self.previewpath = None
 
     def set_cell_values(self, percentage_x, percentage_y):
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
         # Requires recalculation
         self.path = None
+        self.previewpath = None
 
     def set_padding_values(self, padding_x, padding_y):
         self.cell_padding_h_percentage = padding_x
         self.cell_padding_v_percentage = padding_y
         # Requires recalculation
         self.path = None
+        self.preview_path = None
 
     def set_additional_parameters(self, param_a, param_b):
         self.param_a = param_a
@@ -444,7 +450,10 @@ class LivingHinges:
         self.set_predefined_pattern(self.cutshape)
 
     def generate(self, show_outline=False, force=False, final=False):
-        if self.path is not None and not force:
+        if final and self.path is not None and not force:
+            # No need to recalculate...
+            return
+        elif not final and self.preview_path is not None and not force:
             # No need to recalculate...
             return
 
@@ -578,6 +587,7 @@ class LivingHinges:
             # path elements to lines
             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            self.previewpath = copy(self.path)
 
     def clip_path(self, path, xmin, ymin, xmax, ymax):
         """
@@ -1177,7 +1187,7 @@ class HingePanel(wx.Panel):
             # flag = self.check_debug_outline.GetValue()
             self.hinge_generator.generate(show_outline=False, force=False, final=False)
             gc.SetPen(mypen_path)
-            gcpath = self.renderer.make_path(gc, self.hinge_generator.path)
+            gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
             gc.StrokePath(gcpath)
 
     def on_button_close(self, event):
