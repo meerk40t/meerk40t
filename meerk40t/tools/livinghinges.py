@@ -1,8 +1,9 @@
 import wx
+from copy import copy
 from numpy import linspace
 
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_hinges_50
+from meerk40t.gui.icons import icons8_hinges_50, EmptyIcon
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -17,6 +18,7 @@ from meerk40t.svgelements import (
     Path,
     Point,
     Polygon,
+    Polyline,
     QuadraticBezier,
 )
 from meerk40t.tools.pathtools import VectorMontonizer
@@ -52,28 +54,102 @@ class LivingHinges:
         self.y0 = height * self.gap
         self.x1 = width * (1 - self.gap)
         self.y1 = height * (1 - self.gap)
-        self.param_a = 0.7
-        self.param_b = 0.7
+        # Declare all used variables to satisfy codacy
+        self.param_a = 0
+        self.param_b = 0
+        self.cell_height_percentage = 20
+        self.cell_width_percentage = 20
+        self.cell_height = height * self.cell_height_percentage / 100
+        self.cell_width = width * self.cell_width_percentage / 100
+        self.cell_padding_v_percentage = 0
+        self.cell_padding_h_percentage = 0
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / 100
+        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
         # Requires recalculation
         self.path = None
+        self.previewpath = None
         self.outershape = None
         self.pattern = []
         self.cutshape = ""
         self._defined_patterns = {}
-        self._defined_patterns["line"] = (self.set_line, False, "", "", (-20, -35, 0, 0))
-        self._defined_patterns["fishbone"] = (self.set_fishbone, False, "", "", (10, 10, 0, 0))
-        self._defined_patterns["diagonal"] = (self.set_diagonal, False, "", "", (-10, -10, 0, 0))
-        self._defined_patterns["diamond1"] = (self.set_diamond1, False, "", "", (-15, 10, 0, 0))
-        self._defined_patterns["diamond2"] = (self.set_diamond2, False, "", "", (-12, 6, 0, 0))
-        self._defined_patterns["cross"] = (self.set_cross, False, "", "", (-15, -4, 0, 0))
-        self._defined_patterns["bezier"] = (self.set_bezier, True, "", "", (-2, -16, 0.4, 0.3))
-        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
-        self._defined_patterns["bowlingpin"] = (self.set_bowlingpin, True, "Left/right bowl", "Top/bottom bowl", (-21, -5, -0.3, 0))
-        self._defined_patterns["beehive"] = (
-            self.set_beehive, True, "Position of left side", "Distance of second line", (-1, 6, 1.4, 0)
+        self._defined_patterns["line"] = (
+            self.set_line,
+            False,
+            "",
+            "",
+            (-20, -35, 0, 0),
         )
-        self._defined_patterns["fabric"] = (self.set_fabric, False, "", "", (-18, 13, 0, 0))
-        self._defined_patterns["brackets"] = (self.set_brackets, True, "", "", (-14, -11, 0.7, 0.7))
+        self._defined_patterns["fishbone"] = (
+            self.set_fishbone,
+            False,
+            "",
+            "",
+            (10, 10, 0, 0),
+        )
+        self._defined_patterns["diagonal"] = (
+            self.set_diagonal,
+            False,
+            "",
+            "",
+            (-10, -10, 0, 0),
+        )
+        self._defined_patterns["diamond1"] = (
+            self.set_diamond1,
+            False,
+            "",
+            "",
+            (-15, 10, 0, 0),
+        )
+        self._defined_patterns["diamond2"] = (
+            self.set_diamond2,
+            False,
+            "",
+            "",
+            (-12, 6, 0, 0),
+        )
+        self._defined_patterns["cross"] = (
+            self.set_cross,
+            False,
+            "",
+            "",
+            (-15, -4, 0, 0),
+        )
+        self._defined_patterns["bezier"] = (
+            self.set_bezier,
+            True,
+            "",
+            "",
+            (-2, -16, 0.4, 0.3),
+        )
+        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
+        self._defined_patterns["bowlingpin"] = (
+            self.set_bowlingpin,
+            True,
+            "Left/right bowl",
+            "Top/bottom bowl",
+            (-21, -5, -0.3, 0),
+        )
+        self._defined_patterns["beehive"] = (
+            self.set_beehive,
+            True,
+            "Position of left side",
+            "Distance of second line",
+            (-1, 6, 1.4, 0),
+        )
+        self._defined_patterns["fabric"] = (
+            self.set_fabric,
+            False,
+            "",
+            "",
+            (-18, 13, 0, 0),
+        )
+        self._defined_patterns["brackets"] = (
+            self.set_brackets,
+            True,
+            "",
+            "",
+            (-14, -11, 0.7, 0.7),
+        )
         # self._defined_patterns["circle"] = (self.set_circle, True, "", "", (10, 10, 0.7, 0.7))
 
         self.set_cell_values(10, 10)
@@ -94,9 +170,10 @@ class LivingHinges:
     def set_predefined_pattern(self, cutshape):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
         #
-        if cutshape not in self._defined_patterns:
-            return
-        entry = self._defined_patterns[cutshape]
+        if cutshape in self._defined_patterns:
+            entry = self._defined_patterns[cutshape]
+        else:
+            entry = self._defined_patterns[0]
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
@@ -104,6 +181,7 @@ class LivingHinges:
         self.pattern = []
         entry[0]()
         self.path = None
+        self.previewpath = None
         return additional_parameter, info1, info2
 
     def set_line(self):
@@ -218,9 +296,7 @@ class LivingHinges:
         self.pattern.append(("L", 1, 0.75))
 
     def set_bezier(self):
-        anchor_tip = (
-            self.param_a
-        )  # distance factor from anchor to place control point
+        anchor_tip = self.param_a  # distance factor from anchor to place control point
         anchor_center = self.param_b
         self.pattern.append(("M", 0, 0))
         self.pattern.append(
@@ -256,19 +332,10 @@ class LivingHinges:
             radius = i * dx
 
             self.pattern.append(("M", cx + radius, cy))
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx, cy + radius)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx - radius, cy)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx, cy - radius)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx + radius, cy)
-            )
-
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy + radius))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx - radius, cy))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy - radius))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx + radius, cy))
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -360,18 +427,21 @@ class LivingHinges:
         self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
         self.path = None
+        self.previewpath = None
 
     def set_cell_values(self, percentage_x, percentage_y):
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
         # Requires recalculation
         self.path = None
+        self.previewpath = None
 
     def set_padding_values(self, padding_x, padding_y):
         self.cell_padding_h_percentage = padding_x
         self.cell_padding_v_percentage = padding_y
         # Requires recalculation
         self.path = None
+        self.preview_path = None
 
     def set_additional_parameters(self, param_a, param_b):
         self.param_a = param_a
@@ -380,7 +450,10 @@ class LivingHinges:
         self.set_predefined_pattern(self.cutshape)
 
     def generate(self, show_outline=False, force=False, final=False):
-        if self.path is not None and not force:
+        if final and self.path is not None and not force:
+            # No need to recalculate...
+            return
+        elif not final and self.preview_path is not None and not force:
             # No need to recalculate...
             return
 
@@ -440,8 +513,18 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
-        if final:
+        rectangular = True
+        if (
+            self.outershape is not None and
+            hasattr(self.outershape, "as_path") and
+            self.outershape.type != "elem rect"
+        ):
+            rectangular = False
+        if final and not rectangular:
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            from time import time
+
+            t0 = time()
             vm = VectorMontonizer()
             if self.outershape is None:
                 outer_poly = Polygon(
@@ -459,21 +542,52 @@ class LivingHinges:
                     [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
                 )
             vm.add_polyline(outer_poly)
-            path = Path()
+            path = Path(stroke=Color("red"), stroke_width=500)
+            deleted = 0
+            total = 0
+            # pt_min_x = 1E+30
+            # pt_min_y = 1E+30
+            # pt_max_x = -1 * pt_min_x
+            # pt_max_y = -1 * pt_min_y
+            # Numpy does not work
+            # vm.add_polyline(outer_poly)
+            # path = Path(stroke=Color("red"), stroke_width=500)
+            # for sub_inner in self.path.as_subpaths():
+            #     sub_inner = Path(sub_inner)
+            #     pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
+            #     good_pts = [p for p in pts_sub if vm.is_point_inside(p[0] + self.start_x, p[1] + self.start_y)]
+            #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
             for sub_inner in self.path.as_subpaths():
                 sub_inner = Path(sub_inner)
-                pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
-                good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
-                if len(good_pts) > 0:
-                    path.move(*good_pts)
+                pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+
+                for i in range(len(pts_sub)-1, -1, -1):
+                    total += 1
+                    pt = pts_sub[i]
+                    pt[0] += self.start_x
+                    pt[1] += self.start_y
+                    # pt_min_x = min(pt_min_x, pt[0])
+                    # pt_min_y = min(pt_min_y, pt[1])
+                    # pt_max_x = max(pt_max_x, pt[0])
+                    # pt_max_y = max(pt_max_y, pt[1])
+                    if not vm.is_point_inside(pt[0], pt[1]):
+                        # if we do have points beyond, then we create a seperate path
+                        if i < len(pts_sub) - 1:
+                            goodpts = pts_sub[i+1:]
+                            path += Path(Polyline(goodpts), stroke=Color("red"), stroke_width=500)
+                        del pts_sub[i:]
+                        deleted += 1
+                path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
             self.path = path
         else:
             # Former method....
-            # is limited to rectangular area but maintains inner cubics, quads and arcs
-            # while the vectormontonizer is more versatile when it comes to the
-            # surrounding shape but transforms all path elements to lines
+            # ...is limited to rectangular area but maintains inner cubics,
+            # quads and arcs while the vectormontonizer is more versatile
+            # when it comes to the surrounding shape but transforms all
+            # path elements to lines
             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            self.previewpath = copy(self.path)
 
     def clip_path(self, path, xmin, ymin, xmax, ymax):
         """
@@ -485,7 +599,6 @@ class LivingHinges:
             ymin : Upper side of the rectangular area
             xmax : Right side of the rectangular area
             ymax : Lower side of the rectangular area
-
         """
 
         def outside(bb_to_check, master_bb):
@@ -578,7 +691,7 @@ class LivingHinges:
                         new_ey = new_ey_clipped
                         if min(new_cy, new_ey) == ymax and dy != 0:
                             # Outward...
-                            ignored
+                            ignored += 1
                         elif max(new_cy, new_ey) == ymin and dy != 0:
                             # Outward...
                             ignored += 1
@@ -596,8 +709,6 @@ class LivingHinges:
 
         def add_move(addpath, destination):
             # Was the last segment as well a move? Then just update the coords...
-            # if destination[0]<xmin or destination[0]>xmax or destination[1]<ymin or destination[1]>ymax:
-            #     return
             if len(addpath) > 0:
                 if isinstance(addpath[-1], Move):
                     addpath[-1].end = destination
@@ -773,21 +884,25 @@ class LivingHinges:
 
 
 class HingePanel(wx.Panel):
+    """
+    UI for LivingHinges, allows setting of parameters including preview of the expected result
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.hinge_origin_x ="0cm"
-        self.hinge_origin_y ="0cm"
-        self.hinge_width ="5cm"
-        self.hinge_height ="5cm"
-        self.hinge_cells_x= 20
+        self.hinge_origin_x = "0cm"
+        self.hinge_origin_y = "0cm"
+        self.hinge_width = "5cm"
+        self.hinge_height = "5cm"
+        self.hinge_cells_x = 20
         self.hinge_cells_y = 20
         self.hinge_padding_x = 10
         self.hinge_padding_y = 10
         self.hinge_param_a = 0.7
-        self.hinge_param_b= 0.7
+        self.hinge_param_b = 0.7
 
         self.renderer = LaserRender(context)
         self.in_event = False
@@ -798,7 +913,18 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
-        self.button_default = wx.Button(self, wx.ID_ANY, "D")
+        self.button_default = wx.StaticBitmap(
+            self, wx.ID_ANY,
+            size=wx.Size(30, 30),
+            style=wx.SB_SUNKEN,
+        )
+        self.button_default.SetBitmap(
+            EmptyIcon(
+                size=25,
+                color=self.button_default.GetBackgroundColour(),
+                msg="D"
+            ).GetBitmap()
+        )
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
@@ -886,7 +1012,7 @@ class HingePanel(wx.Panel):
         self.slider_param_a.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
-        self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
+        self.button_default.Bind(wx.EVT_LEFT_DOWN, self.on_default_button)
         # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
 
     def _set_layout(self):
@@ -987,9 +1113,7 @@ class HingePanel(wx.Panel):
         label_offset_x.SetMinSize((90, -1))
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_offset_x.SetToolTip(
-            _("Select the pattern-offset in X-direction")
-        )
+        self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
         hsizer_offsetx.Add(self.slider_offset_x, 1, wx.EXPAND, 0)
 
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
@@ -999,9 +1123,7 @@ class HingePanel(wx.Panel):
         label_offset_y.SetMinSize((90, -1))
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_offset_y.SetToolTip(
-            _("Select the pattern-offset in Y-direction")
-        )
+        self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))
         hsizer_offsety.Add(self.slider_offset_y, 1, wx.EXPAND, 0)
 
         self.slider_param_a.SetToolTip(_("Change the shape appearance"))
@@ -1065,7 +1187,7 @@ class HingePanel(wx.Panel):
             # flag = self.check_debug_outline.GetValue()
             self.hinge_generator.generate(show_outline=False, force=False, final=False)
             gc.SetPen(mypen_path)
-            gcpath = self.renderer.make_path(gc, self.hinge_generator.path)
+            gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
             gc.StrokePath(gcpath)
 
     def on_button_close(self, event):
@@ -1073,7 +1195,7 @@ class HingePanel(wx.Panel):
 
     def on_default_button(self, event):
         idx = self.combo_style.GetSelection()
-        if idx<0:
+        if idx < 0:
             return
         pattern = self.patterns[idx]
         default = self.hinge_generator.get_default(pattern)
@@ -1081,21 +1203,57 @@ class HingePanel(wx.Panel):
         self.slider_height.SetValue(20)
         self.slider_offset_x.SetValue(default[0])
         self.slider_offset_y.SetValue(default[1])
-        self.slider_param_a.SetValue(int(10*default[2]))
-        self.slider_param_b.SetValue(int(10*default[3]))
+        self.slider_param_a.SetValue(int(10 * default[2]))
+        self.slider_param_b.SetValue(int(10 * default[3]))
         self.on_option_update(None)
 
     def on_button_generate(self, event):
+        oldlabel = self.button_generate.Label
+        self.button_generate.Enable(False)
+        self.button_generate.SetLabel(_("Processing..."))
+        if self.hinge_generator.outershape is not None:
+            # As we have a reference shape, we make sure
+            # we update the information...
+            units = self.context.units_name
+            bounds = self.hinge_generator.outershape.bbox()
+            start_x = bounds[0]
+            start_y = bounds[1]
+            wd = bounds[2] - bounds[0]
+            ht = bounds[3] - bounds[1]
+            self.hinge_origin_x = Length(
+                amount=start_x, digits=3, preferred_units=units
+            ).preferred_length
+            self.hinge_origin_y = Length(
+                amount=start_y, digits=3, preferred_units=units
+            ).preferred_length
+            self.hinge_width = Length(
+                amount=wd, digits=2, preferred_units=units
+            ).preferred_length
+            self.hinge_height = Length(
+                amount=ht, digits=2, preferred_units=units
+            ).preferred_length
+            self.text_origin_x.ChangeValue(self.hinge_origin_x)
+            self.text_origin_y.ChangeValue(self.hinge_origin_y)
+            self.text_width.ChangeValue(self.hinge_width)
+            self.text_height.ChangeValue(self.hinge_height)
+            self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
+
         # Polycut algorithm does not work for me (yet), final=False still
-        self.hinge_generator.generate(show_outline=False, force=False, final=False)
+        self.hinge_generator.generate(show_outline=False, force=True, final=True)
         node = self.context.elements.elem_branch.add(
-            path=abs(self.hinge_generator.path),
+            path=self.hinge_generator.path,
             stroke_width=500,
             color=Color("red"),
             type="elem path",
         )
+        if self.hinge_generator.outershape is not None:
+            group_node = self.hinge_generator.outershape.parent.add(type="group", label="Hinge")
+            group_node.append_child(self.hinge_generator.outershape)
+            group_node.append_child(node)
         self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
+        self.button_generate.Enable(True)
+        self.button_generate.SetLabel(oldlabel)
 
     def on_pattern_update(self, event):
         # Save the old values...
@@ -1157,7 +1315,15 @@ class HingePanel(wx.Panel):
     def _setup_settings(self):
         firstpattern = self.patterns[0]
         for (pattern, recommended) in zip(self.patterns, self.defaults):
-            default = (pattern, 20, 20, recommended[0], recommended[1], recommended[2], recommended[3])
+            default = (
+                pattern,
+                20,
+                20,
+                recommended[0],
+                recommended[1],
+                recommended[2],
+                recommended[3],
+            )
             self.context.setting(list, f"hinge_{pattern}", default)
         self.context.setting(str, "hinge_type", firstpattern)
 
@@ -1170,9 +1336,12 @@ class HingePanel(wx.Panel):
         pattern = self.context.hinge_type
         default = (
             pattern,
-            self.hinge_cells_x, self.hinge_cells_y,
-            self.hinge_padding_x, self.hinge_padding_y,
-            self.hinge_param_a, self.hinge_param_b
+            self.hinge_cells_x,
+            self.hinge_cells_y,
+            self.hinge_padding_x,
+            self.hinge_padding_y,
+            self.hinge_param_a,
+            self.hinge_param_b,
         )
         setattr(self.context, f"hinge_{pattern}", default)
         # print (f"Stored defaults for {pattern}: {default}")
@@ -1190,12 +1359,12 @@ class HingePanel(wx.Panel):
                 # strange
                 # print(f"Could not get a setting for {pattern}: {default}")
                 return
-            self.hinge_cells_x= default[1]
-            self.hinge_cells_y= default[2]
-            self.hinge_padding_x= default[3]
-            self.hinge_padding_y= default[4]
-            self.hinge_param_a= default[5]
-            self.hinge_param_b= default[6]
+            self.hinge_cells_x = default[1]
+            self.hinge_cells_y = default[2]
+            self.hinge_padding_x = default[3]
+            self.hinge_padding_y = default[4]
+            self.hinge_param_a = default[5]
+            self.hinge_param_b = default[6]
 
         flag, info1, info2 = self.hinge_generator.set_predefined_pattern(pattern)
         x = float(Length(self.hinge_origin_x))
@@ -1203,9 +1372,7 @@ class HingePanel(wx.Panel):
         wd = float(Length(self.hinge_width))
         ht = float(Length(self.hinge_height))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
-        self.hinge_generator.set_cell_values(
-            self.hinge_cells_x, self.hinge_cells_y
-        )
+        self.hinge_generator.set_cell_values(self.hinge_cells_x, self.hinge_cells_y)
         self.hinge_generator.set_padding_values(
             self.hinge_padding_x, self.hinge_padding_y
         )
@@ -1252,14 +1419,15 @@ class HingePanel(wx.Panel):
 
     def pane_show(self):
         first_selected = None
-        bounds = self.context.elements._emphasized_bounds
         units = self.context.units_name
-        if bounds is not None:
-            for node in self.context.elements.elems(emphasized=True):
-                first_selected = node
-                break
+        flag = True
+        for node in self.context.elements.elems(emphasized=True):
+            first_selected = node
+            bounds = node.bbox()
             self.hinge_generator.set_hinge_shape(first_selected)
-        else:
+            flag = False
+            break
+        if flag:
             if units in ("in", "inch"):
                 s = "2in"
             else:
@@ -1270,17 +1438,37 @@ class HingePanel(wx.Panel):
         start_y = bounds[1]
         wd = bounds[2] - bounds[0]
         ht = bounds[3] - bounds[1]
-        self.hinge_origin_x = Length(amount=start_x, digits=3, preferred_units=units).preferred_length
-        self.hinge_origin_y = Length(amount=start_y, digits=3, preferred_units=units).preferred_length
-        self.hinge_width = Length(amount=wd, digits=2, preferred_units=units).preferred_length
-        self.hinge_height = Length(amount=ht, digits=2, preferred_units=units).preferred_length
+        self.hinge_origin_x = Length(
+            amount=start_x, digits=3, preferred_units=units
+        ).preferred_length
+        self.hinge_origin_y = Length(
+            amount=start_y, digits=3, preferred_units=units
+        ).preferred_length
+        self.hinge_width = Length(
+            amount=wd, digits=2, preferred_units=units
+        ).preferred_length
+        self.hinge_height = Length(
+            amount=ht, digits=2, preferred_units=units
+        ).preferred_length
         self.text_origin_x.ChangeValue(self.hinge_origin_x)
         self.text_origin_y.ChangeValue(self.hinge_origin_y)
         self.text_width.ChangeValue(self.hinge_width)
         self.text_height.ChangeValue(self.hinge_height)
+        self.text_origin_x.Enable(flag)
+        self.text_origin_y.Enable(flag)
+        self.text_width.Enable(flag)
+        self.text_height.Enable(flag)
         self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
         self.on_pattern_update(None)
+
 class LivingHingeTool(MWindow):
+    """
+    LivingHingeTool is the wrapper class to setup the
+    required calls to open the HingePanel window
+    In addition it listens to element selection and passes this
+    information to HingePanel
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
         self.panel_template = HingePanel(
@@ -1294,12 +1482,16 @@ class LivingHingeTool(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Living Hinges"))
         self.Layout()
+        self.Bind(wx.EVT_ACTIVATE, self.window_active, self)
 
     def window_open(self):
         self.panel_template.pane_show()
 
     def window_close(self):
         pass
+
+    def window_active(self, event):
+        self.panel_template.pane_show()
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
