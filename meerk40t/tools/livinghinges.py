@@ -17,6 +17,7 @@ from meerk40t.svgelements import (
     Path,
     Point,
     Polygon,
+    Polyline,
     QuadraticBezier,
 )
 from meerk40t.tools.pathtools import VectorMontonizer
@@ -503,8 +504,18 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
-        if final:
+        rectangular = True
+        if (
+            self.outershape is not None and
+            hasattr(self.outershape, "as_path") and
+            self.outershape.type != "elem rect"
+        ):
+            rectangular = False
+        if final and not rectangular:
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            from time import time
+
+            t0 = time()
             vm = VectorMontonizer()
             if self.outershape is None:
                 outer_poly = Polygon(
@@ -522,19 +533,44 @@ class LivingHinges:
                     [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
                 )
             vm.add_polyline(outer_poly)
-            path = Path()
+            path = Path(stroke=Color("red"), stroke_width=500)
+            deleted = 0
+            total = 0
+            # pt_min_x = 1E+30
+            # pt_min_y = 1E+30
+            # pt_max_x = -1 * pt_min_x
+            # pt_max_y = -1 * pt_min_y
+            # Numpy does not work
+            # vm.add_polyline(outer_poly)
+            # path = Path(stroke=Color("red"), stroke_width=500)
+            # for sub_inner in self.path.as_subpaths():
+            #     sub_inner = Path(sub_inner)
+            #     pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
+            #     good_pts = [p for p in pts_sub if vm.is_point_inside(p[0] + self.start_x, p[1] + self.start_y)]
+            #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
             for sub_inner in self.path.as_subpaths():
                 sub_inner = Path(sub_inner)
-                pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
-                good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
-                if len(good_pts) > 0:
-                    path.move(*good_pts)
+                pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+                for i in range(len(pts_sub)-1, -1, -1):
+                    total += 1
+                    pt = pts_sub[i]
+                    pt[0] += self.start_x
+                    pt[1] += self.start_y
+                    # pt_min_x = min(pt_min_x, pt[0])
+                    # pt_min_y = min(pt_min_y, pt[1])
+                    # pt_max_x = max(pt_max_x, pt[0])
+                    # pt_max_y = max(pt_max_y, pt[1])
+                    if not vm.is_point_inside(pt[0], pt[1]):
+                        del pts_sub[i]
+                        deleted += 1
+                path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
             self.path = path
         else:
             # Former method....
-            # is limited to rectangular area but maintains inner cubics, quads and arcs
-            # while the vectormontonizer is more versatile when it comes to the
-            # surrounding shape but transforms all path elements to lines
+            # ...is limited to rectangular area but maintains inner cubics,
+            # quads and arcs while the vectormontonizer is more versatile
+            # when it comes to the surrounding shape but transforms all
+            # path elements to lines
             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
 
@@ -548,7 +584,6 @@ class LivingHinges:
             ymin : Upper side of the rectangular area
             xmax : Right side of the rectangular area
             ymax : Lower side of the rectangular area
-
         """
 
         def outside(bb_to_check, master_bb):
@@ -1158,16 +1193,52 @@ class HingePanel(wx.Panel):
         self.on_option_update(None)
 
     def on_button_generate(self, event):
+        oldlabel = self.button_generate.Label
+        self.button_generate.Enable(False)
+        self.button_generate.SetLabel(_("Processing..."))
+        if self.hinge_generator.outershape is not None:
+            # As we have a reference shape, we make sure
+            # we update the information...
+            units = self.context.units_name
+            bounds = self.hinge_generator.outershape.bbox()
+            start_x = bounds[0]
+            start_y = bounds[1]
+            wd = bounds[2] - bounds[0]
+            ht = bounds[3] - bounds[1]
+            self.hinge_origin_x = Length(
+                amount=start_x, digits=3, preferred_units=units
+            ).preferred_length
+            self.hinge_origin_y = Length(
+                amount=start_y, digits=3, preferred_units=units
+            ).preferred_length
+            self.hinge_width = Length(
+                amount=wd, digits=2, preferred_units=units
+            ).preferred_length
+            self.hinge_height = Length(
+                amount=ht, digits=2, preferred_units=units
+            ).preferred_length
+            self.text_origin_x.ChangeValue(self.hinge_origin_x)
+            self.text_origin_y.ChangeValue(self.hinge_origin_y)
+            self.text_width.ChangeValue(self.hinge_width)
+            self.text_height.ChangeValue(self.hinge_height)
+            self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
+
         # Polycut algorithm does not work for me (yet), final=False still
-        self.hinge_generator.generate(show_outline=False, force=False, final=False)
+        self.hinge_generator.generate(show_outline=False, force=True, final=True)
         node = self.context.elements.elem_branch.add(
-            path=abs(self.hinge_generator.path),
+            path=self.hinge_generator.path,
             stroke_width=500,
             color=Color("red"),
             type="elem path",
         )
+        if self.hinge_generator.outershape is not None:
+            group_node = self.hinge_generator.outershape.parent.add(type="group", label="Hinge")
+            group_node.append_child(self.hinge_generator.outershape)
+            group_node.append_child(node)
         self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
+        self.button_generate.Enable(True)
+        self.button_generate.SetLabel(oldlabel)
 
     def on_pattern_update(self, event):
         # Save the old values...
@@ -1333,14 +1404,15 @@ class HingePanel(wx.Panel):
 
     def pane_show(self):
         first_selected = None
-        bounds = self.context.elements._emphasized_bounds
         units = self.context.units_name
-        if bounds is not None:
-            for node in self.context.elements.elems(emphasized=True):
-                first_selected = node
-                break
+        flag = True
+        for node in self.context.elements.elems(emphasized=True):
+            first_selected = node
+            bounds = node.bbox()
             self.hinge_generator.set_hinge_shape(first_selected)
-        else:
+            flag = False
+            break
+        if flag:
             if units in ("in", "inch"):
                 s = "2in"
             else:
@@ -1367,9 +1439,12 @@ class HingePanel(wx.Panel):
         self.text_origin_y.ChangeValue(self.hinge_origin_y)
         self.text_width.ChangeValue(self.hinge_width)
         self.text_height.ChangeValue(self.hinge_height)
+        self.text_origin_x.Enable(flag)
+        self.text_origin_y.Enable(flag)
+        self.text_width.Enable(flag)
+        self.text_height.Enable(flag)
         self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
         self.on_pattern_update(None)
-
 
 class LivingHingeTool(MWindow):
     """
@@ -1392,12 +1467,16 @@ class LivingHingeTool(MWindow):
         self.SetIcon(_icon)
         self.SetTitle(_("Living Hinges"))
         self.Layout()
+        self.Bind(wx.EVT_ACTIVATE, self.window_active, self)
 
     def window_open(self):
         self.panel_template.pane_show()
 
     def window_close(self):
         pass
+
+    def window_active(self, event):
+        self.panel_template.pane_show()
 
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
