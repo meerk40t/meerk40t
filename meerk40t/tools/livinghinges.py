@@ -913,15 +913,17 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
+        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
+        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
         self.button_default = wx.StaticBitmap(
             self, wx.ID_ANY,
             size=wx.Size(30, 30),
-            style=wx.SB_SUNKEN,
+            style=wx.BORDER_RAISED,
         )
         self.button_default.SetBitmap(
             EmptyIcon(
                 size=25,
-                color=self.button_default.GetBackgroundColour(),
+                color=self.button_generate.GetBackgroundColour(),
                 msg="D"
             ).GetBitmap()
         )
@@ -1137,11 +1139,9 @@ class HingePanel(wx.Panel):
         hsizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         main_left.Add(hsizer_buttons, 0, wx.EXPAND, 0)
 
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
         self.button_generate.SetToolTip(_("Generates the hinge"))
         hsizer_buttons.Add(self.button_generate, 2, 0, 0)
 
-        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
         hsizer_buttons.Add(self.button_close, 1, 0, 0)
 
         main_right = wx.StaticBoxSizer(
