@@ -551,6 +551,7 @@ class LivingHinges:
             for sub_inner in self.path.as_subpaths():
                 sub_inner = Path(sub_inner)
                 pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+
                 for i in range(len(pts_sub)-1, -1, -1):
                     total += 1
                     pt = pts_sub[i]
@@ -561,7 +562,11 @@ class LivingHinges:
                     # pt_max_x = max(pt_max_x, pt[0])
                     # pt_max_y = max(pt_max_y, pt[1])
                     if not vm.is_point_inside(pt[0], pt[1]):
-                        del pts_sub[i]
+                        # if we do have points beyond, then we create a seperate path
+                        if i < len(pts_sub) - 1:
+                            goodpts = pts_sub[i+1:]
+                            path += Path(Polyline(goodpts), stroke=Color("red"), stroke_width=500)
+                        del pts_sub[i:]
                         deleted += 1
                 path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
             self.path = path
