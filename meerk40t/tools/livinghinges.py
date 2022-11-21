@@ -2,7 +2,7 @@ import wx
 from numpy import linspace
 
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_hinges_50
+from meerk40t.gui.icons import icons8_hinges_50, EmptyIcon
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -57,12 +57,12 @@ class LivingHinges:
         self.param_b = 0
         self.cell_height_percentage = 20
         self.cell_width_percentage = 20
-        self.cell_height = height * self.cell_height_percentage
-        self.cell_width = width * self.cell_width_percentage
+        self.cell_height = height * self.cell_height_percentage / 100
+        self.cell_width = width * self.cell_width_percentage / 100
         self.cell_padding_v_percentage = 0
         self.cell_padding_h_percentage = 0
-        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage
-        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / 100
+        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
         # Requires recalculation
         self.path = None
         self.outershape = None
@@ -659,8 +659,6 @@ class LivingHinges:
 
         def add_move(addpath, destination):
             # Was the last segment as well a move? Then just update the coords...
-            # if destination[0]<xmin or destination[0]>xmax or destination[1]<ymin or destination[1]>ymax:
-            #     return
             if len(addpath) > 0:
                 if isinstance(addpath[-1], Move):
                     addpath[-1].end = destination
@@ -865,7 +863,18 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
-        self.button_default = wx.Button(self, wx.ID_ANY, "D")
+        self.button_default = wx.StaticBitmap(
+            self, wx.ID_ANY,
+            size=wx.Size(30, 30),
+            style=wx.SB_SUNKEN,
+        )
+        self.button_default.SetBitmap(
+            EmptyIcon(
+                size=25,
+                color=self.button_default.GetBackgroundColour(),
+                msg="D"
+            ).GetBitmap()
+        )
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
@@ -953,7 +962,7 @@ class HingePanel(wx.Panel):
         self.slider_param_a.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
-        self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
+        self.button_default.Bind(wx.EVT_LEFT_DOWN, self.on_default_button)
         # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
 
     def _set_layout(self):
