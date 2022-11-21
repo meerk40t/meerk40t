@@ -130,7 +130,13 @@ class PyEmbeddedImage(py_embedded_image):
             if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
         elif DARKMODE and use_theme:
-            image.Replace(0, 0, 0, 255, 255, 255)
+            for x in range(image.GetWidth()):
+                for y in range(image.GetHeight()):
+                    r = int(255 - image.GetRed(x, y))
+                    g = int(255 - image.GetGreen(x, y))
+                    b = int(255 - image.GetBlue(x, y))
+                    image.SetRGB(x, y, r, g, b)
+            # image.Replace(0, 0, 0, 255, 255, 255)
         return wx.Bitmap(image)
 
     def RemoveAlpha(self, image, black_bg=False):
@@ -291,7 +297,13 @@ class EmptyIcon:
             if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
         elif DARKMODE and use_theme:
-            image.Replace(0, 0, 0, 255, 255, 255)
+            for x in range(image.GetWidth()):
+                for y in range(image.GetHeight()):
+                    r = int(255 - image.GetRed(x, y))
+                    g = int(255 - image.GetGreen(x, y))
+                    b = int(255 - image.GetBlue(x, y))
+                    image.SetRGB(x, y, r, g, b)
+            # image.Replace(0, 0, 0, 255, 255, 255)
         return wx.Bitmap(image)
 
     def RemoveAlpha(self, image, black_bg=False):
