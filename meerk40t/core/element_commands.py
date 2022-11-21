@@ -3905,7 +3905,6 @@ def init_commands(kernel):
         data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
-        import numpy as np
         vm = VectorMontonizer()
         outer_path = Polygon(
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
@@ -3914,9 +3913,12 @@ def init_commands(kernel):
         path = Path()
         for sub_inner in inner_path.as_subpaths():
             sub_inner = Path(sub_inner)
-            pts_sub = sub_inner.npoint(np.linspace(0, 1, 1000))
-            good_pts = [p for p in pts_sub if vm.is_point_inside(p[0], p[1])]
-            path.move(*good_pts)
+            pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+            for i in range(len(pts_sub)-1, -1, -1):
+                pt = pts_sub[i]
+                if not vm.is_point_inside(pt[0], pt[1]):
+                    del pts_sub[i]
+            path += Path(Polyline(pts_sub))
         node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke

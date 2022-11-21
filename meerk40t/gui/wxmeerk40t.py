@@ -48,6 +48,7 @@ from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialtest import TemplateTool
+from ..tools.livinghinges import LivingHingeTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -670,6 +671,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
+        kernel.register("window/Hingetool", LivingHingeTool)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
