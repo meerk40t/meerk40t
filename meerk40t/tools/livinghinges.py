@@ -641,7 +641,7 @@ class LivingHinges:
                         new_ey = new_ey_clipped
                         if min(new_cy, new_ey) == ymax and dy != 0:
                             # Outward...
-                            ignored
+                            ignored += 1
                         elif max(new_cy, new_ey) == ymin and dy != 0:
                             # Outward...
                             ignored += 1
@@ -836,6 +836,10 @@ class LivingHinges:
 
 
 class HingePanel(wx.Panel):
+    """
+    UI for LivingHinges, allows setting of parameters including preview of the expected result
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1359,6 +1363,13 @@ class HingePanel(wx.Panel):
 
 
 class LivingHingeTool(MWindow):
+    """
+    LivingHingeTool is the wrapper class to setup the
+    required calls to open the HingePanel window
+    In addition it listens to element selection and passes this
+    information to HingePanel
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
         self.panel_template = HingePanel(
