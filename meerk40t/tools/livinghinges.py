@@ -52,28 +52,101 @@ class LivingHinges:
         self.y0 = height * self.gap
         self.x1 = width * (1 - self.gap)
         self.y1 = height * (1 - self.gap)
-        self.param_a = 0.7
-        self.param_b = 0.7
+        # Declare all used variables to satisfy codacy
+        self.param_a = 0
+        self.param_b = 0
+        self.cell_height_percentage = 20
+        self.cell_width_percentage = 20
+        self.cell_height = height * self.cell_height_percentage
+        self.cell_width = width * self.cell_width_percentage
+        self.cell_padding_v_percentage = 0
+        self.cell_padding_h_percentage = 0
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage
+        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage
         # Requires recalculation
         self.path = None
         self.outershape = None
         self.pattern = []
         self.cutshape = ""
         self._defined_patterns = {}
-        self._defined_patterns["line"] = (self.set_line, False, "", "", (-20, -35, 0, 0))
-        self._defined_patterns["fishbone"] = (self.set_fishbone, False, "", "", (10, 10, 0, 0))
-        self._defined_patterns["diagonal"] = (self.set_diagonal, False, "", "", (-10, -10, 0, 0))
-        self._defined_patterns["diamond1"] = (self.set_diamond1, False, "", "", (-15, 10, 0, 0))
-        self._defined_patterns["diamond2"] = (self.set_diamond2, False, "", "", (-12, 6, 0, 0))
-        self._defined_patterns["cross"] = (self.set_cross, False, "", "", (-15, -4, 0, 0))
-        self._defined_patterns["bezier"] = (self.set_bezier, True, "", "", (-2, -16, 0.4, 0.3))
-        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
-        self._defined_patterns["bowlingpin"] = (self.set_bowlingpin, True, "Left/right bowl", "Top/bottom bowl", (-21, -5, -0.3, 0))
-        self._defined_patterns["beehive"] = (
-            self.set_beehive, True, "Position of left side", "Distance of second line", (-1, 6, 1.4, 0)
+        self._defined_patterns["line"] = (
+            self.set_line,
+            False,
+            "",
+            "",
+            (-20, -35, 0, 0),
         )
-        self._defined_patterns["fabric"] = (self.set_fabric, False, "", "", (-18, 13, 0, 0))
-        self._defined_patterns["brackets"] = (self.set_brackets, True, "", "", (-14, -11, 0.7, 0.7))
+        self._defined_patterns["fishbone"] = (
+            self.set_fishbone,
+            False,
+            "",
+            "",
+            (10, 10, 0, 0),
+        )
+        self._defined_patterns["diagonal"] = (
+            self.set_diagonal,
+            False,
+            "",
+            "",
+            (-10, -10, 0, 0),
+        )
+        self._defined_patterns["diamond1"] = (
+            self.set_diamond1,
+            False,
+            "",
+            "",
+            (-15, 10, 0, 0),
+        )
+        self._defined_patterns["diamond2"] = (
+            self.set_diamond2,
+            False,
+            "",
+            "",
+            (-12, 6, 0, 0),
+        )
+        self._defined_patterns["cross"] = (
+            self.set_cross,
+            False,
+            "",
+            "",
+            (-15, -4, 0, 0),
+        )
+        self._defined_patterns["bezier"] = (
+            self.set_bezier,
+            True,
+            "",
+            "",
+            (-2, -16, 0.4, 0.3),
+        )
+        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
+        self._defined_patterns["bowlingpin"] = (
+            self.set_bowlingpin,
+            True,
+            "Left/right bowl",
+            "Top/bottom bowl",
+            (-21, -5, -0.3, 0),
+        )
+        self._defined_patterns["beehive"] = (
+            self.set_beehive,
+            True,
+            "Position of left side",
+            "Distance of second line",
+            (-1, 6, 1.4, 0),
+        )
+        self._defined_patterns["fabric"] = (
+            self.set_fabric,
+            False,
+            "",
+            "",
+            (-18, 13, 0, 0),
+        )
+        self._defined_patterns["brackets"] = (
+            self.set_brackets,
+            True,
+            "",
+            "",
+            (-14, -11, 0.7, 0.7),
+        )
         # self._defined_patterns["circle"] = (self.set_circle, True, "", "", (10, 10, 0.7, 0.7))
 
         self.set_cell_values(10, 10)
@@ -94,9 +167,10 @@ class LivingHinges:
     def set_predefined_pattern(self, cutshape):
         # The pattern needs to be defined within a 0,0  - 1,1 rectangle
         #
-        if cutshape not in self._defined_patterns:
-            return
-        entry = self._defined_patterns[cutshape]
+        if cutshape in self._defined_patterns:
+            entry = self._defined_patterns[cutshape]
+        else:
+            entry = self._defined_patterns[0]
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
@@ -218,9 +292,7 @@ class LivingHinges:
         self.pattern.append(("L", 1, 0.75))
 
     def set_bezier(self):
-        anchor_tip = (
-            self.param_a
-        )  # distance factor from anchor to place control point
+        anchor_tip = self.param_a  # distance factor from anchor to place control point
         anchor_center = self.param_b
         self.pattern.append(("M", 0, 0))
         self.pattern.append(
@@ -256,19 +328,10 @@ class LivingHinges:
             radius = i * dx
 
             self.pattern.append(("M", cx + radius, cy))
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx, cy + radius)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx - radius, cy)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx, cy - radius)
-            )
-            self.pattern.append(
-                ("A", cx, cy, rotation, arc, sweep, cx + radius, cy)
-            )
-
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy + radius))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx - radius, cy))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy - radius))
+            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx + radius, cy))
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -778,16 +841,16 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.hinge_origin_x ="0cm"
-        self.hinge_origin_y ="0cm"
-        self.hinge_width ="5cm"
-        self.hinge_height ="5cm"
-        self.hinge_cells_x= 20
+        self.hinge_origin_x = "0cm"
+        self.hinge_origin_y = "0cm"
+        self.hinge_width = "5cm"
+        self.hinge_height = "5cm"
+        self.hinge_cells_x = 20
         self.hinge_cells_y = 20
         self.hinge_padding_x = 10
         self.hinge_padding_y = 10
         self.hinge_param_a = 0.7
-        self.hinge_param_b= 0.7
+        self.hinge_param_b = 0.7
 
         self.renderer = LaserRender(context)
         self.in_event = False
@@ -987,9 +1050,7 @@ class HingePanel(wx.Panel):
         label_offset_x.SetMinSize((90, -1))
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_offset_x.SetToolTip(
-            _("Select the pattern-offset in X-direction")
-        )
+        self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
         hsizer_offsetx.Add(self.slider_offset_x, 1, wx.EXPAND, 0)
 
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
@@ -999,9 +1060,7 @@ class HingePanel(wx.Panel):
         label_offset_y.SetMinSize((90, -1))
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.slider_offset_y.SetToolTip(
-            _("Select the pattern-offset in Y-direction")
-        )
+        self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))
         hsizer_offsety.Add(self.slider_offset_y, 1, wx.EXPAND, 0)
 
         self.slider_param_a.SetToolTip(_("Change the shape appearance"))
@@ -1073,7 +1132,7 @@ class HingePanel(wx.Panel):
 
     def on_default_button(self, event):
         idx = self.combo_style.GetSelection()
-        if idx<0:
+        if idx < 0:
             return
         pattern = self.patterns[idx]
         default = self.hinge_generator.get_default(pattern)
@@ -1081,8 +1140,8 @@ class HingePanel(wx.Panel):
         self.slider_height.SetValue(20)
         self.slider_offset_x.SetValue(default[0])
         self.slider_offset_y.SetValue(default[1])
-        self.slider_param_a.SetValue(int(10*default[2]))
-        self.slider_param_b.SetValue(int(10*default[3]))
+        self.slider_param_a.SetValue(int(10 * default[2]))
+        self.slider_param_b.SetValue(int(10 * default[3]))
         self.on_option_update(None)
 
     def on_button_generate(self, event):
@@ -1157,7 +1216,15 @@ class HingePanel(wx.Panel):
     def _setup_settings(self):
         firstpattern = self.patterns[0]
         for (pattern, recommended) in zip(self.patterns, self.defaults):
-            default = (pattern, 20, 20, recommended[0], recommended[1], recommended[2], recommended[3])
+            default = (
+                pattern,
+                20,
+                20,
+                recommended[0],
+                recommended[1],
+                recommended[2],
+                recommended[3],
+            )
             self.context.setting(list, f"hinge_{pattern}", default)
         self.context.setting(str, "hinge_type", firstpattern)
 
@@ -1170,9 +1237,12 @@ class HingePanel(wx.Panel):
         pattern = self.context.hinge_type
         default = (
             pattern,
-            self.hinge_cells_x, self.hinge_cells_y,
-            self.hinge_padding_x, self.hinge_padding_y,
-            self.hinge_param_a, self.hinge_param_b
+            self.hinge_cells_x,
+            self.hinge_cells_y,
+            self.hinge_padding_x,
+            self.hinge_padding_y,
+            self.hinge_param_a,
+            self.hinge_param_b,
         )
         setattr(self.context, f"hinge_{pattern}", default)
         # print (f"Stored defaults for {pattern}: {default}")
@@ -1190,12 +1260,12 @@ class HingePanel(wx.Panel):
                 # strange
                 # print(f"Could not get a setting for {pattern}: {default}")
                 return
-            self.hinge_cells_x= default[1]
-            self.hinge_cells_y= default[2]
-            self.hinge_padding_x= default[3]
-            self.hinge_padding_y= default[4]
-            self.hinge_param_a= default[5]
-            self.hinge_param_b= default[6]
+            self.hinge_cells_x = default[1]
+            self.hinge_cells_y = default[2]
+            self.hinge_padding_x = default[3]
+            self.hinge_padding_y = default[4]
+            self.hinge_param_a = default[5]
+            self.hinge_param_b = default[6]
 
         flag, info1, info2 = self.hinge_generator.set_predefined_pattern(pattern)
         x = float(Length(self.hinge_origin_x))
@@ -1203,9 +1273,7 @@ class HingePanel(wx.Panel):
         wd = float(Length(self.hinge_width))
         ht = float(Length(self.hinge_height))
         self.hinge_generator.set_hinge_area(x, y, wd, ht)
-        self.hinge_generator.set_cell_values(
-            self.hinge_cells_x, self.hinge_cells_y
-        )
+        self.hinge_generator.set_cell_values(self.hinge_cells_x, self.hinge_cells_y)
         self.hinge_generator.set_padding_values(
             self.hinge_padding_x, self.hinge_padding_y
         )
@@ -1270,16 +1338,26 @@ class HingePanel(wx.Panel):
         start_y = bounds[1]
         wd = bounds[2] - bounds[0]
         ht = bounds[3] - bounds[1]
-        self.hinge_origin_x = Length(amount=start_x, digits=3, preferred_units=units).preferred_length
-        self.hinge_origin_y = Length(amount=start_y, digits=3, preferred_units=units).preferred_length
-        self.hinge_width = Length(amount=wd, digits=2, preferred_units=units).preferred_length
-        self.hinge_height = Length(amount=ht, digits=2, preferred_units=units).preferred_length
+        self.hinge_origin_x = Length(
+            amount=start_x, digits=3, preferred_units=units
+        ).preferred_length
+        self.hinge_origin_y = Length(
+            amount=start_y, digits=3, preferred_units=units
+        ).preferred_length
+        self.hinge_width = Length(
+            amount=wd, digits=2, preferred_units=units
+        ).preferred_length
+        self.hinge_height = Length(
+            amount=ht, digits=2, preferred_units=units
+        ).preferred_length
         self.text_origin_x.ChangeValue(self.hinge_origin_x)
         self.text_origin_y.ChangeValue(self.hinge_origin_y)
         self.text_width.ChangeValue(self.hinge_width)
         self.text_height.ChangeValue(self.hinge_height)
         self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
         self.on_pattern_update(None)
+
+
 class LivingHingeTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(570, 420, submenu="Laser-Tools", *args, **kwds)
