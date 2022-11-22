@@ -913,20 +913,7 @@ class HingePanel(wx.Panel):
         self.combo_style = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
-        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
-        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
-        self.button_default = wx.StaticBitmap(
-            self, wx.ID_ANY,
-            size=wx.Size(30, 30),
-            style=wx.BORDER_RAISED,
-        )
-        self.button_default.SetBitmap(
-            EmptyIcon(
-                size=25,
-                color=self.button_generate.GetBackgroundColour(),
-                msg="D"
-            ).GetBitmap()
-        )
+        self.button_default = wx.Button(self, wx.ID_ANY, "D")
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
@@ -976,6 +963,8 @@ class HingePanel(wx.Panel):
             +50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
+        self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
 
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
@@ -1014,7 +1003,7 @@ class HingePanel(wx.Panel):
         self.slider_param_a.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
-        self.button_default.Bind(wx.EVT_LEFT_DOWN, self.on_default_button)
+        self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
         # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
 
     def _set_layout(self):
