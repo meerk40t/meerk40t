@@ -921,6 +921,7 @@ class HingePanel(wx.Panel):
             100,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        self.text_cell_width = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_height = wx.Slider(
             self,
             wx.ID_ANY,
@@ -929,6 +930,7 @@ class HingePanel(wx.Panel):
             100,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        self.text_cell_height = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_offset_x = wx.Slider(
             self,
             wx.ID_ANY,
@@ -937,6 +939,7 @@ class HingePanel(wx.Panel):
             50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        self.text_cell_offset_x = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.slider_offset_y = wx.Slider(
             self,
             wx.ID_ANY,
@@ -945,6 +948,7 @@ class HingePanel(wx.Panel):
             50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+        self.text_cell_offset_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         # Slider times ten
         self.slider_param_a = wx.Slider(
             self,
@@ -1091,7 +1095,8 @@ class HingePanel(wx.Panel):
         self.slider_width.SetToolTip(
             _("Select the ratio of the cell width compared to the overall width")
         )
-        hsizer_cellwidth.Add(self.slider_width, 1, wx.EXPAND, 0)
+        hsizer_cellwidth.Add(self.slider_width, 2, wx.EXPAND, 0)
+        hsizer_cellwidth.Add(self.text_cell_width, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_cellheight = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_cellheight, 1, wx.EXPAND, 0)
@@ -1103,7 +1108,8 @@ class HingePanel(wx.Panel):
         self.slider_height.SetToolTip(
             _("Select the ratio of the cell height compared to the overall height")
         )
-        hsizer_cellheight.Add(self.slider_height, 1, wx.EXPAND, 0)
+        hsizer_cellheight.Add(self.slider_height, 2, wx.EXPAND, 0)
+        hsizer_cellheight.Add(self.text_cell_height, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_offsetx = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_offsetx, 1, wx.EXPAND, 0)
@@ -1113,7 +1119,8 @@ class HingePanel(wx.Panel):
         hsizer_offsetx.Add(label_offset_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
-        hsizer_offsetx.Add(self.slider_offset_x, 1, wx.EXPAND, 0)
+        hsizer_offsetx.Add(self.slider_offset_x, 2, wx.EXPAND, 0)
+        hsizer_offsetx.Add(self.text_cell_offset_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_options.Add(hsizer_offsety, 0, wx.EXPAND, 0)
@@ -1123,7 +1130,8 @@ class HingePanel(wx.Panel):
         hsizer_offsety.Add(label_offset_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))
-        hsizer_offsety.Add(self.slider_offset_y, 1, wx.EXPAND, 0)
+        hsizer_offsety.Add(self.slider_offset_y, 2, wx.EXPAND, 0)
+        hsizer_offsety.Add(self.text_cell_offset_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_param_a.SetToolTip(_("Change the shape appearance"))
         self.slider_param_b.SetToolTip(_("Change the shape appearance"))
@@ -1148,6 +1156,8 @@ class HingePanel(wx.Panel):
 
         hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
         main_right.Add(hsizer_preview, 0, wx.EXPAND, 0)
+        self.check_preview_show_pattern.SetMinSize(wx.Size(-1, 23))
+        self.check_preview_show_shape.SetMinSize(wx.Size(-1, 23))
         hsizer_preview.Add(self.check_preview_show_pattern, 1, wx.EXPAND, 0)
         hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
 
@@ -1322,7 +1332,68 @@ class HingePanel(wx.Panel):
         self.context.hinge_type = style
         # Load new set of values...
         self._restore_settings(reload=True)
+        self.sync_controls(True)
         self.apply()
+
+    def sync_controls(self, to_text=True):
+        try:
+            wd = float(Length(self.text_width.GetValue()))
+        except ValueError:
+            wd = 0
+        try:
+            ht = float(Length(self.text_height.GetValue()))
+        except ValueError:
+            ht = 0
+        if to_text:
+            cell_x = self.slider_width.GetValue()
+            cell_y = self.slider_height.GetValue()
+            offset_x = self.slider_offset_x.GetValue()
+            offset_y = self.slider_offset_y.GetValue()
+            units = self.context.units_name
+            cx = cell_x / 100 * wd
+            cy = cell_y / 100 * ht
+            self.text_cell_width.SetValue(Length(amount=cx, preferred_units=units).preferred_length)
+            self.text_cell_height.SetValue(Length(amount=cy, preferred_units=units).preferred_length)
+
+            self.text_cell_offset_x.SetValue(Length(amount=cx * offset_x/ 100, preferred_units=units).preferred_length)
+            self.text_cell_offset_y.SetValue(Length(amount=cy * offset_y/ 100, preferred_units=units).preferred_length)
+        else:
+            try:
+                cx = float(Length(self.text_cell_width))
+            except ValueError:
+                cx = 0
+            try:
+                cy = float(Length(self.text_cell_height))
+            except ValueError:
+                cy = 0
+            try:
+                offset_x = float(Length(self.text_cell_offset_x))
+            except ValueError:
+                offset_x = 0
+            try:
+                offset_y = float(Length(self.text_cell_offset_y))
+            except ValueError:
+                offset_y = 0
+            if wd != 0:
+                px = int(100 * cx / wd)
+            else:
+                px = 100
+            self.slider_width.SetValue(px)
+            if ht != 0:
+                py = int(100 * cy / ht)
+            else:
+                py = 100
+            self.slider_width.SetValue(py)
+            if cx != 0:
+                px = int(100 * offset_x / cx)
+            else:
+                px = 0
+            self.slider_offset_x.SetValue(px)
+            if cy != 0:
+                py = int(100 * offset_y / cy)
+            else:
+                py = 0
+            self.slider_offset_y.SetValue(py)
 
     def on_option_update(self, event):
         # Generic update within a pattern
@@ -1361,6 +1432,7 @@ class HingePanel(wx.Panel):
         offset_y = self.slider_offset_y.GetValue()
         self.hinge_padding_x = offset_x
         self.hinge_padding_y = offset_y
+        self.sync_controls(True)
 
         p_a = self.slider_param_a.GetValue() / 10.0
         p_b = self.slider_param_b.GetValue() / 10.0
@@ -1485,6 +1557,7 @@ class HingePanel(wx.Panel):
             flag = False
             break
         if flag:
+            self.hinge_generator.set_hinge_shape(None)
             if units in ("in", "inch"):
                 s = "2in"
             else:
