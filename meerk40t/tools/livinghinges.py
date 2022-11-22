@@ -29,10 +29,6 @@ _ = wx.GetTranslation
 TODO:
 a) get rid of row / col range limitation and iterate until boundary exceeds frame
 b) Fix circle arc invocation
-c) Create proper bowlingpin shape
-d) Proper clipping
-e) Save presets per patterntype / or allow save / load of patternset
-f) Labels for additional parameters?!
 
 """
 
@@ -906,6 +902,9 @@ class HingePanel(wx.Panel):
 
         self.renderer = LaserRender(context)
         self.in_event = False
+        self.require_refresh = True
+        self._Buffer = None
+
         self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_origin_y = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -965,6 +964,12 @@ class HingePanel(wx.Panel):
         )
         self.button_generate = wx.Button(self, wx.ID_ANY, _("Generate"))
         self.button_close = wx.Button(self, wx.ID_ANY, _("Close"))
+        self.context.setting(bool, "hinge_preview_pattern", True)
+        self.context.setting(bool, "hinge_preview_shape", True)
+        self.check_preview_show_pattern = wx.CheckBox(self, wx.ID_ANY, _("Preview Pattern"))
+        self.check_preview_show_pattern.SetValue(bool(self.context.hinge_preview_pattern))
+        self.check_preview_show_shape = wx.CheckBox(self, wx.ID_ANY, _("Preview Shape"))
+        self.check_preview_show_shape.SetValue(bool(self.context.hinge_preview_shape))
 
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
@@ -1004,7 +1009,10 @@ class HingePanel(wx.Panel):
         self.slider_param_b.Bind(wx.EVT_SLIDER, self.on_option_update)
         self.combo_style.Bind(wx.EVT_COMBOBOX, self.on_pattern_update)
         self.button_default.Bind(wx.EVT_BUTTON, self.on_default_button)
-        # self.check_debug_outline.Bind(wx.EVT_CHECKBOX, self.on_option_update)
+        self.check_preview_show_pattern.Bind(wx.EVT_CHECKBOX, self.on_preview_options)
+        self.check_preview_show_shape.Bind(wx.EVT_CHECKBOX, self.on_preview_options)
+        self.panel_preview.Bind(wx.EVT_PAINT, self.on_display_paint)
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
     def _set_layout(self):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1138,14 +1146,62 @@ class HingePanel(wx.Panel):
         )
         main_sizer.Add(main_right, 2, wx.EXPAND, 0)
 
+        hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
+        main_right.Add(hsizer_preview, 0, wx.EXPAND, 0)
+        hsizer_preview.Add(self.check_preview_show_pattern, 1, wx.EXPAND, 0)
+        hsizer_preview.Add(self.check_preview_show_shape, 1, wx.EXPAND, 0)
+
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         main_right.Add(self.panel_preview, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
 
+    def on_preview_options(self, event):
+        self.context.hinge_preview_pattern = self.check_preview_show_pattern.GetValue()
+        self.context.hinge_preview_shape = self.check_preview_show_shape.GetValue()
+        self.refresh_display()
+
+    def on_display_paint(self, event=None):
+        try:
+            wx.BufferedPaintDC(self.panel_preview, self._Buffer)
+        except RuntimeError:
+            pass
+
+    def set_buffer(self):
+        width, height = self.panel_preview.Size
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        self._Buffer = wx.Bitmap(width, height)
+
+    def refresh_display(self):
+        if not wx.IsMainThread():
+            wx.CallAfter(self.refresh_in_ui)
+        else:
+            self.refresh_in_ui()
+
     def on_paint(self, event):
+        self.Layout()
+        self.set_buffer()
+        wx.CallAfter(self.refresh_in_ui)
+
+    def on_size(self, event=None):
+        self.Layout()
+        self.set_buffer()
+        wx.CallAfter(self.refresh_in_ui)
+
+    def refresh_in_ui(self):
+        if self.in_event:
+            return
         # Create paint DC
-        dc = wx.PaintDC(self.panel_preview)
+        self.in_event = True
+        if self._Buffer is None:
+            self.set_buffer()
+        dc = wx.MemoryDC()
+        dc.SelectObject(self._Buffer)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
         # Create graphics context from it
         gc = wx.GraphicsContext.Create(dc)
 
@@ -1164,20 +1220,32 @@ class HingePanel(wx.Panel):
                 ty=0.05 * ratio * self.hinge_generator.height,
             )
             gc.SetTransform(matrix)
-            # Draw the hinge area:
             linewidth = max(int(1 / ratio), 1)
-            # print (linewidth)
-            mypen_border = wx.Pen(wx.BLUE, linewidth, wx.PENSTYLE_SOLID)
-            mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
-            gc.SetPen(mypen_border)
-            gc.DrawRectangle(
-                0, 0, self.hinge_generator.width, self.hinge_generator.height
-            )
-            # flag = self.check_debug_outline.GetValue()
-            self.hinge_generator.generate(show_outline=False, force=False, final=False)
-            gc.SetPen(mypen_path)
-            gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
-            gc.StrokePath(gcpath)
+            if self.check_preview_show_shape.GetValue():
+                mypen_border = wx.Pen(wx.BLUE, linewidth, wx.PENSTYLE_SOLID)
+                gc.SetPen(mypen_border)
+                if self.hinge_generator.outershape is None:
+                    # Draw the hinge area:
+                    gc.DrawRectangle(
+                        0, 0, self.hinge_generator.width, self.hinge_generator.height
+                    )
+                else:
+                    node = copy(self.hinge_generator.outershape)
+                    bb = node.bbox()
+                    node.matrix *= Matrix.translate(-bb[0], -bb[1])
+                    path = node.as_path()
+                    gcpath = self.renderer.make_path(gc, path)
+                    gc.StrokePath(gcpath)
+            if self.check_preview_show_pattern.GetValue():
+                mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
+                # flag = self.check_debug_outline.GetValue()
+                self.hinge_generator.generate(show_outline=False, force=False, final=False)
+                gc.SetPen(mypen_path)
+                gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
+                gc.StrokePath(gcpath)
+        self.panel_preview.Refresh()
+        self.panel_preview.Update()
+        self.in_event = False
 
     def on_button_close(self, event):
         self.context("window toggle Hingetool\n")
@@ -1319,7 +1387,7 @@ class HingePanel(wx.Panel):
     def apply(self):
         # Restore settings will call the LivingHinge class
         self._restore_settings(reload=False)
-        self.panel_preview.Refresh()
+        self.refresh_display()
 
     def _save_settings(self):
         pattern = self.context.hinge_type
