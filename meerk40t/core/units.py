@@ -941,35 +941,43 @@ class Length(object):
 
     @property
     def length_pixels(self):
-        return f"{self.pixels}px"
+        amount = self.pixels
+        return f"{round(amount, 8)}px"
 
     @property
     def length_inches(self):
-        return f"{self.inches}in"
+        amount = self.inches
+        return f"{round(amount, 8)}in"
 
     @property
     def length_cm(self):
-        return f"{self.cm}cm"
+        amount = self.cm
+        return f"{round(amount, 8)}cm"
 
     @property
     def length_mm(self):
-        return f"{self.mm}mm"
+        amount = self.mm
+        return f"{round(amount, 8)}mm"
 
     @property
     def length_nm(self):
-        return f"{self.nm}nm"
+        amount = self.nm
+        return f"{round(amount, 8)}nm"
 
     @property
     def length_mil(self):
-        return f"{self.mil}mil"
+        amount = self.mil
+        return f"{round(amount, 8)}mil"
 
     @property
     def length_um(self):
-        return f"{self.um}um"
+        amount = self.um
+        return f"{round(amount, 8)}um"
 
     @property
     def length_pt(self):
-        return f"{self.pt}pt"
+        amount = self.pt
+        return f"{round(amount, 8)}pt"
 
     @property
     def length_units(self):
