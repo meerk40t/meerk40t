@@ -587,20 +587,26 @@ class LivingHinges:
         #  will round down so add 1 and trim later
                 #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
-        cols = (
-            int(
-                ((self.x1 - self.x0) + self.cell_width)
-                / (self.cell_width + (2 * self.cell_padding_h))
+        if self.cell_width + 2 * self.cell_padding_h == 0:
+            cols = 1
+        else:
+            cols = (
+                int(
+                    ((self.x1 - self.x0) + self.cell_width)
+                    / (self.cell_width + (2 * self.cell_padding_h))
+                )
+                + 1
             )
-            + 1
-        )
-        rows = (
-            int(
-                ((self.y1 - self.y0) + self.cell_height)
-                / (self.cell_height + (2 * self.cell_padding_v))
+        if self.cell_height + 2 * self.cell_padding_v == 0:
+            rows = 1
+        else:
+            rows = (
+                int(
+                    ((self.y1 - self.y0) + self.cell_height)
+                    / (self.cell_height + (2 * self.cell_padding_v))
+                )
+                + 1
             )
-            + 1
-        )
 
         if self._extend_patterns:
             start_value = -2
