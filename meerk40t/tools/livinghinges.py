@@ -78,16 +78,16 @@ class LivingHinges:
         )
         self._defined_patterns["fishbone"] = (
             self.set_fishbone,
-            False,
-            "",
-            "",
+            True,
+            "Left/Right Indentation",
+            "Bottom Indentation",
             (10, 10, 0, 0),
         )
         self._defined_patterns["diagonal"] = (
             self.set_diagonal,
-            False,
-            "",
-            "",
+            True,
+            "Left/Right Indentation",
+            "Top/Bottom Indentation",
             (-10, -10, 0, 0),
         )
         self._defined_patterns["diamond1"] = (
@@ -106,9 +106,9 @@ class LivingHinges:
         )
         self._defined_patterns["cross"] = (
             self.set_cross,
-            False,
-            "",
-            "",
+            True,
+            "Left/Right Indentation",
+            "Top/Bottom Indentation",
             (-15, -4, 0, 0),
         )
         self._defined_patterns["bezier"] = (
@@ -186,14 +186,18 @@ class LivingHinges:
         self.pattern.append(("L", 1, 0.5))
 
     def set_fishbone(self):
-        self.pattern.append(("M", 0, 1))
+        dx = self.param_a / 5.0 * 0.5
+        dy = self.param_b / 5.0 * 0.5
+        self.pattern.append(("M", 0 + dx, 1 - dy))
         self.pattern.append(("L", 0.5, 0))
-        self.pattern.append(("M", 0.5, 0))
-        self.pattern.append(("L", 1, 1))
+        # self.pattern.append(("M", 0.5, 0))
+        self.pattern.append(("L", 1 - dx, 1 - dy))
 
     def set_diagonal(self):
-        self.pattern.append(("M", 0, 1))
-        self.pattern.append(("L", 1, 0))
+        dx = self.param_a / 5.0 * 1.0
+        dy = self.param_b / 5.0 * 1.0
+        self.pattern.append(("M", 0 + dx, 1 - dy))
+        self.pattern.append(("L", 1 - dx, 0 + dy))
 
     def set_diamond1(self):
         self.pattern.append(("M", 0, 0.5))
@@ -212,14 +216,16 @@ class LivingHinges:
 
     def set_cross(self):
         # Pattern: cross
-        self.pattern.append(("M", 0.0, 0.25))
-        self.pattern.append(("L", 0.25, 0.50))
-        self.pattern.append(("L", 0.0, 0.75))
-        self.pattern.append(("M", 0.25, 0.50))
-        self.pattern.append(("L", 0.75, 0.50))
-        self.pattern.append(("M", 1, 0.25))
-        self.pattern.append(("L", 0.75, 0.50))
-        self.pattern.append(("L", 1, 0.75))
+        dx = self.param_a / 5.0 * 0.5
+        dy = self.param_b / 5.0 * 0.5
+        self.pattern.append(("M", 0.0, 0.25 + dy))
+        self.pattern.append(("L", 0.25 + dx, 0.50))
+        self.pattern.append(("L", 0.0, 0.75 - dy))
+        self.pattern.append(("M", 0.25 + dx, 0.50))
+        self.pattern.append(("L", 0.75 - dx, 0.50))
+        self.pattern.append(("M", 1, 0.25 + dy))
+        self.pattern.append(("L", 0.75 - dx, 0.50))
+        self.pattern.append(("L", 1, 0.75 - dy))
 
     def set_fabric(self):
         self.pattern.append(("M", 0.25, 0.25))
