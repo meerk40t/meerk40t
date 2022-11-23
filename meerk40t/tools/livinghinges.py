@@ -4,7 +4,7 @@ import wx
 from numpy import linspace
 
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import EmptyIcon, icons8_hinges_50
+from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -66,8 +66,11 @@ class LivingHinges:
         self.path = None
         self.previewpath = None
         self.outershape = None
+        # Specifically for the shape pattern we hold a list of precalculated polygons
+        self._polycache = list()
         self.pattern = []
         self.cutshape = ""
+        self._extend_patterns = True
         self._defined_patterns = {}
         self._defined_patterns["line"] = (
             self.set_line,
@@ -75,6 +78,7 @@ class LivingHinges:
             "",
             "",
             (-20, -35, 0, 0),
+            True,
         )
         self._defined_patterns["fishbone"] = (
             self.set_fishbone,
@@ -82,6 +86,7 @@ class LivingHinges:
             "Left/Right Indentation",
             "Bottom Indentation",
             (10, 10, 0, 0),
+            True,
         )
         self._defined_patterns["diagonal"] = (
             self.set_diagonal,
@@ -89,6 +94,7 @@ class LivingHinges:
             "Left/Right Indentation",
             "Top/Bottom Indentation",
             (-10, -10, 0, 0),
+            True,
         )
         self._defined_patterns["diamond1"] = (
             self.set_diamond1,
@@ -96,6 +102,7 @@ class LivingHinges:
             "",
             "",
             (-15, 10, 0, 0),
+            True,
         )
         self._defined_patterns["diamond2"] = (
             self.set_diamond2,
@@ -103,6 +110,7 @@ class LivingHinges:
             "",
             "",
             (-12, 6, 0, 0),
+            True,
         )
         self._defined_patterns["cross"] = (
             self.set_cross,
@@ -110,6 +118,7 @@ class LivingHinges:
             "Left/Right Indentation",
             "Top/Bottom Indentation",
             (-15, -4, 0, 0),
+            True,
         )
         self._defined_patterns["bezier"] = (
             self.set_bezier,
@@ -117,14 +126,23 @@ class LivingHinges:
             "",
             "",
             (-2, -16, 0.4, 0.3),
+            True,
         )
-        self._defined_patterns["wave"] = (self.set_wave, True, "", "", (-13, -26, 0, 0))
+        self._defined_patterns["wave"] = (
+            self.set_wave,
+            True,
+            "",
+            "",
+            (-13, -26, 0, 0),
+            True,
+        )
         self._defined_patterns["bowlingpin"] = (
             self.set_bowlingpin,
             True,
             "Left/right bowl",
             "Top/bottom bowl",
             (-21, -5, -0.3, 0),
+            True,
         )
         self._defined_patterns["beehive"] = (
             self.set_beehive,
@@ -132,6 +150,7 @@ class LivingHinges:
             "Position of left side",
             "Distance of second line",
             (-1, 6, 1.4, 0),
+            True,
         )
         self._defined_patterns["fabric"] = (
             self.set_fabric,
@@ -139,6 +158,7 @@ class LivingHinges:
             "",
             "",
             (-18, 13, 0, 0),
+            True,
         )
         self._defined_patterns["brackets"] = (
             self.set_brackets,
@@ -146,8 +166,16 @@ class LivingHinges:
             "",
             "",
             (-14, -11, 0.7, 0.7),
+            True,
         )
-        # self._defined_patterns["circle"] = (self.set_circle, True, "", "", (10, 10, 0.7, 0.7))
+        self._defined_patterns["shape"] = (
+            self.set_shape,
+            True,
+            "Number of copies",
+            "Number of segments",
+            (0, 0, 1, 0.4),
+            False,
+        )
 
         self.set_cell_values(10, 10)
         self.set_padding_values(5, 5)
@@ -171,6 +199,7 @@ class LivingHinges:
             entry = self._defined_patterns[cutshape]
         else:
             entry = self._defined_patterns[0]
+        self._extend_patterns = entry[5]
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
@@ -316,29 +345,110 @@ class LivingHinges:
         self.pattern.append(("C", 0.0, p_a, 1.0, p_b, 1.0, 0.5))
         self.pattern.append(("C", 1.0, 1 - p_a, 0.0, 1 - p_b, 0.0, 0.5))
 
-    def set_circle(self):
-        # concentric circles
-        amount = int(abs(10 * self.param_a)) + 1  # (1 to 50)
-        gap = abs(self.param_b)
-        dx = 0.5 / amount
-        cx = 0.5
-        cy = 0.5
-        rotation = 0
-        sweep = 0
-        arc = 0
-        for i in range(amount):
-            # A move-to command to the point cx+rx,cy;
-            # arc to cx,cy+ry;
-            # arc to cx-rx,cy;
-            # arc to cx,cy-ry;
-            # arc with a segment-completing close path operation.
-            radius = i * dx
+    def set_shape(self):
+        # concentric shapes
+        if len(self._polycache) != 0:
+            # We've done our bit already
+            return
+        resolution = 200.0
+        if self.outershape is None:
+            shape = Path(Polyline((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
+        else:
+            shape = self.outershape.as_path()
+        bb = shape.bbox()
+        wd = bb[2] - bb[0]
+        if wd == 0:
+            wd = 1
+        ht = bb[3] - bb[1]
+        if ht == 0:
+            ht = 1
+        tx = 0
+        ty = 0
+        tc = int(resolution)
+        # minx = miny = 1e18
+        # maxx = maxy = -1e18
+        # Convert to polygon and bring it to 0 / 1
+        if wd == 0:
+            ratiox = 1
+        else:
+            ratiox = 1 / wd
 
-            self.pattern.append(("M", cx + radius, cy))
-            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy + radius))
-            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx - radius, cy))
-            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx, cy - radius))
-            self.pattern.append(("A", cx, cy, rotation, arc, sweep, cx + radius, cy))
+        if ht == 0:
+            ratioy = 1
+        else:
+            ratioy = 1 / ht
+        amount = int(abs(10 * self.param_a))  # (1 to 50)
+        segments = int(abs(10 * self.param_b))
+        seg_break = int(resolution) / (segments + 1)
+        seg_len = resolution / 40.0
+        for i in range(int(resolution) + 1):
+            pt = shape.point(i / resolution, error=1e4)
+            pt[0] = (pt[0] - bb[0]) * ratiox
+            pt[1] = (pt[1] - bb[1]) * ratioy
+            xx = pt[0]
+            yy = pt[1]
+            tx += xx
+            ty += yy
+            # minx = min(minx, xx)
+            # miny = min(miny, yy)
+            # maxx = max(maxx, xx)
+            # maxy = max(maxy, yy)
+            self._polycache.append(pt)
+        geometric_center_x = tx / tc
+        geometric_center_y = ty / tc
+        # print(
+        #     f"geometric center master: {geometric_center_x:.1f}, {geometric_center_y:.1f}"
+        # )
+        # print(f"boundaries: {minx:.1f}, {miny:.1f} - {maxx:.1f}, {maxy:.1f}")
+        dx = 0
+        dy = 0
+        regular = False
+        ratio = 1.0
+        dx = 1.0 / (amount + 1)
+
+        ratio = 1
+        for num in range(amount):
+            ratio -= dx
+            regular = not regular
+            current_x = None
+            current_y = None
+            if regular:
+                segcount = int(seg_break * 0.25)
+            else:
+                segcount = int(seg_break * 0.5)
+            # tx = 0
+            # ty = 0
+            # minx = miny = 1e18
+            # maxx = maxy = -1e18
+            for i in range(int(resolution) + 1):
+                xx = (
+                    self._polycache[i][0] - geometric_center_x
+                ) * ratio + geometric_center_x
+                yy = (
+                    self._polycache[i][1] - geometric_center_y
+                ) * ratio + geometric_center_y
+                # tx += xx
+                # ty += yy
+                # minx = min(minx, xx)
+                # miny = min(miny, yy)
+                # maxx = max(maxx, xx)
+                # maxy = max(maxy, yy)
+                segcount += 1
+                if segcount < seg_break:
+                    if current_x is None:
+                        self.pattern.append(("M", xx, yy))
+                    else:
+                        self.pattern.append(("L", xx, yy))
+                    current_x = xx
+                    current_y = yy
+                elif segcount >= seg_break + seg_len:
+                    segcount = 0
+                    current_x = None
+                    current_y = None
+            # geo_x = tx / tc
+            # geo_y = ty / tc
+            # print(f"geometric center copy: {geo_x:.1f}, {geo_y:.1f}")
+            # print(f"boundaries: {minx:.1f}, {miny:.1f} - {maxx:.1f}, {maxy:.1f}")
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -417,6 +527,8 @@ class LivingHinges:
                 self.path.quad(control1, endpoint)
 
     def set_hinge_shape(self, shapenode):
+        # reset cache
+        self._polycache = list()
         self.outershape = shapenode
 
     def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
@@ -449,6 +561,8 @@ class LivingHinges:
     def set_additional_parameters(self, param_a, param_b):
         self.param_a = param_a
         self.param_b = param_b
+        # Reset cache for shape pattern
+        self._polycache = list()
         # Make sure pattern is updated with additional parameter
         self.set_predefined_pattern(self.cutshape)
 
@@ -471,30 +585,48 @@ class LivingHinges:
 
         #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
-        cols = (
-            int(
-                ((self.x1 - self.x0) + self.cell_width)
-                / (self.cell_width + (2 * self.cell_padding_h))
+                #  Determine rows and columns of cuts to create
+        #  will round down so add 1 and trim later
+        if self.cell_width + 2 * self.cell_padding_h == 0:
+            cols = 1
+        else:
+            cols = (
+                int(
+                    ((self.x1 - self.x0) + self.cell_width)
+                    / (self.cell_width + (2 * self.cell_padding_h))
+                )
+                + 1
             )
-            + 1
-        )
-        rows = (
-            int(
-                ((self.y1 - self.y0) + self.cell_height)
-                / (self.cell_height + (2 * self.cell_padding_v))
+        if self.cell_height + 2 * self.cell_padding_v == 0:
+            rows = 1
+        else:
+            rows = (
+                int(
+                    ((self.y1 - self.y0) + self.cell_height)
+                    / (self.cell_height + (2 * self.cell_padding_v))
+                )
+                + 1
             )
-            + 1
-        )
 
+        if self._extend_patterns:
+            start_value = -2
+            end_value = 1
+            off_x = -1 * (self.cell_width / 2)
+        else:
+            cols = max(1, cols - 2)
+            rows = max(1, rows - 2)
+            start_value = 0
+            end_value = 0
+            off_x = 0
         # print (f"Area: {self.width:.1f}, {self.height:.1f}, Cell: {self.cell_width:.1f}, {self.cell_height:.1f}")
         # print (f"Rows: {rows}, Cols={cols}")
         # print (f"Ratios: {self.cell_width_percentage}, {self.cell_height_percentage}")
         # print (f"Padding: {self.cell_padding_h_percentage}, {self.cell_padding_v_percentage}")
-        for col in range(-2, cols + 1, 1):
-            top_left_x = self.x0 - (self.cell_width / 2)
+        for col in range(start_value, cols + end_value, 1):
+            top_left_x = self.x0 + off_x
             x_offset = col * (self.cell_width + (2 * self.cell_padding_h))
             x_current = top_left_x + x_offset
-            for row in range(-2, rows + 1, 1):
+            for row in range(start_value, rows + end_value, 1):
                 top_left_y = self.y0
                 y_offset = row * (self.cell_height + (2 * self.cell_padding_v)) + (
                     (self.cell_height + (2 * self.cell_padding_v)) / 2
@@ -1471,8 +1603,11 @@ class HingePanel(wx.Panel):
         if self.in_change_event:
             return
         self.in_change_event = True
-        origin = event.GetEventObject()
-        etype = event.GetEventType()
+        if event is None:
+            origin = None
+        else:
+            origin = event.GetEventObject()
+        # etype = event.GetEventType()
         sync_direction = True
         if (
             origin is self.text_cell_height
