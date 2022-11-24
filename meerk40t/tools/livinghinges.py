@@ -3,7 +3,7 @@ from copy import copy
 import wx
 from numpy import linspace
 
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, ACCEPTED_UNITS
 from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -29,8 +29,7 @@ _ = wx.GetTranslation
 """
 TODO:
 a) get rid of row / col range limitation and iterate until boundary exceeds frame
-b) Fix circle arc invocation
-
+b) Come up with a better inner offset algorithm
 """
 
 
@@ -1063,6 +1062,7 @@ class HingePanel(wx.Panel):
             100,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
+
         self.text_cell_width = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -1175,30 +1175,60 @@ class HingePanel(wx.Panel):
         self.text_cell_width.Bind(wx.EVT_TEXT_ENTER, self.on_option_update)
         self.text_cell_offset_x.Bind(wx.EVT_TEXT_ENTER, self.on_option_update)
         self.text_cell_offset_y.Bind(wx.EVT_TEXT_ENTER, self.on_option_update)
+        self.text_cell_height.Bind(wx.EVT_KILL_FOCUS, self.on_option_update)
+        self.text_cell_width.Bind(wx.EVT_KILL_FOCUS, self.on_option_update)
+        self.text_cell_offset_x.Bind(wx.EVT_KILL_FOCUS, self.on_option_update)
+        self.text_cell_offset_y.Bind(wx.EVT_KILL_FOCUS, self.on_option_update)
+        self.text_cell_height.Bind(wx.EVT_TEXT, self.on_option_update)
+        self.text_cell_width.Bind(wx.EVT_TEXT, self.on_option_update)
+        self.text_cell_offset_x.Bind(wx.EVT_TEXT, self.on_option_update)
+        self.text_cell_offset_y.Bind(wx.EVT_TEXT, self.on_option_update)
 
     def _set_layout(self):
+        def size_it(ctrl, value):
+            ctrl.SetMaxSize(wx.Size(value, -1))
+            ctrl.SetSize(wx.Size(value, -1))
+
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        size_it(self.slider_height, 120)
+        size_it(self.slider_width, 120)
+        size_it(self.slider_offset_x, 120)
+        size_it(self.slider_offset_y, 120)
+        size_it(self.slider_param_a, 120)
+        size_it(self.slider_param_b, 120)
+        size_it(self.text_cell_height, 90)
+        size_it(self.text_cell_width, 90)
+        size_it(self.text_cell_offset_x, 90)
+        size_it(self.text_cell_offset_y, 90)
+        size_it(self.text_width, 90)
+        size_it(self.text_height, 90)
+        size_it(self.text_origin_x, 90)
+        size_it(self.text_origin_y, 90)
+        size_it(self.combo_style, 120)
+        size_it(self.button_generate, 120)
+        size_it(self.button_close, 90)
 
         main_left = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(main_left, 1, wx.EXPAND, 0)
+        main_sizer.Add(main_left, 0, wx.EXPAND | wx.FIXED_MINSIZE, 0)
 
-        vsizer_dimension = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Dimension")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("Dimension"))
+        size_it(sbox, 230)
+        vsizer_dimension = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         main_left.Add(vsizer_dimension, 0, wx.EXPAND, 0)
 
         hsizer_origin = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_dimension.Add(hsizer_origin, 0, wx.EXPAND, 0)
 
-        hsizer_originx = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("X:"))
+        size_it(sbox, 110)
+        hsizer_originx = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         self.text_origin_x.SetToolTip(_("X-Coordinate of the hinge area"))
         hsizer_originx.Add(self.text_origin_x, 1, wx.EXPAND, 0)
 
-        hsizer_originy = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("Y:"))
+        size_it(sbox, 110)
+        hsizer_originy = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+
         self.text_origin_y.SetToolTip(_("Y-Coordinate of the hinge area"))
         hsizer_originy.Add(self.text_origin_y, 1, wx.EXPAND, 0)
 
@@ -1208,15 +1238,16 @@ class HingePanel(wx.Panel):
         hsizer_wh = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_dimension.Add(hsizer_wh, 0, wx.EXPAND, 0)
 
-        hsizer_width = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("Width:"))
+        size_it(sbox, 110)
+        hsizer_width = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+
         self.text_width.SetToolTip(_("Width of the hinge area"))
         hsizer_width.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        hsizer_height = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("Height:"))
+        size_it(sbox, 110)
+        hsizer_height = wx.StaticBoxSizer(sbox, wx.VERTICAL)
 
         self.text_height.SetToolTip(_("Height of the hinge area"))
         hsizer_height.Add(self.text_height, 1, wx.EXPAND, 0)
@@ -1224,9 +1255,9 @@ class HingePanel(wx.Panel):
         hsizer_wh.Add(hsizer_width, 1, wx.EXPAND, 0)
         hsizer_wh.Add(hsizer_height, 1, wx.EXPAND, 0)
 
-        vsizer_options = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
-        )
+        sbox = wx.StaticBox(self, wx.ID_ANY, _("Options"))
+        size_it(sbox, 230)
+        vsizer_options = wx.StaticBoxSizer(sbox, wx.VERTICAL)
         main_left.Add(vsizer_options, 0, wx.EXPAND, 0)
 
         hsizer_pattern = wx.BoxSizer(wx.HORIZONTAL)
@@ -1330,7 +1361,7 @@ class HingePanel(wx.Panel):
         main_right = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "Preview"), wx.VERTICAL
         )
-        main_sizer.Add(main_right, 2, wx.EXPAND, 0)
+        main_sizer.Add(main_right, 1, wx.EXPAND, 0)
 
         hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
         main_right.Add(hsizer_preview, 0, wx.EXPAND, 0)
@@ -1341,7 +1372,9 @@ class HingePanel(wx.Panel):
 
         self.panel_preview = wx.Panel(self, wx.ID_ANY)
         main_right.Add(self.panel_preview, 1, wx.EXPAND, 0)
-
+        main_left.Layout()
+        main_right.Layout()
+        main_sizer.Layout()
         self.SetSizer(main_sizer)
 
     def on_preview_options(self, event):
@@ -1408,6 +1441,8 @@ class HingePanel(wx.Panel):
                 ty=0.05 * ratio * self.hinge_generator.height,
             )
             gc.SetTransform(matrix)
+            if ratio == 0:
+                ratio = 1
             linewidth = max(int(1 / ratio), 1)
             if self.check_preview_show_shape.GetValue():
                 mypen_border = wx.Pen(wx.BLUE, linewidth, wx.PENSTYLE_SOLID)
@@ -1600,6 +1635,8 @@ class HingePanel(wx.Panel):
 
     def on_option_update(self, event):
         # Generic update within a pattern
+        if event is not None:
+            event.Skip()
         if self.in_change_event:
             return
         self.in_change_event = True
@@ -1607,6 +1644,34 @@ class HingePanel(wx.Panel):
             origin = None
         else:
             origin = event.GetEventObject()
+            if event.GetEventType() == wx.wxEVT_TEXT and not getattr(self.context.root, "process_while_typing", False):
+                self.in_change_event = False
+                return
+            if isinstance(origin, wx.TextCtrl):
+                newvalue = origin.GetValue().strip().lower()
+                # Some basic checks:
+                # a) Empty?
+                # b) Is it a valid length?
+                # c) Does it have a unit at the end?
+                if len(newvalue) == 0:
+                    self.in_change_event = False
+                    return
+                try:
+                    testlen = float(Length(newvalue))
+                except ValueError:
+                    self.in_change_event = False
+                    return
+                valid = False
+                for unit in ACCEPTED_UNITS:
+                    if unit == "" or unit == "%":
+                        # no relative units or no units at all
+                        continue
+                    if newvalue.endswith(unit):
+                        valid = True
+                        break
+                if not valid:
+                    self.in_change_event = False
+                    return
         # etype = event.GetEventType()
         sync_direction = True
         if (
