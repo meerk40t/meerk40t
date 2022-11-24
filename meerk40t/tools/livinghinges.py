@@ -1186,7 +1186,8 @@ class HingePanel(wx.Panel):
 
     def _set_layout(self):
         def size_it(ctrl, value):
-            ctrl.SetMaxSize(wx.Size(value, -1))
+            ctrl.SetMaxSize(wx.Size(int(value), -1))
+            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
             ctrl.SetSize(wx.Size(value, -1))
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1205,8 +1206,8 @@ class HingePanel(wx.Panel):
         size_it(self.text_origin_x, 90)
         size_it(self.text_origin_y, 90)
         size_it(self.combo_style, 120)
-        size_it(self.button_generate, 120)
-        size_it(self.button_close, 90)
+        # size_it(self.button_generate, 120)
+        # size_it(self.button_close, 90)
 
         main_left = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(main_left, 0, wx.EXPAND | wx.FIXED_MINSIZE, 0)
