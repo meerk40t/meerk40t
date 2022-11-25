@@ -411,10 +411,10 @@ class TextCtrl(wx.TextCtrl):
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
-        _MIN_WIDTH, _MAX_WIDTH, _height = self.validate_widths()
-        self.SetMinSize(wx.Size(_MIN_WIDTH, _height))
+        _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
+        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
         if limited:
-            self.SetMaxSize(wx.Size(_MAX_WIDTH, _height))
+            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
 
     def validate_widths(self):
         minw = 35
@@ -432,16 +432,14 @@ class TextCtrl(wx.TextCtrl):
         f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
             minpattern
         )
-        f1 = f_height
         minw = f_width + 5
         f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
             maxpattern
         )
-        f2 = f_height
         maxw = f_width + 10
         # Now release dc
         dc.SelectObject(wx.NullBitmap)
-        return minw, maxw, max(f1, f2)
+        return minw, maxw
 
     def SetActionRoutine(self, action_routine):
         """
