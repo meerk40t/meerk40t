@@ -42,7 +42,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -955,9 +955,7 @@ class MovePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
-        main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Move Laser to:")), wx.HORIZONTAL
-        )
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Move Laser to:"), wx.HORIZONTAL)
         v_main_sizer = wx.BoxSizer(wx.VERTICAL)
         h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1047,9 +1045,7 @@ class PulsePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: PulsePanel.__do_layout
-        sizer_5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
-        )
+        sizer_5 = StaticBoxSizer(self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL)
         sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
@@ -1082,8 +1078,8 @@ class SizePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.mainsizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Object Dimensions")), wx.HORIZONTAL
+        self.mainsizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
         )
         self.button_navigate_resize = wx.BitmapButton(
             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
@@ -1783,9 +1779,7 @@ class JogDistancePanel(wx.Panel):
             value="10mm",
             check="length",
         )
-        main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
-        )
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Jog Distance:"), wx.VERTICAL)
         main_sizer.Add(self.text_jog_amount, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)

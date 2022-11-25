@@ -7,7 +7,7 @@ from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -23,20 +23,20 @@ class ConfigurationUsb(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_usb_settings = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("USB Settings")), wx.VERTICAL
+        sizer_usb_settings = StaticBoxSizer(
+            self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
         )
 
-        sizer_usb_restrict = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Restrict Multiple Lasers")), wx.VERTICAL
+        sizer_usb_restrict = StaticBoxSizer(
+            self, wx.ID_ANY, _("Restrict Multiple Lasers"), wx.VERTICAL
         )
         sizer_usb_settings.Add(sizer_usb_restrict, 0, wx.EXPAND, 0)
 
         sizer_criteria = wx.BoxSizer(wx.HORIZONTAL)
         sizer_usb_restrict.Add(sizer_criteria, 1, wx.EXPAND, 0)
 
-        sizer_chip_version = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("CH341 Version")), wx.HORIZONTAL
+        sizer_chip_version = StaticBoxSizer(
+            self, wx.ID_ANY, _("CH341 Version"), wx.HORIZONTAL
         )
         sizer_criteria.Add(sizer_chip_version, 0, wx.EXPAND, 0)
 
@@ -52,8 +52,8 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_chip_version.Add(self.spin_device_version, 0, wx.EXPAND, 0)
 
-        sizer_device_index = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device Index:")), wx.HORIZONTAL
+        sizer_device_index = StaticBoxSizer(
+            self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL
         )
         sizer_criteria.Add(sizer_device_index, 0, wx.EXPAND, 0)
 
@@ -69,8 +69,8 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_device_index.Add(self.spin_device_index, 0, wx.EXPAND, 0)
 
-        sizer_serial = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Serial Number")), wx.HORIZONTAL
+        sizer_serial = StaticBoxSizer(
+            self, wx.ID_ANY, _("Serial Number"), wx.HORIZONTAL
         )
         sizer_usb_restrict.Add(sizer_serial, 0, wx.EXPAND, 0)
 
@@ -91,9 +91,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_serial.Add(self.text_serial_number, 1, wx.EXPAND, 0)
 
-        sizer_buffer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Write Buffer")), wx.HORIZONTAL
-        )
+        sizer_buffer = StaticBoxSizer(self, wx.ID_ANY, _("Write Buffer"), wx.HORIZONTAL)
         sizer_usb_settings.Add(sizer_buffer, 0, wx.EXPAND, 0)
 
         self.checkbox_limit_buffer = wx.CheckBox(
@@ -224,13 +222,9 @@ class ConfigurationTcp(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_13 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("TCP Settings")), wx.HORIZONTAL
-        )
+        sizer_13 = StaticBoxSizer(self, wx.ID_ANY, _("TCP Settings"), wx.HORIZONTAL)
 
-        h_sizer_y1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Address")), wx.VERTICAL
-        )
+        h_sizer_y1 = StaticBoxSizer(self, wx.ID_ANY, _("Address"), wx.VERTICAL)
         sizer_13.Add(h_sizer_y1, 3, wx.EXPAND, 0)
 
         self.text_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
@@ -238,9 +232,7 @@ class ConfigurationTcp(wx.Panel):
         self.text_address.SetToolTip(_("IP/Host if the server computer"))
         h_sizer_y1.Add(self.text_address, 1, wx.EXPAND, 0)
 
-        sizer_port = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Port")), wx.VERTICAL
-        )
+        sizer_port = StaticBoxSizer(self, wx.ID_ANY, _("Port"), wx.VERTICAL)
         sizer_13.Add(sizer_port, 1, wx.EXPAND, 0)
 
         self.text_port = TextCtrl(
@@ -287,18 +279,14 @@ class ConfigurationLaserPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        v_sizer_main = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Laser Parameters")), wx.VERTICAL
+        v_sizer_main = StaticBoxSizer(
+            self, wx.ID_ANY, _("Laser Parameters"), wx.VERTICAL
         )
 
-        sizer_bed = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
-        )
+        sizer_bed = StaticBoxSizer(self, wx.ID_ANY, _("Bed Dimensions"), wx.HORIZONTAL)
         v_sizer_main.Add(sizer_bed, 0, wx.EXPAND, 0)
 
-        h_sizer_wd = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Width")), wx.HORIZONTAL
-        )
+        h_sizer_wd = StaticBoxSizer(self, wx.ID_ANY, _("Width"), wx.HORIZONTAL)
         sizer_bed.Add(h_sizer_wd, 1, wx.EXPAND, 0)
 
         self.text_bedwidth = TextCtrl(
@@ -312,9 +300,7 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
         h_sizer_wd.Add(self.text_bedwidth, 1, wx.EXPAND, 0)
 
-        h_sizer_ht = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Height")), wx.HORIZONTAL
-        )
+        h_sizer_ht = StaticBoxSizer(self, wx.ID_ANY, _("Height"), wx.HORIZONTAL)
         sizer_bed.Add(h_sizer_ht, 1, wx.EXPAND, 0)
 
         label_3 = wx.StaticText(self, wx.ID_ANY, "")
@@ -331,14 +317,12 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_bedheight.SetToolTip(_("Height of the laser bed."))
         h_sizer_ht.Add(self.text_bedheight, 1, wx.EXPAND, 0)
 
-        sizer_scale_factors = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("User Scale Factor")), wx.HORIZONTAL
+        sizer_scale_factors = StaticBoxSizer(
+            self, wx.ID_ANY, _("User Scale Factor"), wx.HORIZONTAL
         )
         v_sizer_main.Add(sizer_scale_factors, 0, wx.EXPAND, 0)
 
-        h_sizer_x_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL
-        )
+        h_sizer_x_2 = StaticBoxSizer(self, wx.ID_ANY, _("X:"), wx.HORIZONTAL)
         sizer_scale_factors.Add(h_sizer_x_2, 1, wx.EXPAND, 0)
 
         self.text_scale_x = TextCtrl(
@@ -354,9 +338,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         h_sizer_x_2.Add(self.text_scale_x, 1, wx.EXPAND, 0)
 
-        h_sizer_y_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL
-        )
+        h_sizer_y_2 = StaticBoxSizer(self, wx.ID_ANY, _("Y:"), wx.HORIZONTAL)
         sizer_scale_factors.Add(h_sizer_y_2, 1, wx.EXPAND, 0)
 
         self.text_scale_y = TextCtrl(
@@ -461,9 +443,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_name = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device Name")), wx.HORIZONTAL
-        )
+        sizer_name = StaticBoxSizer(self, wx.ID_ANY, _("Device Name"), wx.HORIZONTAL)
         self.text_device_label = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -473,14 +453,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         sizer_name.Add(self.text_device_label, 1, wx.EXPAND, 0)
         sizer_page_1.Add(sizer_name, 0, wx.EXPAND, 0)
 
-        sizer_config = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
+        sizer_config = StaticBoxSizer(
+            self, wx.ID_ANY, _("Configuration"), wx.HORIZONTAL
         )
         sizer_page_1.Add(sizer_config, 0, wx.EXPAND, 0)
 
-        sizer_board = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Board Setup")), wx.HORIZONTAL
-        )
+        sizer_board = StaticBoxSizer(self, wx.ID_ANY, _("Board Setup"), wx.HORIZONTAL)
         sizer_config.Add(sizer_board, 0, wx.EXPAND, 0)
 
         self.combobox_board = wx.ComboBox(
@@ -534,9 +512,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_16.Add(self.checkbox_swap_xy, 0, wx.EXPAND, 0)
 
-        sizer_interface = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Interface")), wx.VERTICAL
-        )
+        sizer_interface = StaticBoxSizer(self, wx.ID_ANY, _("Interface"), wx.VERTICAL)
         sizer_page_1.Add(sizer_interface, 0, wx.EXPAND, 0)
 
         sizer_interface_radio = wx.BoxSizer(wx.HORIZONTAL)
@@ -705,8 +681,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         sizer_page_2 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_general = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("General Options")), wx.VERTICAL
+        sizer_general = StaticBoxSizer(
+            self, wx.ID_ANY, _("General Options"), wx.VERTICAL
         )
         sizer_page_2.Add(sizer_general, 0, wx.EXPAND, 0)
 
@@ -768,9 +744,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
 
-        sizer_jog = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Rapid Jog")), wx.VERTICAL
-        )
+        sizer_jog = StaticBoxSizer(self, wx.ID_ANY, _("Rapid Jog"), wx.VERTICAL)
         sizer_page_2.Add(sizer_jog, 0, wx.EXPAND, 0)
 
         h_sizer_y3 = wx.BoxSizer(wx.VERTICAL)
@@ -785,8 +759,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_rapid_moves_between.SetValue(1)
         h_sizer_y3.Add(self.check_rapid_moves_between, 0, wx.EXPAND, 0)
 
-        h_sizer_y5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Minimum Jog Distance")), wx.HORIZONTAL
+        h_sizer_y5 = StaticBoxSizer(
+            self, wx.ID_ANY, _("Minimum Jog Distance"), wx.HORIZONTAL
         )
         h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
 
@@ -815,8 +789,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.radio_box_jog_method.SetSelection(0)
         sizer_jog.Add(self.radio_box_jog_method, 0, wx.EXPAND, 0)
 
-        sizer_rapid_override = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Rapid Override")), wx.VERTICAL
+        sizer_rapid_override = StaticBoxSizer(
+            self, wx.ID_ANY, _("Rapid Override"), wx.VERTICAL
         )
         sizer_page_2.Add(sizer_rapid_override, 0, wx.EXPAND, 0)
 
@@ -828,9 +802,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer_36 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X Travel Speed:")), wx.HORIZONTAL
-        )
+        sizer_36 = StaticBoxSizer(self, wx.ID_ANY, _("X Travel Speed:"), wx.HORIZONTAL)
 
         self.text_rapid_x = TextCtrl(
             self,
@@ -845,9 +817,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_36.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_35 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y Travel Speed:")), wx.HORIZONTAL
-        )
+        sizer_35 = StaticBoxSizer(self, wx.ID_ANY, _("Y Travel Speed:"), wx.HORIZONTAL)
 
         sizer_speed_xy.Add(sizer_36, 1, wx.EXPAND, 0)
         sizer_speed_xy.Add(sizer_35, 1, wx.EXPAND, 0)
@@ -862,9 +832,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         label_4 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_35.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_speed = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Speed:")), wx.VERTICAL
-        )
+        sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed:"), wx.VERTICAL)
         sizer_page_2.Add(sizer_speed, 0, wx.EXPAND, 0)
 
         sizer_32 = wx.BoxSizer(wx.HORIZONTAL)

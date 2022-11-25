@@ -13,6 +13,7 @@ from meerk40t.extra.hershey import (
 )
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import get_safe_path
 
 # begin wxGlade: dependencies
@@ -120,12 +121,9 @@ class LineTextPropertPanel(wx.Panel):
         self.node = node
         self.fonts = []
 
-        self.header = wx.StaticBox(self, wx.ID_ANY, _("Vector-Text"))
-        main_sizer = wx.StaticBoxSizer(self.header, wx.VERTICAL)
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Vector-Text"), wx.VERTICAL)
 
-        sizer_text = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Content")), wx.HORIZONTAL
-        )
+        sizer_text = StaticBoxSizer(self, wx.ID_ANY, _("Content"), wx.HORIZONTAL)
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
 
@@ -137,8 +135,8 @@ class LineTextPropertPanel(wx.Panel):
         self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_text.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
-        sizer_fonts = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fonts (double-click to use)")), wx.VERTICAL
+        sizer_fonts = StaticBoxSizer(
+            self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
 
         self.list_fonts = wx.ListBox(self, wx.ID_ANY)
@@ -269,8 +267,8 @@ class PanelFontSelect(wx.Panel):
 
         self.fonts = []
 
-        sizer_fonts = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fonts (double-click to use)")), wx.VERTICAL
+        sizer_fonts = StaticBoxSizer(
+            self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
         )
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
@@ -406,14 +404,12 @@ class PanelFontManager(wx.Panel):
         )
 
         self.text_info.SetMinSize((-1, 90))
-        sizer_info = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Information")), wx.HORIZONTAL
-        )
+        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
         mainsizer.Add(sizer_info, 0, wx.EXPAND, 0)
         sizer_info.Add(self.text_info, 1, wx.EXPAND, 0)
 
-        sizer_directory = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Font-Directory")), wx.HORIZONTAL
+        sizer_directory = StaticBoxSizer(
+            self, wx.ID_ANY, _("Font-Directory"), wx.HORIZONTAL
         )
         mainsizer.Add(sizer_directory, 0, wx.EXPAND, 0)
 
@@ -423,9 +419,7 @@ class PanelFontManager(wx.Panel):
         self.btn_dirselect = wx.Button(self, wx.ID_ANY, "...")
         sizer_directory.Add(self.btn_dirselect, 0, wx.EXPAND, 0)
 
-        sizer_fonts = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fonts")), wx.VERTICAL
-        )
+        sizer_fonts = StaticBoxSizer(self, wx.ID_ANY, _("Fonts"), wx.VERTICAL)
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
         self.list_fonts = wx.ListBox(self, wx.ID_ANY)

@@ -3,6 +3,8 @@ import time
 import wx
 from wx import aui
 
+from meerk40t.gui.wxutils import StaticBoxSizer
+
 _ = wx.GetTranslation
 
 
@@ -59,12 +61,8 @@ class DebugTreePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Selected:")), wx.VERTICAL
-        )
-        sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Emphasized:")), wx.VERTICAL
-        )
+        sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Selected:"), wx.VERTICAL)
+        sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Emphasized:"), wx.VERTICAL)
         sizer_1.Add(self.lb_selected, 1, wx.EXPAND, 0)
         sizer_2.Add(self.lb_emphasized, 1, wx.EXPAND, 0)
         sizer_2.Add(self.txt_first, 0, wx.EXPAND, 0)

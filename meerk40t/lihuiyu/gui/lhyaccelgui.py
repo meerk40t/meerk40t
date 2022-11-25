@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -175,23 +175,21 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: AccelBuild.__do_layout
         sizer_accel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_hraster = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Horizontal Raster")), wx.VERTICAL
+        sizer_hraster = StaticBoxSizer(
+            self, wx.ID_ANY, _("Horizontal Raster"), wx.VERTICAL
         )
         sizer_19 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_18 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_vraster = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Vertical Raster")), wx.VERTICAL
+        sizer_vraster = StaticBoxSizer(
+            self, wx.ID_ANY, _("Vertical Raster"), wx.VERTICAL
         )
         sizer_22 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_21 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_vector = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Vector")), wx.VERTICAL
-        )
+        sizer_vector = StaticBoxSizer(self, wx.ID_ANY, _("Vector"), wx.VERTICAL)
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10 = wx.BoxSizer(wx.HORIZONTAL)

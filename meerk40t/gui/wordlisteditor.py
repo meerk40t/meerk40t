@@ -15,6 +15,7 @@ from .icons import (
     icons8_remove_25,
 )
 from .mwindow import MWindow
+from .wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -680,10 +681,7 @@ class ImportPanel(wx.Panel):
         self.context = context
         self.wlist = self.context.elements.mywordlist
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        info_box = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Import CSV")),
-            wx.VERTICAL,
-        )
+        info_box = StaticBoxSizer(self, wx.ID_ANY, _("Import CSV"), wx.VERTICAL)
         sizer_csv = wx.BoxSizer(wx.HORIZONTAL)
         info_box.Add(sizer_csv, 1, wx.EXPAND, 0)
 
@@ -813,10 +811,7 @@ class AboutPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        info_box = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("How to use...")),
-            wx.VERTICAL,
-        )
+        info_box = StaticBoxSizer(self, wx.ID_ANY, _("How to use..."), wx.VERTICAL)
         self.parent_panel = None
         s = self.context.asset("wordlist_howto")
         info_label = wx.TextCtrl(

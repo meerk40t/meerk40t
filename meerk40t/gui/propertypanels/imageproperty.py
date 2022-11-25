@@ -8,7 +8,7 @@ from meerk40t.core.units import UNITS_PER_INCH
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -133,9 +133,7 @@ class CropPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ContrastPanel.__do_layout
-        sizer_main = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image-Dimensions")), wx.VERTICAL
-        )
+        sizer_main = StaticBoxSizer(self, wx.ID_ANY, _("Image-Dimensions"), wx.VERTICAL)
         sizer_info = wx.BoxSizer(wx.HORIZONTAL)
         sizer_info.Add(self.check_enable_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_info.Add(self.button_reset, 0, wx.EXPAND, 0)
@@ -418,9 +416,7 @@ class ImageModificationPanel(ScrolledPanel):
         )
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_script = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("RasterWizard")), wx.HORIZONTAL
-        )
+        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("RasterWizard"), wx.HORIZONTAL)
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
@@ -642,9 +638,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             self.Centre()
             return
 
-        sizer_options = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
-        )
+        sizer_options = StaticBoxSizer(self, wx.ID_ANY, _("Options"), wx.VERTICAL)
         main_sizer.Add(sizer_options, 1, wx.EXPAND, 0)
 
         sizer_turn = wx.BoxSizer(wx.HORIZONTAL)
@@ -769,9 +763,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.button_generate.SetToolTip(_("Generate a preview of the result"))
         sizer_buttons.Add(self.button_generate, 0, 0, 0)
 
-        sizer_preview = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Preview")), wx.VERTICAL
-        )
+        sizer_preview = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
         main_sizer.Add(sizer_preview, 2, wx.EXPAND, 0)
 
         self.bitmap_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
@@ -1128,6 +1120,8 @@ class ImagePropertyPanel(ScrolledPanel):
             self.slider_grayscale_blue,
         )
         # self.check_enable_grayscale.SetValue(op["enable"])
+        if node.invert is None:
+            node.invert = False
         self.check_invert_grayscale.SetValue(node.invert)
 
         self.slider_grayscale_red.SetValue(int(node.red * 500.0))
@@ -1190,17 +1184,13 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
         sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_dpi = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
-        )
+        sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
-        sizer_dither = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
-        )
+        sizer_dither = StaticBoxSizer(self, wx.ID_ANY, _("Dither"), wx.HORIZONTAL)
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -1208,32 +1198,17 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
 
-        # sizer_rasterwizard = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Image-Operation")), wx.HORIZONTAL
-        # )
-        # sizer_rasterwizard.Add(self.combo_operations, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        # sizer_main.Add(sizer_rasterwizard, 0, wx.EXPAND, 0)
-
-        # -----
-
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_grayscale = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL
+        sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Grayscale"), wx.VERTICAL)
+        sizer_grayscale_lightness = StaticBoxSizer(
+            self, wx.ID_ANY, _("Lightness"), wx.HORIZONTAL
         )
-        sizer_grayscale_lightness = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Lightness")), wx.HORIZONTAL
+        sizer_grayscale_blue = StaticBoxSizer(self, wx.ID_ANY, _("Blue"), wx.HORIZONTAL)
+        sizer_grayscale_green = StaticBoxSizer(
+            self, wx.ID_ANY, _("Green"), wx.HORIZONTAL
         )
-        sizer_grayscale_blue = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Blue")), wx.HORIZONTAL
-        )
-        sizer_grayscale_green = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Green")), wx.HORIZONTAL
-        )
-        sizer_grayscale_red = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL
-        )
+        sizer_grayscale_red = StaticBoxSizer(self, wx.ID_ANY, _("Red"), wx.HORIZONTAL)
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
         sizer_grayscale_red.Add(self.slider_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)

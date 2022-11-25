@@ -8,7 +8,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -111,21 +111,11 @@ class RotarySettingsPanel(ScrolledPanel):
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_scale = wx.BoxSizer(wx.HORIZONTAL)
-        # sizer_circumference = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Object Circumference:")), wx.HORIZONTAL
-        # )
-        # sizer_20 = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Roller Circumference:")), wx.HORIZONTAL
-        # )
-        # sizer_steps = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Rotation Steps:")), wx.HORIZONTAL
-        # )
-        sizer_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scale X:")), wx.HORIZONTAL
-        )
-        sizer_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scale Y:")), wx.HORIZONTAL
-        )
+        # sizer_circumference = StaticBoxSizer(self, wx.ID_ANY, _("Object Circumference:"), wx.HORIZONTAL)
+        # sizer_20 = StaticBoxSizer(self, wx.ID_ANY, _("Roller Circumference:"), wx.HORIZONTAL)
+        # sizer_steps = StaticBoxSizer(self, wx.ID_ANY, _("Rotation Steps:"), wx.HORIZONTAL)
+        sizer_x = StaticBoxSizer(self, wx.ID_ANY, _("Scale X:"), wx.HORIZONTAL)
+        sizer_y = StaticBoxSizer(self, wx.ID_ANY, _("Scale Y:"), wx.HORIZONTAL)
         sizer_main.Add(self.checkbox_rotary, 0, 0, 0)
         sizer_x.Add(self.text_rotary_scalex, 0, 0, 0)
         sizer_y.Add(self.text_rotary_scaley, 0, 0, 0)

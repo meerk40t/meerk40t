@@ -9,7 +9,7 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
-from .wxutils import TextCtrl
+from .wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -96,9 +96,7 @@ class PreferencesLanguagePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Language")), wx.HORIZONTAL
-        )
+        sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Language"), wx.HORIZONTAL)
         from .wxmeerk40t import supported_languages
 
         choices = [
@@ -139,8 +137,8 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("SVG Pixel Per Inch")), wx.HORIZONTAL
+        sizer_3 = StaticBoxSizer(
+            self, wx.ID_ANY, _("SVG Pixel Per Inch"), wx.HORIZONTAL
         )
 
         self.combo_svg_ppi = wx.ComboBox(

@@ -3,6 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -35,9 +36,7 @@ class DevicePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Your Devices")), wx.VERTICAL
-        )
+        sizer_1 = StaticBoxSizer(self, wx.ID_ANY, _("Your Devices"), wx.VERTICAL)
 
         self.devices_list = wx.ListCtrl(
             self,

@@ -13,7 +13,7 @@ from meerk40t.gui.propertypanels.attributes import (
     PositionSizePanel,
     StrokeWidthPanel,
 )
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -270,18 +270,14 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_v_main = wx.BoxSizer(wx.VERTICAL)
 
         sizer_h_infos = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_info1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Points")), wx.VERTICAL
-        )
+        sizer_info1 = StaticBoxSizer(self, wx.ID_ANY, _("Points"), wx.VERTICAL)
         sizer_info1.Add(self.lbl_info_points, 1, wx.EXPAND, 0)
 
-        sizer_info2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Length")), wx.VERTICAL
-        )
+        sizer_info2 = StaticBoxSizer(self, wx.ID_ANY, _("Length"), wx.VERTICAL)
         sizer_info2.Add(self.lbl_info_length, 1, wx.EXPAND, 0)
 
-        sizer_info3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Area (w/wo stroke)")), wx.VERTICAL
+        sizer_info3 = StaticBoxSizer(
+            self, wx.ID_ANY, _("Area (w/wo stroke)"), wx.VERTICAL
         )
         sizer_info3.Add(self.lbl_info_area, 1, wx.EXPAND, 0)
 

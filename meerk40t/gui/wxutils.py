@@ -411,15 +411,15 @@ class TextCtrl(wx.TextCtrl):
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
         if self._style & wx.TE_PROCESS_ENTER != 0:
             self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
-        _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
-        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        _MIN_WIDTH, _MAX_WIDTH, _height = self.validate_widths()
+        self.SetMinSize(wx.Size(_MIN_WIDTH, _height))
         if limited:
-            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+            self.SetMaxSize(wx.Size(_MAX_WIDTH, _height))
 
     def validate_widths(self):
         minw = 35
         maxw = 100
-        minpattern = "00000"
+        minpattern = "0000"
         maxpattern = "999999999.99mm"
         # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
@@ -432,14 +432,16 @@ class TextCtrl(wx.TextCtrl):
         f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
             minpattern
         )
+        f1 = f_height
         minw = f_width + 5
         f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
             maxpattern
         )
+        f2 = f_height
         maxw = f_width + 10
         # Now release dc
         dc.SelectObject(wx.NullBitmap)
-        return minw, maxw
+        return minw, maxw, max(f1, f2)
 
     def SetActionRoutine(self, action_routine):
         """
@@ -731,6 +733,29 @@ class CheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
+class StaticBoxSizer(wx.StaticBoxSizer):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        label="",
+        orientation=wx.HORIZONTAL,
+        *args,
+        **kwargs,
+    ):
+        self.sbox = wx.StaticBox(parent, id, label=label)
+        self.sbox.SetMinSize(wx.Size(50, 50))
+        super().__init__(self.sbox, orientation)
+
+    def Show(self, show=True):
+        self.sbox.Show(show)
+
+    def SetLabel(self, label):
+        self.sbox.SetLabel(label)
+
+    def Refresh(self, *args):
+        self.sbox.Refresh(*args)
 
 class ScrolledPanel(SP):
     """
