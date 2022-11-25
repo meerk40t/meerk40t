@@ -32,6 +32,7 @@ a) get rid of row / col range limitation and iterate until boundary exceeds fram
 b) Come up with a better inner offset algorithm
 """
 
+_FACTOR = 1000
 
 class LivingHinges:
     """
@@ -53,14 +54,14 @@ class LivingHinges:
         # Declare all used variables to satisfy codacy
         self.param_a = 0
         self.param_b = 0
-        self.cell_height_percentage = 20
-        self.cell_width_percentage = 20
-        self.cell_height = height * self.cell_height_percentage / 100
-        self.cell_width = width * self.cell_width_percentage / 100
+        self.cell_height_percentage = 200
+        self.cell_width_percentage = 200
+        self.cell_height = height * self.cell_height_percentage / _FACTOR
+        self.cell_width = width * self.cell_width_percentage / _FACTOR
         self.cell_padding_v_percentage = 0
         self.cell_padding_h_percentage = 0
-        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / 100
-        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / _FACTOR
+        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / _FACTOR
         # Requires recalculation
         self.path = None
         self.previewpath = None
@@ -76,7 +77,7 @@ class LivingHinges:
             False,
             "",
             "",
-            (-20, -35, 0, 0),
+            (-200, -350, 0, 0),
             True,
         )
         self._defined_patterns["fishbone"] = (
@@ -84,7 +85,7 @@ class LivingHinges:
             True,
             "Left/Right Indentation",
             "Bottom Indentation",
-            (10, 10, 0, 0),
+            (100, 100, 0, 0),
             True,
         )
         self._defined_patterns["diagonal"] = (
@@ -92,7 +93,7 @@ class LivingHinges:
             True,
             "Left/Right Indentation",
             "Top/Bottom Indentation",
-            (-10, -10, 0, 0),
+            (-100, -100, 0, 0),
             True,
         )
         self._defined_patterns["diamond1"] = (
@@ -100,7 +101,7 @@ class LivingHinges:
             False,
             "",
             "",
-            (-15, 10, 0, 0),
+            (-150, 100, 0, 0),
             True,
         )
         self._defined_patterns["diamond2"] = (
@@ -108,7 +109,7 @@ class LivingHinges:
             False,
             "",
             "",
-            (-12, 6, 0, 0),
+            (-120, 60, 0, 0),
             True,
         )
         self._defined_patterns["cross"] = (
@@ -116,7 +117,7 @@ class LivingHinges:
             True,
             "Left/Right Indentation",
             "Top/Bottom Indentation",
-            (-15, -4, 0, 0),
+            (-150, -40, 0, 0),
             True,
         )
         self._defined_patterns["bezier"] = (
@@ -124,7 +125,7 @@ class LivingHinges:
             True,
             "",
             "",
-            (-2, -16, 0.4, 0.3),
+            (-20, -160, 0.4, 0.3),
             True,
         )
         self._defined_patterns["wave"] = (
@@ -132,7 +133,7 @@ class LivingHinges:
             True,
             "",
             "",
-            (-13, -26, 0, 0),
+            (-130, -260, 0, 0),
             True,
         )
         self._defined_patterns["bowlingpin"] = (
@@ -140,7 +141,7 @@ class LivingHinges:
             True,
             "Left/right bowl",
             "Top/bottom bowl",
-            (-21, -5, -0.3, 0),
+            (-210, -50, -0.3, 0),
             True,
         )
         self._defined_patterns["beehive"] = (
@@ -148,7 +149,7 @@ class LivingHinges:
             True,
             "Position of left side",
             "Distance of second line",
-            (-1, 6, 1.4, 0),
+            (-10, 60, 1.4, 0),
             True,
         )
         self._defined_patterns["fabric"] = (
@@ -156,7 +157,7 @@ class LivingHinges:
             False,
             "",
             "",
-            (-18, 13, 0, 0),
+            (-180, 130, 0, 0),
             True,
         )
         self._defined_patterns["brackets"] = (
@@ -164,7 +165,7 @@ class LivingHinges:
             True,
             "",
             "",
-            (-14, -11, 0.7, 0.7),
+            (-140, -110, 0.7, 0.7),
             True,
         )
         self._defined_patterns["shape"] = (
@@ -176,8 +177,8 @@ class LivingHinges:
             False,
         )
 
-        self.set_cell_values(10, 10)
-        self.set_padding_values(5, 5)
+        self.set_cell_values(100, 100)
+        self.set_padding_values(50, 50)
         self.set_predefined_pattern("line")
 
     def get_patterns(self):
@@ -573,10 +574,10 @@ class LivingHinges:
             # No need to recalculate...
             return
 
-        self.cell_width = self.width * self.cell_width_percentage / 100
-        self.cell_height = self.height * self.cell_height_percentage / 100
-        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / 100
-        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / 100
+        self.cell_width = self.width * self.cell_width_percentage / _FACTOR
+        self.cell_height = self.height * self.cell_height_percentage / _FACTOR
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / _FACTOR
+        self.cell_padding_v = self.cell_height * self.cell_padding_v_percentage / _FACTOR
         self.path = Path(stroke=Color("red"), stroke_width=500)
 
         if show_outline:
@@ -1033,10 +1034,10 @@ class HingePanel(wx.Panel):
         self.hinge_origin_y = "0cm"
         self.hinge_width = "5cm"
         self.hinge_height = "5cm"
-        self.hinge_cells_x = 20
-        self.hinge_cells_y = 20
-        self.hinge_padding_x = 10
-        self.hinge_padding_y = 10
+        self.hinge_cells_x = 200
+        self.hinge_cells_y = 200
+        self.hinge_padding_x = 100
+        self.hinge_padding_y = 100
         self.hinge_param_a = 0.7
         self.hinge_param_b = 0.7
 
@@ -1054,26 +1055,30 @@ class HingePanel(wx.Panel):
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN
         )
         self.button_default = wx.Button(self, wx.ID_ANY, "D")
+        _default = 200
         self.slider_width = wx.Slider(
             self,
             wx.ID_ANY,
-            20,
+            _default,
             1,
-            100,
-            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+            _FACTOR,
+            style=wx.SL_HORIZONTAL,
         )
-
+        self.slider_width_label = wx.StaticText(self, wx.ID_ANY, f"{_default/_FACTOR:.1%}")
+        self.slider_width_label.SetFont(wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.text_cell_width = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
         self.slider_height = wx.Slider(
             self,
             wx.ID_ANY,
-            20,
+            _default,
             1,
-            100,
-            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+            _FACTOR,
+            style=wx.SL_HORIZONTAL,
         )
+        self.slider_height_label = wx.StaticText(self, wx.ID_ANY, f"{_default/_FACTOR:.1%}")
+        self.slider_height_label.SetFont(wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.text_cell_height = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -1081,10 +1086,12 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            -49,
-            50,
-            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+            1 - _FACTOR /2,
+            _FACTOR / 2,
+            style=wx.SL_HORIZONTAL,
         )
+        self.slider_offx_label = wx.StaticText(self, wx.ID_ANY)
+        self.slider_offx_label.SetFont(wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.text_cell_offset_x = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -1092,10 +1099,12 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            -49,
-            50,
-            style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
+            1 - _FACTOR /2,
+            _FACTOR / 2,
+            style=wx.SL_HORIZONTAL,
         )
+        self.slider_offy_label = wx.StaticText(self, wx.ID_ANY)
+        self.slider_offy_label.SetFont(wx.Font(8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         self.text_cell_offset_y = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
@@ -1290,7 +1299,10 @@ class HingePanel(wx.Panel):
             + "\n"
             + _("(Press return to apply values)")
         )
-        hsizer_cellwidth.Add(self.slider_width, 2, wx.EXPAND, 0)
+        vs_width = wx.BoxSizer(wx.VERTICAL)
+        vs_width.Add(self.slider_width, 0, wx.EXPAND, 0)
+        vs_width.Add(self.slider_width_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer_cellwidth.Add(vs_width, 2, wx.EXPAND, 0)
         hsizer_cellwidth.Add(self.text_cell_width, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_cellheight = wx.BoxSizer(wx.HORIZONTAL)
@@ -1308,7 +1320,10 @@ class HingePanel(wx.Panel):
             + "\n"
             + _("(Press return to apply values)")
         )
-        hsizer_cellheight.Add(self.slider_height, 2, wx.EXPAND, 0)
+        vs_height = wx.BoxSizer(wx.VERTICAL)
+        vs_height.Add(self.slider_height, 0, wx.EXPAND, 0)
+        vs_height.Add(self.slider_height_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer_cellheight.Add(vs_height, 2, wx.EXPAND, 0)
         hsizer_cellheight.Add(self.text_cell_height, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_offsetx = wx.BoxSizer(wx.HORIZONTAL)
@@ -1324,7 +1339,10 @@ class HingePanel(wx.Panel):
             + "\n"
             + _("(Press return to apply values)")
         )
-        hsizer_offsetx.Add(self.slider_offset_x, 2, wx.EXPAND, 0)
+        vs_offx = wx.BoxSizer(wx.VERTICAL)
+        vs_offx.Add(self.slider_offset_x, 0, wx.EXPAND, 0)
+        vs_offx.Add(self.slider_offx_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer_offsetx.Add(vs_offx, 2, wx.EXPAND, 0)
         hsizer_offsetx.Add(self.text_cell_offset_x, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer_offsety = wx.BoxSizer(wx.HORIZONTAL)
@@ -1340,7 +1358,10 @@ class HingePanel(wx.Panel):
             + "\n"
             + _("(Press return to apply values)")
         )
-        hsizer_offsety.Add(self.slider_offset_y, 2, wx.EXPAND, 0)
+        vs_offy = wx.BoxSizer(wx.VERTICAL)
+        vs_offy.Add(self.slider_offset_y, 0, wx.EXPAND, 0)
+        vs_offy.Add(self.slider_offy_label, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer_offsety.Add(vs_offy, 2, wx.EXPAND, 0)
         hsizer_offsety.Add(self.text_cell_offset_y, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_param_a.SetToolTip(_("Change the shape appearance"))
@@ -1482,10 +1503,14 @@ class HingePanel(wx.Panel):
             return
         pattern = self.patterns[idx]
         default = self.hinge_generator.get_default(pattern)
-        self.slider_width.SetValue(20)
-        self.slider_height.SetValue(20)
+        self.slider_width.SetValue(200)
+        self.slider_width_label.SetLabel(f"{self.slider_width.GetValue()/_FACTOR:.1%}")
+        self.slider_height.SetValue(200)
+        self.slider_height_label.SetLabel(f"{self.slider_height.GetValue()/_FACTOR:.1%}")
         self.slider_offset_x.SetValue(default[0])
+        self.slider_offx_label.SetLabel(f"{default[0]/_FACTOR:.1%}")
         self.slider_offset_y.SetValue(default[1])
+        self.slider_offy_label.SetLabel(f"{default[1]/_FACTOR:.1%}")
         self.slider_param_a.SetValue(int(10 * default[2]))
         self.slider_param_b.SetValue(int(10 * default[3]))
         self.on_option_update(None)
@@ -1569,8 +1594,8 @@ class HingePanel(wx.Panel):
             offset_x = self.slider_offset_x.GetValue()
             offset_y = self.slider_offset_y.GetValue()
             units = self.context.units_name
-            cx = cell_x / 100 * wd
-            cy = cell_y / 100 * ht
+            cx = cell_x / _FACTOR * wd
+            cy = cell_y / _FACTOR * ht
             self.text_cell_width.SetValue(
                 Length(amount=cx, preferred_units=units).preferred_length
             )
@@ -1580,12 +1605,12 @@ class HingePanel(wx.Panel):
 
             self.text_cell_offset_x.SetValue(
                 Length(
-                    amount=cx * offset_x / 100, preferred_units=units
+                    amount=cx * offset_x / _FACTOR, preferred_units=units
                 ).preferred_length
             )
             self.text_cell_offset_y.SetValue(
                 Length(
-                    amount=cy * offset_y / 100, preferred_units=units
+                    amount=cy * offset_y / _FACTOR, preferred_units=units
                 ).preferred_length
             )
         else:
@@ -1606,33 +1631,38 @@ class HingePanel(wx.Panel):
             except ValueError:
                 offset_y = 0
             if wd != 0:
-                px = int(100 * cx / wd)
+                px = int(_FACTOR * cx / wd)
             else:
-                px = 100
+                px = _FACTOR
             if ht != 0:
-                py = int(100 * cy / ht)
+                py = int(_FACTOR * cy / ht)
             else:
-                py = 100
+                py = _FACTOR
             if self.slider_width.GetValue() != px:
                 self.hinge_cells_x = px
                 self.slider_width.SetValue(px)
+                self.slider_width_label.SetLabel(f"{self.hinge_cells_x/_FACTOR:.1%}")
             if self.slider_height.GetValue() != py:
                 self.hinge_cells_y = py
                 self.slider_height.SetValue(py)
+                self.slider_height_label.SetLabel(f"{self.hinge_cells_y/_FACTOR:.1%}")
             if cx != 0:
-                px = int(100 * offset_x / cx)
+                px = int(_FACTOR * offset_x / cx)
             else:
                 px = 0
             if cy != 0:
-                py = int(100 * offset_y / cy)
+                py = int(_FACTOR * offset_y / cy)
             else:
                 py = 0
             if self.slider_offset_x.GetValue() != px:
                 self.hinge_padding_x = px
                 self.slider_offset_x.SetValue(px)
+                self.slider_offx_label.SetLabel(f"{px/_FACTOR:.1%}")
             if self.slider_offset_y.GetValue() != py:
                 self.hinge_padding_y = py
                 self.slider_offset_y.SetValue(py)
+                self.slider_offy_label.SetLabel(f"{py/_FACTOR:.1%}")
+
 
     def on_option_update(self, event):
         # Generic update within a pattern
@@ -1713,10 +1743,15 @@ class HingePanel(wx.Panel):
         cell_y = self.slider_height.GetValue()
         self.hinge_cells_x = cell_x
         self.hinge_cells_y = cell_y
+        self.slider_width_label.SetLabel(f"{self.hinge_cells_x/_FACTOR:.1%}")
+        self.slider_height_label.SetLabel(f"{self.hinge_cells_y/_FACTOR:.1%}")
+
         offset_x = self.slider_offset_x.GetValue()
         offset_y = self.slider_offset_y.GetValue()
         self.hinge_padding_x = offset_x
         self.hinge_padding_y = offset_y
+        self.slider_offx_label.SetLabel(f"{self.hinge_padding_x/_FACTOR:.1%}")
+        self.slider_offy_label.SetLabel(f"{self.hinge_padding_y/_FACTOR:.1%}")
 
         self.sync_controls(to_text=sync_direction)
 
@@ -1733,8 +1768,8 @@ class HingePanel(wx.Panel):
         for (pattern, recommended) in zip(self.patterns, self.defaults):
             default = (
                 pattern,
-                20,
-                20,
+                200,
+                200,
                 recommended[0],
                 recommended[1],
                 recommended[2],
@@ -1820,15 +1855,19 @@ class HingePanel(wx.Panel):
         require_sync = False
         if self.slider_width.GetValue() != self.hinge_cells_x:
             self.slider_width.SetValue(self.hinge_cells_x)
+            self.slider_width_label.SetLabel(f"{self.hinge_cells_x/_FACTOR:.1%}")
             require_sync = True
         if self.slider_height.GetValue() != self.hinge_cells_y:
             self.slider_height.SetValue(self.hinge_cells_y)
+            self.slider_height_label.SetLabel(f"{self.hinge_cells_y/_FACTOR:.1%}")
             require_sync = True
         if self.slider_offset_x.GetValue() != self.hinge_padding_x:
             self.slider_offset_x.SetValue(self.hinge_padding_x)
+            self.slider_offx_label.SetLabel(f"{self.hinge_padding_x/_FACTOR:.1%}")
             require_sync = True
         if self.slider_offset_y.GetValue() != self.hinge_padding_y:
             self.slider_offset_y.SetValue(self.hinge_padding_y)
+            self.slider_offy_label.SetLabel(f"{self.hinge_padding_y/_FACTOR:.1%}")
             require_sync = True
         if self.slider_param_a.GetValue() != int(10 * self.hinge_param_a):
             self.slider_param_a.SetValue(int(10 * self.hinge_param_a))
