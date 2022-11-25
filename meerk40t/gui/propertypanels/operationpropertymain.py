@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
@@ -27,9 +27,7 @@ class LayerSettingPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        layer_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Layer:")), wx.HORIZONTAL
-        )
+        layer_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Layer:"), wx.HORIZONTAL)
 
         self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
@@ -39,11 +37,11 @@ class LayerSettingPanel(wx.Panel):
 
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
-        h_classify_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Classification")), wx.HORIZONTAL
+        h_classify_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Classification"), wx.HORIZONTAL
         )
-        h_property_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Properties")), wx.HORIZONTAL
+        h_property_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Properties"), wx.HORIZONTAL
         )
         rastertooltip = ""
         if self.operation.type == "op raster":
@@ -336,9 +334,7 @@ class SpeedPpiPanel(wx.Panel):
         # print (f"op='{op}', power={power_min}-{power_max}, speed={speed_min}-{speed_max}")
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        speed_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Speed (mm/s)")), wx.HORIZONTAL
-        )
+        speed_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed (mm/s)"), wx.HORIZONTAL)
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
         self.text_speed = TextCtrl(
@@ -366,9 +362,7 @@ class SpeedPpiPanel(wx.Panel):
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
-        power_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Power (ppi)")), wx.HORIZONTAL
-        )
+        power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
 
         self.text_power = TextCtrl(
@@ -395,8 +389,8 @@ class SpeedPpiPanel(wx.Panel):
 
         freq = self.context.device.lookup("frequency")
         if freq:
-            frequency_sizer = wx.StaticBoxSizer(
-                wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
+            frequency_sizer = StaticBoxSizer(
+                self, wx.ID_ANY, _("Frequency (kHz)"), wx.HORIZONTAL
             )
             speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
@@ -514,9 +508,7 @@ class PassesPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_passes = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Passes:")), wx.HORIZONTAL
-        )
+        sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
         self.check_passes = wx.CheckBox(self, wx.ID_ANY, _("Passes"))
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
@@ -618,15 +610,11 @@ class InfoPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_info = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Info:")), wx.HORIZONTAL
-        )
+        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("Info:"), wx.HORIZONTAL)
 
-        sizer_children = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Children:")), wx.HORIZONTAL
-        )
-        sizer_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Est. burn-time:")), wx.HORIZONTAL
+        sizer_children = StaticBoxSizer(self, wx.ID_ANY, _("Children:"), wx.HORIZONTAL)
+        sizer_time = StaticBoxSizer(
+            self, wx.ID_ANY, _("Est. burn-time:"), wx.HORIZONTAL
         )
 
         self.text_children = wx.TextCtrl(self, wx.ID_ANY, "0", style=wx.TE_READONLY)
@@ -739,9 +727,7 @@ class PanelStartPreference(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_2 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Start Preference:")), wx.VERTICAL
-        )
+        sizer_2 = StaticBoxSizer(self, wx.ID_ANY, _("Start Preference:"), wx.VERTICAL)
 
         self.slider_top = wx.Slider(self, wx.ID_ANY, 1, 0, 2)
         sizer_2.Add(self.slider_top, 0, wx.EXPAND, 0)
@@ -1081,13 +1067,9 @@ class RasterSettingsPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        raster_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Raster:")), wx.VERTICAL
-        )
+        raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Raster:"), wx.VERTICAL)
         param_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
-        )
+        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
 
         self.text_dpi = TextCtrl(
@@ -1131,9 +1113,7 @@ class RasterSettingsPanel(wx.Panel):
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_6 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Overscan:")), wx.HORIZONTAL
-        )
+        sizer_6 = StaticBoxSizer(self, wx.ID_ANY, _("Overscan:"), wx.HORIZONTAL)
         param_sizer.Add(sizer_6, 1, wx.EXPAND, 0)
 
         raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
@@ -1149,9 +1129,7 @@ class RasterSettingsPanel(wx.Panel):
         self.text_overscan.SetToolTip(_("Overscan amount"))
         sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
 
-        sizer_4 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Direction:")), wx.HORIZONTAL
-        )
+        sizer_4 = StaticBoxSizer(self, wx.ID_ANY, _("Direction:"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_4, 0, wx.EXPAND, 0)
 
         self.combo_raster_direction = wx.ComboBox(
@@ -1335,12 +1313,10 @@ class HatchSettingsPanel(wx.Panel):
         self.operation = node
         self._Buffer = None
 
-        raster_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Hatch:")), wx.VERTICAL
-        )
+        raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Hatch:"), wx.VERTICAL)
 
-        sizer_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Hatch Distance:")), wx.HORIZONTAL
+        sizer_distance = StaticBoxSizer(
+            self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
         )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
@@ -1354,9 +1330,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
-        sizer_angle = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Angle")), wx.HORIZONTAL
-        )
+        sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
         self.text_angle = TextCtrl(
@@ -1372,9 +1346,7 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
 
-        sizer_fill = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fill Style")), wx.VERTICAL
-        )
+        sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fill Style"), wx.VERTICAL)
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
         self.fills = list(self.context.match("hatch", suffix=True))
@@ -1646,8 +1618,8 @@ class DwellSettingsPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        sizer_passes = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Dwell Time: (ms)")), wx.HORIZONTAL
+        sizer_passes = StaticBoxSizer(
+            self, wx.ID_ANY, _("Dwell Time: (ms)"), wx.HORIZONTAL
         )
 
         self.text_dwelltime = TextCtrl(

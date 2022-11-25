@@ -17,7 +17,7 @@ from meerk40t.gui.icons import (
     icons8_up_50,
     icons8_visit_20,
 )
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -61,12 +61,8 @@ class DefaultActionPanel(wx.Panel):
         self.append_ops = []
 
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_before = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("At job start")), wx.VERTICAL
-        )
-        sizer_after = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("At job end")), wx.VERTICAL
-        )
+        sizer_before = StaticBoxSizer(self, wx.ID_ANY, _("At job start"), wx.VERTICAL)
+        sizer_after = StaticBoxSizer(self, wx.ID_ANY, _("At job end"), wx.VERTICAL)
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
 
         self.option_list = wx.ListCtrl(
@@ -101,8 +97,8 @@ class DefaultActionPanel(wx.Panel):
         self.button_up_append.SetBitmap(icons8_up_50.GetBitmap(resize=25))
         self.button_down_append.SetBitmap(icons8_down_50.GetBitmap(resize=25))
 
-        sizer_param = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Operation parameter:")), wx.HORIZONTAL
+        sizer_param = StaticBoxSizer(
+            self, wx.ID_ANY, _("Operation parameter:"), wx.HORIZONTAL
         )
         sizer_param.Add(self.text_param_option, 1, wx.EXPAND, 0)
         sizer_button = wx.BoxSizer(wx.VERTICAL)

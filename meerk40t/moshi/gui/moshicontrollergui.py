@@ -4,6 +4,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -162,11 +163,9 @@ class MoshiControllerPanel(wx.Panel):
         sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
-        packet_count = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Packet Info")), wx.VERTICAL
-        )
-        byte_data_status = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Byte Data Status")), wx.HORIZONTAL
+        packet_count = StaticBoxSizer(self, wx.ID_ANY, _("Packet Info"), wx.VERTICAL)
+        byte_data_status = StaticBoxSizer(
+            self, wx.ID_ANY, _("Byte Data Status"), wx.HORIZONTAL
         )
         byte5sizer = wx.BoxSizer(wx.VERTICAL)
         byte4sizer = wx.BoxSizer(wx.VERTICAL)
@@ -174,24 +173,16 @@ class MoshiControllerPanel(wx.Panel):
         byte2sizer = wx.BoxSizer(wx.VERTICAL)
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer_usb_settings = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("USB Settings")), wx.VERTICAL
+        sizer_usb_settings = StaticBoxSizer(
+            self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
         )
         sizer_23 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Chip Version")), wx.HORIZONTAL
-        )
-        sizer_11 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device Bus:")), wx.HORIZONTAL
-        )
-        sizer_10 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device Address:")), wx.HORIZONTAL
-        )
-        sizer_3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device Index:")), wx.HORIZONTAL
-        )
-        sizer_usb_connect = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("USB Connection")), wx.VERTICAL
+        sizer_12 = StaticBoxSizer(self, wx.ID_ANY, _("Chip Version"), wx.HORIZONTAL)
+        sizer_11 = StaticBoxSizer(self, wx.ID_ANY, _("Device Bus:"), wx.HORIZONTAL)
+        sizer_10 = StaticBoxSizer(self, wx.ID_ANY, _("Device Address:"), wx.HORIZONTAL)
+        sizer_3 = StaticBoxSizer(self, wx.ID_ANY, _("Device Index:"), wx.HORIZONTAL)
+        sizer_usb_connect = StaticBoxSizer(
+            self, wx.ID_ANY, _("USB Connection"), wx.VERTICAL
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)

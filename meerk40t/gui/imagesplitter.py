@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_keyhole_50, icons8_split_table_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
@@ -165,23 +165,17 @@ class SplitterPanel(wx.Panel):
         self.btn_align.SetBitmap(icons8_split_table_50.GetBitmap(resize=25))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
-        sizer_dpi = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image resolution:")), wx.HORIZONTAL
+        sizer_dpi = StaticBoxSizer(
+            self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
         sizer_dpi.Add(lbl_dpi, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_dim_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X-Axis:")),
-            wx.VERTICAL,
-        )
+        sizer_dim_x = StaticBoxSizer(self, wx.ID_ANY, _("X-Axis:"), wx.VERTICAL)
         sizer_dim_x.Add(self.split_x, 0, wx.EXPAND, 0)
 
-        sizer_dim_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y-Axis:")),
-            wx.VERTICAL,
-        )
+        sizer_dim_y = StaticBoxSizer(self, wx.ID_ANY, _("Y-Axis:"), wx.VERTICAL)
         sizer_dim_y.Add(self.split_y, 0, wx.EXPAND, 0)
 
         sizer_dimensions.Add(sizer_dim_x, 1, wx.EXPAND, 0)
@@ -310,20 +304,18 @@ class KeyholePanel(wx.Panel):
         self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=25))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
-        sizer_dpi = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image resolution:")), wx.HORIZONTAL
+        sizer_dpi = StaticBoxSizer(
+            self, wx.ID_ANY, _("Image resolution:"), wx.HORIZONTAL
         )
         sizer_dpi.Add(lbl_dpi, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_check_invert = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Invert Mask:")),
-            wx.HORIZONTAL,
+        sizer_check_invert = StaticBoxSizer(
+            self, wx.ID_ANY, _("Invert Mask:"), wx.HORIZONTAL
         )
-        sizer_check_outline = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Trace Keyhole:")),
-            wx.HORIZONTAL,
+        sizer_check_outline = StaticBoxSizer(
+            self, wx.ID_ANY, _("Trace Keyhole:"), wx.HORIZONTAL
         )
         self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
         self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")

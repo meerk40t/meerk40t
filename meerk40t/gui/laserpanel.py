@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
     icons8_save_50,
 )
-from meerk40t.gui.wxutils import disable_window
+from meerk40t.gui.wxutils import disable_window, StaticBoxSizer
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -81,9 +81,7 @@ class LaserPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_devices = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device")), wx.HORIZONTAL
-        )
+        sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.

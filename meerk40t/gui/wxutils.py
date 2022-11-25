@@ -419,7 +419,7 @@ class TextCtrl(wx.TextCtrl):
     def validate_widths(self):
         minw = 35
         maxw = 100
-        minpattern = "00000"
+        minpattern = "0000"
         maxpattern = "999999999.99mm"
         # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
@@ -731,6 +731,29 @@ class CheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
+class StaticBoxSizer(wx.StaticBoxSizer):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        label="",
+        orientation=wx.HORIZONTAL,
+        *args,
+        **kwargs,
+    ):
+        self.sbox = wx.StaticBox(parent, id, label=label)
+        self.sbox.SetMinSize(wx.Size(50, 50))
+        super().__init__(self.sbox, orientation)
+
+    def Show(self, show=True):
+        self.sbox.Show(show)
+
+    def SetLabel(self, label):
+        self.sbox.SetLabel(label)
+
+    def Refresh(self, *args):
+        self.sbox.Refresh(*args)
 
 class ScrolledPanel(SP):
     """

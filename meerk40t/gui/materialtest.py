@@ -14,7 +14,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Circle, Color, Matrix, Rect
 
@@ -94,15 +94,15 @@ class TemplatePanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer_param_op = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Operation to test")), wx.HORIZONTAL
+        sizer_param_op = StaticBoxSizer(
+            self, wx.ID_ANY, _("Operation to test"), wx.HORIZONTAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
         sizer_param_op.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_op.Add(self.combo_ops, 1, wx.EXPAND, 0)
 
-        sizer_param_check = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Show Labels / Values")), wx.HORIZONTAL
+        sizer_param_check = StaticBoxSizer(
+            self, wx.ID_ANY, _("Show Labels / Values"), wx.HORIZONTAL
         )
         sizer_param_check.Add(self.check_labels, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_check.Add(self.check_values, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -111,8 +111,8 @@ class TemplatePanel(wx.Panel):
         sizer_param_optype.Add(sizer_param_check, 1, wx.EXPAND, 0)
 
         sizer_param_xy = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_param_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("First parameter (X-Axis)")), wx.VERTICAL
+        sizer_param_x = StaticBoxSizer(
+            self, wx.ID_ANY, _("First parameter (X-Axis)"), wx.VERTICAL
         )
 
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -165,8 +165,8 @@ class TemplatePanel(wx.Panel):
         sizer_param_x.Add(hline_delta_1, 0, wx.EXPAND, 0)
         sizer_param_x.Add(hline_color_1, 0, wx.EXPAND, 0)
 
-        sizer_param_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Second parameter (Y-Axis)")), wx.VERTICAL
+        sizer_param_y = StaticBoxSizer(
+            self, wx.ID_ANY, _("Second parameter (Y-Axis)"), wx.VERTICAL
         )
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -226,9 +226,7 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(sizer_param_xy, 0, wx.EXPAND, 0)
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
 
-        sizer_info = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("How to use it")), wx.VERTICAL
-        )
+        sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.VERTICAL)
         infomsg = _("To provide the best burning results, the parameters of operations")
         infomsg += " " + _(
             "need to be adjusted according to *YOUR* laser and the specific material"

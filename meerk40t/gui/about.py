@@ -3,6 +3,7 @@ import wx
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_meerk40t, icons8_about_50
 from .mwindow import MWindow
+from .wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -214,31 +215,25 @@ class InformationPanel(wx.Panel):
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_mk = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "MeerK40t"), wx.HORIZONTAL
-        )
+        sizer_mk = StaticBoxSizer(self, wx.ID_ANY, "MeerK40t", wx.HORIZONTAL)
         sizer_mk.Add(self.mk_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_mk, 0, wx.EXPAND, 0)
 
-        sizer_py = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Python"), wx.HORIZONTAL
-        )
+        sizer_py = StaticBoxSizer(self, wx.ID_ANY, "Python", wx.HORIZONTAL)
         sizer_py.Add(self.py_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_py, 0, wx.EXPAND, 0)
 
-        sizer_wx = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "wxPython"), wx.HORIZONTAL
-        )
+        sizer_wx = StaticBoxSizer(self, wx.ID_ANY, "wxPython", wx.HORIZONTAL)
         sizer_wx.Add(self.wx_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_wx, 0, wx.EXPAND, 0)
 
-        sizer_cfg = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Configuration-Path")), wx.HORIZONTAL
+        sizer_cfg = StaticBoxSizer(
+            self, wx.ID_ANY, _("Configuration-Path"), wx.HORIZONTAL
         )
         sizer_cfg.Add(self.config_path, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_cfg, 0, wx.EXPAND, 0)
 
-        sizer_os = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "OS"), wx.HORIZONTAL)
+        sizer_os = StaticBoxSizer(self, wx.ID_ANY, "OS", wx.HORIZONTAL)
         sizer_os.Add(self.os_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_os, 1, wx.EXPAND, 0)  # This one may grow
 

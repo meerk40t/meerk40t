@@ -3,7 +3,7 @@ import platform
 import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
@@ -90,8 +90,8 @@ class FontHistory(wx.Panel):
             self.textbox.Bind(wx.EVT_TEXT, self.on_text_change)
 
         self.load_font_history()
-        sizer_h_fonthistory = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Last Font-Entries")), wx.HORIZONTAL
+        sizer_h_fonthistory = StaticBoxSizer(
+            self, wx.ID_ANY, _("Last Font-Entries"), wx.HORIZONTAL
         )
         for i in range(self.FONTHISTORY):
             sizer_h_fonthistory.Add(
@@ -148,10 +148,10 @@ class TextVariables(wx.Panel):
         choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
-        sizer_h_variables = wx.StaticBoxSizer(
-            wx.StaticBox(
-                self, wx.ID_ANY, _("Available Variables (double click to use)")
-            ),
+        sizer_h_variables = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("Available Variables (double click to use)"),
             wx.HORIZONTAL,
         )
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)

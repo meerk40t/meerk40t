@@ -19,7 +19,7 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import TextCtrl
+from ..gui.wxutils import TextCtrl, StaticBoxSizer
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange_50
 from .mwindow import MWindow
@@ -491,17 +491,16 @@ class DistributionPanel(wx.Panel):
         self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
-        sizer_check = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("First and last element treatment")),
+        sizer_check = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("First and last element treatment"),
             wx.HORIZONTAL,
         )
         sizer_check.Add(self.check_inside_xy, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_treat = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_rotate = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Rotation")),
-            wx.HORIZONTAL,
-        )
+        sizer_rotate = StaticBoxSizer(self, wx.ID_ANY, _("Rotation"), wx.HORIZONTAL)
         sizer_rotate.Add(self.check_rotate, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_treat.Add(self.rbox_treatment, 1, wx.EXPAND, 0)
@@ -1196,15 +1195,19 @@ class ArrangementPanel(wx.Panel):
         self.btn_arrange.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_dim_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X-Axis:")),
+        sizer_dim_x = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("X-Axis:"),
             wx.VERTICAL,
         )
         sizer_dim_x.Add(self.arrange_x, 0, wx.EXPAND, 0)
         sizer_dim_x.Add(self.check_same_x, 0, wx.EXPAND, 0)
 
-        sizer_dim_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y-Axis:")),
+        sizer_dim_y = StaticBoxSizer(
+            self,
+            wx.ID_ANY,
+            _("Y-Axis:"),
             wx.VERTICAL,
         )
         sizer_dim_y.Add(self.arrange_y, 0, wx.EXPAND, 0)
@@ -1213,10 +1216,6 @@ class ArrangementPanel(wx.Panel):
         sizer_dimensions.Add(sizer_dim_x, 1, wx.EXPAND, 0)
         sizer_dimensions.Add(sizer_dim_y, 1, wx.EXPAND, 0)
 
-        # sizer_gaps = wx.StaticBoxSizer(
-        #     wx.HORIZONTAL,
-        #     wx.StaticBox(self, wx.ID_ANY, _("Gaps:")),
-        # )
         sizer_gaps_x = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gaps_x.Add(
             wx.StaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
@@ -1227,9 +1226,7 @@ class ArrangementPanel(wx.Panel):
             wx.StaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0
         )
         sizer_gaps_y.Add(self.txt_gap_y, 1, wx.EXPAND, 0)
-        sizer_gaps_xy = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Gaps:")), wx.VERTICAL
-        )
+        sizer_gaps_xy = StaticBoxSizer(self, wx.ID_ANY, _("Gaps:"), wx.VERTICAL)
         sizer_gaps_xy.Add(sizer_gaps_x, 1, wx.EXPAND, 0)
         sizer_gaps_xy.Add(sizer_gaps_y, 1, wx.EXPAND, 0)
         sizer_gaps = wx.BoxSizer(wx.HORIZONTAL)

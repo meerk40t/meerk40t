@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, TextCtrl, StaticBoxSizer
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
@@ -316,11 +316,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 last_section = ""
                 last_subsection = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
-                last_box = wx.StaticBoxSizer(
-                    wx.StaticBox(
-                        self, id=wx.ID_ANY, label=_(self.unsorted_label(this_page))
-                    ),
-                    wx.VERTICAL,
+                last_box = StaticBoxSizer(
+                    self, wx.ID_ANY, _(self.unsorted_label(this_page)), wx.VERTICAL
                 )
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0)
                 current_main_sizer = last_box
@@ -331,13 +328,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 expansion_flag = 0
                 last_subsection = ""
                 if this_section != "":
-                    last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(
-                            self,
-                            id=wx.ID_ANY,
-                            label=_(self.unsorted_label(this_section)),
-                        ),
-                        wx.VERTICAL,
+                    last_box = StaticBoxSizer(
+                        self,
+                        id=wx.ID_ANY,
+                        label=_(self.unsorted_label(this_section)),
+                        orientation=wx.VERTICAL,
                     )
                     current_main_sizer.Add(last_box, 0, wx.EXPAND, 0)
                 else:
@@ -351,13 +346,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                     expansion_flag = 1
                     lbl = _(self.unsorted_label(this_subsection))
                     if lbl != "":
-                        last_box = wx.StaticBoxSizer(
-                            wx.StaticBox(
-                                self,
-                                id=wx.ID_ANY,
-                                label=lbl,
-                            ),
-                            wx.HORIZONTAL,
+                        last_box = StaticBoxSizer(
+                            self,
+                            id=wx.ID_ANY,
+                            label=lbl,
+                            orientation=wx.HORIZONTAL,
                         )
                     else:
                         last_box = wx.BoxSizer(wx.HORIZONTAL)
@@ -427,9 +420,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
                 control = wx.Button(self, -1)
 
                 def set_file(filename: str):
@@ -474,8 +465,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, float) and data_style == "slider":
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -516,8 +507,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -628,8 +619,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     mask_bits = getattr(obj, mask)
 
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -769,8 +760,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -820,8 +811,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -863,8 +854,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -902,8 +893,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
                 if label != "":
-                    control_sizer = wx.StaticBoxSizer(
-                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    control_sizer = StaticBoxSizer(
+                        self, wx.ID_ANY, label, wx.HORIZONTAL
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -13,7 +13,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu_for_node
+from meerk40t.gui.wxutils import create_menu_for_node, StaticBoxSizer
 from meerk40t.svgelements import Point
 
 
@@ -1857,9 +1857,7 @@ class RefAlign(wx.Dialog):
         sizer_options = wx.BoxSizer(wx.HORIZONTAL)
         sizer_ref_align.Add(sizer_options, 0, wx.EXPAND, 0)
 
-        sizer_pos = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Position")), wx.HORIZONTAL
-        )
+        sizer_pos = StaticBoxSizer(self, wx.ID_ANY, _("Position"), wx.HORIZONTAL)
         sizer_options.Add(sizer_pos, 1, wx.EXPAND, 0)
 
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
@@ -1919,9 +1917,7 @@ class RefAlign(wx.Dialog):
         )
         sizer_8.Add(self.radio_btn_9, 0, 0, 0)
 
-        sizer_scale = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scaling")), wx.VERTICAL
-        )
+        sizer_scale = StaticBoxSizer(self, wx.ID_ANY, _("Scaling"), wx.VERTICAL)
         sizer_options.Add(sizer_scale, 1, wx.EXPAND, 0)
 
         self.radio_btn_10 = wx.RadioButton(

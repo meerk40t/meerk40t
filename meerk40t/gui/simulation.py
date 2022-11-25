@@ -51,7 +51,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import ScrolledPanel, disable_window
+from .wxutils import StaticBoxSizer
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -1096,26 +1096,26 @@ class SimulationPanel(wx.Panel, Job):
         sizer_execute = wx.BoxSizer(wx.VERTICAL)
         sizer_speed_options = wx.BoxSizer(wx.VERTICAL)
         sizer_pb_speed = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_total_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Total Time")), wx.HORIZONTAL
+        sizer_total_time = StaticBoxSizer(
+            self, wx.ID_ANY, _("Total Time"), wx.HORIZONTAL
         )
-        sizer_travel_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Travel Time")), wx.HORIZONTAL
+        sizer_travel_time = StaticBoxSizer(
+            self, wx.ID_ANY, _("Travel Time"), wx.HORIZONTAL
         )
-        sizer_laser_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Laser Time")), wx.HORIZONTAL
+        sizer_laser_time = StaticBoxSizer(
+            self, wx.ID_ANY, _("Laser Time"), wx.HORIZONTAL
         )
-        sizer_extra_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Extra Time")), wx.HORIZONTAL
+        sizer_extra_time = StaticBoxSizer(
+            self, wx.ID_ANY, _("Extra Time"), wx.HORIZONTAL
         )
-        sizer_total_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Total Distance")), wx.HORIZONTAL
+        sizer_total_distance = StaticBoxSizer(
+            self, wx.ID_ANY, _("Total Distance"), wx.HORIZONTAL
         )
-        sizer_travel_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Travel Distance")), wx.HORIZONTAL
+        sizer_travel_distance = StaticBoxSizer(
+            self, wx.ID_ANY, _("Travel Distance"), wx.HORIZONTAL
         )
-        sizer_laser_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Laser Distance")), wx.HORIZONTAL
+        sizer_laser_distance = StaticBoxSizer(
+            self, wx.ID_ANY, _("Laser Distance"), wx.HORIZONTAL
         )
         # +--------+---+-------+
         # |   P    |   | Optim |

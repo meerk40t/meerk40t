@@ -7,6 +7,7 @@ from meerk40t.core.units import Length, ACCEPTED_UNITS
 from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
@@ -585,7 +586,7 @@ class LivingHinges:
 
         #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
-                #  Determine rows and columns of cuts to create
+        #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
         if self.cell_width + 2 * self.cell_padding_h == 0:
             cols = 1
@@ -1221,23 +1222,17 @@ class HingePanel(wx.Panel):
         main_left = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(main_left, 0, wx.EXPAND | wx.FIXED_MINSIZE, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("Dimension"))
-        size_it(sbox, 230)
-        vsizer_dimension = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        vsizer_dimension = StaticBoxSizer(self, wx.ID_ANY, _("Dimension"), wx.VERTICAL)
         main_left.Add(vsizer_dimension, 0, wx.EXPAND, 0)
 
         hsizer_origin = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_dimension.Add(hsizer_origin, 0, wx.EXPAND, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("X:"))
-        size_it(sbox, 110)
-        hsizer_originx = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        hsizer_originx = StaticBoxSizer(self, wx.ID_ANY, _("X:"), wx.VERTICAL)
         self.text_origin_x.SetToolTip(_("X-Coordinate of the hinge area"))
         hsizer_originx.Add(self.text_origin_x, 1, wx.EXPAND, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("Y:"))
-        size_it(sbox, 110)
-        hsizer_originy = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        hsizer_originy = StaticBoxSizer(self, wx.ID_ANY, _("Y:"), wx.VERTICAL)
 
         self.text_origin_y.SetToolTip(_("Y-Coordinate of the hinge area"))
         hsizer_originy.Add(self.text_origin_y, 1, wx.EXPAND, 0)
@@ -1248,16 +1243,12 @@ class HingePanel(wx.Panel):
         hsizer_wh = wx.BoxSizer(wx.HORIZONTAL)
         vsizer_dimension.Add(hsizer_wh, 0, wx.EXPAND, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("Width:"))
-        size_it(sbox, 110)
-        hsizer_width = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        hsizer_width = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.VERTICAL)
 
         self.text_width.SetToolTip(_("Width of the hinge area"))
         hsizer_width.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("Height:"))
-        size_it(sbox, 110)
-        hsizer_height = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        hsizer_height = StaticBoxSizer(self, wx.ID_ANY, _("Height:"), wx.VERTICAL)
 
         self.text_height.SetToolTip(_("Height of the hinge area"))
         hsizer_height.Add(self.text_height, 1, wx.EXPAND, 0)
@@ -1265,9 +1256,7 @@ class HingePanel(wx.Panel):
         hsizer_wh.Add(hsizer_width, 1, wx.EXPAND, 0)
         hsizer_wh.Add(hsizer_height, 1, wx.EXPAND, 0)
 
-        sbox = wx.StaticBox(self, wx.ID_ANY, _("Options"))
-        size_it(sbox, 230)
-        vsizer_options = wx.StaticBoxSizer(sbox, wx.VERTICAL)
+        vsizer_options = StaticBoxSizer(self, wx.ID_ANY, _("Options"), wx.VERTICAL)
         main_left.Add(vsizer_options, 0, wx.EXPAND, 0)
 
         hsizer_pattern = wx.BoxSizer(wx.HORIZONTAL)
@@ -1380,9 +1369,7 @@ class HingePanel(wx.Panel):
 
         hsizer_buttons.Add(self.button_close, 1, 0, 0)
 
-        main_right = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Preview"), wx.VERTICAL
-        )
+        main_right = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
         main_sizer.Add(main_right, 1, wx.EXPAND, 0)
 
         hsizer_preview = wx.BoxSizer(wx.HORIZONTAL)
@@ -1675,7 +1662,9 @@ class HingePanel(wx.Panel):
             origin = None
         else:
             origin = event.GetEventObject()
-            if event.GetEventType() == wx.wxEVT_TEXT and not getattr(self.context.root, "process_while_typing", False):
+            if event.GetEventType() == wx.wxEVT_TEXT and not getattr(
+                self.context.root, "process_while_typing", False
+            ):
                 self.in_change_event = False
                 return
             if isinstance(origin, wx.TextCtrl):

@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
@@ -32,10 +32,9 @@ class ColorPanel(wx.Panel):
         self.label = label
         self.node = node
 
-        self.header = wx.StaticBox(self, wx.ID_ANY, _(self.label))
-        main_sizer = wx.StaticBoxSizer(self.header, wx.VERTICAL)
+        self.main_sizer = StaticBoxSizer(self, wx.ID_ANY, _(self.label), wx.VERTICAL)
         color_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
+        self.main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
         self.underliner = []
         self.bgcolors = [
@@ -80,7 +79,7 @@ class ColorPanel(wx.Panel):
             wx.FONTWEIGHT_BOLD,
         )
         self.btn_color[self.last_col_idx].SetFont(font)
-        self.SetSizer(main_sizer)
+        self.SetSizer(self.main_sizer)
         self.Layout()
         self.set_widgets(self.node)
 
@@ -200,8 +199,8 @@ class ColorPanel(wx.Panel):
                 else:
                     s = value.hexrgb
                 colinfo = s
-            self.header.SetLabel(_(self.label) + " (" + colinfo + ")")
-            self.header.Refresh()
+            self.main_sizer.SetLabel(_(self.label) + " (" + colinfo + ")")
+            self.main_sizer.Refresh()
 
             if idx is None:  # Okay, we need to determine it ourselves
                 idx = -1
@@ -236,13 +235,9 @@ class IdPanel(wx.Panel):
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
+        self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Id"), wx.VERTICAL)
         self.sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        self.sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
+        self.sizer_label = StaticBoxSizer(self, wx.ID_ANY, _("Label"), wx.VERTICAL)
         self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
@@ -326,15 +321,14 @@ class LinePropPanel(wx.Panel):
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
-        self.box_cap = wx.StaticBox(self, wx.ID_ANY, _("Line-End"))
-        self.sizer_cap = wx.StaticBoxSizer(self.box_cap, wx.VERTICAL)
+
+        self.sizer_cap = StaticBoxSizer(self, wx.ID_ANY, _("Line-End"), wx.VERTICAL)
         self.sizer_cap.Add(self.combo_cap, 1, wx.EXPAND, 0)
 
-        self.box_join = wx.StaticBox(self, wx.ID_ANY, _("Line-Join"))
-        self.sizer_join = wx.StaticBoxSizer(self.box_join, wx.VERTICAL)
+        self.sizer_join = StaticBoxSizer(self, wx.ID_ANY, _("Line-Join"), wx.VERTICAL)
         self.sizer_join.Add(self.combo_join, 1, wx.EXPAND, 0)
-        self.box_fill = wx.StaticBox(self, wx.ID_ANY, _("Fillrule"))
-        self.sizer_fill = wx.StaticBoxSizer(self.box_fill, wx.VERTICAL)
+
+        self.sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fillrule"), wx.VERTICAL)
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
         sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
@@ -406,11 +400,11 @@ class LinePropPanel(wx.Panel):
             self.combo_fill.SetSelection(int(node.fillrule))
 
         self.combo_cap.Show(vis1)
-        self.box_cap.Show(vis1)
+        self.sizer_cap.Show(vis1)
         self.combo_join.Show(vis2)
-        self.box_join.Show(vis2)
+        self.sizer_join.Show(vis2)
         self.combo_fill.Show(vis3)
-        self.box_fill.Show(vis3)
+        self.sizer_fill.Show(vis3)
 
         if vis1 or vis2 or vis3:
             self.Show()
@@ -427,9 +421,7 @@ class StrokeWidthPanel(wx.Panel):
         self.node = node
 
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        s_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Stroke-Width")), wx.HORIZONTAL
-        )
+        s_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Stroke-Width"), wx.HORIZONTAL)
         main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
         # Plus one combobox + value field for stroke width
         strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
@@ -611,16 +603,12 @@ class PositionSizePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_h = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL
-        )
-        sizer_w = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL
-        )
-        sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
-        sizer_x = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "X:"), wx.HORIZONTAL)
-        sizer_lock = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Prevent changes:")), wx.HORIZONTAL
+        sizer_h = StaticBoxSizer(self, wx.ID_ANY, _("Height:"), wx.HORIZONTAL)
+        sizer_w = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.HORIZONTAL)
+        sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
+        sizer_x = StaticBoxSizer(self, wx.ID_ANY, "X:", wx.HORIZONTAL)
+        sizer_lock = StaticBoxSizer(
+            self, wx.ID_ANY, _("Prevent changes:"), wx.HORIZONTAL
         )
         sizer_lock.Add(self.check_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
