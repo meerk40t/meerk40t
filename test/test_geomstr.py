@@ -1,8 +1,7 @@
 import random
 import unittest
 
-from geomstr.geomstr import Geomstr, Scanbeam
-
+from meerk40t.tools.geomstr import Geomstr, Scanbeam
 
 class TestGeomstr(unittest.TestCase):
     """These tests ensure the basic functions of the Angle element."""
