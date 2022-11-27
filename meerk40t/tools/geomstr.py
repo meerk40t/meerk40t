@@ -4,13 +4,12 @@ import numpy as np
 
 
 """
-The idea behind numpy laser paths is to define a common structure that could replace the whole of cutcode and do so in a
-way that could be both be faster and more compact for other data structures commonly used throughout Meerk40t.
+The idea behind Geometry Strings is to define a common structure that could replace the whole of cutcode and do so in a
+way that could be both be faster and more compact for other data structures commonly used throughout Meerk40t. And to
+include within that datastructure many common operations that need to be called repeated.
 
 * Some drivers can use direct circular arcs, lines, and others use bezier curves. We should also avoid prematurely
 interpolating our data prior to knowing what types of data the driver might want or accept.
-* Some drivers accept and use pure step versions of our code. Rather than using lines we would more directly use
-individual orthogonal steps.
 * Some drivers can use dwell points, in that, they can go to a particular location and turn the laser on for a period
 of time.
 * Rasters are converted into a series of tiny steps that are usually either on or off but these are so plentiful that
@@ -26,31 +25,33 @@ Each segment is defined by 5 complex values, these are:
 
 `Start, Control1, Type/Settings, Control2, End`
 
-* Line: Start, NOP, Type=0, NOP, End
-* Quad: Start, C0, Type=1, C0, End  -- Note C0 is duplicated and identical. But, only one needs to be read.
-* Cubic: Start, C0, Type=2, C1, End
-* Arc: Start, C0, Type=3, C0, End -- Note C0 is duplicated and identical.
-* Dwell: Start, NOP, Type=4, NOP, Start -- Note, Start and End are the same point.
-* Wait: NOP, NOP, Type=5, NOP, NOP, -- Note, Start and End are the same point.
-* Ramp: Start, PStart, Type=6, PEnd, End -- Power ramp line.
-* End: NOP, NOP, Type=99, NOP, NOP -- Structural segment.
+* Line: Start, NOP, Type=0/Settings, NOP, End
+* Quad: Start, C0, Type=1/Settings, C0, End  -- Note C0 is duplicated and identical. But, only one needs to be read.
+* Cubic: Start, C0, Type=2/Settings, C1, End
+* Arc: Start, C0, Type=3/Settings, C0, End -- Note C0 is duplicated and identical.
+* Dwell: Start, NOP, Type=4/Settings, NOP, Start -- Note, Start and End are the same point.
+* Wait: NOP, NOP, Type=5/Settings, NOP, NOP, -- Note, Start and End are the same point.
+* Ramp: Start, PStart, Type=6/Settings, PEnd, End -- Power ramp line.
+* End: NOP, NOP, Type=99/Settings, NOP, NOP -- Structural segment.
 * Vertex, NOP, NOP, Type=100/Index, NOP, NOP -- Structural segment. 
 
-Note: the Arc is circular only and defined by 3 points. Start, End, and a single control point. It does not do
+Note: the Arc is circular-only and defined by 3 points. Start, End, and a single control point. We do not do
 elliptical arcs since they are weird/complex and no laser appears to use them.
 
 Additional extensions can be added by expanding the type parameters. Since each set of values is a complex, the points
-provide x and y values (real, imag). The type parameter (index 2) provides the power, except for Dwell and Wait where
-it provides the time.
+provide x and y values (real, imag). The type parameter (index 2) provides the settings. The settings object is users'
+choice. In the case of Wait, we assume it gives the wait time.
 
 At first glance the structure may seem somewhat unusual but the `Position, Position, Type, Position, Position`
-structure  serves a utilitarian purpose. All paths are reversible. We can flip this data, to reverse these segments.
-The start and end points can swap as well as the control points for the cubic, and the power-start and power-end for
-Ramp. Whereas the types of parameter remains in the same position.
+structure serves a utilitarian purpose; all paths are reversible. We can flip this data, to reverse these segments.
+The start and end points can swap as well as the control points for the cubic, and arc, or swamp power levels for ramp.
+Whereas the types of parameter remains in the same position.
 
 The numpy flip operation can be done over the x and y axis. This provides the list of segments in reverse order while
-also reversing all the segments themselves. This is the key to doing 2-opt travel minimization, which are provided in
+also reversing all the segments themselves. This is the key to doing 2-opt travel minimization, which is provided in
 the code.
+
+---
 
 Ruida has some segments which start at one power and ramp up to a second amount of power. In this case, the reverse of
 this needs to attenuate power over that length. In such a case the C0 and C1 places are adapted to set the power.
@@ -58,22 +59,25 @@ this needs to attenuate power over that length. In such a case the C0 and C1 pla
 This class is expected to be able to replace many uses of the Path class as well as all cutcode, permitting all affine
 transformations, and serve as a laser-first data structure. These should serve as faster laser-centric path-like code.
 
-Each path's imaginary middle part points to a settings index. These are the settings being used to draw this geometry
-with whatever device is performing the drawing. So if the laser had frequency or if an embroidery machine had
-multi-needles you could refer to the expected thread-color of the segment. If There's only one set of settings all 
-segments may point to same object etc.
+Each path's complex2 `.imag` middle part points to a settings index. These are the settings being used to draw this
+geometry with whatever device is performing the drawing. So if the laser had frequency or if an embroidery machine had
+multi-needles you could refer to the expected thread-color of the segment. If there's only one set of settings all 
+segments may point to same object. If different settings are used for each segment, these can point to different
+segments.
 
-There are two primary structural nodes types. These are END and VERTEX. The END indicates that a particular walk was
+There are two primary structural nodes types. These are END and VERTEX. The END indicates that a particular walk is
 finished and that the END of that walk has been reached. A VERTEX indicates that we occupy the same space
-as all other VERTEX nodes with that index, no validation will be made to determine if all strings terminating in the
-same vertex are coincident. A shape is closed if both the shape starts and ends a the same vertex.
+as all other VERTEX nodes with that index. No validation will be made to determine if any walks terminating or starting
+in the same vertex are coincident. A shape is closed if both the shape starts and ends in the same vertex.
 
 VERTEX also provides us with usable graph topologies. We can consider the difference between a closed and opened path
-whether both ends terminate in the same vertex (assuming no other path strings) use the same vertex.
+to be whether both ends terminate in the same vertex. But, we can also have several different geometric strings either
+start or end in the same vertex.
 
-Segment strings are defined by runs. These are adjacent segments without END or VERTEX. Runs can be disjointed this
-implies the position was moved. Usually this difference in position should be 0. Structural nodes like VERTEX work on
-both sides. For example, 
+Strings can be disjointed, in that the position between one position and the next are not coincident, this implies the
+position was moved. Usually this difference in position should be 0.
+
+Structural nodes like VERTEX work on both sides. For example, 
 
 Vertex 0
 Line A, B
@@ -83,12 +87,12 @@ Line C, D
 Line D, E
 Vertex 0
 
-The run goes V0, A->B, B->C V1 and a different run goes V1, C->D, D->E, V0. These definitions imply that V0 is located
-at points A and E and for valid geometry probably should be. However, this is merely implied. We may define another run
-as V1, Line C->Z.
+The string goes V0, A->B, B->C V1 and the next string goes V1, C->D, D->E, V0. These definitions imply that V0 is
+located at points A and E, and for valid geometry probably should be. However, this is merely implied.
+We may define another run as V1, Line C->Z.
 
-All runs are reversible. In fact, the reason for the 5 complex structure is so that each segment can reverse with
-a flip.
+All strings are reversible. In fact, the reason for the 5 complex structure is so that each segment can reverse with
+a np.flip.
 """
 
 TYPE_LINE = 0
