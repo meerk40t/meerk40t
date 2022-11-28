@@ -67,7 +67,6 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_hinges_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -1219,20 +1218,6 @@ class MeerK40t(MWindow):
                     list(kernel.elements.elems(emphasized=True))
                 )
                 > 2,
-            },
-        )
-        kernel.register(
-            "button/extended_tools/LivingHinge",
-            {
-                "label": _("Hinge"),
-                "icon": icons8_hinges_50,
-                "tip": _("Fill area with a living hinge pattern"),
-                "action": lambda v: kernel.console("window open Hingetool\n"),
-                "size": bsize_small,
-                "rule_enabled": lambda cond: len(
-                    list(kernel.elements.elems(emphasized=True))
-                )
-                > 0,
             },
         )
 

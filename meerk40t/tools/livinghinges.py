@@ -4,7 +4,7 @@ import wx
 from numpy import linspace
 
 from meerk40t.core.units import Length, ACCEPTED_UNITS
-from meerk40t.gui.icons import icons8_hinges_50
+from meerk40t.gui.icons import icons8_hinges_50, STD_ICON_SIZE
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.kernel import signal_listener
@@ -1964,3 +1964,20 @@ class LivingHingeTool(MWindow):
     @staticmethod
     def submenu():
         return ("Laser-Tools", "Living-Hinges")
+
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/extended_tools/LivingHinge",
+            {
+                "label": _("Hinge"),
+                "icon": icons8_hinges_50,
+                "tip": _("Fill area with a living hinge pattern"),
+                "action": lambda v: kernel.console("window open Hingetool\n"),
+                "size": STD_ICON_SIZE,
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
