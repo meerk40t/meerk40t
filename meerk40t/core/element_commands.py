@@ -52,6 +52,25 @@ def init_commands(kernel):
 
     _ = kernel.translation
 
+    choices = [
+        {
+            "attr": "trace_start_method",
+            "object": self,
+            "default": 0,
+            "type": int,
+            "label": _("Delay hull trace"),
+            "tip": _("Establish if and how an element hull trace should wait"),
+            "page": "Laser",
+            "section": "General",
+            "style": "option",
+            "display": ("Immediate", "User confirmation", "Delay 5 seconds"),
+            "choices": (0, 1, 2),
+        },
+    ]
+    kernel.register_choices("preferences", choices)
+
+
+
     def classify_new(data):
         """
         Why are we doing it here? An immediate classification
@@ -6140,13 +6159,14 @@ def init_commands(kernel):
         help=_("Method to use (one of quick, hull, complex, segment, circle)"),
     )
     @self.console_argument("resolution")
+    @self.console_option("start", "s", type=int, help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"))
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
         input_type=("elements", "shapes", None),
     )
     def trace_trace_spooler(
-        command, channel, _, method=None, resolution=None, data=None, **kwargs
+        command, channel, _, method=None, resolution=None, start=None, data=None, **kwargs
     ):
         if method is None:
             method = "quick"
@@ -6166,12 +6186,27 @@ def init_commands(kernel):
             channel(_("No elements bounds to trace"))
             return
         hull = generate_hull_shape(method, data, resolution)
+        if start is None:
+            # Lets take system default
+            start = self.trace_start_method
+        if start < 0 or start > 2:
+            start = 0
         if len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return
 
-        def run_shape(_spooler, _hull):
-            def trace_hull():
+        def run_shape(_spooler, startmethod, _hull):
+            def trace_hull(startmethod=0):
+                if startmethod == 0:
+                    # Immediately
+                    pass
+                elif startmethod == 1:
+                    # Dialog
+                    yield ('console', 'interrupt "Trace is about to start"')
+                elif startmethod == 2:
+                    # Wait for some seconds
+                    yield ('wait', 5000)
+
                 yield "wait_finish"
                 yield "rapid_mode"
                 idx = 0
@@ -6184,10 +6219,10 @@ def init_commands(kernel):
                     )
 
             _spooler.laserjob(
-                list(trace_hull()), label=f"Trace Job: {method}", helper=True
+                list(trace_hull(startmethod)), label=f"Trace Job: {method}", helper=True
             )
 
-        run_shape(spooler, hull)
+        run_shape(spooler, start, hull)
 
     @self.console_argument(
         "method",
