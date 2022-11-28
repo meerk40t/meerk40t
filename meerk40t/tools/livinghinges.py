@@ -1495,7 +1495,7 @@ class HingePanel(wx.Panel):
         self.in_draw_event = False
 
     def on_button_close(self, event):
-        self.context("window toggle Hingetool\n")
+        self.context("window close Hingetool\n")
 
     def on_default_button(self, event):
         idx = self.combo_style.GetSelection()

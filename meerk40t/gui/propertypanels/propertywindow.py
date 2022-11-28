@@ -143,7 +143,7 @@ class PropertyWindow(MWindow):
             },
         )
         kernel.register(
-            "button/extended_tools/Properties",
+            "button/properties/Properties",
             {
                 "label": _("Property Window"),
                 "icon": icons8_computer_support_50,
