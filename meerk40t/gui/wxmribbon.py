@@ -713,7 +713,7 @@ class RibbonPanel(wx.Panel):
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.tool_extended_button_bar)
+        self.set_buttons(new_values, self.extended_button_bar)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
@@ -739,6 +739,10 @@ class RibbonPanel(wx.Panel):
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.align_button_bar)
+
+    @lookup_listener("button/properties")
+    def set_property_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.property_button_bar)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -949,16 +953,28 @@ class RibbonPanel(wx.Panel):
         self.group_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.tool_extended_panel = MyRibbonPanel(
+        self.extended_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Extended Tools"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.extended_panel)
+        button_bar = RibbonButtonBar(self.extended_panel)
+        self.extended_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.property_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Properties"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
-        self.ribbon_panels.append(self.tool_extended_panel)
-        button_bar = RibbonButtonBar(self.tool_extended_panel)
-        self.tool_extended_button_bar = button_bar
+        self.ribbon_panels.append(self.property_panel)
+        button_bar = RibbonButtonBar(self.property_panel)
+        self.property_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.modify_panel = MyRibbonPanel(
