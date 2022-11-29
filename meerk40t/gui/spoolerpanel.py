@@ -445,7 +445,7 @@ class SpoolerPanel(wx.Panel):
             remove_mode = "stop"
         else:
             action = _("Remove")
-            remove_mode = "stop"
+            remove_mode = "remove"
         item = menu.Append(
             wx.ID_ANY,
             "{action} {name} [{label}]".format(
