@@ -302,6 +302,36 @@ class Geomstr:
         """
         return self.index
 
+    def find_intersections(self, other):
+        """
+        Finds intersections between line types through brute force.
+
+        @param other:
+        @return:
+        """
+        intersections = []
+        for s in range(self.index):
+            if int(self.segments[s, 2].real) & 0xFF != TYPE_LINE:
+                continue
+            for t in range(other.index):
+                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
+                    continue
+                intersect = Geomstr.line_intersect(
+                    self.segments[s,0].real,
+                    self.segments[s,0].imag,
+                    self.segments[s,-1].real,
+                    self.segments[s,-1].imag,
+                    other.segments[t,0].real,
+                    other.segments[t,0].imag,
+                    other.segments[t,-1].real,
+                    other.segments[t,-1].imag,
+                )
+                if not intersect:
+                    continue
+                xi, yi = intersect
+                intersections.append((xi, yi, s, t))
+        return intersections
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
