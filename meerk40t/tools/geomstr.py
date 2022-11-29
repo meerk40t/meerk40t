@@ -317,14 +317,14 @@ class Geomstr:
                 if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
                     continue
                 intersect = Geomstr.line_intersect(
-                    self.segments[s,0].real,
-                    self.segments[s,0].imag,
-                    self.segments[s,-1].real,
-                    self.segments[s,-1].imag,
-                    other.segments[t,0].real,
-                    other.segments[t,0].imag,
-                    other.segments[t,-1].real,
-                    other.segments[t,-1].imag,
+                    self.segments[s, 0].real,
+                    self.segments[s, 0].imag,
+                    self.segments[s, -1].real,
+                    self.segments[s, -1].imag,
+                    other.segments[t, 0].real,
+                    other.segments[t, 0].imag,
+                    other.segments[t, -1].real,
+                    other.segments[t, -1].imag,
                 )
                 if not intersect:
                     continue
