@@ -519,6 +519,8 @@ class SharpenPanel(wx.Panel):
     def accepts(node):
         if node.type != "elem image":
             return False
+        if node.operations is None:
+            node.operations = list()
         for n in node.operations:
             if n.get("name") == "unsharp_mask":
                 return True
