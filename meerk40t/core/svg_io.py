@@ -228,6 +228,14 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+        def single_file_node():
+            # do we have more than one element on the top level hierarchy?
+            # If no then return True
+            flag = True
+            if len(elem_tree.children) > 1:
+                flag = False
+            return flag
+
         for c in elem_tree.children:
             if c.type == "elem ellipse":
                 element = c.shape
@@ -382,7 +390,14 @@ class SVGWriter:
                 continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write values.
-                SVGWriter._write_elements(xml_tree, c)
+                # is this the only file node? If yes then no need to generate an additional group
+                if single_file_node():
+                    SVGWriter._write_elements(xml_tree, c)
+                else:
+                    group_element = SubElement(xml_tree, SVG_TAG_GROUP)
+                    if hasattr(c, "name") and c.name is not None and c.name != "":
+                        group_element.set("inkscape:label", c.name)
+                    SVGWriter._write_elements(group_element, c)
                 continue
             else:
                 # This is a non-standard element. Save custom.
