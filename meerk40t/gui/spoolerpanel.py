@@ -716,6 +716,17 @@ class SpoolerPanel(wx.Panel):
                 and self.context.spool_ignore_helper_jobs
             ):
                 addit = False
+            if addit and len(self.history) > 0:
+                # is it identical to the last entry?
+                # Should not happen per se, but there were some reports of duplicate entries...
+                lastentry = self.history[0]
+                identical = True
+                for idx in range(6):
+                    if lastentry[idx] != newestinfo[idx]:
+                        identical = False
+                        break
+                if identical:
+                    addit = False
             if addit:
                 # We dont need the helper-flag, we use this for a jobinfo column
                 if len(newestinfo) >= 7:
