@@ -62,6 +62,12 @@ def plugin(kernel, lifecycle=None):
 
     context = kernel.root
 
+    def update_image_node(node):
+        if hasattr(node, "node"):
+            node.node.altered()
+        node.altered()
+        node.update(context)
+
     @context.console_command(
         "image",
         help=_("image <operation>*"),
@@ -294,7 +300,8 @@ def plugin(kernel, lifecycle=None):
                 except NotImplementedError:
                     raise CommandSyntaxError("Method not recognized.")
             inode.image = inode.image.convert("1")
-            inode.altered()
+            update_image_node(inode)
+
         return "image", data
 
     @context.console_option(
@@ -342,7 +349,8 @@ def plugin(kernel, lifecycle=None):
                         new_data[x, y] = (255, 255, 255, 0)
                         continue
             inode.image = img
-            inode.altered()
+            update_image_node(inode)
+
         return "image", data
 
     @context.console_argument("color", type=Color, help=_("Color to be added"))
@@ -370,7 +378,8 @@ def plugin(kernel, lifecycle=None):
                         new_data[x, y] = pix
                         continue
             inode.image = img
-            inode.altered()
+            update_image_node(inode)
+
         return "image", data
 
     @context.console_command(
@@ -393,9 +402,8 @@ def plugin(kernel, lifecycle=None):
             img = img.point(lambda e: 255 - e)
             black.putalpha(img)
             inode.image = black
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
         return "image", data
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
@@ -410,7 +418,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode != "RGBA":
                 img = img.convert("RGBA")
             inode.image = img
-            inode.altered()
+            update_image_node(inode)
+
         return "image", data
 
     @context.console_argument("left", help="left side of crop", type=int)
@@ -438,7 +447,8 @@ def plugin(kernel, lifecycle=None):
                         _("Lower margin is higher than the upper margin.")
                     )
                 inode.image = img.crop((left, upper, right, lower))
-                inode.altered()
+                update_image_node(inode)
+
             except (KeyError, ValueError):
                 raise CommandSyntaxError
         return "image", data
@@ -465,9 +475,8 @@ def plugin(kernel, lifecycle=None):
                 img = inode.image
                 enhancer = ImageEnhance.Contrast(img)
                 inode.image = enhancer.enhance(factor)
-                if hasattr(inode, "node"):
-                    inode.node.altered()
-                inode.altered()
+                update_image_node(inode)
+
                 channel(_("Image Contrast Factor: {factor}").format(factor=factor))
             except (IndexError, ValueError):
                 channel(_("image contrast <factor>"))
@@ -493,7 +502,8 @@ def plugin(kernel, lifecycle=None):
                 img = inode.image
                 enhancer = ImageEnhance.Brightness(img)
                 inode.image = enhancer.enhance(factor)
-                inode.altered()
+                update_image_node(inode)
+
                 channel(_("Image Brightness Factor: {factor}").format(factor=factor))
             except (IndexError, ValueError):
                 channel(_("image brightness <factor>"))
@@ -518,9 +528,8 @@ def plugin(kernel, lifecycle=None):
                 img = inode.image
                 enhancer = ImageEnhance.Color(img)
                 inode.image = enhancer.enhance(factor)
-                if hasattr(inode, "node"):
-                    inode.node.altered()
-                inode.altered()
+                update_image_node(inode)
+
                 channel(_("Image Color Factor: {factor}").format(factor=factor))
             except (IndexError, ValueError):
                 channel(_("image color <factor>"))
@@ -545,7 +554,8 @@ def plugin(kernel, lifecycle=None):
                 img = inode.image
                 enhancer = ImageEnhance.Sharpness(img)
                 inode.image = enhancer.enhance(factor)
-                inode.altered()
+                update_image_node(inode)
+
                 channel(_("Image Sharpness Factor: {factor}").format(factor=factor))
             except (IndexError, ValueError):
                 channel(_("image sharpness <factor>"))
@@ -567,9 +577,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.BLUR)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Blurred."))
         return "image", data
 
@@ -589,7 +598,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.SHARPEN)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Sharpened."))
         return "image", data
 
@@ -609,9 +619,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Edges Enhanced."))
         return "image", data
 
@@ -631,7 +640,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.FIND_EDGES)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Edges Found."))
         return "image", data
 
@@ -651,9 +661,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.EMBOSS)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Embossed."))
         return "image", data
 
@@ -673,7 +682,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.SMOOTH)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Smoothed."))
         return "image", data
 
@@ -693,9 +703,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.CONTOUR)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Contoured."))
         return "image", data
 
@@ -715,7 +724,8 @@ def plugin(kernel, lifecycle=None):
             if img.mode == "P":
                 img = img.convert("RGBA")
             inode.image = img.filter(filter=ImageFilter.DETAIL)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Detailed."))
         return "image", data
 
@@ -738,8 +748,8 @@ def plugin(kernel, lifecycle=None):
             try:
                 img = inode.image
                 inode.image = img.quantize(colors=colors)
-                if hasattr(inode, "node"):
-                    inode.node.altered()
+                update_image_node(inode)
+
                 channel(_("Image Quantized to {count} colors.").format(count=colors))
             except (IndexError, ValueError):
                 pass
@@ -763,7 +773,8 @@ def plugin(kernel, lifecycle=None):
             try:
                 img = inode.opaque_image.convert("RGB")
                 inode.image = ImageOps.solarize(img, threshold=threshold)
-                inode.altered()
+                update_image_node(inode)
+
                 channel(
                     _("Image Solarized at {threshold} gray.").format(
                         threshold=threshold
@@ -798,14 +809,14 @@ def plugin(kernel, lifecycle=None):
                 inode.image = ImageOps.invert(img)
                 if original_mode == "1":
                     inode.image = inode.image.convert("1")
-                if hasattr(inode, "node"):
-                    inode.node.altered()
-                inode.altered()
+                update_image_node(inode)
+
                 channel(_("Image Inverted."))
             except OSError:
                 channel(
                     _("Image type cannot be converted. {mode}").format(mode=img.mode)
                 )
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_command(
@@ -822,8 +833,10 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.image
             inode.image = ImageOps.flip(img)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Flipped."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_command(
@@ -840,10 +853,10 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.image
             inode.image = ImageOps.mirror(img)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Image Mirrored."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_command(
@@ -860,8 +873,10 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_90)
-            inode.altered()
+            update_image_node(inode)
+
             channel(_("Rotated image counterclockwise."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_command(
@@ -878,10 +893,9 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_270)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
             channel(_("Rotated image clockwise."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_argument(
@@ -905,10 +919,11 @@ def plugin(kernel, lifecycle=None):
             try:
                 img = inode.opaque_image  # .convert("RGB")
                 inode.image = ImageOps.autocontrast(img, cutoff=cutoff)
-                inode.altered()
+                update_image_node(inode)
                 channel(_("Image Auto-Contrasted."))
             except (IndexError, ValueError):
                 channel(_("image autocontrast <cutoff-percent>"))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_option(
@@ -952,10 +967,9 @@ def plugin(kernel, lifecycle=None):
                     inode.image = inode.image.getchannel("A")
             else:
                 inode.image = ImageOps.grayscale(img)
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
             channel(_("Image Grayscale."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_command(
@@ -972,8 +986,9 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.opaque_image.convert("RGB")
             inode.image = ImageOps.equalize(img)
-            inode.altered()
+            update_image_node(inode)
             channel(_("Image Equalized."))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_argument(
@@ -1011,6 +1026,7 @@ def plugin(kernel, lifecycle=None):
             channel(_("Image sliced at position {position}").format(position=x))
             return "image", [node1, node2]
 
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_argument(
@@ -1041,7 +1057,7 @@ def plugin(kernel, lifecycle=None):
             inode_bottom.image = image_bottom
             inode_bottom.transform.pre_translate(0, y)
 
-            inode.altered()
+            update_image_node(inode)
             elements = context.elements
             node1 = elements.elem_branch.add_node(inode_top)
             node2 = elements.elem_branch.add_node(inode_bottom)
@@ -1182,7 +1198,7 @@ def plugin(kernel, lifecycle=None):
             )
             mesh = list(zip(boxes, quads))
             inode.image = im.transform(im.size, Image.MESH, mesh, Image.BILINEAR)
-            inode.altered()
+            update_image_node(inode)
         return "image", data
 
     @context.console_option(
@@ -1265,9 +1281,7 @@ def plugin(kernel, lifecycle=None):
                 (xx, yy, xx + im.size[0] * scale, yy + im.size[1] * scale)
             )
             inode.image = half_tone
-            if hasattr(inode, "node"):
-                inode.node.altered()
-            inode.altered()
+            update_image_node(inode)
         return "image", data
 
 

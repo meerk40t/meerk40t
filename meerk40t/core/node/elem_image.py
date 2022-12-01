@@ -34,6 +34,20 @@ class ImageNode(Node):
 
         self.passthrough = False
         super(ImageNode, self).__init__(type="elem image", **kwargs)
+        # kwargs can actually reset quite a lot of the properties to none
+        # so we need to revert these changes...
+        if self.red is None:
+            self.red = 1.0
+        if self.green is None:
+            self.green = 1.0
+        if self.blue is None:
+            self.blue = 1.0
+        if self.lightness is None:
+            self.lightness = 1.0
+        if self.operations is None:
+            self.operations = list()
+        if self.dither_type is None:
+            self.dither_type = "Floyd-Steinberg"
 
         self.__formatter = "{element_type} {id} {width}x{height}"
         if self.matrix is None:
@@ -94,7 +108,9 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self._processed_image is None and (len(self.operations) > 0 or self.dither):
+        if self._processed_image is None and (
+            (self.operations is not None and len(self.operations) > 0) or self.dither
+        ):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
@@ -271,22 +287,28 @@ class ImageNode(Node):
         return img
 
     def _convert_image_to_grayscale(self, image):
-        # Precalculate RGB for L conversion.
-        r = self.red * 0.299
-        g = self.green * 0.587
-        b = self.blue * 0.114
-        v = self.lightness
-        c = r + g + b
-        try:
-            c /= v
-            r = r / c
-            g = g / c
-            b = b / c
-        except ZeroDivisionError:
-            pass
-
         # Convert image to L type.
         if image.mode != "L":
+            # Precalculate RGB for L conversion.
+            # if self.red is None:
+            #     self.red = 1
+            if self.red is None or self.green is None or self.blue is None:
+                r = 1
+                g = 1
+                b = 1
+            else:
+                r = self.red * 0.299
+                g = self.green * 0.587
+                b = self.blue * 0.114
+                v = self.lightness
+                c = r + g + b
+                try:
+                    c /= v
+                    r = r / c
+                    g = g / c
+                    b = b / c
+                except ZeroDivisionError:
+                    pass
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
         return image
