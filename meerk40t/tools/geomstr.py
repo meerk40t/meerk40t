@@ -309,6 +309,7 @@ class Geomstr:
         @param other:
         @return:
         """
+        idx = 0
         intersections = []
         for s in range(self.index):
             if int(self.segments[s, 2].real) & 0xFF != TYPE_LINE:
@@ -329,7 +330,8 @@ class Geomstr:
                 if not intersect:
                     continue
                 xi, yi = intersect
-                intersections.append((xi, yi, s, t))
+                intersections.append((xi, yi, s, t, idx))
+                idx += 1
         return intersections
 
     def _ensure_capacity(self, capacity):
