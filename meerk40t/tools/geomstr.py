@@ -302,6 +302,94 @@ class Geomstr:
         """
         return self.index
 
+    def merge(self, other):
+        intersections = self.find_intersections(other)
+        bisectors = {}
+
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(s)
+            if bis is None:
+                bis = []
+                bisectors[s] = bis
+            bis.append((xi, yi, s, t, idx))
+        original = self.segments
+        total = self.index + other.index + len(intersections) * 4 + 1
+        new_segments = np.zeros((total, 5), dtype="complex")
+
+        itx = 0
+        itx = self._bisect_segments(bisectors, original, self.index, new_segments, itx)
+        new_segments[itx] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_END, -1),
+            np.nan,
+            np.nan,
+        )
+        itx += 1
+
+        bisectors = {}
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(t)
+            if bis is None:
+                bis = []
+                bisectors[t] = bis
+            bis.append((xi, yi, t, s, idx))
+        original = other.segments
+        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
+        self.segments = new_segments
+        self.index = itx
+        self.capacity = new_segments.shape[0]
+        return self
+
+    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
+        def bisector_sort(e):
+            """Sort by edge index, and distance from start."""
+            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
+
+        for seg in range(index):
+            bisector = bisectors.get(seg)
+            if bisector is None:
+                # Not bisected, copy over.
+                new_segments[itx] = original[seg]
+                itx += 1
+                continue
+            bisector.sort(key=bisector_sort)
+
+            start = original[seg, 0]
+            settype = original[seg, 2]
+            for xi, yi, si, ti, idx in bisector:
+                end = complex(xi, yi)
+
+                new_segments[itx] = (
+                    start,
+                    start,
+                    settype,
+                    end,
+                    end,
+                )
+                itx += 1
+
+                new_segments[itx] = (
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_VERTEX, idx),
+                    np.nan,
+                    np.nan,
+                )
+                itx += 1
+
+                start = end
+            end = original[seg, -1]
+            new_segments[itx] = (
+                start,
+                start,
+                settype,
+                end,
+                end,
+            )
+            itx += 1
+        return itx
+
     def find_intersections(self, other):
         """
         Finds intersections between line types through brute force.
