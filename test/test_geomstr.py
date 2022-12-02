@@ -97,9 +97,7 @@ class TestGeomstr(unittest.TestCase):
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
         results = subject.merge(clip)
-        self.assertTrue(len(results), 2)
-        print(results)
-        # self.assertEqual(results[0], (50, 50, 0, 0))
+        print(results.segments)
 
     def test_geomstr_merge_capacity_count(self):
         for j in range(25):
