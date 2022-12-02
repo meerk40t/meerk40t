@@ -87,19 +87,46 @@ class TestGeomstr(unittest.TestCase):
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
         results = subject.find_intersections(clip)
-        self.assertTrue(len(results), 1)
-        self.assertEqual(results[0], (50, 50, 0, 0))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0], (50, 50, 0, 0, 0))
 
-    def test_geomstr_polycut(self):
+    def test_geomstr_merge(self):
         subject = Geomstr()
-        # subject.line(complex(0, 25), complex(100, 25))
-        # clip = Geomstr()
-        # clip.line(complex(10, 10), complex(40, 10))
-        # clip.line(complex(40, 10), complex(40, 40))
-        # clip.line(complex(40, 40), complex(10, 40))
-        # clip.line(complex(10, 40), complex(10, 10))
-        # clip.close()
-        # result = subject.subtract(clip)
-        # results = list(result.as_segments())
-        # self.assertTrue(len(results), 1)
-        # self.assertEqual(results[0], ("line", (10, 25), (40, 25)))
+        subject.line(complex(0, 20), complex(100, 100))
+        subject.line(complex(20, 0), complex(100, 100))
+        clip = Geomstr()
+        clip.line(complex(100, 0), complex(0, 100))
+        results = subject.merge(clip)
+        self.assertTrue(len(results), 2)
+        print(results)
+        # self.assertEqual(results[0], (50, 50, 0, 0))
+
+    def test_geomstr_merge_capacity_count(self):
+        for j in range(25):
+            clip = Geomstr()
+            for i in range(50):
+                clip.line(
+                    complex(random.randint(0, 50), random.randint(0, 50)),
+                    complex(random.randint(0, 50), random.randint(0, 50)),
+                )
+            subject = Geomstr()
+            for i in range(50):
+                subject.line(
+                    complex(random.randint(0, 50), random.randint(0, 50)),
+                    complex(random.randint(0, 50), random.randint(0, 50)),
+                )
+            results = subject.merge(clip)
+            self.assertEqual(results.index, results.capacity)
+
+    def test_geomstr_merge_order(self):
+        subject = Geomstr()
+        subject.line(complex(50, 0), complex(50, 100))
+        clip = Geomstr()
+        clip.line(complex(0, 20), complex(100, 20))
+        clip.line(complex(0, 40), complex(100, 40))
+        clip.line(complex(0, 80), complex(100, 80))
+        clip.line(complex(0, 60), complex(100, 60))
+        clip.line(complex(0, 100), complex(100, 100))
+        results = subject.merge(clip)
+        print(results)
+
