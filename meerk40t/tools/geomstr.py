@@ -33,7 +33,7 @@ Each segment is defined by 5 complex values, these are:
 * Wait: NOP, NOP, Type=5/Settings, NOP, NOP, -- Note, Start and End are the same point.
 * Ramp: Start, PStart, Type=6/Settings, PEnd, End -- Power ramp line.
 * End: NOP, NOP, Type=99/Settings, NOP, NOP -- Structural segment.
-* Vertex, NOP, NOP, Type=100/Index, NOP, NOP -- Structural segment. 
+* Vertex, NOP, NOP, Type=100/Index, NOP, NOP -- Structural segment.
 
 Note: the Arc is circular-only and defined by 3 points. Start, End, and a single control point. We do not do
 elliptical arcs since they are weird/complex and no laser appears to use them.
@@ -61,7 +61,7 @@ transformations, and serve as a laser-first data structure. These should serve a
 
 Each path's complex2 `.imag` middle part points to a settings index. These are the settings being used to draw this
 geometry with whatever device is performing the drawing. So if the laser had frequency or if an embroidery machine had
-multi-needles you could refer to the expected thread-color of the segment. If there's only one set of settings all 
+multi-needles you could refer to the expected thread-color of the segment. If there's only one set of settings all
 segments may point to same object. If different settings are used for each segment, these can point to different
 segments.
 
@@ -77,7 +77,7 @@ start or end in the same vertex.
 Strings can be disjointed, in that the position between one position and the next are not coincident, this implies the
 position was moved. Usually this difference in position should be 0.
 
-Structural nodes like VERTEX work on both sides. For example, 
+Structural nodes like VERTEX work on both sides. For example,
 
 Vertex 0
 Line A, B
@@ -107,6 +107,9 @@ TYPE_VERTEX = 100
 
 
 class Scanbeam:
+    """
+    Accepts a Geomstr operation and performs scanbeam operations.
+    """
     def __init__(self, geom):
         self._geom = geom
 
@@ -278,6 +281,9 @@ class Scanbeam:
 
 
 class Geomstr:
+    """
+    Geometry String Class
+    """
     def __init__(self):
         self.index = 0
         self.capacity = 12
@@ -287,6 +293,7 @@ class Geomstr:
     def __copy__(self):
         """
         Create a geomstr copy.
+
         @return: Copy of geomstr.
         """
         geomstr = Geomstr()
@@ -297,12 +304,16 @@ class Geomstr:
 
     def __len__(self):
         """
-
         @return: length of the geomstr (note not the capacity).
         """
         return self.index
 
     def merge(self, other):
+        """
+        Merge other geomstr with this geomstr. Intersections meet at vertices.
+        @param other:
+        @return:
+        """
         intersections = self.find_intersections(other)
         bisectors = {}
 
@@ -436,6 +447,13 @@ class Geomstr:
             self.segments = self.segments[0 : self.index]
 
     def settings(self, key, settings):
+        """
+        Set settings object for given key.
+
+        @param key:
+        @param settings:
+        @return:
+        """
         self._settings[key] = settings
 
     @property
@@ -525,7 +543,7 @@ class Geomstr:
     def x_intercept(self, e, y):
         m = self.segment_slope(e)
         b = self.segment_intercept(e)
-        if m == float("nan") or m == float("inf"):
+        if math.isnan(m) or math.isinf(m):
             low = self.segment_end_with_min_y(e)
             return low.real
         return (y - b) / m
@@ -774,11 +792,11 @@ class Geomstr:
         """
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
-            float("nan"),
-            float("nan"),
+            np.nan,
+            np.nan,
             complex(TYPE_END, settings),
-            float("nan"),
-            float("nan"),
+            np.nan,
+            np.nan,
         )
         self.index += 1
 
@@ -790,11 +808,11 @@ class Geomstr:
         """
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
-            float("nan"),
-            float("nan"),
+            np.nan,
+            np.nan,
             complex(TYPE_VERTEX, vertex),
-            float("nan"),
-            float("nan"),
+            np.nan,
+            np.nan,
         )
         self.index += 1
 
