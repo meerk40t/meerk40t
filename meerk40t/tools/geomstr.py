@@ -284,10 +284,16 @@ class Geomstr:
     """
     Geometry String Class
     """
-    def __init__(self):
-        self.index = 0
-        self.capacity = 12
-        self.segments = np.zeros((self.capacity, 5), dtype="complex")
+    def __init__(self, segments=None):
+        if segments is not None:
+            self.index = len(segments)
+            self.capacity = self.index
+            self.segments = segments
+        else:
+            self.index = 0
+            self.capacity = 12
+            self.segments = np.zeros((self.capacity, 5), dtype="complex")
+
         self._settings = dict()
 
     def __copy__(self):
@@ -833,6 +839,21 @@ class Geomstr:
         pen_ups = self.segments[indexes0, -1]
         pen_downs = self.segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
+
+    def as_subpaths(self):
+        """
+        Generate individual subpaths.
+
+        @return:
+        """
+        types = self.segments[: self.index, 2]
+        q = np.where(types.real == TYPE_END)[0]
+        last = 0
+        for m in q:
+            yield Geomstr(self.segments[last:m])
+            last = m + 1
+        if last != self.index:
+            yield Geomstr(self.segments[last : self.index])
 
     def two_opt_distance(self, max_passes=None):
         """
