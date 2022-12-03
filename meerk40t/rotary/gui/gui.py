@@ -11,16 +11,21 @@ def plugin(kernel, lifecycle):
         from meerk40t.rotary.gui.rotarysettings import RotarySettings
 
         _ = kernel.translation
+        # Disable Rotary for the time being as it is not yet fully working...
+        enable_rotary = False
+        if not enable_rotary:
+            return
+
         kernel.register("window/Rotary", RotarySettings)
-        # kernel.register(
-        #     "button/device/Rotary",
-        #     {
-        #         "label": _("Rotary"),
-        #         "icon": icons8_roll_50,
-        #         "tip": _("Opens Rotary Window"),
-        #         "action": lambda v: kernel.console("window toggle Rotary\n"),
-        #     },
-        # )
+        kernel.register(
+            "button/device/Rotary",
+            {
+                "label": _("Rotary"),
+                "icon": icons8_roll_50,
+                "tip": _("Opens Rotary Window"),
+                "action": lambda v: kernel.console("window toggle Rotary\n"),
+            },
+        )
 
         @kernel.console_command("rotaryview", help=_("Rotary View of Scene"))
         def toggle_rotary_view(*args, **kwargs):

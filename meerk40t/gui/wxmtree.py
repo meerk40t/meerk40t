@@ -1191,7 +1191,11 @@ class ShadowTree:
                     value = _(pattern + std)
                     if not value.startswith(pattern):
                         mymap[key] = value
-            return text.format_map(mymap)
+            try:
+                result = text.format_map(mymap)
+            except KeyError:
+                result = "<???>"
+            return result
 
         def get_formatter(nodetype):
             default = self.context.elements.lookup(f"format/{nodetype}")

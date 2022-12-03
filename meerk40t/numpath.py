@@ -5,7 +5,6 @@ import numpy as np
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
-
 The idea behind numpy laser paths is to define a common structure that could replace the whole of cutcode and do so in a
 way that could be both be faster and more compact for other data structures commonly used throughout Meerk40t.
 
@@ -26,16 +25,17 @@ objects, with enough generalization to capture hypothetical additional forms.
 
 Each segment is defined by 5 complex values, these are:
 
-`Start, Control1, Type/Power, Control2, End`
+`Start, Control1, Type/Settings, Control2, End`
 
 * Line: Start, NOP, Type=0, NOP, End
 * Quad: Start, C0, Type=1, C0, End  -- Note C0 is duplicated and identical. But, only one needs to be read.
 * Cubic: Start, C0, Type=2, C1, End
 * Arc: Start, C0, Type=3, C0, End -- Note C0 is duplicated and identical.
-* Dwell: Start, NOP, Type=4/Time, NOP, Start -- Note, Start and End are the same point.
-* Wait: NOP,, NOP, Type=5/Time, NOP, NOP, -- Note, Start and End are the same point.
+* Dwell: Start, NOP, Type=4, NOP, Start -- Note, Start and End are the same point.
+* Wait: NOP, NOP, Type=5, NOP, NOP, -- Note, Start and End are the same point.
 * Ramp: Start, PStart, Type=6, PEnd, End -- Power ramp line.
 * End: NOP, NOP, Type=99, NOP, NOP -- Structural segment.
+* Vertex, NOP, NOP, Type=100/Index, NOP, NOP -- Structural segment. 
 
 Note: the Arc is circular only and defined by 3 points. Start, End, and a single control point. It does not do
 elliptical arcs since they are weird/complex and no laser appears to use them.
@@ -58,6 +58,38 @@ this needs to attenuate power over that length. In such a case the C0 and C1 pla
 
 This class is expected to be able to replace many uses of the Path class as well as all cutcode, permitting all affine
 transformations, and serve as a laser-first data structure. These should serve as faster laser-centric path-like code.
+
+Each path's imaginary middle part points to a settings index. These are the settings being used to draw this geometry
+with whatever device is performing the drawing. So if the laser had frequency or if an embroidery machine had
+multi-needles you could refer to the expected thread-color of the segment. If There's only one set of settings all 
+segments may point to same object etc.
+
+There are two primary structural nodes types. These are END and VERTEX. The END indicates that a particular walk was
+finished and that the END of that walk has been reached. A VERTEX indicates that we occupy the same space
+as all other VERTEX nodes with that index, no validation will be made to determine if all strings terminating in the
+same vertex are coincident. A shape is closed if both the shape starts and ends a the same vertex.
+
+VERTEX also provides us with usable graph topologies. We can consider the difference between a closed and opened path
+whether both ends terminate in the same vertex (assuming no other path strings) use the same vertex.
+
+Segment strings are defined by runs. These are adjacent segments without END or VERTEX. Runs can be disjointed this
+implies the position was moved. Usually this difference in position should be 0. Structural nodes like VERTEX work on
+both sides. For example, 
+
+Vertex 0
+Line A, B
+Line B, C
+Vertex 1
+Line C, D
+Line D, E
+Vertex 0
+
+The run goes V0, A->B, B->C V1 and a different run goes V1, C->D, D->E, V0. These definitions imply that V0 is located
+at points A and E and for valid geometry probably should be. However, this is merely implied. We may define another run
+as V1, Line C->Z.
+
+All runs are reversible. In fact, the reason for the 5 complex structure is so that each segment can reverse with
+a flip.
 """
 
 TYPE_LINE = 0
@@ -68,6 +100,7 @@ TYPE_DWELL = 4
 TYPE_WAIT = 5
 TYPE_RAMP = 6
 TYPE_END = 99
+TYPE_VERTEX = 100
 
 
 class Numpath:

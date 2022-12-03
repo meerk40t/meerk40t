@@ -553,6 +553,52 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_combo_text(attr, control, obj, data_type, additional_signal),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type in (int, str) and data_style == "option":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                display_list = list(map(str, c.get("display")))
+                choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                control = wx.ComboBox(
+                    self,
+                    wx.ID_ANY,
+                    choices=display_list,
+                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                )
+                # Constrain the width
+                testsize = control.GetBestSize()
+                control.SetMaxSize(wx.Size(testsize[0] + 30, -1))
+                # print ("Display: %s" % display_list)
+                # print ("Choices: %s" % choice_list)
+                # print ("To set: %s" % str(data))
+                if data is not None:
+                    control.SetSelection(choice_list.index(str(data)))
+
+                def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
+                    def select(event=None):
+                        cl = choice_list[ctrl.GetSelection()]
+                        v = dtype(cl)
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v, obj)
+                            for _sig in addsig:
+                                self.context.signal(_sig)
+
+                    return select
+
+                if label != "":
+                    # Try to center it vertically to the controls extent
+                    wd, ht = control.GetSize()
+                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
+                    # label_text.SetMinSize((-1, ht))
+                    control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                control.Bind(
+                    wx.EVT_COMBOBOX,
+                    on_combosmall_option(
+                        attr, control, obj, data_type, additional_signal, choice_list
+                    ),
+                )
+                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 

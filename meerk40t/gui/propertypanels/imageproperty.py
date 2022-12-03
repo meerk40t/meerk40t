@@ -1242,6 +1242,8 @@ class ImagePropertyPanel(ScrolledPanel):
     def on_text_dpi(self):
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
+        self.node.update(self.context)
+        self.context.signal("element_property_reload", self.node)
 
     def on_dither(self, event=None):
         # Dither can be set by two different means:
