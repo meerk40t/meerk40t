@@ -381,6 +381,9 @@ class RibbonPanel(wx.Panel):
                     if event:
                         _event = event.Clone()
                         _event.SetId(first_button.id)
+                        if first_button.id == evt_id:
+                            # Can't recurse.
+                            return
                         self.button_click(_event)
                         self._button_click_id(first_button.id, _event)
                         return
