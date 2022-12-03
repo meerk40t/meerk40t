@@ -160,8 +160,13 @@ class HingePanel(wx.Panel):
 
         self.patterns = list()
         self.defaults = list()
-        for pattern, default in self.hinge_generator.get_patterns():
-            self.patterns.append(pattern)
+        self.pattern_entry = list()
+
+        for entry in context.match("pattern/", suffix=True):
+            pattern = context.lookup(f"pattern/{entry}")
+            default = pattern[4]
+            self.pattern_entry.append(pattern)
+            self.patterns.append(entry)
             self.defaults.append(default)
         self.combo_style.Set(self.patterns)
         self.combo_style.SetSelection(0)
@@ -502,7 +507,9 @@ class HingePanel(wx.Panel):
         if idx < 0:
             return
         pattern = self.patterns[idx]
-        default = self.hinge_generator.get_default(pattern)
+        entry = self.context.lookup(f"pattern/{pattern}")
+        default = entry[4]
+
         self.slider_width.SetValue(200)
         self.slider_width_label.SetLabel(f"{self.slider_width.GetValue()/_FACTOR:.1%}")
         self.slider_height.SetValue(200)
@@ -820,7 +827,8 @@ class HingePanel(wx.Panel):
             self.hinge_param_a = default[5]
             self.hinge_param_b = default[6]
 
-        flag, info1, info2 = self.hinge_generator.set_predefined_pattern(pattern)
+        entry = self.context.lookup(f"pattern/{pattern}")
+        flag, info1, info2 = self.hinge_generator.set_predefined_pattern(entry)
         x = float(Length(self.hinge_origin_x))
         y = float(Length(self.hinge_origin_y))
         wd = float(Length(self.hinge_width))
