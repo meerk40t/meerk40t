@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 
+from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
 The idea behind Geometry Strings is to define a common structure that could replace the whole of cutcode and do so in a
@@ -918,6 +919,59 @@ class Geomstr:
             if max_passes and current_pass >= max_passes:
                 break
             current_pass += 1
+
+    def generator(self):
+        """
+        Generate plotter code. This should generate individual x, y, power levels for each type of segment.
+        The wait and dwell segments generate x, y, with a negative power (consisting of the wait time)
+        @return:
+        """
+        for segment in self.segments[0 : self.index]:
+            start = segment[0]
+            c0 = segment[1]
+            segpow = segment[2]
+            c1 = segment[3]
+            end = segment[4]
+            segment_type = segpow.real
+            settings_index = segpow.imag
+            if segment_type == TYPE_LINE:
+                for x, y in ZinglPlotter.plot_line(
+                    start.real, start.imag, end.real, end.imag
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_QUAD:
+                for x, y in ZinglPlotter.plot_quad_bezier(
+                    start.real, start.imag, c0.real, c0.imag, end.real, end.imag
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_CUBIC:
+                for x, y in ZinglPlotter.plot_cubic_bezier(
+                    start.real,
+                    start.imag,
+                    c0.real,
+                    c0.imag,
+                    c1.real,
+                    c1.imag,
+                    end.real,
+                    end.imag,
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_ARC:
+                raise NotImplementedError
+            elif segment_type == TYPE_DWELL:
+                yield start.real, start.imag, 0
+                yield start.real, start.imag, -settings_index
+            elif segment_type == TYPE_WAIT:
+                yield start.real, start.imag, 0
+                yield float("nan"), float("nan"), -settings_index
+            elif segment_type == TYPE_RAMP:
+                pos = list(
+                    ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
+                )
+                settings_index = np.interp(float(c0), float(c1), len(pos))
+                for i, p in enumerate(pos):
+                    x, y = p
+                    yield x, y, settings_index[i]
 
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
