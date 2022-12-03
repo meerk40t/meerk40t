@@ -153,6 +153,10 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(fills.plugin)
 
+        from .fill import patternfill
+
+        plugins.append(patternfill.plugin)
+
         from .extra import vectrace
 
         plugins.append(vectrace.plugin)
