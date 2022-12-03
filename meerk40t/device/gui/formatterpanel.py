@@ -62,13 +62,13 @@ class FormatterPanel(wx.Panel):
             "elem ellipse": icons8_oval_50,
             "elem image": icons8_image_50,
             "elem path": icons8_vector_50,
-            "elem numpath": icons8_vector_50,
+            "elem geomstr": icons8_vector_50,
             "elem polyline": icons8_polyline_50,
             "elem rect": icons8_rectangular_50,
             "elem line": icons8_polyline_50,
             "elem text": icons8_text_50,
         }
-        omit = ("elem numpath", "elem line")
+        omit = ("elem geomstr", "elem line")
         self.node_list = list(elem_group_nodes + op_nodes)
         for node in omit:
             try:

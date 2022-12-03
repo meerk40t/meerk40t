@@ -30,7 +30,7 @@ from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
+from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -227,8 +227,8 @@ class LaserRender:
             except AttributeError:
                 if node.type == "elem path":
                     node.draw = self.draw_path_node
-                elif node.type == "elem numpath":
-                    node.draw = self.draw_numpath_node
+                elif node.type == "elem geomstr":
+                    node.draw = self.draw_geomstr_node
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in (
@@ -286,7 +286,7 @@ class LaserRender:
                     )
         return p
 
-    def make_numpath(self, gc, path):
+    def make_geomstr(self, gc, path):
         """
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
@@ -611,14 +611,14 @@ class LaserRender:
             gc.StrokePath(node._cache)
         gc.PopState()
 
-    def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+    def draw_geomstr_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
         try:
             matrix = node.matrix
         except AttributeError:
             matrix = None
         if not hasattr(node, "_cache") or node._cache is None:
-            cache = self.make_numpath(gc, node.path)
+            cache = self.make_geomstr(gc, node.path)
             node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)

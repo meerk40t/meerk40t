@@ -3995,8 +3995,8 @@ def init_commands(kernel):
         return "shapes", paths
 
     @self.console_command(
-        "numpath",
-        help=_("Convert any element nodes to numpath nodes"),
+        "geomstr",
+        help=_("Convert any element nodes to geomstr nodes"),
         input_type="elements",
         output_type="elements",
     )
@@ -4006,9 +4006,8 @@ def init_commands(kernel):
         if len(data) == 0:
             return "elements", data
 
-        from ..numpath import Numpath
-
-        numpath = Numpath()
+        from meerk40t.tools.geomstr import Geomstr
+        geomstr = Geomstr()
         for node in data:
             try:
                 e = node.as_path()
@@ -4016,23 +4015,23 @@ def init_commands(kernel):
                 continue
             for seg in e:
                 if isinstance(seg, Line):
-                    numpath.line(complex(seg.start), complex(seg.end))
+                    geomstr.line(complex(seg.start), complex(seg.end))
                 elif isinstance(seg, QuadraticBezier):
-                    numpath.quad(
+                    geomstr.quad(
                         complex(seg.start), complex(seg.control), complex(seg.end)
                     )
                 elif isinstance(seg, CubicBezier):
-                    numpath.cubic(
+                    geomstr.cubic(
                         complex(seg.start),
                         complex(seg.control1),
                         complex(seg.control2),
                         complex(seg.end),
                     )
                 elif isinstance(seg, Close):
-                    numpath.close()
-                    numpath.end()
-            numpath.end()
-        if len(numpath) == 0:
+                    geomstr.close()
+                    geomstr.end()
+            geomstr.end()
+        if len(geomstr) == 0:
             return "elements", data
         try:
             fillrule = data[0].fillrule
@@ -4047,8 +4046,8 @@ def init_commands(kernel):
         except AttributeError:
             join = None
         node = self.elem_branch.add(
-            path=numpath,
-            type="elem numpath",
+            path=geomstr,
+            type="elem geomstr",
             stroke=data[0].stroke,
             fill=data[0].fill,
             fillrule=fillrule,

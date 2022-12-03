@@ -66,7 +66,3 @@ Many commands accept Angles and Lengths as real values. Though the Length is now
 The Viewbox functions is used to do things like center the camera image in the window.
 
 Many of these are fundamental objects within MeerK40t. 
-
-## numpath (Experimental)
-
-Numpath is a path type object made with numpy. The goal is to permit replacing most of cutcode with an object-type that could also work within the front-end. All numpath objects consist of 5 complex values, with symmetric object orders. The center value, the 3rd in the list of five, is a value of type/reference where the reference is a lookup for the particular settings. This should permit a single numpath to replace a all of cutcode in a single well-defined object. 
