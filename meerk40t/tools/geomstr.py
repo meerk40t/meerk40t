@@ -520,8 +520,8 @@ class Geomstr:
             return (
                 min(line[0].real, line[-1].real),
                 min(line[0].imag, line[-1].imag),
-                min(line[0].real, line[-1].real),
-                min(line[0].imag, line[-1].imag),
+                max(line[0].real, line[-1].real),
+                max(line[0].imag, line[-1].imag),
             )
         elif line[2].real == TYPE_CUBIC:
             local_extremizers = list(self._cubic_local_extremes(0, line))
