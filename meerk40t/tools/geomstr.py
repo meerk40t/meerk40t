@@ -100,11 +100,11 @@ TYPE_LINE = 0
 TYPE_QUAD = 1
 TYPE_CUBIC = 2
 TYPE_ARC = 3
-TYPE_DWELL = 4
-TYPE_WAIT = 5
-TYPE_RAMP = 6
-TYPE_END = 99
-TYPE_VERTEX = 100
+TYPE_POINT = 4
+
+TYPE_RAMP = 0x10
+TYPE_VERTEX = 0x79
+TYPE_END = 0x80
 
 
 class Scanbeam:
@@ -940,36 +940,19 @@ class Geomstr:
         )
         self.index += 1
 
-    def dwell(self, position, time):
+    def point(self, position, settings=0):
         """
-        Add in dwell time to fire the laser standing at a particular point.
+        Add in point 1D geometry object.
 
-        @param position: Position at which to fire the laser
-        @param time: time in ms to fire the laser
+        @param position: Position at which add point
+        @param settings: optional settings level for the point
         @return:
         """
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
             position,
             position,
-            complex(TYPE_DWELL, time),
-            position,
-            position,
-        )
-        self.index += 1
-
-    def wait(self, position, time):
-        """
-        Add in wait time to stand for the laser
-        @param position: Position to wait at
-        @param time: time in seconds to wait
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            position,
-            position,
-            complex(TYPE_WAIT, time),
+            complex(TYPE_POINT, settings),
             position,
             position,
         )
@@ -1162,12 +1145,8 @@ class Geomstr:
                     yield x, y, settings_index
             elif segment_type == TYPE_ARC:
                 raise NotImplementedError
-            elif segment_type == TYPE_DWELL:
-                yield start.real, start.imag, 0
-                yield start.real, start.imag, -settings_index
-            elif segment_type == TYPE_WAIT:
-                yield start.real, start.imag, 0
-                yield float("nan"), float("nan"), -settings_index
+            elif segment_type == TYPE_POINT:
+                yield start.real, start.imag, settings_index
             elif segment_type == TYPE_RAMP:
                 pos = list(
                     ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
