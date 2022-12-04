@@ -552,6 +552,25 @@ class Geomstr:
 
             return xmin, ymin, xmax, ymax
 
+    def segment_point(self, e, t):
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            point = self._line_point(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_QUAD:
+            point = self._quad_point(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_CUBIC:
+            point = self._cubic_point(line, [t])
+            return complex(*point)
+
+    def _line_point(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[4].real, line[4].imag
+        return np.interp(positions, [0, 1], [x0, x1]), np.interp(
+            positions, [0, 1], [y0, y1]
+        )
+
     def _quad_point(self, line, positions):
         """Calculate the x,y position at a certain position of the path. `pos` may be a
         float or a NumPy array."""

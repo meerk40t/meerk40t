@@ -210,6 +210,44 @@ class TestGeomstr(unittest.TestCase):
         # print(p.segments)
         # draw(p.segments, w, h)
 
+    def test_geomstr_line_point(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = Line(start, end)
+
+            path = Geomstr()
+            path.line(start, end)
+            t = random.random()
+            self.assertEqual(c.point(t), path.segment_point(0, t))
+
+    def test_geomstr_quad_point(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            control = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = QuadraticBezier(start, control, end)
+
+            path = Geomstr()
+            path.quad(start, control, end)
+
+            t = random.random()
+            self.assertEqual(c.point(t), path.segment_point(0, t))
+
+    def test_geomstr_cubic_point(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            c1 = complex(random.random() * 100, random.random() * 100)
+            c2 = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = CubicBezier(start, c1, c2, end)
+
+            path = Geomstr()
+            path.cubic(start, c1, c2, end)
+
+            t = random.random()
+            self.assertEqual(c.point(t), path.segment_point(0, t))
+
     def test_geomstr_line_bounds(self):
         for i in range(1000):
             start = complex(random.random() * 100, random.random() * 100)
@@ -231,12 +269,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.quad(start, control, end)
 
-            q0 = c.bbox()
-            q1 = path.segment_bbox(0)
-            if q0 != q1:
-                print("this is failing.")
             self.assertEqual(c.bbox(), path.segment_bbox(0))
-
 
     def test_geomstr_cubic_bounds(self):
         for i in range(1000):
@@ -250,7 +283,6 @@ class TestGeomstr(unittest.TestCase):
             path.cubic(start, c1, c2, end)
 
             self.assertEqual(c.bbox(), path.segment_bbox(0))
-
 
     def test_geomstr(self):
         path = Geomstr()
