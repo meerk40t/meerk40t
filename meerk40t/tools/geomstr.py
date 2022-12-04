@@ -111,6 +111,7 @@ class Scanbeam:
     """
     Accepts a Geomstr operation and performs scanbeam operations.
     """
+
     def __init__(self, geom):
         self._geom = geom
 
@@ -285,6 +286,7 @@ class Geomstr:
     """
     Geometry String Class
     """
+
     def __init__(self, segments=None):
         if segments is not None:
             self.index = len(segments)
@@ -511,6 +513,78 @@ class Geomstr:
                 max_x * mx.b + max_y * mx.d + 1 * mx.f,
             )
         return min_x, min_y, max_x, max_y
+
+    def segment_bbox(self, e):
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            return (
+                min(line[0].real, line[-1].real),
+                min(line[0].imag, line[-1].imag),
+                min(line[0].real, line[-1].real),
+                min(line[0].imag, line[-1].imag),
+            )
+        elif line[2].real == TYPE_CUBIC:
+            local_extremizers = list(self._cubic_local_extremes(0, line))
+            extreme_points = self._cubic_point(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._cubic_local_extremes(1, line))
+            extreme_points = self._cubic_point(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
+
+    def _cubic_point(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        x2, y2 = line[3].real, line[3].imag
+        x3, y3 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            pos_3 = position * position * position
+            n_pos = 1 - position
+            n_pos_3 = n_pos * n_pos * n_pos
+            pos_2_n_pos = position * position * n_pos
+            n_pos_2_pos = n_pos * n_pos * position
+            return (
+                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
+                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _cubic_local_extremes(self, v, e):
+        """
+        returns the extreme t values for a cubic bezier curve, with a non-zero denom
+        """
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[3].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[3].imag, e[4].imag
+
+        denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
+        if abs(denom) >= 1e-12:
+            delta = (
+                a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
+            )
+            if delta >= 0:  # otherwise no local extrema
+                sqdelta = math.sqrt(delta)
+                tau = a[0] - 2 * a[1] + a[2]
+                r1 = (tau + sqdelta) / denom
+                r2 = (tau - sqdelta) / denom
+                if 0 < r1 < 1:
+                    yield r1
+                if 0 < r2 < 1:
+                    yield r2
+        else:
+            yield 0.5
 
     def segment_slope(self, e):
         line = self.segments[e]

@@ -10,7 +10,7 @@ from math import tau
 import numpy as np
 
 from meerk40t.fill.fills import  scanline_fill
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import Matrix, CubicBezier
 
 
 def draw(segments, w, h, filename="test.png"):
@@ -209,6 +209,20 @@ class TestGeomstr(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
+
+    def test_geomstr_cubic_bounds(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            c1 = complex(random.random() * 100, random.random() * 100)
+            c2 = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = CubicBezier(start, c1, c2, end)
+
+            path = Geomstr()
+            path.cubic(start, c1, c2, end)
+
+            self.assertEqual(c.bbox(), path.segment_bbox(0))
+
 
     def test_geomstr(self):
         path = Geomstr()
