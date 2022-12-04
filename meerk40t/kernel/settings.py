@@ -76,6 +76,29 @@ class Settings:
         except PermissionError:
             return
 
+    def literal_dict(self):
+        literal_dict = dict()
+        for section in self._config_dict:
+            section_dict = self._config_dict[section]
+            literal_section_dict = dict()
+            literal_dict[section] = literal_section_dict
+            for key in section_dict:
+                value = section_dict[key]
+                try:
+                    value = ast.literal_eval(value)
+                except (ValueError, SyntaxError):
+                    pass
+                literal_section_dict[key] = value
+        return literal_dict
+
+    def set_dict(self, literal_dict):
+        self._config_dict.clear()
+        for section in literal_dict:
+            section_dict = dict()
+            self._config_dict[section] = section_dict
+            for key in literal_dict[section]:
+                section_dict[key] = str(literal_dict[section][key])
+
     def read_persistent(
         self,
         t: type,
