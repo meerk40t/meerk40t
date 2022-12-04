@@ -716,6 +716,124 @@ class Geomstr:
         else:
             yield 0.5
 
+    def convex_hull(self, pts):
+        if len(pts) == 0:
+            return
+        points = []
+        for i in range(len(pts)):
+            p = pts[i]
+            if isinstance(p, int):
+                if p < 0:
+                    p = self.segments[~p][-1]
+                else:
+                    p = self.segments[p][0]
+            points.append(p)
+        points = sorted(set(points), key=lambda p: p.real)
+        first_point_on_hull = points[0]
+        point_on_hull = first_point_on_hull
+        while True:
+            yield point_on_hull
+            endpoint = point_on_hull
+            for t in points:
+                if (
+                    point_on_hull is endpoint
+                    or Geomstr.orientation(None, point_on_hull, t, endpoint) == "ccw"
+                ):
+                    endpoint = t
+            point_on_hull = endpoint
+            if first_point_on_hull is point_on_hull:
+                break
+
+    def orientation(self, p, q, r):
+        """Determine the clockwise, linear, or counterclockwise orientation of the given points"""
+        if isinstance(p, int):
+            if p < 0:
+                p = self.segments[~p][-1]
+            else:
+                p = self.segments[p][0]
+        if isinstance(q, int):
+            if q < 0:
+                q = self.segments[~q][-1]
+            else:
+                q = self.segments[q][0]
+        if isinstance(r, int):
+            if r < 0:
+                r = self.segments[~r][-1]
+            else:
+                r = self.segments[r][0]
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
+            r.imag - q.imag
+        )
+        if val == 0:
+            return "linear"
+        elif val > 0:
+            return "cw"
+        else:
+            return "ccw"
+
+    def polar(self, p, angle, r):
+        if isinstance(p, int):
+            if p < 0:
+                p = self.segments[~p][-1]
+            else:
+                p = self.segments[p][0]
+        dx = math.cos(angle) * r
+        dy = math.sin(angle) * r
+        return p + complex(dx, dy)
+
+    def reflected(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return p2 + (p2 - p1)
+
+    def angle(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        d = p2 - p1
+        return math.atan2(d.imag, d.real)
+
+    def towards(self, p1, p2, amount):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return amount * (p2 - p1) + p1
+
+    def distance(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return abs(p1 - p2)
+
     def segment_slope(self, e):
         line = self.segments[e]
         a = line[0]
@@ -1166,58 +1284,3 @@ class Geomstr:
         if 0.0 <= ua <= 1.0 and 0.0 <= ub <= 1.0:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
-
-    @staticmethod
-    def orientation(p, q, r):
-        """Determine the clockwise, linear, or counterclockwise orientation of the given points"""
-        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
-            r.imag - q.imag
-        )
-        if val == 0:
-            return "linear"
-        elif val > 0:
-            return "cw"
-        else:
-            return "ccw"
-
-    @staticmethod
-    def convex_hull(pts):
-        if len(pts) == 0:
-            return
-        points = sorted(set(pts), key=lambda p: p.real)
-        first_point_on_hull = points[0]
-        point_on_hull = first_point_on_hull
-        while True:
-            yield point_on_hull
-            endpoint = point_on_hull
-            for t in points:
-                if (
-                    point_on_hull is endpoint
-                    or Geomstr.orientation(point_on_hull, t, endpoint) == "ccw"
-                ):
-                    endpoint = t
-            point_on_hull = endpoint
-            if first_point_on_hull is point_on_hull:
-                break
-
-    @staticmethod
-    def distance(p1, p2):
-        return abs(p1-p2)
-
-    @staticmethod
-    def polar(p1, angle, r):
-        dx = math.cos(angle) * r
-        dy = math.sin(angle) * r
-        return p1 + complex(dx, dy)
-
-    @staticmethod
-    def reflected(p1, p2):
-        return p2 + (p2 - p1)
-
-    @staticmethod
-    def angle(p1, p2):
-        return math.atan2(p2.imag - p1.imag, p2.real - p1.real)
-
-    @staticmethod
-    def towards(p1, p2, amount):
-        return amount * (p2 - p1) + p1
