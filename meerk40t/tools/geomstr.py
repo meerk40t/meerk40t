@@ -514,6 +514,12 @@ class Geomstr:
             )
         return min_x, min_y, max_x, max_y
 
+    def arc_radius(self, e):
+        line = self.segments[e]
+        start = line[0]
+        center = self.arc_center(e)
+        return abs(start-center)
+
     def arc_center(self, e):
         line = self.segments[e]
         start = line[0]

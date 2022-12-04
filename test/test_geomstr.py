@@ -222,6 +222,20 @@ class TestGeomstr(unittest.TestCase):
 
             self.assertAlmostEqual(complex(c.center), path.arc_center(0))
 
+    def test_geomstr_arc_radius(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            control = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = Arc(start=start, control=control, end=end)
+
+            path = Geomstr()
+            path.arc(start, control, end)
+
+            self.assertAlmostEqual(c.rx, path.arc_radius(0))
+            self.assertAlmostEqual(c.ry, path.arc_radius(0))
+
+
 
     def test_geomstr_line_point(self):
         for i in range(1000):
