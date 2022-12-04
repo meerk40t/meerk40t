@@ -514,6 +514,57 @@ class Geomstr:
             )
         return min_x, min_y, max_x, max_y
 
+    def arc_center(self, e):
+        line = self.segments[e]
+        start = line[0]
+        control = line[1]
+        end = line[4]
+
+        delta_a = control - start
+        delta_b = end - control
+        ab_mid = (start + control) / 2.0
+        bc_mid = (control + end) / 2.0
+        if start == end:
+            return ab_mid
+        
+        if abs(delta_a.real) > 1e-12:
+            slope_a = delta_a.imag / delta_a.real
+        else:
+            slope_a = np.inf
+
+        if abs(delta_b.real) > 1e-12:
+            slope_b = delta_b.imag / delta_b.real
+        else:
+            slope_b = np.inf
+
+        if abs(delta_a.imag) < 1e-12:  # slope_a == 0
+            cx = ab_mid.real
+            if abs(delta_b.real) < 1e-12:  # slope_b == inf
+                return complex(cx, bc_mid.imag)
+            if abs(slope_b) > 1e-12:
+                return complex(cx, bc_mid.imag + (bc_mid.real - cx) / slope_b)
+            return complex(cx, np.inf)
+        elif abs(delta_b.imag) < 1e-12:  # slope_b == 0
+            cx = bc_mid.real
+            if abs(delta_a.imag) < 1e-12:  # slope_a == inf
+                return complex(cx, ab_mid.imag)
+            return complex(cx, ab_mid.imag + (ab_mid.real - cx) / slope_a)
+        elif abs(delta_a.real) < 1e-12:  # slope_a == inf
+            cy = ab_mid.imag
+            return complex(slope_b * (bc_mid.imag - cy) + bc_mid.real, cy)
+        elif abs(delta_b.real) < 1e-12:  # slope_b == inf
+            cy = bc_mid.imag
+            return complex(slope_a * (ab_mid.imag - cy) + ab_mid.real, cy)
+        elif abs(slope_a - slope_b) < 1e-12:
+            return ab_mid
+        cx = (
+            slope_a * slope_b * (ab_mid.imag - bc_mid.imag)
+            - slope_a * bc_mid.real
+            + slope_b * ab_mid.real
+        ) / (slope_b - slope_a)
+        cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
+        return complex(cx, cy)
+
     def segment_bbox(self, e):
         line = self.segments[e]
         if line[2].real == TYPE_LINE:
