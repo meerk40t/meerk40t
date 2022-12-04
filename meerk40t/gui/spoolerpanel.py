@@ -793,59 +793,62 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItemData(list_id, idx - 1)
 
     def reload_history(self):
-        self.history = []
-        directory = os.path.dirname(self.context.elements.op_data._config_file)
-        filename = os.path.join(directory, "history.json")
-        if os.path.exists(filename):
-            try:
-                with open(filename, "r") as f:
-                    self.history = json.load(f)
-            except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
-                pass
-        if len(self.history) > 0:
-            if len(self.history[0]) < 5:
-                # Incompatible
-                self.history = []
+        spooler_log = self.context.logging.logs.get("spooler", dict())
+        self.history = spooler_log.get("history", list())
+        # self.history = []
+        # directory = os.path.dirname(self.context.elements.op_data._config_file)
+        # filename = os.path.join(directory, "history.json")
+        # if os.path.exists(filename):
+        #     try:
+        #         with open(filename, "r") as f:
+        #             self.history = json.load(f)
+        #     except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+        #         pass
+        # if len(self.history) > 0:
+        #     if len(self.history[0]) < 5:
+        #         # Incompatible
+        #         self.history = []
         self.refresh_history()
 
     def save_history(self):
-        def escaped(s):
-            return s.replace('"', "'")
-
-        directory = os.path.dirname(self.context.elements.op_data._config_file)
-        filename = os.path.join(directory, "history.json")
-        try:
-            with open(filename, "w") as f:
-                json.dump(self.history, f)
-        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
-            pass
-        filename = os.path.join(directory, "history.csv")
-        try:
-            with open(filename, "w", encoding="utf-8") as f:
-                simpleline = "device;jobname;start;end;duration;passes"
-                f.write(simpleline + "\n")
-                for info in self.history:
-                    if info[1] is None:
-                        continue
-                    simpleline = escaped(info[3])
-                    simpleline += ";" + escaped(info[0])
-                    starttime = (
-                        self.datestr(info[1]) + " " + self.timestr(info[1], True)
-                    )
-                    simpleline += ";" + starttime
-                    starttime = self.timestr(info[1] + info[2], True)
-                    simpleline += ";" + starttime
-                    runtime = self.timestr(info[2], False)
-                    simpleline += ";" + runtime
-                    # First passes then device
-                    if len(info) >= 5:
-                        simpleline += ";" + escaped(info[4])
-                    else:
-                        simpleline += ";''"
-                    f.write(simpleline + "\n")
-
-        except (PermissionError, OSError, FileNotFoundError):
-            pass
+        self.context.logging.logs["spooler"] = {"history": self.history}
+        # def escaped(s):
+        #     return s.replace('"', "'")
+        #
+        # directory = os.path.dirname(self.context.elements.op_data._config_file)
+        # filename = os.path.join(directory, "history.json")
+        # try:
+        #     with open(filename, "w") as f:
+        #         json.dump(self.history, f)
+        # except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+        #     pass
+        # filename = os.path.join(directory, "history.csv")
+        # try:
+        #     with open(filename, "w", encoding="utf-8") as f:
+        #         simpleline = "device;jobname;start;end;duration;passes"
+        #         f.write(simpleline + "\n")
+        #         for info in self.history:
+        #             if info[1] is None:
+        #                 continue
+        #             simpleline = escaped(info[3])
+        #             simpleline += ";" + escaped(info[0])
+        #             starttime = (
+        #                 self.datestr(info[1]) + " " + self.timestr(info[1], True)
+        #             )
+        #             simpleline += ";" + starttime
+        #             starttime = self.timestr(info[1] + info[2], True)
+        #             simpleline += ";" + starttime
+        #             runtime = self.timestr(info[2], False)
+        #             simpleline += ";" + runtime
+        #             # First passes then device
+        #             if len(info) >= 5:
+        #                 simpleline += ";" + escaped(info[4])
+        #             else:
+        #                 simpleline += ";''"
+        #             f.write(simpleline + "\n")
+        #
+        # except (PermissionError, OSError, FileNotFoundError):
+        #     pass
 
     def before_history_update(self, event):
         list_id = event.GetIndex()  # Get the current row
