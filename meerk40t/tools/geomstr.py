@@ -518,7 +518,7 @@ class Geomstr:
         line = self.segments[e]
         start = line[0]
         center = self.arc_center(e)
-        return abs(start-center)
+        return abs(start - center)
 
     def arc_center(self, e):
         line = self.segments[e]
@@ -532,7 +532,7 @@ class Geomstr:
         bc_mid = (control + end) / 2.0
         if start == end:
             return ab_mid
-        
+
         if abs(delta_a.real) > 1e-12:
             slope_a = delta_a.imag / delta_a.real
         else:
@@ -1187,3 +1187,58 @@ class Geomstr:
         if 0.0 <= ua <= 1.0 and 0.0 <= ub <= 1.0:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
+
+    @staticmethod
+    def orientation(p, q, r):
+        """Determine the clockwise, linear, or counterclockwise orientation of the given points"""
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
+            r.imag - q.imag
+        )
+        if val == 0:
+            return "linear"
+        elif val > 0:
+            return "cw"
+        else:
+            return "ccw"
+
+    @staticmethod
+    def convex_hull(pts):
+        if len(pts) == 0:
+            return
+        points = sorted(set(pts), key=lambda p: p.real)
+        first_point_on_hull = points[0]
+        point_on_hull = first_point_on_hull
+        while True:
+            yield point_on_hull
+            endpoint = point_on_hull
+            for t in points:
+                if (
+                    point_on_hull is endpoint
+                    or Geomstr.orientation(point_on_hull, t, endpoint) == "ccw"
+                ):
+                    endpoint = t
+            point_on_hull = endpoint
+            if first_point_on_hull is point_on_hull:
+                break
+
+    @staticmethod
+    def distance(p1, p2):
+        return abs(p1-p2)
+
+    @staticmethod
+    def polar(p1, angle, r):
+        dx = math.cos(angle) * r
+        dy = math.sin(angle) * r
+        return p1 + complex(dx, dy)
+
+    @staticmethod
+    def reflected(p1, p2):
+        return p2 + (p2 - p1)
+
+    @staticmethod
+    def angle(p1, p2):
+        return math.atan2(p2.imag - p1.imag, p2.real - p1.real)
+
+    @staticmethod
+    def towards(p1, p2, amount):
+        return amount * (p2 - p1) + p1

@@ -236,7 +236,6 @@ class TestGeomstr(unittest.TestCase):
             self.assertAlmostEqual(c.ry, path.arc_radius(0))
 
 
-
     def test_geomstr_line_point(self):
         for i in range(1000):
             start = complex(random.random() * 100, random.random() * 100)
@@ -310,6 +309,44 @@ class TestGeomstr(unittest.TestCase):
             path.cubic(start, c1, c2, end)
 
             self.assertEqual(c.bbox(), path.segment_bbox(0))
+
+    def test_geomstr_point_towards_static(self):
+        p = complex(4, 4)
+        q = Geomstr.towards(p, complex(6, 6), 0.5)
+        self.assertEqual(q, complex(5, 5))
+
+    def test_geomstr_point_distance_static(self):
+        from math import sqrt
+        p = complex(4, 4)
+        m = Geomstr.distance(p, complex(6,6))
+        self.assertEqual(m, 2 * sqrt(2))
+        m = Geomstr.distance(p, complex(4,0))
+        self.assertEqual(m, 4)
+
+    def test_geomstr_point_angle_static(self):
+        from math import radians
+        p = complex(0,0)
+        a = Geomstr.angle(p, complex(3, 3))
+        a45 = radians(45)
+        self.assertEqual(a, a45)
+        a = Geomstr.angle(p, complex(0, 3))
+        a90 = radians(90)
+        self.assertEqual(a, a90)
+        a = Geomstr.angle(p, complex(-3, 0))
+        a180 = radians(180)
+        self.assertEqual(a, a180)
+
+    def test_geomstr_point_polar_static(self):
+        from math import radians, sqrt
+        p = complex(0)
+        a = radians(45)
+        q = Geomstr.polar(p, a, 10)
+        self.assertAlmostEqual(q, complex(sqrt(2)/2 * 10, sqrt(2)/2 * 10))
+
+    def test_geomstr_point_reflected_static(self):
+        p = complex(0)
+        r = Geomstr.reflected(p, complex(10,10))
+        self.assertEqual(r, complex(20,20))
 
     def test_geomstr(self):
         path = Geomstr()
