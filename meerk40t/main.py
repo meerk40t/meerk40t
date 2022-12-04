@@ -121,33 +121,13 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(rotary.plugin)
 
-        from .core import spoolers
+        from .core import core
 
-        plugins.append(spoolers.plugin)
-
-        from .core import elements
-
-        plugins.append(elements.plugin)
-
-        from .core import bindalias
-
-        plugins.append(bindalias.plugin)
-
-        from .core import webhelp
-
-        plugins.append(webhelp.plugin)
-
-        from .core import planner
-
-        plugins.append(planner.plugin)
+        plugins.append(core.plugin)
 
         from .image import imagetools
 
         plugins.append(imagetools.plugin)
-
-        from .core import svg_io
-
-        plugins.append(svg_io.plugin)
 
         from .fill import fills
 
