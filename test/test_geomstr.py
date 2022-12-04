@@ -221,6 +221,22 @@ class TestGeomstr(unittest.TestCase):
 
             self.assertEqual(c.bbox(), path.segment_bbox(0))
 
+    def test_geomstr_quad_bounds(self):
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            control = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = QuadraticBezier(start, control, end)
+
+            path = Geomstr()
+            path.quad(start, control, end)
+
+            q0 = c.bbox()
+            q1 = path.segment_bbox(0)
+            if q0 != q1:
+                print("this is failing.")
+            self.assertEqual(c.bbox(), path.segment_bbox(0))
+
 
     def test_geomstr_cubic_bounds(self):
         for i in range(1000):

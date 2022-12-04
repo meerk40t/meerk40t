@@ -523,6 +523,20 @@ class Geomstr:
                 max(line[0].real, line[-1].real),
                 max(line[0].imag, line[-1].imag),
             )
+        elif line[2].real == TYPE_QUAD:
+            local_extremizers = list(self._quad_local_extremes(0, line))
+            extreme_points = self._quad_point(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._quad_local_extremes(1, line))
+            extreme_points = self._quad_point(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
         elif line[2].real == TYPE_CUBIC:
             local_extremizers = list(self._cubic_local_extremes(0, line))
             extreme_points = self._cubic_point(line, local_extremizers)
@@ -537,6 +551,46 @@ class Geomstr:
             ymax = max(local_extrema)
 
             return xmin, ymin, xmax, ymax
+
+    def _quad_point(self, line, positions):
+        """Calculate the x,y position at a certain position of the path. `pos` may be a
+        float or a NumPy array."""
+
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        # line[3] is identical to line[1]
+        x2, y2 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            n_pos = 1 - position
+            pos_2 = position * position
+            n_pos_2 = n_pos * n_pos
+            n_pos_pos = n_pos * position
+
+            return (
+                n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
+                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _quad_local_extremes(self, v, e):
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[4].imag
+
+        n = a[0] - a[1]
+        d = a[0] - 2 * a[1] + a[2]
+        if d != 0:
+            t = n / float(d)
+            if 0 < t < 1:
+                yield t
+        else:
+            yield 0.5
 
     def _cubic_point(self, line, positions):
         x0, y0 = line[0].real, line[0].imag
