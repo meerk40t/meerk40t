@@ -6,9 +6,9 @@ from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import Matrix
 
 
-class NumpathNode(Node, Parameters):
+class GeomstrNode(Node, Parameters):
     """
-    NumpathNode is the bootstrapped node type for the 'elem numpath' type.
+    GeomstrNode is the bootstrapped node type for the 'elem geomstr' type.
     """
 
     def __init__(self, **kwargs):
@@ -21,7 +21,7 @@ class NumpathNode(Node, Parameters):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        super().__init__(type="elem numpath", **kwargs)
+        super().__init__(type="elem geomstr", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         if self.matrix is None:
             self.matrix = Matrix()
@@ -32,7 +32,7 @@ class NumpathNode(Node, Parameters):
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
-        return NumpathNode(**nd)
+        return GeomstrNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
@@ -72,8 +72,8 @@ class NumpathNode(Node, Parameters):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(NumpathNode, self).default_map(default_map=default_map)
-        default_map["element_type"] = "Numpath"
+        default_map = super(GeomstrNode, self).default_map(default_map=default_map)
+        default_map["element_type"] = "Geomstr"
         default_map.update(self.__dict__)
         return default_map
 

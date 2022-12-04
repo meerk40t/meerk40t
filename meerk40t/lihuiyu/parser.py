@@ -24,6 +24,8 @@ class LihuiyuParser:
         self.count_flag = 0
         self.settings = Parameters({"speed": 20.0, "power": 1000.0})
 
+        self.path = None
+
         self.speed_code = None
 
         self.x = 0.0
@@ -53,9 +55,10 @@ class LihuiyuParser:
         self.number_consumer = {}
 
     def parse(self, data, elements):
-        from meerk40t.numpath import Numpath
 
-        self.path = Numpath()
+        from meerk40t.tools.geomstr import Geomstr
+
+        self.path = Geomstr()
 
         def position(p):
             if p is None:
@@ -70,7 +73,7 @@ class LihuiyuParser:
         self.write(data)
         self.path.uscale(UNITS_PER_MIL)
         elements.elem_branch.add(
-            type="elem numpath",
+            type="elem geomstr",
             path=self.path,
             stroke=Color("black"),
             **self.settings.settings,
