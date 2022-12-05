@@ -5,95 +5,57 @@ import numpy as np
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
-The idea behind Geometry Strings is to define a common structure that could replace the whole of cutcode and do so in a
-way that could be both be faster and more compact for other data structures commonly used throughout Meerk40t. And to
-include within that datastructure many common operations that need to be called repeated.
+Geomstr objects store aligned arrays of geom primitives. These primitives are line,
+quad, cubic, arc, and point. There are a couple additional structural elements
+like end, and vertex. 
 
-* Some drivers can use direct circular arcs, lines, and others use bezier curves. We should also avoid prematurely
-interpolating our data prior to knowing what types of data the driver might want or accept.
-* Some drivers can use dwell points, in that, they can go to a particular location and turn the laser on for a period
-of time.
-* Rasters are converted into a series of tiny steps that are usually either on or off but these are so plentiful that
-attempting to render them results in an unusably slow program.
-* We should/must optimize our pathing such that we can minimize travel time.
-* Some hatch operations result in many disjointed paths. The current objects we have to capture this data requires many
-node objects and is very inefficient.
+All the geom primitives are stored in an array of with a width of 5 complex
+numbers. The complex numbers are often, but not always used as points. This
+structure is intended to permit not just efficient storage of all geom objects
+and mixtures of those  primitives but also to permit efficient reversing
+with the use of flips.
 
-For these reasons we have the geomstr class which uses numpy arrays to define geometric and highly laser-specific
-objects, with enough generalization to capture hypothetical additional forms.
+The center complex number stores the geom type and a reference point to the
+associated settings information. This is usually going to be a dictionary
+but objects would work equally well.
 
-Each segment is defined by 5 complex values, these are:
+Adjacent geoms are part of a run. It's assumed that most geometry accessing 
+this data is going travel in a path through each of these points. Disjointed
+geoms are considered to be implicit moves. For example:
 
-`Start, Control1, Type/Settings, Control2, End`
+line (0+0j, 0+50j)
+line (50+0j, 50+50j)
 
-* Line: Start, NOP, Type=0/Settings, NOP, End
-* Quad: Start, C0, Type=1/Settings, C0, End  -- Note C0 is duplicated and identical. But, only one needs to be read.
-* Cubic: Start, C0, Type=2/Settings, C1, End
-* Arc: Start, C0, Type=3/Settings, C0, End -- Note C0 is duplicated and identical.
-* Dwell: Start, NOP, Type=4/Settings, NOP, Start -- Note, Start and End are the same point.
-* Wait: NOP, NOP, Type=5/Settings, NOP, NOP, -- Note, Start and End are the same point.
-* Ramp: Start, PStart, Type=6/Settings, PEnd, End -- Power ramp line.
-* End: NOP, NOP, Type=99/Settings, NOP, NOP -- Structural segment.
-* Vertex, NOP, NOP, Type=100/Index, NOP, NOP -- Structural segment.
+is not a connected run, but two disjointed lines. This implies that we moved
+between these lines, in fact, we assume that geometry will always travel
+from one geom to the next. Except for a structural end type geom. That overtly
+declares that no geometry objects should imply any additional links.
 
-Note: the Arc is circular-only and defined by 3 points. Start, End, and a single control point. We do not do
-elliptical arcs since they are weird/complex and no laser appears to use them.
+A vertex geom does not have an associated set of settings (or a position)
+but rather the .imag component of the center complex gives the vertex index.
+Any vertex with the same index is the same vertex regardless where it occurs
+in the geometry. This means that if a run occurs such that it starts and
+ends with vertex #1, this is explicitly a closed path, or rather implicitly
+circular, it could still be disjointed. This also means that multiple
+different runs or even individual geoms can connect to the same vertex,
+creating a graph topography.
 
-Additional extensions can be added by expanding the type parameters. Since each set of values is a complex, the points
-provide x and y values (real, imag). The type parameter (index 2) provides the settings. The settings object is users'
-choice. In the case of Wait, we assume it gives the wait time.
+All the non-structural geoms have index 0 and index 4 the complex representation
+of the start and end points of the geom. The quad and arcs store the same
+control point in index 1 and 3. And the cubic stores the first and second
+control points in 1 and 3. Point and line may store arbitrary information
+in indexes 1 and 3. All geoms store descriptive info in index 2. This means
+that reversing geoms and even reversing run of geoms can always be done
+with np.flip() calls.
 
-At first glance the structure may seem somewhat unusual but the `Position, Position, Type, Position, Position`
-structure serves a utilitarian purpose; all paths are reversible. We can flip this data, to reverse these segments.
-The start and end points can swap as well as the control points for the cubic, and arc, or swamp power levels for ramp.
-Whereas the types of parameter remains in the same position.
-
-The numpy flip operation can be done over the x and y axis. This provides the list of segments in reverse order while
-also reversing all the segments themselves. This is the key to doing 2-opt travel minimization, which is provided in
-the code.
-
----
-
-Ruida has some segments which start at one power and ramp up to a second amount of power. In this case, the reverse of
-this needs to attenuate power over that length. In such a case the C0 and C1 places are adapted to set the power.
-
-This class is expected to be able to replace many uses of the Path class as well as all cutcode, permitting all affine
-transformations, and serve as a laser-first data structure. These should serve as faster laser-centric path-like code.
-
-Each path's complex2 `.imag` middle part points to a settings index. These are the settings being used to draw this
-geometry with whatever device is performing the drawing. So if the laser had frequency or if an embroidery machine had
-multi-needles you could refer to the expected thread-color of the segment. If there's only one set of settings all
-segments may point to same object. If different settings are used for each segment, these can point to different
-segments.
-
-There are two primary structural nodes types. These are END and VERTEX. The END indicates that a particular walk is
-finished and that the END of that walk has been reached. A VERTEX indicates that we occupy the same space
-as all other VERTEX nodes with that index. No validation will be made to determine if any walks terminating or starting
-in the same vertex are coincident. A shape is closed if both the shape starts and ends in the same vertex.
-
-VERTEX also provides us with usable graph topologies. We can consider the difference between a closed and opened path
-to be whether both ends terminate in the same vertex. But, we can also have several different geometric strings either
-start or end in the same vertex.
-
-Strings can be disjointed, in that the position between one position and the next are not coincident, this implies the
-position was moved. Usually this difference in position should be 0.
-
-Structural nodes like VERTEX work on both sides. For example,
-
-Vertex 0
-Line A, B
-Line B, C
-Vertex 1
-Line C, D
-Line D, E
-Vertex 0
-
-The string goes V0, A->B, B->C V1 and the next string goes V1, C->D, D->E, V0. These definitions imply that V0 is
-located at points A and E, and for valid geometry probably should be. However, this is merely implied.
-We may define another run as V1, Line C->Z.
-
-All strings are reversible. In fact, the reason for the 5 complex structure is so that each segment can reverse with
-a np.flip.
+The arc geom is circular and the parameterization is three points, the start,
+end and control. If the start and end points are coincident, the control point
+is not merely on the arc but is also the furthest point on the arc, located
+2*radius distances from the start and end points, the entire geom effectively
+denotes a clockwise circle. Note: given that this is degenerate, flipping does
+not properly give a counterclockwise circle. If the three points are all
+collinear this is effectively a line. If all three points are coincident
+this is effectively a point.
 """
 
 TYPE_LINE = 0
