@@ -249,6 +249,7 @@ class Geometry:
     """
     Total geomstr functions
     """
+
     def __init__(self, geomstr):
         self.geomstr = geomstr
 
@@ -272,16 +273,16 @@ class Geometry:
         """
         segments = self.geomstr.segments
         index = self.geomstr.index
-        starts = segments[: index, 0]
+        starts = segments[:index, 0]
         reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
         imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
-        segments[: index, 0] = reals + 1j * imags
-        ends = segments[: index, 4]
+        segments[:index, 0] = reals + 1j * imags
+        ends = segments[:index, 4]
         reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
         imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
-        segments[: index, 4] = reals + 1j * imags
+        segments[:index, 4] = reals + 1j * imags
 
-        infos = segments[: index, 2]
+        infos = segments[:index, 2]
         q = np.where(infos.astype(int) & 0b0110)
 
         c0s = segments[q, 1]
@@ -303,9 +304,9 @@ class Geometry:
         """
         segments = self.geomstr.segments
         index = self.geomstr.index
-        segments[: index, 0] += complex(dx, dy)
-        segments[: index, 4] += complex(dx, dy)
-        infos = segments[: index, 2]
+        segments[:index, 0] += complex(dx, dy)
+        segments[:index, 4] += complex(dx, dy)
+        infos = segments[:index, 2]
         q = np.where(infos.astype(int) & 0b0110)
         segments[q, 1] += complex(dx, dy)
         segments[q, 3] += complex(dx, dy)
@@ -319,9 +320,9 @@ class Geometry:
         """
         segments = self.geomstr.segments
         index = self.geomstr.index
-        segments[: index, 0] *= scale
-        segments[: index, 4] *= scale
-        infos = segments[: index, 2]
+        segments[:index, 0] *= scale
+        segments[:index, 4] *= scale
+        infos = segments[:index, 2]
         q = np.where(infos.astype(int) & 0b0110)
         segments[q, 1] *= scale
         segments[q, 3] *= scale
@@ -344,7 +345,7 @@ class Geometry:
         # TODO: Doesn't account for mx
         segments = self.geomstr.segments
         index = self.geomstr.index
-        min_x, min_y, max_x, max_y = self.geomstr.bbox(segments[0 : index])
+        min_x, min_y, max_x, max_y = self.geomstr.bbox(segments[0:index])
         return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
 
     def raw_length(self):
@@ -357,7 +358,7 @@ class Geometry:
         """
         segments = self.geomstr.segments
         index = self.geomstr.index
-        infos = segments[: index, 2]
+        infos = segments[:index, 2]
         q = np.where(infos.astype(int) & 0b1001)
         pen_downs = segments[q, 0]
         pen_ups = segments[q, -1]
@@ -370,7 +371,7 @@ class Geometry:
         """
         segments = self.geomstr.segments
         index = self.geomstr.index
-        infos = segments[: index, 2]
+        infos = segments[:index, 2]
         q = np.where(infos.astype(int) & 0b1001)
         valid_segments = segments[q]
 
@@ -586,7 +587,7 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
 
-        for segment in segments[0 : index]:
+        for segment in segments[0:index]:
             start = segment[0]
             c0 = segment[1]
             segpow = segment[2]
@@ -1000,7 +1001,7 @@ class Geomstr:
         if isinstance(e, np.ndarray):
             bboxes = np.zeros((4, len(e)), dtype=float)
             for i in range(len(e)):
-                bboxes[:,i] = self.bbox(i)
+                bboxes[:, i] = self.bbox(i)
             return bboxes
         line = self.segments[e]
         if line[2].real == TYPE_LINE:
@@ -1153,10 +1154,79 @@ class Geomstr:
         else:
             yield 0.5
 
-
     #######################
     # Geom Tranformations
     #######################
+
+    def transform(self, e, mx):
+        """
+        Affine Transformation by an arbitrary matrix.
+
+        @param e: line to transform
+        @param mx: Matrix to transform by
+        @return:
+        """
+        line = self.segments[e]
+        def transform_point(v):
+            line[v] = complex(
+                line[v].real * mx.a + line[v].imag * mx.c + 1 * mx.e,
+                line[v].real * mx.b + line[v].imag * mx.d + 1 * mx.f,
+            )
+
+        transform_point(0)
+        transform_point(4)
+
+        if not line[2] & 0x0110:
+            return
+
+        transform_point(1)
+        transform_point(3)
+
+    def translate(self, dx, dy):
+        """
+        Translate the location within the path.
+
+        @param dx: change in x
+        @param dy: change in y
+        @return:
+        """
+        line = self.segments[e]
+        offset = complex(dx, dy)
+        line[0] += offset
+        line[4] += offset
+
+        if not line[2] & 0x0110:
+            return
+
+        line[1] += offset
+        line[3] += offset
+
+
+    def uscale(self, scale):
+        """
+        Uniform scaling operation
+
+        @param scale: uniform scaling factor
+        @return:
+        """
+        line = self.segments[e]
+        line[0] *= scale
+        line[4] *= scale
+
+        if not line[2] & 0x0110:
+            return
+
+        line[1] *= scale
+        line[3] *= scale
+
+    def rotate(self, angle):
+        """
+        Rotate segments around the origin.
+        @param angle: angle in radians
+        @return:
+        """
+        rotation = complex(math.cos(angle), math.sin(angle))
+        self.uscale(rotation)
 
     #######################
     # Arc Functions
@@ -1218,7 +1288,6 @@ class Geomstr:
         ) / (slope_b - slope_a)
         cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
         return complex(cx, cy)
-
 
     #######################
     # Point/Endpoint Functions
@@ -1422,7 +1491,6 @@ class Geomstr:
                 p2 = self.segments[p2][0]
         return abs(p1 - p2)
 
-
     #######################
     # Line-Like Functions
     #######################
@@ -1530,7 +1598,6 @@ class Geomstr:
             low = self.endpoint_min_y(e)
             return low.real
         return (y - b) / m
-
 
     #######################
     # Geometry Window Functions
