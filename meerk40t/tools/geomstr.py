@@ -1154,6 +1154,358 @@ class Geomstr:
         else:
             yield 0.5
 
+    def length(self, e):
+        """
+        Returns the length of geom e.
+
+        @param e:
+        @return:
+        """
+        start, control1, info, control2, end = self.segments[e]
+        if info.real == TYPE_LINE:
+            return abs(start - end)
+        if info.real == TYPE_QUAD:
+            pass
+        if info.real == TYPE_CUBIC:
+            pass
+
+    def split(self, e, t):
+        """
+        Splits individual geom e at position t [0-1]
+
+        @param e:
+        @param t:
+        @return:
+        """
+        raise NotImplementedError
+
+    def normal(self, e, t):
+        """
+        return the unit-normal (right hand rule) vector to this at t.
+
+        @param e:
+        @param t:
+        @return:
+        """
+        return -1j * self.tangent(t)
+
+    def tangent(self, e, t):
+        """
+        returns the tangent vector of the geom at t (centered at origin).
+
+        @param e:
+        @param t:
+        @return:
+        """
+        start, control1, info, control2, end = self.segments[e]
+
+        if info.real == TYPE_LINE:
+            dseg = end - start
+            return dseg / abs(dseg)
+
+        if info.real in (TYPE_QUAD, TYPE_CUBIC):
+            dseg = seg.derivative(t)
+
+            # Note: dseg might be numpy value, use np.seterr(invalid='raise')
+            try:
+                unit_tangent = dseg / abs(dseg)
+            except (ZeroDivisionError, FloatingPointError):
+                # This may be a removable singularity, if so we just need to compute
+                # the limit.
+                # Note: limit{{dseg / abs(dseg)} = sqrt(limit{dseg**2 / abs(dseg)**2})
+                dseg_poly = seg.poly().deriv()
+                dseg_abs_squared_poly = real(dseg_poly) ** 2 + imag(dseg_poly) ** 2
+                try:
+                    unit_tangent = csqrt(
+                        rational_limit(dseg_poly**2, dseg_abs_squared_poly, t)
+                    )
+                except ValueError:
+                    bef = seg.poly().deriv()(t - 1e-4)
+                    aft = seg.poly().deriv()(t + 1e-4)
+                    mes = (
+                        "Unit tangent appears to not be well-defined at "
+                        "t = {}, \n".format(t)
+                        + "seg.poly().deriv()(t - 1e-4) = {}\n".format(bef)
+                        + "seg.poly().deriv()(t + 1e-4) = {}".format(aft)
+                    )
+                    raise ValueError(mes)
+            return unit_tangent
+
+    def curvature(self, e, t):
+        """
+        returns the curvature of the geom at t
+
+        @param e:
+        @param t:
+        @return:
+        """
+        start, control1, info, control2, end = self.segments[e]
+        if info.real == TYPE_LINE:
+            return 0
+
+    def _line_coeffs(self, p):
+        return [p[4] - p[0], p[0]]
+
+    def _quad_coeffs(self, p):
+        return p[0] - 2 * p[1] + p[4], 2 * (p[1] - p[0]), p[0]
+
+    def _cubic_coeffs(self, p):
+        return (
+            -p[0] + 3 * (p[1] - p[3]) + p[4],
+            3 * (p[0] - 2 * p[1] + p[3]),
+            3 * (-p[0] + p[1]),
+            p[0],
+        )
+
+    def poly(self, e):
+        """
+        Returns segment as polynomial object
+
+        @param e:
+        @return:
+        """
+        line = self.segments[e]
+        if line[2].real == TYPE_CUBIC:
+            return np.poly1d(self._cubic_coeffs(line))
+        if line[2].real == TYPE_QUAD:
+            return np.poly1d(self._quad_coeffs(line))
+        if line[2].real == TYPE_LINE:
+            return np.poly1d(self._line_coeffs(line))
+
+    def derivative(self, e, t, n=1):
+        """
+        return the nth dervative of the segment e at position t
+
+        @param e:
+        @param t:
+        @param n:
+        @return:
+        """
+        line = self.segments[e]
+        start = line[0]
+        control1 = line[1]
+        control2 = line[3]
+        end = line[4]
+
+        if line[2].real == TYPE_LINE:
+            if n == 1:
+                return end - start
+            return 0
+
+        if line[2].real == TYPE_QUAD:
+            if n == 1:
+                return 2 * ((control1 - start) * (1 - t) + (end - control1) * t)
+            elif n == 2:
+                return 2 * (end - 2 * control1 + start)
+            return 0
+
+        if line[2].real == TYPE_CUBIC:
+            if n == 1:
+                return (
+                    3 * (control1 - start) * (1 - t) ** 2
+                    + 6 * (control2 - control1) * (1 - t) * t
+                    + 3 * (end - control2) * t**2
+                )
+            elif n == 2:
+                return 6 * (
+                    (1 - t) * (control2 - 2 * control1 + start)
+                    + t * (end - 2 * control2 + control1)
+                )
+            elif n == 3:
+                return 6 * (end - 3 * (p[2] - control1) - start)
+            return 0
+
+    def intersections(self, e, other_seg):
+        line1 = self.segments[e]
+        line2 = self.segments[other_seg]
+        start, control1, info, control2, end = line1
+        ostart, ocontrol1, oinfo, ocontrol2, oend = line2
+        if info.real in (TYPE_LINE, TYPE_QUAD, TYPE_CUBIC) and oinfo.real in (
+            TYPE_LINE,
+            TYPE_QUAD,
+            TYPE_CUBIC,
+        ):
+            # Fast fail
+            if info.real & 0b0110:
+                sa = start.real, control1.real, control2.real, end.real
+                sb = start.imag, control1.imag, control2.imag, end.imag
+            else:
+                sa = start.real, end.real
+                sb = start.imag, end.imag
+            if oinfo.real & 0b0110:
+                oa = ostart.real, ocontrol1.real, ocontrol2.real, oend.real
+                ob = ostart.imag, ocontrol1.imag, ocontrol2.imag, oend.imag
+            else:
+                oa = start.real, end.real
+                ob = start.imag, end.imag
+            if (
+                min(oa) > max(sa)
+                or max(oa) < min(sa)
+                or min(ob) > max(sb)
+                or max(ob) < min(sb)
+            ):
+                return  # There can't be any intersections
+        if info.real == TYPE_LINE:
+            if oinfo.real == TYPE_LINE:
+                yield from self._line_line_intersection(line1, line2)
+            if oinfo.real == TYPE_QUAD:
+                yield from self._line_quad_intersection(line1, line2)
+            if oinfo.real == TYPE_CUBIC:
+                yield from self._line_cubic_intersection(line1, line2)
+
+        if info.real == TYPE_QUAD:
+            if oinfo.real == TYPE_LINE:
+                yield from self._line_quad_intersection(line2, line1)
+            if oinfo.real == TYPE_QUAD:
+                yield from self._quad_quad_intersection(line1, line2)
+            if oinfo.real == TYPE_CUBIC:
+                yield from self._quad_cubic_intersection(line1, line2)
+
+        if info.real == TYPE_CUBIC:
+            if oinfo.real == TYPE_LINE:
+                yield from self._line_cubic_intersection(line2, line1)
+            if oinfo.real == TYPE_QUAD:
+                yield from self._quad_cubic_intersection(line2, line1)
+            if oinfo.real == TYPE_CUBIC:
+                yield from self._cubic_cubic_intersection(line1, line2)
+
+    def _line_line_intersections(self, line1, line2):
+        start, control1, info, control2, end = line1
+        ostart, ocontrol1, oinfo, ocontrol2, oend = line2
+
+        a = (start.real, end.real)
+        b = (start.imag, end.imag)
+        c = (ostart.real, oend.real)
+        d = (ostart.imag, oend.imag)
+        denom = (a[1] - a[0]) * (d[0] - d[1]) - (b[1] - b[0]) * (c[0] - c[1])
+        if np.isclose(denom, 0):
+            return
+        t1 = (
+            c[0] * (b[0] - d[1]) - c[1] * (b[0] - d[0]) - a[0] * (d[0] - d[1])
+        ) / denom
+        t2 = (
+            -(a[1] * (b[0] - d[0]) - a[0] * (b[1] - d[0]) - c[0] * (b[0] - b[1]))
+            / denom
+        )
+        if 0 <= t1 <= 1 and 0 <= t2 <= 1:
+            yield t1, t2
+
+    def _polyroots(self, p, realroots=False, condition=lambda r: True):
+        """
+        Returns the roots of a polynomial with coefficients given in p.
+          p[0] * x**n + p[1] * x**(n-1) + ... + p[n-1]*x + p[n]
+        INPUT:
+        p - Rank-1 array-like object of polynomial coefficients.
+        realroots - a boolean.  If true, only real roots will be returned  and the
+            condition function can be written assuming all roots are real.
+        condition - a boolean-valued function.  Only roots satisfying this will be
+            returned.  If realroots==True, these conditions should assume the roots
+            are real.
+        OUTPUT:
+        A list containing the roots of the polynomial.
+        NOTE:  This uses np.isclose and np.roots"""
+        roots = np.roots(p)
+        if realroots:
+            roots = [r.real for r in roots if np.isclose(r.imag, 0)]
+        roots = [r for r in roots if condition(r)]
+
+        duplicates = []
+        for idx, (r1, r2) in enumerate(combinations(roots, 2)):
+            if np.isclose(r1, r2):
+                duplicates.append(idx)
+        return [r for idx, r in enumerate(roots) if idx not in duplicates]
+
+    def _line_quad_intersections(self, line, bezier):
+        line = line[0], line[4]
+        bezier = bezier[0], bezier[1], bezier[4]
+        # First let's shift the complex plane so that line starts at the origin
+
+        shifted_bezier = [z - line[0] for z in bezier]
+        shifted_line_end = line[1] - line[0]
+        line_length = abs(shifted_line_end)
+
+        # Now let's rotate the complex plane so that line falls on the x-axis
+        rotation_matrix = line_length / shifted_line_end
+        transformed_bezier = [rotation_matrix * z for z in shifted_bezier]
+
+        # Now all intersections should be roots of the imaginary component of
+        # the transformed bezier
+        transformed_bezier_imag = [p.imag for p in transformed_bezier]
+        p = transformed_bezier_imag
+        # Quad coeffs
+        coeffs_y = (p[0] - 2 * p[1] + p[2], 2 * (p[1] - p[0]), p[0])
+        # returns real roots 0 <= r <= 1
+        roots_y = list(
+            self._polyroots(
+                coeffs_y, realroots=True, condition=lambda tval: 0 <= tval <= 1
+            )
+        )
+
+        transformed_bezier_real = [p.real for p in transformed_bezier]
+        p = transformed_bezier_real
+        for bez_t in set(roots_y):
+            # Quad xvalues
+            xval = p[0] + bez_t * (2 * (p[1] - p[0]) + bez_t * (p[0] - 2 * p[1] + p[2]))
+            if 0 <= xval <= line_length:
+                line_t = xval / line_length
+                yield bez_t, line_t
+
+    def _line_cubic_intersections(self, line, bezier):
+        line = line[0], line[4]
+        bezier = bezier[0], bezier[1], bezier[3], bezier[4]
+        # First let's shift the complex plane so that line starts at the origin
+
+        shifted_bezier = [z - line[0] for z in bezier]
+        shifted_line_end = line[1] - line[0]
+        line_length = abs(shifted_line_end)
+
+        # Now let's rotate the complex plane so that line falls on the x-axis
+        rotation_matrix = line_length / shifted_line_end
+        transformed_bezier = [rotation_matrix * z for z in shifted_bezier]
+
+        # Now all intersections should be roots of the imaginary component of
+        # the transformed bezier
+        transformed_bezier_imag = [p.imag for p in transformed_bezier]
+        p = transformed_bezier_imag
+        # Cubic coeffs
+        coeffs_y = (
+            -p[0] + 3 * (p[1] - p[2]) + p[3],
+            3 * (p[0] - 2 * p[1] + p[2]),
+            3 * (p[1] - p[0]),
+            p[0],
+        )
+        # returns real roots 0 <= r <= 1
+        roots_y = list(
+            self._polyroots(
+                coeffs_y, realroots=True, condition=lambda tval: 0 <= tval <= 1
+            )
+        )
+        transformed_bezier_real = [p.real for p in transformed_bezier]
+
+        for bez_t in set(roots_y):
+            # Cubic xvalue
+            xval = p[0] + bez_t * (
+                3 * (p[1] - p[0])
+                + bez_t
+                * (
+                    3 * (p[0] + p[2])
+                    - 6 * p[1]
+                    + bez_t * (-p[0] + 3 * (p[1] - p[2]) + p[3])
+                )
+            )
+            if 0 <= xval <= line_length:
+                line_t = xval / line_length
+                yield bez_t, line_t
+
+    def _quad_quad_intersections(self, line1, line2):
+        pass
+
+    def _quad_cubic_intersections(self, line1, line2):
+        pass
+
+    def _cubic_cubic_intersections(self, line1, line2):
+        pass
+
     #######################
     # Geom Tranformations
     #######################
