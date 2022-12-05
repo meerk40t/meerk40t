@@ -250,6 +250,19 @@ class Geometry:
     def __init__(self, geomstr):
         self.geomstr = geomstr
 
+    @property
+    def segments(self):
+        return self.geomstr.segments
+
+    @property
+    def index(self):
+        return self.geomstr.index
+
+    @property
+    def capacity(self):
+        return self.geomstr.capacity
+
+
     def transform(self, mx):
         """
         Affine Transformation by an arbitrary matrix.
