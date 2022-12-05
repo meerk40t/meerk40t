@@ -1270,7 +1270,7 @@ class Geomstr:
             return dseg / abs(dseg)
 
         if info.real in (TYPE_QUAD, TYPE_CUBIC):
-            dseg = seg.derivative(t)
+            dseg = self.derivative(e, t)
 
             # Note: dseg might be numpy value, use np.seterr(invalid='raise')
             try:
@@ -1279,23 +1279,34 @@ class Geomstr:
                 # This may be a removable singularity, if so we just need to compute
                 # the limit.
                 # Note: limit{{dseg / abs(dseg)} = sqrt(limit{dseg**2 / abs(dseg)**2})
-                dseg_poly = seg.poly().deriv()
-                dseg_abs_squared_poly = real(dseg_poly) ** 2 + imag(dseg_poly) ** 2
+                dseg_poly = self.poly(e).deriv()
+                dseg_abs_squared_poly = self._real(dseg_poly) ** 2 + self._imag(dseg_poly) ** 2
                 try:
-                    unit_tangent = csqrt(
+                    unit_tangent = np.sqrt(
                         rational_limit(dseg_poly**2, dseg_abs_squared_poly, t)
                     )
                 except ValueError:
-                    bef = seg.poly().deriv()(t - 1e-4)
-                    aft = seg.poly().deriv()(t + 1e-4)
+                    bef = self.poly(e).deriv()(t - 1e-4)
+                    aft = self.poly(e).deriv()(t + 1e-4)
                     mes = (
-                        "Unit tangent appears to not be well-defined at "
-                        "t = {}, \n".format(t)
-                        + "seg.poly().deriv()(t - 1e-4) = {}\n".format(bef)
-                        + "seg.poly().deriv()(t + 1e-4) = {}".format(aft)
+                        f"Unit tangent appears to not be well-defined at t = {t},\n"
+                        f"seg.poly().deriv()(t - 1e-4) = {bef}\n"
+                        f"seg.poly().deriv()(t + 1e-4) = {aft}"
                     )
                     raise ValueError(mes)
             return unit_tangent
+
+    def _real(self, z):
+        try:
+            return np.poly1d(z.coeffs.real)
+        except AttributeError:
+            return z.real
+
+    def _imag(self, z):
+        try:
+            return np.poly1d(z.coeffs.imag)
+        except AttributeError:
+            return z.imag
 
     def curvature(self, e, t):
         """
