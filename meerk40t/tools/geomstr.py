@@ -100,17 +100,18 @@ TYPE_LINE = 0
 TYPE_QUAD = 1
 TYPE_CUBIC = 2
 TYPE_ARC = 3
-TYPE_DWELL = 4
-TYPE_WAIT = 5
-TYPE_RAMP = 6
-TYPE_END = 99
-TYPE_VERTEX = 100
+TYPE_POINT = 4
+
+TYPE_RAMP = 0x10
+TYPE_VERTEX = 0x79
+TYPE_END = 0x80
 
 
 class Scanbeam:
     """
     Accepts a Geomstr operation and performs scanbeam operations.
     """
+
     def __init__(self, geom):
         self._geom = geom
 
@@ -285,6 +286,7 @@ class Geomstr:
     """
     Geometry String Class
     """
+
     def __init__(self, segments=None):
         if segments is not None:
             self.index = len(segments)
@@ -512,6 +514,326 @@ class Geomstr:
             )
         return min_x, min_y, max_x, max_y
 
+    def arc_radius(self, e):
+        line = self.segments[e]
+        start = line[0]
+        center = self.arc_center(e)
+        return abs(start - center)
+
+    def arc_center(self, e):
+        line = self.segments[e]
+        start = line[0]
+        control = line[1]
+        end = line[4]
+
+        delta_a = control - start
+        delta_b = end - control
+        ab_mid = (start + control) / 2.0
+        bc_mid = (control + end) / 2.0
+        if start == end:
+            return ab_mid
+
+        if abs(delta_a.real) > 1e-12:
+            slope_a = delta_a.imag / delta_a.real
+        else:
+            slope_a = np.inf
+
+        if abs(delta_b.real) > 1e-12:
+            slope_b = delta_b.imag / delta_b.real
+        else:
+            slope_b = np.inf
+
+        if abs(delta_a.imag) < 1e-12:  # slope_a == 0
+            cx = ab_mid.real
+            if abs(delta_b.real) < 1e-12:  # slope_b == inf
+                return complex(cx, bc_mid.imag)
+            if abs(slope_b) > 1e-12:
+                return complex(cx, bc_mid.imag + (bc_mid.real - cx) / slope_b)
+            return complex(cx, np.inf)
+        elif abs(delta_b.imag) < 1e-12:  # slope_b == 0
+            cx = bc_mid.real
+            if abs(delta_a.imag) < 1e-12:  # slope_a == inf
+                return complex(cx, ab_mid.imag)
+            return complex(cx, ab_mid.imag + (ab_mid.real - cx) / slope_a)
+        elif abs(delta_a.real) < 1e-12:  # slope_a == inf
+            cy = ab_mid.imag
+            return complex(slope_b * (bc_mid.imag - cy) + bc_mid.real, cy)
+        elif abs(delta_b.real) < 1e-12:  # slope_b == inf
+            cy = bc_mid.imag
+            return complex(slope_a * (ab_mid.imag - cy) + ab_mid.real, cy)
+        elif abs(slope_a - slope_b) < 1e-12:
+            return ab_mid
+        cx = (
+            slope_a * slope_b * (ab_mid.imag - bc_mid.imag)
+            - slope_a * bc_mid.real
+            + slope_b * ab_mid.real
+        ) / (slope_b - slope_a)
+        cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
+        return complex(cx, cy)
+
+    def segment_bbox(self, e):
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            return (
+                min(line[0].real, line[-1].real),
+                min(line[0].imag, line[-1].imag),
+                max(line[0].real, line[-1].real),
+                max(line[0].imag, line[-1].imag),
+            )
+        elif line[2].real == TYPE_QUAD:
+            local_extremizers = list(self._quad_local_extremes(0, line))
+            extreme_points = self._quad_point(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._quad_local_extremes(1, line))
+            extreme_points = self._quad_point(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
+        elif line[2].real == TYPE_CUBIC:
+            local_extremizers = list(self._cubic_local_extremes(0, line))
+            extreme_points = self._cubic_point(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._cubic_local_extremes(1, line))
+            extreme_points = self._cubic_point(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
+
+    def segment_point(self, e, t):
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            point = self._line_point(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_QUAD:
+            point = self._quad_point(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_CUBIC:
+            point = self._cubic_point(line, [t])
+            return complex(*point)
+
+    def _line_point(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[4].real, line[4].imag
+        return np.interp(positions, [0, 1], [x0, x1]), np.interp(
+            positions, [0, 1], [y0, y1]
+        )
+
+    def _quad_point(self, line, positions):
+        """Calculate the x,y position at a certain position of the path. `pos` may be a
+        float or a NumPy array."""
+
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        # line[3] is identical to line[1]
+        x2, y2 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            n_pos = 1 - position
+            pos_2 = position * position
+            n_pos_2 = n_pos * n_pos
+            n_pos_pos = n_pos * position
+
+            return (
+                n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
+                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _quad_local_extremes(self, v, e):
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[4].imag
+
+        n = a[0] - a[1]
+        d = a[0] - 2 * a[1] + a[2]
+        if d != 0:
+            t = n / float(d)
+            if 0 < t < 1:
+                yield t
+        else:
+            yield 0.5
+
+    def _cubic_point(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        x2, y2 = line[3].real, line[3].imag
+        x3, y3 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            pos_3 = position * position * position
+            n_pos = 1 - position
+            n_pos_3 = n_pos * n_pos * n_pos
+            pos_2_n_pos = position * position * n_pos
+            n_pos_2_pos = n_pos * n_pos * position
+            return (
+                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
+                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _cubic_local_extremes(self, v, e):
+        """
+        returns the extreme t values for a cubic bezier curve, with a non-zero denom
+        """
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[3].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[3].imag, e[4].imag
+
+        denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
+        if abs(denom) >= 1e-12:
+            delta = (
+                a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
+            )
+            if delta >= 0:  # otherwise no local extrema
+                sqdelta = math.sqrt(delta)
+                tau = a[0] - 2 * a[1] + a[2]
+                r1 = (tau + sqdelta) / denom
+                r2 = (tau - sqdelta) / denom
+                if 0 < r1 < 1:
+                    yield r1
+                if 0 < r2 < 1:
+                    yield r2
+        else:
+            yield 0.5
+
+    def convex_hull(self, pts):
+        if len(pts) == 0:
+            return
+        points = []
+        for i in range(len(pts)):
+            p = pts[i]
+            if isinstance(p, int):
+                if p < 0:
+                    p = self.segments[~p][-1]
+                else:
+                    p = self.segments[p][0]
+            points.append(p)
+        points = sorted(set(points), key=lambda p: p.real)
+        first_point_on_hull = points[0]
+        point_on_hull = first_point_on_hull
+        while True:
+            yield point_on_hull
+            endpoint = point_on_hull
+            for t in points:
+                if (
+                    point_on_hull is endpoint
+                    or Geomstr.orientation(None, point_on_hull, t, endpoint) == "ccw"
+                ):
+                    endpoint = t
+            point_on_hull = endpoint
+            if first_point_on_hull is point_on_hull:
+                break
+
+    def orientation(self, p, q, r):
+        """Determine the clockwise, linear, or counterclockwise orientation of the given points"""
+        if isinstance(p, int):
+            if p < 0:
+                p = self.segments[~p][-1]
+            else:
+                p = self.segments[p][0]
+        if isinstance(q, int):
+            if q < 0:
+                q = self.segments[~q][-1]
+            else:
+                q = self.segments[q][0]
+        if isinstance(r, int):
+            if r < 0:
+                r = self.segments[~r][-1]
+            else:
+                r = self.segments[r][0]
+        val = (q.imag - p.imag) * (r.real - q.real) - (q.real - p.real) * (
+            r.imag - q.imag
+        )
+        if val == 0:
+            return "linear"
+        elif val > 0:
+            return "cw"
+        else:
+            return "ccw"
+
+    def polar(self, p, angle, r):
+        if isinstance(p, int):
+            if p < 0:
+                p = self.segments[~p][-1]
+            else:
+                p = self.segments[p][0]
+        dx = math.cos(angle) * r
+        dy = math.sin(angle) * r
+        return p + complex(dx, dy)
+
+    def reflected(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return p2 + (p2 - p1)
+
+    def angle(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        d = p2 - p1
+        return math.atan2(d.imag, d.real)
+
+    def towards(self, p1, p2, amount):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return amount * (p2 - p1) + p1
+
+    def distance(self, p1, p2):
+        if isinstance(p1, int):
+            if p1 < 0:
+                p1 = self.segments[~p1][-1]
+            else:
+                p1 = self.segments[p1][0]
+        if isinstance(p2, int):
+            if p2 < 0:
+                p2 = self.segments[~p2][-1]
+            else:
+                p2 = self.segments[p2][0]
+        return abs(p1 - p2)
+
     def segment_slope(self, e):
         line = self.segments[e]
         a = line[0]
@@ -736,36 +1058,19 @@ class Geomstr:
         )
         self.index += 1
 
-    def dwell(self, position, time):
+    def point(self, position, settings=0):
         """
-        Add in dwell time to fire the laser standing at a particular point.
+        Add in point 1D geometry object.
 
-        @param position: Position at which to fire the laser
-        @param time: time in ms to fire the laser
+        @param position: Position at which add point
+        @param settings: optional settings level for the point
         @return:
         """
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
             position,
             position,
-            complex(TYPE_DWELL, time),
-            position,
-            position,
-        )
-        self.index += 1
-
-    def wait(self, position, time):
-        """
-        Add in wait time to stand for the laser
-        @param position: Position to wait at
-        @param time: time in seconds to wait
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            position,
-            position,
-            complex(TYPE_WAIT, time),
+            complex(TYPE_POINT, settings),
             position,
             position,
         )
@@ -958,12 +1263,8 @@ class Geomstr:
                     yield x, y, settings_index
             elif segment_type == TYPE_ARC:
                 raise NotImplementedError
-            elif segment_type == TYPE_DWELL:
-                yield start.real, start.imag, 0
-                yield start.real, start.imag, -settings_index
-            elif segment_type == TYPE_WAIT:
-                yield start.real, start.imag, 0
-                yield float("nan"), float("nan"), -settings_index
+            elif segment_type == TYPE_POINT:
+                yield start.real, start.imag, settings_index
             elif segment_type == TYPE_RAMP:
                 pos = list(
                     ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
