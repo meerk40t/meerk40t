@@ -1760,6 +1760,22 @@ class Geomstr:
         cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
         return complex(cx, cy)
 
+    def arc_sweep(self, e, center=None):
+        line = self.segments[e]
+        start = line, control, info, control2, end = line
+        if start == end:
+            # If start and end are coincident then our sweep is a full cw circle
+            return math.tau
+        if center is None:
+            center = self.arc_center(e)
+        start_t = self.angle(center, start)
+        end_t = self.angle(center, end)
+        sweep = end_t - start_t
+        if self.orientation(start, control, end) == "cw":
+            return sweep + math.tau
+        return sweep
+
+
     #######################
     # Point/Endpoint Functions
     #######################
