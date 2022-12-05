@@ -269,31 +269,28 @@ class Geometry:
         @param mx: Matrix to transform by
         @return:
         """
-        for segment in self.segments[0 : self.index]:
-            start = segment[0]
-            c0 = segment[1]
-            info = segment[2]
-            c1 = segment[3]
-            end = segment[4]
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        starts = segments[: index, 0]
+        reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
+        imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
+        segments[: index, 0] = reals + 1j * imags
+        ends = segments[: index, 4]
+        reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
+        imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
+        segments[: index, 4] = reals + 1j * imags
 
-            start = complex(
-                start.real * mx.a + start.imag * mx.c + 1 * mx.e,
-                start.real * mx.b + start.imag * mx.d + 1 * mx.f,
-            )
-            end = complex(
-                end.real * mx.a + end.imag * mx.c + 1 * mx.e,
-                end.real * mx.b + end.imag * mx.d + 1 * mx.f,
-            )
-            if info.real not in (TYPE_LINE, TYPE_POINT, TYPE_END, TYPE_VERTEX):
-                c0 = complex(
-                    c0.real * mx.a + c0.imag * mx.c + 1 * mx.e,
-                    c0.real * mx.b + c0.imag * mx.d + 1 * mx.f,
-                )
-                c1 = complex(
-                    c1.real * mx.a + c1.imag * mx.c + 1 * mx.e,
-                    c1.real * mx.b + c1.imag * mx.d + 1 * mx.f,
-                )
-            segment[:] = start, c0, info, c1, end
+        infos = segments[: index, 2]
+        q = np.where(infos.astype(int) & 0b0110)
+
+        c0s = segments[q, 1]
+        reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
+        imags = c0s.real * mx.b + c0s.imag * mx.d + 1 * mx.f
+        segments[q, 1] = reals + 1j * imags
+        c1s = segments[q, 3]
+        reals = c1s.real * mx.a + c1s.imag * mx.c + 1 * mx.e
+        imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
+        segments[q, 3] = reals + 1j * imags
 
     def translate(self, dx, dy):
         """
@@ -303,12 +300,14 @@ class Geometry:
         @param dy: change in y
         @return:
         """
-        self.segments[: self.index, 0] += complex(dx, dy)
-        self.segments[: self.index, 4] += complex(dx, dy)
-        types = self.segments[: self.index, 2]
-        q = np.where(types.astype(int) not in (TYPE_LINE, TYPE_POINT, TYPE_END, TYPE_VERTEX))
-        self.segments[q, 1] += complex(dx, dy)
-        self.segments[q, 3] += complex(dx, dy)
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        segments[: index, 0] += complex(dx, dy)
+        segments[: index, 4] += complex(dx, dy)
+        infos = segments[: index, 2]
+        q = np.where(infos.astype(int) & 0b0110)
+        segments[q, 1] += complex(dx, dy)
+        segments[q, 3] += complex(dx, dy)
 
     def uscale(self, scale):
         """
@@ -317,12 +316,14 @@ class Geometry:
         @param scale: uniform scaling factor
         @return:
         """
-        self.segments[: self.index, 0] *= scale
-        self.segments[: self.index, 4] *= scale
-        types = self.segments[: self.index, 2]
-        q = np.where(types.astype(int) not in (TYPE_LINE, TYPE_POINT, TYPE_END, TYPE_VERTEX))
-        self.segments[q, 1] *= scale
-        self.segments[q, 3] *= scale
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        segments[: index, 0] *= scale
+        segments[: index, 4] *= scale
+        infos = segments[: index, 2]
+        q = np.where(infos.astype(int) & 0b0110)
+        segments[q, 1] *= scale
+        segments[q, 3] *= scale
 
     def rotate(self, angle):
         """
@@ -339,42 +340,26 @@ class Geometry:
         @param mx: Conditional matrix operation.
         @return:
         """
-        segments = self.segments[: self.index]
-        nans = np.isnan(segments[:, 0])
-        firsts = segments[~nans, 0]
-        nans = np.isnan(segments[:, 4])
-        lasts = segments[~nans, 4]
-        max_x = max(
-            np.max(np.real(firsts)),
-            np.max(np.real(lasts)),
-        )
-        min_x = min(
-            np.min(np.real(firsts)),
-            np.min(np.real(lasts)),
-        )
-        max_y = max(
-            np.max(np.imag(firsts)),
-            np.max(np.imag(lasts)),
-        )
-        min_y = min(
-            np.min(np.imag(firsts)),
-            np.min(np.imag(lasts)),
-        )
-        if mx is not None:
-            min_x, min_y = (
-                min_x * mx.a + min_y * mx.c + 1 * mx.e,
-                min_x * mx.b + min_y * mx.d + 1 * mx.f,
-            )
-            max_x, max_y = (
-                max_x * mx.a + max_y * mx.c + 1 * mx.e,
-                max_x * mx.b + max_y * mx.d + 1 * mx.f,
-            )
-        return min_x, min_y, max_x, max_y
+        # TODO: Doesn't account for mx
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        min_x, min_y, max_x, max_y = self.geomstr.bbox(segments[0 : index])
+        return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
 
-    def length(self):
-        indexes0 = np.arange(0, self.index)
-        pen_downs = self.segments[indexes0, 0]
-        pen_ups = self.segments[indexes0, -1]
+    def raw_length(self):
+        """
+        Determines the raw length of the geoms. Where length is taken as the distance
+        from start to end (ignoring any curving), real length would be greater than this
+        but never less.
+
+        @return:
+        """
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        infos = segments[: index, 2]
+        q = np.where(infos.astype(int) & 0b1001)
+        pen_downs = segments[q, 0]
+        pen_ups = segments[q, -1]
         return np.sum(np.abs(pen_ups - pen_downs))
 
     def travel_distance(self):
@@ -382,27 +367,17 @@ class Geometry:
         Calculate the total travel distance for this geomstr.
         @return: distance in units for the travel
         """
-        # TODO: Update for NOP start/end points
-        indexes0 = np.arange(0, self.index - 1)
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        infos = segments[: index, 2]
+        q = np.where(infos.astype(int) & 0b1001)
+        valid_segments = segments[q]
+
+        indexes0 = np.arange(0, len(valid_segments) - 1)
         indexes1 = indexes0 + 1
-        pen_ups = self.segments[indexes0, -1]
-        pen_downs = self.segments[indexes1, 0]
+        pen_ups = valid_segments[indexes0, -1]
+        pen_downs = valid_segments[indexes1, 0]
         return np.sum(np.abs(pen_ups - pen_downs))
-
-    def as_subpaths(self):
-        """
-        Generate individual subpaths.
-
-        @return:
-        """
-        types = self.segments[: self.index, 2]
-        q = np.where(types.real == TYPE_END)[0]
-        last = 0
-        for m in q:
-            yield Geomstr(self.segments[last:m])
-            last = m + 1
-        if last != self.index:
-            yield Geomstr(self.segments[last : self.index])
 
     def two_opt_distance(self, max_passes=None):
         """
@@ -410,14 +385,17 @@ class Geometry:
         @param max_passes: Max number of passes to attempt
         @return:
         """
-        self._trim()
+
+        self.geomstr._trim()
+        segments = self.geomstr.segments
+        original = self.geomstr.index
+
         min_value = -1e-10
         current_pass = 0
 
-        indexes0 = np.arange(0, self.index - 1)
+        indexes0 = np.arange(0, original - 1)
         indexes1 = indexes0 + 1
 
-        segments = self.segments
         improved = True
         while improved:
             improved = False
@@ -433,8 +411,8 @@ class Geometry:
                     segments[: index + 1], (0, 1)
                 )  # top to bottom, and right to left flips.
                 improved = True
-            for mid in range(1, self.index - 1):
-                idxs = np.arange(mid, self.index - 1)
+            for mid in range(1, original - 1):
+                idxs = np.arange(mid, original - 1)
 
                 mid_source = segments[mid - 1, -1]
                 mid_dest = segments[mid, 0]
@@ -474,6 +452,9 @@ class Geometry:
         @param other:
         @return:
         """
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+
         intersections = self.find_intersections(other)
         bisectors = {}
 
@@ -483,12 +464,12 @@ class Geometry:
                 bis = []
                 bisectors[s] = bis
             bis.append((xi, yi, s, t, idx))
-        original = self.segments
-        total = self.index + other.index + len(intersections) * 4 + 1
+        original = segments
+        total = index + other.index + len(intersections) * 4 + 1
         new_segments = np.zeros((total, 5), dtype="complex")
 
         itx = 0
-        itx = self._bisect_segments(bisectors, original, self.index, new_segments, itx)
+        itx = self._bisect_segments(bisectors, original, index, new_segments, itx)
         new_segments[itx] = (
             np.nan,
             np.nan,
@@ -507,9 +488,9 @@ class Geometry:
             bis.append((xi, yi, t, s, idx))
         original = other.segments
         itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
-        self.segments = new_segments
-        self.index = itx
-        self.capacity = new_segments.shape[0]
+        self.geomstr.segments = new_segments
+        self.geomstr.index = itx
+        self.geomstr.capacity = new_segments.shape[0]
         return self
 
     def _bisect_segments(self, bisectors, original, index, new_segments, itx):
@@ -568,19 +549,21 @@ class Geometry:
         @param other:
         @return:
         """
+        segments = self.geomstr.segments
+        index = self.geomstr.index
         idx = 0
         intersections = []
-        for s in range(self.index):
-            if int(self.segments[s, 2].real) & 0xFF != TYPE_LINE:
+        for s in range(index):
+            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
                 continue
             for t in range(other.index):
                 if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
                     continue
                 intersect = Geomstr.line_intersect(
-                    self.segments[s, 0].real,
-                    self.segments[s, 0].imag,
-                    self.segments[s, -1].real,
-                    self.segments[s, -1].imag,
+                    segments[s, 0].real,
+                    segments[s, 0].imag,
+                    segments[s, -1].real,
+                    segments[s, -1].imag,
                     other.segments[t, 0].real,
                     other.segments[t, 0].imag,
                     other.segments[t, -1].real,
@@ -599,7 +582,10 @@ class Geometry:
         The wait and dwell segments generate x, y, with a negative power (consisting of the wait time)
         @return:
         """
-        for segment in self.segments[0 : self.index]:
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+
+        for segment in segments[0 : index]:
             start = segment[0]
             c0 = segment[1]
             segpow = segment[2]
@@ -678,6 +664,13 @@ class Geomstr:
         """
         return self.index
 
+    @property
+    def geometry(self):
+        """
+        return geometry class for the geomstr object.
+        """
+        return Geometry(self)
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
@@ -711,9 +704,9 @@ class Geomstr:
         @return:
         """
         if a is None:
-            a = np.nan
+            a = 0
         if b is None:
-            b = np.nan
+            b = 0
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
             start,
@@ -791,9 +784,9 @@ class Geomstr:
         @return:
         """
         if a is None:
-            a = np.nan
+            a = 0
         if b is None:
-            b = np.nan
+            b = 0
         self._ensure_capacity(self.index + 1)
         self.segments[self.index] = (
             position,
@@ -1037,7 +1030,12 @@ class Geomstr:
         cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
         return complex(cx, cy)
 
-    def segment_bbox(self, e):
+    def bbox(self, e):
+        if isinstance(e, np.ndarray):
+            bboxes = np.zeros((4, len(e)), dtype=float)
+            for i in range(len(e)):
+                bboxes[:,i] = self.bbox(i)
+            return bboxes
         line = self.segments[e]
         if line[2].real == TYPE_LINE:
             return (
@@ -1342,6 +1340,20 @@ class Geomstr:
             low = self.segment_end_with_min_y(e)
             return low.real
         return (y - b) / m
+
+    def as_subpaths(self):
+        """
+        Generate individual subpaths.
+        @return:
+        """
+        types = self.segments[: self.index, 2]
+        q = np.where(types.real == TYPE_END)[0]
+        last = 0
+        for m in q:
+            yield Geomstr(self.segments[last:m])
+            last = m + 1
+        if last != self.index:
+            yield Geomstr(self.segments[last : self.index])
 
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
