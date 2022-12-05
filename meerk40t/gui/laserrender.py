@@ -305,7 +305,7 @@ class LaserRender:
                 c1 = e[3]
                 end = e[4]
 
-                if seg_type in (TYPE_LINE, TYPE_RAMP):
+                if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
