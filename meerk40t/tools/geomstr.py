@@ -1161,13 +1161,79 @@ class Geomstr:
         @param e:
         @return:
         """
-        start, control1, info, control2, end = self.segments[e]
+        line = self.segments[e]
+        start, control1, info, control2, end = line
         if info.real == TYPE_LINE:
             return abs(start - end)
         if info.real == TYPE_QUAD:
-            pass
+            a = start - 2 * control1 + end
+            b = 2 * (control1 - start)
+            try:
+                # For an explanation of this case, see
+                # http://www.malczak.info/blog/quadratic-bezier-curve-length/
+                A = 4 * (a.real * a.real + a.imag * a.imag)
+                B = 4 * (a.real * b.real + a.imag * b.imag)
+                C = b.real * b.real + b.imag * b.imag
+
+                Sabc = 2 * sqrt(A + B + C)
+                A2 = sqrt(A)
+                A32 = 2 * A * A2
+                C2 = 2 * sqrt(C)
+                BA = B / A2
+
+                s = (
+                    A32 * Sabc
+                    + A2 * B * (Sabc - C2)
+                    + (4 * C * A - B * B) * log((2 * A2 + BA + Sabc) / (BA + C2))
+                ) / (4 * A32)
+            except (ZeroDivisionError, ValueError):
+                # a_dot_b = a.real * b.real + a.imag * b.imag
+                if abs(a) < 1e-10:
+                    s = abs(b)
+                else:
+                    k = abs(b) / abs(a)
+                    if k >= 2:
+                        s = abs(b) - abs(a)
+                    else:
+                        s = abs(a) * (k * k / 2 - k + 1)
+            return s
         if info.real == TYPE_CUBIC:
-            pass
+            try:
+                return self._cubic_length_quad(line)
+            except:
+                # Absolute fallback
+                pass
+            positions = self._cubic_position(line, np.linspace(0, 1))
+            positions = positions[0] + positions[1] * 1j
+            q = np.arange(0, len(positions) - 1)
+            pen_downs = positions[q]  # values 0-49
+            pen_ups = positions[q + 1]  # values 1-50
+            return np.sum(np.abs(pen_ups - pen_downs))
+
+    def _cubic_length_quad(self, line):
+        """
+        If we have scipy.integrate availible, use quad from that to solve this.
+
+        @param line:
+        @return:
+        """
+        from scipy.integrate import quad
+
+        start, control1, info, control2, end = line
+
+        p0 = start
+        p1 = control1
+        p2 = control2
+        p3 = end
+
+        def _abs_derivative(t):
+            return abs(
+                3 * (p1 - p0) * (1 - t) ** 2
+                + 6 * (p2 - p1) * (1 - t) * t
+                + 3 * (p3 - p2) * t**2
+            )
+
+        return quad(_abs_derivative, 0.0, 1.0, epsabs=1e-12, limit=1000)[0]
 
     def split(self, e, t):
         """
