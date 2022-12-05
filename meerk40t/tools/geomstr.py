@@ -1280,7 +1280,9 @@ class Geomstr:
                 # the limit.
                 # Note: limit{{dseg / abs(dseg)} = sqrt(limit{dseg**2 / abs(dseg)**2})
                 dseg_poly = self.poly(e).deriv()
-                dseg_abs_squared_poly = self._real(dseg_poly) ** 2 + self._imag(dseg_poly) ** 2
+                dseg_abs_squared_poly = (
+                    self._real(dseg_poly) ** 2 + self._imag(dseg_poly) ** 2
+                )
                 try:
                     unit_tangent = np.sqrt(
                         self._rational_limit(dseg_poly**2, dseg_abs_squared_poly, t)
@@ -1335,6 +1337,30 @@ class Geomstr:
         start, control1, info, control2, end = self.segments[e]
         if info.real == TYPE_LINE:
             return 0
+        if info.real in (TYPE_QUAD, TYPE_CUBIC, TYPE_ARC):
+            dz = self.derivative(e, t)
+            ddz = self.derivative(e, t, n=2)
+            dx, dy = dz.real, dz.imag
+            ddx, ddy = ddz.real, ddz.imag
+            old_np_seterr = np.seterr(invalid="raise")
+            try:
+                kappa = abs(dx * ddy - dy * ddx) / sqrt(dx * dx + dy * dy) ** 3
+            except (ZeroDivisionError, FloatingPointError):
+                # tangent vector is zero at t, use polytools to find limit
+                p = self.poly(e)
+                dp = p.deriv()
+                ddp = dp.deriv()
+                dx, dy = self._real(dp), self._imag(dp)
+                ddx, ddy = self._real(ddp), self._imag(ddp)
+                f2 = (dx * ddy - dy * ddx) ** 2
+                g2 = (dx * dx + dy * dy) ** 3
+                lim2 = self._rational_limit(f2, g2, t)
+                if lim2 < 0:  # impossible, must be numerical error
+                    return 0
+                kappa = np.sqrt(lim2)
+            finally:
+                np.seterr(**old_np_seterr)
+            return kappa
 
     def _line_coeffs(self, p):
         return [p[4] - p[0], p[0]]
