@@ -279,131 +279,6 @@ class Geomstr:
         """
         return self.index
 
-    def merge(self, other):
-        """
-        Merge other geomstr with this geomstr. Intersections meet at vertices.
-        @param other:
-        @return:
-        """
-        intersections = self.find_intersections(other)
-        bisectors = {}
-
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(s)
-            if bis is None:
-                bis = []
-                bisectors[s] = bis
-            bis.append((xi, yi, s, t, idx))
-        original = self.segments
-        total = self.index + other.index + len(intersections) * 4 + 1
-        new_segments = np.zeros((total, 5), dtype="complex")
-
-        itx = 0
-        itx = self._bisect_segments(bisectors, original, self.index, new_segments, itx)
-        new_segments[itx] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_END, -1),
-            np.nan,
-            np.nan,
-        )
-        itx += 1
-
-        bisectors = {}
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(t)
-            if bis is None:
-                bis = []
-                bisectors[t] = bis
-            bis.append((xi, yi, t, s, idx))
-        original = other.segments
-        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
-        self.segments = new_segments
-        self.index = itx
-        self.capacity = new_segments.shape[0]
-        return self
-
-    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
-        def bisector_sort(e):
-            """Sort by edge index, and distance from start."""
-            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
-
-        for seg in range(index):
-            bisector = bisectors.get(seg)
-            if bisector is None:
-                # Not bisected, copy over.
-                new_segments[itx] = original[seg]
-                itx += 1
-                continue
-            bisector.sort(key=bisector_sort)
-
-            start = original[seg, 0]
-            settype = original[seg, 2]
-            for xi, yi, si, ti, idx in bisector:
-                end = complex(xi, yi)
-
-                new_segments[itx] = (
-                    start,
-                    start,
-                    settype,
-                    end,
-                    end,
-                )
-                itx += 1
-
-                new_segments[itx] = (
-                    np.nan,
-                    np.nan,
-                    complex(TYPE_VERTEX, idx),
-                    np.nan,
-                    np.nan,
-                )
-                itx += 1
-
-                start = end
-            end = original[seg, -1]
-            new_segments[itx] = (
-                start,
-                start,
-                settype,
-                end,
-                end,
-            )
-            itx += 1
-        return itx
-
-    def find_intersections(self, other):
-        """
-        Finds intersections between line types through brute force.
-
-        @param other:
-        @return:
-        """
-        idx = 0
-        intersections = []
-        for s in range(self.index):
-            if int(self.segments[s, 2].real) & 0xFF != TYPE_LINE:
-                continue
-            for t in range(other.index):
-                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
-                    continue
-                intersect = Geomstr.line_intersect(
-                    self.segments[s, 0].real,
-                    self.segments[s, 0].imag,
-                    self.segments[s, -1].real,
-                    self.segments[s, -1].imag,
-                    other.segments[t, 0].real,
-                    other.segments[t, 0].imag,
-                    other.segments[t, -1].real,
-                    other.segments[t, -1].imag,
-                )
-                if not intersect:
-                    continue
-                xi, yi = intersect
-                intersections.append((xi, yi, s, t, idx))
-                idx += 1
-        return intersections
-
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
@@ -426,6 +301,153 @@ class Geomstr:
         @return:
         """
         self._settings[key] = settings
+
+
+    def polyline(self, points, settings=0):
+        """
+        Add a series of polyline points
+        @param points:
+        @param settings:
+        @return:
+        """
+        for i in range(1, len(points)):
+            self.line(points[i - 1], points[i], settings=settings)
+
+    def line(self, start, end, settings=0, a=None, b=None):
+        """
+        Add a line between start and end points at the given settings level
+
+        @param start: complex: start point
+        @param end: complex: end point
+        @param settings: settings level to assign this particular line.
+        @return:
+        """
+        if a is None:
+            a = np.nan
+        if b is None:
+            b = np.nan
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            start,
+            a,
+            complex(TYPE_LINE, settings),
+            b,
+            end,
+        )
+        self.index += 1
+
+    def quad(self, start, control, end, settings=0):
+        """
+        Add a quadratic bezier curve.
+        @param start: (complex) start point
+        @param control: (complex) control point
+        @param end: (complex) end point
+        @param settings: optional settings level for the quadratic bezier curve
+        @return:
+        """
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            start,
+            control,
+            complex(TYPE_QUAD, settings),
+            control,
+            end,
+        )
+        self.index += 1
+
+    def cubic(self, start, control0, control1, end, settings=0):
+        """
+        Add in a cubic bezier curve
+        @param start: (complex) start point
+        @param control0: (complex) first control point
+        @param control1: (complex) second control point
+        @param end: (complex) end point
+        @param settings: optional settings level for the cubic bezier curve
+        @return:
+        """
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            start,
+            control0,
+            complex(TYPE_CUBIC, settings),
+            control1,
+            end,
+        )
+        self.index += 1
+
+    def arc(self, start, control, end, settings=0):
+        """
+        Add in a circular arc curve
+        @param start: (complex) start point
+        @param control:(complex) control point
+        @param end: (complex) end point
+        @param settings: optional settings level for the arc
+        @return:
+        """
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            start,
+            control,
+            complex(TYPE_ARC, settings),
+            control,
+            end,
+        )
+        self.index += 1
+
+    def point(self, position, settings=0, a=None, b=None):
+        """
+        Add in point 1D geometry object.
+
+        @param position: Position at which add point
+        @param settings: optional settings level for the point
+        @return:
+        """
+        if a is None:
+            a = np.nan
+        if b is None:
+            b = np.nan
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            position,
+            a,
+            complex(TYPE_POINT, settings),
+            b,
+            position,
+        )
+        self.index += 1
+
+    def end(self, settings=0):
+        """
+        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
+        @param settings: Unused settings value for break.
+        @return:
+        """
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_END, settings),
+            np.nan,
+            np.nan,
+        )
+        self.index += 1
+
+    def vertex(self, vertex=0):
+        """
+        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
+        @param settings: Unused settings value for break.
+        @return:
+        """
+        self._ensure_capacity(self.index + 1)
+        self.segments[self.index] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_VERTEX, vertex),
+            np.nan,
+            np.nan,
+        )
+        self.index += 1
+
 
     @property
     def first_point(self):
@@ -933,163 +955,6 @@ class Geomstr:
         if start_segment != end_segment:
             self.line(end_segment, start_segment, settings=settings)
 
-    def polyline(self, points, settings=0):
-        """
-        Add a series of polyline points
-        @param points:
-        @param settings:
-        @return:
-        """
-        for i in range(1, len(points)):
-            self.line(points[i - 1], points[i], settings=settings)
-
-    def line(self, start, end, settings=0):
-        """
-        Add a line between start and end points at the given settings level
-
-        @param start: complex: start point
-        @param end: complex: end point
-        @param settings: settings level to assign this particular line.
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            start,
-            start,
-            complex(TYPE_LINE, settings),
-            end,
-            end,
-        )
-        self.index += 1
-
-    def quad(self, start, control, end, settings=0):
-        """
-        Add a quadratic bezier curve.
-        @param start: (complex) start point
-        @param control: (complex) control point
-        @param end: (complex) end point
-        @param settings: optional settings level for the quadratic bezier curve
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            start,
-            control,
-            complex(TYPE_QUAD, settings),
-            control,
-            end,
-        )
-        self.index += 1
-
-    def cubic(self, start, control0, control1, end, settings=0):
-        """
-        Add in a cubic bezier curve
-        @param start: (complex) start point
-        @param control0: (complex) first control point
-        @param control1: (complex) second control point
-        @param end: (complex) end point
-        @param settings: optional settings level for the cubic bezier curve
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            start,
-            control0,
-            complex(TYPE_CUBIC, settings),
-            control1,
-            end,
-        )
-        self.index += 1
-
-    def arc(self, start, control, end, settings=0):
-        """
-        Add in a circular arc curve
-        @param start: (complex) start point
-        @param control:(complex) control point
-        @param end: (complex) end point
-        @param settings: optional settings level for the arc
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            start,
-            control,
-            complex(TYPE_ARC, settings),
-            control,
-            end,
-        )
-        self.index += 1
-
-    def point(self, position, settings=0):
-        """
-        Add in point 1D geometry object.
-
-        @param position: Position at which add point
-        @param settings: optional settings level for the point
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            position,
-            position,
-            complex(TYPE_POINT, settings),
-            position,
-            position,
-        )
-        self.index += 1
-
-    def ramp(self, start, end, settings_start=0.0, settings_end=0):
-        """
-        settings ramping line.
-
-        @param start: (complex) start point
-        @param end: (complex) end point
-        @param settings_start: starting settings
-        @param settings_end: ending settings
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            start,
-            settings_start,
-            complex(TYPE_RAMP, 1),
-            settings_end,
-            end,
-        )
-        self.index += 1
-
-    def end(self, settings=0):
-        """
-        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
-        @param settings: Unused settings value for break.
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_END, settings),
-            np.nan,
-            np.nan,
-        )
-        self.index += 1
-
-    def vertex(self, vertex=0):
-        """
-        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
-        @param settings: Unused settings value for break.
-        @return:
-        """
-        self._ensure_capacity(self.index + 1)
-        self.segments[self.index] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_VERTEX, vertex),
-            np.nan,
-            np.nan,
-        )
-        self.index += 1
-
     def length(self):
         indexes0 = np.arange(0, self.index)
         pen_downs = self.segments[indexes0, 0]
@@ -1186,6 +1051,131 @@ class Geomstr:
             if max_passes and current_pass >= max_passes:
                 break
             current_pass += 1
+
+    def merge(self, other):
+        """
+        Merge other geomstr with this geomstr. Intersections meet at vertices.
+        @param other:
+        @return:
+        """
+        intersections = self.find_intersections(other)
+        bisectors = {}
+
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(s)
+            if bis is None:
+                bis = []
+                bisectors[s] = bis
+            bis.append((xi, yi, s, t, idx))
+        original = self.segments
+        total = self.index + other.index + len(intersections) * 4 + 1
+        new_segments = np.zeros((total, 5), dtype="complex")
+
+        itx = 0
+        itx = self._bisect_segments(bisectors, original, self.index, new_segments, itx)
+        new_segments[itx] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_END, -1),
+            np.nan,
+            np.nan,
+        )
+        itx += 1
+
+        bisectors = {}
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(t)
+            if bis is None:
+                bis = []
+                bisectors[t] = bis
+            bis.append((xi, yi, t, s, idx))
+        original = other.segments
+        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
+        self.segments = new_segments
+        self.index = itx
+        self.capacity = new_segments.shape[0]
+        return self
+
+    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
+        def bisector_sort(e):
+            """Sort by edge index, and distance from start."""
+            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
+
+        for seg in range(index):
+            bisector = bisectors.get(seg)
+            if bisector is None:
+                # Not bisected, copy over.
+                new_segments[itx] = original[seg]
+                itx += 1
+                continue
+            bisector.sort(key=bisector_sort)
+
+            start = original[seg, 0]
+            settype = original[seg, 2]
+            for xi, yi, si, ti, idx in bisector:
+                end = complex(xi, yi)
+
+                new_segments[itx] = (
+                    start,
+                    start,
+                    settype,
+                    end,
+                    end,
+                )
+                itx += 1
+
+                new_segments[itx] = (
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_VERTEX, idx),
+                    np.nan,
+                    np.nan,
+                )
+                itx += 1
+
+                start = end
+            end = original[seg, -1]
+            new_segments[itx] = (
+                start,
+                start,
+                settype,
+                end,
+                end,
+            )
+            itx += 1
+        return itx
+
+    def find_intersections(self, other):
+        """
+        Finds intersections between line types through brute force.
+
+        @param other:
+        @return:
+        """
+        idx = 0
+        intersections = []
+        for s in range(self.index):
+            if int(self.segments[s, 2].real) & 0xFF != TYPE_LINE:
+                continue
+            for t in range(other.index):
+                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
+                    continue
+                intersect = Geomstr.line_intersect(
+                    self.segments[s, 0].real,
+                    self.segments[s, 0].imag,
+                    self.segments[s, -1].real,
+                    self.segments[s, -1].imag,
+                    other.segments[t, 0].real,
+                    other.segments[t, 0].imag,
+                    other.segments[t, -1].real,
+                    other.segments[t, -1].imag,
+                )
+                if not intersect:
+                    continue
+                xi, yi = intersect
+                intersections.append((xi, yi, s, t, idx))
+                idx += 1
+        return intersections
 
     def generator(self):
         """
