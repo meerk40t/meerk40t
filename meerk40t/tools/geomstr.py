@@ -58,15 +58,16 @@ collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
 """
 
-TYPE_NOP = 0
+# Note lower nibble is which indexes are positions (except info index)
+TYPE_NOP = 0 | 0b000
 TYPE_POINT = 0x10 | 0b1001
 TYPE_LINE = 0x20 | 0b1001
 TYPE_QUAD = 0x30 | 0b1111
 TYPE_CUBIC = 0x40 | 0b1111
 TYPE_ARC = 0x50 | 0b1111
 
-TYPE_VERTEX = 0x79
-TYPE_END = 0x80
+TYPE_VERTEX = 0x70 | 0b0000
+TYPE_END = 0x80 | 0b0000
 
 
 class Scanbeam:
@@ -243,6 +244,7 @@ class Scanbeam:
         else:
             self._low = -float("inf")
 
+
 class Geometry:
     """
     Total geomstr functions
@@ -261,7 +263,6 @@ class Geometry:
     @property
     def capacity(self):
         return self.geomstr.capacity
-
 
     def transform(self, mx):
         """
@@ -694,6 +695,10 @@ class Geomstr:
         """
         self._settings[key] = settings
 
+    #######################
+    # Geometric Primatives
+    #######################
+
     def line(self, start, end, settings=0, a=None, b=None):
         """
         Add a line between start and end points at the given settings level
@@ -853,6 +858,10 @@ class Geomstr:
         if start_segment != end_segment:
             self.line(end_segment, start_segment, settings=settings)
 
+    #######################
+    # Geometric Helpers
+    #######################
+
     def polyline(self, points, settings=0):
         """
         Add a series of polyline points
@@ -862,6 +871,10 @@ class Geomstr:
         """
         for i in range(1, len(points)):
             self.line(points[i - 1], points[i], settings=settings)
+
+    #######################
+    # Query Properties
+    #######################
 
     @property
     def first_point(self):
@@ -973,6 +986,182 @@ class Geomstr:
     #         array.extend([0.0] * (sizeRequired - len(array)))
     #     return array
 
+    #######################
+    # Universal Functions
+    #######################
+
+    def bbox(self, e):
+        """
+        Get the bounds of the given geom primitive
+
+        @param e:
+        @return:
+        """
+        if isinstance(e, np.ndarray):
+            bboxes = np.zeros((4, len(e)), dtype=float)
+            for i in range(len(e)):
+                bboxes[:,i] = self.bbox(i)
+            return bboxes
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            return (
+                min(line[0].real, line[-1].real),
+                min(line[0].imag, line[-1].imag),
+                max(line[0].real, line[-1].real),
+                max(line[0].imag, line[-1].imag),
+            )
+        elif line[2].real == TYPE_QUAD:
+            local_extremizers = list(self._quad_local_extremes(0, line))
+            extreme_points = self._quad_position(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._quad_local_extremes(1, line))
+            extreme_points = self._quad_position(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
+        elif line[2].real == TYPE_CUBIC:
+            local_extremizers = list(self._cubic_local_extremes(0, line))
+            extreme_points = self._cubic_position(line, local_extremizers)
+            local_extrema = extreme_points[0]
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._cubic_local_extremes(1, line))
+            extreme_points = self._cubic_position(line, local_extremizers)
+            local_extrema = extreme_points[1]
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
+
+    def position(self, e, t):
+        """
+        Get the position t [0-1] within the geom.
+
+        @param e:
+        @param t:
+        @return:
+        """
+        line = self.segments[e]
+        if line[2].real == TYPE_LINE:
+            point = self._line_position(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_QUAD:
+            point = self._quad_position(line, [t])
+            return complex(*point)
+        elif line[2].real == TYPE_CUBIC:
+            point = self._cubic_position(line, [t])
+            return complex(*point)
+
+    def _line_position(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[4].real, line[4].imag
+        return np.interp(positions, [0, 1], [x0, x1]), np.interp(
+            positions, [0, 1], [y0, y1]
+        )
+
+    def _quad_position(self, line, positions):
+        """Calculate the x,y position at a certain position of the path. `pos` may be a
+        float or a NumPy array."""
+
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        # line[3] is identical to line[1]
+        x2, y2 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            n_pos = 1 - position
+            pos_2 = position * position
+            n_pos_2 = n_pos * n_pos
+            n_pos_pos = n_pos * position
+
+            return (
+                n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
+                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _quad_local_extremes(self, v, e):
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[4].imag
+
+        n = a[0] - a[1]
+        d = a[0] - 2 * a[1] + a[2]
+        if d != 0:
+            t = n / float(d)
+            if 0 < t < 1:
+                yield t
+        else:
+            yield 0.5
+
+    def _cubic_position(self, line, positions):
+        x0, y0 = line[0].real, line[0].imag
+        x1, y1 = line[1].real, line[1].imag
+        x2, y2 = line[3].real, line[3].imag
+        x3, y3 = line[4].real, line[4].imag
+
+        def _compute_point(position):
+            # compute factors
+            pos_3 = position * position * position
+            n_pos = 1 - position
+            n_pos_3 = n_pos * n_pos * n_pos
+            pos_2_n_pos = position * position * n_pos
+            n_pos_2_pos = n_pos * n_pos * position
+            return (
+                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
+                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3,
+            )
+
+        return _compute_point(np.array(positions))
+
+    def _cubic_local_extremes(self, v, e):
+        """
+        returns the extreme t values for a cubic bezier curve, with a non-zero denom
+        """
+        yield 0
+        yield 1
+        if v == 0:
+            a = e[0].real, e[1].real, e[3].real, e[4].real
+        else:
+            a = e[0].imag, e[1].imag, e[3].imag, e[4].imag
+
+        denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
+        if abs(denom) >= 1e-12:
+            delta = (
+                a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
+            )
+            if delta >= 0:  # otherwise no local extrema
+                sqdelta = math.sqrt(delta)
+                tau = a[0] - 2 * a[1] + a[2]
+                r1 = (tau + sqdelta) / denom
+                r2 = (tau - sqdelta) / denom
+                if 0 < r1 < 1:
+                    yield r1
+                if 0 < r2 < 1:
+                    yield r2
+        else:
+            yield 0.5
+
+
+    #######################
+    # Geom Tranformations
+    #######################
+
+    #######################
+    # Arc Functions
+    #######################
+
     def arc_radius(self, e):
         line = self.segments[e]
         start = line[0]
@@ -1030,157 +1219,23 @@ class Geomstr:
         cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
         return complex(cx, cy)
 
-    def bbox(self, e):
-        if isinstance(e, np.ndarray):
-            bboxes = np.zeros((4, len(e)), dtype=float)
-            for i in range(len(e)):
-                bboxes[:,i] = self.bbox(i)
-            return bboxes
-        line = self.segments[e]
-        if line[2].real == TYPE_LINE:
-            return (
-                min(line[0].real, line[-1].real),
-                min(line[0].imag, line[-1].imag),
-                max(line[0].real, line[-1].real),
-                max(line[0].imag, line[-1].imag),
-            )
-        elif line[2].real == TYPE_QUAD:
-            local_extremizers = list(self._quad_local_extremes(0, line))
-            extreme_points = self._quad_point(line, local_extremizers)
-            local_extrema = extreme_points[0]
-            xmin = min(local_extrema)
-            xmax = max(local_extrema)
 
-            local_extremizers = list(self._quad_local_extremes(1, line))
-            extreme_points = self._quad_point(line, local_extremizers)
-            local_extrema = extreme_points[1]
-            ymin = min(local_extrema)
-            ymax = max(local_extrema)
-
-            return xmin, ymin, xmax, ymax
-        elif line[2].real == TYPE_CUBIC:
-            local_extremizers = list(self._cubic_local_extremes(0, line))
-            extreme_points = self._cubic_point(line, local_extremizers)
-            local_extrema = extreme_points[0]
-            xmin = min(local_extrema)
-            xmax = max(local_extrema)
-
-            local_extremizers = list(self._cubic_local_extremes(1, line))
-            extreme_points = self._cubic_point(line, local_extremizers)
-            local_extrema = extreme_points[1]
-            ymin = min(local_extrema)
-            ymax = max(local_extrema)
-
-            return xmin, ymin, xmax, ymax
-
-    def segment_point(self, e, t):
-        line = self.segments[e]
-        if line[2].real == TYPE_LINE:
-            point = self._line_point(line, [t])
-            return complex(*point)
-        elif line[2].real == TYPE_QUAD:
-            point = self._quad_point(line, [t])
-            return complex(*point)
-        elif line[2].real == TYPE_CUBIC:
-            point = self._cubic_point(line, [t])
-            return complex(*point)
-
-    def _line_point(self, line, positions):
-        x0, y0 = line[0].real, line[0].imag
-        x1, y1 = line[4].real, line[4].imag
-        return np.interp(positions, [0, 1], [x0, x1]), np.interp(
-            positions, [0, 1], [y0, y1]
-        )
-
-    def _quad_point(self, line, positions):
-        """Calculate the x,y position at a certain position of the path. `pos` may be a
-        float or a NumPy array."""
-
-        x0, y0 = line[0].real, line[0].imag
-        x1, y1 = line[1].real, line[1].imag
-        # line[3] is identical to line[1]
-        x2, y2 = line[4].real, line[4].imag
-
-        def _compute_point(position):
-            # compute factors
-            n_pos = 1 - position
-            pos_2 = position * position
-            n_pos_2 = n_pos * n_pos
-            n_pos_pos = n_pos * position
-
-            return (
-                n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
-                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2,
-            )
-
-        return _compute_point(np.array(positions))
-
-    def _quad_local_extremes(self, v, e):
-        yield 0
-        yield 1
-        if v == 0:
-            a = e[0].real, e[1].real, e[4].real
-        else:
-            a = e[0].imag, e[1].imag, e[4].imag
-
-        n = a[0] - a[1]
-        d = a[0] - 2 * a[1] + a[2]
-        if d != 0:
-            t = n / float(d)
-            if 0 < t < 1:
-                yield t
-        else:
-            yield 0.5
-
-    def _cubic_point(self, line, positions):
-        x0, y0 = line[0].real, line[0].imag
-        x1, y1 = line[1].real, line[1].imag
-        x2, y2 = line[3].real, line[3].imag
-        x3, y3 = line[4].real, line[4].imag
-
-        def _compute_point(position):
-            # compute factors
-            pos_3 = position * position * position
-            n_pos = 1 - position
-            n_pos_3 = n_pos * n_pos * n_pos
-            pos_2_n_pos = position * position * n_pos
-            n_pos_2_pos = n_pos * n_pos * position
-            return (
-                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
-                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3,
-            )
-
-        return _compute_point(np.array(positions))
-
-    def _cubic_local_extremes(self, v, e):
-        """
-        returns the extreme t values for a cubic bezier curve, with a non-zero denom
-        """
-        yield 0
-        yield 1
-        if v == 0:
-            a = e[0].real, e[1].real, e[3].real, e[4].real
-        else:
-            a = e[0].imag, e[1].imag, e[3].imag, e[4].imag
-
-        denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
-        if abs(denom) >= 1e-12:
-            delta = (
-                a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
-            )
-            if delta >= 0:  # otherwise no local extrema
-                sqdelta = math.sqrt(delta)
-                tau = a[0] - 2 * a[1] + a[2]
-                r1 = (tau + sqdelta) / denom
-                r2 = (tau - sqdelta) / denom
-                if 0 < r1 < 1:
-                    yield r1
-                if 0 < r2 < 1:
-                    yield r2
-        else:
-            yield 0.5
+    #######################
+    # Point/Endpoint Functions
+    #######################
 
     def convex_hull(self, pts):
+        """
+        Generate points of the convex hull around the given points.
+
+        If a point refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param pts:
+        @return:
+        """
         if len(pts) == 0:
             return
         points = []
@@ -1209,7 +1264,15 @@ class Geomstr:
                 break
 
     def orientation(self, p, q, r):
-        """Determine the clockwise, linear, or counterclockwise orientation of the given points"""
+        """
+        Determine the clockwise, linear, or counterclockwise orientation of the given
+        points.
+
+        If p, q, r refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+        """
         if isinstance(p, int):
             if p < 0:
                 p = self.segments[~p][-1]
@@ -1236,6 +1299,19 @@ class Geomstr:
             return "ccw"
 
     def polar(self, p, angle, r):
+        """
+        polar position from p at angle and distance r.
+
+        If p refers to a non-point with differing start/end values then ~index
+        refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param p:
+        @param angle:
+        @param r:
+        @return:
+        """
         if isinstance(p, int):
             if p < 0:
                 p = self.segments[~p][-1]
@@ -1246,6 +1322,18 @@ class Geomstr:
         return p + complex(dx, dy)
 
     def reflected(self, p1, p2):
+        """
+        p1 reflected across p2
+
+        If p1 or p2 refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param p1:
+        @param p2:
+        @return:
+        """
         if isinstance(p1, int):
             if p1 < 0:
                 p1 = self.segments[~p1][-1]
@@ -1259,6 +1347,18 @@ class Geomstr:
         return p2 + (p2 - p1)
 
     def angle(self, p1, p2):
+        """
+        Angle from p1 to p2
+
+        If p1 or p2 refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param p1:
+        @param p2:
+        @return:
+        """
         if isinstance(p1, int):
             if p1 < 0:
                 p1 = self.segments[~p1][-1]
@@ -1273,6 +1373,19 @@ class Geomstr:
         return math.atan2(d.imag, d.real)
 
     def towards(self, p1, p2, amount):
+        """
+        Position from p1 towards p2 by amount.
+
+        If p1 or p2 refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param p1:
+        @param p2:
+        @param amount:
+        @return:
+        """
         if isinstance(p1, int):
             if p1 < 0:
                 p1 = self.segments[~p1][-1]
@@ -1286,6 +1399,17 @@ class Geomstr:
         return amount * (p2 - p1) + p1
 
     def distance(self, p1, p2):
+        """
+        Distance between points.
+        If p1 or p2 refers to a non-point with differing start/end values then
+        ~index refers to the endpoint and index refers to the start point.
+
+        Also accepts complex number coordinates, instead of geom endpoint.
+
+        @param p1:
+        @param p2:
+        @return:
+        """
         if isinstance(p1, int):
             if p1 < 0:
                 p1 = self.segments[~p1][-1]
@@ -1298,7 +1422,18 @@ class Geomstr:
                 p2 = self.segments[p2][0]
         return abs(p1 - p2)
 
-    def segment_slope(self, e):
+
+    #######################
+    # Line-Like Functions
+    #######################
+
+    def slope(self, e):
+        """
+        Slope of line between start and end points.
+
+        @param e:
+        @return:
+        """
         line = self.segments[e]
         a = line[0]
         b = line[-1]
@@ -1306,7 +1441,13 @@ class Geomstr:
             return float("inf")
         return (b.imag - a.imag) / (b.real - a.real)
 
-    def segment_intercept(self, e):
+    def y_intercept(self, e):
+        """
+        y_intercept value between start and end points.
+
+        @param e:
+        @return:
+        """
         line = self.segments[e]
         a = line[0]
         b = line[-1]
@@ -1315,7 +1456,13 @@ class Geomstr:
         im = (b.imag - a.imag) / (b.real - a.real)
         return a.imag - (im * a.real)
 
-    def segment_end_with_min_y(self, e):
+    def endpoint_min_y(self, e):
+        """
+        returns which endpoint has a larger value for y.
+
+        @param e:
+        @return:
+        """
         line = self.segments[e]
         a = line[0]
         b = line[-1]
@@ -1324,7 +1471,13 @@ class Geomstr:
         else:
             return b
 
-    def segment_end_with_max_y(self, e):
+    def endpoint_max_y(self, e):
+        """
+        returns which endpoint has a smaller value for y.
+
+        @param e:
+        @return:
+        """
         line = self.segments[e]
         a = line[0]
         b = line[-1]
@@ -1333,17 +1486,60 @@ class Geomstr:
         else:
             return b
 
+    def endpoint_min_x(self, e):
+        """
+        returns which endpoint has a larger value for x.
+
+        @param e:
+        @return:
+        """
+        line = self.segments[e]
+        a = line[0]
+        b = line[-1]
+        if a.real < b.real:
+            return a
+        else:
+            return b
+
+    def endpoint_max_x(self, e):
+        """
+        returns which endpoint has a smaller value for x.
+
+        @param e:
+        @return:
+        """
+        line = self.segments[e]
+        a = line[0]
+        b = line[-1]
+        if a.real > b.real:
+            return a
+        else:
+            return b
+
     def x_intercept(self, e, y):
-        m = self.segment_slope(e)
-        b = self.segment_intercept(e)
+        """
+        Gives the x_intercept of a line at a specific value of y.
+
+        @param e:
+        @param y:
+        @return:
+        """
+        m = self.slope(e)
+        b = self.y_intercept(e)
         if math.isnan(m) or math.isinf(m):
-            low = self.segment_end_with_min_y(e)
+            low = self.endpoint_min_y(e)
             return low.real
         return (y - b) / m
+
+
+    #######################
+    # Geometry Window Functions
+    #######################
 
     def as_subpaths(self):
         """
         Generate individual subpaths.
+
         @return:
         """
         types = self.segments[: self.index, 2]

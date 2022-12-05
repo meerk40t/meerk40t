@@ -245,7 +245,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.line(start, end)
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_quad_point(self):
         for i in range(1000):
@@ -258,7 +258,7 @@ class TestGeomstr(unittest.TestCase):
             path.quad(start, control, end)
 
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_cubic_point(self):
         for i in range(1000):
@@ -272,7 +272,7 @@ class TestGeomstr(unittest.TestCase):
             path.cubic(start, c1, c2, end)
 
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_line_bounds(self):
         for i in range(1000):
