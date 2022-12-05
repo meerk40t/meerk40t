@@ -1283,7 +1283,7 @@ class Geomstr:
                 dseg_abs_squared_poly = self._real(dseg_poly) ** 2 + self._imag(dseg_poly) ** 2
                 try:
                     unit_tangent = np.sqrt(
-                        rational_limit(dseg_poly**2, dseg_abs_squared_poly, t)
+                        self._rational_limit(dseg_poly**2, dseg_abs_squared_poly, t)
                     )
                 except ValueError:
                     bef = self.poly(e).deriv()(t - 1e-4)
@@ -1295,6 +1295,22 @@ class Geomstr:
                     )
                     raise ValueError(mes)
             return unit_tangent
+
+        if info.real == TYPE_ARC:
+            dseg = self.derivative(t)
+            return dseg / abs(dseg)
+
+    def _rational_limit(self, f, g, t0):
+        """Computes the limit of the rational function (f/g)(t)
+        as t approaches t0."""
+        assert isinstance(f, np.poly1d) and isinstance(g, np.poly1d)
+        assert g != np.poly1d([0])
+        if g(t0) != 0:
+            return f(t0) / g(t0)
+        elif f(t0) == 0:
+            return rational_limit(f.deriv(), g.deriv(), t0)
+        else:
+            raise ValueError("Limit does not exist.")
 
     def _real(self, z):
         try:
