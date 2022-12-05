@@ -1,4 +1,5 @@
 import random
+import time
 import unittest
 
 from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE
@@ -273,6 +274,31 @@ class TestGeomstr(unittest.TestCase):
 
             t = random.random()
             self.assertEqual(c.point(t), path.position(0, t))
+
+    def test_geomstr_cubic_length(self):
+        difference = 0
+        t0 = 0
+        t1 = 0
+        for i in range(1000):
+            start = complex(random.random() * 100, random.random() * 100)
+            c1 = complex(random.random() * 100, random.random() * 100)
+            c2 = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = CubicBezier(start, c1, c2, end)
+
+            path = Geomstr()
+            path.cubic(start, c1, c2, end)
+            t = time.time()
+            clen = c.length()
+            t0 += time.time() - t
+
+            t = time.time()
+            plen = path.length(0)
+            t1 += time.time() - t
+            self.assertAlmostEqual(clen, plen, delta=0.1)
+            difference += clen
+            difference -= plen
+        print(f"geomstr cubic length time {t0}. svgelements cubic length time {t1}. total difference {difference}")
 
     def test_geomstr_line_bounds(self):
         for i in range(1000):
