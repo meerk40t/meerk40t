@@ -1433,6 +1433,26 @@ class Geomstr:
             elif n == 3:
                 return 6 * (end - 3 * (p[2] - control1) - start)
             return 0
+        if info.real == TYPE_ARC:
+            # Delta is angular distance of the arc.
+            # Theta is the angle between x-axis and start_point
+            center = self.arc_center(e)
+            theta = self.angle(center, start)
+            sweep = self.arc_sweep(e, center=center)
+            angle = theta + t * sweep
+            r = abs(center-start)
+            k = (self.delta * math.tau / 360) ** n  # ((d/dt)angle)**n
+
+            if n % 4 == 0 and n > 0:
+                return r * cos(angle) + 1j * (r * sin(angle))
+            elif n % 4 == 1:
+                return k * (-r * sin(angle) + 1j * (r * cos(angle)))
+            elif n % 4 == 2:
+                return k * (-r * cos(angle) + 1j * (-r * sin(angle)))
+            elif n % 4 == 3:
+                return k * (r * sin(angle) + 1j * (-r * cos(angle)))
+            else:
+                raise ValueError("n should be a positive integer.")
 
     def intersections(self, e, other_seg):
         line1 = self.segments[e]
