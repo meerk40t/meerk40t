@@ -1199,7 +1199,7 @@ class Geomstr:
             return s
         if info.real == TYPE_CUBIC:
             try:
-                return self._cubic_length_quad(line)
+                return self._cubic_length_via_quad(line)
             except:
                 # Absolute fallback
                 pass
@@ -1210,7 +1210,7 @@ class Geomstr:
             pen_ups = positions[q + 1]  # values 1-50
             return np.sum(np.abs(pen_ups - pen_downs))
 
-    def _cubic_length_quad(self, line):
+    def _cubic_length_via_quad(self, line):
         """
         If we have scipy.integrate availible, use quad from that to solve this.
 
