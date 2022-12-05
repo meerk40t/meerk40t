@@ -1128,7 +1128,7 @@ class Geomstr:
 
     def _cubic_local_extremes(self, v, e):
         """
-        returns the extreme t values for a cubic bezier curve, with a non-zero denom
+        returns the extreme t values for a cubic Bézier curve, with a non-zero denom
         """
         yield 0
         yield 1
@@ -1167,6 +1167,7 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
+
         def transform_point(v):
             line[v] = complex(
                 line[v].real * mx.a + line[v].imag * mx.c + 1 * mx.e,
@@ -1182,7 +1183,7 @@ class Geomstr:
         transform_point(1)
         transform_point(3)
 
-    def translate(self, dx, dy):
+    def translate(self, e, dx, dy):
         """
         Translate the location within the path.
 
@@ -1201,8 +1202,7 @@ class Geomstr:
         line[1] += offset
         line[3] += offset
 
-
-    def uscale(self, scale):
+    def uscale(self, e, scale):
         """
         Uniform scaling operation
 
@@ -1219,14 +1219,14 @@ class Geomstr:
         line[1] *= scale
         line[3] *= scale
 
-    def rotate(self, angle):
+    def rotate(self, e, angle):
         """
         Rotate segments around the origin.
         @param angle: angle in radians
         @return:
         """
         rotation = complex(math.cos(angle), math.sin(angle))
-        self.uscale(rotation)
+        self.uscale(e, rotation)
 
     #######################
     # Arc Functions
