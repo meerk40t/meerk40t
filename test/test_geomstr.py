@@ -279,7 +279,7 @@ class TestGeomstr(unittest.TestCase):
         difference = 0
         t0 = 0
         t1 = 0
-        for i in range(1000):
+        for i in range(50):
             start = complex(random.random() * 100, random.random() * 100)
             c1 = complex(random.random() * 100, random.random() * 100)
             c2 = complex(random.random() * 100, random.random() * 100)
@@ -496,7 +496,7 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_intersect_segments(self):
         path = Geomstr()
-        for i in range(100):
+        for i in range(50):
             t = random.randint(0, 5)
             if t == 0:
                 start = complex(random.random() * 100, random.random() * 100)
