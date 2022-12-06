@@ -1226,16 +1226,16 @@ class Geomstr:
                 B = 4 * (a.real * b.real + a.imag * b.imag)
                 C = b.real * b.real + b.imag * b.imag
 
-                Sabc = 2 * sqrt(A + B + C)
-                A2 = sqrt(A)
+                Sabc = 2 * math.sqrt(A + B + C)
+                A2 = math.sqrt(A)
                 A32 = 2 * A * A2
-                C2 = 2 * sqrt(C)
+                C2 = 2 * math.sqrt(C)
                 BA = B / A2
 
                 s = (
                     A32 * Sabc
                     + A2 * B * (Sabc - C2)
-                    + (4 * C * A - B * B) * log((2 * A2 + BA + Sabc) / (BA + C2))
+                    + (4 * C * A - B * B) * math.log((2 * A2 + BA + Sabc) / (BA + C2))
                 ) / (4 * A32)
             except (ZeroDivisionError, ValueError):
                 # a_dot_b = a.real * b.real + a.imag * b.imag
@@ -1360,7 +1360,7 @@ class Geomstr:
         if g(t0) != 0:
             return f(t0) / g(t0)
         elif f(t0) == 0:
-            return rational_limit(f.deriv(), g.deriv(), t0)
+            return self._rational_limit(f.deriv(), g.deriv(), t0)
         else:
             raise ValueError("Limit does not exist.")
 
@@ -1394,7 +1394,7 @@ class Geomstr:
             ddx, ddy = ddz.real, ddz.imag
             old_np_seterr = np.seterr(invalid="raise")
             try:
-                kappa = abs(dx * ddy - dy * ddx) / sqrt(dx * dx + dy * dy) ** 3
+                kappa = abs(dx * ddy - dy * ddx) / math.sqrt(dx * dx + dy * dy) ** 3
             except (ZeroDivisionError, FloatingPointError):
                 # tangent vector is zero at t, use polytools to find limit
                 p = self.poly(e)
@@ -1451,37 +1451,34 @@ class Geomstr:
         @return:
         """
         line = self.segments[e]
-        start = line[0]
-        control1 = line[1]
-        control2 = line[3]
-        end = line[4]
+        start, control, info, control2, end = line
 
-        if line[2].real == TYPE_LINE:
+        if info.real == TYPE_LINE:
             if n == 1:
                 return end - start
             return 0
 
-        if line[2].real == TYPE_QUAD:
+        if info.real == TYPE_QUAD:
             if n == 1:
-                return 2 * ((control1 - start) * (1 - t) + (end - control1) * t)
+                return 2 * ((control - start) * (1 - t) + (end - control) * t)
             elif n == 2:
-                return 2 * (end - 2 * control1 + start)
+                return 2 * (end - 2 * control + start)
             return 0
 
-        if line[2].real == TYPE_CUBIC:
+        if info.real == TYPE_CUBIC:
             if n == 1:
                 return (
-                    3 * (control1 - start) * (1 - t) ** 2
-                    + 6 * (control2 - control1) * (1 - t) * t
+                    3 * (control - start) * (1 - t) ** 2
+                    + 6 * (control2 - control) * (1 - t) * t
                     + 3 * (end - control2) * t**2
                 )
             elif n == 2:
                 return 6 * (
-                    (1 - t) * (control2 - 2 * control1 + start)
-                    + t * (end - 2 * control2 + control1)
+                    (1 - t) * (control2 - 2 * control + start)
+                    + t * (end - 2 * control2 + control)
                 )
             elif n == 3:
-                return 6 * (end - 3 * (p[2] - control1) - start)
+                return 6 * (end - 3 * (control2 - control) - start)
             return 0
         if info.real == TYPE_ARC:
             # Delta is angular distance of the arc.
@@ -1491,16 +1488,16 @@ class Geomstr:
             sweep = self.arc_sweep(e, center=center)
             angle = theta + t * sweep
             r = abs(center - start)
-            k = (self.delta * math.tau / 360) ** n  # ((d/dt)angle)**n
+            k = (sweep * math.tau / 360) ** n  # ((d/dt)angle)**n
 
             if n % 4 == 0 and n > 0:
-                return r * cos(angle) + 1j * (r * sin(angle))
+                return r * math.cos(angle) + 1j * (r * math.sin(angle))
             elif n % 4 == 1:
-                return k * (-r * sin(angle) + 1j * (r * cos(angle)))
+                return k * (-r * math.sin(angle) + 1j * (r * math.cos(angle)))
             elif n % 4 == 2:
-                return k * (-r * cos(angle) + 1j * (-r * sin(angle)))
+                return k * (-r * math.cos(angle) + 1j * (-r * math.sin(angle)))
             elif n % 4 == 3:
-                return k * (r * sin(angle) + 1j * (-r * cos(angle)))
+                return k * (r * math.sin(angle) + 1j * (-r * math.cos(angle)))
             else:
                 raise ValueError("n should be a positive integer.")
 
