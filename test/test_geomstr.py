@@ -524,8 +524,8 @@ class TestGeomstr(unittest.TestCase):
 
         for j in range(path.index):
             for k in range(path.index):
-                # {path.bbox(j)} {path.bbox(k)}:
-                print(f"{path.segment_type(j)} x {path.segment_type(k)}: {list(path.intersections(j, k))}")
+                q = f"{path.segment_type(j)} x {path.segment_type(k)}: {list(path.intersections(j, k))}"
+                # print(q)
 
     def test_geomstr_merge(self):
         subject = Geomstr()
