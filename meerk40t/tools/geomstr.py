@@ -876,6 +876,27 @@ class Geomstr:
     #######################
     # Query Properties
     #######################
+    def segment_type(self, e=None, line=None):
+        if line is None:
+            line = self.segments[e]
+
+        infor = line[2].real
+        if infor == TYPE_LINE:
+            return "line"
+        if infor == TYPE_QUAD:
+            return "quad"
+        if infor == TYPE_CUBIC:
+            return "cubic"
+        if infor == TYPE_ARC:
+            return "arc"
+        if infor == TYPE_POINT:
+            return "arc"
+        if infor == TYPE_VERTEX:
+            return "vertex"
+        if infor == TYPE_END:
+            return "end"
+        if infor == TYPE_NOP:
+            return "nop"
 
     @property
     def first_point(self):
