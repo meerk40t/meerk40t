@@ -1035,13 +1035,13 @@ class Geomstr:
         elif line[2].real == TYPE_QUAD:
             local_extremizers = list(self._quad_local_extremes(0, line))
             extreme_points = self._quad_position(line, local_extremizers)
-            local_extrema = extreme_points[0]
+            local_extrema = extreme_points.real
             xmin = min(local_extrema)
             xmax = max(local_extrema)
 
             local_extremizers = list(self._quad_local_extremes(1, line))
             extreme_points = self._quad_position(line, local_extremizers)
-            local_extrema = extreme_points[1]
+            local_extrema = extreme_points.imag
             ymin = min(local_extrema)
             ymax = max(local_extrema)
 
@@ -1049,13 +1049,13 @@ class Geomstr:
         elif line[2].real == TYPE_CUBIC:
             local_extremizers = list(self._cubic_local_extremes(0, line))
             extreme_points = self._cubic_position(line, local_extremizers)
-            local_extrema = extreme_points[0]
+            local_extrema = extreme_points.real
             xmin = min(local_extrema)
             xmax = max(local_extrema)
 
             local_extremizers = list(self._cubic_local_extremes(1, line))
             extreme_points = self._cubic_position(line, local_extremizers)
-            local_extrema = extreme_points[1]
+            local_extrema = extreme_points.imag
             ymin = min(local_extrema)
             ymax = max(local_extrema)
 
@@ -1079,12 +1079,15 @@ class Geomstr:
         elif line[2].real == TYPE_CUBIC:
             point = self._cubic_position(line, [t])
             return complex(*point)
+        if line[2].real == TYPE_ARC:
+            point = self._arc_position(line, [t])
 
     def _line_position(self, line, positions):
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[4].real, line[4].imag
-        return np.interp(positions, [0, 1], [x0, x1]), np.interp(
-            positions, [0, 1], [y0, y1]
+        return (
+            np.interp(positions, [0, 1], [x0, x1])
+            + np.interp(positions, [0, 1], [y0, y1]) * 1j
         )
 
     def _quad_position(self, line, positions):
@@ -1103,10 +1106,9 @@ class Geomstr:
             n_pos_2 = n_pos * n_pos
             n_pos_pos = n_pos * position
 
-            return (
-                n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2,
-                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2,
-            )
+            return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2) + (
+                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2
+            ) * 1j
 
         return _compute_point(np.array(positions))
 
@@ -1141,9 +1143,10 @@ class Geomstr:
             pos_2_n_pos = position * position * n_pos
             n_pos_2_pos = n_pos * n_pos * position
             return (
-                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3,
-                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3,
-            )
+                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3
+            ) + (
+                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3
+            ) * 1j
 
         return _compute_point(np.array(positions))
 
@@ -1461,7 +1464,7 @@ class Geomstr:
             theta = self.angle(center, start)
             sweep = self.arc_sweep(e, center=center)
             angle = theta + t * sweep
-            r = abs(center-start)
+            r = abs(center - start)
             k = (self.delta * math.tau / 360) ** n  # ((d/dt)angle)**n
 
             if n % 4 == 0 and n > 0:
@@ -1486,13 +1489,13 @@ class Geomstr:
             TYPE_CUBIC,
         ):
             # Fast fail
-            if info.real & 0b0110:
+            if int(info.real) & 0b0110:
                 sa = start.real, control1.real, control2.real, end.real
                 sb = start.imag, control1.imag, control2.imag, end.imag
             else:
                 sa = start.real, end.real
                 sb = start.imag, end.imag
-            if oinfo.real & 0b0110:
+            if int(oinfo.real) & 0b0110:
                 oa = ostart.real, ocontrol1.real, ocontrol2.real, oend.real
                 ob = ostart.imag, ocontrol1.imag, ocontrol2.imag, oend.imag
             else:
@@ -1505,29 +1508,29 @@ class Geomstr:
                 or max(ob) < min(sb)
             ):
                 return  # There can't be any intersections
+        if info.real == TYPE_POINT:
+            return
+        if oinfo.real == TYPE_POINT:
+            return
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:
-                yield from self._line_line_intersection(line1, line2)
+                yield from self._line_line_intersections(line1, line2)
             if oinfo.real == TYPE_QUAD:
-                yield from self._line_quad_intersection(line1, line2)
+                yield from self._line_quad_intersections(line1, line2)
             if oinfo.real == TYPE_CUBIC:
-                yield from self._line_cubic_intersection(line1, line2)
+                yield from self._line_cubic_intersections(line1, line2)
+            return
 
         if info.real == TYPE_QUAD:
             if oinfo.real == TYPE_LINE:
-                yield from self._line_quad_intersection(line2, line1)
-            if oinfo.real == TYPE_QUAD:
-                yield from self._quad_quad_intersection(line1, line2)
-            if oinfo.real == TYPE_CUBIC:
-                yield from self._quad_cubic_intersection(line1, line2)
+                yield from self._line_quad_intersections(line2, line1)
+                return
 
         if info.real == TYPE_CUBIC:
             if oinfo.real == TYPE_LINE:
-                yield from self._line_cubic_intersection(line2, line1)
-            if oinfo.real == TYPE_QUAD:
-                yield from self._quad_cubic_intersection(line2, line1)
-            if oinfo.real == TYPE_CUBIC:
-                yield from self._cubic_cubic_intersection(line1, line2)
+                yield from self._line_cubic_intersections(line2, line1)
+                return
+        yield from self._find_intersections(line1, line2)
 
     def _line_line_intersections(self, line1, line2):
         start, control1, info, control2, end = line1
@@ -1564,6 +1567,8 @@ class Geomstr:
         OUTPUT:
         A list containing the roots of the polynomial.
         NOTE:  This uses np.isclose and np.roots"""
+        from itertools import combinations
+
         roots = np.roots(p)
         if realroots:
             roots = [r.real for r in roots if np.isclose(r.imag, 0)]
@@ -1750,8 +1755,9 @@ class Geomstr:
         center = self.arc_center(e)
         return abs(start - center)
 
-    def arc_center(self, e):
-        line = self.segments[e]
+    def arc_center(self, e=None, line=None):
+        if line is None:
+            line = self.segments[e]
         start = line[0]
         control = line[1]
         end = line[4]
@@ -1801,9 +1807,10 @@ class Geomstr:
         cy = ab_mid.imag - (cx - ab_mid.real) / slope_a
         return complex(cx, cy)
 
-    def arc_sweep(self, e, center=None):
-        line = self.segments[e]
-        start = line, control, info, control2, end = line
+    def arc_sweep(self, e=None, line=None, center=None):
+        if line is None:
+            line = self.segments[e]
+        start, control, info, control2, end = line
         if start == end:
             # If start and end are coincident then our sweep is a full cw circle
             return math.tau
@@ -1815,7 +1822,6 @@ class Geomstr:
         if self.orientation(start, control, end) == "cw":
             return sweep + math.tau
         return sweep
-
 
     #######################
     # Point/Endpoint Functions
