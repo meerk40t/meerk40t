@@ -1255,7 +1255,6 @@ class Geomstr:
                 # Absolute fallback
                 pass
             positions = self._cubic_position(line, np.linspace(0, 1))
-            positions = positions[0] + positions[1] * 1j
             q = np.arange(0, len(positions) - 1)
             pen_downs = positions[q]  # values 0-49
             pen_ups = positions[q + 1]  # values 1-50
