@@ -494,6 +494,39 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], (50, 50, 0, 0, 0))
 
+    def test_geomstr_intersect_segments(self):
+        path = Geomstr()
+        for i in range(100):
+            t = random.randint(0, 5)
+            if t == 0:
+                start = complex(random.random() * 100, random.random() * 100)
+                path.point(start)
+            if t == 1:
+                start = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.line(start, end)
+            if t == 2:
+                start = complex(random.random() * 100, random.random() * 100)
+                control = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.quad(start, control, end)
+            if t == 3:
+                start = complex(random.random() * 100, random.random() * 100)
+                c1 = complex(random.random() * 100, random.random() * 100)
+                c2 = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.cubic(start, c1, c2, end)
+            if t == 4:
+                start = complex(random.random() * 100, random.random() * 100)
+                control = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.arc(start, control, end)
+
+        for j in range(path.index):
+            for k in range(path.index):
+                # {path.bbox(j)} {path.bbox(k)}:
+                print(f"{path.segment_type(j)} x {path.segment_type(k)}: {list(path.intersections(j, k))}")
+
     def test_geomstr_merge(self):
         subject = Geomstr()
         subject.line(complex(0, 20), complex(100, 100))
