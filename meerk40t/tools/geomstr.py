@@ -1178,6 +1178,33 @@ class Geomstr:
         else:
             yield 0.5
 
+    def _arc_position(self, line, positions):
+        start, control1, info, control2, end = line
+
+        xy = np.empty((len(positions), 2), dtype=float)
+        center = self.arc_center(line=line)
+        theta = self.angle(center, start)
+        sweep = self.arc_sweep(line=line, center=center)
+
+        if start == end and sweep == 0:
+            xy[:, 0], xy[:, 1] = start
+        else:
+            t = theta + positions * sweep
+            r = abs(center - start)
+
+            cx = center.real
+            cy = center.imag
+            cos_t = np.cos(t)
+            sin_t = np.sin(t)
+            xy[:, 0] = cx + r * cos_t
+            xy[:, 1] = cy + r * sin_t
+
+            # ensure clean endings
+            xy[positions == 0, :] = list([start.real, start.imag])
+            xy[positions == 1, :] = list([end.real, end.imag])
+
+        return xy
+
     def length(self, e):
         """
         Returns the length of geom e.
