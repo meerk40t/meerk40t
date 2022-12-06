@@ -1689,14 +1689,110 @@ class Geomstr:
                 line_t = xval / line_length
                 yield bez_t, line_t
 
-    def _quad_quad_intersections(self, line1, line2):
-        pass
+    def _get_segment_function(self, infor):
+        if infor == TYPE_LINE:
+            return self._line_position
+        if infor == TYPE_QUAD:
+            return self._quad_position
+        if infor == TYPE_CUBIC:
+            return self._cubic_position
+        if infor == TYPE_ARC:
+            return self._arc_position
 
-    def _quad_cubic_intersections(self, line1, line2):
-        pass
+    def _find_intersections(self, segment1, segment2):
+        fun1 = self._get_segment_function(segment1[2].real)
+        fun2 = self._get_segment_function(segment2[2].real)
 
-    def _cubic_cubic_intersections(self, line1, line2):
-        pass
+        old_np_seterr = np.seterr(divide="ignore", invalid="ignore")
+        try:
+            yield from self._find_intersections_recurse(segment1, segment2, fun1, fun2)
+        finally:
+            np.seterr(**old_np_seterr)
+
+    def _find_intersections_recurse(
+        self,
+        segment1,
+        segment2,
+        segfunction1,
+        segfunction2,
+        iterate=7,
+        step_a=0.01,
+        min_ua=0,
+        max_ua=1,
+        step_b=0.01,
+        min_ub=0,
+        max_ub=1,
+    ):
+        a = np.arange(min_ua, max_ua, step_a)
+        b = np.arange(min_ub, max_ub, step_b)
+        j = segfunction1(segment1, a)
+        k = segfunction2(segment2, b)
+
+        ax1, bx1 = np.meshgrid(np.real(j[:-1]), np.real(k[:-1]))
+        ax2, bx2 = np.meshgrid(np.real(j[1:]), np.real(k[1:]))
+        ay1, by1 = np.meshgrid(np.imag(j[:-1]), np.imag(k[:-1]))
+        ay2, by2 = np.meshgrid(np.imag(j[1:]), np.imag(k[1:]))
+
+        # Note if denom is zero these are parallel lines.
+        denom = (by2 - by1) * (ax2 - ax1) - (bx2 - bx1) * (ay2 - ay1)
+
+        ua = ((bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)) / denom
+        ub = ((ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)) / denom
+        hit = np.dstack((0.0 <= ua, ua <= 1.0, 0.0 <= ub, ub <= 1.0)).all(axis=2)
+        aw = np.argwhere(hit).astype("float")
+        if iterate == 0:
+            ap = min_ua + ua[hit] * step_a
+            bp = min_ub + ub[hit] * step_b
+            aw[:, 0] *= step_a
+            aw[:, 1] *= step_b
+            aw[:, 0] += ap
+            aw[:, 1] += bp
+            for intersection in aw:
+                yield intersection[0], intersection[1]
+        else:
+            for intersection in aw:
+                yield from self._find_intersections_recurse(
+                    segment1,
+                    segment2,
+                    segfunction1,
+                    segfunction2,
+                    iterate=iterate - 1,
+                    step_a=step_a * 0.01,
+                    min_ua=min_ua + intersection[1] * step_a,
+                    max_ua=min_ua + intersection[1] * step_a + step_a,
+                    step_b=step_b * 0.01,
+                    min_ub=min_ub + intersection[0] * step_b,
+                    max_ub=min_ub + intersection[0] * step_b + step_b,
+                )
+
+    def _find_polyline_intersections(self, a, b):
+        """
+        Find all intersections between complex-array polylines a and b
+
+        @param a:
+        @param b:
+        @return:
+        """
+        old_np_seterr = np.seterr(divide="ignore", invalid="ignore")
+        try:
+            ax1, bx1 = np.meshgrid(np.real(a[:-1]), np.real(b[:-1]))
+            ax2, bx2 = np.meshgrid(np.real(a[1:]), np.real(b[1:]))
+            ay1, by1 = np.meshgrid(np.imag(a[:-1]), np.imag(b[:-1]))
+            ay2, by2 = np.meshgrid(np.imag(a[1:]), np.imag(b[1:]))
+
+            # Note if denom is zero these are parallel lines.
+            denom = (by2 - by1) * (ax2 - ax1) - (bx2 - bx1) * (ay2 - ay1)
+
+            ua = ((bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)) / denom
+            ub = ((ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)) / denom
+            hit = np.dstack((0.0 <= ua, ua <= 1.0, 0.0 <= ub, ub <= 1.0)).all(axis=2)
+            ax1 = ax1[hit]
+            ay1 = ay1[hit]
+            x_vals = ax1 + ua[hit] * (ax2[hit] - ax1)
+            y_vals = ay1 + ua[hit] * (ay2[hit] - ay1)
+            return x_vals + y_vals * 1j
+        finally:
+            np.seterr(**old_np_seterr)
 
     #######################
     # Geom Tranformations
