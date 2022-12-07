@@ -123,9 +123,12 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
-        for n in list(node.children):
-            node.insert_sibling(n)
-        node.remove_node()  # Removing group/file node.
+        for e in list(self.elems(emphasized=True)):
+            if e.type not in ("group", "file"):
+                continue
+            for n in list(e.children):
+                e.insert_sibling(n)
+            e.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
     @tree_operation(
@@ -228,20 +231,32 @@ def init_tree(kernel):
     @tree_submenu(_("RasterWizard"))
     @tree_operation(_("Set to None"), node_type="elem image", help="")
     def image_rasterwizard_apply_none(node, **kwargs):
-        node.operations = []
-        node.update(self)
+        firstnode = None
+        for e in list(self.elems(emphasized=True)):
+            if e.type != "elem image":
+                continue
+            e.operations = []
+            e.update(self)
+            if firstnode is None:
+                firstnode = e
         activate = self.kernel.lookup("function/open_property_window_for_node")
-        if activate is not None:
-            activate(node)
-            self.signal("propupdate", node)
+        if activate is not None and firstnode is not None:
+            activate(firstnode)
+            self.signal("propupdate", firstnode)
 
     @tree_submenu(_("RasterWizard"))
     @tree_values("script", values=list(self.match("raster_script", suffix=True)))
     @tree_operation(_("Apply: {script}"), node_type="elem image", help="")
     def image_rasterwizard_apply(node, script=None, **kwargs):
         raster_script = self.lookup(f"raster_script/{script}")
-        node.operations = raster_script
-        node.update(self)
+        firstnode = None
+        for e in list(self.elems(emphasized=True)):
+            if e.type != "elem image":
+                continue
+            e.operations = raster_script
+            e.update(self)
+            if firstnode is None:
+                firstnode = e
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(node)
@@ -250,15 +265,20 @@ def init_tree(kernel):
     def radio_match(node, speed=0, **kwargs):
         return node.speed == float(speed)
 
-    @tree_submenu(_("Speed"))
+    @tree_submenu(_("Speed for Raster-Operation"))
     @tree_radio(radio_match)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
-        node.speed = float(speed)
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            if n.type not in ("op raster", "op image"):
+                continue
+            n.speed = float(speed)
+            data.append(n)
+        self.signal("element_property_reload", data)
 
-    @tree_submenu(_("Speed"))
+    @tree_submenu(_("Speed for Engrave-Operation"))
     @tree_radio(radio_match)
     @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
@@ -267,10 +287,15 @@ def init_tree(kernel):
         help="",
     )
     def set_speed_vector(node, speed=35, **kwargs):
-        node.speed = float(speed)
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            if n.type not in ("op engrave", "op hatch"):
+                continue
+            n.speed = float(speed)
+            data.append(n)
+        self.signal("element_property_reload", data)
 
-    @tree_submenu(_("Speed"))
+    @tree_submenu(_("Speed for Cut-Operation"))
     @tree_radio(radio_match)
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
     @tree_operation(
@@ -279,8 +304,13 @@ def init_tree(kernel):
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
-        node.speed = float(speed)
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            if n.type != "op cut":
+                continue
+            n.speed = float(speed)
+            data.append(n)
+        self.signal("element_property_reload", data)
 
     def radio_match(node, power=0, **kwargs):
         return node.power == float(power)
@@ -294,8 +324,11 @@ def init_tree(kernel):
         help="",
     )
     def set_power(node, power=1000, **kwargs):
-        node.power = float(power)
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            n.power = float(power)
+            data.append(n)
+        self.signal("element_property_reload", data)
 
     def radio_match(node, dpi=100, **kwargs):
         return node.dpi == dpi
@@ -309,8 +342,11 @@ def init_tree(kernel):
         help=_("Change dpi values"),
     )
     def set_step_n(node, dpi=1, **kwargs):
-        node.dpi = dpi
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            n.dpi = dpi
+            data.append(n)
+        self.signal("element_property_reload", data)
 
     def radio_match(node, passvalue=1, **kwargs):
         return (node.passes_custom and passvalue == node.passes) or (
@@ -322,9 +358,12 @@ def init_tree(kernel):
     @tree_iterate("passvalue", 1, 10)
     @tree_operation(_("Passes {passvalue}"), node_type=op_parent_nodes, help="")
     def set_n_passes(node, passvalue=1, **kwargs):
-        node.passes = passvalue
-        node.passes_custom = passvalue != 1
-        self.signal("element_property_reload", node)
+        data = list()
+        for n in list(self.ops(emphasized=True)):
+            n.passes = passvalue
+            n.passes_custom = passvalue != 1
+            data.append(n)
+        self.signal("element_property_reload", data)
 
     # ---- Burn Direction
     def get_direction_values():
@@ -355,8 +394,13 @@ def init_tree(kernel):
         values = get_direction_values()
         for idx, key in enumerate(values):
             if key == raster_direction:
-                node.raster_direction = idx
-                self.signal("element_property_reload", node)
+                data = list()
+                for n in list(self.ops(emphasized=True)):
+                    if n.type not in ("op raster", "op image"):
+                        continue
+                    n.raster_direction = idx
+                    data.append(n)
+                self.signal("element_property_reload", data)
                 break
 
     def get_swing_values():
@@ -384,8 +428,13 @@ def init_tree(kernel):
         values = get_swing_values()
         for idx, key in enumerate(values):
             if key == raster_swing:
-                node.raster_swing = idx
-                self.signal("element_property_reload", node)
+                data = list()
+                for n in list(self.ops(emphasized=True)):
+                    if n.type not in ("op raster", "op image"):
+                        continue
+                    n.raster_swing = idx
+                    data.append(n)
+                self.signal("element_property_reload", data)
                 break
 
     @tree_separator_before()
@@ -1332,7 +1381,7 @@ def init_tree(kernel):
         node_type=elem_group_nodes,
         help=_("Any existing assignment of this element to operations will be removed"),
     )
-    def remove_assignments(node, **kwargs):
+    def remove_assignments(singlenode, **kwargs):
         def rem_node(rnode):
             # recursively remove assignments...
             if rnode.type in ("file", "group"):
@@ -1341,8 +1390,8 @@ def init_tree(kernel):
             else:
                 for ref in list(rnode._references):
                     ref.remove_node()
-
-        rem_node(node)
+        for node in list(self.elems(emphasized=True)):
+            rem_node(node)
         self.signal("tree_changed")
 
     @tree_separator_before()
@@ -1454,17 +1503,22 @@ def init_tree(kernel):
         ),
         help="Adjusts the reference value for a wordlist, ie {name} to {name#+1}",
     )
-    def wlist_plus(node, **kwargs):
-        delta_wordlist = 1
-        if hasattr(node, "text"):
-            node.text = self.wordlist_delta(node.text, delta_wordlist)
-            node.altered()
-            self.signal("element_property_update", [node])
-        elif hasattr(node, "mktext"):
-            node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
-            for property_op in self.kernel.lookup_all("path_updater/.*"):
-                property_op(self.kernel.root, node)
-            self.signal("element_property_update", [node])
+    def wlist_plus(singlenode, **kwargs):
+        data = list()
+        for node in list(self.elems(emphasized=True)):
+            if not has_wordlist(node):
+                continue
+            delta_wordlist = 1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                data.append(node)
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                data.append(node)
+        self.signal("element_property_update", data)
 
     @tree_conditional(lambda node: has_wordlist(node))
     @tree_operation(
@@ -1475,17 +1529,22 @@ def init_tree(kernel):
         ),
         help="Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}",
     )
-    def wlist_minus(node, **kwargs):
-        delta_wordlist = -1
-        if hasattr(node, "text"):
-            node.text = self.wordlist_delta(node.text, delta_wordlist)
-            node.altered()
-            self.signal("element_property_update", [node])
-        elif hasattr(node, "mktext"):
-            node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
-            for property_op in self.kernel.lookup_all("path_updater/.*"):
-                property_op(self.kernel.root, node)
-            self.signal("element_property_update", [node])
+    def wlist_minus(singlenode, **kwargs):
+        data = list()
+        for node in list(self.elems(emphasized=True)):
+            if not has_wordlist(node):
+                continue
+            delta_wordlist = -1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                data.append(node)
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                data.append(node)
+        self.signal("element_property_update", data)
 
     @tree_conditional(lambda node: has_vectorize(node))
     @tree_submenu(_("Outline element(s)..."))
@@ -1530,20 +1589,29 @@ def init_tree(kernel):
         ),
         help="",
     )
-    def convert_to_path(node, **kwargs):
-        oldstuff = []
-        for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
-            if hasattr(node, attrib):
-                oldval = getattr(node, attrib, None)
-                oldstuff.append([attrib, oldval])
-        try:
-            path = node.as_path()
-        except AttributeError:
-            return
-        newnode = node.replace_node(path=path, type="elem path")
-        for item in oldstuff:
-            setattr(newnode, item[0], item[1])
-        newnode.altered()
+    def convert_to_path(singlenode, **kwargs):
+        for node in list(self.elems(emphasized=True)):
+            if not node not in (
+                "elem ellipse",
+                "elem path",
+                "elem polyline",
+                "elem rect",
+                "elem line",
+            ):
+                continue
+            oldstuff = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    oldstuff.append([attrib, oldval])
+            try:
+                path = node.as_path()
+            except AttributeError:
+                return
+            newnode = node.replace_node(path=path, type="elem path")
+            for item in oldstuff:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
 
     @tree_submenu(_("Flip"))
     @tree_separator_before()
@@ -1555,7 +1623,7 @@ def init_tree(kernel):
         help=_("Mirror Horizontally"),
     )
     def mirror_elem(node, **kwargs):
-        bounds = node.bounds
+        bounds = self._emphasized_bounds
         if bounds is None:
             return
         center_x = (bounds[2] + bounds[0]) / 2.0
@@ -1571,7 +1639,7 @@ def init_tree(kernel):
         help=_("Flip Vertically"),
     )
     def flip_elem(node, **kwargs):
-        bounds = node.bounds
+        bounds = self._emphasized_bounds
         if bounds is None:
             return
         center_x = (bounds[2] + bounds[0]) / 2.0
@@ -1590,7 +1658,7 @@ def init_tree(kernel):
     )
     def scale_elem_amount(node, scale, **kwargs):
         scale = 6.0 / float(scale)
-        bounds = node.bounds
+        bounds = self._emphasized_bounds
         if bounds is None:
             return
         center_x = (bounds[2] + bounds[0]) / 2.0
@@ -1635,7 +1703,7 @@ def init_tree(kernel):
     @tree_operation(_("Rotate {angle}°"), node_type=elem_group_nodes, help="")
     def rotate_elem_amount(node, angle, **kwargs):
         turns = float(angle) / 360.0
-        bounds = node.bounds
+        bounds = self._emphasized_bounds
         if bounds is None:
             return
         center_x = (bounds[2] + bounds[0]) / 2.0
