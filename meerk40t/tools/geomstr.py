@@ -1698,7 +1698,7 @@ class Geomstr:
     def _find_intersections(self, segment1, segment2):
         fun1 = self._get_segment_function(segment1[2].real)
         fun2 = self._get_segment_function(segment2[2].real)
-        yield from self.self._find_intersection_main(segment1, segment2, fun1, fun2)
+        yield from self._find_intersection_main(segment1, segment2, fun1, fun2)
 
     def _find_intersection_main(
             self,
@@ -1716,8 +1716,8 @@ class Geomstr:
         b = np.linspace(tb[0], tb[1], num=samples)
         step_a = a[1] - a[0]
         step_b = b[1] - b[0]
-        j = segfunction1(segment1, a)
-        k = segfunction2(segment2, b)
+        j = fun1(segment1, a)
+        k = fun2(segment2, b)
 
         ax1, bx1 = np.meshgrid(np.real(j[:-1]), np.real(k[:-1]))
         ax2, bx2 = np.meshgrid(np.real(j[1:]), np.real(k[1:]))
@@ -1749,9 +1749,11 @@ class Geomstr:
             bt = tb[0] + float(hit[0]) * step_b
             a_fractional = ta_hit[i] * step_a
             b_fractional = tb_hit[i] * step_b
-            yield from find_intersections(
+            yield from self._find_intersection_main(
                 segment1,
                 segment2,
+                fun1,
+                fun2,
                 samples=10,
                 ta=(at, at + step_a, at + a_fractional),
                 tb=(bt, bt + step_b, bt + b_fractional),
@@ -1824,16 +1826,15 @@ class Geomstr:
         @param dy: change in y
         @return:
         """
-        line = self.segments[e]
+        geoms = self.segments[e]
         offset = complex(dx, dy)
-        line[0] += offset
-        line[4] += offset
-
-        if not line[2] & 0x0110:
-            return
-
-        line[1] += offset
-        line[3] += offset
+        geoms[0] += offset
+        geoms[4] += offset
+        infos = geoms[2]
+        q = np.where(infos.astype(int) & 0b0110)
+        geoms = segments[q]
+        geoms[1] += offset
+        geoms[3] += offset
 
     def uscale(self, e, scale):
         """
