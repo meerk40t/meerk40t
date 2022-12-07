@@ -295,18 +295,16 @@ class RasterOpNode(Node, Parameters):
             scanlines = height_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += (
-                scanlines * width_in_inches / speed_in_per_s
-                + height_in_inches / speed_in_per_s
-            )
+            this_len = scanlines * width_in_inches + height_in_inches
+            estimate += this_len / speed_in_per_s
+            # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.raster_direction in (2, 3, 4):
             scanlines = width_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += (
-                scanlines * height_in_inches / speed_in_per_s
-                + width_in_inches / speed_in_per_s
-            )
+            this_len = scanlines * height_in_inches + width_in_inches
+            estimate += this_len / speed_in_per_s
+            # print (f"Vertical scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 

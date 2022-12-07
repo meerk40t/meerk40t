@@ -1,6 +1,5 @@
-from ...tools.rasterplotter import RasterPlotter
-from .cutobject import CutObject
-
+from meerk40t.tools.rasterplotter import RasterPlotter
+from meerk40t.core.cutcode.cutobject import CutObject
 
 class RasterCut(CutObject):
     """
@@ -98,18 +97,44 @@ class RasterCut(CutObject):
         return self.plot.offset_x
 
     def length(self):
+        # a crosshatch will be translated into two passes,
+        # so we have either a clear horizontal or a clear vertical
+        # orientation
+        # Self.scan_x * width in pixel = real width
+        # Overscan is as well in device units
         if self.horizontal:
-            return (
+            result = (
                 self.width * self.height
                 + (2 * self.scan * self.height)
                 + (self.height * self.step_y)
             )
+            scanlines = self.height
+            ss = self.step_y
+            sd = self.width
         else:
-            return (
+            result = (
                 self.width * self.height
                 + (2 * self.scan * self.height)
                 + (self.width * self.step_x)
             )
+            scanlines = self.width
+            sd = self.height
+            ss = self.step_y
+        # The variable name is misleading, if True -> burn in one direction, if False -> burn back and forth
+        if self.bidirectional:
+            scanlines *= 2
+        msc = self.scan
+        myresult = scanlines * (sd * ss + msc)
+        # mm = self.settings.get("native_mm", 39.3701)
+        # iw = self.width * self.step_x / mm
+        # ih = self.height * self.step_y / mm
+        # print (f"Flags: bidir={self.bidirectional}, hor={self.horizontal}")
+        # print (f"Length {'horizontal' if self.horizontal else 'vertical'} Rastercut: Image: {self.width} x {self.height}")
+        # print (f"Supposed dimensions: {iw:.1f}mm x {ih:.1f}mm ({iw/25.4:.1f}in x {ih/25.4:.1f}in)")
+        # print (f"Scanlines: {scanlines}, Step-X: {self.step_x:.2f}, Step-Y: {self.step_y:.2f}")
+        # print (f"Overscan: {self.scan}, Direction: {'back and forth' if self.bidirectional else 'one direction only'}")
+        # print (f"Result in device-units: {result:.1f} ({myresult:.1f}), mm={result/mm:.1f} ({myresult/mm:.1f})")
+        return myresult
 
     def extra(self):
         return self.width * 0.105  # 105ms for the turnaround.
