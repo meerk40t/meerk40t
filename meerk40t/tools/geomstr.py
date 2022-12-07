@@ -1698,29 +1698,24 @@ class Geomstr:
     def _find_intersections(self, segment1, segment2):
         fun1 = self._get_segment_function(segment1[2].real)
         fun2 = self._get_segment_function(segment2[2].real)
+        yield from self.self._find_intersection_main(segment1, segment2, fun1, fun2)
 
-        old_np_seterr = np.seterr(divide="ignore", invalid="ignore")
-        try:
-            yield from self._find_intersections_recurse(segment1, segment2, fun1, fun2)
-        finally:
-            np.seterr(**old_np_seterr)
-
-    def _find_intersections_recurse(
-        self,
-        segment1,
-        segment2,
-        segfunction1,
-        segfunction2,
-        iterate=7,
-        step_a=0.01,
-        min_ua=0,
-        max_ua=1,
-        step_b=0.01,
-        min_ub=0,
-        max_ub=1,
+    def _find_intersection_main(
+            self,
+            segment1,
+            segment2,
+            fun1,
+            fun2,
+            samples=500,
+            ta=(0.0, 1.0, None),
+            tb=(0.0, 1.0, None),
+            tol=1e-12,
     ):
-        a = np.arange(min_ua, max_ua, step_a)
-        b = np.arange(min_ub, max_ub, step_b)
+        assert (samples > 2)
+        a = np.linspace(ta[0], ta[1], num=samples)
+        b = np.linspace(tb[0], tb[1], num=samples)
+        step_a = a[1] - a[0]
+        step_b = b[1] - b[0]
         j = segfunction1(segment1, a)
         k = segfunction2(segment2, b)
 
@@ -1729,37 +1724,39 @@ class Geomstr:
         ay1, by1 = np.meshgrid(np.imag(j[:-1]), np.imag(k[:-1]))
         ay2, by2 = np.meshgrid(np.imag(j[1:]), np.imag(k[1:]))
 
-        # Note if denom is zero these are parallel lines.
         denom = (by2 - by1) * (ax2 - ax1) - (bx2 - bx1) * (ay2 - ay1)
+        qa = (bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)
+        qb = (ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)
+        hits = np.dstack(
+            (
+                denom != 0,
+                np.sign(qa) == np.sign(denom),
+                np.sign(qb) == np.sign(denom),
+                abs(denom) >= abs(qa),
+                abs(denom) >= abs(qb),
+            )
+        ).all(axis=2)
+        where_hit = np.argwhere(hits)
+        if step_a < tol and len(where_hit) != 1:
+            if ta[2] is not None and tb[2] is not None:
+                yield ta[2], tb[2]
+            return
+        ta_hit = qa[hits] / denom[hits]
+        tb_hit = qb[hits] / denom[hits]
 
-        ua = ((bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)) / denom
-        ub = ((ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)) / denom
-        hit = np.dstack((0.0 <= ua, ua <= 1.0, 0.0 <= ub, ub <= 1.0)).all(axis=2)
-        aw = np.argwhere(hit).astype("float")
-        if iterate == 0:
-            ap = min_ua + ua[hit] * step_a
-            bp = min_ub + ub[hit] * step_b
-            aw[:, 0] *= step_a
-            aw[:, 1] *= step_b
-            aw[:, 0] += ap
-            aw[:, 1] += bp
-            for intersection in aw:
-                yield intersection[0], intersection[1]
-        else:
-            for intersection in aw:
-                yield from self._find_intersections_recurse(
-                    segment1,
-                    segment2,
-                    segfunction1,
-                    segfunction2,
-                    iterate=iterate - 1,
-                    step_a=step_a * 0.01,
-                    min_ua=min_ua + intersection[1] * step_a,
-                    max_ua=min_ua + intersection[1] * step_a + step_a,
-                    step_b=step_b * 0.01,
-                    min_ub=min_ub + intersection[0] * step_b,
-                    max_ub=min_ub + intersection[0] * step_b + step_b,
-                )
+        for i, hit in enumerate(where_hit):
+            at = ta[0] + float(hit[1]) * step_a
+            bt = tb[0] + float(hit[0]) * step_b
+            a_fractional = ta_hit[i] * step_a
+            b_fractional = tb_hit[i] * step_b
+            yield from find_intersections(
+                segment1,
+                segment2,
+                samples=10,
+                ta=(at, at + step_a, at + a_fractional),
+                tb=(bt, bt + step_b, bt + b_fractional),
+                tol=tol
+            )
 
     def _find_polyline_intersections(self, a, b):
         """
