@@ -185,6 +185,9 @@ class SVGWriter:
             if hasattr(n, "label") and n.label is not None and n.label != "":
                 has_labels = True
                 break
+            if n.type == "file":
+                has_labels = True
+                break
         if not has_labels:
             for n in elements.regmarks_nodes():
                 if hasattr(n, "label") and n.label is not None and n.label != "":
