@@ -1179,7 +1179,7 @@ class Geomstr:
             yield 0.5
 
     def _arc_position(self, line, positions):
-        start, control1, info, control2, end = line
+        start, control, info, control2, end = line
 
         xy = np.empty((len(positions), 2), dtype=float)
         center = self.arc_center(line=line)
