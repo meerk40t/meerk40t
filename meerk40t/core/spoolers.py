@@ -589,6 +589,9 @@ class Spooler:
                             status,
                             e.helper,
                             e.estimate_time(),
+                            e.steps_done,
+                            e.steps_total,
+                            loop,
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -619,6 +622,9 @@ class Spooler:
                     status,
                     element.helper,
                     element.estimate_time(),
+                    element.steps_done,
+                    element.steps_total,
+                    loop,
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:
