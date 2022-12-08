@@ -746,7 +746,8 @@ class RuidaEmulator(Module, Parameters):
                             x, y, laser = plot.plot[i]
                             x, y = matrix.transform_point([x, y])
                             plot.plot[i] = int(x), int(y), laser
-                    self.spooler.laserjob([self.cutcode])
+                    label = f"Ruida ({len(self.cutcode)} items)"
+                    self.spooler.laserjob([self.cutcode], label=label)
                 if self.design and self.elements is not None:
                     node = CutNode(cutcode=self.cutcode)
                     self.elements.op_branch.add_node(node)
