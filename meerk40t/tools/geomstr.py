@@ -1538,11 +1538,13 @@ class Geomstr:
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:
                 yield from self._line_line_intersections(line1, line2)
+                return
             if oinfo.real == TYPE_QUAD:
                 yield from self._line_quad_intersections(line1, line2)
+                return
             if oinfo.real == TYPE_CUBIC:
                 yield from self._line_cubic_intersections(line1, line2)
-            return
+                return
 
         if info.real == TYPE_QUAD:
             if oinfo.real == TYPE_LINE:
