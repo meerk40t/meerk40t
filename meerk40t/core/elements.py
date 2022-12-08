@@ -398,6 +398,7 @@ class Elemental(Service):
         self._clipboard_default = "0"
 
         self.note = None
+        self._filename = None
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
@@ -449,6 +450,20 @@ class Elemental(Service):
         self._align_boundaries = None
         self._align_group = False
         self._align_stack = []
+
+    @property
+    def filename(self):
+        result = None
+        if self._filename is not None:
+            result = self._filename
+        return result
+
+    @property
+    def basename(self):
+        result = None
+        if self._filename is not None:
+            result = os.path.basename(self._filename)
+        return result
 
     @property
     def default_stroke(self):
@@ -2801,6 +2816,7 @@ class Elemental(Service):
                         results = loader.load(self, self, pathname, **kwargs)
                         self.remove_empty_groups()
                         self.signal("freeze_tree", False)
+                        self._filename = pathname
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
@@ -2840,6 +2856,7 @@ class Elemental(Service):
             for description, extension, mimetype, _version in saver.save_types():
                 if pathname.lower().endswith(extension) and _version == version:
                     saver.save(self, pathname, version)
+                    self._filename = pathname
                     return True
         return False
 
