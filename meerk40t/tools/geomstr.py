@@ -1203,7 +1203,7 @@ class Geomstr:
             xy[positions == 0, :] = list([start.real, start.imag])
             xy[positions == 1, :] = list([end.real, end.imag])
 
-        return xy
+        return xy[:, 0] + xy[:, 1] * 1j
 
     def length(self, e):
         """
