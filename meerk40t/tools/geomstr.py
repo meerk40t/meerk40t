@@ -1738,19 +1738,6 @@ class Geomstr:
         :param enhance_samples:
         :return:
         """
-        if depth == 0:
-            # Quick Fail. There are no intersections without overlapping quick bounds
-            try:
-                s1x = [e.real for e in segment1.bpoints()]
-                s2x = [e.real for e in segment2.bpoints()]
-                if min(s1x) > max(s2x) or max(s1x) < min(s2x):
-                    return
-                s1y = [e.imag for e in segment1.bpoints()]
-                s2y = [e.imag for e in segment2.bpoints()]
-                if min(s1y) > max(s2y) or max(s1y) < min(s2y):
-                    return
-            except AttributeError:
-                pass
         assert (samples >= 2)
         a = np.linspace(ta[0], ta[1], num=samples)
         b = np.linspace(tb[0], tb[1], num=samples)
