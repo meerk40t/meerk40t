@@ -207,17 +207,36 @@ class LivingHinges:
         elif not final and self.preview_path is not None and not force:
             # No need to recalculate...
             return
+        self.path = Path(stroke=Color("red"), stroke_width=500)
+        self._generate_pattern(show_outline)
+        rectangular = (
+            self.outershape is not None
+            and hasattr(self.outershape, "as_path")
+            and self.outershape.type != "elem rect"
+        )
+        if final and not rectangular:
+            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            self.path = self._clip_path_monotonizer()
+        else:
+            # Former method....
+            # ...is limited to rectangular area but maintains inner cubics,
+            # quads and arcs while the vectormontonizer is more versatile
+            # when it comes to the surrounding shape but transforms all
+            # path elements to lines
+            self.path = self._clip_path_rect(self.path, 0, 0, self.width, self.height)
+            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
+            self.previewpath = copy(self.path)
+
+    def _generate_pattern(self, show_outline=False):
+        if show_outline:
+            self.make_outline(self.x0, self.y0, self.x1, self.y1)
 
         self.cell_width = self.width * self.cell_width_percentage / _FACTOR
         self.cell_height = self.height * self.cell_height_percentage / _FACTOR
         self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / _FACTOR
         self.cell_padding_v = (
-            self.cell_height * self.cell_padding_v_percentage / _FACTOR
+                self.cell_height * self.cell_padding_v_percentage / _FACTOR
         )
-        self.path = Path(stroke=Color("red"), stroke_width=500)
-
-        if show_outline:
-            self.make_outline(self.x0, self.y0, self.x1, self.y1)
 
         #  Determine rows and columns of cuts to create
         #  will round down so add 1 and trim later
@@ -227,21 +246,21 @@ class LivingHinges:
             cols = 1
         else:
             cols = (
-                int(
-                    ((self.x1 - self.x0) + self.cell_width)
-                    / (self.cell_width + (2 * self.cell_padding_h))
-                )
-                + 1
+                    int(
+                        ((self.x1 - self.x0) + self.cell_width)
+                        / (self.cell_width + (2 * self.cell_padding_h))
+                    )
+                    + 1
             )
         if self.cell_height + 2 * self.cell_padding_v == 0:
             rows = 1
         else:
             rows = (
-                int(
-                    ((self.y1 - self.y0) + self.cell_height)
-                    / (self.cell_height + (2 * self.cell_padding_v))
-                )
-                + 1
+                    int(
+                        ((self.y1 - self.y0) + self.cell_height)
+                        / (self.cell_height + (2 * self.cell_padding_v))
+                    )
+                    + 1
             )
 
         if self._extend_patterns:
@@ -258,6 +277,7 @@ class LivingHinges:
         # print (f"Rows: {rows}, Cols={cols}")
         # print (f"Ratios: {self.cell_width_percentage}, {self.cell_height_percentage}")
         # print (f"Padding: {self.cell_padding_h_percentage}, {self.cell_padding_v_percentage}")
+
         for col in range(start_value, cols + end_value, 1):
             top_left_x = self.x0 + off_x
             x_offset = col * (self.cell_width + (2 * self.cell_padding_h))
@@ -265,7 +285,7 @@ class LivingHinges:
             for row in range(start_value, rows + end_value, 1):
                 top_left_y = self.y0
                 y_offset = row * (self.cell_height + (2 * self.cell_padding_v)) + (
-                    (self.cell_height + (2 * self.cell_padding_v)) / 2
+                        (self.cell_height + (2 * self.cell_padding_v)) / 2
                 ) * (col % 2)
                 y_current = top_left_y + y_offset
 
@@ -284,85 +304,69 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
-        rectangular = True
-        if (
-            self.outershape is not None
-            and hasattr(self.outershape, "as_path")
-            and self.outershape.type != "elem rect"
-        ):
-            rectangular = False
-        if final and not rectangular:
-            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
-            from time import time
 
-            t0 = time()
-            vm = VectorMontonizer()
-            if self.outershape is None:
-                outer_poly = Polygon(
-                    (
-                        Point(self.x0, self.y0),
-                        Point(self.x1, self.y0),
-                        Point(self.x1, self.y1),
-                        Point(self.x0, self.y1),
-                        Point(self.x0, self.y0),
-                    )
-                )
-            else:
-                outer_path = self.outershape.as_path()
-                outer_poly = Polygon(
-                    [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-                )
-            vm.add_polyline(outer_poly)
-            path = Path(stroke=Color("red"), stroke_width=500)
-            deleted = 0
-            total = 0
-            # pt_min_x = 1E+30
-            # pt_min_y = 1E+30
-            # pt_max_x = -1 * pt_min_x
-            # pt_max_y = -1 * pt_min_y
-            # Numpy does not work
-            # vm.add_polyline(outer_poly)
-            # path = Path(stroke=Color("red"), stroke_width=500)
-            # for sub_inner in self.path.as_subpaths():
-            #     sub_inner = Path(sub_inner)
-            #     pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
-            #     good_pts = [p for p in pts_sub if vm.is_point_inside(p[0] + self.start_x, p[1] + self.start_y)]
-            #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
-            for sub_inner in self.path.as_subpaths():
-                sub_inner = Path(sub_inner)
-                pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
+    def _clip_path_monotonizer(self):
+        from time import time
 
-                for i in range(len(pts_sub) - 1, -1, -1):
-                    total += 1
-                    pt = pts_sub[i]
-                    pt[0] += self.start_x
-                    pt[1] += self.start_y
-                    # pt_min_x = min(pt_min_x, pt[0])
-                    # pt_min_y = min(pt_min_y, pt[1])
-                    # pt_max_x = max(pt_max_x, pt[0])
-                    # pt_max_y = max(pt_max_y, pt[1])
-                    if not vm.is_point_inside(pt[0], pt[1]):
-                        # if we do have points beyond, then we create a seperate path
-                        if i < len(pts_sub) - 1:
-                            goodpts = pts_sub[i + 1 :]
-                            path += Path(
-                                Polyline(goodpts), stroke=Color("red"), stroke_width=500
-                            )
-                        del pts_sub[i:]
-                        deleted += 1
-                path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
-            self.path = path
+        t0 = time()
+        vm = VectorMontonizer()
+        if self.outershape is None:
+            outer_poly = Polygon(
+                (
+                    Point(self.x0, self.y0),
+                    Point(self.x1, self.y0),
+                    Point(self.x1, self.y1),
+                    Point(self.x0, self.y1),
+                    Point(self.x0, self.y0),
+                )
+            )
         else:
-            # Former method....
-            # ...is limited to rectangular area but maintains inner cubics,
-            # quads and arcs while the vectormontonizer is more versatile
-            # when it comes to the surrounding shape but transforms all
-            # path elements to lines
-            self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
-            self.path.transform *= Matrix.translate(self.start_x, self.start_y)
-            self.previewpath = copy(self.path)
+            outer_path = self.outershape.as_path()
+            outer_poly = Polygon(
+                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+            )
+        vm.add_polyline(outer_poly)
+        path = Path(stroke=Color("red"), stroke_width=500)
+        deleted = 0
+        total = 0
+        # pt_min_x = 1E+30
+        # pt_min_y = 1E+30
+        # pt_max_x = -1 * pt_min_x
+        # pt_max_y = -1 * pt_min_y
+        # Numpy does not work
+        # vm.add_polyline(outer_poly)
+        # path = Path(stroke=Color("red"), stroke_width=500)
+        # for sub_inner in self.path.as_subpaths():
+        #     sub_inner = Path(sub_inner)
+        #     pts_sub = sub_inner.npoint(linspace(0, 1, 1000))
+        #     good_pts = [p for p in pts_sub if vm.is_point_inside(p[0] + self.start_x, p[1] + self.start_y)]
+        #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
+        for sub_inner in self.path.as_subpaths():
+            sub_inner = Path(sub_inner)
+            pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
 
-    def clip_path(self, path, xmin, ymin, xmax, ymax):
+            for i in range(len(pts_sub) - 1, -1, -1):
+                total += 1
+                pt = pts_sub[i]
+                pt[0] += self.start_x
+                pt[1] += self.start_y
+                # pt_min_x = min(pt_min_x, pt[0])
+                # pt_min_y = min(pt_min_y, pt[1])
+                # pt_max_x = max(pt_max_x, pt[0])
+                # pt_max_y = max(pt_max_y, pt[1])
+                if not vm.is_point_inside(pt[0], pt[1]):
+                    # if we do have points beyond, then we create a seperate path
+                    if i < len(pts_sub) - 1:
+                        goodpts = pts_sub[i + 1:]
+                        path += Path(
+                            Polyline(goodpts), stroke=Color("red"), stroke_width=500
+                        )
+                    del pts_sub[i:]
+                    deleted += 1
+            path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
+        return path
+
+    def _clip_path_rect(self, path, xmin, ymin, xmax, ymax):
         """
         Clip a path at a rectangular area, will return the clipped path
 
