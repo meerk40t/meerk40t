@@ -18,6 +18,17 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+# History Indices
+IDX_HISTORY_JOBNAME = 0
+IDX_HISTORY_START = 1
+IDX_HISTORY_DURATION = 2
+IDX_HISTORY_DEVICE = 3
+IDX_HISTORY_PASSES = 4
+IDX_HISTORY_STATUS = 5
+IDX_HISTORY_INFO = 6
+IDX_HISTORY_ESTIMATE = 7
+IDX_HISTORY_UNUSED = 8
+
 
 def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
@@ -157,9 +168,10 @@ class SpoolerPanel(wx.Panel):
             "start": 3,
             "end": 4,
             "runtime": 5,
-            "passes": 6,
-            "status": 7,
-            "jobinfo": 8,
+            "estimate": 6,
+            "passes": 7,
+            "status": 8,
+            "jobinfo": 9,
         }
         if not self.clear_data:
             self.reload_history()
@@ -219,6 +231,9 @@ class SpoolerPanel(wx.Panel):
         )
         self.list_job_history.AppendColumn(
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_history.AppendColumn(
             _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
@@ -692,7 +707,7 @@ class SpoolerPanel(wx.Panel):
         # That would be the right thing, so if the bug is ever fixed, that will work
         pattern = pattern.replace("07", "{mm}")
         pattern = pattern.replace("7", "{mm}")
-        # And this the bug...
+        # And this is needed to deal with the bug...
         pattern = pattern.replace("08", "{mm}")
         pattern = pattern.replace("8", "{mm}")
         result = pattern.format(
@@ -711,8 +726,8 @@ class SpoolerPanel(wx.Panel):
             addit = True
             # No helper jobs....
             if (
-                len(newestinfo) >= 7
-                and newestinfo[6]
+                len(newestinfo) > IDX_HISTORY_INFO
+                and newestinfo[IDX_HISTORY_INFO]
                 and self.context.spool_ignore_helper_jobs
             ):
                 addit = False
@@ -721,7 +736,7 @@ class SpoolerPanel(wx.Panel):
                 # Should not happen per se, but there were some reports of duplicate entries...
                 lastentry = self.history[0]
                 identical = True
-                for idx in range(6):
+                for idx in range(IDX_HISTORY_STATUS + 1):
                     if lastentry[idx] != newestinfo[idx]:
                         identical = False
                         break
@@ -729,17 +744,20 @@ class SpoolerPanel(wx.Panel):
                     addit = False
             if addit:
                 # We dont need the helper-flag, we use this for a jobinfo column
-                if len(newestinfo) >= 7:
+                if len(newestinfo) > IDX_HISTORY_INFO:
                     newestinfo = list(newestinfo)
-                    newestinfo[6] = ""
+                    newestinfo[IDX_HISTORY_INFO] = ""
                 self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         idx = 0
         hlen = len(self.history)
         for info in self.history:
+            if len(info) < IDX_HISTORY_DURATION or not isinstance(info, (tuple, list)):
+                # print (f"Corrupt entry: {info}")
+                continue
             addit = True
             if self.filter_device is not None:
-                if info[3] != self.filter_device:
+                if info[IDX_HISTORY_DEVICE] != self.filter_device:
                     addit = False
             if not addit:
                 continue
@@ -748,47 +766,60 @@ class SpoolerPanel(wx.Panel):
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx2}"
             )
-            if info[1] is None:
+            if info[IDX_HISTORY_START] is None:
                 continue
             self.list_job_history.SetItem(
-                list_id, self.column_history["jobname"], info[0]
+                list_id, self.column_history["jobname"], info[IDX_HISTORY_JOBNAME]
             )
-            starttime = self.datestr(info[1]) + " " + self.timestr(info[1], True)
+            starttime = (
+                self.datestr(info[IDX_HISTORY_START])
+                + " "
+                + self.timestr(info[IDX_HISTORY_START], True)
+            )
             self.list_job_history.SetItem(
                 list_id, self.column_history["start"], starttime
             )
-            starttime = self.timestr(info[1] + info[2], True)
+            starttime = self.timestr(
+                info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
+            )
             self.list_job_history.SetItem(
                 list_id, self.column_history["end"], starttime
             )
-            runtime = self.timestr(info[2], False)
+            runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
             self.list_job_history.SetItem(
                 list_id, self.column_history["runtime"], runtime
             )
             # First passes then device
             if len(info) >= 5:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["passes"], info[4]
+                    list_id, self.column_history["passes"], info[IDX_HISTORY_PASSES]
                 )
             else:
                 self.list_job_history.SetItem(
                     list_id, self.column_history["passes"], "???"
                 )
             self.list_job_history.SetItem(
-                list_id, self.column_history["device"], info[3]
+                list_id, self.column_history["device"], info[IDX_HISTORY_DEVICE]
             )
-            if len(info) >= 6:
+            if len(info) > IDX_HISTORY_STATUS:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["status"], info[5]
+                    list_id, self.column_history["status"], info[IDX_HISTORY_STATUS]
                 )
-            if len(info) >= 7:
-                if isinstance(info[6], bool):
+            if len(info) > IDX_HISTORY_INFO:
+                if isinstance(info[IDX_HISTORY_INFO], bool):
                     # Old data, where helper flag was saved
-                    info[6] = ""
-                if info[6] is None:
-                    info[6] = ""
+                    info[IDX_HISTORY_INFO] = ""
+                if info[IDX_HISTORY_INFO] is None:
+                    info[IDX_HISTORY_INFO] = ""
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["jobinfo"], info[6]
+                    list_id, self.column_history["jobinfo"], info[IDX_HISTORY_INFO]
+                )
+            if len(info) > IDX_HISTORY_ESTIMATE:
+                if info[IDX_HISTORY_ESTIMATE] is None:
+                    info[IDX_HISTORY_ESTIMATE] = 0
+                runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["estimate"], runtime
                 )
             self.list_job_history.SetItemData(list_id, idx - 1)
 
@@ -821,24 +852,40 @@ class SpoolerPanel(wx.Panel):
         filename = os.path.join(directory, "history.csv")
         try:
             with open(filename, "w", encoding="utf-8") as f:
-                simpleline = "device;jobname;start;end;duration;passes"
+                simpleline = (
+                    "device;jobname;start;end;duration;estimate;passes;status;info"
+                )
                 f.write(simpleline + "\n")
                 for info in self.history:
-                    if info[1] is None:
+                    if info[IDX_HISTORY_START] is None:
                         continue
-                    simpleline = escaped(info[3])
-                    simpleline += ";" + escaped(info[0])
+                    simpleline = escaped(info[IDX_HISTORY_DEVICE])
+                    simpleline += ";" + escaped(info[IDX_HISTORY_JOBNAME])
                     starttime = (
-                        self.datestr(info[1]) + " " + self.timestr(info[1], True)
+                        self.datestr(info[IDX_HISTORY_START])
+                        + " "
+                        + self.timestr(info[IDX_HISTORY_START], True)
                     )
                     simpleline += ";" + starttime
-                    starttime = self.timestr(info[1] + info[2], True)
+                    starttime = self.timestr(
+                        info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
+                    )
                     simpleline += ";" + starttime
-                    runtime = self.timestr(info[2], False)
+                    runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
+                    simpleline += ";" + runtime
+                    runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
                     simpleline += ";" + runtime
                     # First passes then device
-                    if len(info) >= 5:
-                        simpleline += ";" + escaped(info[4])
+                    if len(info) > IDX_HISTORY_PASSES:
+                        simpleline += ";" + escaped(info[IDX_HISTORY_PASSES])
+                    else:
+                        simpleline += ";''"
+                    if len(info) > IDX_HISTORY_STATUS:
+                        simpleline += ";" + escaped(info[IDX_HISTORY_STATUS])
+                    else:
+                        simpleline += ";''"
+                    if len(info) > IDX_HISTORY_INFO:
+                        simpleline += ";" + escaped(info[IDX_HISTORY_INFO])
                     else:
                         simpleline += ";''"
                     f.write(simpleline + "\n")
@@ -912,7 +959,7 @@ class SpoolerPanel(wx.Panel):
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
             return
-        if len(info) > 1 and info[1] is None:
+        if len(info) > 1 and info[IDX_HISTORY_START] is None:
             return
         self.refresh_history(newestinfo=info)
         self.save_history()

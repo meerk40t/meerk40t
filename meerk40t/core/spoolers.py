@@ -585,6 +585,7 @@ class Spooler:
                             passinfo,
                             status,
                             e.helper,
+                            e.estimate_time(),
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -614,6 +615,7 @@ class Spooler:
                     f"{loop}/{total}",
                     status,
                     element.helper,
+                    element.estimate_time(),
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:
