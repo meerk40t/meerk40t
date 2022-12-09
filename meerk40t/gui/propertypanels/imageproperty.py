@@ -398,6 +398,8 @@ class ImageModificationPanel(ScrolledPanel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
+        self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
+        self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
 
         self._do_layout()
         self._do_logic()
@@ -420,7 +422,7 @@ class ImageModificationPanel(ScrolledPanel):
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
-
+        sizer_script.Add(self.check_prevent_crop, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(sizer_script, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
 
@@ -432,12 +434,17 @@ class ImageModificationPanel(ScrolledPanel):
         self.button_apply.Bind(wx.EVT_BUTTON, self.on_apply_replace)
         self.button_apply.Bind(wx.EVT_RIGHT_DOWN, self.on_apply_append)
         self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_list_menu)
+        self.check_prevent_crop.Bind(wx.EVT_CHECKBOX, self.on_crop_option)
 
     @staticmethod
     def accepts(node):
         if node.type == "elem image":
             return True
         return False
+
+    def on_crop_option(self, event):
+        self.node.prevent_crop = self.check_prevent_crop.GetValue()
+        self.update_node()
 
     def set_widgets(self, node=None):
         self.node = node
@@ -446,6 +453,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.fill_operations()
 
     def fill_operations(self):
+        self.check_prevent_crop.SetValue(self.node.prevent_crop)
         self.list_operations.DeleteAllItems()
         idx = 0
         for op in self.node.operations:

@@ -92,7 +92,7 @@ class ImageNode(Node):
         self._processed_matrix = None
         self._process_image_failed = False
         self._processing_message = None
-        if self.operations:
+        if self.operations or not self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
