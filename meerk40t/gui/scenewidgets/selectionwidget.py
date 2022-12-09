@@ -425,8 +425,13 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 e.modified()
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(self.scene.context)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -695,11 +700,16 @@ class CornerWidget(Widget):
             dy = position[5]
 
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(self.scene.context)
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
@@ -926,11 +936,16 @@ class SideWidget(Widget):
             dy = position[5]
 
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(self.scene.context)
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
@@ -1135,11 +1150,16 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
+            images = []
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(self.scene.context)
         elif event == -1:
             pass
         elif event == 0:  # move

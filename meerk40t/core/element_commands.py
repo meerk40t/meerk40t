@@ -2787,6 +2787,7 @@ def init_commands(kernel):
         # bounds = self._emphasized_bounds
         center_x = (bounds[2] + bounds[0]) / 2.0
         center_y = (bounds[3] + bounds[1]) / 2.0
+        images = []
         for cc in range(copies):
             # print ("Angle: %f rad = %f deg" % (currentangle, currentangle/pi * 180))
             add_elem = list(map(copy, data))
@@ -2797,6 +2798,8 @@ def init_commands(kernel):
                     e.matrix *= f"translate({x_pos}, {y_pos})"
                     e.matrix *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                     e.modified()
+                    if hasattr(e, "update"):
+                        images.append(e)
                 else:
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
@@ -2805,6 +2808,8 @@ def init_commands(kernel):
                 self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
+        for e in images:
+            e.update(self.scene.context)
 
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
@@ -4779,6 +4784,7 @@ def init_commands(kernel):
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
         matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
+        images = []
         try:
             if not absolute:
                 for node in data:
@@ -4787,6 +4793,8 @@ def init_commands(kernel):
 
                     node.matrix *= matrix
                     node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
             else:
                 for node in data:
                     start_angle = node.matrix.rotation
@@ -4794,8 +4802,12 @@ def init_commands(kernel):
                     matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
                     node.matrix *= matrix
                     node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
         except ValueError:
             raise CommandSyntaxError
+        for node in images:
+            node.update(self)
         return "elements", data
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
@@ -4877,6 +4889,7 @@ def init_commands(kernel):
             channel(_("Scaling by Zero Error"))
             return
         matrix = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
+        images = []
         try:
             if not absolute:
                 for node in data:
@@ -4884,6 +4897,8 @@ def init_commands(kernel):
                         continue
                     node.matrix *= matrix
                     node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
             else:
                 for node in data:
                     if hasattr(node, "lock") and node.lock:
@@ -4895,8 +4910,12 @@ def init_commands(kernel):
                     matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                     node.matrix *= matrix
                     node.modified()
+                    if hasattr(node, "update"):
+                        images.append(node)
         except ValueError:
             raise CommandSyntaxError
+        for node in images:
+            node.update(self)
         return "elements", data
 
     @self.console_option(
@@ -5159,12 +5178,17 @@ def init_commands(kernel):
             matrix = Matrix(matrixstr)
             if data is None:
                 data = list(self.elems(emphasized=True))
+            images = []
             for node in data:
                 if hasattr(node, "lock") and node.lock:
                     channel(_("resize: cannot resize a locked element"))
                     continue
                 node.matrix *= matrix
                 node.modified()
+                if hasattr(node, "update"):
+                    images.append(node)
+            for node in images:
+                node.update(self.scene.context)
             return "elements", data
         except (ValueError, ZeroDivisionError, TypeError):
             raise CommandSyntaxError
@@ -5201,6 +5225,7 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No selected elements."))
             return
+        images = []
         try:
             # SVG 7.15.3 defines the matrix form as:
             # [a c  e]
@@ -5218,8 +5243,12 @@ def init_commands(kernel):
                     continue
                 node.matrix = Matrix(m)
                 node.modified()
+                if hasattr(node, "update"):
+                    images.append(node)
         except ValueError:
             raise CommandSyntaxError
+        for node in images:
+            node.update(self)
         return
 
     @self.console_command(
@@ -5231,6 +5260,7 @@ def init_commands(kernel):
     def reset(command, channel, _, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
+        images = []
         for e in data:
             if hasattr(e, "lock") and e.lock:
                 continue
@@ -5240,6 +5270,11 @@ def init_commands(kernel):
             channel(_("reset - {name}").format(name=name))
             e.matrix.reset()
             e.modified()
+            if hasattr(e, "update"):
+                images.append(e)
+        for e in images:
+            e.update(self)
+
         return "elements", data
 
     @self.console_command(
