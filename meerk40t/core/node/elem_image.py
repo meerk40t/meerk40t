@@ -31,6 +31,7 @@ class ImageNode(Node):
         self.blue = 1.0
         self.lightness = 1.0
         self.view_invert = False
+        self.prevent_crop = False
 
         self.passthrough = False
         super(ImageNode, self).__init__(type="elem image", **kwargs)
@@ -95,7 +96,7 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
 
     def __copy__(self):
         nd = self.node_dict
@@ -114,7 +115,7 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
         if self._processed_image is not None:
             return self._processed_image
         else:
@@ -135,7 +136,7 @@ class ImageNode(Node):
         self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
-        self.process_image(self.step_x, self.step_y)
+        self.process_image(self.step_x, self.step_y, not self.prevent_crop)
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -237,7 +238,7 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
             # Unset cache.
             self._cache = None
 
