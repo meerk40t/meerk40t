@@ -2773,19 +2773,25 @@ class MeerK40t(MWindow):
             context.channel("shutdown").watch(print)
         self.context(".timer 0 1 quit\n")
 
-    @signal_listener("altered")
-    @signal_listener("modified")
-    def on_invalidate_save(self, origin, *args):
-        self.needs_saving = True
+
+    def set_needs_save_status(self, newstatus):
+        self.needs_saving = newstatus
         app = self.context.app.GetTopWindow()
         if isinstance(app, wx.TopLevelWindow):
             app.OSXSetModified(self.needs_saving)
 
+    @signal_listener("altered")
+    @signal_listener("modified")
+    def on_invalidate_save(self, origin, *args):
+        status = True
+        # Let's check whether the list of elements is empty:
+        # if that's the case then we refrain from setting the status
+        if len(self.context.elements.elem_branch.children) == 0:
+            status = False
+        self.set_needs_save_status(status)
+
     def validate_save(self):
-        self.needs_saving = False
-        app = self.context.app.GetTopWindow()
-        if isinstance(app, wx.TopLevelWindow):
-            app.OSXSetModified(self.needs_saving)
+        self.set_needs_save_status(False)
 
     @signal_listener("warning")
     def on_warning_signal(self, origin, message, caption, style):
@@ -3049,9 +3055,9 @@ class MeerK40t(MWindow):
     def clear_project(self):
         context = self.context
         self.working_file = None
-        self.validate_save()
         context.elements.clear_all()
         self.context(".laserpath_clear\n")
+        self.validate_save()
 
     def clear_and_open(self, pathname):
         self.clear_project()
