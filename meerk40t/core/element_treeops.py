@@ -346,6 +346,11 @@ def init_tree(kernel):
         for n in list(self.ops(emphasized=True)):
             n.dpi = dpi
             data.append(n)
+        for n in list(self.elems(emphasized=True)):
+            if n.type == "elem image":
+                n.dpi = dpi
+                n.update(self)
+                data.append(n)
         self.signal("element_property_reload", data)
 
     def radio_match(node, passvalue=1, **kwargs):
