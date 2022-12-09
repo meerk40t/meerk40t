@@ -87,7 +87,8 @@ class GRBLEmulator(Module):
                 # This may be a WaitCut and has no plot.
                 pass
         if self.control:
-            self.context.device.spooler.laserjob([self.cutcode])
+            label = f"Gcode ({len(self.cutcode)} items)"
+            self.context.device.spooler.laserjob([self.cutcode], label=label)
         if self.design:
             elements = self.context.elements
             node = CutNode(cutcode=self.cutcode)

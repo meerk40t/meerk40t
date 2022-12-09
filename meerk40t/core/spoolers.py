@@ -22,6 +22,8 @@ def plugin(kernel, lifecycle):
             device = kernel.device
 
             spooler = device.spooler
+            # Do we have a filename to use as label?
+            label = kernel.elements.basename
 
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
@@ -35,7 +37,7 @@ def plugin(kernel, lifecycle):
                 else:
                     if e.loop_enabled:
                         loops = e.loop_n
-                spooler.laserjob(data.plan, loops=loops)
+                spooler.laserjob(data.plan, loops=loops, label=label)
                 channel(_("Spooled Plan."))
                 kernel.root.signal("plan", data.name, 6)
 
@@ -66,7 +68,8 @@ def plugin(kernel, lifecycle):
                 raise CommandSyntaxError
             try:
                 for plan_command, command_name, suffix in kernel.find("plan", op):
-                    spooler.laserjob(plan_command)
+                    label = f"Send {op}"
+                    spooler.laserjob(plan_command, label=label)
                     return data_type, spooler
             except (KeyError, IndexError):
                 pass
@@ -586,6 +589,9 @@ class Spooler:
                             status,
                             e.helper,
                             e.estimate_time(),
+                            e.steps_done,
+                            e.steps_total,
+                            loop,
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -616,6 +622,9 @@ class Spooler:
                     status,
                     element.helper,
                     element.estimate_time(),
+                    element.steps_done,
+                    element.steps_total,
+                    loop,
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:
