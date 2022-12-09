@@ -1173,7 +1173,7 @@ class ShadowTree:
             # lets replace some of the more obvious ones...
             mymap = node.default_map()
             for key in mymap:
-                if hasattr(node, key) and mymap[key] == "None":
+                if hasattr(node, key) and key in mymap and mymap[key] == "None":
                     if getattr(node, key) is None:
                         mymap[key] = "-"
             # There are a couple of translatable entries,
@@ -1192,10 +1192,10 @@ class ShadowTree:
                     if not value.startswith(pattern):
                         mymap[key] = value
             try:
-                result = text.format_map(mymap)
+                res = text.format_map(mymap)
             except KeyError:
-                result = "<???>"
-            return result
+                res = text
+            return res
 
         def get_formatter(nodetype):
             default = self.context.elements.lookup(f"format/{nodetype}")
