@@ -232,7 +232,7 @@ class Scanbeam:
         self.scanline = -float("inf")
 
         self._sorted_edge_list = []
-        self._edge_index = 0
+        self._edge_index_of_high = -1
 
         self._active_edge_list = []
         self._dirty_actives_sort = False
@@ -361,20 +361,21 @@ class Scanbeam:
 
         @return:
         """
-        self._edge_index += 1
-        self._low = self._high
-        try:
-            self._high, sb_index = self._sorted_edge_list[self._edge_index]
-            self._high = self._high.imag
-        except IndexError:
-            self._high = float("inf")
-
-        if self._edge_index > 0:
-            sb_value, sb_index = self._sorted_edge_list[self._edge_index - 1]
+        leading_edge = self._edge_index_of_high
+        if leading_edge >= 0:
+            sb_value, sb_index = self._sorted_edge_list[leading_edge]
             if sb_index >= 0:
                 self._active_edge_list.append(sb_index)
             else:
                 self._active_edge_list.remove(~sb_index)
+
+        self._edge_index_of_high += 1
+        self._low = self._high
+        if self._edge_index_of_high < len(self._sorted_edge_list):
+            self._high, sb_index = self._sorted_edge_list[self._edge_index_of_high]
+            self._high = self._high.imag
+        else:
+            self._high = float("inf")
 
     def decrement_scanbeam(self):
         """
@@ -382,20 +383,21 @@ class Scanbeam:
 
         @return:
         """
-        self._edge_index -= 1
-        self._high = self._low
-        try:
-            self._low, sb_index = self._sorted_edge_list[self._edge_index - 1]
-            self._low = self._low.imag
-        except IndexError:
-            self._low = float("-inf")
-
-        if self._edge_index <= len(self._sorted_edge_list):
-            sb_value, sb_index = self._sorted_edge_list[self._edge_index - 1]
+        leading_edge = self._edge_index_of_high - 1
+        if leading_edge < len(self._sorted_edge_list):
+            sb_value, sb_index = self._sorted_edge_list[leading_edge]
             if sb_index >= 0:
-                self._active_edge_list.append(sb_index)
+                self._active_edge_list.remove(sb_index)
             else:
-                self._active_edge_list.remove(~sb_index)
+                self._active_edge_list.append(~sb_index)
+
+        self._edge_index_of_high -= 1
+        self._high = self._low
+        if self._edge_index_of_high > 0:
+            self._low, sb_index = self._sorted_edge_list[self._edge_index_of_high - 1]
+            self._low = self._low.imag
+        else:
+            self._low = float("-inf")
 
 
 class Geometry:
