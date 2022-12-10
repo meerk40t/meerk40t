@@ -72,6 +72,41 @@ TYPE_VERTEX = 0x70 | 0b0000
 TYPE_END = 0x80 | 0b0000
 
 
+class Polygon:
+    def __init__(self, *args):
+        self.geomstr = Geomstr()
+        self.geomstr.polyline(args)
+
+    def bbox(self, mx=None):
+        return self.geomstr.geometry.bbox(mx)
+
+
+class Clip:
+    def __init__(self, shape):
+        self.clipping_shape = shape.geomstr
+        self.bounds = shape.bbox()
+        self.subject = None
+
+    def clip(self, pattern):
+        clip = Geomstr()
+        if hasattr(pattern, "generate"):
+            self.subject = list(pattern.generate(*self.bounds))
+        for s in self.subject:
+            clip.append(s)
+        for i in range(self.clipping_shape.index):
+            for c in range(clip.index, -1, -1):
+                for t0, t1 in clip.intersections(c, self.clipping_shape.segments[i]):
+                    clip.split(c, t0)
+
+        sb = Scanbeam(self.clipping_shape)
+        for c in range(clip.index, -1, -1):
+            geom = clip.segments[c]
+            start = geom[0]
+            end = geom[-1]
+            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(end.real, end.imag):
+                geom[2] = TYPE_END
+
+
 class Pattern:
     def __init__(self, geomstr=None):
         if geomstr is None:
@@ -254,7 +289,7 @@ class Scanbeam:
         This assumes that add_polyline added a closed point class.
         @param x: x location of point
         @param y: y location of point
-        @param tolerance: wiggle room
+        @param tolerance: wiggle room, in favor of inside
         @return:
         """
         self.scanline_to(y)
@@ -821,6 +856,11 @@ class Geomstr:
 
     def clear(self):
         self.index = 0
+
+    def append(self, other):
+        self._ensure_capacity(self.index + other.index + 1)
+        self.end()
+        self.segments[self.index:self.index + other.index] = other.segments[:other.index]
 
     #######################
     # Geometric Primatives
@@ -1413,6 +1453,11 @@ class Geomstr:
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=1e-12, limit=1000)[0]
 
+    def insert_position(self, e):
+        self._ensure_capacity(self.index + 1)
+        self.segments[e + 1:] = self.segments[e:-1]
+        self.index += 1
+
     def split(self, e, t):
         """
         Splits individual geom e at position t [0-1]
@@ -1421,6 +1466,21 @@ class Geomstr:
         @param t:
         @return:
         """
+        line = self.segments[e]
+        start, control, info, control2, end = line
+        if info.real == TYPE_LINE:
+            self.insert_position(e+1)
+            mid = self.towards(start, end, t)
+            self.segments[e][-1] = mid
+            self.segments[e+1] = (
+                mid,
+                control,
+                info,
+                control2,
+                end
+            )
+            self.index += 1
+            return
         raise NotImplementedError
 
     def normal(self, e, t):
@@ -1629,9 +1689,9 @@ class Geomstr:
             else:
                 raise ValueError("n should be a positive integer.")
 
-    def intersections(self, e, other_seg):
-        line1 = self.segments[e]
-        line2 = self.segments[other_seg]
+    def intersections(self, e, other):
+        line1 = self.segments[e] if isinstance(e, int) else e
+        line2 = self.segments[other] if isinstance(other, int) else other
         start, control1, info, control2, end = line1
         ostart, ocontrol1, oinfo, ocontrol2, oend = line2
         if info.real in (TYPE_LINE, TYPE_QUAD, TYPE_CUBIC) and oinfo.real in (
@@ -1662,6 +1722,10 @@ class Geomstr:
         if info.real == TYPE_POINT:
             return
         if oinfo.real == TYPE_POINT:
+            return
+        if info.real == TYPE_END:
+            return
+        if oinfo.real == TYPE_END:
             return
         if info.real == TYPE_LINE:
             if oinfo.real == TYPE_LINE:
