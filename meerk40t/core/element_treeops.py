@@ -236,9 +236,10 @@ def init_tree(kernel):
             if e.type != "elem image":
                 continue
             e.operations = []
-            e.update(self)
+            e.update(None)
             if firstnode is None:
                 firstnode = e
+        self.signal("refresh_scene", "Scene")
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None and firstnode is not None:
             activate(firstnode)
@@ -254,9 +255,10 @@ def init_tree(kernel):
             if e.type != "elem image":
                 continue
             e.operations = raster_script
-            e.update(self)
+            e.update(None)
             if firstnode is None:
                 firstnode = e
+        self.signal("refresh_scene", "Scene")
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
             activate(node)
@@ -346,6 +348,12 @@ def init_tree(kernel):
         for n in list(self.ops(emphasized=True)):
             n.dpi = dpi
             data.append(n)
+        for n in list(self.elems(emphasized=True)):
+            if n.type == "elem image":
+                n.dpi = dpi
+                n.update(None)
+                data.append(n)
+        self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", data)
 
     def radio_match(node, passvalue=1, **kwargs):
