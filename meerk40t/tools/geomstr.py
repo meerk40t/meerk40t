@@ -346,6 +346,8 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
         min_x, min_y, max_x, max_y = self.geomstr.bbox(segments[0:index])
+        if len(min_x) == 0:
+            return np.nan, np.nan, np.nan, np.nan
         return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
 
     def raw_length(self):
