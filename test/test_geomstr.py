@@ -567,10 +567,22 @@ class TestGeomstr(unittest.TestCase):
 
     def test_pattern_generation(self):
         from meerk40t.fill.patternfill import set_diamond1
+
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
-        for s in p.generate(0, 0, 3, 1):
+        for s in p.generate(0, 0, 1, 1):
+            array = np.array(
+                [
+                    [0.0 + 0.5j, 0.0 + 0.0j, 41.0 + 0.0j, 0.0 + 0.0j, 0.5 + 0.0j],
+                    [0.5 + 0.0j, 0.0 + 0.0j, 41.0 + 0.0j, 0.0 + 0.0j, 1.0 + 0.5j],
+                    [1.0 + 0.5j, 0.0 + 0.0j, 41.0 + 0.0j, 0.0 + 0.0j, 0.5 + 1.0j],
+                    [0.5 + 1.0j, 0.0 + 0.0j, 41.0 + 0.0j, 0.0 + 0.0j, 0.0 + 0.5j],
+                ]
+            )
+            array2 = s.segments[:s.index]
+            self.assertTrue((array == array2).all())
+            print(repr(s))
+        for s in p.generate(0, 0, 3, 3):
             print(repr(s))
         print("finished.")
-
