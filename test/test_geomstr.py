@@ -470,6 +470,19 @@ class TestGeomstr(unittest.TestCase):
         beam.scanline_to(25)
         self.assertEqual(len(beam._active_edge_list), 2)
 
+    def test_geomstr_scanbeam_decrement(self):
+        path = Geomstr()
+        path.line(complex(0, 0), complex(50, 0))  # 0
+        path.line(complex(50, 0), complex(50, 50))  # 1 ACTIVE
+        path.line(complex(50, 50), complex(0, 50))  # 2
+        path.line(complex(0, 50), complex(0, 0))  # 3 ACTIVE
+        path.close()
+        self.assertEqual(path.geometry.travel_distance(), 0)
+        beam = Scanbeam(path)
+        beam.scanline_to(float("inf"))
+        beam.scanline_to(25)
+        self.assertEqual(len(beam._active_edge_list), 2)
+
     def test_geomstr_isinside(self):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
