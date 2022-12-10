@@ -2,7 +2,7 @@ import random
 import time
 import unittest
 
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern
+from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon
 
 import unittest
 from copy import copy
@@ -602,3 +602,13 @@ class TestGeomstr(unittest.TestCase):
         for s in p.generate(0, 0, 2, 2):
             print(repr(s))
         print("finished.")
+
+    def test_pattern_clip(self):
+        from meerk40t.fill.patternfill import set_diamond1
+
+        f = set_diamond1
+        p = Pattern()
+        p.create_from_pattern(f)
+        q = Clip(Polygon(0+2j, 4+0j, 4+4j))
+        q.clip(p)
+
