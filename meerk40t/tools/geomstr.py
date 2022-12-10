@@ -834,6 +834,9 @@ class Geomstr:
         """
         self._settings[key] = settings
 
+    def clear(self):
+        self.index = 0
+
     #######################
     # Geometric Primatives
     #######################
