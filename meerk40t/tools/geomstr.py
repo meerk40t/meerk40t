@@ -1703,17 +1703,17 @@ class Geomstr:
         yield from self._find_intersections_main(segment1, segment2, fun1, fun2)
 
     def _find_intersections_main(
-            self,
-            segment1,
-            segment2,
-            fun1,
-            fun2,
-            samples=50,
-            ta=(0.0, 1.0, None),
-            tb=(0.0, 1.0, None),
-            depth=0,
-            enhancements=2,
-            enhance_samples=50,
+        self,
+        segment1,
+        segment2,
+        fun1,
+        fun2,
+        samples=50,
+        ta=(0.0, 1.0, None),
+        tb=(0.0, 1.0, None),
+        depth=0,
+        enhancements=2,
+        enhance_samples=50,
     ):
         """
         Calculate intersections by linearized polyline intersections with enhancements.
@@ -1740,7 +1740,7 @@ class Geomstr:
         :param enhance_samples:
         :return:
         """
-        assert (samples >= 2)
+        assert samples >= 2
         a = np.linspace(ta[0], ta[1], num=samples)
         b = np.linspace(tb[0], tb[1], num=samples)
         step_a = a[1] - a[0]
@@ -1780,7 +1780,8 @@ class Geomstr:
 
             at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
             bt = tb[0] + float(hit[0]) * step_b
-            a_fractional = ta_hit[i] * step_a  # Fractional guess within intersected segment
+            # Fractional guess within intersected segment
+            a_fractional = ta_hit[i] * step_a
             b_fractional = tb_hit[i] * step_b
             if depth == enhancements:
                 # We've enhanced as best as we can, yield the current + segment t-value to our answer
