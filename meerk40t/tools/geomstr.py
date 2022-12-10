@@ -1840,22 +1840,25 @@ class Geomstr:
         @param mx: Matrix to transform by
         @return:
         """
-        line = self.segments[e]
+        geoms = self.segments[e]
 
-        def transform_point(v):
-            line[v] = complex(
-                line[v].real * mx.a + line[v].imag * mx.c + 1 * mx.e,
-                line[v].real * mx.b + line[v].imag * mx.d + 1 * mx.f,
-            )
+        geoms[0] = (np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e) + (
+            np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f
+        ) * 1j
+        geoms[4] = (np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e) + (
+            np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f
+        ) * 1j
 
-        transform_point(0)
-        transform_point(4)
+        infos = geoms[2]
+        q = np.where(infos.astype(int) & 0b0110)
+        geoms = self.segments[q]
 
-        if not line[2] & 0x0110:
-            return
-
-        transform_point(1)
-        transform_point(3)
+        geoms[1] = (np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e) + (
+            np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f
+        ) * 1j
+        geoms[3] = (np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e) + (
+            np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f
+        ) * 1j
 
     def translate(self, e, dx, dy):
         """
@@ -1871,7 +1874,7 @@ class Geomstr:
         geoms[4] += offset
         infos = geoms[2]
         q = np.where(infos.astype(int) & 0b0110)
-        geoms = segments[q]
+        geoms = self.segments[q]
         geoms[1] += offset
         geoms[3] += offset
 
@@ -1882,15 +1885,15 @@ class Geomstr:
         @param scale: uniform scaling factor
         @return:
         """
-        line = self.segments[e]
-        line[0] *= scale
-        line[4] *= scale
+        geoms = self.segments[e]
+        geoms[0] *= scale
+        geoms[4] *= scale
 
-        if not line[2] & 0x0110:
-            return
-
-        line[1] *= scale
-        line[3] *= scale
+        infos = geoms[2]
+        q = np.where(infos.astype(int) & 0b0110)
+        geoms = self.segments[q]
+        geoms[1] *= scale
+        geoms[3] *= scale
 
     def rotate(self, e, angle):
         """
