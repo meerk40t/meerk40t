@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 
+from meerk40t.svgelements import Matrix
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
@@ -68,6 +69,135 @@ TYPE_ARC = 0x50 | 0b1111
 
 TYPE_VERTEX = 0x70 | 0b0000
 TYPE_END = 0x80 | 0b0000
+
+
+class Pattern:
+    def __init__(self, geomstr=None):
+        if geomstr is None:
+            geomstr = Geomstr()
+        self.geomstr = geomstr
+        x0, y0, x1, y1 = geomstr.geometry.bbox()
+        self.offset_x = x0
+        self.offset_y = x0
+        self.cell_width = x1-x0
+        self.cell_height = y1-y0
+        self.padding_x = 0
+        self.padding_y = 0
+
+    def create_from_pattern(self, pattern, a=None, b=None, *args, **kwargs):
+        """
+        Write the pattern to the pattern in patterning format.
+
+        @param pattern: generator of pattern format.
+        @return:
+        """
+        path = self.geomstr
+        path.clear()
+        current = 0j
+
+        for entry in pattern(a, b, *args, **kwargs):
+            key = entry[0].lower()
+            if key == "m":
+                current = complex(entry[1], entry[2])
+            elif key == "h":
+                endpoint = complex(current.real + entry[1], current.imag)
+                path.line(current, endpoint)
+                current = endpoint
+            elif key == "v":
+                endpoint = complex(current.real, current.imag + entry[1])
+                path.line(current, endpoint)
+                current = endpoint
+            elif key == "l":
+                # Line to...
+                endpoint = complex(entry[1], entry[2])
+                path.line(current, endpoint)
+                current = endpoint
+            elif key == "a":
+                control = complex(entry[1], entry[2])
+                endpoint = complex(entry[3], entry[4])
+                path.arc(current, control, endpoint)
+                current = endpoint
+            elif key == "c":
+                control1 = complex(entry[1], entry[2])
+                control2 = complex(entry[3], entry[4])
+                endpoint = complex(entry[5], entry[6])
+                path.cubic(current, control1, control2, endpoint)
+                current = endpoint
+            elif key == "q":
+                control1 = complex(entry[1], entry[2])
+                endpoint = complex(entry[3], entry[4])
+                path.quad(current, control1, endpoint)
+                current = endpoint
+            else:
+                raise ValueError("Unrecognized Pattern Element")
+
+    def set_cell_dims_percent(self, percent_x, percent_y):
+        # I dunno
+        pass
+
+    def set_cell_dims(self, width, height):
+        self.cell_width, self.cell_width = width, height
+
+    def set_cell_padding(self, pad_x, pad_y):
+        self.padding_x, self.padding_y = pad_x, pad_y
+
+    def generate(self, x0, y0, x1, y1):
+        """
+        Generates a geomstr pattern between x0, y0, x1 and y1. The pattern may exceed
+        the given bounds. It is guaranteed, however, to include all the required pattern
+        copies within space given.
+
+        @param x0:
+        @param y0:
+        @param x1:
+        @param y1:
+        @return:
+        """
+        cwidth = self.cell_width
+        cheight = self.cell_height
+        padding_x = self.padding_x
+        padding_y = self.padding_y
+
+        #  Determine rows and columns of cuts to create
+        #  will round down so add 1 and trim later
+        if cwidth + 2 * padding_x == 0:
+            columns = 1
+        else:
+            columns = int(((x1 - x0) + cwidth)/ (cwidth + (2 * padding_x))) + 1
+        if cheight + 2 * padding_y == 0:
+            rows = 1
+        else:
+            rows = int(((y1 - y0) + cheight)/ (cheight + (2 * padding_y))) + 1
+
+        extend_patterns = False
+
+        if extend_patterns:
+            start_value = -2
+            end_value = 1
+            off_x = -1 * (cwidth / 2)
+        else:
+            columns = max(1, columns - 2)
+            rows = max(1, rows - 2)
+            start_value = 0
+            end_value = 0
+            off_x = 0
+
+        for c in range(start_value, columns + end_value, 1):
+            top_left_x = x0 + off_x
+            x_offset = c * (cwidth + (2 * padding_x))
+            x_current = top_left_x + x_offset
+            for row in range(start_value, rows + end_value, 1):
+                top_left_y = y0
+                y_offset = row * (cheight + (2 * padding_y)) + (
+                        (cheight + (2 * padding_y)) / 2
+                ) * (c % 2)
+                y_current = top_left_y + y_offset
+
+                if x_current < x1 and y_current < y1:
+                    m = Matrix.translate(x_current - self.offset_x, y_current - self.offset_y)
+                    m *= Matrix.scale(self.cell_height, self.cell_height)
+                    # Don't call draw if outside of hinge area
+                    yield self.geomstr.as_transformed(m)
 
 
 class Scanbeam:
@@ -389,7 +519,6 @@ class Geometry:
         @param max_passes: Max number of passes to attempt
         @return:
         """
-
         self.geomstr._trim()
         segments = self.geomstr.segments
         original = self.geomstr.index
