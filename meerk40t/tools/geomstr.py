@@ -92,6 +92,11 @@ class Pattern:
         @param pattern: generator of pattern format.
         @return:
         """
+        self.offset_x = 0
+        self.offset_y = 0
+        self.cell_width = 1
+        self.cell_height = 1
+
         path = self.geomstr
         path.clear()
         current = 0j
