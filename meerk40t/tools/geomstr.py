@@ -1,4 +1,5 @@
 import math
+from copy import copy
 
 import numpy as np
 
@@ -778,6 +779,12 @@ class Geomstr:
             self.segments = np.zeros((self.capacity, 5), dtype="complex")
 
         self._settings = dict()
+
+    def __str__(self):
+        return f"Geomstr({self.index} segments)"
+
+    def __repr__(self):
+        return f"Geomstr({repr(self.segments[:self.index])})"
 
     def __copy__(self):
         """
