@@ -2038,6 +2038,11 @@ class Geomstr:
         rotation = complex(math.cos(angle), math.sin(angle))
         self.uscale(e, rotation)
 
+    def as_transformed(self, mx):
+        g = copy(self)
+        g.geometry.transform(mx)
+        return g
+
     #######################
     # Arc Functions
     #######################
