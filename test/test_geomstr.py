@@ -1,4 +1,5 @@
 import random
+import time
 import unittest
 
 from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE
@@ -50,7 +51,7 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.uscale(w)
+        numpath.geometry.uscale(w)
 
         numpath2 = Geomstr()
         numpath2.polyline(
@@ -71,16 +72,17 @@ class TestGeomstr(unittest.TestCase):
                 complex(w * 0.25, h * 0.25),
             )
         )
+        q = numpath.segments == numpath2.segments
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
-        numpath.translate(3, 3)
+        numpath.geometry.translate(3, 3)
         self.assertFalse(np.all(numpath.segments == numpath2.segments))
-        numpath.translate(-3, -3)
+        numpath.geometry.translate(-3, -3)
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
 
     def test_geomstr_bbox(self):
         w = 10000
-        numpath = Geomstr()
-        numpath.polyline(
+        geomstr = Geomstr()
+        geomstr.polyline(
             (
                 complex(0.05, 0.05),
                 complex(0.95, 0.05),
@@ -89,7 +91,7 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.05, 0.05),
             )
         )
-        numpath.polyline(
+        geomstr.polyline(
             (
                 complex(0.25, 0.25),
                 complex(0.75, 0.25),
@@ -98,10 +100,10 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.uscale(w)
-        self.assertEqual(numpath.bbox(), (500.0, 500.0, 9500.0, 9500.0))
-        numpath.rotate(tau * 0.25)
-        for x, y in zip(numpath.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
+        geomstr.geometry.uscale(w)
+        self.assertEqual(geomstr.geometry.bbox(), (500.0, 500.0, 9500.0, 9500.0))
+        geomstr.geometry.rotate(tau * 0.25)
+        for x, y in zip(geomstr.geometry.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
             self.assertAlmostEqual(x, y)
 
     def test_geomstr_transform(self):
@@ -124,10 +126,10 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.uscale(10000)
+        numpath.geometry.uscale(10000)
         c = copy(numpath)
-        numpath.rotate(tau * 0.25)
-        c.transform(Matrix("rotate(.25turn)"))
+        numpath.geometry.rotate(tau * 0.25)
+        c.geometry.transform(Matrix("rotate(.25turn)"))
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
 
@@ -153,8 +155,8 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.uscale(10000)
-        numpath.rotate(tau * 0.25)
+        numpath.geometry.uscale(10000)
+        numpath.geometry.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
             for seg in subpath.segments:
@@ -244,7 +246,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.line(start, end)
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_quad_point(self):
         for i in range(1000):
@@ -257,7 +259,7 @@ class TestGeomstr(unittest.TestCase):
             path.quad(start, control, end)
 
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
 
     def test_geomstr_cubic_point(self):
         for i in range(1000):
@@ -271,7 +273,32 @@ class TestGeomstr(unittest.TestCase):
             path.cubic(start, c1, c2, end)
 
             t = random.random()
-            self.assertEqual(c.point(t), path.segment_point(0, t))
+            self.assertEqual(c.point(t), path.position(0, t))
+
+    def test_geomstr_cubic_length(self):
+        difference = 0
+        t0 = 0
+        t1 = 0
+        for i in range(50):
+            start = complex(random.random() * 100, random.random() * 100)
+            c1 = complex(random.random() * 100, random.random() * 100)
+            c2 = complex(random.random() * 100, random.random() * 100)
+            end = complex(random.random() * 100, random.random() * 100)
+            c = CubicBezier(start, c1, c2, end)
+
+            path = Geomstr()
+            path.cubic(start, c1, c2, end)
+            t = time.time()
+            clen = c.length()
+            t0 += time.time() - t
+
+            t = time.time()
+            plen = path.length(0)
+            t1 += time.time() - t
+            self.assertAlmostEqual(clen, plen, delta=0.1)
+            difference += clen
+            difference -= plen
+        print(f"geomstr cubic length time {t0}. svgelements cubic length time {t1}. total difference {difference}")
 
     def test_geomstr_line_bounds(self):
         for i in range(1000):
@@ -282,7 +309,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.line(start, end)
 
-            self.assertEqual(c.bbox(), path.segment_bbox(0))
+            self.assertEqual(c.bbox(), path.bbox(0))
 
     def test_geomstr_quad_bounds(self):
         for i in range(1000):
@@ -294,7 +321,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.quad(start, control, end)
 
-            self.assertEqual(c.bbox(), path.segment_bbox(0))
+            self.assertEqual(c.bbox(), path.bbox(0))
 
     def test_geomstr_cubic_bounds(self):
         for i in range(1000):
@@ -307,7 +334,7 @@ class TestGeomstr(unittest.TestCase):
             path = Geomstr()
             path.cubic(start, c1, c2, end)
 
-            self.assertEqual(c.bbox(), path.segment_bbox(0))
+            self.assertEqual(c.bbox(), path.bbox(0))
 
     def test_geomstr_point_functions(self):
         from math import sqrt,  radians
@@ -380,10 +407,10 @@ class TestGeomstr(unittest.TestCase):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
         self.assertEqual(len(path), 1)
-        self.assertEqual(path.length(), 50)
-        self.assertEqual(path.bbox(), (0, 0, 50, 0))
+        self.assertEqual(path.geometry.raw_length(), 50)
+        self.assertEqual(path.geometry.bbox(), (0, 0, 50, 0))
         path.line(complex(50, 0), complex(50, 50))
-        self.assertEqual(path.length(), 100)
+        self.assertEqual(path.geometry.raw_length(), 100)
 
     def test_geomstr_convex_hull(self):
         path = Geomstr()
@@ -396,7 +423,8 @@ class TestGeomstr(unittest.TestCase):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
         path.line(complex(50, 50), complex(50, 0))
-        self.assertEqual(path.length(), 100)
+        path = path.geometry
+        self.assertEqual(path.raw_length(), 100)
         self.assertEqual(path.travel_distance(), 50)
         path.two_opt_distance()
         self.assertEqual(path.travel_distance(), 0)
@@ -435,7 +463,7 @@ class TestGeomstr(unittest.TestCase):
         path.line(complex(50, 50), complex(0, 50))  # 2
         path.line(complex(0, 50), complex(0, 0))  # 3 ACTIVE
         path.close()
-        self.assertEqual(path.travel_distance(), 0)
+        self.assertEqual(path.geometry.travel_distance(), 0)
         beam = Scanbeam(path)
         beam.scanline_to(25)
         self.assertEqual(len(beam._active_edge_list), 2)
@@ -462,9 +490,42 @@ class TestGeomstr(unittest.TestCase):
         subject.line(complex(0, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.find_intersections(clip)
+        results = subject.geometry.find_intersections(clip)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], (50, 50, 0, 0, 0))
+
+    def test_geomstr_intersect_segments(self):
+        path = Geomstr()
+        for i in range(50):
+            t = random.randint(0, 5)
+            if t == 0:
+                start = complex(random.random() * 100, random.random() * 100)
+                path.point(start)
+            if t == 1:
+                start = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.line(start, end)
+            if t == 2:
+                start = complex(random.random() * 100, random.random() * 100)
+                control = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.quad(start, control, end)
+            if t == 3:
+                start = complex(random.random() * 100, random.random() * 100)
+                c1 = complex(random.random() * 100, random.random() * 100)
+                c2 = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.cubic(start, c1, c2, end)
+            if t == 4:
+                start = complex(random.random() * 100, random.random() * 100)
+                control = complex(random.random() * 100, random.random() * 100)
+                end = complex(random.random() * 100, random.random() * 100)
+                path.arc(start, control, end)
+
+        for j in range(path.index):
+            for k in range(path.index):
+                q = f"{path.segment_type(j)} x {path.segment_type(k)}: {list(path.intersections(j, k))}"
+                # print(q)
 
     def test_geomstr_merge(self):
         subject = Geomstr()
@@ -472,7 +533,7 @@ class TestGeomstr(unittest.TestCase):
         subject.line(complex(20, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.merge(clip)
+        results = subject.geometry.merge(clip)
         print(results.segments)
 
     def test_geomstr_merge_capacity_count(self):
@@ -489,7 +550,7 @@ class TestGeomstr(unittest.TestCase):
                     complex(random.randint(0, 50), random.randint(0, 50)),
                     complex(random.randint(0, 50), random.randint(0, 50)),
                 )
-            results = subject.merge(clip)
+            results = subject.geometry.merge(clip)
             self.assertEqual(results.index, results.capacity)
 
     def test_geomstr_merge_order(self):
@@ -501,6 +562,6 @@ class TestGeomstr(unittest.TestCase):
         clip.line(complex(0, 80), complex(100, 80))
         clip.line(complex(0, 60), complex(100, 60))
         clip.line(complex(0, 100), complex(100, 100))
-        results = subject.merge(clip)
+        results = subject.geometry.merge(clip)
         print(results)
 
