@@ -952,8 +952,10 @@ class Geomstr:
 
     def vertex(self, vertex=0):
         """
-        Adds a structural break in the current path. Two structural breaks are assumed to be a new path.
-        @param settings: Unused settings value for break.
+        Add a vertex, a vertex is assumed to be the same point always. Any run that hits a
+        vertex is said to have hit a graph-node. If there are two vertexes there is a loop
+        if there's more than segments that goto a vertex that is a graph.
+        @param vertex: Vertex index of vertex being added
         @return:
         """
         self._ensure_capacity(self.index + 1)
