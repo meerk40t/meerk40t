@@ -569,7 +569,8 @@ class TestGeomstr(unittest.TestCase):
         from meerk40t.fill.patternfill import set_diamond1
         f = set_diamond1
         p = Pattern()
-        p.create_from_pattern(p)
-        for s in p.generate(0,0,0,0):
-            print(s)
+        p.create_from_pattern(f)
+        for s in p.generate(0, 0, 3, 1):
+            print(repr(s))
+        print("finished.")
 
