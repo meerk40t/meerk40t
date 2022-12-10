@@ -2,7 +2,7 @@ import random
 import time
 import unittest
 
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE
+from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern
 
 import unittest
 from copy import copy
@@ -564,4 +564,12 @@ class TestGeomstr(unittest.TestCase):
         clip.line(complex(0, 100), complex(100, 100))
         results = subject.geometry.merge(clip)
         print(results)
+
+    def test_pattern_generation(self):
+        from meerk40t.fill.patternfill import set_diamond1
+        f = set_diamond1
+        p = Pattern()
+        p.create_from_pattern(p)
+        for s in p.generate(0,0,0,0):
+            print(s)
 
