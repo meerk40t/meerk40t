@@ -105,6 +105,7 @@ class Clip:
             end = geom[-1]
             if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(end.real, end.imag):
                 geom[2] = TYPE_END
+        return clip
 
 
 class Pattern:

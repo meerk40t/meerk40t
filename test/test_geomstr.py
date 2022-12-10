@@ -624,5 +624,6 @@ class TestGeomstr(unittest.TestCase):
         p = Pattern()
         p.create_from_pattern(f)
         q = Clip(Polygon(0+2j, 4+0j, 4+4j))
-        q.clip(p)
+        clipped = q.clip(p)
+        print(repr(clipped))
 
