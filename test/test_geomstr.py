@@ -480,6 +480,7 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.geometry.travel_distance(), 0)
         beam = Scanbeam(path)
         beam.scanline_to(float("inf"))
+        self.assertEqual(len(beam._active_edge_list), 0)
         beam.scanline_to(25)
         self.assertEqual(len(beam._active_edge_list), 2)
 
