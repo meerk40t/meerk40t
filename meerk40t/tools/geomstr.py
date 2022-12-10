@@ -163,42 +163,22 @@ class Pattern:
         cheight = self.cell_height
         padding_x = self.padding_x
         padding_y = self.padding_y
+        width = (x1 - x0)
+        height = (y1 - y0)
+        row_offset = 0.5 * self.cell_width
 
-        #  Determine rows and columns of cuts to create
-        #  will round down so add 1 and trim later
-        if cwidth + 2 * padding_x == 0:
-            columns = 1
-        else:
-            columns = int(((x1 - x0) + cwidth)/ (cwidth + (2 * padding_x))) + 1
-        if cheight + 2 * padding_y == 0:
-            rows = 1
-        else:
-            rows = int(((y1 - y0) + cheight)/ (cheight + (2 * padding_y))) + 1
+        start_index_x = math.floor(x0 / cwidth)
+        start_index_y = math.floor(y0 / cheight)
+        end_index_x = start_index_x + int(math.ceil(width / (cwidth + padding_x)))
+        end_index_y = start_index_y + int(math.ceil(height / (cheight + padding_y)))
 
-        extend_patterns = False
-
-        if extend_patterns:
-            start_value = -2
-            end_value = 1
-            off_x = -1 * (cwidth / 2)
-        else:
-            columns = max(1, columns - 2)
-            rows = max(1, rows - 2)
-            start_value = 0
-            end_value = 0
-            off_x = 0
-
-        for c in range(start_value, columns + end_value, 1):
-            top_left_x = x0 + off_x
-            x_offset = c * (cwidth + (2 * padding_x))
-            x_current = top_left_x + x_offset
-            for row in range(start_value, rows + end_value, 1):
-                top_left_y = y0
-                y_offset = row * (cheight + (2 * padding_y)) + (
-                        (cheight + (2 * padding_y)) / 2
-                ) * (c % 2)
-                y_current = top_left_y + y_offset
-
+        for c in range(start_index_x, end_index_x):
+            x_current = x0 + (c * (cwidth + padding_x))
+            for r in range(start_index_y, end_index_y):
+                y_current = y0 + (r * (cheight + padding_y))
+                if c % 2 == 1:
+                    # Every other row is offset.
+                    y_current += row_offset
                 if x_current < x1 and y_current < y1:
                     # Don't call draw if outside of hinge area
                     m = Matrix.translate(x_current - self.offset_x, y_current - self.offset_y)
