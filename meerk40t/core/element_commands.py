@@ -2809,7 +2809,7 @@ def init_commands(kernel):
             data_out.extend(add_elem)
             currentangle += segment_len
         for e in images:
-            e.update(self.scene.context)
+            e.update(None)
 
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
@@ -4807,7 +4807,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(self)
+            node.update(None)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
@@ -4915,7 +4916,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(self)
+            node.update(None)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -5188,7 +5190,8 @@ def init_commands(kernel):
                 if hasattr(node, "update"):
                     images.append(node)
             for node in images:
-                node.update(self.scene.context)
+                node.update(None)
+            self.signal("refresh_scene", "Scene")
             return "elements", data
         except (ValueError, ZeroDivisionError, TypeError):
             raise CommandSyntaxError
@@ -5248,7 +5251,8 @@ def init_commands(kernel):
         except ValueError:
             raise CommandSyntaxError
         for node in images:
-            node.update(self)
+            node.update(None)
+        self.signal("refresh_scene", "Scene")
         return
 
     @self.console_command(
@@ -5273,8 +5277,8 @@ def init_commands(kernel):
             if hasattr(e, "update"):
                 images.append(e)
         for e in images:
-            e.update(self)
-
+            e.update(None)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
