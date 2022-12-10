@@ -103,7 +103,9 @@ class TestGeomstr(unittest.TestCase):
         geomstr.geometry.uscale(w)
         self.assertEqual(geomstr.geometry.bbox(), (500.0, 500.0, 9500.0, 9500.0))
         geomstr.geometry.rotate(tau * 0.25)
-        for x, y in zip(geomstr.geometry.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
+        for x, y in zip(
+            geomstr.geometry.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)
+        ):
             self.assertAlmostEqual(x, y)
 
     def test_geomstr_transform(self):
@@ -582,7 +584,21 @@ class TestGeomstr(unittest.TestCase):
             )
             array2 = s.segments[:s.index]
             self.assertTrue((array == array2).all())
-            print(repr(s))
-        for s in p.generate(0, 0, 3, 3):
+
+    def test_pattern_generation_counts(self):
+        from meerk40t.fill.patternfill import set_diamond1
+
+        f = set_diamond1
+        p = Pattern()
+        p.create_from_pattern(f)
+
+        three_x_three_grid = list(p.generate(0, 0, 4, 4))
+        self.assertEqual(len(three_x_three_grid), 16)
+        p.set_cell_padding(0.5, 0.5)
+        three_x_three_grid = list(p.generate(0, 0, 4, 4))
+        # 1 0.5 1 0.5 1 = 4, so 4x4 with 0.5 padding fits 3x3
+        self.assertEqual(len(three_x_three_grid), 9)
+        p.set_cell_padding(0, 0)
+        for s in p.generate(0, 0, 2, 2):
             print(repr(s))
         print("finished.")

@@ -200,9 +200,9 @@ class Pattern:
                 y_current = top_left_y + y_offset
 
                 if x_current < x1 and y_current < y1:
+                    # Don't call draw if outside of hinge area
                     m = Matrix.translate(x_current - self.offset_x, y_current - self.offset_y)
                     m *= Matrix.scale(self.cell_height, self.cell_height)
-                    # Don't call draw if outside of hinge area
                     yield self.geomstr.as_transformed(m)
 
 
