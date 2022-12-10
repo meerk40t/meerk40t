@@ -378,22 +378,24 @@ class Scanbeam:
 
     def decrement_scanbeam(self):
         """
-        Move the scanbeam higher in the events.
+        Decrement scanbeam the active edge events.
 
         @return:
         """
-        # TODO: Not fixed.
         self._edge_index -= 1
         self._high = self._low
-        if self._edge_index > 0:
+        try:
             self._low, sb_index = self._sorted_edge_list[self._edge_index - 1]
             self._low = self._low.imag
-            if sb_index > 0:
+        except IndexError:
+            self._low = float("-inf")
+
+        if self._edge_index <= len(self._sorted_edge_list):
+            sb_value, sb_index = self._sorted_edge_list[self._edge_index - 1]
+            if sb_index >= 0:
                 self._active_edge_list.append(sb_index)
             else:
                 self._active_edge_list.remove(~sb_index)
-        else:
-            self._low = -float("inf")
 
 
 class Geometry:
