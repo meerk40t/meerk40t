@@ -135,15 +135,17 @@ class LivingHinges:
 
         p = Pattern()
         p.create_from_pattern(self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape)
+        p.set_cell_padding(self.cell_padding_h, self.cell_padding_v)
+        p.set_cell_dims(self.cell_width, self.cell_height)
 
         outer_path = self.outershape.as_path()
-        pts = [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+        pts = [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
         poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
 
         q = Clip(poly)
         self.path = q.clip(p)
 
-        self.path.geometry.translate(self.start_x, self.start_y)
+        # self.path.geometry.translate(self.start_x, self.start_y)
         self.previewpath = copy(self.path)
 
 
