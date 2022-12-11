@@ -505,7 +505,13 @@ class Geometry:
         # TODO: Doesn't account for mx
         segments = self.geomstr.segments
         index = self.geomstr.index
-        min_x, min_y, max_x, max_y = self.geomstr.bbox(segments[0:index])
+        bounds = self.geomstr.bbox(segments[0:index])
+        min_x, min_y, max_x, max_y = bounds
+        min_x = min_x[np.where(~np.isnan(min_x))]
+        min_y = min_y[np.where(~np.isnan(min_y))]
+        max_x = max_x[np.where(~np.isnan(max_x))]
+        max_y = max_y[np.where(~np.isnan(max_y))]
+
         if len(min_x) == 0:
             return np.nan, np.nan, np.nan, np.nan
         return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
