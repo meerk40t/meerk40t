@@ -94,17 +94,21 @@ class Clip:
         for s in self.subject:
             clip.append(s)
         for i in range(self.clipping_shape.index):
-            for c in range(clip.index, -1, -1):
-                for t0, t1 in clip.intersections(c, self.clipping_shape.segments[i]):
+            for c in range(clip.index - 1, -1, -1):
+                for t0, t1 in sorted(list(clip.intersections(c, self.clipping_shape.segments[i])), key=lambda t: t[0], reverse=True):
                     clip.split(c, t0)
 
         sb = Scanbeam(self.clipping_shape)
-        for c in range(clip.index, -1, -1):
+        for c in range(clip.index - 1, -1, -1):
             geom = clip.segments[c]
             start = geom[0]
             end = geom[-1]
             if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(end.real, end.imag):
-                geom[2] = TYPE_END
+                geom[2] = np.nan
+
+        r = np.where(~np.isnan(clip.segments[:clip.index,2]))
+        clip.segments = clip.segments[r]
+        clip.index = len(clip.segments)
         return clip
 
 
@@ -866,6 +870,7 @@ class Geomstr:
         self._ensure_capacity(self.index + other.index + 1)
         self.end()
         self.segments[self.index:self.index + other.index] = other.segments[:other.index]
+        self.index += other.index
 
     #######################
     # Geometric Primatives
@@ -1484,7 +1489,6 @@ class Geomstr:
                 control2,
                 end
             )
-            self.index += 1
             return
         raise NotImplementedError
 
@@ -1897,6 +1901,8 @@ class Geomstr:
     def _find_intersections(self, segment1, segment2):
         fun1 = self._get_segment_function(segment1[2].real)
         fun2 = self._get_segment_function(segment2[2].real)
+        if fun1 is None or fun2 is None:
+            return  # Only shapes can intersect. We don't do point point.
         yield from self._find_intersections_main(segment1, segment2, fun1, fun2)
 
     def _find_intersections_main(
