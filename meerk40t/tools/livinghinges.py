@@ -493,7 +493,7 @@ class HingePanel(wx.Panel):
                     show_outline=False, force=False, final=False
                 )
                 gc.SetPen(mypen_path)
-                gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
+                gcpath = self.renderer.make_geomstr(gc, self.hinge_generator.previewpath)
                 gc.StrokePath(gcpath)
         self.panel_preview.Refresh()
         self.panel_preview.Update()
