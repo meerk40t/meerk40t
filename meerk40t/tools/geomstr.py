@@ -86,13 +86,7 @@ class Clip:
         self.clipping_shape = shape.geomstr
         self.bounds = shape.bbox()
 
-    def clip(self, pattern):
-        if hasattr(pattern, "generate"):
-            clip = Geomstr()
-            for s in list(pattern.generate(*self.bounds)):
-                clip.append(s)
-        else:
-            clip = pattern
+    def clip(self, clip):
         for i in range(self.clipping_shape.index):
             for c in range(clip.index - 1, -1, -1):
                 for t0, t1 in sorted(list(clip.intersections(c, self.clipping_shape.segments[i])), key=lambda t: t[0], reverse=True):
