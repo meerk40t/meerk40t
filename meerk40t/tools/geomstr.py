@@ -213,9 +213,9 @@ class Pattern:
         end_index_y = start_index_y + int(math.ceil(height / (cheight + padding_y)))
 
         for c in range(start_index_x, end_index_x):
-            x_current = x0 + (c * (cwidth + padding_x))
+            x_current = c * (cwidth + padding_x)
             for r in range(start_index_y, end_index_y):
-                y_current = y0 + (r * (cheight + padding_y))
+                y_current = r * (cheight + padding_y)
                 if c % 2 == 1:
                     # Every other row is offset.
                     y_current += row_offset
@@ -467,7 +467,7 @@ class Geometry:
         segments[:index, 0] += complex(dx, dy)
         segments[:index, 4] += complex(dx, dy)
         infos = segments[:index, 2]
-        q = np.where(infos.astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b0110)
         segments[q, 1] += complex(dx, dy)
         segments[q, 3] += complex(dx, dy)
 
