@@ -182,7 +182,7 @@ class Pattern:
         pass
 
     def set_cell_dims(self, width, height):
-        self.cell_width, self.cell_width = width, height
+        self.cell_width, self.cell_height = width, height
 
     def set_cell_padding(self, pad_x, pad_y):
         self.padding_x, self.padding_y = pad_x, pad_y
