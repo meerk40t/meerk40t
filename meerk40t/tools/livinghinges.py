@@ -464,8 +464,8 @@ class HingePanel(wx.Panel):
                 b=0,
                 c=0,
                 d=ratio,
-                tx=0.05 * ratio * self.hinge_generator.width,
-                ty=0.05 * ratio * self.hinge_generator.height,
+                tx=ratio * (0.05 * self.hinge_generator.width - self.hinge_generator.start_x),
+                ty=ratio * (0.05 * self.hinge_generator.height - self.hinge_generator.start_y),
             )
             gc.SetTransform(matrix)
             if ratio == 0:
@@ -480,10 +480,10 @@ class HingePanel(wx.Panel):
                         0, 0, self.hinge_generator.width, self.hinge_generator.height
                     )
                 else:
-                    node = copy(self.hinge_generator.outershape)
-                    bb = node.bbox()
-                    node.matrix *= Matrix.translate(-bb[0], -bb[1])
-                    path = node.as_path()
+                    # node = copy(self.hinge_generator.outershape)
+                    # bb = node.bbox()
+                    # node.matrix *= Matrix.translate(-bb[0], -bb[1])
+                    path = self.hinge_generator.outershape.as_path()
                     gcpath = self.renderer.make_path(gc, path)
                     gc.StrokePath(gcpath)
             if self.check_preview_show_pattern.GetValue():
