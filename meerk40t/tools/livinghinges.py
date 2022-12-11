@@ -490,7 +490,7 @@ class HingePanel(wx.Panel):
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
-                    show_outline=False, force=False, final=False
+                    show_outline=False, force=False, final=False, clip_bounds=False,
                 )
                 gc.SetPen(mypen_path)
                 gspath = self.hinge_generator.path
