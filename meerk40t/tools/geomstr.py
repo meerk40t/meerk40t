@@ -521,7 +521,7 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
         infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b1001)
         pen_downs = segments[q, 0]
         pen_ups = segments[q, -1]
         return np.sum(np.abs(pen_ups - pen_downs))
@@ -534,7 +534,7 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
         infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b1001)
         valid_segments = segments[q]
 
         indexes0 = np.arange(0, len(valid_segments) - 1)

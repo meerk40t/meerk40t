@@ -626,7 +626,12 @@ class TestGeomstr(unittest.TestCase):
         poly = Polygon(0+2j, 4+0j, 4+4j, 0+2j)
         poly.geomstr.geometry.uscale(5)
         q = Clip(poly)
-        clipped = q.clip(p)
+
+        clip = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            clip.append(s)
+
+        clipped = q.clip(clip)
         clipped.geometry.uscale(10)
         # self.assertEqual(len(clipped), 54)
         # from PIL import ImageDraw, Image
