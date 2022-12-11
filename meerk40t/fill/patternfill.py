@@ -93,6 +93,8 @@ class LivingHinges:
     def set_cell_values(self, percentage_x, percentage_y):
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
+        self.cell_height = self.height * self.cell_height_percentage / _FACTOR
+        self.cell_width = self.width * self.cell_width_percentage / _FACTOR
         # Requires recalculation
         self.path = None
         self.preview_path = None
@@ -100,6 +102,11 @@ class LivingHinges:
     def set_padding_values(self, padding_x, padding_y):
         self.cell_padding_h_percentage = padding_x
         self.cell_padding_v_percentage = padding_y
+
+        self.cell_padding_h = self.cell_width * self.cell_padding_h_percentage / _FACTOR
+        self.cell_padding_v = (
+            self.cell_height * self.cell_padding_v_percentage / _FACTOR
+        )
         # Requires recalculation
         self.path = None
         self.preview_path = None
