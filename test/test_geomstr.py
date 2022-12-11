@@ -619,11 +619,22 @@ class TestGeomstr(unittest.TestCase):
 
     def test_pattern_clip(self):
         from meerk40t.fill.patternfill import set_diamond1
-
+        t = time.time()
         f = set_diamond1
         p = Pattern()
         p.create_from_pattern(f)
-        q = Clip(Polygon(0+2j, 4+0j, 4+4j, 0+2j))
+        poly = Polygon(0+2j, 4+0j, 4+4j, 0+2j)
+        poly.geomstr.geometry.uscale(5)
+        q = Clip(poly)
         clipped = q.clip(p)
-        self.assertEqual(len(clipped), 54)
+        clipped.geometry.uscale(10)
+        # self.assertEqual(len(clipped), 54)
+        # from PIL import ImageDraw, Image
+        #
+        # x0, y0, x1, y1 = clipped.geometry.bbox()
+        #
+        # img = Image.new("L", size=(int(x1-x0), int(y1-y0)), color="white")
+        # draw = ImageDraw.Draw(img)
+        # clipped.draw(draw, int(x0), int(y0))
+        # img.save("test.png")
 
