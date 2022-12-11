@@ -1196,19 +1196,24 @@ class Geomstr:
     # Universal Functions
     #######################
 
-    def bbox(self, e):
+    def bbox(self, e=None):
         """
         Get the bounds of the given geom primitive
 
         @param e:
         @return:
         """
+        if isinstance(e, Matrix):
+            return self.geometry.bbox(e)
         if isinstance(e, np.ndarray):
             bboxes = np.zeros((4, len(e)), dtype=float)
-            for i in range(len(e)):
-                bboxes[:, i] = self.bbox(i)
+            for i, line in enumerate(e):
+                bboxes[:, i] = self._bbox_segment(line)
             return bboxes
         line = self.segments[e]
+        return self._bbox_segment(line)
+
+    def _bbox_segment(self, line):
         if line[2].real == TYPE_LINE:
             return (
                 min(line[0].real, line[-1].real),
@@ -1496,7 +1501,7 @@ class Geomstr:
                 end
             )
             return
-        raise NotImplementedError
+        # TODO: Add in splitting for other types.
 
     def normal(self, e, t):
         """
