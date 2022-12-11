@@ -55,7 +55,7 @@ class LivingHinges:
         )
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
         self.outershape = None
         # Specifically for the shape pattern we hold a list of precalculated polygons
         self.pattern = []
@@ -88,14 +88,14 @@ class LivingHinges:
         self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
 
     def set_cell_values(self, percentage_x, percentage_y):
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
 
     def set_padding_values(self, padding_x, padding_y):
         self.cell_padding_h_percentage = padding_x
@@ -154,7 +154,7 @@ class LivingHinges:
             self.path = clip
 
         # self.path.geometry.translate(self.start_x, self.start_y)
-        self.previewpath = copy(self.path)
+        self.preview_path = copy(self.path)
 
 
 # class LivingHingesOld:
