@@ -30,7 +30,8 @@ IDX_HISTORY_ESTIMATE = 7
 IDX_HISTORY_STEPS_DONE = 8
 IDX_HISTORY_STEPS_TOTAL = 9
 IDX_HISTORY_LOOPS_DONE = 10
-
+# Amount of columns...
+IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
 
 def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
@@ -688,6 +689,8 @@ class SpoolerPanel(wx.Panel):
 
     @staticmethod
     def timestr(t, oneday):
+        if t is None:
+            return ""
         if oneday:
             localt = time.localtime(t)
             hours = localt[3]
@@ -703,6 +706,8 @@ class SpoolerPanel(wx.Panel):
 
     @staticmethod
     def datestr(t):
+        if t is None:
+            return ""
         localt = time.localtime(t)
         lyear = localt[0]
         lmonth = int(localt[1])
@@ -857,6 +862,19 @@ class SpoolerPanel(wx.Panel):
             try:
                 with open(filename, "r") as f:
                     self.history = json.load(f)
+                # make sure we extend the fields for those entries
+                # that were saved with a previous version
+                for item in self.history:
+                    while len(item) < IDX_HISTORY_MAX_FIELDS:
+                        item.append(None)
+                    for idx in (
+                        IDX_HISTORY_START, IDX_HISTORY_DURATION,
+                        IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
+                        IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
+                    ):
+                        if item[idx] is None:
+                            item[idx] = 0
+
                 # Store in new format...
                 self.save_history()
                 # Now delete the file...
@@ -869,7 +887,10 @@ class SpoolerPanel(wx.Panel):
         self.refresh_history()
 
     def save_history(self):
+
         def escaped(s):
+            if s is None:
+                s = ""
             return s.replace('"', "'")
 
         self.context.logging.logs["spooler"] = {"history": self.history}
