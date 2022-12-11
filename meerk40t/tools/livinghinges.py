@@ -561,7 +561,7 @@ class HingePanel(wx.Panel):
             path=self.hinge_generator.path,
             stroke_width=500,
             color=Color("red"),
-            type="elem path",
+            type="elem geomstr",
         )
         if self.hinge_generator.outershape is not None:
             group_node = self.hinge_generator.outershape.parent.add(
