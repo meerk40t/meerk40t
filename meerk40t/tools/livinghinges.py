@@ -493,7 +493,8 @@ class HingePanel(wx.Panel):
                     show_outline=False, force=False, final=False
                 )
                 gc.SetPen(mypen_path)
-                gcpath = self.renderer.make_geomstr(gc, self.hinge_generator.previewpath)
+                gspath = self.hinge_generator.path
+                gcpath = self.renderer.make_geomstr(gc, gspath)
                 gc.StrokePath(gcpath)
         self.panel_preview.Refresh()
         self.panel_preview.Update()
@@ -560,7 +561,7 @@ class HingePanel(wx.Panel):
         node = self.context.elements.elem_branch.add(
             path=self.hinge_generator.path,
             stroke_width=500,
-            color=Color("red"),
+            stroke=Color("red"),
             type="elem geomstr",
         )
         if self.hinge_generator.outershape is not None:
