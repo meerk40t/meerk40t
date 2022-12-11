@@ -420,7 +420,6 @@ class ImageModificationPanel(ScrolledPanel):
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
-
         sizer_main.Add(sizer_script, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
 
@@ -473,7 +472,8 @@ class ImageModificationPanel(ScrolledPanel):
             self.update_node()
 
     def update_node(self):
-        self.node.update(self.context.elements)
+        self.context.elements.emphasized()
+        self.node.update(self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
 
@@ -1023,6 +1023,7 @@ class ImagePropertyPanel(ScrolledPanel):
             check="float",
             limited=True,
         )
+        self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
 
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -1119,6 +1120,8 @@ class ImagePropertyPanel(ScrolledPanel):
             self.on_slider_grayscale_component,
             self.slider_grayscale_blue,
         )
+        self.check_prevent_crop.Bind(wx.EVT_CHECKBOX, self.on_crop_option)
+
         # self.check_enable_grayscale.SetValue(op["enable"])
         if node.invert is None:
             node.invert = False
@@ -1156,8 +1159,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
+        self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
+        self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
@@ -1190,11 +1195,16 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
+        sizer_crop = StaticBoxSizer(self, wx.ID_ANY, _("Auto-Crop:"), wx.HORIZONTAL)
+        sizer_crop.Add(self.check_prevent_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_dpi_dither.Add(sizer_crop, 1, wx.EXPAND, 0)
+
         sizer_dither = StaticBoxSizer(self, wx.ID_ANY, _("Dither"), wx.HORIZONTAL)
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_dpi_dither.Add(sizer_dither, 2, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
 
@@ -1239,11 +1249,19 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Centre()
         # end wxGlade
 
+    def node_update(self):
+        self.context.elements.emphasized()
+        self.node.update(self.context)
+        self.context.signal("element_property_update", self.node)
+
     def on_text_dpi(self):
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
+
+    def on_crop_option(self, event):
+        self.node.prevent_crop = self.check_prevent_crop.GetValue()
+        self.node_update()
 
     def on_dither(self, event=None):
         # Dither can be set by two different means:
@@ -1260,15 +1278,13 @@ class ImagePropertyPanel(ScrolledPanel):
             dither_op["type"] = dither_type
         self.node.dither = dither_flag
         self.node.dither_type = dither_type
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
 
     def on_check_invert_grayscale(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.node.invert = self.check_invert_grayscale.GetValue()
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
 
     def on_slider_grayscale_component(
         self, event=None
@@ -1286,8 +1302,7 @@ class ImagePropertyPanel(ScrolledPanel):
             int(self.slider_grayscale_lightness.GetValue()) / 500.0
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
 
     # def on_combo_operation(self, event):
     #     idx = self.combo_operations.GetSelection()

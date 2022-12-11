@@ -31,6 +31,7 @@ class ImageNode(Node):
         self.blue = 1.0
         self.lightness = 1.0
         self.view_invert = False
+        self.prevent_crop = False
 
         self.passthrough = False
         super(ImageNode, self).__init__(type="elem image", **kwargs)
@@ -91,11 +92,11 @@ class ImageNode(Node):
         self._processed_matrix = None
         self._process_image_failed = False
         self._processing_message = None
-        if self.operations:
+        if self.operations or self.dither or self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
 
     def __copy__(self):
         nd = self.node_dict
@@ -114,7 +115,7 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
         if self._processed_image is not None:
             return self._processed_image
         else:
@@ -135,7 +136,7 @@ class ImageNode(Node):
         self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
-        self.process_image(self.step_x, self.step_y)
+        self.process_image(self.step_x, self.step_y, not self.prevent_crop)
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -203,27 +204,40 @@ class ImageNode(Node):
         @return:
         """
         self._needs_update = True
-        self._processing_message = "Processing..."
-        context.signal("refresh_scene", "Scene")
+        if context is not None:
+            self._processing_message = "Processing..."
+            context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
-                if self._process_image_failed:
-                    self._processing_message = (
-                        "Process image could not exist in memory."
-                    )
-                else:
-                    self._processing_message = None
                 self._needs_update = False
                 self._update_thread = None
-                context.signal("refresh_scene", "Scene")
-                context.signal("image updated", self)
+                if context is not None:
+                    if self._process_image_failed:
+                        self._processing_message = (
+                            "Process image could not exist in memory."
+                        )
+                    else:
+                        self._processing_message = None
+                    context.signal("refresh_scene", "Scene")
+                    context.signal("image_updated", self)
 
             self._processed_image = None
             # self.processed_matrix = None
-            self._update_thread = context.threaded(
-                self._process_image_thread, result=clear, daemon=True
-            )
+            if context is None:
+                # Direct execution
+                self._needs_update = False
+                # Calculate scene step_x, step_y values
+                step = UNITS_PER_INCH / self.dpi
+                step_x = step
+                step_y = step
+                self.process_image(step_x, step_y, not self.prevent_crop)
+                # Unset cache.
+                self._cache = None
+            else:
+                self._update_thread = context.threaded(
+                    self._process_image_thread, result=clear, daemon=True
+                )
 
     def _process_image_thread(self):
         """
@@ -237,7 +251,7 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
             # Unset cache.
             self._cache = None
 
@@ -269,6 +283,9 @@ class ImageNode(Node):
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
+            bb = self.bbox()
+            self._bounds = bb
+            self._paint_bounds = bb
         except (MemoryError, Image.DecompressionBombError):
             self._process_image_failed = True
         self.updated()
