@@ -2520,6 +2520,22 @@ class Geomstr:
         if last != self.index:
             yield Geomstr(self.segments[last : self.index])
 
+    def draw(self, draw, offset_x, offset_y):
+        """
+        Though not a requirement, this draws with the given ImageDraw api found in Pillow.
+
+        Currently only works with lines.
+        @param draw: draw object
+        @param offset_x: x offset
+        @param offset_y: y offset
+        @return:
+        """
+        types = self.segments[: self.index, 2]
+        q = np.where(types.real == TYPE_LINE)
+        for line in self.segments[q]:
+            start, control1, info, control2, end = line
+            draw.line((int(start.real) - offset_x, int(start.imag) - offset_y, int(end.real) - offset_x, int(end.imag) - offset_y), fill="black")
+
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
         denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1)
