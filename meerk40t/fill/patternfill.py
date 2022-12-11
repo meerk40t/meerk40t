@@ -16,6 +16,7 @@ from meerk40t.svgelements import (
     Polyline,
     QuadraticBezier,
 )
+from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pathtools import VectorMontonizer
 
 
@@ -122,7 +123,7 @@ class LivingHinges:
         # Make sure pattern is updated with additional parameter
         self.set_predefined_pattern(self.cutpattern)
 
-    def generate(self, show_outline=False, force=False, final=False):
+    def generate(self, show_outline=False, force=False, final=False, clip_bounds=True):
         if final and self.path is not None and not force:
             # No need to recalculate...
             return
@@ -143,7 +144,14 @@ class LivingHinges:
         poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
 
         q = Clip(poly)
-        self.path = q.clip(p)
+        clip = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            clip.append(s)
+
+        if clip_bounds:
+            self.path = q.clip(clip)
+        else:
+            self.path = clip
 
         # self.path.geometry.translate(self.start_x, self.start_y)
         self.previewpath = copy(self.path)
