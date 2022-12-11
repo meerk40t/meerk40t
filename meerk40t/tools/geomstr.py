@@ -443,7 +443,7 @@ class Geometry:
         segments[:index, 4] = reals + 1j * imags
 
         infos = segments[:index, 2]
-        q = np.where(infos.astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b0110)
 
         c0s = segments[q, 1]
         reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
@@ -483,7 +483,7 @@ class Geometry:
         segments[:index, 0] *= scale
         segments[:index, 4] *= scale
         infos = segments[:index, 2]
-        q = np.where(infos.astype(int) & 0b0110)
+        q = np.where(np.real(infos).astype(int) & 0b0110)
         segments[q, 1] *= scale
         segments[q, 3] *= scale
 
@@ -521,7 +521,7 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
         infos = segments[:index, 2]
-        q = np.where(infos.astype(int) & 0b1001)
+        q = np.where(np.real(infos).astype(int) & 0b0110)
         pen_downs = segments[q, 0]
         pen_ups = segments[q, -1]
         return np.sum(np.abs(pen_ups - pen_downs))
@@ -534,7 +534,7 @@ class Geometry:
         segments = self.geomstr.segments
         index = self.geomstr.index
         infos = segments[:index, 2]
-        q = np.where(infos.astype(int) & 0b1001)
+        q = np.where(np.real(infos).astype(int) & 0b0110)
         valid_segments = segments[q]
 
         indexes0 = np.arange(0, len(valid_segments) - 1)
