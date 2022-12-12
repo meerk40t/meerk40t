@@ -15067,10 +15067,10 @@ msgstr "Linke Seite"
 msgid "Distance of second line"
 msgstr "Abstand zur zweiten Linie"
 
-msgid "Left/right bowl"
+msgid "Left/Right Bowl"
 msgstr "Linke/Rechte Wölbung"
 
-msgid "Top/bottom bowl"
+msgid "Top/Bottom Bowl"
 msgstr "Obere/Untere Wölbung"
 
 msgid "Left/Right Indentation"
