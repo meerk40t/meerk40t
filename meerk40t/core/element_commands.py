@@ -3252,10 +3252,11 @@ def init_commands(kernel):
             linejoin=Linejoin.JOIN_ROUND,
         )
         # Newly created! Classification needed?
-        post.append(classify_new(node))
+        data_out = [node]
+        post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
 
-        return "elements", [node]
+        return "elements", data_out
 
     @self.console_option(
         "dpi", "d", help=_("interim image resolution"), default=500, type=float
