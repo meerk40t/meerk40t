@@ -407,47 +407,6 @@ class Geometry:
     def __init__(self, geomstr):
         self.geomstr = geomstr
 
-    @property
-    def segments(self):
-        return self.geomstr.segments
-
-    @property
-    def index(self):
-        return self.geomstr.index
-
-    @property
-    def capacity(self):
-        return self.geomstr.capacity
-
-    def transform(self, mx):
-        """
-        Affine Transformation by an arbitrary matrix.
-        @param mx: Matrix to transform by
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        starts = segments[:index, 0]
-        reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
-        imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
-        segments[:index, 0] = reals + 1j * imags
-        ends = segments[:index, 4]
-        reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
-        imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
-        segments[:index, 4] = reals + 1j * imags
-
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
-
-        c0s = segments[q, 1]
-        reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
-        imags = c0s.real * mx.b + c0s.imag * mx.d + 1 * mx.f
-        segments[q, 1] = reals + 1j * imags
-        c1s = segments[q, 3]
-        reals = c1s.real * mx.a + c1s.imag * mx.c + 1 * mx.e
-        imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
-        segments[q, 3] = reals + 1j * imags
-
     def translate(self, dx, dy):
         """
         Translate the location within the path.
@@ -2041,33 +2000,55 @@ class Geomstr:
     # Geom Tranformations
     #######################
 
-    def transform(self, e, mx):
+    def transform(self, mx, e):
         """
         Affine Transformation by an arbitrary matrix.
-
-        @param e: line to transform
         @param mx: Matrix to transform by
         @return:
         """
-        geoms = self.segments[e]
+        if e is not None:
+            geoms = self.segments[e]
 
-        geoms[0] = (np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f
-        ) * 1j
-        geoms[4] = (np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f
-        ) * 1j
+            geoms[0] = (np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e) + (
+                    np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f
+            ) * 1j
+            geoms[4] = (np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e) + (
+                    np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f
+            ) * 1j
 
-        infos = geoms[2]
-        q = np.where(infos.astype(int) & 0b0110)
-        geoms = self.segments[q]
+            infos = geoms[2]
+            q = np.where(infos.astype(int) & 0b0110)
+            geoms = self.segments[q]
 
-        geoms[1] = (np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f
-        ) * 1j
-        geoms[3] = (np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f
-        ) * 1j
+            geoms[1] = (np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e) + (
+                    np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f
+            ) * 1j
+            geoms[3] = (np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e) + (
+                    np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f
+            ) * 1j
+            return
+        segments = self.segments
+        index = self.index
+        starts = segments[:index, 0]
+        reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
+        imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
+        segments[:index, 0] = reals + 1j * imags
+        ends = segments[:index, 4]
+        reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
+        imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
+        segments[:index, 4] = reals + 1j * imags
+
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b0110)
+
+        c0s = segments[q, 1]
+        reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
+        imags = c0s.real * mx.b + c0s.imag * mx.d + 1 * mx.f
+        segments[q, 1] = reals + 1j * imags
+        c1s = segments[q, 3]
+        reals = c1s.real * mx.a + c1s.imag * mx.c + 1 * mx.e
+        imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
+        segments[q, 3] = reals + 1j * imags
 
     def translate(self, e, dx, dy):
         """
