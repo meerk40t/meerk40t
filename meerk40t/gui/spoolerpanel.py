@@ -854,6 +854,20 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItemData(list_id, idx - 1)
 
     def reload_history(self):
+        def fixitems():
+            # make sure we extend the fields for those entries
+            # that were saved with a previous version
+            for item in self.history:
+                while len(item) < IDX_HISTORY_MAX_FIELDS:
+                    item.append(None)
+                for idx in (
+                    IDX_HISTORY_START, IDX_HISTORY_DURATION,
+                    IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
+                    IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
+                ):
+                    if item[idx] is None:
+                        item[idx] = 0
+
         self.history = []
         directory = os.path.dirname(self.context.elements.op_data._config_file)
         filename = os.path.join(directory, "history.json")
@@ -862,19 +876,7 @@ class SpoolerPanel(wx.Panel):
             try:
                 with open(filename, "r") as f:
                     self.history = json.load(f)
-                # make sure we extend the fields for those entries
-                # that were saved with a previous version
-                for item in self.history:
-                    while len(item) < IDX_HISTORY_MAX_FIELDS:
-                        item.append(None)
-                    for idx in (
-                        IDX_HISTORY_START, IDX_HISTORY_DURATION,
-                        IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
-                        IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
-                    ):
-                        if item[idx] is None:
-                            item[idx] = 0
-
+                fixitems()
                 # Store in new format...
                 self.save_history()
                 # Now delete the file...
@@ -884,6 +886,9 @@ class SpoolerPanel(wx.Panel):
         if len(self.history) == 0:
             spooler_log = self.context.logging.logs.get("spooler", dict())
             self.history = spooler_log.get("history", list())
+            # Even if no old json file exists, the logged items could
+            # still have some compatibility issues...
+            fixitems()
         self.refresh_history()
 
     def save_history(self):
