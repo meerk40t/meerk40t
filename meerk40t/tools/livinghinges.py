@@ -303,8 +303,6 @@ class HingePanel(wx.Panel):
         )
         self.text_cell_width.SetToolTip(
             _("Select the ratio of the cell width compared to the overall width")
-            + "\n"
-            + _("(Press return to apply values)")
         )
         vs_width = wx.BoxSizer(wx.VERTICAL)
         vs_width.Add(self.slider_width, 0, wx.EXPAND, 0)
@@ -324,8 +322,6 @@ class HingePanel(wx.Panel):
         )
         self.text_cell_height.SetToolTip(
             _("Select the ratio of the cell height compared to the overall height")
-            + "\n"
-            + _("(Press return to apply values)")
         )
         vs_height = wx.BoxSizer(wx.VERTICAL)
         vs_height.Add(self.slider_height, 0, wx.EXPAND, 0)
@@ -343,8 +339,6 @@ class HingePanel(wx.Panel):
         self.slider_offset_x.SetToolTip(_("Select the pattern-offset in X-direction"))
         self.text_cell_offset_x.SetToolTip(
             _("Select the pattern-offset in X-direction")
-            + "\n"
-            + _("(Press return to apply values)")
         )
         vs_offx = wx.BoxSizer(wx.VERTICAL)
         vs_offx.Add(self.slider_offset_x, 0, wx.EXPAND, 0)
@@ -362,8 +356,6 @@ class HingePanel(wx.Panel):
         self.slider_offset_y.SetToolTip(_("Select the pattern-offset in Y-direction"))
         self.text_cell_offset_y.SetToolTip(
             _("Select the pattern-offset in Y-direction")
-            + "\n"
-            + _("(Press return to apply values)")
         )
         vs_offy = wx.BoxSizer(wx.VERTICAL)
         vs_offy.Add(self.slider_offset_y, 0, wx.EXPAND, 0)
@@ -955,7 +947,7 @@ class LivingHingeTool(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_hinges_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Living Hinges"))
+        self.SetTitle(_("Living-Hinges"))
         self.Layout()
         self.Bind(wx.EVT_ACTIVATE, self.window_active, self)
 
