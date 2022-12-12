@@ -78,7 +78,7 @@ class Polygon:
         self.geomstr.polyline(args)
 
     def bbox(self, mx=None):
-        return self.geomstr.geometry.bbox(mx)
+        return self.geomstr.bbox(mx)
 
 
 class Clip:
@@ -89,7 +89,11 @@ class Clip:
     def clip(self, clip):
         for i in range(self.clipping_shape.index):
             for c in range(clip.index - 1, -1, -1):
-                for t0, t1 in sorted(list(clip.intersections(c, self.clipping_shape.segments[i])), key=lambda t: t[0], reverse=True):
+                for t0, t1 in sorted(
+                    list(clip.intersections(c, self.clipping_shape.segments[i])),
+                    key=lambda t: t[0],
+                    reverse=True,
+                ):
                     clip.split(c, t0)
 
         sb = Scanbeam(self.clipping_shape)
@@ -97,10 +101,12 @@ class Clip:
             geom = clip.segments[c]
             start = geom[0]
             end = geom[-1]
-            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(end.real, end.imag):
+            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(
+                end.real, end.imag
+            ):
                 geom[2] = np.nan
 
-        r = np.where(~np.isnan(clip.segments[:clip.index,2]))
+        r = np.where(~np.isnan(clip.segments[: clip.index, 2]))
         clip.segments = clip.segments[r]
         clip.index = len(clip.segments)
         return clip
@@ -111,11 +117,11 @@ class Pattern:
         if geomstr is None:
             geomstr = Geomstr()
         self.geomstr = geomstr
-        x0, y0, x1, y1 = geomstr.geometry.bbox()
+        x0, y0, x1, y1 = geomstr.bbox()
         self.offset_x = x0
         self.offset_y = x0
-        self.cell_width = x1-x0
-        self.cell_height = y1-y0
+        self.cell_width = x1 - x0
+        self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
 
@@ -197,8 +203,8 @@ class Pattern:
         cheight = self.cell_height
         padding_x = self.padding_x
         padding_y = self.padding_y
-        width = (x1 - x0)
-        height = (y1 - y0)
+        width = x1 - x0
+        height = y1 - y0
         row_offset = 0.5 * self.cell_width
 
         start_index_x = math.floor(x0 / cwidth)
@@ -216,7 +222,9 @@ class Pattern:
                 if x_current < x1 and y_current < y1:
                     # Don't call draw if outside of hinge area
                     m = Matrix.scale(self.cell_height, self.cell_height)
-                    m *= Matrix.translate(x_current - self.offset_x, y_current - self.offset_y)
+                    m *= Matrix.translate(
+                        x_current - self.offset_x, y_current - self.offset_y
+                    )
                     yield self.geomstr.as_transformed(m)
 
 
@@ -399,399 +407,6 @@ class Scanbeam:
             self._low = float("-inf")
 
 
-class Geometry:
-    """
-    Total geomstr functions
-    """
-
-    def __init__(self, geomstr):
-        self.geomstr = geomstr
-
-    @property
-    def segments(self):
-        return self.geomstr.segments
-
-    @property
-    def index(self):
-        return self.geomstr.index
-
-    @property
-    def capacity(self):
-        return self.geomstr.capacity
-
-    def transform(self, mx):
-        """
-        Affine Transformation by an arbitrary matrix.
-        @param mx: Matrix to transform by
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        starts = segments[:index, 0]
-        reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
-        imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
-        segments[:index, 0] = reals + 1j * imags
-        ends = segments[:index, 4]
-        reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
-        imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
-        segments[:index, 4] = reals + 1j * imags
-
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
-
-        c0s = segments[q, 1]
-        reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
-        imags = c0s.real * mx.b + c0s.imag * mx.d + 1 * mx.f
-        segments[q, 1] = reals + 1j * imags
-        c1s = segments[q, 3]
-        reals = c1s.real * mx.a + c1s.imag * mx.c + 1 * mx.e
-        imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
-        segments[q, 3] = reals + 1j * imags
-
-    def translate(self, dx, dy):
-        """
-        Translate the location within the path.
-
-        @param dx: change in x
-        @param dy: change in y
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        segments[:index, 0] += complex(dx, dy)
-        segments[:index, 4] += complex(dx, dy)
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
-        segments[q, 1] += complex(dx, dy)
-        segments[q, 3] += complex(dx, dy)
-
-    def uscale(self, scale):
-        """
-        Uniform scaling operation
-
-        @param scale: uniform scaling factor
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        segments[:index, 0] *= scale
-        segments[:index, 4] *= scale
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b0110)
-        segments[q, 1] *= scale
-        segments[q, 3] *= scale
-
-    def rotate(self, angle):
-        """
-        Rotate segments around the origin.
-        @param angle: angle in radians
-        @return:
-        """
-        rotation = complex(math.cos(angle), math.sin(angle))
-        self.uscale(rotation)
-
-    def bbox(self, mx=None):
-        """
-        bounding box of the particular segments.
-        @param mx: Conditional matrix operation.
-        @return:
-        """
-        # TODO: Doesn't account for mx
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        bounds = self.geomstr.bbox(segments[0:index])
-        min_x, min_y, max_x, max_y = bounds
-        min_x = min_x[np.where(~np.isnan(min_x))]
-        min_y = min_y[np.where(~np.isnan(min_y))]
-        max_x = max_x[np.where(~np.isnan(max_x))]
-        max_y = max_y[np.where(~np.isnan(max_y))]
-
-        if len(min_x) == 0:
-            return np.nan, np.nan, np.nan, np.nan
-        return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
-
-    def raw_length(self):
-        """
-        Determines the raw length of the geoms. Where length is taken as the distance
-        from start to end (ignoring any curving), real length would be greater than this
-        but never less.
-
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b1001)
-        pen_downs = segments[q, 0]
-        pen_ups = segments[q, -1]
-        return np.sum(np.abs(pen_ups - pen_downs))
-
-    def travel_distance(self):
-        """
-        Calculate the total travel distance for this geomstr.
-        @return: distance in units for the travel
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        infos = segments[:index, 2]
-        q = np.where(np.real(infos).astype(int) & 0b1001)
-        valid_segments = segments[q]
-
-        indexes0 = np.arange(0, len(valid_segments) - 1)
-        indexes1 = indexes0 + 1
-        pen_ups = valid_segments[indexes0, -1]
-        pen_downs = valid_segments[indexes1, 0]
-        return np.sum(np.abs(pen_ups - pen_downs))
-
-    def two_opt_distance(self, max_passes=None):
-        """
-        Perform two-opt optimization to minimize travel distances.
-        @param max_passes: Max number of passes to attempt
-        @return:
-        """
-        self.geomstr._trim()
-        segments = self.geomstr.segments
-        original = self.geomstr.index
-
-        min_value = -1e-10
-        current_pass = 0
-
-        indexes0 = np.arange(0, original - 1)
-        indexes1 = indexes0 + 1
-
-        improved = True
-        while improved:
-            improved = False
-
-            first = segments[0][0]
-            pen_ups = segments[indexes0, -1]
-            pen_downs = segments[indexes1, 0]
-
-            delta = np.abs(first - pen_downs) - np.abs(pen_ups - pen_downs)
-            index = int(np.argmin(delta))
-            if delta[index] < min_value:
-                segments[: index + 1] = np.flip(
-                    segments[: index + 1], (0, 1)
-                )  # top to bottom, and right to left flips.
-                improved = True
-            for mid in range(1, original - 1):
-                idxs = np.arange(mid, original - 1)
-
-                mid_source = segments[mid - 1, -1]
-                mid_dest = segments[mid, 0]
-                pen_ups = segments[idxs, -1]
-                pen_downs = segments[idxs + 1, 0]
-                delta = (
-                    np.abs(mid_source - pen_ups)
-                    + np.abs(mid_dest - pen_downs)
-                    - np.abs(pen_ups - pen_downs)
-                    - np.abs(mid_source - mid_dest)
-                )
-                index = int(np.argmin(delta))
-                if delta[index] < min_value:
-                    segments[mid : mid + index + 1] = np.flip(
-                        segments[mid : mid + index + 1], (0, 1)
-                    )
-                    improved = True
-
-            last = segments[-1, -1]
-            pen_ups = segments[indexes0, -1]
-            pen_downs = segments[indexes1, 0]
-
-            delta = np.abs(pen_ups - last) - np.abs(pen_ups - pen_downs)
-            index = int(np.argmin(delta))
-            if delta[index] < min_value:
-                segments[index + 1 :] = np.flip(
-                    segments[index + 1 :], (0, 1)
-                )  # top to bottom, and right to left flips.
-                improved = True
-            if max_passes and current_pass >= max_passes:
-                break
-            current_pass += 1
-
-    def merge(self, other):
-        """
-        Merge other geomstr with this geomstr. Intersections meet at vertices.
-        @param other:
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-
-        intersections = self.find_intersections(other)
-        bisectors = {}
-
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(s)
-            if bis is None:
-                bis = []
-                bisectors[s] = bis
-            bis.append((xi, yi, s, t, idx))
-        original = segments
-        total = index + other.index + len(intersections) * 4 + 1
-        new_segments = np.zeros((total, 5), dtype="complex")
-
-        itx = 0
-        itx = self._bisect_segments(bisectors, original, index, new_segments, itx)
-        new_segments[itx] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_END, -1),
-            np.nan,
-            np.nan,
-        )
-        itx += 1
-
-        bisectors = {}
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(t)
-            if bis is None:
-                bis = []
-                bisectors[t] = bis
-            bis.append((xi, yi, t, s, idx))
-        original = other.segments
-        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
-        self.geomstr.segments = new_segments
-        self.geomstr.index = itx
-        self.geomstr.capacity = new_segments.shape[0]
-        return self
-
-    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
-        def bisector_sort(e):
-            """Sort by edge index, and distance from start."""
-            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
-
-        for seg in range(index):
-            bisector = bisectors.get(seg)
-            if bisector is None:
-                # Not bisected, copy over.
-                new_segments[itx] = original[seg]
-                itx += 1
-                continue
-            bisector.sort(key=bisector_sort)
-
-            start = original[seg, 0]
-            settype = original[seg, 2]
-            for xi, yi, si, ti, idx in bisector:
-                end = complex(xi, yi)
-
-                new_segments[itx] = (
-                    start,
-                    start,
-                    settype,
-                    end,
-                    end,
-                )
-                itx += 1
-
-                new_segments[itx] = (
-                    np.nan,
-                    np.nan,
-                    complex(TYPE_VERTEX, idx),
-                    np.nan,
-                    np.nan,
-                )
-                itx += 1
-
-                start = end
-            end = original[seg, -1]
-            new_segments[itx] = (
-                start,
-                start,
-                settype,
-                end,
-                end,
-            )
-            itx += 1
-        return itx
-
-    def find_intersections(self, other):
-        """
-        Finds intersections between line types through brute force.
-
-        @param other:
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-        idx = 0
-        intersections = []
-        for s in range(index):
-            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
-                continue
-            for t in range(other.index):
-                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
-                    continue
-                intersect = Geomstr.line_intersect(
-                    segments[s, 0].real,
-                    segments[s, 0].imag,
-                    segments[s, -1].real,
-                    segments[s, -1].imag,
-                    other.segments[t, 0].real,
-                    other.segments[t, 0].imag,
-                    other.segments[t, -1].real,
-                    other.segments[t, -1].imag,
-                )
-                if not intersect:
-                    continue
-                xi, yi = intersect
-                intersections.append((xi, yi, s, t, idx))
-                idx += 1
-        return intersections
-
-    def generator(self):
-        """
-        Generate plotter code. This should generate individual x, y, power levels for each type of segment.
-        The wait and dwell segments generate x, y, with a negative power (consisting of the wait time)
-        @return:
-        """
-        segments = self.geomstr.segments
-        index = self.geomstr.index
-
-        for segment in segments[0:index]:
-            start = segment[0]
-            c0 = segment[1]
-            segpow = segment[2]
-            c1 = segment[3]
-            end = segment[4]
-            segment_type = segpow.real
-            settings_index = segpow.imag
-            if segment_type == TYPE_LINE:
-                for x, y in ZinglPlotter.plot_line(
-                    start.real, start.imag, end.real, end.imag
-                ):
-                    yield x, y, settings_index
-            elif segment_type == TYPE_QUAD:
-                for x, y in ZinglPlotter.plot_quad_bezier(
-                    start.real, start.imag, c0.real, c0.imag, end.real, end.imag
-                ):
-                    yield x, y, settings_index
-            elif segment_type == TYPE_CUBIC:
-                for x, y in ZinglPlotter.plot_cubic_bezier(
-                    start.real,
-                    start.imag,
-                    c0.real,
-                    c0.imag,
-                    c1.real,
-                    c1.imag,
-                    end.real,
-                    end.imag,
-                ):
-                    yield x, y, settings_index
-            elif segment_type == TYPE_ARC:
-                raise NotImplementedError
-            elif segment_type == TYPE_POINT:
-                yield start.real, start.imag, settings_index
-            # elif segment_type == TYPE_RAMP:
-            #     pos = list(
-            #         ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
-            #     )
-            #     settings_index = np.interp(float(c0), float(c1), len(pos))
-            #     for i, p in enumerate(pos):
-            #         x, y = p
-            #         yield x, y, settings_index[i]
-
-
 class Geomstr:
     """
     Geometry String Class
@@ -833,13 +448,6 @@ class Geomstr:
         """
         return self.index
 
-    @property
-    def geometry(self):
-        """
-        return geometry class for the geomstr object.
-        """
-        return Geometry(self)
-
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
@@ -869,7 +477,9 @@ class Geomstr:
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
         self.end()
-        self.segments[self.index:self.index + other.index] = other.segments[:other.index]
+        self.segments[self.index : self.index + other.index] = other.segments[
+            : other.index
+        ]
         self.index += other.index
 
     #######################
@@ -1190,15 +800,26 @@ class Geomstr:
     # Universal Functions
     #######################
 
-    def bbox(self, e=None):
+    def bbox(self, mx=None, e=None):
         """
         Get the bounds of the given geom primitive
 
+        @param mx:
         @param e:
         @return:
         """
-        if isinstance(e, Matrix):
-            return self.geometry.bbox(e)
+        if e is None:
+            segments = self.segments
+            index = self.index
+            bounds = self.bbox(mx=mx, e=segments[0:index])
+            min_x, min_y, max_x, max_y = bounds
+            min_x = min_x[np.where(~np.isnan(min_x))]
+            min_y = min_y[np.where(~np.isnan(min_y))]
+            max_x = max_x[np.where(~np.isnan(max_x))]
+            max_y = max_y[np.where(~np.isnan(max_y))]
+            if len(min_x) == 0:
+                return np.nan, np.nan, np.nan, np.nan
+            return np.min(min_x), np.min(min_y), np.max(max_x), np.max(max_y)
         if isinstance(e, np.ndarray):
             bboxes = np.zeros((4, len(e)), dtype=float)
             for i, line in enumerate(e):
@@ -1470,7 +1091,7 @@ class Geomstr:
 
     def insert_position(self, e):
         self._ensure_capacity(self.index + 1)
-        self.segments[e + 1:] = self.segments[e:-1]
+        self.segments[e + 1 :] = self.segments[e:-1]
         self.index += 1
 
     def split(self, e, t):
@@ -1484,16 +1105,10 @@ class Geomstr:
         line = self.segments[e]
         start, control, info, control2, end = line
         if info.real == TYPE_LINE:
-            self.insert_position(e+1)
+            self.insert_position(e + 1)
             mid = self.towards(start, end, t)
             self.segments[e][-1] = mid
-            self.segments[e+1] = (
-                mid,
-                control,
-                info,
-                control2,
-                end
-            )
+            self.segments[e + 1] = (mid, control, info, control2, end)
             return
         # TODO: Add in splitting for other types.
 
@@ -1505,7 +1120,7 @@ class Geomstr:
         @param t:
         @return:
         """
-        return -1j * self.tangent(t)
+        return -1j * self.tangent(e, t)
 
     def tangent(self, e, t):
         """
@@ -2041,35 +1656,57 @@ class Geomstr:
     # Geom Tranformations
     #######################
 
-    def transform(self, e, mx):
+    def transform(self, mx, e=None):
         """
         Affine Transformation by an arbitrary matrix.
-
-        @param e: line to transform
         @param mx: Matrix to transform by
         @return:
         """
-        geoms = self.segments[e]
+        if e is not None:
+            geoms = self.segments[e]
 
-        geoms[0] = (np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f
-        ) * 1j
-        geoms[4] = (np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f
-        ) * 1j
+            geoms[0] = (
+                np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f) * 1j
+            geoms[4] = (
+                np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f) * 1j
 
-        infos = geoms[2]
-        q = np.where(infos.astype(int) & 0b0110)
-        geoms = self.segments[q]
+            infos = geoms[2]
+            q = np.where(infos.astype(int) & 0b0110)
+            geoms = self.segments[q]
 
-        geoms[1] = (np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f
-        ) * 1j
-        geoms[3] = (np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e) + (
-            np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f
-        ) * 1j
+            geoms[1] = (
+                np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f) * 1j
+            geoms[3] = (
+                np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f) * 1j
+            return
+        segments = self.segments
+        index = self.index
+        starts = segments[:index, 0]
+        reals = starts.real * mx.a + starts.imag * mx.c + 1 * mx.e
+        imags = starts.real * mx.b + starts.imag * mx.d + 1 * mx.f
+        segments[:index, 0] = reals + 1j * imags
+        ends = segments[:index, 4]
+        reals = ends.real * mx.a + ends.imag * mx.c + 1 * mx.e
+        imags = ends.real * mx.b + ends.imag * mx.d + 1 * mx.f
+        segments[:index, 4] = reals + 1j * imags
 
-    def translate(self, e, dx, dy):
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b0110)
+
+        c0s = segments[q, 1]
+        reals = c0s.real * mx.a + c0s.imag * mx.c + 1 * mx.e
+        imags = c0s.real * mx.b + c0s.imag * mx.d + 1 * mx.f
+        segments[q, 1] = reals + 1j * imags
+        c1s = segments[q, 3]
+        reals = c1s.real * mx.a + c1s.imag * mx.c + 1 * mx.e
+        imags = c1s.real * mx.b + c1s.imag * mx.d + 1 * mx.f
+        segments[q, 3] = reals + 1j * imags
+
+    def translate(self, dx, dy, e=None):
         """
         Translate the location within the path.
 
@@ -2077,6 +1714,16 @@ class Geomstr:
         @param dy: change in y
         @return:
         """
+        if e is None:
+            segments = self.segments
+            index = self.index
+            segments[:index, 0] += complex(dx, dy)
+            segments[:index, 4] += complex(dx, dy)
+            infos = segments[:index, 2]
+            q = np.where(np.real(infos).astype(int) & 0b0110)
+            segments[q, 1] += complex(dx, dy)
+            segments[q, 3] += complex(dx, dy)
+            return
         geoms = self.segments[e]
         offset = complex(dx, dy)
         geoms[0] += offset
@@ -2087,13 +1734,23 @@ class Geomstr:
         geoms[1] += offset
         geoms[3] += offset
 
-    def uscale(self, e, scale):
+    def uscale(self, scale, e=None):
         """
         Uniform scaling operation
 
         @param scale: uniform scaling factor
         @return:
         """
+        if e is None:
+            segments = self.segments
+            index = self.index
+            segments[:index, 0] *= scale
+            segments[:index, 4] *= scale
+            infos = segments[:index, 2]
+            q = np.where(np.real(infos).astype(int) & 0b0110)
+            segments[q, 1] *= scale
+            segments[q, 3] *= scale
+            return
         geoms = self.segments[e]
         geoms[0] *= scale
         geoms[4] *= scale
@@ -2104,18 +1761,18 @@ class Geomstr:
         geoms[1] *= scale
         geoms[3] *= scale
 
-    def rotate(self, e, angle):
+    def rotate(self, angle, e=None):
         """
         Rotate segments around the origin.
         @param angle: angle in radians
         @return:
         """
         rotation = complex(math.cos(angle), math.sin(angle))
-        self.uscale(e, rotation)
+        self.uscale(rotation, e=e)
 
     def as_transformed(self, mx):
         g = copy(self)
-        g.geometry.transform(mx)
+        g.transform(mx)
         return g
 
     #######################
@@ -2539,7 +2196,15 @@ class Geomstr:
         q = np.where(types.real == TYPE_LINE)
         for line in self.segments[q]:
             start, control1, info, control2, end = line
-            draw.line((int(start.real) - offset_x, int(start.imag) - offset_y, int(end.real) - offset_x, int(end.imag) - offset_y), fill="black")
+            draw.line(
+                (
+                    int(start.real) - offset_x,
+                    int(start.imag) - offset_y,
+                    int(end.real) - offset_x,
+                    int(end.imag) - offset_y,
+                ),
+                fill="black",
+            )
 
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
@@ -2551,3 +2216,288 @@ class Geomstr:
         if 0.0 <= ua <= 1.0 and 0.0 <= ub <= 1.0:
             return (x1 + ua * (x2 - x1)), (y1 + ua * (y2 - y1))
         return None
+
+    #######################
+    # Global Functions
+    #######################
+
+    def raw_length(self):
+        """
+        Determines the raw length of the geoms. Where length is taken as the distance
+        from start to end (ignoring any curving), real length would be greater than this
+        but never less.
+
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b1001)
+        pen_downs = segments[q, 0]
+        pen_ups = segments[q, -1]
+        return np.sum(np.abs(pen_ups - pen_downs))
+
+    def travel_distance(self):
+        """
+        Calculate the total travel distance for this geomstr.
+        @return: distance in units for the travel
+        """
+        segments = self.segments
+        index = self.index
+        infos = segments[:index, 2]
+        q = np.where(np.real(infos).astype(int) & 0b1001)
+        valid_segments = segments[q]
+
+        indexes0 = np.arange(0, len(valid_segments) - 1)
+        indexes1 = indexes0 + 1
+        pen_ups = valid_segments[indexes0, -1]
+        pen_downs = valid_segments[indexes1, 0]
+        return np.sum(np.abs(pen_ups - pen_downs))
+
+    def two_opt_distance(self, max_passes=None):
+        """
+        Perform two-opt optimization to minimize travel distances.
+        @param max_passes: Max number of passes to attempt
+        @return:
+        """
+        self._trim()
+        segments = self.segments
+        original = self.index
+
+        min_value = -1e-10
+        current_pass = 0
+
+        indexes0 = np.arange(0, original - 1)
+        indexes1 = indexes0 + 1
+
+        improved = True
+        while improved:
+            improved = False
+
+            first = segments[0][0]
+            pen_ups = segments[indexes0, -1]
+            pen_downs = segments[indexes1, 0]
+
+            delta = np.abs(first - pen_downs) - np.abs(pen_ups - pen_downs)
+            index = int(np.argmin(delta))
+            if delta[index] < min_value:
+                segments[: index + 1] = np.flip(
+                    segments[: index + 1], (0, 1)
+                )  # top to bottom, and right to left flips.
+                improved = True
+            for mid in range(1, original - 1):
+                idxs = np.arange(mid, original - 1)
+
+                mid_source = segments[mid - 1, -1]
+                mid_dest = segments[mid, 0]
+                pen_ups = segments[idxs, -1]
+                pen_downs = segments[idxs + 1, 0]
+                delta = (
+                    np.abs(mid_source - pen_ups)
+                    + np.abs(mid_dest - pen_downs)
+                    - np.abs(pen_ups - pen_downs)
+                    - np.abs(mid_source - mid_dest)
+                )
+                index = int(np.argmin(delta))
+                if delta[index] < min_value:
+                    segments[mid : mid + index + 1] = np.flip(
+                        segments[mid : mid + index + 1], (0, 1)
+                    )
+                    improved = True
+
+            last = segments[-1, -1]
+            pen_ups = segments[indexes0, -1]
+            pen_downs = segments[indexes1, 0]
+
+            delta = np.abs(pen_ups - last) - np.abs(pen_ups - pen_downs)
+            index = int(np.argmin(delta))
+            if delta[index] < min_value:
+                segments[index + 1 :] = np.flip(
+                    segments[index + 1 :], (0, 1)
+                )  # top to bottom, and right to left flips.
+                improved = True
+            if max_passes and current_pass >= max_passes:
+                break
+            current_pass += 1
+
+    def merge(self, other):
+        """
+        Merge other geomstr with this geomstr. Intersections meet at vertices.
+        @param other:
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+
+        intersections = self.find_intersections(other)
+        bisectors = {}
+
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(s)
+            if bis is None:
+                bis = []
+                bisectors[s] = bis
+            bis.append((xi, yi, s, t, idx))
+        original = segments
+        total = index + other.index + len(intersections) * 4 + 1
+        new_segments = np.zeros((total, 5), dtype="complex")
+
+        itx = 0
+        itx = self._bisect_segments(bisectors, original, index, new_segments, itx)
+        new_segments[itx] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_END, -1),
+            np.nan,
+            np.nan,
+        )
+        itx += 1
+
+        bisectors = {}
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(t)
+            if bis is None:
+                bis = []
+                bisectors[t] = bis
+            bis.append((xi, yi, t, s, idx))
+        original = other.segments
+        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
+        self.segments = new_segments
+        self.index = itx
+        self.capacity = new_segments.shape[0]
+        return self
+
+    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
+        def bisector_sort(e):
+            """Sort by edge index, and distance from start."""
+            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
+
+        for seg in range(index):
+            bisector = bisectors.get(seg)
+            if bisector is None:
+                # Not bisected, copy over.
+                new_segments[itx] = original[seg]
+                itx += 1
+                continue
+            bisector.sort(key=bisector_sort)
+
+            start = original[seg, 0]
+            settype = original[seg, 2]
+            for xi, yi, si, ti, idx in bisector:
+                end = complex(xi, yi)
+
+                new_segments[itx] = (
+                    start,
+                    start,
+                    settype,
+                    end,
+                    end,
+                )
+                itx += 1
+
+                new_segments[itx] = (
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_VERTEX, idx),
+                    np.nan,
+                    np.nan,
+                )
+                itx += 1
+
+                start = end
+            end = original[seg, -1]
+            new_segments[itx] = (
+                start,
+                start,
+                settype,
+                end,
+                end,
+            )
+            itx += 1
+        return itx
+
+    def find_intersections(self, other):
+        """
+        Finds intersections between line types through brute force.
+
+        @param other:
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+        idx = 0
+        intersections = []
+        for s in range(index):
+            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
+                continue
+            for t in range(other.index):
+                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
+                    continue
+                intersect = Geomstr.line_intersect(
+                    segments[s, 0].real,
+                    segments[s, 0].imag,
+                    segments[s, -1].real,
+                    segments[s, -1].imag,
+                    other.segments[t, 0].real,
+                    other.segments[t, 0].imag,
+                    other.segments[t, -1].real,
+                    other.segments[t, -1].imag,
+                )
+                if not intersect:
+                    continue
+                xi, yi = intersect
+                intersections.append((xi, yi, s, t, idx))
+                idx += 1
+        return intersections
+
+    def generator(self):
+        """
+        Generate plotter code. This should generate individual x, y, power levels for each type of segment.
+        The wait and dwell segments generate x, y, with a negative power (consisting of the wait time)
+        @return:
+        """
+        segments = self.segments
+        index = self.index
+
+        for segment in segments[0:index]:
+            start = segment[0]
+            c0 = segment[1]
+            segpow = segment[2]
+            c1 = segment[3]
+            end = segment[4]
+            segment_type = segpow.real
+            settings_index = segpow.imag
+            if segment_type == TYPE_LINE:
+                for x, y in ZinglPlotter.plot_line(
+                    start.real, start.imag, end.real, end.imag
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_QUAD:
+                for x, y in ZinglPlotter.plot_quad_bezier(
+                    start.real, start.imag, c0.real, c0.imag, end.real, end.imag
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_CUBIC:
+                for x, y in ZinglPlotter.plot_cubic_bezier(
+                    start.real,
+                    start.imag,
+                    c0.real,
+                    c0.imag,
+                    c1.real,
+                    c1.imag,
+                    end.real,
+                    end.imag,
+                ):
+                    yield x, y, settings_index
+            elif segment_type == TYPE_ARC:
+                raise NotImplementedError
+            elif segment_type == TYPE_POINT:
+                yield start.real, start.imag, settings_index
+            # elif segment_type == TYPE_RAMP:
+            #     pos = list(
+            #         ZinglPlotter.plot_line(start.real, start.imag, end.real, end.imag)
+            #     )
+            #     settings_index = np.interp(float(c0), float(c1), len(pos))
+            #     for i, p in enumerate(pos):
+            #         x, y = p
+            #         yield x, y, settings_index[i]
