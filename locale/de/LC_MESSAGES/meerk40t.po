@@ -3430,8 +3430,11 @@ msgid "Rotate 90° CCW"
 msgstr "Drehe 90° nach links"
 
 #: meerk40t/core/elements.py:7964
-msgid "Save output.png"
-msgstr "Speichern als .png"
+msgid "Save original image to output.png"
+msgstr "Speichere Original als output.png"
+
+msgid "Save processed image to output.png"
+msgstr "Speichere bearbeitetes Bild als output.png"
 
 #: meerk40t/core/elements.py:7971
 msgid "Expand all children"
@@ -5383,6 +5386,9 @@ msgstr "Gefährliche Koordinaten"
 #: meerk40t/gui/lasertoolpanel.py:733
 msgid "Laser-Tools"
 msgstr "Laser-Tools"
+
+msgid "Place Template"
+msgstr "Vorlage platzieren"
 
 #: meerk40t/gui/materialtest.py:32
 msgid "Cut"
@@ -10270,7 +10276,7 @@ msgid "Prevent changes:"
 msgstr "Verhindere Veränderungen:"
 
 #: meerk40t/gui/propertypanels/attributes.py:372
-msgid "If active then this element is effectly prevented from being modified"
+msgid "If active then this element is effectively prevented from being modified"
 msgstr "Falls aktiv ist das Element vor allen Veränderungen geschützt."
 
 #: meerk40t/gui/propertypanels/consoleproperty.py:19
@@ -10280,6 +10286,15 @@ msgstr "Konsolen-Eigenschaften"
 #: meerk40t/gui/propertypanels/groupproperties.py:55
 msgid "Group Properties"
 msgstr "Gruppen-Eigenschaften"
+
+msgid "Auto-Crop:"
+msgstr "Auto-Zuschneiden:"
+
+msgid "No final crop"
+msgstr "Kein Zuschneiden"
+
+msgid "Prevent final crop after all operations"
+msgstr "Kein automatisches Zuschneiden des Bildes am Ende aller Manipulations-Operationen"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:35
 #: meerk40t/gui/propertypanels/imageproperty.py:175
@@ -10314,7 +10329,7 @@ msgstr "Wieviele Pixel sollen auf der oberen Kante abgeschnitten werden?"
 msgid "How many pixels do you want to crop from the bottom?"
 msgstr "Wieviele Pixel sollen auf der unteren Kante abgeschnitten werden?"
 
-msgid "Apply script"
+msgid "Apply Script"
 msgstr "Skript anwenden"
 
 msgid "Action"
@@ -10346,6 +10361,9 @@ msgstr "Toleranz"
 
 msgid "Black-Level"
 msgstr "Schwarzwert"
+
+msgid "Generate a preview of the result"
+msgstr "Erzeuge Vorschau des Ergebnisses"
 
 msgid ""
 "This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
@@ -14967,3 +14985,96 @@ msgstr "Umrande Elemente..."
 
 msgid "...with {offset}mm distance"
 msgstr "...mit {offset}mm Abstand"
+
+msgid "Hinge"
+msgstr "Flex"
+
+msgid "Fill area with a living hinge pattern"
+msgstr "Fülle einen Bereich mit einem Flex-Muster"
+
+msgid "Living-Hinges"
+msgstr "Flexible Bereiche"
+
+msgid "Preview Pattern"
+msgstr "Zeige Muster"
+
+msgid "Preview Shape"
+msgstr "Zeige Umriss"
+
+msgid "Generate"
+msgstr "Erzeugen"
+
+msgid "Generates the hinge"
+msgstr "Erzeuge den Flex-Bereich"
+
+msgid "Cell-Width:"
+msgstr "Zellen-Breite:"
+
+msgid "Cell-Height:"
+msgstr "Zellen-Höhe:"
+
+msgid "Offset X:"
+msgstr ""
+
+msgid "Offset Y:"
+msgstr ""
+
+msgid "Pattern:"
+msgstr "Muster:"
+
+msgid "Choose the hinge pattern"
+msgstr "Muster im Flex-Bereich"
+
+msgid "X-Coordinate of the hinge area"
+msgstr "X-Koordinate des Flex-Bereiches"
+
+msgid "Y-Coordinate of the hinge area"
+msgstr "Y-Koordinate des Flex-Bereiches"
+
+msgid "Width of the hinge area"
+msgstr "Breite des Flex-Bereiches"
+
+msgid "Height of the hinge area"
+msgstr "Höhe des Flex-Bereiches"
+
+msgid "Default Values"
+msgstr "Standard-Werte"
+
+msgid "Select the ratio of the cell width compared to the overall width"
+msgstr "Lege das Breiten-Verhältnis einer Einzel-Zelle zum Gesamt-Bereich fest"
+
+msgid "Select the ratio of the cell height compared to the overall height"
+msgstr "Lege das Höhen-Verhältnis einer Einzel-Zelle zum Gesamt-Bereich fest"
+
+msgid "Select the pattern-offset in X-direction"
+msgstr "Offset der Zellen in X-Richtung"
+
+msgid "Select the pattern-offset in Y-direction"
+msgstr "Offset der Zellen in Y-Richtung"
+
+msgid "Change the shape appearance"
+msgstr "Beeinflusse das Aussehen des Musters"
+
+msgid "Number of copies"
+msgstr "Kopien"
+
+msgid "Number of segments"
+msgstr "Segmente"
+
+msgid "Position of left side"
+msgstr "Linke Seite"
+
+msgid "Distance of second line"
+msgstr "Abstand zur zweiten Linie"
+
+msgid "Left/right bowl"
+msgstr "Linke/Rechte Wölbung"
+
+msgid "Top/bottom bowl"
+msgstr "Obere/Untere Wölbung"
+
+msgid "Left/Right Indentation"
+msgstr "Linker/Rechter Einzug"
+
+msgid "Top/Bottom Indentation"
+msgstr "Oberer/Unterer Einzug"
