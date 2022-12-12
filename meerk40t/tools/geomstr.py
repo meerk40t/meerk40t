@@ -89,7 +89,11 @@ class Clip:
     def clip(self, clip):
         for i in range(self.clipping_shape.index):
             for c in range(clip.index - 1, -1, -1):
-                for t0, t1 in sorted(list(clip.intersections(c, self.clipping_shape.segments[i])), key=lambda t: t[0], reverse=True):
+                for t0, t1 in sorted(
+                    list(clip.intersections(c, self.clipping_shape.segments[i])),
+                    key=lambda t: t[0],
+                    reverse=True,
+                ):
                     clip.split(c, t0)
 
         sb = Scanbeam(self.clipping_shape)
@@ -97,10 +101,12 @@ class Clip:
             geom = clip.segments[c]
             start = geom[0]
             end = geom[-1]
-            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(end.real, end.imag):
+            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(
+                end.real, end.imag
+            ):
                 geom[2] = np.nan
 
-        r = np.where(~np.isnan(clip.segments[:clip.index,2]))
+        r = np.where(~np.isnan(clip.segments[: clip.index, 2]))
         clip.segments = clip.segments[r]
         clip.index = len(clip.segments)
         return clip
@@ -114,8 +120,8 @@ class Pattern:
         x0, y0, x1, y1 = geomstr.bbox()
         self.offset_x = x0
         self.offset_y = x0
-        self.cell_width = x1-x0
-        self.cell_height = y1-y0
+        self.cell_width = x1 - x0
+        self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
 
@@ -197,8 +203,8 @@ class Pattern:
         cheight = self.cell_height
         padding_x = self.padding_x
         padding_y = self.padding_y
-        width = (x1 - x0)
-        height = (y1 - y0)
+        width = x1 - x0
+        height = y1 - y0
         row_offset = 0.5 * self.cell_width
 
         start_index_x = math.floor(x0 / cwidth)
@@ -216,7 +222,9 @@ class Pattern:
                 if x_current < x1 and y_current < y1:
                     # Don't call draw if outside of hinge area
                     m = Matrix.scale(self.cell_height, self.cell_height)
-                    m *= Matrix.translate(x_current - self.offset_x, y_current - self.offset_y)
+                    m *= Matrix.translate(
+                        x_current - self.offset_x, y_current - self.offset_y
+                    )
                     yield self.geomstr.as_transformed(m)
 
 
@@ -469,7 +477,9 @@ class Geomstr:
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
         self.end()
-        self.segments[self.index:self.index + other.index] = other.segments[:other.index]
+        self.segments[self.index : self.index + other.index] = other.segments[
+            : other.index
+        ]
         self.index += other.index
 
     #######################
@@ -1081,7 +1091,7 @@ class Geomstr:
 
     def insert_position(self, e):
         self._ensure_capacity(self.index + 1)
-        self.segments[e + 1:] = self.segments[e:-1]
+        self.segments[e + 1 :] = self.segments[e:-1]
         self.index += 1
 
     def split(self, e, t):
@@ -1095,16 +1105,10 @@ class Geomstr:
         line = self.segments[e]
         start, control, info, control2, end = line
         if info.real == TYPE_LINE:
-            self.insert_position(e+1)
+            self.insert_position(e + 1)
             mid = self.towards(start, end, t)
             self.segments[e][-1] = mid
-            self.segments[e+1] = (
-                mid,
-                control,
-                info,
-                control2,
-                end
-            )
+            self.segments[e + 1] = (mid, control, info, control2, end)
             return
         # TODO: Add in splitting for other types.
 
@@ -1661,23 +1665,23 @@ class Geomstr:
         if e is not None:
             geoms = self.segments[e]
 
-            geoms[0] = (np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e) + (
-                    np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f
-            ) * 1j
-            geoms[4] = (np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e) + (
-                    np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f
-            ) * 1j
+            geoms[0] = (
+                np.real(geoms[0]) * mx.a + np.imag(geoms[0]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[0]) * mx.b + np.imag(geoms[0]) * mx.d + 1 * mx.f) * 1j
+            geoms[4] = (
+                np.real(geoms[4]) * mx.a + np.imag(geoms[4]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[4]) * mx.b + np.imag(geoms[4]) * mx.d + 1 * mx.f) * 1j
 
             infos = geoms[2]
             q = np.where(infos.astype(int) & 0b0110)
             geoms = self.segments[q]
 
-            geoms[1] = (np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e) + (
-                    np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f
-            ) * 1j
-            geoms[3] = (np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e) + (
-                    np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f
-            ) * 1j
+            geoms[1] = (
+                np.real(geoms[1]) * mx.a + np.imag(geoms[1]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[1]) * mx.b + np.imag(geoms[1]) * mx.d + 1 * mx.f) * 1j
+            geoms[3] = (
+                np.real(geoms[3]) * mx.a + np.imag(geoms[3]) * mx.c + 1 * mx.e
+            ) + (np.real(geoms[3]) * mx.b + np.imag(geoms[3]) * mx.d + 1 * mx.f) * 1j
             return
         segments = self.segments
         index = self.index
@@ -2192,7 +2196,15 @@ class Geomstr:
         q = np.where(types.real == TYPE_LINE)
         for line in self.segments[q]:
             start, control1, info, control2, end = line
-            draw.line((int(start.real) - offset_x, int(start.imag) - offset_y, int(end.real) - offset_x, int(end.imag) - offset_y), fill="black")
+            draw.line(
+                (
+                    int(start.real) - offset_x,
+                    int(start.imag) - offset_y,
+                    int(end.real) - offset_x,
+                    int(end.imag) - offset_y,
+                ),
+                fill="black",
+            )
 
     @staticmethod
     def line_intersect(x1, y1, x2, y2, x3, y3, x4, y4):
