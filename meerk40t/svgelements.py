@@ -8346,10 +8346,7 @@ class Image(SVGElement, GraphicObject, Transformable):
         if viewbox is not None:
             self.viewbox = Viewbox(viewbox)
         if SVG_ATTR_PRESERVEASPECTRATIO in values:
-            if values[SVG_ATTR_PRESERVEASPECTRATIO] == SVG_VALUE_NONE:
-                self.preserve_aspect_ratio = None
-            else:
-                self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
+            self.preserve_aspect_ratio = values[SVG_ATTR_PRESERVEASPECTRATIO]
         self.x = Length(values.get(SVG_ATTR_X, 0)).value()
         self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
         self.width = Length(values.get(SVG_ATTR_WIDTH, "100%")).value()
