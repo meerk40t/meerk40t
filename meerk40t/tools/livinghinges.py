@@ -517,9 +517,11 @@ class HingePanel(wx.Panel):
         self.on_option_update(None)
 
     def on_button_generate(self, event):
+        from time import time
         oldlabel = self.button_generate.Label
         self.button_generate.Enable(False)
         self.button_generate.SetLabel(_("Processing..."))
+        start_time = time()
         if self.hinge_generator.outershape is not None:
             # As we have a reference shape, we make sure
             # we update the information...
@@ -555,12 +557,18 @@ class HingePanel(wx.Panel):
             color=Color("red"),
             type="elem path",
         )
+        # Lets simplify things...
+        self.context.elements.simplify_node(node)
+
         if self.hinge_generator.outershape is not None:
             group_node = self.hinge_generator.outershape.parent.add(
                 type="group", label="Hinge"
             )
             group_node.append_child(self.hinge_generator.outershape)
             group_node.append_child(node)
+        end_time = time()
+        self.Parent.SetTitle(_("Living-Hinges")+ f" ({end_time-start_time:.2f}s.)")
+
         self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
         self.button_generate.Enable(True)
