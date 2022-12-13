@@ -5303,11 +5303,14 @@ def init_commands(kernel):
                 name = name[:50] + "…"
             try:
                 e.shape.reify()
-                e.altered()
-                channel(_("reified - %s") % name)
             except AttributeError as err:
-                channel(_("Couldn't reify - %s - %s") % (name, err))
-
+                try:
+                    e.path.reify()
+                except AttributeError:
+                    channel(_("Couldn't reify - %s - %s") % (name, err))
+                    return "elements", data
+            e.altered()
+            channel(_("reified - %s") % name)
         return "elements", data
 
     @self.console_command(
