@@ -200,6 +200,21 @@ class LivingHinges:
         # Make sure pattern is updated with additional parameter
         self.set_predefined_pattern(self.cutpattern)
 
+    @staticmethod
+    def outside(bb_to_check, master_bb):
+        out_x = "inside"
+        out_y = "inside"
+        if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
+            # fully out on x
+            out_x = "outside"
+        elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
+            out_x = "cross"
+        if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
+            out_y = "outside"
+        elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
+            out_x = "cross"
+        return out_x, out_y
+
     def generate(self, show_outline=False, force=False, final=False):
         if final and self.path is not None and not force:
             # No need to recalculate...
@@ -297,21 +312,11 @@ class LivingHinges:
 
             t0 = time()
             vm = VectorMontonizer()
-            if self.outershape is None:
-                outer_poly = Polygon(
-                    (
-                        Point(self.x0, self.y0),
-                        Point(self.x1, self.y0),
-                        Point(self.x1, self.y1),
-                        Point(self.x0, self.y1),
-                        Point(self.x0, self.y0),
-                    )
-                )
-            else:
-                outer_path = self.outershape.as_path()
-                outer_poly = Polygon(
-                    [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-                )
+            outer_bb = self.outershape.bbox()
+            outer_path = self.outershape.as_path()
+            outer_poly = Polygon(
+                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+            )
             vm.add_polyline(outer_poly)
             path = Path(stroke=Color("red"), stroke_width=500)
             deleted = 0
@@ -329,9 +334,14 @@ class LivingHinges:
             #     good_pts = [p for p in pts_sub if vm.is_point_inside(p[0] + self.start_x, p[1] + self.start_y)]
             #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
             for sub_inner in self.path.as_subpaths():
+                sub_bbox = sub_inner.bbox()
+                outx, outy  = self.outside(sub_bbox, outer_bb)
+                if outx == "outside" or outy == "outside":
+                    continue
+
                 sub_inner = Path(sub_inner)
                 pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
-
+                fullyinside = True
                 for i in range(len(pts_sub) - 1, -1, -1):
                     total += 1
                     pt = pts_sub[i]
@@ -350,7 +360,11 @@ class LivingHinges:
                             )
                         del pts_sub[i:]
                         deleted += 1
-                path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
+                        fullyinside = False
+                if fullyinside:
+                    path += sub_inner
+                else:
+                    path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
             self.path = path
         else:
             # Former method....
@@ -374,20 +388,6 @@ class LivingHinges:
             ymax : Lower side of the rectangular area
         """
 
-        def outside(bb_to_check, master_bb):
-            out_x = "inside"
-            out_y = "inside"
-            if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
-                # fully out on x
-                out_x = "outside"
-            elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
-                out_x = "cross"
-            if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
-                out_y = "outside"
-            elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
-                out_x = "cross"
-            return out_x, out_y
-
         def approximate_line(part_of_path, current_x, current_y):
             # print(f"Check: {type(part_of_path).__name__} {part_of_path.bbox()} {clipbb}")
             added = 0
@@ -403,7 +403,7 @@ class LivingHinges:
                     max(current_x, p[0]),
                     max(current_y, p[1]),
                 )
-                sx, sy = outside(segbb, clipbb)
+                sx, sy = self.outside(segbb, clipbb)
                 # print(f"{segbb} - {clipbb} {sx} - {sy}")
                 if sx == "outside" or sy == "outside":
                     # Fully outside, so drop
@@ -520,7 +520,7 @@ class LivingHinges:
                 current_y = e.end[1]
                 not_deleted += 1
             elif isinstance(e, Line):
-                statex, statey = outside(segbb, clipbb)
+                statex, statey = self.outside(segbb, clipbb)
                 dx = e.end[0] - current_x
                 dy = e.end[1] - current_y
                 if statex == "outside" or statey == "outside":
@@ -594,7 +594,7 @@ class LivingHinges:
                 newpath.closed()
                 not_deleted += 1
             elif isinstance(e, QuadraticBezier):
-                statex, statey = outside(segbb, clipbb)
+                statex, statey = self.outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
                     add_move(newpath, e.end)
@@ -608,7 +608,7 @@ class LivingHinges:
                 current_x = e.end[0]
                 current_y = e.end[1]
             elif isinstance(e, CubicBezier):
-                statex, statey = outside(segbb, clipbb)
+                statex, statey = self.outside(segbb, clipbb)
                 if statex == "outside" and statey == "outside":
                     # Fully outside, so drop
                     add_move(newpath, e.end)
@@ -625,7 +625,7 @@ class LivingHinges:
             elif isinstance(e, Arc):
                 for e_cubic in e.as_cubic_curves():
                     segbb = e_cubic.bbox()
-                    statex, statey = outside(segbb, clipbb)
+                    statex, statey = self.outside(segbb, clipbb)
                     if statex == "outside" and statey == "outside":
                         # Fully outside, so drop
                         add_move(newpath, e.end)
