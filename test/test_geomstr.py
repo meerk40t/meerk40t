@@ -624,7 +624,7 @@ class TestGeomstr(unittest.TestCase):
         p.create_from_pattern(f)
         poly = Polygon(0+2j, 4+0j, 4+4j, 0+2j)
         poly.geomstr.uscale(5)
-        q = Clip(poly)
+        q = Clip(poly.geomstr)
 
         clip = Geomstr()
         for s in list(p.generate(*q.bounds)):

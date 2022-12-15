@@ -83,7 +83,7 @@ class Polygon:
 
 class Clip:
     def __init__(self, shape):
-        self.clipping_shape = shape.geomstr
+        self.clipping_shape = shape
         self.bounds = shape.bbox()
 
     def clip(self, clip):
