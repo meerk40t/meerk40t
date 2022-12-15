@@ -642,3 +642,86 @@ class TestGeomstr(unittest.TestCase):
         # clipped.draw(draw, int(x0), int(y0))
         # img.save("test.png")
 
+    def test_point_in_polygon_beat(self):
+        """
+        Raytraced comparison with our geomstr version.
+
+        See:
+        https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
+        @return:
+        """
+
+        def points_in_polygon(polygon, pts):
+            pts = np.asarray(pts, dtype='float32')
+            polygon = np.asarray(polygon, dtype='float32')
+            contour2 = np.vstack((polygon[1:], polygon[:1]))
+            test_diff = contour2 - polygon
+            mask1 = (pts[:, None] == polygon).all(-1).any(-1)
+            m1 = (polygon[:, 1] > pts[:, None, 1]) != (contour2[:, 1] > pts[:, None, 1])
+            slope = ((pts[:, None, 0] - polygon[:, 0]) * test_diff[:, 1]) - (
+                        test_diff[:, 0] * (pts[:, None, 1] - polygon[:, 1]))
+            m2 = slope == 0
+            mask2 = (m1 & m2).any(-1)
+            m3 = (slope < 0) != (contour2[:, 1] < polygon[:, 1])
+            m4 = m1 & m3
+            count = np.count_nonzero(m4, axis=-1)
+            mask3 = ~(count % 2 == 0)
+            mask = mask1 | mask2 | mask3
+            return mask
+
+        N = 50000
+        lenpoly = 1000
+        polygon = [[np.sin(x) + 0.5, np.cos(x) + 0.5] for x in np.linspace(0, 2 * np.pi, lenpoly)]
+        polygon = np.array(polygon, dtype='float32')
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype('float32')
+        t = time.time()
+        mask = points_in_polygon(polygon, points)
+        t1 = time.time() - t
+
+        # Convert to correct format.
+        points = points[:,0] + points[:,1] * 1j
+        pg = polygon[:,0] + polygon[:,1] * 1j
+        poly = Polygon(*pg)
+        t = time.time()
+        q = Scanbeam(poly.geomstr)
+        r = q.points_in_polygon(points)
+        t2 = time.time() - t
+        for i in range(N):
+            if mask[i]:
+                self.assertTrue(r[i])
+            else:
+                self.assertFalse(r[i])
+        print(f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x")
+
+    def test_point_in_polygon(self):
+        from meerk40t.fill.patternfill import set_diamond1
+        t1 = 0
+        t2 = 0
+        f = set_diamond1
+        p = Pattern()
+        p.create_from_pattern(f)
+
+        yy = []
+        for i in range(100):
+            yy.append(complex(random.random() * 5, random.random()*5))
+        yy.append(yy[0])
+        poly = Polygon(*yy)  # 0,10 20,0 20,20.1 0,10
+        poly.geomstr.uscale(5)
+        m = Scanbeam(poly.geomstr)
+
+        pts = []
+        for i in range(2000):
+            pts.append(complex(random.random() * 25, random.random()*25))
+
+        t = time.time()
+        r = m.points_in_polygon(pts)
+        t1 += time.time() - t
+
+        t = time.time()
+        rr = [int(m.is_point_inside(j.real, j.imag)) for j in pts]
+        t2 += time.time() - t
+
+        for i, j in enumerate(pts):
+            self.assertEqual(rr[i], r[i])
+        print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")

@@ -265,6 +265,49 @@ class Scanbeam:
 
         self.increment_scanbeam()
 
+        self._nb_events = None
+        self._nb_scan = None
+
+    def compute_beam(self):
+        actives = []
+        largest_actives = 0
+        events = []
+        while self._high != float("inf"):
+            if self._high != self._low:
+                if len(self.actives()) > largest_actives:
+                    largest_actives = len(self.actives())
+                actives.append(list(self.actives()))
+                events.append(self._high)
+            self.increment_scanbeam()
+        actives.append([])
+        self._nb_events = events
+        self._nb_scan = np.zeros((len(actives), largest_actives), dtype=int)
+        self._nb_scan -= 1
+        for i, active in enumerate(actives):
+            self._nb_scan[i, 0:len(active)] = active
+
+    def points_in_polygon(self, e):
+        if self._nb_scan is None:
+            self.compute_beam()
+        _, y = np.meshgrid(self._nb_events, np.imag(e))
+        q = self._nb_events <= y
+        idx = np.sum(q, axis=1)
+        actives = self._nb_scan[idx]
+        line = self._geom.segments[actives]
+        a = line[:, :, 0]
+        a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+        b = line[:, :, -1]
+        b = np.where(actives == -1, np.nan + np.nan * 1j, b)
+        m = (b.imag - a.imag) / (b.real - a.real)
+        y0 = a.imag - (m * a.real)
+        _, ys = np.meshgrid(np.arange(y0.shape[1]), np.imag(e))
+        x_intercepts = (ys - y0) / m
+        _, xs = np.meshgrid(np.arange(y0.shape[1]), np.real(e))
+        v = x_intercepts <= xs
+        results = np.sum(v, axis=1)
+        results %= 2
+        return results
+
     def scanline_increment(self, delta):
         self.scanline_to(self.scanline + delta)
         return math.isinf(self._low) or math.isinf(self._high)
@@ -303,11 +346,9 @@ class Scanbeam:
         for i in range(1, len(self._active_edge_list), 2):
             prior = self._active_edge_list[i - 1]
             after = self._active_edge_list[i]
-            if (
-                self.x_intercept(prior) - tolerance
-                <= x
-                <= self.x_intercept(after) + tolerance
-            ):
+            p_i = self.x_intercept(prior) - tolerance
+            a_i = self.x_intercept(after) + tolerance
+            if p_i <= x <= a_i:
                 return True
         return False
 
