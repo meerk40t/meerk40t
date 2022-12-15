@@ -485,7 +485,7 @@ class Geomstr:
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
-        self.capacity = self.capacity << 1
+        self.capacity = max(self.capacity << 1, capacity)
         new_segments = np.zeros((self.capacity, 5), dtype="complex")
         new_segments[0 : self.index] = self.segments[0 : self.index]
         self.segments = new_segments
