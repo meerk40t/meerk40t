@@ -3252,10 +3252,11 @@ def init_commands(kernel):
             linejoin=Linejoin.JOIN_ROUND,
         )
         # Newly created! Classification needed?
-        post.append(classify_new(node))
+        data_out = [node]
+        post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
 
-        return "elements", [node]
+        return "elements", data_out
 
     @self.console_option(
         "dpi", "d", help=_("interim image resolution"), default=500, type=float
@@ -3914,6 +3915,27 @@ def init_commands(kernel):
                 channel(f"Node {e} anchor changed from {old_anchor} to {anchor}")
 
             e.altered()
+        return "elements", data
+
+    @self.console_command("simplify", input_type=("elements", None), output_type="elements")
+    def simplify_path(command, channel, _,  data=None, post=None, **kwargs):
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        data_changed = list()
+        if len(data) == 0:
+            channel("Requires a selected polygon")
+            return None
+        for node in data:
+            changed, before, after = self.simplify_node(node)
+            if changed:
+                s = node.type
+                channel(f"Simplified {s} ({node.label}): from {before} to {after}")
+                node.altered()
+                data_changed.append(node)
+        if len(data_changed)>0:
+            self.signal("element_property_update", data_changed)
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command("polycut", input_type=("elements", None), output_type="elements")
@@ -5302,11 +5324,14 @@ def init_commands(kernel):
                 name = name[:50] + "…"
             try:
                 e.shape.reify()
-                e.altered()
-                channel(_("reified - %s") % name)
             except AttributeError as err:
-                channel(_("Couldn't reify - %s - %s") % (name, err))
-
+                try:
+                    e.path.reify()
+                except AttributeError:
+                    channel(_("Couldn't reify - %s - %s") % (name, err))
+                    return "elements", data
+            e.altered()
+            channel(_("reified - %s") % name)
         return "elements", data
 
     @self.console_command(

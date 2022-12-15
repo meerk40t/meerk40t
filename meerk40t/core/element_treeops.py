@@ -123,12 +123,9 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
-        for e in list(self.elems(emphasized=True)):
-            if e.type not in ("group", "file"):
-                continue
-            for n in list(e.children):
-                e.insert_sibling(n)
-            e.remove_node()  # Removing group/file node.
+        for n in list(node.children):
+            node.insert_sibling(n)
+        node.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
     @tree_operation(

@@ -130,6 +130,21 @@ class LivingHinges:
         # Make sure pattern is updated with additional parameter
         self.set_predefined_pattern(self.cutpattern)
 
+    @staticmethod
+    def outside(bb_to_check, master_bb):
+        out_x = "inside"
+        out_y = "inside"
+        if bb_to_check[0] > master_bb[2] or bb_to_check[2] < master_bb[0]:
+            # fully out on x
+            out_x = "outside"
+        elif bb_to_check[0] < master_bb[0] or bb_to_check[2] > master_bb[2]:
+            out_x = "cross"
+        if bb_to_check[1] > master_bb[3] or bb_to_check[3] < master_bb[1]:
+            out_y = "outside"
+        elif bb_to_check[1] < master_bb[1] or bb_to_check[3] > master_bb[3]:
+            out_x = "cross"
+        return out_x, out_y
+
     def generate(self, show_outline=False, force=False, final=False, clip_bounds=True):
         if final and self.path is not None and not force:
             # No need to recalculate...
@@ -1070,7 +1085,7 @@ def plugin(kernel, lifecycle):
                 set_fishbone,
                 True,
                 "Left/Right Indentation",
-                "Bottom Indentation",
+                "Top/Bottom Indentation",
                 (100, 100, 0, 0),
                 True,
             ),
@@ -1146,8 +1161,8 @@ def plugin(kernel, lifecycle):
             (
                 set_bowlingpin,
                 True,
-                "Left/right bowl",
-                "Top/bottom bowl",
+                "Left/Right Bowl",
+                "Top/Bottom Bowl",
                 (-210, -50, -0.3, 0),
                 True,
             ),

@@ -51,7 +51,7 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.geometry.uscale(w)
+        numpath.uscale(w)
 
         numpath2 = Geomstr()
         numpath2.polyline(
@@ -74,9 +74,9 @@ class TestGeomstr(unittest.TestCase):
         )
         q = numpath.segments == numpath2.segments
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
-        numpath.geometry.translate(3, 3)
+        numpath.translate(3, 3)
         self.assertFalse(np.all(numpath.segments == numpath2.segments))
-        numpath.geometry.translate(-3, -3)
+        numpath.translate(-3, -3)
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
 
     def test_geomstr_bbox(self):
@@ -100,11 +100,11 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        geomstr.geometry.uscale(w)
-        self.assertEqual(geomstr.geometry.bbox(), (500.0, 500.0, 9500.0, 9500.0))
-        geomstr.geometry.rotate(tau * 0.25)
+        geomstr.uscale(w)
+        self.assertEqual(geomstr.bbox(), (500.0, 500.0, 9500.0, 9500.0))
+        geomstr.rotate(tau * 0.25)
         for x, y in zip(
-            geomstr.geometry.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)
+            geomstr.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)
         ):
             self.assertAlmostEqual(x, y)
 
@@ -128,10 +128,10 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.geometry.uscale(10000)
+        numpath.uscale(10000)
         c = copy(numpath)
-        numpath.geometry.rotate(tau * 0.25)
-        c.geometry.transform(Matrix("rotate(.25turn)"))
+        numpath.rotate(tau * 0.25)
+        c.transform(Matrix("rotate(.25turn)"))
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
 
@@ -157,8 +157,8 @@ class TestGeomstr(unittest.TestCase):
                 complex(0.25, 0.25),
             )
         )
-        numpath.geometry.uscale(10000)
-        numpath.geometry.rotate(tau * 0.25)
+        numpath.uscale(10000)
+        numpath.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
             for seg in subpath.segments:
@@ -409,10 +409,10 @@ class TestGeomstr(unittest.TestCase):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
         self.assertEqual(len(path), 1)
-        self.assertEqual(path.geometry.raw_length(), 50)
-        self.assertEqual(path.geometry.bbox(), (0, 0, 50, 0))
+        self.assertEqual(path.raw_length(), 50)
+        self.assertEqual(path.bbox(), (0, 0, 50, 0))
         path.line(complex(50, 0), complex(50, 50))
-        self.assertEqual(path.geometry.raw_length(), 100)
+        self.assertEqual(path.raw_length(), 100)
 
     def test_geomstr_convex_hull(self):
         path = Geomstr()
@@ -425,7 +425,6 @@ class TestGeomstr(unittest.TestCase):
         path = Geomstr()
         path.line(complex(0, 0), complex(50, 0))
         path.line(complex(50, 50), complex(50, 0))
-        path = path.geometry
         self.assertEqual(path.raw_length(), 100)
         self.assertEqual(path.travel_distance(), 50)
         path.two_opt_distance()
@@ -465,7 +464,7 @@ class TestGeomstr(unittest.TestCase):
         path.line(complex(50, 50), complex(0, 50))  # 2
         path.line(complex(0, 50), complex(0, 0))  # 3 ACTIVE
         path.close()
-        self.assertEqual(path.geometry.travel_distance(), 0)
+        self.assertEqual(path.travel_distance(), 0)
         beam = Scanbeam(path)
         beam.scanline_to(25)
         self.assertEqual(len(beam._active_edge_list), 2)
@@ -477,7 +476,7 @@ class TestGeomstr(unittest.TestCase):
         path.line(complex(50, 50), complex(0, 50))  # 2
         path.line(complex(0, 50), complex(0, 0))  # 3 ACTIVE
         path.close()
-        self.assertEqual(path.geometry.travel_distance(), 0)
+        self.assertEqual(path.travel_distance(), 0)
         beam = Scanbeam(path)
         beam.scanline_to(float("inf"))
         self.assertEqual(len(beam._active_edge_list), 0)
@@ -506,7 +505,7 @@ class TestGeomstr(unittest.TestCase):
         subject.line(complex(0, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.geometry.find_intersections(clip)
+        results = subject.find_intersections(clip)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], (50, 50, 0, 0, 0))
 
@@ -549,7 +548,7 @@ class TestGeomstr(unittest.TestCase):
         subject.line(complex(20, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.geometry.merge(clip)
+        results = subject.merge(clip)
         print(results.segments)
 
     def test_geomstr_merge_capacity_count(self):
@@ -566,7 +565,7 @@ class TestGeomstr(unittest.TestCase):
                     complex(random.randint(0, 50), random.randint(0, 50)),
                     complex(random.randint(0, 50), random.randint(0, 50)),
                 )
-            results = subject.geometry.merge(clip)
+            results = subject.merge(clip)
             self.assertEqual(results.index, results.capacity)
 
     def test_geomstr_merge_order(self):
@@ -578,7 +577,7 @@ class TestGeomstr(unittest.TestCase):
         clip.line(complex(0, 80), complex(100, 80))
         clip.line(complex(0, 60), complex(100, 60))
         clip.line(complex(0, 100), complex(100, 100))
-        results = subject.geometry.merge(clip)
+        results = subject.merge(clip)
         print(results)
 
     def test_pattern_generation(self):
@@ -624,7 +623,7 @@ class TestGeomstr(unittest.TestCase):
         p = Pattern()
         p.create_from_pattern(f)
         poly = Polygon(0+2j, 4+0j, 4+4j, 0+2j)
-        poly.geomstr.geometry.uscale(5)
+        poly.geomstr.uscale(5)
         q = Clip(poly)
 
         clip = Geomstr()
@@ -632,7 +631,7 @@ class TestGeomstr(unittest.TestCase):
             clip.append(s)
 
         clipped = q.clip(clip)
-        clipped.geometry.uscale(10)
+        clipped.uscale(10)
         # self.assertEqual(len(clipped), 54)
         # from PIL import ImageDraw, Image
         #
@@ -643,3 +642,86 @@ class TestGeomstr(unittest.TestCase):
         # clipped.draw(draw, int(x0), int(y0))
         # img.save("test.png")
 
+    def test_point_in_polygon_beat(self):
+        """
+        Raytraced comparison with our geomstr version.
+
+        See:
+        https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
+        @return:
+        """
+
+        def points_in_polygon(polygon, pts):
+            pts = np.asarray(pts, dtype='float32')
+            polygon = np.asarray(polygon, dtype='float32')
+            contour2 = np.vstack((polygon[1:], polygon[:1]))
+            test_diff = contour2 - polygon
+            mask1 = (pts[:, None] == polygon).all(-1).any(-1)
+            m1 = (polygon[:, 1] > pts[:, None, 1]) != (contour2[:, 1] > pts[:, None, 1])
+            slope = ((pts[:, None, 0] - polygon[:, 0]) * test_diff[:, 1]) - (
+                        test_diff[:, 0] * (pts[:, None, 1] - polygon[:, 1]))
+            m2 = slope == 0
+            mask2 = (m1 & m2).any(-1)
+            m3 = (slope < 0) != (contour2[:, 1] < polygon[:, 1])
+            m4 = m1 & m3
+            count = np.count_nonzero(m4, axis=-1)
+            mask3 = ~(count % 2 == 0)
+            mask = mask1 | mask2 | mask3
+            return mask
+
+        N = 50000
+        lenpoly = 1000
+        polygon = [[np.sin(x) + 0.5, np.cos(x) + 0.5] for x in np.linspace(0, 2 * np.pi, lenpoly)]
+        polygon = np.array(polygon, dtype='float32')
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype('float32')
+        t = time.time()
+        mask = points_in_polygon(polygon, points)
+        t1 = time.time() - t
+
+        # Convert to correct format.
+        points = points[:,0] + points[:,1] * 1j
+        pg = polygon[:,0] + polygon[:,1] * 1j
+        poly = Polygon(*pg)
+        t = time.time()
+        q = Scanbeam(poly.geomstr)
+        r = q.points_in_polygon(points)
+        t2 = time.time() - t
+        for i in range(N):
+            if mask[i]:
+                self.assertTrue(r[i])
+            else:
+                self.assertFalse(r[i])
+        print(f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x")
+
+    def test_point_in_polygon(self):
+        from meerk40t.fill.patternfill import set_diamond1
+        t1 = 0
+        t2 = 0
+        f = set_diamond1
+        p = Pattern()
+        p.create_from_pattern(f)
+
+        yy = []
+        for i in range(100):
+            yy.append(complex(random.random() * 5, random.random()*5))
+        yy.append(yy[0])
+        poly = Polygon(*yy)  # 0,10 20,0 20,20.1 0,10
+        poly.geomstr.uscale(5)
+        m = Scanbeam(poly.geomstr)
+
+        pts = []
+        for i in range(2000):
+            pts.append(complex(random.random() * 25, random.random()*25))
+
+        t = time.time()
+        r = m.points_in_polygon(pts)
+        t1 += time.time() - t
+
+        t = time.time()
+        rr = [int(m.is_point_inside(j.real, j.imag)) for j in pts]
+        t2 += time.time() - t
+
+        for i, j in enumerate(pts):
+            self.assertEqual(rr[i], r[i])
+        print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")

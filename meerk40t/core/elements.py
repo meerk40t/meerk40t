@@ -2868,3 +2868,86 @@ class Elemental(Service):
                 filetypes.append(f"{description} ({extension})")
                 filetypes.append(f"*.{extension}")
         return "|".join(filetypes)
+
+    def simplify_node(self, node):
+        def my_sign(x):
+            # Returns +1 for positive figures, -1 for negative and 0 for Zero
+            return (x > 0) - (x < 0)
+
+        from meerk40t.svgelements import Line
+        changed = False
+        before = 0
+        after = 0
+        if node.type == "elem path" and len(node.path._segments) > 1:
+            obj = node.path
+            last = None
+            before = len(obj._segments)
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if isinstance(seg, Line):
+                    if last is not None:
+                        # Two consecutive line segments
+                        lastdx = round(last.end.x - last.start.x, 6)
+                        lastdy = round(last.end.y - last.start.y, 6)
+                        thisdx = round(seg.end.x - seg.start.x, 6)
+                        thisdy = round(seg.end.y - seg.start.y, 6)
+                        same = False
+                        # if thisdx == 0 or lastdx == 0:
+                        #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
+                        # else:
+                        #     channel(f"Compare {idx}, {thisdy / thisdx:.3f} vs {lastdy / lastdx:.3f}")
+
+                        if thisdx == 0 or lastdx == 0:
+                            # Vertical line - same direction?
+                            if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
+                                same = True
+                        elif abs(thisdy/thisdx - lastdy/lastdx)<1.0E-6:
+                            same = True
+
+                        if same:
+                            # We can just merge the two segments
+                            seg.end = last.end
+                            obj._segments.pop(idx + 1)
+                            changed = True
+                    last = seg
+                else:
+                    last = None
+            after = len(obj._segments)
+        elif node.type == "elem polyline" and len(node.shape.points)>2:
+            obj = node.shape
+            pt_older = None
+            pt_old = None
+            before = len(obj.points)
+            for idx in range(len(obj.points) - 1, -1, -1):
+                pt = obj.points[idx]
+                if pt_older is not None and pt_old is not None:
+                    # Two consecutive line segments
+                    lastdx = round(pt_older[0] - pt_old[0], 6)
+                    lastdy = round(pt_older[1] - pt_old[1], 6)
+                    thisdx = round(pt_old[0] - pt[0], 6)
+                    thisdy = round(pt_old[1] - pt[1], 6)
+                    same = False
+                    # if thisdx == 0 or lastdx == 0:
+                    #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
+                    # else:
+                    #     channel(f"Compare {idx}, {thisdy / thisdx:.3f} vs {lastdy / lastdx:.3f}")
+
+                    if thisdx == 0 or lastdx == 0:
+                        # Vertical line - same direction?
+                        if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
+                            same = True
+                    elif abs(thisdy/thisdx - lastdy/lastdx)<1.0E-6:
+                        same = True
+
+                    if same:
+                        # We can just merge the two segments by
+                        # elminating the middle point
+                        obj.points.pop(idx + 1)
+                        changed = True
+                        # just set the middle point to the last point,
+                        # so that the last point remains
+                        pt_old = pt_older
+                pt_older = pt_old
+                pt_old = pt
+            after = len(obj.points)
+        return changed, before, after
