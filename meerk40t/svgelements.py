@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.8.5"
+SVGELEMENTS_VERSION = "1.9.0"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3360,6 +3360,12 @@ class SVGElement(object):
         self.values[key] = value
         return self
 
+    def write_xml(self, f):
+        write(self, f)
+
+    def string_xml(self):
+        return tostring(self)
+
 
 class Transformable:
     """Any element that is transformable and has a transform property."""
@@ -4057,6 +4063,110 @@ class PathSegment:
         For a relative segment the current_point must be provided. If it is omitted then only an absolute segment
         can be returned."""
         raise NotImplementedError
+
+    def intersect(self, segment):
+        return list(PathSegment.find_intersections(self, segment))
+
+    @staticmethod
+    def find_intersections(
+        segment1,
+        segment2,
+        samples=50,
+        ta=(0.0, 1.0, None),
+        tb=(0.0, 1.0, None),
+        depth=0,
+        enhancements=2,
+        enhance_samples=50,
+    ):
+        """
+        Calculate intersections by linearized polyline intersections with enhancements.
+        We calculate probable intersections by linearizing our segment into `sample` polylines
+        we then find those intersecting segments and the range of t where those intersections
+        could have occurred and then subdivide those segments in a series of enhancements to
+        find their intersections with increased precision.
+
+        This code is fast, but it could fail by both finding a rare phantom intersection (if there
+        is a low or no enhancements) or by failing to find a real intersection. Because the polylines
+        approximation did not intersect in the base case.
+
+        At a resolution of about 1e-15 the intersection calculations become unstable and intersection
+        candidates can duplicate or become lost. We terminate at that point and give the last best
+        guess.
+
+        :param segment1:
+        :param segment2:
+        :param samples:
+        :param ta:
+        :param tb:
+        :param depth:
+        :param enhancements:
+        :param enhance_samples:
+        :return:
+        """
+        assert samples >= 2
+
+        import numpy as np
+
+        a = np.linspace(ta[0], ta[1], num=samples)
+        b = np.linspace(tb[0], tb[1], num=samples)
+        step_a = a[1] - a[0]
+        step_b = b[1] - b[0]
+        j = segment1.npoint(a)
+        k = segment2.npoint(b)
+        j = j[:, 0] + j[:, 1] * 1j
+        k = k[:, 0] + k[:, 1] * 1j
+
+        ax1, bx1 = np.meshgrid(np.real(j[:-1]), np.real(k[:-1]))
+        ax2, bx2 = np.meshgrid(np.real(j[1:]), np.real(k[1:]))
+        ay1, by1 = np.meshgrid(np.imag(j[:-1]), np.imag(k[:-1]))
+        ay2, by2 = np.meshgrid(np.imag(j[1:]), np.imag(k[1:]))
+
+        denom = (by2 - by1) * (ax2 - ax1) - (bx2 - bx1) * (ay2 - ay1)
+        qa = (bx2 - bx1) * (ay1 - by1) - (by2 - by1) * (ax1 - bx1)
+        qb = (ax2 - ax1) * (ay1 - by1) - (ay2 - ay1) * (ax1 - bx1)
+        hits = np.dstack(
+            (
+                denom != 0,  # Cannot be parallel.
+                np.sign(denom) == np.sign(qa),  # D and Qa must have same sign.
+                np.sign(denom) == np.sign(qb),  # D and Qb must have same sign.
+                abs(denom) >= abs(qa),  # D >= Qa (else not between 0 - 1)
+                abs(denom) >= abs(qb),  # D >= Qb (else not between 0 - 1)
+            )
+        ).all(axis=2)
+
+        where_hit = np.argwhere(hits)
+        if len(where_hit) != 1 and step_a < 1e-10:
+            # We're hits are becoming unstable give last best value.
+            if ta[2] is not None and tb[2] is not None:
+                yield ta[2], tb[2]
+            return
+
+        # Calculate the t values for the intersections
+        ta_hit = qa[hits] / denom[hits]
+        tb_hit = qb[hits] / denom[hits]
+
+        for i, hit in enumerate(where_hit):
+
+            at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
+            bt = tb[0] + float(hit[0]) * step_b
+            a_fractional = (
+                ta_hit[i] * step_a
+            )  # Fractional guess within intersected segment
+            b_fractional = tb_hit[i] * step_b
+            if depth == enhancements:
+                # We've enhanced as best as we can, yield the current + segment t-value to our answer
+                yield at + a_fractional, bt + b_fractional
+            else:
+                yield from PathSegment.find_intersections(
+                    segment1,
+                    segment2,
+                    ta=(at, at + step_a, at + a_fractional),
+                    tb=(bt, bt + step_b, bt + b_fractional),
+                    samples=enhance_samples,
+                    depth=depth + 1,
+                    enhancements=enhancements,
+                    enhance_samples=enhance_samples,
+                )
 
 
 class Move(PathSegment):
@@ -8682,6 +8792,7 @@ class SVG(Group):
             else:
                 children.append((elem, None))
         nodes = children
+
         # End preprocess
 
         # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end.
@@ -8902,11 +9013,10 @@ class SVG(Group):
                     if context is not None:
                         context.append(s)
                     context = s
-                    if root is None:
-                        root = s
                 elif SVG_TAG_GROUP == tag:
                     s = Group(values)
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                     context = s
                     s.render(ppi=ppi, width=width, height=height)
                 elif SVG_TAG_DEFS == tag:
@@ -8931,7 +9041,8 @@ class SVG(Group):
                         del values[SVG_ATTR_WIDTH]
                     if SVG_ATTR_HEIGHT in values:
                         del values[SVG_ATTR_HEIGHT]
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                     context = s
                     use += 1
                     if SVG_ATTR_ID in attributes and root is not None and use == 1:
@@ -8974,7 +9085,8 @@ class SVG(Group):
                         s.reify()
                     if s.is_degenerate():
                         continue
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                 elif tag in (
                     SVG_TAG_STYLE,
                     SVG_TAG_TEXT,
@@ -8986,25 +9098,31 @@ class SVG(Group):
                     continue
                 else:
                     s = SVGElement(values)  # SVG Unknown object return as element.
-                    context.append(s)
-
-                # Assign optional linked properties.
-                try:
-                    clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
-                    if clip_path_url is not None:
-                        clip_path = root.get_element_by_url(clip_path_url)
-                        s.clip_path = clip_path
-                except AttributeError:
-                    pass
-                if clip != 0:
+                    if context is not None:
+                        context.append(s)
+                # If no root was established, s is root.
+                if root is None:
+                    root = s
+                if isinstance(root, SVG):
+                    # Assign optional linked properties.
                     try:
-                        clip_rule = s.values.get(SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO)
-                        if clip_rule is not None:
-                            s.clip_rule = clip_rule
+                        clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
+                        if clip_path_url is not None:
+                            clip_path = root.get_element_by_url(clip_path_url)
+                            s.clip_path = clip_path
                     except AttributeError:
                         pass
-                if SVG_ATTR_ID in attributes and root is not None and use == 0:
-                    root.objects[attributes[SVG_ATTR_ID]] = s
+                    if clip != 0:
+                        try:
+                            clip_rule = s.values.get(
+                                SVG_ATTR_CLIP_RULE, SVG_RULE_NONZERO
+                            )
+                            if clip_rule is not None:
+                                s.clip_rule = clip_rule
+                        except AttributeError:
+                            pass
+                    if SVG_ATTR_ID in attributes and use == 0:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
                 if (
@@ -9030,13 +9148,16 @@ class SVG(Group):
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                 elif SVG_TAG_DESC == tag:
                     s = Desc(values, desc=elem.text)
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                 elif SVG_TAG_TITLE == tag:
                     s = Title(values, title=elem.text)
-                    context.append(s)
+                    if context is not None:
+                        context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     textstyle = elem.text
                     if textstyle is None:
@@ -9059,6 +9180,8 @@ class SVG(Group):
                 elif SVG_TAG_USE == tag:
                     use -= 1
                 if s is not None:
+                    if root is None:
+                        root = s
                     # Assign optional linked properties.
                     try:
                         clip_path_url = s.values.get(SVG_ATTR_CLIP_PATH, None)
@@ -9083,3 +9206,273 @@ class SVG(Group):
                     # Rare wc3 test uses a 'd' namespace.
                     values[elem[0]] = elem[1]
         return root
+
+
+def tostring(node):
+    from xml.etree.ElementTree import tostring
+
+    return tostring(_write_node(node), encoding="unicode")
+
+
+def write(node, f, pretty=True):
+    from xml.etree.ElementTree import ElementTree
+
+    root = _write_node(node)
+    if pretty:
+        _pretty_print(root)
+    tree = ElementTree(root)
+    if f.lower().endswith("svgz"):
+        import gzip
+
+        f = gzip.open(f, "wb")
+    tree.write(f)
+
+
+def _write_node(node, xml_tree=None, viewport_transform=None):
+    if hasattr(node, "values"):
+        values = node.values
+        values = node.values.get(SVG_STRUCT_ATTRIB, values)
+    else:
+        values = None
+
+    def subxml(xml_tree, tag):
+        from xml.etree.ElementTree import Element, SubElement
+
+        if xml_tree is None:
+            xml_tree = Element(tag)
+        else:
+            xml_tree = SubElement(xml_tree, tag)
+        for key, value in values.items():
+            if key in (
+                "tag",
+                SVG_STRUCT_ATTRIB,
+                SVG_ATTR_TRANSFORM,
+                SVG_ATTR_FILL,
+                SVG_ATTR_STROKE,
+                SVG_TAG_STYLE,
+            ):
+                continue
+            xml_tree.set(key, str(value))
+        return xml_tree
+
+    if isinstance(node, SVG):
+        if xml_tree is None:
+            xml_tree = subxml(xml_tree, SVG_NAME_TAG)
+            xml_tree.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
+            xml_tree.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
+            xml_tree.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
+            xml_tree.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
+        else:
+            xml_tree = subxml(xml_tree, SVG_NAME_TAG)
+        if node.x:
+            xml_tree.set(SVG_ATTR_X, str(node.x))
+        if node.y:
+            xml_tree.set(SVG_ATTR_Y, str(node.y))
+        if node.width:
+            xml_tree.set(SVG_ATTR_WIDTH, str(node.width))
+        if node.height:
+            xml_tree.set(SVG_ATTR_HEIGHT, str(node.height))
+        if node.viewbox:
+            xml_tree.set(SVG_ATTR_VIEWBOX, str(node.viewbox))
+        vt = node.viewbox_transform
+        if vt:
+            m = Matrix(vt)
+            m.inverse()
+            vt = m
+        else:
+            vt = None
+        for child in node:
+            _write_node(child, xml_tree, vt)
+    elif isinstance(node, Ellipse):
+        xml_tree = subxml(xml_tree, SVG_TAG_ELLIPSE)
+        if node.cx:
+            xml_tree.set(SVG_ATTR_CENTER_X, str(node.cx))
+        if node.cy:
+            xml_tree.set(SVG_ATTR_CENTER_Y, str(node.cy))
+        if node.rx:
+            xml_tree.set(SVG_ATTR_RADIUS_X, str(node.rx))
+        if node.ry:
+            xml_tree.set(SVG_ATTR_RADIUS_Y, str(node.ry))
+    elif isinstance(node, Circle):
+        xml_tree = subxml(xml_tree, SVG_TAG_CIRCLE)
+        if node.cx:
+            xml_tree.set(SVG_ATTR_CENTER_X, str(node.cx))
+        if node.cy:
+            xml_tree.set(SVG_ATTR_CENTER_Y, str(node.cy))
+        if node.rx:
+            xml_tree.set(SVG_ATTR_RADIUS, str(node.rx))
+    elif isinstance(node, Image):
+        xml_tree = subxml(xml_tree, SVG_TAG_IMAGE)
+        from io import BytesIO
+        from base64 import b64encode
+
+        if node.image is not None:
+            stream = BytesIO()
+            node.image.save(stream, format="PNG")
+            xml_tree.set(
+                "xlink:href",
+                f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
+            )
+        if node.x:
+            xml_tree.set(SVG_ATTR_X, str(node.x))
+        if node.y:
+            xml_tree.set(SVG_ATTR_Y, str(node.y))
+        if node.width:
+            xml_tree.set(SVG_ATTR_WIDTH, str(node.width))
+        if node.height:
+            xml_tree.set(SVG_ATTR_HEIGHT, str(node.height))
+    elif isinstance(node, SimpleLine):
+        xml_tree = subxml(xml_tree, SVG_TAG_LINE)
+        if node.x1:
+            xml_tree.set(SVG_ATTR_X1, str(node.x1))
+        if node.y1:
+            xml_tree.set(SVG_ATTR_Y1, str(node.y1))
+        if node.x2:
+            xml_tree.set(SVG_ATTR_X2, str(node.x2))
+        if node.y2:
+            xml_tree.set(SVG_ATTR_Y2, str(node.y2))
+    elif isinstance(node, Path):
+        xml_tree = subxml(xml_tree, SVG_TAG_PATH)
+        xml_tree.set(SVG_ATTR_DATA, node.d(transformed=False))
+    elif isinstance(node, Polyline):
+        xml_tree = subxml(xml_tree, SVG_TAG_POLYLINE)
+        xml_tree.set(
+            SVG_ATTR_POINTS,
+            " ".join([f"{e[0]} {e[1]}" for e in node.points]),
+        )
+    elif isinstance(node, Polygon):
+        xml_tree = subxml(xml_tree, SVG_TAG_POLYGON)
+        xml_tree.set(
+            SVG_ATTR_POINTS,
+            " ".join([f"{e[0]} {e[1]}" for e in node.points]),
+        )
+    elif isinstance(node, Rect):
+        xml_tree = subxml(xml_tree, SVG_TAG_RECT)
+        if node.x:
+            xml_tree.set(SVG_ATTR_X, str(node.x))
+        if node.y:
+            xml_tree.set(SVG_ATTR_Y, str(node.y))
+        if node.rx:
+            xml_tree.set(SVG_ATTR_RADIUS_X, str(node.rx))
+        if node.ry:
+            xml_tree.set(SVG_ATTR_RADIUS_Y, str(node.ry))
+        if node.width:
+            xml_tree.set(SVG_ATTR_WIDTH, str(node.width))
+        if node.height:
+            xml_tree.set(SVG_ATTR_HEIGHT, str(node.height))
+    elif isinstance(node, Text):
+        xml_tree = subxml(xml_tree, SVG_TAG_TEXT)
+        xml_tree.text = node.text
+        if node.font_family:
+            xml_tree.set(SVG_ATTR_FONT_FAMILY, node.font_family)
+        if node.font_style:
+            xml_tree.set(SVG_ATTR_FONT_STYLE, node.font_style)
+        if node.font_variant:
+            xml_tree.set(SVG_ATTR_FONT_VARIANT, node.font_variant)
+        if node.font_stretch:
+            xml_tree.set(SVG_ATTR_FONT_STRETCH, node.font_stretch)
+        if node.font_size:
+            xml_tree.set(SVG_ATTR_FONT_SIZE, str(node.font_size))
+        if node.line_height:
+            xml_tree.set("line_height", str(node.line_height))
+        if node.anchor:
+            xml_tree.set(SVG_ATTR_TEXT_ANCHOR, node.anchor)
+    elif isinstance(node, Desc):
+        xml_tree = subxml(xml_tree, SVG_TAG_DESC)
+        if node.desc:
+            xml_tree.set(SVG_TAG_DESC, str(node.desc))
+    elif isinstance(node, Title):
+        xml_tree = subxml(xml_tree, SVG_TAG_TITLE)
+        if node.title:
+            xml_tree.set(SVG_TAG_TITLE, str(node.title))
+    elif isinstance(node, Pattern):
+        xml_tree = subxml(xml_tree, SVG_TAG_PATTERN)
+        if node.pattern_transform:
+            xml_tree.set(SVG_ATTR_PATTERN_TRANSFORM, str(node.pattern_transform))
+        if node.pattern_content_units:
+            xml_tree.set(
+                SVG_ATTR_PATTERN_CONTENT_UNITS, str(node.pattern_content_units)
+            )
+        if node.pattern_units:
+            xml_tree.set(SVG_ATTR_PATTERN_UNITS, str(node.pattern_units))
+        if node.preserve_aspect_ratio:
+            xml_tree.set(SVG_ATTR_PRESERVEASPECTRATIO, str(node.preserve_aspect_ratio))
+    elif isinstance(node, Use):
+        # While Use elements are originally their own thing it can't be restored.
+        xml_tree = subxml(xml_tree, SVG_TAG_GROUP)
+        for child in node:
+            _write_node(child, xml_tree, viewport_transform)
+    elif isinstance(node, Group):
+        # This is a structural group node of elements. Recurse call to write values.
+        xml_tree = subxml(xml_tree, SVG_TAG_GROUP)
+        for child in node:
+            _write_node(child, xml_tree, viewport_transform)
+    elif isinstance(node, SVGElement):
+        if SVG_ATTR_TAG in values:
+            xml_tree = subxml(xml_tree, values.get(SVG_ATTR_TAG))
+        else:
+            # Cannot write generic svgelement form
+            return
+    # Write Transform
+    if hasattr(node, "transform") and not isinstance(node, Group):
+        t = node.transform
+        if viewport_transform:
+            t = t * viewport_transform
+        if not t.is_identity():
+            xml_tree.set(
+                SVG_ATTR_TRANSFORM,
+                "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+            )
+
+    # Write Stroke
+    if hasattr(node, "stroke"):
+        stroke = node.stroke
+        if stroke is not None:
+            stroke_opacity = stroke.opacity
+            stroke = (
+                str(abs(stroke))
+                if stroke is not None and stroke.value is not None
+                else SVG_VALUE_NONE
+            )
+            xml_tree.set(SVG_ATTR_STROKE, stroke)
+            if stroke_opacity != 1.0 and stroke_opacity is not None:
+                xml_tree.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
+
+            try:
+                stroke_width = str(node.stroke_width)
+                xml_tree.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+            except AttributeError:
+                pass
+
+    # Write Fill
+    if hasattr(node, "fill"):
+        fill = node.fill
+        if fill is not None:
+            fill_opacity = fill.opacity
+            fill = (
+                str(abs(fill))
+                if fill is not None and fill.value is not None
+                else SVG_VALUE_NONE
+            )
+            xml_tree.set(SVG_ATTR_FILL, fill)
+            if fill_opacity != 1.0 and fill_opacity is not None:
+                xml_tree.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
+
+    # Write id
+    if hasattr(node, "id"):
+        if node.id is not None:
+            xml_tree.set(SVG_ATTR_ID, str(node.id))
+
+    return xml_tree
+
+
+def _pretty_print(current, parent=None, index=-1, depth=0):
+    for i, node in enumerate(current):
+        _pretty_print(node, current, i, depth + 1)
+    if parent is not None:
+        if index == 0:
+            parent.text = "\n" + ("\t" * depth)
+        else:
+            parent[index - 1].tail = "\n" + ("\t" * depth)
+        if index == len(parent) - 1:
+            current.tail = "\n" + ("\t" * (depth - 1))
