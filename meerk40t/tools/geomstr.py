@@ -95,18 +95,11 @@ class Clip:
                     reverse=True,
                 ):
                     clip.split(c, t0)
-
         sb = Scanbeam(self.clipping_shape)
-        for c in range(clip.index - 1, -1, -1):
-            geom = clip.segments[c]
-            start = geom[0]
-            end = geom[-1]
-            if not sb.is_point_inside(start.real, start.imag) or not sb.is_point_inside(
-                end.real, end.imag
-            ):
-                geom[2] = np.nan
-
-        r = np.where(~np.isnan(clip.segments[: clip.index, 2]))
+        geoms = clip.segments[:clip.index]
+        starts_in_polygon = sb.points_in_polygon(geoms[:, 0])
+        ends_in_polygon = sb.points_in_polygon(geoms[:, -1])
+        r = np.where(starts_in_polygon + ends_in_polygon == 2)
         clip.segments = clip.segments[r]
         clip.index = len(clip.segments)
         return clip
