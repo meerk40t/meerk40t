@@ -161,6 +161,8 @@ class LivingHinges:
         p.set_cell_padding(self.cell_padding_h, self.cell_padding_v)
         p.set_cell_dims(self.cell_width, self.cell_height)
 
+        if self.outershape is None:
+            return
         outer_path = self.outershape.as_path()
         pts = [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
         poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
