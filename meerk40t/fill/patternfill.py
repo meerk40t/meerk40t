@@ -164,20 +164,22 @@ class LivingHinges:
         if self.outershape is None:
             return
         outer_path = self.outershape.as_path()
-        pts = [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
-        poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
+        self.path = Geomstr()
+        for sp in outer_path.as_subpaths():
+            pts = [Path(sp).point(i / 100.0, error=1e4) for i in range(101)]
+            poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
 
-        q = Clip(poly)
-        clip = Geomstr()
-        for s in list(p.generate(*q.bounds)):
-            clip.append(s)
+            q = Clip(poly)
+            clip = Geomstr()
+            for s in list(p.generate(*q.bounds)):
+                clip.append(s)
 
-        if clip_bounds:
-            self.path = q.clip(clip)
-        else:
-            self.path = clip
+            if clip_bounds:
+                self.path.append(q.clip(clip))
+            else:
+                self.path.append(clip)
 
-        # self.path.geometry.translate(self.start_x, self.start_y)
+            # self.path.geometry.translate(self.start_x, self.start_y)
         self.preview_path = copy(self.path)
 
 
