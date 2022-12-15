@@ -154,7 +154,6 @@ class LivingHinges:
             return
         from meerk40t.tools.geomstr import Pattern
         from meerk40t.tools.geomstr import Clip
-        from meerk40t.tools.geomstr import Polygon as Gpoly
 
         p = Pattern()
         p.create_from_pattern(self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape)
@@ -165,21 +164,23 @@ class LivingHinges:
             return
         outer_path = self.outershape.as_path()
         self.path = Geomstr()
+        clip = Geomstr()
         for sp in outer_path.as_subpaths():
             pts = [Path(sp).point(i / 100.0, error=1e4) for i in range(101)]
-            poly = Gpoly(*[complex(pt.x, pt.y) for pt in pts])
+            clip.polyline([complex(pt.x, pt.y) for pt in pts])
+            # clip.end()
 
-            q = Clip(poly)
-            clip = Geomstr()
-            for s in list(p.generate(*q.bounds)):
-                clip.append(s)
+        q = Clip(clip)
+        subject = Geomstr()
+        for s in list(p.generate(*q.bounds)):
+            subject.append(s)
 
-            if clip_bounds:
-                self.path.append(q.clip(clip))
-            else:
-                self.path.append(clip)
+        if clip_bounds:
+            self.path.append(q.clip(subject))
+        else:
+            self.path.append(subject)
 
-            # self.path.geometry.translate(self.start_x, self.start_y)
+        # self.path.geometry.translate(self.start_x, self.start_y)
         self.preview_path = copy(self.path)
 
 
