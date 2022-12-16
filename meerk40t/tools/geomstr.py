@@ -191,6 +191,7 @@ class Pattern:
         self.cell_height = y1 - y0
         self.padding_x = 0
         self.padding_y = 0
+        self.extend_pattern = False
 
     def create_from_pattern(self, pattern, a=None, b=None, *args, **kwargs):
         """
@@ -272,20 +273,27 @@ class Pattern:
         padding_y = self.padding_y
         width = x1 - x0
         height = y1 - y0
-        row_offset = 0.5 * self.cell_width
 
         start_index_x = math.floor(x0 / cwidth)
         start_index_y = math.floor(y0 / cheight)
         end_index_x = start_index_x + int(math.ceil(width / (cwidth + padding_x)))
         end_index_y = start_index_y + int(math.ceil(height / (cheight + padding_y)))
 
+        if self.extend_pattern:
+            row_offset = -.5 * self.cell_width
+            start_index_x -= 1
+            end_index_x += 1
+        else:
+            row_offset = 0
+
         for c in range(start_index_x, end_index_x):
-            x_current = c * (cwidth + padding_x)
+            xstep = c * (cwidth + (2 * padding_x))
+            x_current = xstep + row_offset
             for r in range(start_index_y, end_index_y):
-                y_current = r * (cheight + padding_y)
-                if c % 2 == 1:
-                    # Every other row is offset.
-                    y_current += row_offset
+                ystep = cheight + (2 * padding_y)
+                y_current = r * ystep
+                if c % 2:
+                    y_current += 0.5 * ystep
                 if x_current < x1 and y_current < y1:
                     # Don't call draw if outside of hinge area
                     m = Matrix.scale(self.cell_height, self.cell_height)

@@ -159,6 +159,7 @@ class LivingHinges:
         p.create_from_pattern(self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape)
         p.set_cell_padding(self.cell_padding_h, self.cell_padding_v)
         p.set_cell_dims(self.cell_width, self.cell_height)
+        p.extend_pattern = self._extend_patterns  # Grid type
 
         if self.outershape is None:
             return
