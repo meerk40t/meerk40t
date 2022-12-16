@@ -626,7 +626,7 @@ class TestGeomstr(unittest.TestCase):
         for i in range(5):
             for e in range(poly.geomstr.index):
                 poly.geomstr.split(e, 0.5)
-        poly.geomstr.uscale(5)
+        poly.geomstr.uscale(15)
         q = Clip(poly.geomstr)
 
         clip = Geomstr()
@@ -634,15 +634,16 @@ class TestGeomstr(unittest.TestCase):
             clip.append(s)
 
         clipped = q.clip(clip)
-        clipped.uscale(10)
-        # self.assertEqual(len(clipped), 54)
+        # clipped.uscale(20)
+        # print(f"Time took {time.time() - t}")
+        #
         # from PIL import ImageDraw, Image
         #
-        # x0, y0, x1, y1 = clipped.geometry.bbox()
+        # x0, y0, x1, y1 = clipped.bbox()
         #
-        # img = Image.new("L", size=(int(x1-x0), int(y1-y0)), color="white")
+        # img = Image.new("L", size=(int(x1-x0)+20, int(y1-y0) + 20), color="white")
         # draw = ImageDraw.Draw(img)
-        # clipped.draw(draw, int(x0), int(y0))
+        # clipped.draw(draw, int(x0) + 10, int(y0) +10)
         # img.save("test.png")
 
     def test_point_in_polygon_beat(self):
