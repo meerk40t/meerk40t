@@ -829,104 +829,6 @@ class Geomstr:
         else:
             return None
 
-    # def deCasteljau(self, control_points, returnArray, t):
-    #     """
-    #      Performs deCasteljau's algorithm for a bezier curve defined by the given control points.
-    #
-    #      A cubic for example requires four points. So it should get an array of 8 values
-    #
-    #      @param control_points (x,y) coord list of the Bezier curve.
-    #      @param returnArray    Array to store the solved points. (can be null)
-    #      @param t              Amount through the curve we are looking at.
-    #      @return returnArray
-    #     """
-    #     returnArray = deCasteljauEnsureCapacity(returnArray, control_points.length / 2);
-    #     System.arraycopy(control_points, 0, returnArray, 0, control_points.length);
-    #     return deCasteljau(returnArray, control_points.length / 2, t);
-    #
-    # def deCasteljau(self, array, length, t):
-    #     """
-    #     Performs deCasteljau's algorithm for a bezier curve defined by the given control points.
-    #
-    #     A cubic for example requires four points. So it should get an array of 8 values
-    #     @param array  (x,y) coord list of the Bezier curve, with needed interpolation space.
-    #     @param length Length of curve in points. 2 = Line, 3 = Quad 4 = Cubic, 5 = Quintic...
-    #     @param t      Amount through the curve we are looking at.
-    #     @return returnArray
-    #     """
-    #     m = length * 2;
-    #     index = m; # start after the control points.
-    #     skip = m - 2; # skip if first compare is the last control position.
-    #     array = deCasteljauEnsureCapacity(array, length);
-    #     for i in range(0, len(array)-2, 2):
-    #         if i == skip:
-    #             m = m - 2
-    #             skip += m
-    #             continue
-    #         array[index] = (float) ((t * (array[i + 2] - array[i])) + array[i])
-    #         index += 1
-    #         array[index] = (float) ((t * (array[i + 3] - array[i + 1])) + array[i + 1])
-    #         index += 1
-    #     return array
-    #
-    #
-    # def deCasteljauDivide(self, controlPoints, order, t):
-    #     """
-    #      Given controlpoints and the order, this function returns the subdivided curve and
-    #      the relevant data are the first (order + order - 1) datum. Additional space will have
-    #      been created and returned as working space for making the relevant curve.
-    #
-    #      Given 1, 2, 3 it will build
-    #        6
-    #       4 5
-    #      1 2 3
-    #
-    #      * And reorder that to return, 1 4 6 7 3.
-    #      * [0, midpoint] are one curve.
-    #      * [midpoint,end] are another curve.
-    #      * <p>
-    #      * Both curves reuse the midpoint.
-    #      * <p>
-    #      * UNTESTED!
-    #      *
-    #      * @param controlPoints at least order control points must be valid.
-    #      * @param order         the cardinality of the curve.
-    #      * @param t             the amount through that curve.
-    #      * @return controlPoints or modified controlPoints object
-    #      */
-    #      """
-    #     controlPoints = deCasteljau(controlPoints, order, t);
-    #     size = order + order - 1;
-    #     midpoint = order
-    #     width = order
-    #     r = 1
-    #     for w in range(size):
-    #         if r == midpoint:
-    #             width = order - 1
-    #             r = width
-    #         else:
-    #             r += width
-    #             width -= 1
-    #             controlPoints[(w << 1)] = controlPoints[(r << 1)];
-    #             controlPoints[(w << 1) + 1] = controlPoints[(r << 1) + 1];
-    #     # reverse the second half values.
-    #     m = (size + midpoint) / 2
-    #     i = midpoint * 2
-    #     s = size * 2
-    #     while  i < m:
-    #         swapPoints(controlPoints, i, s)
-    #         i += 2
-    #         s -= 2
-    #     return controlPoints;
-    #
-    # def deCasteljauEnsureCapacity(self, array, order):
-    #     sizeRequired = order * (order + 1)  # equation converts to 2-float 1-position format.
-    #     if array is None:
-    #         return [0.0] * sizeRequired
-    #     if sizeRequired > len(array):
-    #         # insure capacity
-    #         array.extend([0.0] * (sizeRequired - len(array)))
-    #     return array
 
     #######################
     # Universal Functions
@@ -1311,6 +1213,63 @@ class Geomstr:
                 for i in range(1, len(mid)):
                     yield mid[i - 1], control, info, control2, mid[i]
                 yield mid[-1], control, info, control2, end
+        if info.real == TYPE_QUAD:
+            yield from self._split_quad(e, t)
+        if info.real == TYPE_CUBIC:
+            yield from self._split_cubic(e, t)
+
+    def _split_quad(self, e, t):
+        """
+        Performs deCasteljau's algorithm unrolled.
+        """
+        if isinstance(e, int):
+            e = self.segments[e]
+        try:
+            if len(t) == 1:
+                t = t[0]
+            else:
+                t = np.sort(t)
+                for t0 in t:
+                    splits = list(self._split_quad(e, t0))
+                    yield splits[0]
+                    e = splits[1]
+                yield e
+                return
+        except TypeError:
+            pass
+        start, control, info, control2, end = e
+        r1_0 = t * (control - start) + start
+        r1_1 = t * (control - end) + end
+        r2 = t * (r1_1 - r1_0) + r1_0
+        yield start, r1_0, info, r1_0, r2
+        yield r2, r1_1, info, r1_1, end
+
+    def _split_cubic(self, e, t):
+        if isinstance(e, (int, np.intc, slice)):
+            e = self.segments[e]
+        try:
+            if len(t) == 1:
+                t = t[0]
+            else:
+                t = np.sort(t)
+                for t0 in sorted(t):
+                    splits = list(self._split_quad(e, t0))
+                    yield splits[0]
+                    e = splits[1]
+                yield e
+                return
+        except TypeError:
+            pass
+        start, control, info, control2, end = e
+        r1_0 = t * (control - start) + start
+        r1_1 = t * (control - control2) + control2
+        r1_2 = t * (control2 - end) + end
+        r2_0 = t * (r1_1 - r1_0) + r1_0
+        r2_1 = t * (r1_2 - r1_1) + r1_1
+        r3 = t * (r2_1 - r2_0) + r2_0
+        yield start, r1_0, info, r2_0, r3
+        yield r3, r2_1, info, r1_2, end
+
 
     def normal(self, e, t):
         """
