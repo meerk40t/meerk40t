@@ -86,72 +86,80 @@ class Clip:
         self.clipping_shape = shape
         self.bounds = shape.bbox()
 
-    def clip(self, subject):
-        clip = self.clipping_shape
-        cmaxx = np.where(
-            np.real(clip.segments[: clip.index, 0])
-            > np.real(clip.segments[: clip.index, -1]),
-            np.real(clip.segments[: clip.index, 0]),
-            np.real(clip.segments[: clip.index, -1]),
-        )
-        sminx = np.where(
-            np.real(subject.segments[: subject.index, 0])
-            < np.real(subject.segments[: subject.index, -1]),
-            np.real(subject.segments[: subject.index, 0]),
-            np.real(subject.segments[: subject.index, -1]),
-        )
-        cminx = np.where(
-            np.real(clip.segments[: clip.index, 0])
-            < np.real(clip.segments[: clip.index, -1]),
-            np.real(clip.segments[: clip.index, 0]),
-            np.real(clip.segments[: clip.index, -1]),
-        )
-        smaxx = np.where(
-            np.real(subject.segments[: subject.index, 0])
-            > np.real(subject.segments[: subject.index, -1]),
-            np.real(subject.segments[: subject.index, 0]),
-            np.real(subject.segments[: subject.index, -1]),
-        )
-        cmaxy = np.where(
-            np.imag(clip.segments[: clip.index, 0])
-            > np.imag(clip.segments[: clip.index, -1]),
-            np.imag(clip.segments[: clip.index, 0]),
-            np.imag(clip.segments[: clip.index, -1]),
-        )
-        sminy = np.where(
-            np.imag(subject.segments[: subject.index, 0])
-            < np.imag(subject.segments[: subject.index, -1]),
-            np.imag(subject.segments[: subject.index, 0]),
-            np.imag(subject.segments[: subject.index, -1]),
-        )
-        cminy = np.where(
-            np.imag(clip.segments[: clip.index, 0])
-            < np.imag(clip.segments[: clip.index, -1]),
-            np.imag(clip.segments[: clip.index, 0]),
-            np.imag(clip.segments[: clip.index, -1]),
-        )
-        smaxy = np.where(
-            np.imag(subject.segments[: subject.index, 0])
-            > np.imag(subject.segments[: subject.index, -1]),
-            np.imag(subject.segments[: subject.index, 0]),
-            np.imag(subject.segments[: subject.index, -1]),
-        )
-        x0, y0 = np.meshgrid(cmaxx, sminx)
-        x1, y1 = np.meshgrid(cminx, smaxx)
-        x2, y2 = np.meshgrid(cmaxy, sminy)
-        x3, y3 = np.meshgrid(cminy, smaxy)
+    def clip(self, subject, split=True):
 
-        checks = np.dstack(
-            (
-                x0 > y0,
-                x1 < y1,
-                x2 > y2,
-                x3 < y3,
+        clip = self.clipping_shape
+        if split:
+            s = subject.segments[: subject.index]
+            c = clip.segments[: clip.index]
+            cmaxx = np.where(
+                np.real(c[:, 0])
+                > np.real(c[:, -1]),
+                np.real(c[:, 0]),
+                np.real(c[:, -1]),
             )
-        ).all(axis=2)
-        for s0, s1 in np.argwhere(checks):
-            splits0 = [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
-            subject.split(s0, splits0)
+            sminx = np.where(
+                np.real(s[:, 0])
+                < np.real(s[:, -1]),
+                np.real(s[: , 0]),
+                np.real(s[: , -1]),
+            )
+            cminx = np.where(
+                np.real(c[: , 0])
+                < np.real(c[: , -1]),
+                np.real(c[: , 0]),
+                np.real(c[: , -1]),
+            )
+            smaxx = np.where(
+                np.real(s[: , 0])
+                > np.real(s[: , -1]),
+                np.real(s[: , 0]),
+                np.real(s[: , -1]),
+            )
+            cmaxy = np.where(
+                np.imag(c[: , 0])
+                > np.imag(c[: , -1]),
+                np.imag(c[: , 0]),
+                np.imag(c[: , -1]),
+            )
+            sminy = np.where(
+                np.imag(s[: , 0])
+                < np.imag(s[: , -1]),
+                np.imag(s[: , 0]),
+                np.imag(s[: , -1]),
+            )
+            cminy = np.where(
+                np.imag(c[: , 0])
+                < np.imag(c[: , -1]),
+                np.imag(c[: , 0]),
+                np.imag(c[: , -1]),
+            )
+            smaxy = np.where(
+                np.imag(s[: , 0])
+                > np.imag(s[: , -1]),
+                np.imag(s[: , 0]),
+                np.imag(s[: , -1]),
+            )
+            x0, y0 = np.meshgrid(cmaxx, sminx)
+            x1, y1 = np.meshgrid(cminx, smaxx)
+            x2, y2 = np.meshgrid(cmaxy, sminy)
+            x3, y3 = np.meshgrid(cminy, smaxy)
+
+            checks = np.dstack(
+                (
+                    x0 > y0,
+                    x1 < y1,
+                    x2 > y2,
+                    x3 < y3,
+                )
+            ).all(axis=2)
+            # new_subject = Geomstr(s)
+            for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
+                splits0 = [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
+                if len(splits0):
+                    split_lines = list(subject.split(s0, splits0))
+                    subject.replace(s0, s0, split_lines)
+
 
         # Previous bruteforce.
         # for i in range(clip.index):
@@ -586,7 +594,7 @@ class Geomstr:
         @return:
         """
         self._ensure_capacity(self.index + space)
-        self.segments[e + space :] = self.segments[e:-space]
+        self.segments[e + space :self.index + space] = self.segments[e:self.index]
         self.index += space
 
     def replace(self, e0, e1, lines):
