@@ -1007,22 +1007,49 @@ class Geomstr:
         @param t:
         @return:
         """
-        line = self.segments[e]
-        if line[2].real == TYPE_LINE:
-            point = self._line_position(line, [t])
-            return complex(*point)
-        elif line[2].real == TYPE_QUAD:
-            point = self._quad_position(line, [t])
-            return complex(*point)
-        elif line[2].real == TYPE_CUBIC:
-            point = self._cubic_position(line, [t])
-            return complex(*point)
-        if line[2].real == TYPE_ARC:
-            point = self._arc_position(line, [t])
+        if isinstance(e, int):
+            line = self.segments[e]
+            if line[2].real == TYPE_LINE:
+                point = self._line_position(line, [t])
+                return complex(*point)
+            elif line[2].real == TYPE_QUAD:
+                point = self._quad_position(line, [t])
+                return complex(*point)
+            elif line[2].real == TYPE_CUBIC:
+                point = self._cubic_position(line, [t])
+                return complex(*point)
+            if line[2].real == TYPE_ARC:
+                point = self._arc_position(line, [t])
+                return complex(*point)
+            return
+        geoms = self.segments[e]
+        results = np.zeros(geoms.shape[0], dtype="complex")
+        results[:] = complex(np.nan, np.nan)
+
+        infos = geoms[:,2].astype(int)
+        q = np.where(infos == TYPE_LINE)
+        pts = self._line_position(geoms[q], [t])
+        results[q] = pts
+        q = np.where(infos == TYPE_QUAD)
+        pts = self._quad_position(geoms[q], [t])
+        results[q] = pts
+        q = np.where(infos == TYPE_CUBIC)
+        pts = self._cubic_position(geoms[q], [t])
+        results[q] = pts
+        q = np.where(infos == TYPE_ARC)
+        pts = self._arc_position(geoms[q], [t])
+        results[q] = pts
+        q = np.where(infos == TYPE_POINT)
+        pts = self._line_position(geoms[q], [t])
+        results[q] = pts
+        return results
 
     def _line_position(self, line, positions):
+        if len(line.shape) != 1:
+            # If there's 2d to this, then axis 1 is lines.
+            return self.towards(line[:,0], line[:, -1], positions[0])
         x0, y0 = line[0].real, line[0].imag
-        x1, y1 = line[4].real, line[4].imag
+        x1, y1 = line[-1].real, line[-1].imag
         return (
             np.interp(positions, [0, 1], [x0, x1])
             + np.interp(positions, [0, 1], [y0, y1]) * 1j
@@ -1031,7 +1058,19 @@ class Geomstr:
     def _quad_position(self, line, positions):
         """Calculate the x,y position at a certain position of the path. `pos` may be a
         float or a NumPy array."""
-
+        if len(line.shape) != 1:
+            # 2d means axis 1 is lines:
+            position = positions[0]
+            n_pos = 1 - position
+            pos_2 = position * position
+            n_pos_2 = n_pos * n_pos
+            n_pos_pos = n_pos * position
+            x0, y0 = line[:,0].real, line[:,0].imag
+            x1, y1 = line[:, 1].real, line[:, 1].imag
+            x2, y2 = line[:,-1].real, line[:, -1].imag
+            return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2) + (
+                    n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2
+            ) * 1j
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[1].real, line[1].imag
         # line[3] is identical to line[1]
@@ -1068,6 +1107,24 @@ class Geomstr:
             yield 0.5
 
     def _cubic_position(self, line, positions):
+        if len(line.shape) != 1:
+            # 2d means axis 1 is lines:
+            position = positions[0]
+            pos_3 = position * position * position
+            n_pos = 1 - position
+            n_pos_3 = n_pos * n_pos * n_pos
+            pos_2_n_pos = position * position * n_pos
+            n_pos_2_pos = n_pos * n_pos * position
+            x0, y0 = line[:, 0].real, line[:, 0].imag
+            x1, y1 = line[:, 1].real, line[:, 1].imag
+            x2, y2 = line[:, 3].real, line[:, 3].imag
+            x3, y3 = line[:, -1].real, line[:, -1].imag
+            return (
+                           n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3
+                   ) + (
+                           n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3
+                   ) * 1j
+
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[1].real, line[1].imag
         x2, y2 = line[3].real, line[3].imag
@@ -1117,6 +1174,12 @@ class Geomstr:
             yield 0.5
 
     def _arc_position(self, line, positions):
+        if len(line.shape) != 1:
+            # 2d means axis 1 is lines:
+            results = np.zeros(line.shape[0], dtype=complex)
+            for i, _line in enumerate(line):
+                results[i] = self._arc_position(line, positions)
+            return results
         start, control, info, control2, end = line
 
         xy = np.empty((len(positions), 2), dtype=float)
@@ -1250,7 +1313,6 @@ class Geomstr:
                 for i in range(1,len(mid)):
                     yield mid[i-1], control, info, control2, mid[i]
                 yield mid[-1], control, info, control2, end
-
 
     def normal(self, e, t):
         """
