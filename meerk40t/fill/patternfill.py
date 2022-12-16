@@ -164,6 +164,8 @@ class LivingHinges:
         if self.outershape is None:
             return
         outer_path = self.outershape.as_path()
+        if outer_path is None:
+            return
         self.path = Geomstr()
         clip = Geomstr()
         for sp in outer_path.as_subpaths():
