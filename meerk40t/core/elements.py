@@ -2875,6 +2875,7 @@ class Elemental(Service):
             return (x > 0) - (x < 0)
 
         from meerk40t.svgelements import Line
+
         changed = False
         before = 0
         after = 0
@@ -2886,12 +2887,22 @@ class Elemental(Service):
                 seg = obj._segments[idx]
                 if isinstance(seg, Line):
                     if last is not None:
-                        # Two consecutive line segments
-                        lastdx = round(last.end.x - last.start.x, 6)
-                        lastdy = round(last.end.y - last.start.y, 6)
-                        thisdx = round(seg.end.x - seg.start.x, 6)
-                        thisdy = round(seg.end.y - seg.start.y, 6)
-                        same = False
+                        # Two consecutive line segments (x1,y1)-(x2,y2) and (x3,y3)-(x4,y4)
+                        # denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+                        # denom = (
+                        #     (seg.start.x - seg.end.x) * (last.start.y - last.end.y) -
+                        #     (seg.start.y - seg.end.y) * (last.start.x - last.end.x)
+                        # )
+                        lastdx = last.start.x - last.end.x
+                        lastdy = last.start.y - last.end.y
+                        thisdx = seg.start.x - seg.end.x
+                        thisdy = seg.start.y - seg.end.y
+                        denom = thisdx * lastdy - thisdy * lastdx
+                        same = (
+                            abs(denom) < 1.0e-6 and
+                            my_sign(lastdx) == my_sign(thisdx) and
+                            my_sign(lastdy) == my_sign(thisdy)
+                        )
                         # if thisdx == 0 or lastdx == 0:
                         #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
                         # else:
@@ -2901,7 +2912,7 @@ class Elemental(Service):
                             # Vertical line - same direction?
                             if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
                                 same = True
-                        elif abs(thisdy/thisdx - lastdy/lastdx)<1.0E-6:
+                        elif abs(thisdy / thisdx - lastdy / lastdx) < 1.0e-6:
                             same = True
 
                         if same:
@@ -2913,7 +2924,7 @@ class Elemental(Service):
                 else:
                     last = None
             after = len(obj._segments)
-        elif node.type == "elem polyline" and len(node.shape.points)>2:
+        elif node.type == "elem polyline" and len(node.shape.points) > 2:
             obj = node.shape
             pt_older = None
             pt_old = None
@@ -2921,23 +2932,24 @@ class Elemental(Service):
             for idx in range(len(obj.points) - 1, -1, -1):
                 pt = obj.points[idx]
                 if pt_older is not None and pt_old is not None:
-                    # Two consecutive line segments
-                    lastdx = round(pt_older[0] - pt_old[0], 6)
-                    lastdy = round(pt_older[1] - pt_old[1], 6)
-                    thisdx = round(pt_old[0] - pt[0], 6)
-                    thisdy = round(pt_old[1] - pt[1], 6)
-                    same = False
-                    # if thisdx == 0 or lastdx == 0:
-                    #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
-                    # else:
-                    #     channel(f"Compare {idx}, {thisdy / thisdx:.3f} vs {lastdy / lastdx:.3f}")
+                    # Two consecutive line segments (x1,y1)-(x2,y2) and (x3,y3)-(x4,y4)
+                    # denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+                    # denom = (
+                    #     (pt[0] - pt_old[0]) * (pt_old[1] - pt_older[1]) -
+                    #     (pt[1] - pt_old[1]) * (pt_old[0] - pt_older[0])
+                    # )
+                    lastdx = pt_old[0] - pt_older[0]
+                    lastdy = pt_old[1] - pt_older[1]
+                    thisdx = pt[0] - pt_old[0]
+                    thisdy = pt[1] - pt_old[1]
+                    denom = thisdx * lastdy - thisdy * lastdx
+                    same = (
+                        abs(denom) < 1.0e-6 and
+                        my_sign(lastdx) == my_sign(thisdx) and
+                        my_sign(lastdy) == my_sign(thisdy)
+                    )
+                    # Opposing directions may not happen
 
-                    if thisdx == 0 or lastdx == 0:
-                        # Vertical line - same direction?
-                        if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
-                            same = True
-                    elif abs(thisdy/thisdx - lastdy/lastdx)<1.0E-6:
-                        same = True
 
                     if same:
                         # We can just merge the two segments by
@@ -2947,6 +2959,7 @@ class Elemental(Service):
                         # just set the middle point to the last point,
                         # so that the last point remains
                         pt_old = pt_older
+
                 pt_older = pt_old
                 pt_old = pt
             after = len(obj.points)
