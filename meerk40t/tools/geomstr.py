@@ -150,12 +150,9 @@ class Clip:
             )
         ).all(axis=2)
         for s0, s1 in np.argwhere(checks):
-            for t0, t1 in sorted(
-                list(subject.intersections(int(s0), clip.segments[s1])),
-                key=lambda t: t[0],
-                reverse=True,
-            ):
-                subject.split(s0, t0)
+            splits0 = [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
+            subject.split(s0, splits0)
+
         # Previous bruteforce.
         # for i in range(clip.index):
         #     for c in range(subject.index - 1, -1, -1):
