@@ -738,3 +738,18 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(len(q), steps)
         self.assertEqual(p1, q[0])
         self.assertEqual(p2, q[-1])
+
+    def test_point_split_line_numpy(self):
+        g = Geomstr()
+        g.line(complex(0,100), complex(50,22))
+        g.insert(1, list(g.split(0, 0.5)))
+        self.assertEqual(g.index, 3)
+
+        steps = 5
+        splits = list(g.split(0,np.linspace(0,1,steps)[1:-1]))
+        g.insert(1, splits)
+        self.assertEqual(g.index, 7)
+
+        splits = list(g.split(0, np.linspace(0, 1, steps)))
+        g.replace(0, 7, splits)
+        self.assertEqual(g.index, 5)
