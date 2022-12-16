@@ -1229,6 +1229,12 @@ class Geomstr:
         line = self.segments[e]
         start, control, info, control2, end = line
         if info.real == TYPE_LINE:
+            try:
+                if len(t):
+                    # If this is an array the cuts must be in order.
+                    t = np.sort(t)
+            except TypeError:
+                pass
             mid = self.towards(start, end, t)
             if isinstance(mid, complex):
                 yield start, control, info, control2, mid
