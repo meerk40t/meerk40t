@@ -729,3 +729,12 @@ class TestGeomstr(unittest.TestCase):
         for i, j in enumerate(pts):
             self.assertEqual(rr[i], r[i])
         print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+
+    def test_point_towards_numpy(self):
+        p1 = complex(0, 100)
+        p2 = complex(50, 22)
+        steps = 5
+        q = Geomstr.towards(None, p1, p2, np.linspace(0,1,steps))
+        self.assertEqual(len(q), steps)
+        self.assertEqual(p1, q[0])
+        self.assertEqual(p2, q[-1])
