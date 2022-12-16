@@ -579,6 +579,30 @@ class Geomstr:
     def clear(self):
         self.index = 0
 
+    def allocate_at_position(self, e, space=1):
+        """
+        Creates space within the array, at position e.
+
+        If space is negative this will delete space.
+        @param e:
+        @param space:
+        @return:
+        """
+        self._ensure_capacity(self.index + space)
+        self.segments[e + space :] = self.segments[e:-space]
+        self.index += space
+
+    def replace(self, e0, e1, lines):
+        space = len(lines) - (e1 - e0) - 1
+        self.allocate_at_position(e0, space)
+        if len(lines):
+            self.segments[e0:e0 + len(lines)] = lines
+
+    def insert(self, e, lines):
+        space = len(lines)
+        self.allocate_at_position(e, space)
+        self.segments[e:e+space] = lines
+
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
         self.end()
@@ -1193,11 +1217,6 @@ class Geomstr:
             )
 
         return quad(_abs_derivative, 0.0, 1.0, epsabs=1e-12, limit=1000)[0]
-
-    def insert_position(self, e):
-        self._ensure_capacity(self.index + 1)
-        self.segments[e + 1 :] = self.segments[e:-1]
-        self.index += 1
 
     def split(self, e, t):
         """
