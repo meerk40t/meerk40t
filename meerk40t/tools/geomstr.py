@@ -1223,18 +1223,23 @@ class Geomstr:
         Splits individual geom e at position t [0-1]
 
         @param e:
-        @param t:
+        @param t: position(s) to split at (numpy ok)
         @return:
         """
         line = self.segments[e]
         start, control, info, control2, end = line
         if info.real == TYPE_LINE:
-            self.insert_position(e + 1)
             mid = self.towards(start, end, t)
-            self.segments[e][-1] = mid
-            self.segments[e + 1] = (mid, control, info, control2, end)
-            return
-        # TODO: Add in splitting for other types.
+            if isinstance(mid, complex):
+                yield start, control, info, control2, mid
+                yield mid, control, info, control2, end
+            else:
+                # Mid is an array of complexes
+                yield start, control, info, control2, mid[0]
+                for i in range(1,len(mid)):
+                    yield mid[i-1], control, info, control2, mid[i]
+                yield mid[-1], control, info, control2, end
+
 
     def normal(self, e, t):
         """
