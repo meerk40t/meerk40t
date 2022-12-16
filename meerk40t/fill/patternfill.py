@@ -362,7 +362,7 @@ class LivingHinges:
                         deleted += 1
                         fullyinside = False
                 if fullyinside:
-                    path += sub_inner
+                    path += abs(sub_inner)
                 else:
                     path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
             self.path = path
