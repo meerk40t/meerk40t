@@ -1222,7 +1222,7 @@ class Geomstr:
         """
         Performs deCasteljau's algorithm unrolled.
         """
-        if isinstance(e, int):
+        if isinstance(e, (int, np.intc, slice)):
             e = self.segments[e]
         try:
             if len(t) == 1:
