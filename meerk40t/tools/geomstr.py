@@ -2121,7 +2121,7 @@ class Geomstr:
 
         @param p1:
         @param p2:
-        @param amount:
+        @param amount: value (numpy array accepted)
         @return:
         """
         if isinstance(p1, int):
