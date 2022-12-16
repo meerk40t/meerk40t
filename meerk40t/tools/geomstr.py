@@ -1229,7 +1229,7 @@ class Geomstr:
                 t = t[0]
             else:
                 t = np.sort(t)
-                for t0 in t:
+                for t0 in sorted(t):
                     splits = list(self._split_quad(e, t0))
                     yield splits[0]
                     e = splits[1]
@@ -1239,7 +1239,7 @@ class Geomstr:
             pass
         start, control, info, control2, end = e
         r1_0 = t * (control - start) + start
-        r1_1 = t * (control - end) + end
+        r1_1 = t * (end - control) + control
         r2 = t * (r1_1 - r1_0) + r1_0
         yield start, r1_0, info, r1_0, r2
         yield r2, r1_1, info, r1_1, end
@@ -1253,7 +1253,7 @@ class Geomstr:
             else:
                 t = np.sort(t)
                 for t0 in sorted(t):
-                    splits = list(self._split_quad(e, t0))
+                    splits = list(self._split_cubic(e, t0))
                     yield splits[0]
                     e = splits[1]
                 yield e
@@ -1262,8 +1262,8 @@ class Geomstr:
             pass
         start, control, info, control2, end = e
         r1_0 = t * (control - start) + start
-        r1_1 = t * (control - control2) + control2
-        r1_2 = t * (control2 - end) + end
+        r1_1 = t * (control2 - control) + control
+        r1_2 = t * (end - control2) + control2
         r2_0 = t * (r1_1 - r1_0) + r1_0
         r2_1 = t * (r1_2 - r1_1) + r1_1
         r3 = t * (r2_1 - r2_0) + r2_0
