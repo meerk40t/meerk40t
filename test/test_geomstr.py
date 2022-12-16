@@ -750,6 +750,9 @@ class TestGeomstr(unittest.TestCase):
         g.insert(1, splits)
         self.assertEqual(g.index, 7)
 
-        splits = list(g.split(0, np.linspace(0, 1, steps)))
+        steps = 10
+        splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
-        self.assertEqual(g.index, 5)
+        self.assertEqual(g.index, steps-2)
+        for i in range(1, g.index):
+            self.assertAlmostEqual(g.length(i-1), g.length(i))
