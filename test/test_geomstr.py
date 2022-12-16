@@ -623,6 +623,9 @@ class TestGeomstr(unittest.TestCase):
         p = Pattern()
         p.create_from_pattern(f)
         poly = Polygon(0+2j, 4+0j, 4+4j, 0+2j)
+        for i in range(5):
+            for e in range(poly.geomstr.index):
+                poly.geomstr.split(e, 0.5)
         poly.geomstr.uscale(5)
         q = Clip(poly.geomstr)
 

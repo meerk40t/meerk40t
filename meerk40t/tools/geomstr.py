@@ -86,23 +86,94 @@ class Clip:
         self.clipping_shape = shape
         self.bounds = shape.bbox()
 
-    def clip(self, clip):
-        for i in range(self.clipping_shape.index):
-            for c in range(clip.index - 1, -1, -1):
-                for t0, t1 in sorted(
-                    list(clip.intersections(c, self.clipping_shape.segments[i])),
-                    key=lambda t: t[0],
-                    reverse=True,
-                ):
-                    clip.split(c, t0)
-        sb = Scanbeam(self.clipping_shape)
-        geoms = clip.segments[:clip.index]
+    def clip(self, subject):
+        clip = self.clipping_shape
+        cmaxx = np.where(
+            np.real(clip.segments[: clip.index, 0])
+            > np.real(clip.segments[: clip.index, -1]),
+            np.real(clip.segments[: clip.index, 0]),
+            np.real(clip.segments[: clip.index, -1]),
+        )
+        sminx = np.where(
+            np.real(subject.segments[: subject.index, 0])
+            < np.real(subject.segments[: subject.index, -1]),
+            np.real(subject.segments[: subject.index, 0]),
+            np.real(subject.segments[: subject.index, -1]),
+        )
+        cminx = np.where(
+            np.real(clip.segments[: clip.index, 0])
+            < np.real(clip.segments[: clip.index, -1]),
+            np.real(clip.segments[: clip.index, 0]),
+            np.real(clip.segments[: clip.index, -1]),
+        )
+        smaxx = np.where(
+            np.real(subject.segments[: subject.index, 0])
+            > np.real(subject.segments[: subject.index, -1]),
+            np.real(subject.segments[: subject.index, 0]),
+            np.real(subject.segments[: subject.index, -1]),
+        )
+        cmaxy = np.where(
+            np.imag(clip.segments[: clip.index, 0])
+            > np.imag(clip.segments[: clip.index, -1]),
+            np.imag(clip.segments[: clip.index, 0]),
+            np.imag(clip.segments[: clip.index, -1]),
+        )
+        sminy = np.where(
+            np.imag(subject.segments[: subject.index, 0])
+            < np.imag(subject.segments[: subject.index, -1]),
+            np.imag(subject.segments[: subject.index, 0]),
+            np.imag(subject.segments[: subject.index, -1]),
+        )
+        cminy = np.where(
+            np.imag(clip.segments[: clip.index, 0])
+            < np.imag(clip.segments[: clip.index, -1]),
+            np.imag(clip.segments[: clip.index, 0]),
+            np.imag(clip.segments[: clip.index, -1]),
+        )
+        smaxy = np.where(
+            np.imag(subject.segments[: subject.index, 0])
+            > np.imag(subject.segments[: subject.index, -1]),
+            np.imag(subject.segments[: subject.index, 0]),
+            np.imag(subject.segments[: subject.index, -1]),
+        )
+        x0, y0 = np.meshgrid(cmaxx, sminx)
+        x1, y1 = np.meshgrid(cminx, smaxx)
+        x2, y2 = np.meshgrid(cmaxy, sminy)
+        x3, y3 = np.meshgrid(cminy, smaxy)
+
+        checks = np.dstack(
+            (
+                x0 > y0,
+                x1 < y1,
+                x2 > y2,
+                x3 < y3,
+            )
+        ).all(axis=2)
+        for s0, s1 in np.argwhere(checks):
+            for t0, t1 in sorted(
+                list(subject.intersections(int(s0), clip.segments[s1])),
+                key=lambda t: t[0],
+                reverse=True,
+            ):
+                subject.split(s0, t0)
+        # Previous bruteforce.
+        # for i in range(clip.index):
+        #     for c in range(subject.index - 1, -1, -1):
+        #         for t0, t1 in sorted(
+        #             list(subject.intersections(c, clip.segments[i])),
+        #             key=lambda t: t[0],
+        #             reverse=True,
+        #         ):
+        #             subject.split(c, t0)
+
+        sb = Scanbeam(clip)
+        geoms = subject.segments[: subject.index]
         starts_in_polygon = sb.points_in_polygon(geoms[:, 0])
         ends_in_polygon = sb.points_in_polygon(geoms[:, -1])
         r = np.where(starts_in_polygon + ends_in_polygon == 2)
-        clip.segments = clip.segments[r]
-        clip.index = len(clip.segments)
-        return clip
+        subject.segments = subject.segments[r]
+        subject.index = len(subject.segments)
+        return subject
 
 
 class Pattern:
@@ -277,7 +348,7 @@ class Scanbeam:
         self._nb_scan = np.zeros((len(actives), largest_actives), dtype=int)
         self._nb_scan -= 1
         for i, active in enumerate(actives):
-            self._nb_scan[i, 0:len(active)] = active
+            self._nb_scan[i, 0 : len(active)] = active
 
     def points_in_polygon(self, e):
         if self._nb_scan is None:
