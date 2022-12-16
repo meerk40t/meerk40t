@@ -359,10 +359,16 @@ class Scanbeam:
         a = np.where(actives == -1, np.nan + np.nan * 1j, a)
         b = line[:, :, -1]
         b = np.where(actives == -1, np.nan + np.nan * 1j, b)
-        m = (b.imag - a.imag) / (b.real - a.real)
-        y0 = a.imag - (m * a.real)
-        _, ys = np.meshgrid(np.arange(y0.shape[1]), np.imag(e))
-        x_intercepts = (ys - y0) / m
+
+        old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+        try:
+            # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+            m = (b.imag - a.imag) / (b.real - a.real)
+            y0 = a.imag - (m * a.real)
+            _, ys = np.meshgrid(np.arange(y0.shape[1]), np.imag(e))
+            x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
+        finally:
+            np.seterr(**old_np_seterr)
         _, xs = np.meshgrid(np.arange(y0.shape[1]), np.real(e))
         v = x_intercepts <= xs
         results = np.sum(v, axis=1)
