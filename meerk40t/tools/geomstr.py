@@ -93,52 +93,44 @@ class Clip:
             s = subject.segments[: subject.index]
             c = clip.segments[: clip.index]
             cmaxx = np.where(
-                np.real(c[:, 0])
-                > np.real(c[:, -1]),
+                np.real(c[:, 0]) > np.real(c[:, -1]),
                 np.real(c[:, 0]),
                 np.real(c[:, -1]),
             )
             sminx = np.where(
-                np.real(s[:, 0])
-                < np.real(s[:, -1]),
-                np.real(s[: , 0]),
-                np.real(s[: , -1]),
+                np.real(s[:, 0]) < np.real(s[:, -1]),
+                np.real(s[:, 0]),
+                np.real(s[:, -1]),
             )
             cminx = np.where(
-                np.real(c[: , 0])
-                < np.real(c[: , -1]),
-                np.real(c[: , 0]),
-                np.real(c[: , -1]),
+                np.real(c[:, 0]) < np.real(c[:, -1]),
+                np.real(c[:, 0]),
+                np.real(c[:, -1]),
             )
             smaxx = np.where(
-                np.real(s[: , 0])
-                > np.real(s[: , -1]),
-                np.real(s[: , 0]),
-                np.real(s[: , -1]),
+                np.real(s[:, 0]) > np.real(s[:, -1]),
+                np.real(s[:, 0]),
+                np.real(s[:, -1]),
             )
             cmaxy = np.where(
-                np.imag(c[: , 0])
-                > np.imag(c[: , -1]),
-                np.imag(c[: , 0]),
-                np.imag(c[: , -1]),
+                np.imag(c[:, 0]) > np.imag(c[:, -1]),
+                np.imag(c[:, 0]),
+                np.imag(c[:, -1]),
             )
             sminy = np.where(
-                np.imag(s[: , 0])
-                < np.imag(s[: , -1]),
-                np.imag(s[: , 0]),
-                np.imag(s[: , -1]),
+                np.imag(s[:, 0]) < np.imag(s[:, -1]),
+                np.imag(s[:, 0]),
+                np.imag(s[:, -1]),
             )
             cminy = np.where(
-                np.imag(c[: , 0])
-                < np.imag(c[: , -1]),
-                np.imag(c[: , 0]),
-                np.imag(c[: , -1]),
+                np.imag(c[:, 0]) < np.imag(c[:, -1]),
+                np.imag(c[:, 0]),
+                np.imag(c[:, -1]),
             )
             smaxy = np.where(
-                np.imag(s[: , 0])
-                > np.imag(s[: , -1]),
-                np.imag(s[: , 0]),
-                np.imag(s[: , -1]),
+                np.imag(s[:, 0]) > np.imag(s[:, -1]),
+                np.imag(s[:, 0]),
+                np.imag(s[:, -1]),
             )
             x0, y0 = np.meshgrid(cmaxx, sminx)
             x1, y1 = np.meshgrid(cminx, smaxx)
@@ -155,11 +147,12 @@ class Clip:
             ).all(axis=2)
             # new_subject = Geomstr(s)
             for s0, s1 in sorted(np.argwhere(checks), key=lambda e: e[0], reverse=True):
-                splits0 = [t for t, _ in subject.intersections(int(s0), clip.segments[s1])]
+                splits0 = [
+                    t for t, _ in subject.intersections(int(s0), clip.segments[s1])
+                ]
                 if len(splits0):
                     split_lines = list(subject.split(s0, splits0))
                     subject.replace(s0, s0, split_lines)
-
 
         # Previous bruteforce.
         # for i in range(clip.index):
@@ -267,40 +260,33 @@ class Pattern:
         @param y1:
         @return:
         """
-        cwidth = self.cell_width
-        cheight = self.cell_height
-        padding_x = self.padding_x
-        padding_y = self.padding_y
-        width = x1 - x0
-        height = y1 - y0
-
-        start_index_x = math.floor(x0 / cwidth)
-        start_index_y = math.floor(y0 / cheight)
-        end_index_x = start_index_x + int(math.ceil(width / (cwidth + padding_x)))
-        end_index_y = start_index_y + int(math.ceil(height / (cheight + padding_y)))
+        cw = self.cell_width
+        ch = self.cell_height
+        px = self.padding_x
+        py = self.padding_y
+        cx = cw + px * 2
+        cy = ch + py * 2
+        start_index_x = math.floor(x0 / cx) - 1
+        start_index_y = math.floor(y0 / cy) - 1
+        end_index_x = math.ceil(x1 / cx) + 1
+        end_index_y = math.ceil(y1 / cy) + 1
 
         if self.extend_pattern:
-            row_offset = -.5 * self.cell_width
+            row_offset = -0.5 * self.cell_width
             start_index_x -= 1
-            end_index_x += 1
         else:
             row_offset = 0
 
         for c in range(start_index_x, end_index_x):
-            xstep = c * (cwidth + (2 * padding_x))
-            x_current = xstep + row_offset
+            x = c * cx + row_offset
             for r in range(start_index_y, end_index_y):
-                ystep = cheight + (2 * padding_y)
-                y_current = r * ystep
+                y = r * cy
                 if c % 2:
-                    y_current += 0.5 * ystep
-                if x_current < x1 and y_current < y1:
-                    # Don't call draw if outside of hinge area
-                    m = Matrix.scale(self.cell_height, self.cell_height)
-                    m *= Matrix.translate(
-                        x_current - self.offset_x, y_current - self.offset_y
-                    )
-                    yield self.geomstr.as_transformed(m)
+                    y += 0.5 * cy
+                # Don't call draw if outside of hinge area
+                m = Matrix.scale(cw, ch)
+                m *= Matrix.translate(x - self.offset_x, y - self.offset_y)
+                yield self.geomstr.as_transformed(m)
 
 
 class Scanbeam:
@@ -600,19 +586,19 @@ class Geomstr:
         @return:
         """
         self._ensure_capacity(self.index + space)
-        self.segments[e + space :self.index + space] = self.segments[e:self.index]
+        self.segments[e + space : self.index + space] = self.segments[e : self.index]
         self.index += space
 
     def replace(self, e0, e1, lines):
         space = len(lines) - (e1 - e0) - 1
         self.allocate_at_position(e0, space)
         if len(lines):
-            self.segments[e0:e0 + len(lines)] = lines
+            self.segments[e0 : e0 + len(lines)] = lines
 
     def insert(self, e, lines):
         space = len(lines)
         self.allocate_at_position(e, space)
-        self.segments[e:e+space] = lines
+        self.segments[e : e + space] = lines
 
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
@@ -1032,7 +1018,7 @@ class Geomstr:
         results = np.zeros(geoms.shape[0], dtype="complex")
         results[:] = complex(np.nan, np.nan)
 
-        infos = geoms[:,2].astype(int)
+        infos = np.real(geoms[:, 2]).astype(int)
         q = np.where(infos == TYPE_LINE)
         pts = self._line_position(geoms[q], [t])
         results[q] = pts
@@ -1053,7 +1039,7 @@ class Geomstr:
     def _line_position(self, line, positions):
         if len(line.shape) != 1:
             # If there's 2d to this, then axis 1 is lines.
-            return self.towards(line[:,0], line[:, -1], positions[0])
+            return self.towards(line[:, 0], line[:, -1], positions[0])
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[-1].real, line[-1].imag
         return (
@@ -1071,11 +1057,11 @@ class Geomstr:
             pos_2 = position * position
             n_pos_2 = n_pos * n_pos
             n_pos_pos = n_pos * position
-            x0, y0 = line[:,0].real, line[:,0].imag
+            x0, y0 = line[:, 0].real, line[:, 0].imag
             x1, y1 = line[:, 1].real, line[:, 1].imag
-            x2, y2 = line[:,-1].real, line[:, -1].imag
+            x2, y2 = line[:, -1].real, line[:, -1].imag
             return (n_pos_2 * x0 + 2 * n_pos_pos * x1 + pos_2 * x2) + (
-                    n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2
+                n_pos_2 * y0 + 2 * n_pos_pos * y1 + pos_2 * y2
             ) * 1j
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[1].real, line[1].imag
@@ -1126,10 +1112,10 @@ class Geomstr:
             x2, y2 = line[:, 3].real, line[:, 3].imag
             x3, y3 = line[:, -1].real, line[:, -1].imag
             return (
-                           n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3
-                   ) + (
-                           n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3
-                   ) * 1j
+                n_pos_3 * x0 + 3 * (n_pos_2_pos * x1 + pos_2_n_pos * x2) + pos_3 * x3
+            ) + (
+                n_pos_3 * y0 + 3 * (n_pos_2_pos * y1 + pos_2_n_pos * y2) + pos_3 * y3
+            ) * 1j
 
         x0, y0 = line[0].real, line[0].imag
         x1, y1 = line[1].real, line[1].imag
@@ -1316,8 +1302,8 @@ class Geomstr:
             else:
                 # Mid is an array of complexes
                 yield start, control, info, control2, mid[0]
-                for i in range(1,len(mid)):
-                    yield mid[i-1], control, info, control2, mid[i]
+                for i in range(1, len(mid)):
+                    yield mid[i - 1], control, info, control2, mid[i]
                 yield mid[-1], control, info, control2, end
 
     def normal(self, e, t):
