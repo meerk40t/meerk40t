@@ -172,10 +172,8 @@ class Clip:
         #             subject.split(c, t0)
 
         sb = Scanbeam(clip)
-        geoms = subject.segments[: subject.index]
-        starts_in_polygon = sb.points_in_polygon(geoms[:, 0])
-        ends_in_polygon = sb.points_in_polygon(geoms[:, -1])
-        r = np.where(starts_in_polygon + ends_in_polygon == 2)
+        mid_points = subject.position(slice(subject.index), 0.5)
+        r = np.where(sb.points_in_polygon(mid_points))
         subject.segments = subject.segments[r]
         subject.index = len(subject.segments)
         return subject
