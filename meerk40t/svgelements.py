@@ -2019,7 +2019,7 @@ class Point:
                 self.y = x[1]
                 self.x = x[0]
                 return
-            except TypeError:
+            except (TypeError, IndexError):
                 pass
             try:  # try .imag .real complex values.
                 self.y = x.imag
