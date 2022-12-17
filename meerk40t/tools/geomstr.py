@@ -3,7 +3,7 @@ from copy import copy
 
 import numpy as np
 
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import Matrix, Path
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 """
@@ -2324,6 +2324,32 @@ class Geomstr:
     #######################
     # Geometry Window Functions
     #######################
+
+    def as_path(self):
+        open = True
+        path = Path()
+        for p in self.segments[:self.index]:
+            s, c0, i, c1, e = p
+            if np.real(i) == TYPE_END:
+                open = True
+                continue
+
+            if open or len(path) == 0 or path.current_point != s:
+                path.move(s)
+                open = False
+            if np.real(i) == TYPE_LINE:
+                path.line(e)
+            elif np.real(i) == TYPE_QUAD:
+                path.quad(c0, e)
+            elif np.real(i) == TYPE_CUBIC:
+                path.cubic(c0, c1, e)
+            elif np.real(i) == TYPE_ARC:
+                path.arc(start=s, control=c0, end=e)
+            elif np.real(i) == TYPE_POINT:
+                path.move(s)
+                path.closed()
+        return path
+
 
     def as_subpaths(self):
         """
