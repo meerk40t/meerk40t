@@ -2872,7 +2872,7 @@ class Elemental(Service):
     def simplify_node(self, node):
         def my_sign(x):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
-            return (x > 0) - (x < 0)
+            return bool(x > 0) - bool(x < 0)
 
         from meerk40t.svgelements import Line
         changed = False
