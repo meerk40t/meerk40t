@@ -1229,8 +1229,11 @@ class Geomstr:
                 t = t[0]
             else:
                 t = np.sort(t)
+                last = 0.0
                 for t0 in sorted(t):
-                    splits = list(self._split_quad(e, t0))
+                    # Thanks tiger.
+                    splits = list(self._split_quad(e, (t0 - last) / (1 - last)))
+                    last = t0
                     yield splits[0]
                     e = splits[1]
                 yield e
@@ -1252,8 +1255,10 @@ class Geomstr:
                 t = t[0]
             else:
                 t = np.sort(t)
+                last = 0.0
                 for t0 in sorted(t):
-                    splits = list(self._split_cubic(e, t0))
+                    splits = list(self._split_cubic(e, (t0 - last) / (1 - last)))
+                    last = t0
                     yield splits[0]
                     e = splits[1]
                 yield e
