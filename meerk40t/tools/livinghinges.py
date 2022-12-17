@@ -900,11 +900,12 @@ class HingePanel(wx.Panel):
         units = self.context.units_name
         flag = True
         for node in self.context.elements.elems(emphasized=True):
-            first_selected = node
-            bounds = node.bbox()
-            self.hinge_generator.set_hinge_shape(first_selected)
-            flag = False
-            break
+            if hasattr(node, "as_path"):
+                first_selected = node
+                bounds = node.bbox()
+                self.hinge_generator.set_hinge_shape(first_selected)
+                flag = False
+                break
         if flag:
             self.hinge_generator.set_hinge_shape(None)
             if units in ("in", "inch"):
