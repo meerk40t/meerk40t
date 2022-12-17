@@ -1220,9 +1220,9 @@ class Geomstr:
         """
         Performs deCasteljau's algorithm unrolled.
         """
-        if isinstance(e, (int, np.intc, slice)):
+        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
             e = self.segments[e]
-        try:
+        if isinstance(t, (np.ndarray, tuple, list)):
             if len(t) == 1:
                 t = t[0]
             else:
@@ -1236,8 +1236,6 @@ class Geomstr:
                     e = splits[1]
                 yield e
                 return
-        except TypeError:
-            pass
         start, control, info, control2, end = e
         r1_0 = t * (control - start) + start
         r1_1 = t * (end - control) + control
@@ -1246,9 +1244,9 @@ class Geomstr:
         yield r2, r1_1, info, r1_1, end
 
     def _split_cubic(self, e, t):
-        if isinstance(e, (int, np.intc, slice)):
+        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
             e = self.segments[e]
-        try:
+        if isinstance(t, (np.ndarray, tuple, list)):
             if len(t) == 1:
                 t = t[0]
             else:
@@ -1261,8 +1259,6 @@ class Geomstr:
                     e = splits[1]
                 yield e
                 return
-        except TypeError:
-            pass
         start, control, info, control2, end = e
         r1_0 = t * (control - start) + start
         r1_1 = t * (control2 - control) + control
