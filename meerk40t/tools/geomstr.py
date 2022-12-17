@@ -1120,25 +1120,17 @@ class Geomstr:
         if info.real == TYPE_QUAD:
             a = start - 2 * control1 + end
             b = 2 * (control1 - start)
-            try:
-                # For an explanation of this case, see
-                # http://www.malczak.info/blog/quadratic-bezier-curve-length/
-                A = 4 * (a.real * a.real + a.imag * a.imag)
-                B = 4 * (a.real * b.real + a.imag * b.imag)
-                C = b.real * b.real + b.imag * b.imag
+            # For an explanation of this case, see
+            # http://www.malczak.info/blog/quadratic-bezier-curve-length/
+            A = 4 * (a.real * a.real + a.imag * a.imag)
+            B = 4 * (a.real * b.real + a.imag * b.imag)
+            C = b.real * b.real + b.imag * b.imag
 
-                Sabc = 2 * math.sqrt(A + B + C)
-                A2 = math.sqrt(A)
-                A32 = 2 * A * A2
-                C2 = 2 * math.sqrt(C)
-                BA = B / A2
-
-                s = (
-                    A32 * Sabc
-                    + A2 * B * (Sabc - C2)
-                    + (4 * C * A - B * B) * math.log((2 * A2 + BA + Sabc) / (BA + C2))
-                ) / (4 * A32)
-            except (ZeroDivisionError, ValueError):
+            Sabc = 2 * math.sqrt(A + B + C)
+            A2 = math.sqrt(A)
+            A32 = 2 * A * A2
+            C2 = 2 * math.sqrt(C)
+            if abs(A2) <= 1e-11:
                 # a_dot_b = a.real * b.real + a.imag * b.imag
                 if abs(a) < 1e-10:
                     s = abs(b)
@@ -1148,7 +1140,13 @@ class Geomstr:
                         s = abs(b) - abs(a)
                     else:
                         s = abs(a) * (k * k / 2 - k + 1)
-            return s
+                return s
+            BA = B / A2
+            return (
+                A32 * Sabc
+                + A2 * B * (Sabc - C2)
+                + (4 * C * A - B * B) * math.log((2 * A2 + BA + Sabc) / (BA + C2))
+            ) / (4 * A32)
         if info.real == TYPE_CUBIC:
             try:
                 return self._cubic_length_via_quad(line)
