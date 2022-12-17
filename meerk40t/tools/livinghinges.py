@@ -554,11 +554,13 @@ class HingePanel(wx.Panel):
 
         # Polycut algorithm does not work for me (yet), final=False still
         self.hinge_generator.generate(show_outline=False, force=True, final=True)
+        path = self.hinge_generator.path
+        p = path.as_path()
         node = self.context.elements.elem_branch.add(
-            path=self.hinge_generator.path,
+            path=p,
             stroke_width=500,
             stroke=Color("red"),
-            type="elem geomstr",
+            type="elem path",
         )
         # Lets simplify things...
         self.context.elements.simplify_node(node)
