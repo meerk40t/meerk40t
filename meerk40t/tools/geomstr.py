@@ -297,6 +297,7 @@ class PolyBool:
 
     def segments(self, g, rule="evenodd"):
         self.inputs.append(g)
+
     def union(self):
         if self.combined is not None:
             g, info = self.combined
@@ -332,28 +333,37 @@ class PolyBool:
                 if event_list[idx][1] == event:
                     break
                 idx += 1
-            event_list[idx] = (g.segments[idx][0 if event >= 0 else -1], event)
+            event_list[idx] = (
+                g.segments[event if event >= 0 else ~event][0 if event >= 0 else -1],
+                event,
+            )
 
         def add_seglist(segments):
             for segment in segments:
                 i = g.index
                 g.push(segment)
+                correct_segment_direction(i)
                 add_events(i)
 
         def add_segments(segments):
             s = g.index
             g.append(segments, end=False)
             e = g.index
+
             for i in range(s, e):
+                correct_segment_direction(i)
                 add_events(i)
+
+        def correct_segment_direction(index):
+            segment = g.segments[index]
+            start = segment[0]
+            end = segment[-1]
+            if (start.imag, start.real) > (end.imag, end.real):
+                segment = list(reversed(segment))
+                g.segments[index, :] = segment
 
         def split_segments(s, t):
             segment = g.segments[s]
-            start = segment[0]
-            end = segment[-1]
-            if (start.imag, start.real) < (end.imag, end.real):
-                segment = list(reversed(segment))
-
             split_list = list(g.split(segment, t))
             g.segments[s, :] = split_list[0]
             update_event(~s)
@@ -361,7 +371,9 @@ class PolyBool:
 
         def check_intersections(p1, p2):
             needs_sort = False
-            for t0, t1 in g.intersections(p1, p2):
+            for t0, t1 in g.intersections(
+                p1, p2
+            ):  # These are wrong if I reverse later.
                 if t0 in (0, 1) and t1 in (0, 1):
                     continue
                 split_segments(p1, t0)
@@ -369,7 +381,6 @@ class PolyBool:
                 needs_sort = True
             if needs_sort:
                 event_list.sort(key=sort_key)
-
 
         for input in self.inputs:
             add_segments(input)
@@ -402,7 +413,6 @@ class PolyBool:
                     # Check new neighbors
                     check_intersections(before, after)
                 del active_edges[i]
-
 
 
 class Scanbeam:
@@ -1088,7 +1098,6 @@ class Geomstr:
         else:
             return None
 
-
     #######################
     # Universal Functions
     #######################
@@ -1528,7 +1537,6 @@ class Geomstr:
         r3 = t * (r2_1 - r2_0) + r2_0
         yield start, r1_0, info, r2_0, r3
         yield r3, r2_1, info, r1_2, end
-
 
     def normal(self, e, t):
         """
@@ -2588,7 +2596,7 @@ class Geomstr:
     def as_path(self):
         open = True
         path = Path()
-        for p in self.segments[:self.index]:
+        for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
             if np.real(i) == TYPE_END:
                 open = True
@@ -2609,7 +2617,6 @@ class Geomstr:
                 path.move(s)
                 path.closed()
         return path
-
 
     def as_subpaths(self):
         """
