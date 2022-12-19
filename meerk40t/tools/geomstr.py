@@ -312,7 +312,7 @@ class PolyBool:
         active_edges = []
 
         def sort_key(e):
-            return e[0].imag, e[1]
+            return e[0].imag, ~e[1]
 
         def x_intercept(e):
             return g.x_intercept(e, scanline)
@@ -388,7 +388,7 @@ class PolyBool:
 
         while event_list:
             print(active_edges)
-            print(f"\t{event_list}")
+            print(f"\t{scanline} - {event_list}")
             point, index = event_list.pop(0)
             scanline = point.imag
             if index >= 0:

@@ -845,7 +845,7 @@ class TestGeomstr(unittest.TestCase):
         pb.combine()
         segs = pb.union()
 
-    def test_polybool(self):
+    def test_polybool_rect(self):
         g = Geomstr()
         g.line(0 + 0j, 0 + 100j)
         g.line(0 + 100j, 100 + 100j)
