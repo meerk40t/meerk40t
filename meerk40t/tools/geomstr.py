@@ -289,6 +289,15 @@ class Pattern:
                 yield self.geomstr.as_transformed(m)
 
 
+class PolyBool:
+    def __init__(self):
+        self.inputs = list()
+        # List of each segment info about it.
+
+    def add_segments(self, g):
+        self.inputs.append(g)
+
+
 class Scanbeam:
     """
     Accepts a Geomstr operation and performs scanbeam operations.
