@@ -1336,8 +1336,9 @@ class Geomstr:
         @param t: position(s) to split at (numpy ok)
         @return:
         """
-        line = self.segments[e]
-        start, control, info, control2, end = line
+        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
+            e = self.segments[e]
+        start, control, info, control2, end = e
         if info.real == TYPE_LINE:
             try:
                 if len(t):
