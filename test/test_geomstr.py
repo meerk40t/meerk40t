@@ -2,7 +2,16 @@ import random
 import time
 import unittest
 
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon, MergeGraph, PolyBool
+from meerk40t.tools.geomstr import (
+    Geomstr,
+    Scanbeam,
+    TYPE_LINE,
+    Pattern,
+    Clip,
+    Polygon,
+    MergeGraph,
+    PolyBool,
+)
 
 import unittest
 from copy import copy
@@ -829,8 +838,19 @@ class TestGeomstr(unittest.TestCase):
 
     def test_polybool(self):
         g = Geomstr()
-        g.line(0+0j, 100+100j)
-        g.line(0+100j, 100+0j)
+        g.line(0 + 0j, 100 + 100j)
+        g.line(0 + 100j, 100 + 0j)
+        pb = PolyBool()
+        pb.segments(g, rule="open")
+        pb.combine()
+        segs = pb.union()
+
+    def test_polybool(self):
+        g = Geomstr()
+        g.line(0 + 0j, 0 + 100j)
+        g.line(0 + 100j, 100 + 100j)
+        g.line(100 + 100j, 100 + 0j)
+        g.line(100 + 0j, 0 + 0j)
         pb = PolyBool()
         pb.segments(g, rule="open")
         pb.combine()
