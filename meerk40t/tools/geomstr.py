@@ -750,13 +750,21 @@ class Geomstr:
         self.allocate_at_position(e, space)
         self.segments[e : e + space] = lines
 
-    def append(self, other):
-        self._ensure_capacity(self.index + other.index + 1)
-        self.end()
+    def push(self, line):
+        new_capacity = self.index + 1
+        self._ensure_capacity(new_capacity)
+        self.segments[self.index] = line
+        self.index += 1
+
+    def append(self, other, end=True):
+        new_capacity = self.index + other.index + (1 if end else 0)
+        self._ensure_capacity(new_capacity)
+        if end:
+            self.end()
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
         ]
-        self.index += other.index
+        self.index = new_capacity
 
     #######################
     # Geometric Primatives
