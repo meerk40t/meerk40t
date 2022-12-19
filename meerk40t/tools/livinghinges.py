@@ -559,7 +559,7 @@ class HingePanel(wx.Panel):
         node = self.context.elements.elem_branch.add(
             path=self.hinge_generator.path,
             stroke_width=500,
-            color=Color("red"),
+            stroke=Color("red"),
             type="elem path",
         )
         # Lets simplify things...
