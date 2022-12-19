@@ -2,7 +2,7 @@ import random
 import time
 import unittest
 
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon
+from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon, MergeGraph
 
 import unittest
 from copy import copy
@@ -513,12 +513,13 @@ class TestGeomstr(unittest.TestCase):
         self.assertFalse(beam.is_point_inside(25, 25))
         self.assertTrue(beam.is_point_inside(5, 25))
 
-    def test_geomstr_intersections(self):
+    def test_geomstr_merge_intersections(self):
         subject = Geomstr()
         subject.line(complex(0, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.find_intersections(clip)
+        mg = MergeGraph(subject)
+        results = mg.find_intersections(clip)
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0], (50, 50, 0, 0, 0))
 
@@ -555,13 +556,14 @@ class TestGeomstr(unittest.TestCase):
                 q = f"{path.segment_type(j)} x {path.segment_type(k)}: {list(path.intersections(j, k))}"
                 # print(q)
 
-    def test_geomstr_merge(self):
+    def test_geomstr_merge_merge(self):
         subject = Geomstr()
         subject.line(complex(0, 20), complex(100, 100))
         subject.line(complex(20, 0), complex(100, 100))
         clip = Geomstr()
         clip.line(complex(100, 0), complex(0, 100))
-        results = subject.merge(clip)
+        mg = MergeGraph(subject)
+        results = mg.merge(clip)
         print(results.segments)
 
     def test_geomstr_merge_capacity_count(self):
@@ -578,7 +580,8 @@ class TestGeomstr(unittest.TestCase):
                     complex(random.randint(0, 50), random.randint(0, 50)),
                     complex(random.randint(0, 50), random.randint(0, 50)),
                 )
-            results = subject.merge(clip)
+            mg = MergeGraph(subject)
+            results = mg.merge(clip)
             self.assertEqual(results.index, results.capacity)
 
     def test_geomstr_merge_order(self):
@@ -590,7 +593,8 @@ class TestGeomstr(unittest.TestCase):
         clip.line(complex(0, 80), complex(100, 80))
         clip.line(complex(0, 60), complex(100, 60))
         clip.line(complex(0, 100), complex(100, 100))
-        results = subject.merge(clip)
+        mg = MergeGraph(subject)
+        results = mg.merge(clip)
         print(results)
 
     def test_pattern_generation(self):
