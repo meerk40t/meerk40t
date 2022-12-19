@@ -76,6 +76,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.panels.append(panel_xy)
 
         # Property display
+        self.lbl_info_segments = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -196,6 +197,7 @@ class PathPropertyPanel(ScrolledPanel):
             )
 
             result = 0
+            result_segments = 0
             if hasattr(node, "as_path"):
                 path = node.as_path()
                 target = []
@@ -203,7 +205,12 @@ class PathPropertyPanel(ScrolledPanel):
                 if first_point is not None:
                     pt = (first_point[0], first_point[1], 0)
                     target.append(pt)
+                last = None
                 for e in path:
+                    if last is not None and isinstance(e, Move):
+                        result_segments += 1
+                    elif last is None:
+                        result_segments += 1
                     if isinstance(e, Move):
                         pt = (e.end[0], e.end[1], 0)
                         if pt not in target:
@@ -226,10 +233,12 @@ class PathPropertyPanel(ScrolledPanel):
                         pt = (e.end[0], e.end[1], 0)
                         if pt not in target:
                             target.append(pt)
+                    last = e
                 result = len(target)
             elif hasattr(node, "bounds"):
                 result = 4
-            return result
+                result_segments = 1
+            return result_segments, result
 
         elements = self.context.elements
         _mm = float(Length("1mm"))
@@ -243,10 +252,12 @@ class PathPropertyPanel(ScrolledPanel):
         total_area, second_area = self.covered_area([self.node])
 
         total_length = total_length / _mm
-        points = calc_points(self.node)
+        numpaths, points = calc_points(self.node)
+
 
         self.lbl_info_area.SetValue(f"{total_area:.0f} mm² ({second_area:.0f} mm²)")
         self.lbl_info_length.SetValue(f"{total_length:.1f} mm")
+        self.lbl_info_segments.SetValue(f"{numpaths:d}")
         self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
@@ -259,6 +270,8 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_area.SetValue("")
         self.lbl_info_length.SetValue("")
         self.lbl_info_points.SetValue("")
+        self.lbl_info_segments.SetValue("")
+
 
         self.Refresh()
 
@@ -270,6 +283,10 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_v_main = wx.BoxSizer(wx.VERTICAL)
 
         sizer_h_infos = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_info0 = StaticBoxSizer(self, wx.ID_ANY, _("Segments"), wx.VERTICAL)
+        sizer_info0.Add(self.lbl_info_segments, 1, wx.EXPAND, 0)
+
         sizer_info1 = StaticBoxSizer(self, wx.ID_ANY, _("Points"), wx.VERTICAL)
         sizer_info1.Add(self.lbl_info_points, 1, wx.EXPAND, 0)
 
@@ -281,6 +298,7 @@ class PathPropertyPanel(ScrolledPanel):
         )
         sizer_info3.Add(self.lbl_info_area, 1, wx.EXPAND, 0)
 
+        sizer_h_infos.Add(sizer_info0, 0, wx.EXPAND, 0)
         sizer_h_infos.Add(sizer_info1, 0, wx.EXPAND, 0)
         sizer_h_infos.Add(sizer_info2, 0, wx.EXPAND, 0)
         sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
