@@ -27,7 +27,12 @@ def draw(segments, w, h, filename="test.png"):
     for segment in segments:
         f = segment[0]
         t = segment[-1]
-        draw.line(((f.real, f.imag), (t.real, t.imag)), fill="black")
+        draw.line(((f.real, f.imag), (t.real, t.imag)), fill="#000000")
+    for segment in segments:
+        f = segment[0]
+        t = segment[-1]
+        draw.ellipse((f.real -3, f.imag-3, f.real+3, f.imag+3), fill="#FF0000")
+        draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
     im.save(filename)
 
 def random_point(i=100):
@@ -37,31 +42,33 @@ def random_point(i=100):
 def random_pointi(i=50):
     return complex(random.randint(0, i), random.randint(0, i))
 
-def random_segment(path):
+def random_segment(path, i=100, point=True, line=True, quad=True, cubic=True, arc=True):
     t = random.randint(0, 5)
-    if t == 0:
-        start = random_point()
+    if t == 0 and point:
+        start = random_point(i=i)
         path.point(start)
-    if t == 1:
-        start = random_point()
-        end = random_point()
+    elif t == 1 and line:
+        start = random_point(i=i)
+        end = random_point(i=i)
         path.line(start, end)
-    if t == 2:
-        start = random_point()
-        control = random_point()
-        end = random_point()
+    elif t == 2 and quad:
+        start = random_point(i=i)
+        control = random_point(i=i)
+        end = random_point(i=i)
         path.quad(start, control, end)
-    if t == 3:
-        start = random_point()
-        c1 = random_point()
-        c2 = random_point()
-        end = random_point()
+    elif t == 3 and cubic:
+        start = random_point(i=i)
+        c1 = random_point(i=i)
+        c2 = random_point(i=i)
+        end = random_point(i=i)
         path.cubic(start, c1, c2, end)
-    if t == 4:
-        start = random_point()
-        control = random_point()
-        end = random_point()
+    elif t == 4 and arc:
+        start = random_point(i=i)
+        control = random_point(i=i)
+        end = random_point(i=i)
         path.arc(start, control, end)
+    else:
+        random_segment(path, i=i, point=point, line=line, quad=quad, cubic=cubic, arc=arc)
 
 
 class TestGeomstr(unittest.TestCase):
