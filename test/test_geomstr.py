@@ -30,6 +30,39 @@ def draw(segments, w, h, filename="test.png"):
         draw.line(((f.real, f.imag), (t.real, t.imag)), fill="black")
     im.save(filename)
 
+def random_point(i=100):
+    return complex(random.random() * i, random.random() * i)
+
+
+def random_pointi(i=50):
+    return complex(random.randint(0, i), random.randint(0, i))
+
+def random_segment(path):
+    t = random.randint(0, 5)
+    if t == 0:
+        start = random_point()
+        path.point(start)
+    if t == 1:
+        start = random_point()
+        end = random_point()
+        path.line(start, end)
+    if t == 2:
+        start = random_point()
+        control = random_point()
+        end = random_point()
+        path.quad(start, control, end)
+    if t == 3:
+        start = random_point()
+        c1 = random_point()
+        c2 = random_point()
+        end = random_point()
+        path.cubic(start, c1, c2, end)
+    if t == 4:
+        start = random_point()
+        control = random_point()
+        end = random_point()
+        path.arc(start, control, end)
+
 
 class TestGeomstr(unittest.TestCase):
     """These tests ensure the basic functions of the Geomstr elements."""
@@ -219,9 +252,9 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_arc_center(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            control = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            control = random_point()
+            end = random_point()
             c = Arc(start=start, control=control, end=end)
 
             path = Geomstr()
@@ -231,9 +264,9 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_arc_radius(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            control = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            control = random_point()
+            end = random_point()
             c = Arc(start=start, control=control, end=end)
 
             path = Geomstr()
@@ -244,8 +277,8 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_line_point(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            end = random_point()
             c = Line(start, end)
 
             path = Geomstr()
@@ -255,9 +288,9 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_quad_point(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            control = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            control = random_point()
+            end = random_point()
             c = QuadraticBezier(start, control, end)
 
             path = Geomstr()
@@ -268,10 +301,10 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_cubic_point(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            c1 = complex(random.random() * 100, random.random() * 100)
-            c2 = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            c1 = random_point()
+            c2 = random_point()
+            end = random_point()
             c = CubicBezier(start, c1, c2, end)
 
             path = Geomstr()
@@ -285,10 +318,10 @@ class TestGeomstr(unittest.TestCase):
         t0 = 0
         t1 = 0
         for i in range(50):
-            start = complex(random.random() * 100, random.random() * 100)
-            c1 = complex(random.random() * 100, random.random() * 100)
-            c2 = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            c1 = random_point()
+            c2 = random_point()
+            end = random_point()
             c = CubicBezier(start, c1, c2, end)
 
             path = Geomstr()
@@ -309,8 +342,8 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_line_bounds(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            end = random_point()
             c = Line(start, end)
 
             path = Geomstr()
@@ -320,9 +353,9 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_quad_bounds(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            control = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            control = random_point()
+            end = random_point()
             c = QuadraticBezier(start, control, end)
 
             path = Geomstr()
@@ -332,10 +365,10 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_cubic_bounds(self):
         for i in range(1000):
-            start = complex(random.random() * 100, random.random() * 100)
-            c1 = complex(random.random() * 100, random.random() * 100)
-            c2 = complex(random.random() * 100, random.random() * 100)
-            end = complex(random.random() * 100, random.random() * 100)
+            start = random_point()
+            c1 = random_point()
+            c2 = random_point()
+            end = random_point()
             c = CubicBezier(start, c1, c2, end)
 
             path = Geomstr()
@@ -459,8 +492,8 @@ class TestGeomstr(unittest.TestCase):
         path = Geomstr()
         for i in range(5000):
             path.line(
-                complex(random.randint(0, 50), random.randint(0, 50)),
-                complex(random.randint(0, 50), random.randint(0, 50)),
+                random_pointi(50),
+                random_pointi(50),
             )
 
         beam = Scanbeam(path)
@@ -531,30 +564,7 @@ class TestGeomstr(unittest.TestCase):
     def test_geomstr_intersect_segments(self):
         path = Geomstr()
         for i in range(50):
-            t = random.randint(0, 5)
-            if t == 0:
-                start = complex(random.random() * 100, random.random() * 100)
-                path.point(start)
-            if t == 1:
-                start = complex(random.random() * 100, random.random() * 100)
-                end = complex(random.random() * 100, random.random() * 100)
-                path.line(start, end)
-            if t == 2:
-                start = complex(random.random() * 100, random.random() * 100)
-                control = complex(random.random() * 100, random.random() * 100)
-                end = complex(random.random() * 100, random.random() * 100)
-                path.quad(start, control, end)
-            if t == 3:
-                start = complex(random.random() * 100, random.random() * 100)
-                c1 = complex(random.random() * 100, random.random() * 100)
-                c2 = complex(random.random() * 100, random.random() * 100)
-                end = complex(random.random() * 100, random.random() * 100)
-                path.cubic(start, c1, c2, end)
-            if t == 4:
-                start = complex(random.random() * 100, random.random() * 100)
-                control = complex(random.random() * 100, random.random() * 100)
-                end = complex(random.random() * 100, random.random() * 100)
-                path.arc(start, control, end)
+            random_segment(path)
 
         for j in range(path.index):
             for k in range(path.index):
@@ -576,14 +586,14 @@ class TestGeomstr(unittest.TestCase):
             clip = Geomstr()
             for i in range(50):
                 clip.line(
-                    complex(random.randint(0, 50), random.randint(0, 50)),
-                    complex(random.randint(0, 50), random.randint(0, 50)),
+                    random_pointi(50),
+                    random_pointi(50),
                 )
             subject = Geomstr()
             for i in range(50):
                 subject.line(
-                    complex(random.randint(0, 50), random.randint(0, 50)),
-                    complex(random.randint(0, 50), random.randint(0, 50)),
+                    random_pointi(50),
+                    random_pointi(50),
                 )
             mg = MergeGraph(subject)
             results = mg.merge(clip)
@@ -847,7 +857,7 @@ class TestGeomstr(unittest.TestCase):
 
         yy = []
         for i in range(100):
-            yy.append(complex(random.random() * 5, random.random() * 5))
+            yy.append(random_point(5))
         yy.append(yy[0])
         poly = Polygon(*yy)  # 0,10 20,0 20,20.1 0,10
         poly.geomstr.uscale(5)
@@ -855,7 +865,7 @@ class TestGeomstr(unittest.TestCase):
 
         pts = []
         for i in range(2000):
-            pts.append(complex(random.random() * 25, random.random() * 25))
+            pts.append(random_point(25))
 
         t = time.time()
         r = m.points_in_polygon(pts)
