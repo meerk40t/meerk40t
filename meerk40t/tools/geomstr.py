@@ -321,7 +321,7 @@ class PolyBool:
             try:
                 return e[0].imag, e[0].real, e[2] >= 0, (e[1].real - e[0].real) / (e[1].imag - e[0].imag)
             except ZeroDivisionError:
-                return 0
+                return e[0].imag, e[0].real, e[2] >= 0, float("inf")
 
         def x_intercept(e):
             return g.x_intercept(e, scanline)
