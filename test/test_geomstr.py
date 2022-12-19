@@ -2,7 +2,7 @@ import random
 import time
 import unittest
 
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon, MergeGraph
+from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon, MergeGraph, PolyBool
 
 import unittest
 from copy import copy
@@ -826,3 +826,12 @@ class TestGeomstr(unittest.TestCase):
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
         self.assertEqual(g.index, steps - 2)
+
+    def test_polybool(self):
+        g = Geomstr()
+        g.line(0+0j, 100+100j)
+        g.line(0+100j, 100+0j)
+        pb = PolyBool()
+        pb.segments(g, rule="open")
+        pb.combine()
+        segs = pb.union()
