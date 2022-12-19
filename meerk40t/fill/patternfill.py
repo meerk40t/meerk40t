@@ -215,7 +215,7 @@ class LivingHinges:
             out_x = "cross"
         return out_x, out_y
 
-    def generate(self, show_outline=False, force=False, final=False):
+    def generate(self, show_outline=False, force=False, final=False, clip_bounds=True):
         if final and self.path is not None and not force:
             # No need to recalculate...
             return
@@ -299,6 +299,8 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
+        if not clip_bounds:
+            return
         rectangular = True
         if (
             self.outershape is not None
