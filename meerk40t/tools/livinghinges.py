@@ -96,8 +96,8 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            1 - _FACTOR / 2,
-            _FACTOR / 2,
+            int(1 - _FACTOR / 2),
+            int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
         self.slider_offx_label = wx.StaticText(self, wx.ID_ANY)
@@ -111,8 +111,8 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             0,
-            1 - _FACTOR / 2,
-            _FACTOR / 2,
+            int(1 - _FACTOR / 2),
+            int(_FACTOR / 2),
             style=wx.SL_HORIZONTAL,
         )
         self.slider_offy_label = wx.StaticText(self, wx.ID_ANY)

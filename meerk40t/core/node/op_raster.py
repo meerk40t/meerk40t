@@ -346,7 +346,7 @@ class RasterOpNode(Node, Parameters):
         if make_raster is None:
 
             def strip_rasters():
-                self.remove_node()
+                self.remove_all_children()
 
             commands.append(strip_rasters)
             return

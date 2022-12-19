@@ -203,14 +203,20 @@ class GRBLDriver(Parameters):
             if self.on_value != 1.0:
                 self.power_dirty = True
             self.on_value = 1.0
-            if q.power != self.power:
-                self.set("power", q.power)
+            # Default-Values?!
+            qpower = q.settings.get("power", self.power)
+            qspeed = q.settings.get("speed", self.speed)
+            qraster_step_x = q.settings.get("raster_step_x")
+            qraster_step_y = q.settings.get("raster_step_y")
+            # print (f"Cut {type(q).__name__}, power={qpower}, speed={qspeed}, rx={qraster_step_x}, ry={qraster_step_y}")
+            if qpower != self.power:
+                self.set("power", qpower)
             if (
-                q.speed != self.speed
-                or q.raster_step_x != self.raster_step_x
-                or q.raster_step_y != self.raster_step_y
+                qspeed != self.speed
+                or qraster_step_x != self.raster_step_x
+                or qraster_step_y != self.raster_step_y
             ):
-                self.set("speed", q.speed)
+                self.set("speed", qspeed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
                 self.move_mode = 1
