@@ -293,9 +293,116 @@ class PolyBool:
     def __init__(self):
         self.inputs = list()
         # List of each segment info about it.
+        self.combined = None
 
-    def add_segments(self, g):
+    def segments(self, g, rule="evenodd"):
         self.inputs.append(g)
+    def union(self):
+        if self.combined is not None:
+            g, info = self.combined
+            for m, minfo in zip(g.segments, info):
+                yield m
+
+    def combine(self):
+        g = Geomstr()
+        info = list()
+        scanline = -float("inf")
+        event_list = list()
+        active_edges = []
+
+        def sort_key(e):
+            return e[0].imag, e[1]
+
+        def x_intercept(e):
+            return g.x_intercept(e, scanline)
+
+        def add_events(segindex):
+            start = g.segments[segindex][0]
+            end = g.segments[segindex][-1]
+            if (start.imag, start.real) < (end.imag, end.real):
+                event_list.append((start, segindex))
+                event_list.append((end, ~segindex))
+            else:
+                event_list.append((start, ~segindex))
+                event_list.append((end, segindex))
+
+        def update_event(event):
+            idx = 0
+            while True:
+                if event_list[idx][1] == event:
+                    break
+                idx += 1
+            event_list[idx] = (g.segments[idx][0 if event >= 0 else -1], event)
+
+        def add_seglist(segments):
+            for segment in segments:
+                i = g.index
+                g.push(segment)
+                add_events(i)
+
+        def add_segments(segments):
+            s = g.index
+            g.append(segments, end=False)
+            e = g.index
+            for i in range(s, e):
+                add_events(i)
+
+        def split_segments(s, t):
+            segment = g.segments[s]
+            start = segment[0]
+            end = segment[-1]
+            if (start.imag, start.real) < (end.imag, end.real):
+                segment = list(reversed(segment))
+
+            split_list = list(g.split(segment, t))
+            g.segments[s, :] = split_list[0]
+            update_event(~s)
+            add_seglist(split_list[1:])
+
+        def check_intersections(p1, p2):
+            needs_sort = False
+            for t0, t1 in g.intersections(p1, p2):
+                if t0 in (0, 1) and t1 in (0, 1):
+                    continue
+                split_segments(p1, t0)
+                split_segments(p2, t1)
+                needs_sort = True
+            if needs_sort:
+                event_list.sort(key=sort_key)
+
+
+        for input in self.inputs:
+            add_segments(input)
+        event_list.sort(key=sort_key)
+
+        while event_list:
+            print(active_edges)
+            print(f"\t{event_list}")
+            point, index = event_list.pop(0)
+            scanline = point.imag
+            if index >= 0:
+                active_edges.append(index)
+                active_edges.sort(key=x_intercept)
+                i = active_edges.index(index)
+                current = active_edges[i]
+                if i > 0:
+                    # Check before.
+                    before = active_edges[i - 1]
+                    check_intersections(current, before)
+
+                if i < len(active_edges) - 1:
+                    # Check after.
+                    after = active_edges[i + 1]
+                    check_intersections(current, after)
+            else:
+                i = active_edges.index(~index)
+                if 0 < i < len(active_edges) - 1:
+                    before = active_edges[i - 1]
+                    after = active_edges[i + 1]
+                    # Check new neighbors
+                    check_intersections(before, after)
+                del active_edges[i]
+
 
 
 class Scanbeam:
