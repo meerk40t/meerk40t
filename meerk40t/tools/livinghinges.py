@@ -3,7 +3,6 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import Length, ACCEPTED_UNITS
-from meerk40t.fill.patternfill import LivingHinges
 from meerk40t.gui.icons import icons8_hinges_50, STD_ICON_SIZE
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -32,7 +31,15 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self._use_geomstr = False
+        self._use_geomstr = self.context.setting(bool, "geomstr_hinge", False)
+        if self._use_geomstr:
+            from meerk40t.fill.patterns import LivingHinges
+        else:
+            from meerk40t.fill.patternfill import LivingHinges
+        self.hinge_generator = LivingHinges(
+            0, 0, float(Length("5cm")), float(Length("5cm"))
+        )
+
         self.hinge_origin_x = "0cm"
         self.hinge_origin_y = "0cm"
         self.hinge_width = "5cm"
@@ -152,10 +159,6 @@ class HingePanel(wx.Panel):
         )
         self.check_preview_show_shape = wx.CheckBox(self, wx.ID_ANY, _("Preview Shape"))
         self.check_preview_show_shape.SetValue(bool(self.context.hinge_preview_shape))
-
-        self.hinge_generator = LivingHinges(
-            0, 0, float(Length("5cm")), float(Length("5cm"))
-        )
 
         #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
 
@@ -499,7 +502,7 @@ class HingePanel(wx.Panel):
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
-                    show_outline=False, force=False, final=False, clip_bounds=False,
+                    show_outline=False, force=False, final=False,
                 )
                 gc.SetPen(mypen_path)
                 gspath = self.hinge_generator.preview_path
