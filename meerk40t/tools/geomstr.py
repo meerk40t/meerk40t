@@ -515,6 +515,141 @@ class Scanbeam:
             self._low = float("-inf")
 
 
+class MergeGraph:
+    def __init__(self, geomstr):
+        self.geomstr = geomstr
+
+    def merge(self, other):
+        """
+        Merge other geomstr with this geomstr. Intersections meet at vertices.
+        @param other:
+        @return:
+        """
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+
+        intersections = self.find_intersections(other)
+        bisectors = {}
+
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(s)
+            if bis is None:
+                bis = []
+                bisectors[s] = bis
+            bis.append((xi, yi, s, t, idx))
+        original = segments
+        total = index + other.index + len(intersections) * 4 + 1
+        new_segments = np.zeros((total, 5), dtype="complex")
+
+        itx = 0
+        itx = self._bisect_segments(bisectors, original, index, new_segments, itx)
+        new_segments[itx] = (
+            np.nan,
+            np.nan,
+            complex(TYPE_END, -1),
+            np.nan,
+            np.nan,
+        )
+        itx += 1
+
+        bisectors = {}
+        for xi, yi, s, t, idx in intersections:
+            bis = bisectors.get(t)
+            if bis is None:
+                bis = []
+                bisectors[t] = bis
+            bis.append((xi, yi, t, s, idx))
+        original = other.segments
+        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
+        self.geomstr.segments = new_segments
+        self.geomstr.index = itx
+        self.geomstr.capacity = new_segments.shape[0]
+        return self.geomstr
+
+    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
+        def bisector_sort(e):
+            """Sort by edge index, and distance from start."""
+            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
+
+        for seg in range(index):
+            bisector = bisectors.get(seg)
+            if bisector is None:
+                # Not bisected, copy over.
+                new_segments[itx] = original[seg]
+                itx += 1
+                continue
+            bisector.sort(key=bisector_sort)
+
+            start = original[seg, 0]
+            settype = original[seg, 2]
+            for xi, yi, si, ti, idx in bisector:
+                end = complex(xi, yi)
+
+                new_segments[itx] = (
+                    start,
+                    start,
+                    settype,
+                    end,
+                    end,
+                )
+                itx += 1
+
+                new_segments[itx] = (
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_VERTEX, idx),
+                    np.nan,
+                    np.nan,
+                )
+                itx += 1
+
+                start = end
+            end = original[seg, -1]
+            new_segments[itx] = (
+                start,
+                start,
+                settype,
+                end,
+                end,
+            )
+            itx += 1
+        return itx
+
+    def find_intersections(self, other):
+        """
+        Finds intersections between line types through brute force.
+
+        @param other:
+        @return:
+        """
+        segments = self.geomstr.segments
+        index = self.geomstr.index
+        idx = 0
+        intersections = []
+        for s in range(index):
+            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
+                continue
+            for t in range(other.index):
+                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
+                    continue
+                intersect = Geomstr.line_intersect(
+                    segments[s, 0].real,
+                    segments[s, 0].imag,
+                    segments[s, -1].real,
+                    segments[s, -1].imag,
+                    other.segments[t, 0].real,
+                    other.segments[t, 0].imag,
+                    other.segments[t, -1].real,
+                    other.segments[t, -1].imag,
+                )
+                if not intersect:
+                    continue
+                xi, yi = intersect
+                intersections.append((xi, yi, s, t, idx))
+                idx += 1
+        return intersections
+
+
 class Geomstr:
     """
     Geometry String Class
@@ -2503,136 +2638,6 @@ class Geomstr:
             if max_passes and current_pass >= max_passes:
                 break
             current_pass += 1
-
-    def merge(self, other):
-        """
-        Merge other geomstr with this geomstr. Intersections meet at vertices.
-        @param other:
-        @return:
-        """
-        segments = self.segments
-        index = self.index
-
-        intersections = self.find_intersections(other)
-        bisectors = {}
-
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(s)
-            if bis is None:
-                bis = []
-                bisectors[s] = bis
-            bis.append((xi, yi, s, t, idx))
-        original = segments
-        total = index + other.index + len(intersections) * 4 + 1
-        new_segments = np.zeros((total, 5), dtype="complex")
-
-        itx = 0
-        itx = self._bisect_segments(bisectors, original, index, new_segments, itx)
-        new_segments[itx] = (
-            np.nan,
-            np.nan,
-            complex(TYPE_END, -1),
-            np.nan,
-            np.nan,
-        )
-        itx += 1
-
-        bisectors = {}
-        for xi, yi, s, t, idx in intersections:
-            bis = bisectors.get(t)
-            if bis is None:
-                bis = []
-                bisectors[t] = bis
-            bis.append((xi, yi, t, s, idx))
-        original = other.segments
-        itx = self._bisect_segments(bisectors, original, other.index, new_segments, itx)
-        self.segments = new_segments
-        self.index = itx
-        self.capacity = new_segments.shape[0]
-        return self
-
-    def _bisect_segments(self, bisectors, original, index, new_segments, itx):
-        def bisector_sort(e):
-            """Sort by edge index, and distance from start."""
-            return e[2], abs(complex(e[0], e[1]) - original[e[2], 0])
-
-        for seg in range(index):
-            bisector = bisectors.get(seg)
-            if bisector is None:
-                # Not bisected, copy over.
-                new_segments[itx] = original[seg]
-                itx += 1
-                continue
-            bisector.sort(key=bisector_sort)
-
-            start = original[seg, 0]
-            settype = original[seg, 2]
-            for xi, yi, si, ti, idx in bisector:
-                end = complex(xi, yi)
-
-                new_segments[itx] = (
-                    start,
-                    start,
-                    settype,
-                    end,
-                    end,
-                )
-                itx += 1
-
-                new_segments[itx] = (
-                    np.nan,
-                    np.nan,
-                    complex(TYPE_VERTEX, idx),
-                    np.nan,
-                    np.nan,
-                )
-                itx += 1
-
-                start = end
-            end = original[seg, -1]
-            new_segments[itx] = (
-                start,
-                start,
-                settype,
-                end,
-                end,
-            )
-            itx += 1
-        return itx
-
-    def find_intersections(self, other):
-        """
-        Finds intersections between line types through brute force.
-
-        @param other:
-        @return:
-        """
-        segments = self.segments
-        index = self.index
-        idx = 0
-        intersections = []
-        for s in range(index):
-            if int(segments[s, 2].real) & 0xFF != TYPE_LINE:
-                continue
-            for t in range(other.index):
-                if int(other.segments[t, 2].real) & 0xFF != TYPE_LINE:
-                    continue
-                intersect = Geomstr.line_intersect(
-                    segments[s, 0].real,
-                    segments[s, 0].imag,
-                    segments[s, -1].real,
-                    segments[s, -1].imag,
-                    other.segments[t, 0].real,
-                    other.segments[t, 0].imag,
-                    other.segments[t, -1].real,
-                    other.segments[t, -1].imag,
-                )
-                if not intersect:
-                    continue
-                xi, yi = intersect
-                intersections.append((xi, yi, s, t, idx))
-                idx += 1
-        return intersections
 
     def generator(self):
         """
