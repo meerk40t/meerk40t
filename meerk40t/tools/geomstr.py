@@ -311,8 +311,17 @@ class PolyBool:
         event_list = list()
         active_edges = []
 
-        def sort_key(e):
-            return e[0].imag, ~e[1]
+        def event_sort(e):
+            """
+            Sort by y value, then x value (potential vertical line),
+            then start over end (positive e[1]).
+            @param e:
+            @return:
+            """
+            try:
+                return e[0].imag, e[0].real, e[2] >= 0, (e[1].real - e[0].real) / (e[1].imag - e[0].imag)
+            except ZeroDivisionError:
+                return 0
 
         def x_intercept(e):
             return g.x_intercept(e, scanline)
@@ -320,27 +329,27 @@ class PolyBool:
         def add_events(segindex):
             start = g.segments[segindex][0]
             end = g.segments[segindex][-1]
-            if (start.imag, start.real) < (end.imag, end.real):
-                event_list.append((start, segindex))
-                event_list.append((end, ~segindex))
-            else:
-                event_list.append((start, ~segindex))
-                event_list.append((end, segindex))
+            event_list.append((start, end, segindex))
+            event_list.append((end, start, ~segindex))
 
         def update_event(event):
             idx = 0
             while True:
-                if event_list[idx][1] == event:
+                if event_list[idx][2] == event:
                     break
                 idx += 1
-            event_list[idx] = (
-                g.segments[event if event >= 0 else ~event][0 if event >= 0 else -1],
-                event,
-            )
+            if event >= 0:
+                segment = g.segments[event]
+                event_list[idx] = segment[0], segment[-1], event
+            else:
+                segment = g.segments[~event]
+                event_list[idx] = segment[-1], segment[0], event
 
         def add_seglist(segments):
             for segment in segments:
                 i = g.index
+                if segment[0] == segment[-1]:
+                    continue
                 g.push(segment)
                 correct_segment_direction(i)
                 add_events(i)
@@ -373,24 +382,24 @@ class PolyBool:
             needs_sort = False
             for t0, t1 in g.intersections(
                 p1, p2
-            ):  # These are wrong if I reverse later.
-                if t0 in (0, 1) and t1 in (0, 1):
+            ):
+                if (np.isclose(t0,0) or np.isclose(t0, 1)) and (np.isclose(t1, 0) or np.isclose(t1, 1)):
                     continue
                 split_segments(p1, t0)
                 split_segments(p2, t1)
                 needs_sort = True
             if needs_sort:
-                event_list.sort(key=sort_key)
+                event_list.sort(key=event_sort)
 
         for input in self.inputs:
             add_segments(input)
-        event_list.sort(key=sort_key)
+        event_list.sort(key=event_sort)
 
         while event_list:
-            print(active_edges)
-            print(f"\t{scanline} - {event_list}")
-            point, index = event_list.pop(0)
-            scanline = point.imag
+            # print(active_edges)
+            # print(f"\t{scanline} - {event_list}")
+            a, b, index = event_list.pop(0)
+            scanline = a.imag
             if index >= 0:
                 active_edges.append(index)
                 active_edges.sort(key=x_intercept)
@@ -406,7 +415,10 @@ class PolyBool:
                     after = active_edges[i + 1]
                     check_intersections(current, after)
             else:
-                i = active_edges.index(~index)
+                try:
+                    i = active_edges.index(~index)
+                except ValueError:
+                    print("bug!")
                 if 0 < i < len(active_edges) - 1:
                     before = active_edges[i - 1]
                     after = active_edges[i + 1]
@@ -414,6 +426,8 @@ class PolyBool:
                     check_intersections(before, after)
                 del active_edges[i]
 
+        self.combined = g
+        return g
 
 class Scanbeam:
     """
