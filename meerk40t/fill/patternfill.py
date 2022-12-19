@@ -54,7 +54,7 @@ class LivingHinges:
         )
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
         self.outershape = None
         # Specifically for the shape pattern we hold a list of precalculated polygons
         self.pattern = []
@@ -83,7 +83,7 @@ class LivingHinges:
         info2 = entry[3]
         self.pattern = list(entry[0](self.param_a, self.param_b, outershape=self.outershape))
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
         return additional_parameter, info1, info2
 
     def make_outline(self, x0, y0, x1, y1):
@@ -177,14 +177,14 @@ class LivingHinges:
         self.y1 = hinge_height * (1 - self.gap)
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
 
     def set_cell_values(self, percentage_x, percentage_y):
         self.cell_width_percentage = percentage_x
         self.cell_height_percentage = percentage_y
         # Requires recalculation
         self.path = None
-        self.previewpath = None
+        self.preview_path = None
 
     def set_padding_values(self, padding_x, padding_y):
         self.cell_padding_h_percentage = padding_x
@@ -215,7 +215,7 @@ class LivingHinges:
             out_x = "cross"
         return out_x, out_y
 
-    def generate(self, show_outline=False, force=False, final=False):
+    def generate(self, show_outline=False, force=False, final=False, clip_bounds=True):
         if final and self.path is not None and not force:
             # No need to recalculate...
             return
@@ -299,6 +299,8 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
+        if not clip_bounds:
+            return
         rectangular = True
         if (
             self.outershape is not None
@@ -374,7 +376,7 @@ class LivingHinges:
             # path elements to lines
             self.path = self.clip_path(self.path, 0, 0, self.width, self.height)
             self.path.transform *= Matrix.translate(self.start_x, self.start_y)
-            self.previewpath = copy(self.path)
+            self.preview_path = copy(self.path)
 
     def clip_path(self, path, xmin, ymin, xmax, ymax):
         """

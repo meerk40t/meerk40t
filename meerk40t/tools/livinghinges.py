@@ -3,13 +3,12 @@ from copy import copy
 import wx
 
 from meerk40t.core.units import Length, ACCEPTED_UNITS
-from meerk40t.fill.patternfill import LivingHinges
 from meerk40t.gui.icons import icons8_hinges_50, STD_ICON_SIZE
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Color, Matrix
+from meerk40t.svgelements import Color, Matrix, Path
 
 _ = wx.GetTranslation
 
@@ -32,6 +31,15 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self._use_geomstr = self.context.setting(bool, "geomstr_hinge", False)
+        if self._use_geomstr:
+            from meerk40t.fill.patterns import LivingHinges
+        else:
+            from meerk40t.fill.patternfill import LivingHinges
+        self.hinge_generator = LivingHinges(
+            0, 0, float(Length("5cm")), float(Length("5cm"))
+        )
+
         self.hinge_origin_x = "0cm"
         self.hinge_origin_y = "0cm"
         self.hinge_width = "5cm"
@@ -151,10 +159,6 @@ class HingePanel(wx.Panel):
         )
         self.check_preview_show_shape = wx.CheckBox(self, wx.ID_ANY, _("Preview Shape"))
         self.check_preview_show_shape.SetValue(bool(self.context.hinge_preview_shape))
-
-        self.hinge_generator = LivingHinges(
-            0, 0, float(Length("5cm")), float(Length("5cm"))
-        )
 
         #  self.check_debug_outline = wx.CheckBox(self, wx.ID_ANY, "Show outline")
 
@@ -451,14 +455,24 @@ class HingePanel(wx.Panel):
                 wd / self.hinge_generator.width, ht / self.hinge_generator.height
             )
             ratio *= 0.9
-            matrix = gc.CreateMatrix(
-                a=ratio,
-                b=0,
-                c=0,
-                d=ratio,
-                tx=0.05 * ratio * self.hinge_generator.width,
-                ty=0.05 * ratio * self.hinge_generator.height,
-            )
+            if self._use_geomstr:
+                matrix = gc.CreateMatrix(
+                    a=ratio,
+                    b=0,
+                    c=0,
+                    d=ratio,
+                    tx=ratio * (0.05 * self.hinge_generator.width - self.hinge_generator.start_x),
+                    ty=ratio * (0.05 * self.hinge_generator.height - self.hinge_generator.start_y),
+                )
+            else:
+                matrix = gc.CreateMatrix(
+                    a=ratio,
+                    b=0,
+                    c=0,
+                    d=ratio,
+                    tx=0.05 * ratio * self.hinge_generator.width,
+                    ty=0.05 * ratio * self.hinge_generator.height,
+                )
             gc.SetTransform(matrix)
             if ratio == 0:
                 ratio = 1
@@ -472,21 +486,32 @@ class HingePanel(wx.Panel):
                         0, 0, self.hinge_generator.width, self.hinge_generator.height
                     )
                 else:
-                    node = copy(self.hinge_generator.outershape)
-                    bb = node.bbox()
-                    node.matrix *= Matrix.translate(-bb[0], -bb[1])
-                    path = node.as_path()
-                    gcpath = self.renderer.make_path(gc, path)
-                    gc.StrokePath(gcpath)
+                    if self._use_geomstr:
+                        path = self.hinge_generator.outershape.as_path()
+                        if path:
+                            gcpath = self.renderer.make_path(gc, path)
+                            gc.StrokePath(gcpath)
+                    else:
+                        node = copy(self.hinge_generator.outershape)
+                        bb = node.bbox()
+                        node.matrix *= Matrix.translate(-bb[0], -bb[1])
+                        path = node.as_path()
+                        gcpath = self.renderer.make_path(gc, path)
+                        gc.StrokePath(gcpath)
             if self.check_preview_show_pattern.GetValue():
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
-                    show_outline=False, force=False, final=False
+                    show_outline=False, force=False, final=False,
                 )
                 gc.SetPen(mypen_path)
-                gcpath = self.renderer.make_path(gc, self.hinge_generator.previewpath)
-                gc.StrokePath(gcpath)
+                gspath = self.hinge_generator.preview_path
+                if gspath is not None:
+                    if isinstance(gspath, Path):
+                        gcpath = self.renderer.make_path(gc, gspath)
+                    else:
+                        gcpath = self.renderer.make_geomstr(gc, gspath)
+                    gc.StrokePath(gcpath)
         self.panel_preview.Refresh()
         self.panel_preview.Update()
         self.in_draw_event = False
@@ -551,10 +576,13 @@ class HingePanel(wx.Panel):
 
         # Polycut algorithm does not work for me (yet), final=False still
         self.hinge_generator.generate(show_outline=False, force=True, final=True)
+        path = self.hinge_generator.path
+        if hasattr(path, "as_path"):
+            path = path.as_path()
         node = self.context.elements.elem_branch.add(
-            path=self.hinge_generator.path,
+            path=path,
             stroke_width=500,
-            color=Color("red"),
+            stroke=Color("red"),
             type="elem path",
         )
         # Lets simplify things...
