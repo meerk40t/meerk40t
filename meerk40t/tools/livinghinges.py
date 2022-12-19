@@ -9,7 +9,7 @@ from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Color, Matrix
+from meerk40t.svgelements import Color, Matrix, Path
 
 _ = wx.GetTranslation
 
@@ -482,11 +482,16 @@ class HingePanel(wx.Panel):
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
-                    show_outline=False, force=False, final=False, clip_bounds=False
+                    show_outline=False, force=False, final=False, clip_bounds=False,
                 )
                 gc.SetPen(mypen_path)
-                gcpath = self.renderer.make_path(gc, self.hinge_generator.preview_path)
-                gc.StrokePath(gcpath)
+                gspath = self.hinge_generator.preview_path
+                if gspath is not None:
+                    if isinstance(gspath, Path):
+                        gcpath = self.renderer.make_path(gc, gspath)
+                    else:
+                        gcpath = self.renderer.make_geomstr(gc, gspath)
+                    gc.StrokePath(gcpath)
         self.panel_preview.Refresh()
         self.panel_preview.Update()
         self.in_draw_event = False
