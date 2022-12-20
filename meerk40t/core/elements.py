@@ -2869,7 +2869,6 @@ class Elemental(Service):
                 filetypes.append(f"*.{extension}")
         return "|".join(filetypes)
 
-
     def simplify_node(self, node):
         def my_sign(x):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
@@ -2882,23 +2881,27 @@ class Elemental(Service):
             for current, seg in enumerate(obj._segments):
                 if isinstance(seg, Move):
                     if start >= 0:
-                        result.append( (start, current - 1, obj._segments[start].start.x) )
+                        result.append(
+                            (start, current - 1, obj._segments[start].start.x)
+                        )
                         start = -1
                 elif isinstance(seg, Close):
                     if start >= 0:
-                        result.append( (start, current - 1, obj._segments[start].start.x) )
+                        result.append(
+                            (start, current - 1, obj._segments[start].start.x)
+                        )
                         start = -1
                 else:
                     if start < 0:
                         start = current
             if start >= 0:
-                result.append( (start, len(obj) - 1, obj._segments[start].start.x) )
+                result.append((start, len(obj) - 1, obj._segments[start].start.x))
             # Now let's sort the list according to the X-start position
             result.sort(key=lambda a: a[2])
             return result
 
-
         from time import time
+
         time_start = time()
 
         changed = False
@@ -2916,9 +2919,12 @@ class Elemental(Service):
             # Pass 0: Dropping zero length line segments
             for idx in range(len(obj._segments) - 1, -1, -1):
                 seg = obj._segments[idx]
-                if isinstance(seg, Line) and seg.start.x == seg.end.x and seg.start.y == seg.end.y:
+                if (
+                    isinstance(seg, Line)
+                    and seg.start.x == seg.end.x
+                    and seg.start.y == seg.end.y
+                ):
                     obj._segments.pop(idx)
-
 
             # Pass 1: look inside the nodes and bring small line segments back together...
             for idx in range(len(obj._segments) - 1, -1, -1):
@@ -2938,9 +2944,9 @@ class Elemental(Service):
                         denom = thisdx * lastdy - thisdy * lastdx
 
                         same = (
-                            abs(denom) < basically_zero and
-                            my_sign(lastdx) == my_sign(thisdx) and
-                            my_sign(lastdy) == my_sign(thisdy)
+                            abs(denom) < basically_zero
+                            and my_sign(lastdx) == my_sign(thisdx)
+                            and my_sign(lastdy) == my_sign(thisdy)
                         )
                         # if thisdx == 0 or lastdx == 0:
                         #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
@@ -2977,7 +2983,7 @@ class Elemental(Service):
                 results = list_subpath_bounds(obj)
                 # print (f"Examine {len(results)} chains")
                 if len(results) <= 1:
-                    print ("only one chain, exit")
+                    print("only one chain, exit")
                     break
                 # for current, seg in enumerate(obj._segments):
                 #     flag = ""
@@ -2988,7 +2994,6 @@ class Elemental(Service):
                 #             flag += f"end[{idx}] "
 
                 #     print(f"#{current}: {type(seg).__name__} - {flag}")
-
 
                 for idx, entry in enumerate(results):
                     this_start = entry[0]
@@ -3014,12 +3019,15 @@ class Elemental(Service):
                         coincident = False
                         # Do the lines overlap or have a common end / startpoint together?
                         if (
-                            abs(this_endseg.end.x - other_startseg.start.x) < tolerance and
-                            abs(this_endseg.end.y - other_startseg.start.y) < tolerance
+                            abs(this_endseg.end.x - other_startseg.start.x) < tolerance
+                            and abs(this_endseg.end.y - other_startseg.start.y)
+                            < tolerance
                         ):
                             for idx3 in range(other_end - other_start + 1):
                                 # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
-                                obj._segments.insert(this_end + 1, obj._segments.pop(other_end))
+                                obj._segments.insert(
+                                    this_end + 1, obj._segments.pop(other_end)
+                                )
                                 # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                             joined += 1
                             redo = True
@@ -3058,15 +3066,24 @@ class Elemental(Service):
                                     continue
 
                                 # e) They could still be just parallel, so let's establish this...
-                                if abs(lastdx) < basically_zero or abs(thisdx) < basically_zero:
+                                if (
+                                    abs(lastdx) < basically_zero
+                                    or abs(thisdx) < basically_zero
+                                ):
                                     # Was coming from zero length lines, now removed ahead
 
                                     # print (f"Strange: This: dx={thisdx:.4f}, dy={thisdy:.4f}, Other: dx={lastdx:.4f}, dy={lastdy:.4f}, denom={denom:.4f}")
                                     # print (f"End-Segment: Start: ({this_endseg.start.x:.1f}, {this_endseg.start.y:.1f}) - ({this_endseg.end.x:.1f}, {this_endseg.end.y:.1f})")
                                     # print (f"Start-Segment: Start: ({other_startseg.start.x:.1f}, {other_startseg.start.y:.1f}) - ({other_startseg.end.x:.1f}, {other_startseg.end.y:.1f})")
                                     continue
-                                b1 = this_endseg.start.y - thisdy / thisdx * this_endseg.start.x
-                                b2 = other_startseg.start.y - lastdy / lastdx * other_startseg.start.x
+                                b1 = (
+                                    this_endseg.start.y
+                                    - thisdy / thisdx * this_endseg.start.x
+                                )
+                                b2 = (
+                                    other_startseg.start.y
+                                    - lastdy / lastdx * other_startseg.start.x
+                                )
                                 if abs(b1 - b2) > tolerance:
                                     continue
 
@@ -3076,7 +3093,9 @@ class Elemental(Service):
                                         # Can be eliminated....
                                         obj._segments.pop(other_start)
                                         redo = True
-                                        reason = f"Removed segment {idx2} fully inside {idx}"
+                                        reason = (
+                                            f"Removed segment {idx2} fully inside {idx}"
+                                        )
                                         break
                                     else:
                                         continue
@@ -3088,7 +3107,9 @@ class Elemental(Service):
                                 # print (f"We copy [{other_start}:{other_end}] to the end after {this_end}")
                                 for idx3 in range(other_end - other_start + 1):
                                     # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
-                                    obj._segments.insert(this_end + 1, obj._segments.pop(other_end))
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
                                     # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                 joined += 1
                                 redo = True
@@ -3106,7 +3127,10 @@ class Elemental(Service):
 
                                 # e) They could still be just parallel, so let's establish this...
 
-                                if abs(other_startseg.start.x - this_endseg.start.x) > tolerance:
+                                if (
+                                    abs(other_startseg.start.x - this_endseg.start.x)
+                                    > tolerance
+                                ):
                                     continue
 
                                 # f) Lying completely inside, only if the second chain is a single line we can remove it...
@@ -3127,7 +3151,9 @@ class Elemental(Service):
                                 # print (f"We copy [{other_start}:{other_end}] to the end after {this_end}")
                                 for idx3 in range(other_end - other_start + 1):
                                     # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
-                                    obj._segments.insert(this_end + 1, obj._segments.pop(other_end))
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
                                     # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                 joined += 1
                                 reason = f"Added overlapping vertical segment {idx2} to {idx}"
@@ -3139,7 +3165,7 @@ class Elemental(Service):
                         # print(f"Redo required inner loop: {reason}")
                         changed = True
                         break
-                #end of outer loop
+                # end of outer loop
             time_pass2 = time()
             lastseg = None
             for idx in range(len(obj._segments) - 1, -1, -1):
@@ -3179,12 +3205,11 @@ class Elemental(Service):
                     thisdy = pt[1] - pt_old[1]
                     denom = thisdx * lastdy - thisdy * lastdx
                     same = (
-                        abs(denom) < 1.0e-6 and
-                        my_sign(lastdx) == my_sign(thisdx) and
-                        my_sign(lastdy) == my_sign(thisdy)
+                        abs(denom) < 1.0e-6
+                        and my_sign(lastdx) == my_sign(thisdx)
+                        and my_sign(lastdy) == my_sign(thisdy)
                     )
                     # Opposing directions may not happen
-
 
                     if same:
                         # We can just merge the two segments by
