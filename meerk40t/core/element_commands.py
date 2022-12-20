@@ -3927,12 +3927,23 @@ def init_commands(kernel):
             channel("Requires a selected polygon")
             return None
         for node in data:
+            try:
+                sub_before = len(list(node.as_path().as_subpaths()))
+            except AttributeError:
+                sub_before = 0
+
             changed, before, after = self.simplify_node(node)
             if changed:
-                s = node.type
-                channel(f"Simplified {s} ({node.label}): from {before} to {after}")
                 node.altered()
+                try:
+                    sub_after = len(list(node.as_path().as_subpaths()))
+                except AttributeError:
+                    sub_after = 0
+                channel(f"Simplified {node.type} ({node.label}): from {before} to {after}")
+                channel(f"Subpaths before: {sub_before} to {sub_after}")
                 data_changed.append(node)
+            else:
+                channel(f"Could not simplify {node.type} ({node.label})")
         if len(data_changed)>0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
