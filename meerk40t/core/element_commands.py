@@ -69,8 +69,6 @@ def init_commands(kernel):
     ]
     kernel.register_choices("preferences", choices)
 
-
-
     def classify_new(data):
         """
         Why are we doing it here? An immediate classification
@@ -85,10 +83,12 @@ def init_commands(kernel):
 
         @return: post classification function.
         """
+
         def post_classify_function(**kwargs):
             if self.classify_new and len(data) > 0:
                 self.classify(data)
                 self.signal("tree_changed")
+
         return post_classify_function
 
     @self.console_argument("filename")
@@ -3742,7 +3742,9 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs):
+    def element_ellipse(
+        channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
+    ):
         ellip = Ellipse(
             cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
         )
@@ -3862,7 +3864,9 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_text(command, channel, _, data=None, text=None, size=None, post=None,  **kwargs):
+    def element_text(
+        command, channel, _, data=None, text=None, size=None, post=None, **kwargs
+    ):
         if text is None:
             channel(_("No text specified"))
             return
@@ -3917,8 +3921,10 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
-    @self.console_command("simplify", input_type=("elements", None), output_type="elements")
-    def simplify_path(command, channel, _,  data=None, post=None, **kwargs):
+    @self.console_command(
+        "simplify", input_type=("elements", None), output_type="elements"
+    )
+    def simplify_path(command, channel, _, data=None, post=None, **kwargs):
 
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -3927,19 +3933,34 @@ def init_commands(kernel):
             channel("Requires a selected polygon")
             return None
         for node in data:
+            try:
+                sub_before = len(list(node.as_path().as_subpaths()))
+            except AttributeError:
+                sub_before = 0
+
             changed, before, after = self.simplify_node(node)
             if changed:
-                s = node.type
-                channel(f"Simplified {s} ({node.label}): from {before} to {after}")
                 node.altered()
+                try:
+                    sub_after = len(list(node.as_path().as_subpaths()))
+                except AttributeError:
+                    sub_after = 0
+                channel(
+                    f"Simplified {node.type} ({node.label}): from {before} to {after}"
+                )
+                channel(f"Subpaths before: {sub_before} to {sub_after}")
                 data_changed.append(node)
-        if len(data_changed)>0:
+            else:
+                channel(f"Could not simplify {node.type} ({node.label})")
+        if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_command("polycut", input_type=("elements", None), output_type="elements")
-    def create_pattern(command, channel, _,  data=None, post=None, **kwargs):
+    @self.console_command(
+        "polycut", input_type=("elements", None), output_type="elements"
+    )
+    def create_pattern(command, channel, _, data=None, post=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) <= 1:
@@ -3951,6 +3972,7 @@ def init_commands(kernel):
         data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
+
         vm = VectorMontonizer()
         outer_path = Polygon(
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
@@ -3960,7 +3982,7 @@ def init_commands(kernel):
         for sub_inner in inner_path.as_subpaths():
             sub_inner = Path(sub_inner)
             pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
-            for i in range(len(pts_sub)-1, -1, -1):
+            for i in range(len(pts_sub) - 1, -1, -1):
                 pt = pts_sub[i]
                 if not vm.is_point_inside(pt[0], pt[1]):
                     del pts_sub[i]
@@ -4034,6 +4056,7 @@ def init_commands(kernel):
             return "elements", data
 
         from meerk40t.tools.geomstr import Geomstr
+
         geomstr = Geomstr()
         for node in data:
             try:
@@ -5892,7 +5915,9 @@ def init_commands(kernel):
         input_type="clipboard",
         output_type="elements",
     )
-    def clipboard_paste(command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs):
+    def clipboard_paste(
+        command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs
+    ):
         destination = self._clipboard_default
         try:
             pasted = [copy(e) for e in self._clipboard[destination]]
@@ -6222,14 +6247,26 @@ def init_commands(kernel):
         help=_("Method to use (one of quick, hull, complex, segment, circle)"),
     )
     @self.console_argument("resolution")
-    @self.console_option("start", "s", type=int, help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"))
+    @self.console_option(
+        "start",
+        "s",
+        type=int,
+        help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"),
+    )
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
         input_type=("elements", "shapes", None),
     )
     def trace_trace_spooler(
-        command, channel, _, method=None, resolution=None, start=None, data=None, **kwargs
+        command,
+        channel,
+        _,
+        method=None,
+        resolution=None,
+        start=None,
+        data=None,
+        **kwargs,
     ):
         if method is None:
             method = "quick"
@@ -6265,10 +6302,10 @@ def init_commands(kernel):
                     pass
                 elif startmethod == 1:
                     # Dialog
-                    yield ('console', 'interrupt "Trace is about to start"')
+                    yield ("console", 'interrupt "Trace is about to start"')
                 elif startmethod == 2:
                     # Wait for some seconds
-                    yield ('wait', 5000)
+                    yield ("wait", 5000)
 
                 yield "wait_finish"
                 yield "rapid_mode"
@@ -6301,7 +6338,14 @@ def init_commands(kernel):
         output_type="elements",
     )
     def trace_trace_generator(
-        command, channel, _, method=None, resolution=None, data=None, post=None, **kwargs
+        command,
+        channel,
+        _,
+        method=None,
+        resolution=None,
+        data=None,
+        post=None,
+        **kwargs,
     ):
         if method is None:
             method = "quick"

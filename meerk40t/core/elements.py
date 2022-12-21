@@ -4,7 +4,7 @@ from os.path import realpath
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
 
-from ..svgelements import Color, SVGElement
+from ..svgelements import Color, SVGElement, Line, Move, Close
 from .element_types import *
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -13,7 +13,7 @@ from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
 from .undos import Undo
-from .units import Length
+from .units import Length, UNITS_PER_MIL
 from .wordlist import Wordlist
 
 
@@ -2870,19 +2870,55 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def simplify_node(self, node):
+        basically_zero = 1.0e-6
+        tolerance = UNITS_PER_MIL * 1
+
         def my_sign(x):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
             return bool(x > 0) - bool(x < 0)
 
-        from meerk40t.svgelements import Line
+        def remove_zero_length_lines(obj):
+            # We remove degenerate line segments ie those of zero length
+            # could be intentional in some cases, but that should be dealt
+            # with in dwell cuts...
+            removed = 0
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if (
+                    isinstance(seg, Line)
+                    and seg.start.x == seg.end.x
+                    and seg.start.y == seg.end.y
+                ):
+                    obj._segments.pop(idx)
+                    removed += 1
+            return removed
 
-        changed = False
-        before = 0
-        after = 0
-        if node.type == "elem path" and len(node.path._segments) > 1:
-            obj = node.path
+        def remove_superfluous_moves(obj):
+            # Two or more consecutive moves are processed
+            # as well as a move at the very end
+            lastseg = None
+            removed = 0
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if isinstance(seg, Move):
+                    if lastseg is None:
+                        # Move as the very last segment -> Delete
+                        obj._segments.pop(idx)
+                        removed += 1
+                    else:
+                        if isinstance(lastseg, Move):
+                            # Two consecutive moves? Delete
+                            obj._segments.pop(idx)
+                            removed += 1
+                        else:
+                            lastseg = seg
+                else:
+                    lastseg = seg
+            return removed
+
+        def remove_interim_points_on_line(obj):
+            removed = 0
             last = None
-            before = len(obj._segments)
             for idx in range(len(obj._segments) - 1, -1, -1):
                 seg = obj._segments[idx]
                 if isinstance(seg, Line):
@@ -2900,9 +2936,9 @@ class Elemental(Service):
                         denom = thisdx * lastdy - thisdy * lastdx
 
                         same = (
-                            abs(denom) < 1.0e-6 and
-                            my_sign(lastdx) == my_sign(thisdx) and
-                            my_sign(lastdy) == my_sign(thisdy)
+                            abs(denom) < basically_zero
+                            and my_sign(lastdx) == my_sign(thisdx)
+                            and my_sign(lastdy) == my_sign(thisdy)
                         )
                         # if thisdx == 0 or lastdx == 0:
                         #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
@@ -2913,23 +2949,219 @@ class Elemental(Service):
                             # Vertical line - same direction?
                             if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
                                 same = True
-                        elif abs(thisdy / thisdx - lastdy / lastdx) < 1.0e-6:
+                        elif abs(thisdy / thisdx - lastdy / lastdx) < basically_zero:
                             same = True
 
                         if same:
                             # We can just merge the two segments
                             seg.end = last.end
                             obj._segments.pop(idx + 1)
-                            changed = True
+                            removed += 1
                     last = seg
                 else:
                     last = None
-            after = len(obj._segments)
-        elif node.type == "elem polyline" and len(node.shape.points) > 2:
-            obj = node.shape
+            return removed
+
+        def combine_overlapping_chains(obj):
+            def list_subpath_bounds(obj):
+                # Return a sorted list of subpaths in the given path (from left to right):
+                # tuples with first index, last index, x-coordinate of first segment
+                result = []
+                start = -1
+                for current, seg in enumerate(obj._segments):
+                    if isinstance(seg, Move):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    elif isinstance(seg, Close):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    else:
+                        if start < 0:
+                            start = current
+                if start >= 0:
+                    result.append((start, len(obj) - 1, obj._segments[start].start.x))
+                # Now let's sort the list according to the X-start position
+                result.sort(key=lambda a: a[2])
+                return result
+
+            joined = 0
+            redo = True
+            while redo:
+                # Dont do it again unless indicated...
+                redo = False
+                reason = ""
+                results = list_subpath_bounds(obj)
+                if len(results) <= 1:
+                    # only one chain, exit
+                    break
+
+                for idx, entry in enumerate(results):
+                    this_start = entry[0]
+                    this_end = entry[1]
+                    this_endseg = obj._segments[this_end]
+                    this_endline = bool(isinstance(this_endseg, Line))
+
+                    # Look at all subsequent chains, as they are sorted we know we can just look at
+                    # a) the last point and the first point or the two chains, if they are identical
+                    #    the two chains can be joined (regardless of the type of the two path
+                    #    segments at the end / start)
+                    # b) if the last segment of the first chain and the first segment of the second chain
+                    #    are lines the we establish whether they overlap
+                    for idx2 in range(idx + 1, len(results)):
+                        other_entry = results[idx2]
+                        other_start = other_entry[0]
+                        other_end = other_entry[1]
+                        other_startseg = obj._segments[other_start]
+                        other_startline = bool(isinstance(other_startseg, Line))
+                        # Do the lines overlap or have a common end / startpoint together?
+                        if (
+                            abs(this_endseg.end.x - other_startseg.start.x) < tolerance
+                            and abs(this_endseg.end.y - other_startseg.start.y)
+                            < tolerance
+                        ):
+                            for idx3 in range(other_end - other_start + 1):
+                                obj._segments.insert(
+                                    this_end + 1, obj._segments.pop(other_end)
+                                )
+                            joined += 1
+                            redo = True
+                            reason = f"Join segments at endpoints {idx} - {idx2}"
+                            break
+                        else:
+                            if not other_startline or not this_endline:
+                                # incompatible types, need two lines
+                                continue
+                            thisdx = this_endseg.start.x - this_endseg.end.x
+                            thisdy = this_endseg.start.y - this_endseg.end.y
+                            lastdx = other_startseg.start.x - other_startseg.end.x
+                            lastdy = other_startseg.start.y - other_startseg.end.y
+                            denom = thisdx * lastdy - thisdy * lastdx
+
+                            # We have a couple of base cases
+                            # a) end point of first line identical to start point of second line
+                            # -> already covered elsewhere
+
+                            # b) Lines are not parallel -> ignore
+                            if abs(denom) > basically_zero:
+                                continue
+
+                            if abs(thisdx) > basically_zero:
+                                # Non-vertical lines
+                                # c) second segment starts left of the first -> ignore
+                                if other_startseg.start.x < this_endseg.start.x:
+                                    continue
+
+                                # d) second segment fully to the right of the first -> ignore
+                                if other_startseg.start.x > this_endseg.end.x:
+                                    continue
+
+                                # e) They could still be just parallel, so let's establish this...
+                                if (
+                                    abs(lastdx) < basically_zero
+                                    or abs(thisdx) < basically_zero
+                                ):
+                                    # Was coming from zero length lines, now removed earlier
+                                    continue
+                                b1 = (
+                                    this_endseg.start.y
+                                    - thisdy / thisdx * this_endseg.start.x
+                                )
+                                b2 = (
+                                    other_startseg.start.y
+                                    - lastdy / lastdx * other_startseg.start.x
+                                )
+                                if abs(b1 - b2) > tolerance:
+                                    continue
+
+                                # f) Lying completely inside, only if the second chain is a single line we can remove it...
+                                if other_startseg.end.x <= this_endseg.end.x:
+                                    if other_start == other_end:
+                                        # Can be eliminated....
+                                        obj._segments.pop(other_start)
+                                        joined += 1
+                                        redo = True
+                                        reason = (
+                                            f"Removed segment {idx2} fully inside {idx}"
+                                        )
+                                        break
+                                    else:
+                                        continue
+                                # g) the remaining case is an overlap on x, so we can adjust the start to the end and join
+                                other_startseg.start.x = this_endseg.end.x
+                                other_startseg.start.y = this_endseg.end.y
+                                # Now copy the segments together:
+                                # We know that the to be copied segments, ie the source segments, lie behind the target segments
+                                # print (f"We copy [{other_start}:{other_end}] to the end after {this_end}")
+                                for idx3 in range(other_end - other_start + 1):
+                                    # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
+                                joined += 1
+                                redo = True
+                                reason = f"Added overlapping segment {idx2} to {idx}"
+                                break
+                            else:
+                                # vertical lines but still the same logic applies...
+                                # c) second segment starts on top of the first -> ignore
+                                if other_startseg.start.y < this_endseg.start.y:
+                                    continue
+
+                                # d) second segment fully below the first -> ignore
+                                if other_startseg.start.y > this_endseg.end.y:
+                                    continue
+
+                                # e) They could still be just parallel, so let's establish this...
+                                if (
+                                    abs(other_startseg.start.x - this_endseg.start.x)
+                                    > tolerance
+                                ):
+                                    continue
+
+                                # f) Lying completely inside, only if the second chain is a single line we can remove it...
+                                if other_startseg.end.y <= this_endseg.end.y:
+                                    if other_start == other_end:
+                                        # Can be eliminated....
+                                        obj._segments.pop(other_start)
+                                        joined += 1
+                                        redo = True
+                                        reason = f"Removed vertical segment {idx2} fully inside {idx}"
+                                        break
+                                    else:
+                                        continue
+                                # g) the remaining case is an overlap on y, so we can adjust the start to the end and join
+                                other_startseg.start.x = this_endseg.end.x
+                                other_startseg.start.y = this_endseg.end.y
+                                # Now copy the segments together:
+                                # We know that the to be copied segments, ie the source segments,
+                                # lie behind the target segments
+                                for idx3 in range(other_end - other_start + 1):
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
+                                joined += 1
+                                reason = f"Added overlapping vertical segment {idx2} to {idx}"
+                                redo = True
+                                break
+                    # end of inner loop
+
+                    if redo:
+                        # print(f"Redo required inner loop: {reason}")
+                        changed = True
+                        break
+                # end of outer loop
+            return joined
+
+        def simplify_polyline(obj):
+            removed = 0
             pt_older = None
             pt_old = None
-            before = len(obj.points)
             for idx in range(len(obj.points) - 1, -1, -1):
                 pt = obj.points[idx]
                 if pt_older is not None and pt_old is not None:
@@ -2945,23 +3177,61 @@ class Elemental(Service):
                     thisdy = pt[1] - pt_old[1]
                     denom = thisdx * lastdy - thisdy * lastdx
                     same = (
-                        abs(denom) < 1.0e-6 and
-                        my_sign(lastdx) == my_sign(thisdx) and
-                        my_sign(lastdy) == my_sign(thisdy)
+                        abs(denom) < basically_zero
+                        and my_sign(lastdx) == my_sign(thisdx)
+                        and my_sign(lastdy) == my_sign(thisdy)
                     )
                     # Opposing directions may not happen
-
 
                     if same:
                         # We can just merge the two segments by
                         # elminating the middle point
                         obj.points.pop(idx + 1)
-                        changed = True
+                        removed += 1
                         # just set the middle point to the last point,
                         # so that the last point remains
                         pt_old = pt_older
 
                 pt_older = pt_old
                 pt_old = pt
+            return removed
+
+        changed = False
+        before = 0
+        after = 0
+
+        if node.type == "elem path" and len(node.path._segments) > 1:
+            obj = node.path
+            before = len(obj._segments)
+
+            # Pass 1: Dropping zero length line segments
+            eliminated = remove_zero_length_lines(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 2: look inside the nodes and bring small line segments back together...
+            eliminated = remove_interim_points_on_line(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 3: look at the subpaths....
+            eliminated = combine_overlapping_chains(obj)
+            if eliminated > 0:
+                changed = True
+
+            # pass 4: remove superfluous moves
+            eliminated = remove_superfluous_moves(obj)
+            if eliminated > 0:
+                changed = True
+
+            after = len(obj._segments)
+        elif node.type == "elem polyline" and len(node.shape.points) > 2:
+            obj = node.shape
+            before = len(obj.points)
+            eliminated = simplify_polyline(obj)
+            if eliminated > 0:
+                changed = True
             after = len(obj.points)
+
+        # print (f"Before: {before}, After: {after}")
         return changed, before, after
