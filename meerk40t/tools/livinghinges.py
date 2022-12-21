@@ -461,8 +461,15 @@ class HingePanel(wx.Panel):
                     b=0,
                     c=0,
                     d=ratio,
-                    tx=ratio * (0.05 * self.hinge_generator.width - self.hinge_generator.start_x),
-                    ty=ratio * (0.05 * self.hinge_generator.height - self.hinge_generator.start_y),
+                    tx=ratio
+                    * (
+                        0.05 * self.hinge_generator.width - self.hinge_generator.start_x
+                    ),
+                    ty=ratio
+                    * (
+                        0.05 * self.hinge_generator.height
+                        - self.hinge_generator.start_y
+                    ),
                 )
             else:
                 matrix = gc.CreateMatrix(
@@ -502,7 +509,9 @@ class HingePanel(wx.Panel):
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
                 # flag = self.check_debug_outline.GetValue()
                 self.hinge_generator.generate(
-                    show_outline=False, force=False, final=False,
+                    show_outline=False,
+                    force=False,
+                    final=False,
                 )
                 gc.SetPen(mypen_path)
                 gspath = self.hinge_generator.preview_path
@@ -543,6 +552,7 @@ class HingePanel(wx.Panel):
 
     def on_button_generate(self, event):
         from time import time
+
         oldlabel = self.button_generate.Label
         self.button_generate.Enable(False)
         self.button_generate.SetLabel(_("Processing..."))
@@ -595,7 +605,7 @@ class HingePanel(wx.Panel):
             group_node.append_child(self.hinge_generator.outershape)
             group_node.append_child(node)
         end_time = time()
-        self.Parent.SetTitle(_("Living-Hinges")+ f" ({end_time-start_time:.2f}s.)")
+        self.Parent.SetTitle(_("Living-Hinges") + f" ({end_time-start_time:.2f}s.)")
 
         self.context.signal("classify_new", node)
         self.context.signal("refresh_scene")
