@@ -2870,6 +2870,9 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def simplify_node(self, node):
+        basically_zero = 1.0e-6
+        tolerance = UNITS_PER_MIL * 1
+
         def my_sign(x):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
             return bool(x > 0) - bool(x < 0)
@@ -3196,9 +3199,6 @@ class Elemental(Service):
         changed = False
         before = 0
         after = 0
-
-        basically_zero = 1.0e-6
-        tolerance = UNITS_PER_MIL * 1
 
         if node.type == "elem path" and len(node.path._segments) > 1:
             obj = node.path
