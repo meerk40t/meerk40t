@@ -1293,6 +1293,7 @@ class Elemental(Service):
         self.clear_operations()
         self.clear_files()
         self.clear_note()
+        self.clear_regmarks()
         self.validate_selected_area()
 
     def clear_note(self):
