@@ -2874,49 +2874,11 @@ class Elemental(Service):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
             return bool(x > 0) - bool(x < 0)
 
-        def list_subpath_bounds(obj):
-            # Return a sorted list of subpaths in the given path (from left to right): tuples with first index, last index, x-coordinate of
-            result = []
-            start = -1
-            for current, seg in enumerate(obj._segments):
-                if isinstance(seg, Move):
-                    if start >= 0:
-                        result.append(
-                            (start, current - 1, obj._segments[start].start.x)
-                        )
-                        start = -1
-                elif isinstance(seg, Close):
-                    if start >= 0:
-                        result.append(
-                            (start, current - 1, obj._segments[start].start.x)
-                        )
-                        start = -1
-                else:
-                    if start < 0:
-                        start = current
-            if start >= 0:
-                result.append((start, len(obj) - 1, obj._segments[start].start.x))
-            # Now let's sort the list according to the X-start position
-            result.sort(key=lambda a: a[2])
-            return result
-
-        from time import time
-
-        time_start = time()
-
-        changed = False
-        before = 0
-        after = 0
-        removed = 0
-
-        basically_zero = 1.0e-6
-        tolerance = UNITS_PER_MIL * 1
-
-        if node.type == "elem path" and len(node.path._segments) > 1:
-            obj = node.path
-            last = None
-            before = len(obj._segments)
-            # Pass 0: Dropping zero length line segments
+        def remove_zero_length_lines(obj):
+            # We remove degenerate line segments ie those of zero length
+            # could be intentional in some cases, but that should be dealt
+            # with in dwell cuts...
+            removed = 0
             for idx in range(len(obj._segments) - 1, -1, -1):
                 seg = obj._segments[idx]
                 if (
@@ -2925,8 +2887,35 @@ class Elemental(Service):
                     and seg.start.y == seg.end.y
                 ):
                     obj._segments.pop(idx)
+                    removed += 1
+            return removed
 
-            # Pass 1: look inside the nodes and bring small line segments back together...
+        def remove_superfluous_moves(obj):
+            # Two or more consecutive moves are processed
+            # as well as a move at the very end
+            lastseg = None
+            removed = 0
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if isinstance(seg, Move):
+                    if lastseg is None:
+                        # Move as the very last segment -> Delete
+                        obj._segments.pop(idx)
+                        removed += 1
+                    else:
+                        if isinstance(lastseg, Move):
+                            # Two consecutive moves? Delete
+                            obj._segments.pop(idx)
+                            removed += 1
+                        else:
+                            lastseg = seg
+                else:
+                    lastseg = seg
+            return removed
+
+        def remove_interim_points_on_line(obj):
+            removed = 0
+            last = None
             for idx in range(len(obj._segments) - 1, -1, -1):
                 seg = obj._segments[idx]
                 if isinstance(seg, Line):
@@ -2964,36 +2953,50 @@ class Elemental(Service):
                             # We can just merge the two segments
                             seg.end = last.end
                             obj._segments.pop(idx + 1)
-                            changed = True
+                            removed += 1
                     last = seg
                 else:
                     last = None
+            return removed
 
-            time_pass1 = time()
-            # Pass 2: look at the subpaths....
+        def combine_overlapping_chains(obj):
+            def list_subpath_bounds(obj):
+                # Return a sorted list of subpaths in the given path (from left to right):
+                # tuples with first index, last index, x-coordinate of first segment
+                result = []
+                start = -1
+                for current, seg in enumerate(obj._segments):
+                    if isinstance(seg, Move):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    elif isinstance(seg, Close):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    else:
+                        if start < 0:
+                            start = current
+                if start >= 0:
+                    result.append((start, len(obj) - 1, obj._segments[start].start.x))
+                # Now let's sort the list according to the X-start position
+                result.sort(key=lambda a: a[2])
+                return result
 
             joined = 0
-            removed = 0
-
             redo = True
             while redo:
                 # Dont do it again unless indicated...
                 redo = False
                 reason = ""
                 results = list_subpath_bounds(obj)
-                # print (f"Examine {len(results)} chains")
                 if len(results) <= 1:
-                    print("only one chain, exit")
+                    # only one chain, exit
                     break
-                # for current, seg in enumerate(obj._segments):
-                #     flag = ""
-                #     for idx, entry in enumerate(results):
-                #         if current == entry[0]:
-                #             flag += f"start[{idx}] "
-                #         if current == entry[1]:
-                #             flag += f"end[{idx}] "
-
-                #     print(f"#{current}: {type(seg).__name__} - {flag}")
 
                 for idx, entry in enumerate(results):
                     this_start = entry[0]
@@ -3001,22 +3004,18 @@ class Elemental(Service):
                     this_endseg = obj._segments[this_end]
                     this_endline = bool(isinstance(this_endseg, Line))
 
-                    # print (f"Checking now subpath {idx} from {this_start} to {this_end}")
-
                     # Look at all subsequent chains, as they are sorted we know we can just look at
                     # a) the last point and the first point or the two chains, if they are identical
-                    #    the two chains can be joined (regardless of the type of the two path segments at the end / start)
-                    # b) if the last segemnt of the first chain and the first segment of the second chain
-                    #    are lines the we look whether they overlap
+                    #    the two chains can be joined (regardless of the type of the two path
+                    #    segments at the end / start)
+                    # b) if the last segment of the first chain and the first segment of the second chain
+                    #    are lines the we establish whether they overlap
                     for idx2 in range(idx + 1, len(results)):
                         other_entry = results[idx2]
                         other_start = other_entry[0]
                         other_end = other_entry[1]
                         other_startseg = obj._segments[other_start]
                         other_startline = bool(isinstance(other_startseg, Line))
-                        # print (f"    Comparing to subpath {idx2} from {other_start} to {other_end} (startline={other_startline}, endline={other_endline})")
-                        can_be_joined = False
-                        coincident = False
                         # Do the lines overlap or have a common end / startpoint together?
                         if (
                             abs(this_endseg.end.x - other_startseg.start.x) < tolerance
@@ -3024,11 +3023,9 @@ class Elemental(Service):
                             < tolerance
                         ):
                             for idx3 in range(other_end - other_start + 1):
-                                # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                 obj._segments.insert(
                                     this_end + 1, obj._segments.pop(other_end)
                                 )
-                                # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                             joined += 1
                             redo = True
                             reason = f"Join segments at endpoints {idx} - {idx2}"
@@ -3043,13 +3040,9 @@ class Elemental(Service):
                             lastdy = other_startseg.start.y - other_startseg.end.y
                             denom = thisdx * lastdy - thisdy * lastdx
 
-                            # print(f"end-to-start Denominator: {denom:.4f}")
-                            # print(f"this-segment, dx: {thisdx:.4f}, dy: {thisdy:.4f}")
-                            # print(f"other-segment, dx: {lastdx:.4f}, dy: {lastdy:.4f}")
-
                             # We have a couple of base cases
                             # a) end point of first line identical to start point of second line
-                            # -> already covered above
+                            # -> already covered elsewhere
 
                             # b) Lines are not parallel -> ignore
                             if abs(denom) > basically_zero:
@@ -3070,11 +3063,7 @@ class Elemental(Service):
                                     abs(lastdx) < basically_zero
                                     or abs(thisdx) < basically_zero
                                 ):
-                                    # Was coming from zero length lines, now removed ahead
-
-                                    # print (f"Strange: This: dx={thisdx:.4f}, dy={thisdy:.4f}, Other: dx={lastdx:.4f}, dy={lastdy:.4f}, denom={denom:.4f}")
-                                    # print (f"End-Segment: Start: ({this_endseg.start.x:.1f}, {this_endseg.start.y:.1f}) - ({this_endseg.end.x:.1f}, {this_endseg.end.y:.1f})")
-                                    # print (f"Start-Segment: Start: ({other_startseg.start.x:.1f}, {other_startseg.start.y:.1f}) - ({other_startseg.end.x:.1f}, {other_startseg.end.y:.1f})")
+                                    # Was coming from zero length lines, now removed earlier
                                     continue
                                 b1 = (
                                     this_endseg.start.y
@@ -3092,6 +3081,7 @@ class Elemental(Service):
                                     if other_start == other_end:
                                         # Can be eliminated....
                                         obj._segments.pop(other_start)
+                                        joined += 1
                                         redo = True
                                         reason = (
                                             f"Removed segment {idx2} fully inside {idx}"
@@ -3110,7 +3100,6 @@ class Elemental(Service):
                                     obj._segments.insert(
                                         this_end + 1, obj._segments.pop(other_end)
                                     )
-                                    # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                 joined += 1
                                 redo = True
                                 reason = f"Added overlapping segment {idx2} to {idx}"
@@ -3126,7 +3115,6 @@ class Elemental(Service):
                                     continue
 
                                 # e) They could still be just parallel, so let's establish this...
-
                                 if (
                                     abs(other_startseg.start.x - this_endseg.start.x)
                                     > tolerance
@@ -3138,6 +3126,7 @@ class Elemental(Service):
                                     if other_start == other_end:
                                         # Can be eliminated....
                                         obj._segments.pop(other_start)
+                                        joined += 1
                                         redo = True
                                         reason = f"Removed vertical segment {idx2} fully inside {idx}"
                                         break
@@ -3147,14 +3136,12 @@ class Elemental(Service):
                                 other_startseg.start.x = this_endseg.end.x
                                 other_startseg.start.y = this_endseg.end.y
                                 # Now copy the segments together:
-                                # We know that the to be copied segments, ie the source segments, lie behind the target segments
-                                # print (f"We copy [{other_start}:{other_end}] to the end after {this_end}")
+                                # We know that the to be copied segments, ie the source segments,
+                                # lie behind the target segments
                                 for idx3 in range(other_end - other_start + 1):
-                                    # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                     obj._segments.insert(
                                         this_end + 1, obj._segments.pop(other_end)
                                     )
-                                    # print(f"done #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
                                 joined += 1
                                 reason = f"Added overlapping vertical segment {idx2} to {idx}"
                                 redo = True
@@ -3166,30 +3153,12 @@ class Elemental(Service):
                         changed = True
                         break
                 # end of outer loop
-            time_pass2 = time()
-            lastseg = None
-            for idx in range(len(obj._segments) - 1, -1, -1):
-                seg = obj._segments[idx]
-                if isinstance(seg, Move):
-                    if lastseg is None:
-                        # Move as the very last segment -> Delete
-                        obj._segments.pop(idx)
-                        removed += 1
-                    else:
-                        if isinstance(lastseg, Move):
-                            # Two consecutive moves? Delete
-                            obj._segments.pop(idx)
-                            removed += 1
-                        else:
-                            lastseg = seg
-                else:
-                    lastseg = seg
-            after = len(obj._segments)
-        elif node.type == "elem polyline" and len(node.shape.points) > 2:
-            obj = node.shape
+            return joined
+
+        def simplify_polyline(obj):
+            removed = 0
             pt_older = None
             pt_old = None
-            before = len(obj.points)
             for idx in range(len(obj.points) - 1, -1, -1):
                 pt = obj.points[idx]
                 if pt_older is not None and pt_old is not None:
@@ -3205,7 +3174,7 @@ class Elemental(Service):
                     thisdy = pt[1] - pt_old[1]
                     denom = thisdx * lastdy - thisdy * lastdx
                     same = (
-                        abs(denom) < 1.0e-6
+                        abs(denom) < basically_zero
                         and my_sign(lastdx) == my_sign(thisdx)
                         and my_sign(lastdy) == my_sign(thisdy)
                     )
@@ -3215,18 +3184,54 @@ class Elemental(Service):
                         # We can just merge the two segments by
                         # elminating the middle point
                         obj.points.pop(idx + 1)
-                        changed = True
+                        removed += 1
                         # just set the middle point to the last point,
                         # so that the last point remains
                         pt_old = pt_older
 
                 pt_older = pt_old
                 pt_old = pt
-            after = len(obj.points)
-            time_pass1 = time()
-            time_pass2 = time()
+            return removed
 
-        time_end = time()
-        # print (f"Ready. overall time: {time_end - time_start:.3f}, Pass 1: {time_pass1 - time_start:.3f}, Pass 2: {time_pass2 - time_pass1:.3f}")
+        changed = False
+        before = 0
+        after = 0
+
+        basically_zero = 1.0e-6
+        tolerance = UNITS_PER_MIL * 1
+
+        if node.type == "elem path" and len(node.path._segments) > 1:
+            obj = node.path
+            before = len(obj._segments)
+
+            # Pass 1: Dropping zero length line segments
+            eliminated = remove_zero_length_lines(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 2: look inside the nodes and bring small line segments back together...
+            eliminated = remove_interim_points_on_line(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 3: look at the subpaths....
+            eliminated = combine_overlapping_chains(obj)
+            if eliminated > 0:
+                changed = True
+
+            # pass 4: remove superfluous moves
+            eliminated = remove_superfluous_moves(obj)
+            if eliminated > 0:
+                changed = True
+
+            after = len(obj._segments)
+        elif node.type == "elem polyline" and len(node.shape.points) > 2:
+            obj = node.shape
+            before = len(obj.points)
+            eliminated = simplify_polyline(obj)
+            if eliminated > 0:
+                changed = True
+            after = len(obj.points)
+
         # print (f"Before: {before}, After: {after}")
         return changed, before, after
