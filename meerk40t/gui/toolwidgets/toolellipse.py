@@ -105,6 +105,7 @@ class EllipseTool(ToolWidget):
                 y1 = max(self.p1.imag, self.p2.imag)
                 dx = self.p1.real - self.p2.real
                 dy = self.p1.imag - self.p2.imag
+                # Here or is okay, as dx, dy establish the size of the main axes.
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     # Degenerate? Ignore!
                     self.p1 = None
