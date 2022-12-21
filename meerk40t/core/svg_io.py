@@ -711,8 +711,21 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
+
+        def is_child(candidate, parent_node):
+            if candidate is None:
+                return False
+            if candidate is parent_node:
+                return True
+            if candidate.parent is None:
+                return False
+            return is_child(candidate.parent, parent_node)
+
         if element.values.get("visibility") == "hidden":
-            context_node = self.regmark
+            # This does not allow substructures...
+            # Are we already underneath regmark?
+            if not is_child(context_node, self.regmark):
+                context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
@@ -943,10 +956,12 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, Group):
-            if _label == "regmarks":
+            if _label == "regmarks" or ident == "regmarks":
+                # We don't need a top-level group here, the regmarks node is a kind of a group...
                 context_node = self.regmark
                 e_list = self.regmark_list
-            context_node = context_node.add(type="group", id=ident, label=_label)
+            else:
+                context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
