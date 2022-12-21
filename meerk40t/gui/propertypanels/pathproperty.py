@@ -254,7 +254,6 @@ class PathPropertyPanel(ScrolledPanel):
         total_length = total_length / _mm
         numpaths, points = calc_points(self.node)
 
-
         self.lbl_info_area.SetValue(f"{total_area:.0f} mm² ({second_area:.0f} mm²)")
         self.lbl_info_length.SetValue(f"{total_length:.1f} mm")
         self.lbl_info_segments.SetValue(f"{numpaths:d}")
@@ -271,7 +270,6 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_length.SetValue("")
         self.lbl_info_points.SetValue("")
         self.lbl_info_segments.SetValue("")
-
 
         self.Refresh()
 
