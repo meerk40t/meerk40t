@@ -3236,3 +3236,24 @@ class Elemental(Service):
 
         # print (f"Before: {before}, After: {after}")
         return changed, before, after
+
+
+def linearize_path(path, interp=50, point=False):
+    import numpy as np
+
+    current_polygon = []
+    for subpath in path.as_subpaths():
+        p = Path(subpath)
+        s = []
+        for segment in p:
+            t = type(segment).__name__
+            if t == "Move":
+                s.append((segment.end[0], segment.end[1]))
+            elif t in ("Line", "Close"):
+                s.append((segment.end[0], segment.end[1]))
+            else:
+                s.extend((s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp)))
+        if point:
+            s = list(map(Point, s))
+        current_polygon.append(s)
+    return current_polygon
