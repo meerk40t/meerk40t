@@ -727,7 +727,7 @@ class CameraInterface(MWindow):
     def create_menu(self, append):
 
         def identify_cameras(event=None):
-            self.context.signal("camera_detection")
+            self.context("camdetect\n")
 
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
@@ -896,10 +896,6 @@ class CameraInterface(MWindow):
     @staticmethod
     def submenu():
         return ("Camera", "Camera")
-
-    @signal_listener("camera_detection")
-    def on_detect_camera(self, origin, *args):
-        self.context("camdetect\n")
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
