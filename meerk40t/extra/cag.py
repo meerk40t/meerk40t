@@ -8,19 +8,20 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     elif lifecycle == "register":
-        from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
+        from ..tools import polybool as pb
+        from ..core.elements import linearize_path
 
         _ = kernel.translation
         context = kernel.root
 
         @context.console_option("consume", "c", type=bool, action="store_true", help="consume the original element")
         @context.console_command(
-            ("intersection", "xor", "union", "difference"),
+            ("pintersection", "pxor", "punion", "pdifference"),
             input_type="elements",
             output_type="elements",
             help=_("Constructive Additive Geometry: Add"),
         )
-        def cag(command, channel, _, data=None, consume=False, **kwargs):
+        def cag(command, channel, _, consume=False, data=None, **kwargs):
             if len(data) < 2:
                 channel(
                     _(
@@ -31,13 +32,14 @@ def plugin(kernel, lifecycle):
 
             elements = context.elements
             if command == "intersection":
-                ct = ClipType.Intersection
+                ct = pb.intersect
             elif command == "xor":
-                ct = ClipType.Xor
+                ct = pb.xor
             elif command == "union":
-                ct = ClipType.Union
-            else:  # difference
-                ct = ClipType.Difference
+                ct = pb.union
+            else:
+                # difference
+                ct = pb.difference
             solution_path = Path(
                 stroke=elements.default_stroke,
                 fill=elements.default_fill,
@@ -48,7 +50,6 @@ def plugin(kernel, lifecycle):
             data.sort(key=lambda n: n.emphasized_time)
             last_polygon = None
             node = None
-            from ..core.elements import linearize_path
 
             for i in range(len(data)):
                 node = data[i]
@@ -56,24 +57,15 @@ def plugin(kernel, lifecycle):
                     path = node.as_path()
                 except AttributeError:
                     return "elements", data
-
-                current_polygon = linearize_path(path, point=True)
+                current_polygon = linearize_path(path)
                 if last_polygon is not None:
-                    pc = Clipper()
-                    solution = []
-                    pc.AddPolygons(last_polygon, PolyType.Subject)
-                    pc.AddPolygons(current_polygon, PolyType.Clip)
-                    result = pc.Execute(
-                        ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd
-                    )
-                    current_polygon = solution
+                    current_polygon = ct(pb.Polygon(last_polygon), pb.Polygon(current_polygon))
                 last_polygon = current_polygon
-
             if consume:
                 for node in data:
                     node.remove_node()
-            for se in last_polygon:
-                r = Polygon(*se)
+            for se in last_polygon.regions:
+                r = Polygon(*[(p.x, p.y) for p in se])
                 if solution_path is None:
                     solution_path = Path(r)
                 else:
