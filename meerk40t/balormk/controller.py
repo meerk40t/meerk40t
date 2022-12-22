@@ -243,6 +243,7 @@ class GalvoController:
         self.connection = None
         self._is_opening = False
         self._abort_open = False
+        self._backbone_error = False
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -278,6 +279,9 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
+    def set_backbone_error(self, status):
+        self._backbone_error = status
+
     def added(self):
         pass
 
@@ -309,9 +313,16 @@ class GalvoController:
         except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
+        # Reset error to allow another attempt
+        self.set_backbone_error(False)
 
     def connect_if_needed(self):
-        if self.connection is None:
+        # print(f"Connect if needed is called, status={self._backbone_error}...")
+        if self._backbone_error:
+            self.abort_connect()
+            self.connection = None
+            return
+        if self.connection is None and not self._backbone_error:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
                 name = self.service.label
@@ -329,6 +340,7 @@ class GalvoController:
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
                 count += 1
+                # self.usb_log(f"Error-Routine pass #{count}")
                 if self.is_shutdown or self._abort_open:
                     self._is_opening = False
                     self._abort_open = False
@@ -336,6 +348,8 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
+                    self.set_backbone_error(True)
+                    self.usb_log("Could not connect to the LMC controller.")
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
