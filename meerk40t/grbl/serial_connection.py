@@ -42,6 +42,7 @@ class SerialConnection:
             self.channel("Already connected")
             return
 
+        signal_load = "uninitialized"
         try:
             self.channel("Attempting to Connect...")
             com_port = self.service.com_port
@@ -52,11 +53,13 @@ class SerialConnection:
                 timeout=0,
             )
             self.channel("Connected")
-            self.service.signal("serial;status", "connected")
+            signal_load = "connected"
         except ConnectionError:
             self.channel("Connection Failed.")
         except SerialException:
             self.channel("Serial connection could not be established.")
+
+        self.service.signal("serial;status", signal_load)
 
     def disconnect(self):
         self.channel("Disconnected")
