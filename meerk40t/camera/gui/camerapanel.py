@@ -725,6 +725,10 @@ class CameraInterface(MWindow):
         self.Layout()
 
     def create_menu(self, append):
+
+        def identify_cameras(event=None):
+            self.context.signal("camera_detection")
+
         wxglade_tmp_menu = wx.Menu()
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
@@ -757,6 +761,10 @@ class CameraInterface(MWindow):
                 wx.ID_ANY, _("USB {usb_index}").format(usb_index=i), ""
             )
             self.Bind(wx.EVT_MENU, self.panel.swap_camera(i), id=item.GetId())
+        wxglade_tmp_menu.AppendSeparator()
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Identify cameras"), "")
+        self.Bind(wx.EVT_MENU, identify_cameras, id=item.GetId())
+
         append(wxglade_tmp_menu, _("Camera"))
 
     def window_open(self):
@@ -780,54 +788,8 @@ class CameraInterface(MWindow):
 
             return specific
 
-        def detect_usb_cameras(search=None):
-            def specific(event=None):
-                try:
-                    import cv2
-                except ImportError:
-                    return
-
-                # Max range to look at
-                camera.setting(int, "search_range", 5)
-                camera.setting(list, "uris", [])
-                # Reset stuff...
-                for _index in range(5):
-                    if _index in camera.uris:
-                        camera.uris.remove(_index)
-
-                max_range = camera.search_range
-                if max_range is None or max_range < 1:
-                    max_range = 5
-                found = 0
-                found_camera_string = _("Cameras found: {count}")
-                progress = wx.ProgressDialog(
-                    _("Looking for Cameras (Range={max_range})").format(
-                        max_range=max_range
-                    ),
-                    found_camera_string.format(count=found),
-                    maximum=max_range,
-                    parent=None,
-                    style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
-                )
-                # checks for cameras in the first x USB ports
-                index = 0
-                keepgoing = True
-                while index < max_range and keepgoing:
-                    try:
-                        cap = cv2.VideoCapture(index)
-                        if cap.read()[0]:
-                            camera.uris.append(index)
-                            cap.release()
-                            found += 1
-                    except:
-                        pass
-                    keepgoing = progress.Update(
-                        index + 1, found_camera_string.format(count=found)
-                    )
-                    index += 1
-                progress.Destroy()
-
-            return specific
+        def detect_usb_cameras(event=None):
+            camera("camdetect\n")
 
         kernel.register(
             "button/preparation/Camera",
@@ -867,7 +829,7 @@ class CameraInterface(MWindow):
                     {
                         "identifier": "id_cam",
                         "label": _("Identify cameras"),
-                        "action": detect_usb_cameras(True),
+                        "action": detect_usb_cameras,
                     },
                 ],
             },
@@ -881,10 +843,63 @@ class CameraInterface(MWindow):
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
+        @kernel.console_command(
+            "camdetect", help=_("camdetect: Tries to detect cameras on the system")
+        )
+        def cam_detect(**kwargs):
+            try:
+                import cv2
+            except ImportError:
+                return
+
+            # Max range to look at
+            camera = kernel.get_context("camera")
+            camera.setting(int, "search_range", 5)
+            camera.setting(list, "uris", [])
+            # Reset stuff...
+            for _index in range(5):
+                if _index in camera.uris:
+                    camera.uris.remove(_index)
+
+            max_range = camera.search_range
+            if max_range is None or max_range < 1:
+                max_range = 5
+            found = 0
+            found_camera_string = _("Cameras found: {count}")
+            progress = wx.ProgressDialog(
+                _("Looking for Cameras (Range={max_range})").format(
+                    max_range=max_range
+                ),
+                found_camera_string.format(count=found),
+                maximum=max_range,
+                parent=None,
+                style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
+            )
+            # checks for cameras in the first x USB ports
+            index = 0
+            keepgoing = True
+            while index < max_range and keepgoing:
+                try:
+                    cap = cv2.VideoCapture(index)
+                    if cap.read()[0]:
+                        camera.uris.append(index)
+                        cap.release()
+                        found += 1
+                except:
+                    pass
+                keepgoing = progress.Update(
+                    index + 1, found_camera_string.format(count=found)
+                )
+                index += 1
+            progress.Destroy()
+
     @staticmethod
     def submenu():
         return ("Camera", "Camera")
 
+    @signal_listener("camera_detection")
+    def on_detect_camera(self, origin, *args):
+        self.context("camdetect\n")
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
