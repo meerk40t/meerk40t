@@ -291,26 +291,80 @@ class Pattern:
 
 class PolyBool:
     def __init__(self):
-        self.inputs = list()
         # List of each segment info about it.
-        self.combined = None
-
-    def segments(self, g, rule="evenodd"):
-        self.inputs.append(g)
+        self.path = Geomstr()
+        self._scanline = -float("inf")
+        self._events = list()
+        self._actives = []
+        self._active_table = []
 
     def union(self):
-        if self.combined is not None:
-            g, info = self.combined
-            for m, minfo in zip(g.segments, info):
-                yield m
+        pass
 
-    def combine(self):
-        g = Geomstr()
-        info = list()
-        scanline = -float("inf")
-        event_list = list()
-        active_edges = []
+    def event_startpoint(self, p, s=None, e=None):
+        assert s <= p <= e
+        segment = self.path.segments[p]
+        self._events.append((segment[0], (p,), tuple()))
 
+    def event_endpoint(self, p, s=None, e=None):
+        assert s <= p <= e
+        segment = self.path.segments[p]
+        self._events.append((segment[-1], tuple(), (p,)))
+
+    def event_vertex(self, p, q, s=None, e=None):
+        if p == -1:
+            p = e - 1
+
+        assert s <= p <= e
+        assert s <= q <= e
+
+        first = self.path.segments[p]
+        second = self.path.segments[q]
+        fs = first[0]
+        fe = first[-1]
+        ss = second[0]
+        se = second[-1]
+        if fs == ss:
+            self._events.append((fs, (p, q), tuple()))
+        elif fs == se:
+            self._events.append((fs, (p,), (q,)))
+        elif fe == ss:
+            self._events.append((fe, (q,), (p,)))
+        elif fe == se:
+            self._events.append((fe, tuple(), (p, q)))
+        else:
+            raise ValueError(f"{p} and {q} were disjointed and not a vertex")
+            # disjointed
+
+    def event_intersection(self, pt, s1, s2, e1, e2):
+        self._events.append((pt, (s1, s2), (e1, e2)))
+
+    def segments(self, segments):
+        s = self.path.index
+        self.path.append(segments, end=False)
+        e = self.path.index
+        self.correct_segment_directions(s, e)
+        for i in range(s, e):
+            self.event_startpoint(i, s, e)
+            self.event_endpoint(i, s, e)
+
+    def polygon(self, segments):
+        s = self.path.index
+        self.path.append(segments, end=False)
+        e = self.path.index
+        for i in range(s, e):
+            seg_e = self.path.segments[i]
+            start = seg_e[0]
+            end = seg_e[-1]
+            if (start.imag, start.real) > (end.imag, end.real):
+                # Y_start > Y_end, flip
+                segment = list(reversed(seg_e))
+                self.path.segments[i, :] = segment
+
+        for i in range(s, e):
+            self.event_vertex(i-1, i, s, e)
+
+    def sort_events(self):
         def event_sort(e):
             """
             Sort by y value, then x value (potential vertical line),
@@ -319,115 +373,116 @@ class PolyBool:
             @return:
             """
             try:
-                return e[0].imag, e[0].real, e[2] >= 0, (e[1].real - e[0].real) / (e[1].imag - e[0].imag)
+                return e[0].imag, e[0].real
             except ZeroDivisionError:
-                return e[0].imag, e[0].real, e[2] >= 0, float("inf")
+                return e[0].imag, e[0].real
 
-        def x_intercept(e):
-            return g.x_intercept(e, scanline)
+        self._events.sort(key=event_sort)
 
-        def add_events(segindex):
-            start = g.segments[segindex][0]
-            end = g.segments[segindex][-1]
-            event_list.append((start, end, segindex))
-            event_list.append((end, start, ~segindex))
+    def x_intercept(self, e):
+        return self.path.x_intercept(e, self._scanline)
 
-        def update_event(event):
-            idx = 0
-            while True:
-                if event_list[idx][2] == event:
-                    break
-                idx += 1
-            if event >= 0:
-                segment = g.segments[event]
-                event_list[idx] = segment[0], segment[-1], event
-            else:
-                segment = g.segments[~event]
-                event_list[idx] = segment[-1], segment[0], event
+    def correct_segment_directions(self, s, e):
+        for i in range(s, e):
+            self.correct_segment_direction(i)
 
-        def add_seglist(segments):
-            for segment in segments:
-                i = g.index
-                if segment[0] == segment[-1]:
-                    continue
-                g.push(segment)
-                correct_segment_direction(i)
-                add_events(i)
+    def correct_segment_direction(self, index):
+        segment = self.path.segments[index]
+        start = segment[0]
+        end = segment[-1]
+        if (start.imag, start.real) > (end.imag, end.real):
+            # Y_start > Y_end, flip
+            segment = list(reversed(segment))
+            self.path.segments[index, :] = segment
 
-        def add_segments(segments):
-            s = g.index
-            g.append(segments, end=False)
-            e = g.index
+    def check_intersections(self, p1, p2):
+        print(f"checking for intersections... {p1} {p2}")
+        needs_sort = False
+        for t0, t1 in self.path.intersections(
+            p1, p2
+        ):
+            if p1 not in self._actives or p2 not in self._actives:
+                print("bad intersection check.")
+            if (np.isclose(t0,0) or np.isclose(t0, 1)) and (np.isclose(t1, 0) or np.isclose(t1, 1)):
+                # Not a real intersection.
+                continue
+            print(f"Intersection at {t0}, {t1}")
+            # Get segments
+            seg0 = self.path.segments[p1]
+            seg1 = self.path.segments[p2]
 
-            for i in range(s, e):
-                correct_segment_direction(i)
-                add_events(i)
+            # Get splits
+            split0 = list(self.path.split(seg0, t0))
+            split1 = list(self.path.split(seg1, t1))
 
-        def correct_segment_direction(index):
-            segment = g.segments[index]
-            start = segment[0]
-            end = segment[-1]
-            if (start.imag, start.real) > (end.imag, end.real):
-                segment = list(reversed(segment))
-                g.segments[index, :] = segment
+            # Update current segments to be first part of split.
+            self.path.segments[p1, :] = split0[-1]
+            self.path.segments[p2, :] = split1[-1]
 
-        def split_segments(s, t):
-            segment = g.segments[s]
-            split_list = list(g.split(segment, t))
-            g.segments[s, :] = split_list[0]
-            update_event(~s)
-            add_seglist(split_list[1:])
+            assert len(split0) == 2
+            # TODO: Does not work for multisplit path.
 
-        def check_intersections(p1, p2):
-            needs_sort = False
-            for t0, t1 in g.intersections(
-                p1, p2
-            ):
-                if (np.isclose(t0,0) or np.isclose(t0, 1)) and (np.isclose(t1, 0) or np.isclose(t1, 1)):
-                    continue
-                split_segments(p1, t0)
-                split_segments(p2, t1)
-                needs_sort = True
-            if needs_sort:
-                event_list.sort(key=event_sort)
+            # p1 and p2 replaced very last element
+            print(f"Replacing Actives... {self._actives} {p1} and  {p2}")
+            self._actives[self._actives.index(p1)] = self.path.index
+            for i, evt in enumerate(self._events):
+                # TODO remove later.
+                pt, add, remove = evt
+                if p1 in add:
+                    add = tuple([self.path.index if p == p1 else p for p in add])
+                    self._events[i] = pt, add, remove
+                if p2 in add:
+                    add = tuple([self.path.index + 1 if p == p2 else p for p in add])
+                    self._events[i] = pt, add, remove
+            self.path.push(split0[0])
 
-        for input in self.inputs:
-            add_segments(input)
-        event_list.sort(key=event_sort)
+            self._actives[self._actives.index(p2)] = self.path.index
+            self.path.push(split1[0])
 
-        while event_list:
-            # print(active_edges)
-            # print(f"\t{scanline} - {event_list}")
-            a, b, index = event_list.pop(0)
-            scanline = a.imag
-            if index >= 0:
-                active_edges.append(index)
-                active_edges.sort(key=x_intercept)
-                i = active_edges.index(index)
-                current = active_edges[i]
-                if i > 0:
-                    # Check before.
-                    before = active_edges[i - 1]
-                    check_intersections(current, before)
+            self._actives.sort(key=self.x_intercept)
+            print(f"New Actives... {self._actives}")
+            self.event_intersection(split0[0][-1], p1, p2, self.path.index-2, self.path.index-1)
+            needs_sort = True
+        if needs_sort:
+            self.sort_events()
 
-                if i < len(active_edges) - 1:
-                    # Check after.
-                    after = active_edges[i + 1]
-                    check_intersections(current, after)
-            else:
-                try:
-                    i = active_edges.index(~index)
-                except ValueError:
-                    print("bug!")
-                if 0 < i < len(active_edges) - 1:
-                    before = active_edges[i - 1]
-                    after = active_edges[i + 1]
-                    # Check new neighbors
-                    check_intersections(before, after)
-                del active_edges[i]
+    def combine(self):
+        self.sort_events()
+        while self._events:
+            pt, add, remove = self._events.pop(0)
+            print(f"event: {self._actives}. {pt}, {add}, {remove}")
+            self._scanline = pt.imag
+            remove_pos = [self._actives.index(index) for index in remove]
+            for pos in reversed(sorted(remove_pos)):
+                del self._actives[pos]
+                # print(f"#{pos} in {self._actives}")
+                # if 0 < pos < len(self._actives) - 1:
+                #     before = self._actives[pos - 1]
+                #     after = self._actives[pos + 1]
 
-        self.combined = g
-        return g
+            for index in add:
+                self._actives.append(index)
+                pos = self._actives.index(index)
+                #
+                # if pos > 0:
+                #     # Check before.
+                #     current = self._actives[pos]
+                #     before = self._actives[pos - 1]
+                # if pos < len(self._actives) - 1:
+                #     # Check after.
+                #     current = self._actives[pos]
+                #     after = self._actives[pos + 1]
+                #     self.check_intersections(current, after)
+            self._actives.sort(key=self.x_intercept)
+            print("checking ALL intersections.")
+            for pos in range(1, len(self._actives)):
+                self.check_intersections(self._actives[pos-1], self._actives[pos])
+            # print(f"{index} at {pos} deleted in {self._actives}")
+
+        assert len(self._actives) == 0
+
+        return self.path
+
 
 class Scanbeam:
     """

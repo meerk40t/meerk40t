@@ -857,8 +857,9 @@ class TestGeomstr(unittest.TestCase):
         g = Geomstr()
         g.line(0 + 0j, 100 + 100j)
         g.line(0 + 100j, 100 + 0j)
+        # This is wrong. These aren't connected segments.
         pb = PolyBool()
-        pb.segments(g, rule="open")
+        pb.segments(g)
         pb.combine()
         segs = pb.union()
 
@@ -868,8 +869,9 @@ class TestGeomstr(unittest.TestCase):
         g.line(0 + 100j, 100 + 100j)
         g.line(100 + 100j, 100 + 0j)
         g.line(100 + 0j, 0 + 0j)
+        self.assertEqual(g.travel_distance(), 0)
         pb = PolyBool()
-        pb.segments(g, rule="open")
+        pb.polygon(g)
         pb.combine()
         segs = pb.union()
 
@@ -878,21 +880,27 @@ class TestGeomstr(unittest.TestCase):
         g.line(50 + 0j, 0 + 50j)
         g.line(0 + 50j, 50 + 100j)
         g.line(50 + 100j, 100 + 50j)
-        g.line(50 + 50j, 0 + 50j)
+        g.line(100 + 50j, 50 + 0j)
         pb = PolyBool()
-        pb.segments(g, rule="open")
+        pb.polygon(g)
         pb.combine()
         segs = pb.union()
 
     def test_polybool_random(self):
-        g = Geomstr()
-        for i in range(20):
-            random_segment(g, i=1000, arc=False, point=False, quad=False, cubic=False)
-        t = time.time()
-        pb = PolyBool()
-        pb.segments(g, rule="open")
-        pb.combine()
-        segs = pb.union()
-        print(f"Time: {time.time() - t}")
-        print(len(pb.combined))
-        draw(pb.combined.segments, 1000, 1000, "test.png")
+        for c in range(1):
+            print("\n\n\n\n\n")
+            g = Geomstr()
+            for i in range(10):
+                random_segment(g, i=1000, arc=False, point=False, quad=False, cubic=False)
+            print(g.segments)
+            t = time.time()
+            pb = PolyBool()
+            pb.segments(g)
+            pb.combine()
+            segs = pb.union()
+            print(f"Time: {time.time() - t}")
+            print(len(pb.path))
+            try:
+                draw(pb.path.segments, 1000, 1000, "test.png")
+            except PermissionError:
+                pass
