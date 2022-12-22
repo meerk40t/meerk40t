@@ -81,6 +81,7 @@ class TextNode(Node):
         else:
             font = None
         super(TextNode, self).__init__(type="elem text", **kwargs)
+        self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
             self.matrix = Matrix()
