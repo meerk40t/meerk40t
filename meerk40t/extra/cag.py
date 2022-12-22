@@ -13,15 +13,14 @@ def plugin(kernel, lifecycle):
         _ = kernel.translation
         context = kernel.root
 
+        @context.console_option("consume", "c", type=bool, action="store_true", help="consume the original element")
         @context.console_command(
             ("intersection", "xor", "union", "difference"),
             input_type="elements",
             output_type="elements",
             help=_("Constructive Additive Geometry: Add"),
         )
-        def cag(command, channel, _, data=None, **kwargs):
-            import numpy as np
-
+        def cag(command, channel, _, data=None, consume=False, **kwargs):
             if len(data) < 2:
                 channel(
                     _(
@@ -49,6 +48,7 @@ def plugin(kernel, lifecycle):
             data.sort(key=lambda n: n.emphasized_time)
             last_polygon = None
             node = None
+            from ..core.elements import linearize_path
 
             for i in range(len(data)):
                 node = data[i]
@@ -57,13 +57,7 @@ def plugin(kernel, lifecycle):
                 except AttributeError:
                     return "elements", data
 
-                current_polygon = []
-                for subpath in path.as_subpaths():
-                    subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
-                    subj.reshape((2, 1000))
-                    s = list(map(Point, subj))
-                    current_polygon.append(s)
-
+                current_polygon = linearize_path(path, point=True)
                 if last_polygon is not None:
                     pc = Clipper()
                     solution = []
@@ -75,6 +69,9 @@ def plugin(kernel, lifecycle):
                     current_polygon = solution
                 last_polygon = current_polygon
 
+            if consume:
+                for node in data:
+                    node.remove_node()
             for se in last_polygon:
                 r = Polygon(*se)
                 if solution_path is None:
