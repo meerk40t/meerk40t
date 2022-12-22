@@ -31,15 +31,6 @@ def plugin(kernel, lifecycle):
                 return "elements", []
 
             elements = context.elements
-            if command == "intersection":
-                ct = pb.intersect
-            elif command == "xor":
-                ct = pb.xor
-            elif command == "union":
-                ct = pb.union
-            else:
-                # difference
-                ct = pb.difference
             solution_path = Path(
                 stroke=elements.default_stroke,
                 fill=elements.default_fill,
@@ -48,22 +39,38 @@ def plugin(kernel, lifecycle):
 
             # reorder elements
             data.sort(key=lambda n: n.emphasized_time)
-            last_polygon = None
-            node = None
 
+            node = None
+            segment_list = []
             for i in range(len(data)):
                 node = data[i]
                 try:
                     path = node.as_path()
                 except AttributeError:
                     return "elements", data
-                current_polygon = linearize_path(path)
-                if last_polygon is not None:
-                    current_polygon = ct(pb.Polygon(last_polygon), pb.Polygon(current_polygon))
-                last_polygon = current_polygon
+                c = linearize_path(path)
+                c = pb.Polygon(c)
+                c = pb.segments(c)
+                segment_list.append(c)
+            if len(segment_list) == 0:
+                return "elements", data
             if consume:
                 for node in data:
                     node.remove_node()
+            segs = segment_list[0]
+            for s in segment_list[1:]:
+                combined = pb.combine(segs, s)
+                if command == "intersection":
+                    segs = pb.selectIntersect(combined)
+                elif command == "xor":
+                    segs = pb.selectXor(combined)
+                elif command == "union":
+                    segs = pb.selectUnion(combined)
+                else:
+                    # difference
+                    segs = pb.selectDifference(combined)
+
+            last_polygon = pb.polygon(segs)
             for se in last_polygon.regions:
                 r = Polygon(*[(p.x, p.y) for p in se])
                 if solution_path is None:
