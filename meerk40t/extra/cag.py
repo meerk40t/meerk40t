@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle):
 
         @context.console_option("consume", "c", type=bool, action="store_true", help="consume the original element")
         @context.console_command(
-            ("pintersection", "pxor", "punion", "pdifference"),
+            ("intersection", "xor", "union", "difference"),
             input_type="elements",
             output_type="elements",
             help=_("Constructive Additive Geometry: Add"),
