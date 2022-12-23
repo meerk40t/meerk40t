@@ -5844,7 +5844,7 @@ def init_commands(kernel):
             return
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
-        self.signal("refresh_scene")
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5855,7 +5855,8 @@ def init_commands(kernel):
             channel("No redo available.")
             return
         channel(f"Redo: {self.undo}")
-        self.signal("refresh_scene")
+        self.validate_selected_area()
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5928,9 +5929,15 @@ def init_commands(kernel):
             matrix = Matrix.translate(float(dx), float(dy))
             for node in pasted:
                 node.matrix *= matrix
-        group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        if len(pasted) > 1:
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        else:
+            group = self.elem_branch
         for p in pasted:
-            group.add_node(copy(p))
+            if hasattr(p, "label"):
+                s = "Copy" if p.label is None else f"{p.label} (copy)"
+                p.label = s
+            group.add_node(p)
         self.set_emphasis([group])
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
