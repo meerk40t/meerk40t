@@ -155,7 +155,7 @@ class RotarySettingsPanel(ScrolledPanel):
                 pass
         # Forces guide and grid refresh
         self.rotary.signal("units")
-        self.rotary.signal("refresh_scene")
+        self.rotary.signal("refresh_scene", "Scene")
 
     def on_text_rotary_scale_y(self):
         if self.rotary is None:
@@ -166,7 +166,7 @@ class RotarySettingsPanel(ScrolledPanel):
             pass
         self.scene.grid_secondary_scale_y = self.rotary.scale_y
         self.rotary.signal("units")
-        self.rotary.signal("refresh_scene")
+        self.rotary.signal("refresh_scene", "Scene")
 
     def on_text_rotary_scale_x(self):
         if self.rotary is None:

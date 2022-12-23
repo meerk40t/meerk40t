@@ -608,7 +608,7 @@ class HingePanel(wx.Panel):
         self.Parent.SetTitle(_("Living-Hinges") + f" ({end_time-start_time:.2f}s.)")
 
         self.context.signal("classify_new", node)
-        self.context.signal("refresh_scene")
+        self.context.signal("refresh_scene", "Scene")
         self.button_generate.Enable(True)
         self.button_generate.SetLabel(oldlabel)
 
