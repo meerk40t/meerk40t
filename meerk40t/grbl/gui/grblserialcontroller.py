@@ -112,6 +112,24 @@ class SerialControllerPanel(wx.Panel):
             )
             self.button_device_connect.Enable()
 
+    def pane_show(self):
+        if self.state is None or self.state == "uninitialized" or self.state == "disconnected":
+            self.button_device_connect.SetBackgroundColour("#ffff00")
+            self.button_device_connect.SetLabel(_("Connect"))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+        elif self.state == "connected":
+            self.button_device_connect.SetBackgroundColour("#00ff00")
+            self.button_device_connect.SetLabel(_("Disconnect"))
+            self.button_device_connect.SetBitmap(
+                icons8_connected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+
+    def pane_hide(self):
+        return
 
 class SerialController(MWindow):
     def __init__(self, *args, **kwds):
@@ -139,6 +157,7 @@ class SerialController(MWindow):
         self.context.channel(f"recv-{self._opened_port}").watch(
             self.serial_panel.update_recv
         )
+        self.serial_panel.pane_show()
 
     def window_close(self):
         self.context.channel(f"send-{self._opened_port}").unwatch(
@@ -147,6 +166,7 @@ class SerialController(MWindow):
         self.context.channel(f"recv-{self._opened_port}").unwatch(
             self.serial_panel.update_recv
         )
+        self.serial_panel.pane_hide()
 
     def delegates(self):
         yield self.serial_panel
