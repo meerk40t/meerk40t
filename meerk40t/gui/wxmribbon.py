@@ -694,6 +694,10 @@ class RibbonPanel(wx.Panel):
             except:
                 pass
 
+    @lookup_listener("button/basicediting")
+    def set_editing_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.basicediting_button_bar)
+
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.project_button_bar)
@@ -942,6 +946,18 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.tool_panel)
         button_bar = RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        panel_style = RB.RIBBON_PANEL_MINIMISE_BUTTON
+        self.basicediting_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Edit"),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.basicediting_panel)
+        button_bar = RibbonButtonBar(self.basicediting_panel)
+        self.basicediting_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.group_panel = MyRibbonPanel(

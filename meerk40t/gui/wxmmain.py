@@ -67,6 +67,12 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_scissors_50,
+    icons8_copy_50,
+    icons8_paste_50,
+    icons8_replicate_rows_50,
+    icons8_undo_50,
+    icons8_redo_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -804,6 +810,111 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "text",
+            },
+        )
+
+        kernel.register(
+            "button/basicediting/Cut",
+            {
+                "label": _("Cut"),
+                "icon": icons8_scissors_50,
+                "tip": _(
+                    "Cut selected elements"
+                ),
+                "action": lambda v: kernel.elements("clipboard cut\n"),
+                "size": bsize_small,
+                "identifier": "editcut",
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+        kernel.register(
+            "button/basicediting/Copy",
+            {
+                "label": _("Copy"),
+                "icon": icons8_copy_50,
+                "tip": _(
+                    "Copy selected elements to clipboard"
+                ),
+                "action": lambda v: kernel.elements("clipboard copy\n"),
+                "size": bsize_small,
+                "identifier": "editcopy",
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+
+        def clipboard_filled():
+            res = False
+            try:
+                destination = kernel.elements._clipboard_default
+                if len(kernel.elements._clipboard[destination]) > 0:
+                    res = True
+            except (TypeError, KeyError):
+                pass
+            return res
+
+        kernel.register(
+            "button/basicediting/Paste",
+            {
+                "label": _("Paste"),
+                "icon": icons8_paste_50,
+                "tip": _(
+                    "Paste elements from clipboard"
+                ),
+                "action": lambda v: kernel.elements("clipboard paste\n"),
+                "size": bsize_small,
+                "identifier": "editpaste",
+                "rule_enabled": lambda cond: clipboard_filled(),
+            },
+        )
+        kernel.register(
+            "button/basicediting/Duplicate",
+            {
+                "label": _("Duplicate"),
+                "icon": icons8_replicate_rows_50,
+                "tip": _(
+                    "Duplicate selected elements"
+                ),
+                "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
+                "size": bsize_small,
+                "identifier": "editduplicate",
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+        kernel.register(
+            "button/basicediting/Undo",
+            {
+                "label": _("Undo"),
+                "icon": icons8_undo_50,
+                "tip": _(
+                    "Undo last operation"
+                ),
+                "action": lambda v: kernel.elements("undo\n"),
+                "size": bsize_small,
+                "identifier": "editundo",
+                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
+            },
+        )
+        kernel.register(
+            "button/basicediting/Redo",
+            {
+                "label": _("Redo"),
+                "icon": icons8_redo_50,
+                "tip": _(
+                    "Redo last operation"
+                ),
+                "action": lambda v: kernel.elements("redo\n"),
+                "size": bsize_small,
+                "identifier": "editredo",
+                # "rule_enabled": lambda cond: kernel.elements.undo.has_undo,
             },
         )
 
