@@ -494,6 +494,9 @@ class PanelFontManager(wx.Panel):
                     if fn not in self.fonts:
                         self.fonts.append(fn)
         self.list_fonts.SetItems(self.fonts)
+        # Let the world know we have fonts
+        self.context.signal("icons")
+
 
     def on_btn_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
