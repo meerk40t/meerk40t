@@ -759,6 +759,10 @@ class RibbonPanel(wx.Panel):
     def on_selected_change(self, origin, node=None, *args):
         self.apply_enable_rules()
 
+    @signal_listener("icons")
+    def on_requested_change(self, origin, node=None, *args):
+        self.apply_enable_rules()
+
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)

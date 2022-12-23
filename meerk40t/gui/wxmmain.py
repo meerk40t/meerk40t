@@ -866,29 +866,29 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Paste elements from clipboard"
                 ),
-                "action": lambda v: kernel.elements("clipboard paste\n"),
+                "action": lambda v: kernel.elements("clipboard paste -dx 3mm -dy 3mm\n"),
                 "size": bsize_small,
                 "identifier": "editpaste",
                 "rule_enabled": lambda cond: clipboard_filled(),
             },
         )
-        kernel.register(
-            "button/basicediting/Duplicate",
-            {
-                "label": _("Duplicate"),
-                "icon": icons8_replicate_rows_50,
-                "tip": _(
-                    "Duplicate selected elements"
-                ),
-                "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
-                "size": bsize_small,
-                "identifier": "editduplicate",
-                "rule_enabled": lambda cond: len(
-                    list(kernel.elements.elems(emphasized=True))
-                )
-                > 0,
-            },
-        )
+        # kernel.register(
+        #     "button/basicediting/Duplicate",
+        #     {
+        #         "label": _("Duplicate"),
+        #         "icon": icons8_replicate_rows_50,
+        #         "tip": _(
+        #             "Duplicate selected elements"
+        #         ),
+        #         "action": lambda v: kernel.elements("element copy --dx=3mm --dy=3mm\n"),
+        #         "size": bsize_small,
+        #         "identifier": "editduplicate",
+        #         "rule_enabled": lambda cond: len(
+        #             list(kernel.elements.elems(emphasized=True))
+        #         )
+        #         > 0,
+        #     },
+        # )
         kernel.register(
             "button/basicediting/Undo",
             {

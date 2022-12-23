@@ -5906,6 +5906,8 @@ def init_commands(kernel):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
@@ -5925,8 +5927,16 @@ def init_commands(kernel):
         except (TypeError, KeyError):
             channel(_("Error: Clipboard Empty"))
             return
-        if dx != 0 or dy != 0:
-            matrix = Matrix.translate(float(dx), float(dy))
+        if dx is not None:
+            dx = float(dx)
+        else:
+            dx = 0
+        if dy is not None:
+            dy = float(dy)
+        else:
+            dy = 0
+        if dx !=0 or dy != 0:
+            matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
         if len(pasted) > 1:
@@ -5960,6 +5970,8 @@ def init_commands(kernel):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
         self.remove_elements(data)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_command(
