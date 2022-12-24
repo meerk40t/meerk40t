@@ -359,9 +359,7 @@ class Scanbeam:
     def points_in_polygon(self, e):
         if self._nb_scan is None:
             self.compute_beam()
-        _, y = np.meshgrid(self._nb_events, np.imag(e))
-        q = self._nb_events <= y
-        idx = np.sum(q, axis=1)
+        idx = np.searchsorted(self._nb_events, np.imag(e))
         actives = self._nb_scan[idx]
         line = self._geom.segments[actives]
         a = line[:, :, 0]
@@ -374,13 +372,12 @@ class Scanbeam:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
             m = (b.imag - a.imag) / (b.real - a.real)
             y0 = a.imag - (m * a.real)
-            _, ys = np.meshgrid(np.arange(y0.shape[1]), np.imag(e))
+            ys = np.reshape(np.repeat(np.imag(e), 2), y0.shape)
             x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
         finally:
             np.seterr(**old_np_seterr)
-        _, xs = np.meshgrid(np.arange(y0.shape[1]), np.real(e))
-        v = x_intercepts <= xs
-        results = np.sum(v, axis=1)
+        xs = np.reshape(np.repeat(np.real(e), 2), y0.shape)
+        results = np.sum(x_intercepts <= xs, axis=1)
         results %= 2
         return results
 
