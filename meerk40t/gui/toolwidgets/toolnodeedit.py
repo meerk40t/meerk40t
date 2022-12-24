@@ -17,11 +17,21 @@ class EditTool(ToolWidget):
         ToolWidget.__init__(self, scene)
         self.nodes = None
         self.selected_index = None
+        self.scene.context.listen("emphasized", self.on_emphasized_changed)
+
+    def on_emphasized_changed(self, origin, *args):
+        self.nodes = None
+        self.selected_index = None
+        self.calculate_points()
+
+    def notify_removed_from_parent(self, parent):
+        super().notify_removed_from_parent(parent)
+        self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
 
     def calculate_points(self):
         self.nodes = []
         offset = 5000
-        selected_node = self.scene.context.elements.first_element()
+        selected_node = self.scene.context.elements.first_element(emphasized=True)
         try:
             path = selected_node.path
         except AttributeError:
@@ -142,7 +152,7 @@ class EditTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
-            self.calculate_points()
+            return
         gc.SetPen(self.pen)
         for x, y, w, h, node, segment, point in self.nodes:
             gc.DrawRectangle(x, y, w, h)
