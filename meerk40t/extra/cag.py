@@ -13,14 +13,14 @@ def plugin(kernel, lifecycle):
         _ = kernel.translation
         context = kernel.root
 
-        @context.console_option("consume", "c", type=bool, action="store_true", help="consume the original element")
+        @context.console_option("keep", "k", type=bool, action="store_true", help="keep original elements")
         @context.console_command(
             ("intersection", "xor", "union", "difference"),
             input_type="elements",
             output_type="elements",
             help=_("Constructive Additive Geometry: Add"),
         )
-        def cag(command, channel, _, data=None, consume=False, **kwargs):
+        def cag(command, channel, _, data=None, keep=False, **kwargs):
             if len(data) < 2:
                 channel(
                     _(
@@ -69,7 +69,7 @@ def plugin(kernel, lifecycle):
                     current_polygon = solution
                 last_polygon = current_polygon
 
-            if consume:
+            if not keep:
                 for node in data:
                     node.remove_node()
             for se in last_polygon:
