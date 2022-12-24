@@ -74,8 +74,8 @@ class ContrastPanel(wx.Panel):
         self.check_enable_contrast.SetValue(self.op["enable"])
         self.text_contrast_contrast.SetValue(str(self.op["contrast"]))
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
-        self.slider_contrast_contrast.SetValue(self.op["contrast"])
-        self.slider_contrast_brightness.SetValue(self.op["brightness"])
+        self.slider_contrast_contrast.SetValue(int(self.op["contrast"]))
+        self.slider_contrast_brightness.SetValue(int(self.op["brightness"]))
 
     def __set_properties(self):
         # begin wxGlade: ContrastPanel.__set_properties
@@ -224,11 +224,11 @@ class HalftonePanel(wx.Panel):
         self.check_enable_halftone.SetValue(self.op["enable"])
         self.check_halftone_black.SetValue(self.op["black"])
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.slider_halftone_sample.SetValue(self.op["sample"])
+        self.slider_halftone_sample.SetValue(int(self.op["sample"]))
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.slider_halftone_angle.SetValue(self.op["angle"])
+        self.slider_halftone_angle.SetValue(int(self.op["angle"]))
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.slider_halftone_oversample.SetValue(self.op["oversample"])
+        self.slider_halftone_oversample.SetValue(int(self.op["oversample"]))
 
     def __set_properties(self):
         # begin wxGlade: HalftonePanel.__set_properties
@@ -294,11 +294,11 @@ class HalftonePanel(wx.Panel):
         self.check_enable_halftone.SetValue(self.op["enable"])
         self.check_halftone_black.SetValue(self.op["black"])
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.slider_halftone_sample.SetValue(self.op["sample"])
+        self.slider_halftone_sample.SetValue(int(self.op["sample"]))
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.slider_halftone_angle.SetValue(self.op["angle"])
+        self.slider_halftone_angle.SetValue(int(self.op["angle"]))
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.slider_halftone_oversample.SetValue(self.op["oversample"])
+        self.slider_halftone_oversample.SetValue(int(self.op["oversample"]))
         self.node.update(self.context)
 
     def on_check_halftone_black(
@@ -589,9 +589,9 @@ class SharpenPanel(wx.Panel):
         self.op = op
         self.original_op = deepcopy(op)
         self.check_enable_sharpen.SetValue(op["enable"])
-        self.slider_sharpen_percent.SetValue(op["percent"])
-        self.slider_sharpen_radius.SetValue(op["radius"])
-        self.slider_sharpen_threshold.SetValue(op["threshold"])
+        self.slider_sharpen_percent.SetValue(int(op["percent"]))
+        self.slider_sharpen_radius.SetValue(int(op["radius"]))
+        self.slider_sharpen_threshold.SetValue(int(op["threshold"]))
         self.text_sharpen_percent.SetValue(str(op["percent"]))
         self.text_sharpen_radius.SetValue(str(op["radius"]))
         self.text_sharpen_threshold.SetValue(str(op["threshold"]))
@@ -655,9 +655,9 @@ class SharpenPanel(wx.Panel):
         self.op["percent"] = self.original_op["percent"]
         self.op["radius"] = self.original_op["radius"]
         self.op["threshold"] = self.original_op["threshold"]
-        self.slider_sharpen_percent.SetValue(self.op["percent"])
-        self.slider_sharpen_radius.SetValue(self.op["radius"])
-        self.slider_sharpen_threshold.SetValue(self.op["threshold"])
+        self.slider_sharpen_percent.SetValue(int(self.op["percent"]))
+        self.slider_sharpen_radius.SetValue(Int(self.op["radius"]))
+        self.slider_sharpen_threshold.SetValue(int(self.op["threshold"]))
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
@@ -741,7 +741,7 @@ class GammaPanel(wx.Panel):
         self.op = op
         self.original_op = deepcopy(op)
         self.text_gamma_factor.SetValue(str(op["factor"]))
-        self.slider_gamma_factor.SetValue(op["factor"] * 100.0)
+        self.slider_gamma_factor.SetValue(int(op["factor"] * 100.0))
         self.check_enable_gamma.SetValue(op["enable"])
 
     def __set_properties(self):
@@ -781,7 +781,7 @@ class GammaPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["factor"] = self.original_op["factor"]
-        self.slider_gamma_factor.SetValue(self.op["factor"] * 100.0)
+        self.slider_gamma_factor.SetValue(int(self.op["factor"] * 100.0))
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
         self.node.update(self.context)
 
