@@ -372,11 +372,11 @@ class Scanbeam:
             # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
             m = (b.imag - a.imag) / (b.real - a.real)
             y0 = a.imag - (m * a.real)
-            ys = np.reshape(np.repeat(np.imag(e), 2), y0.shape)
+            ys = np.reshape(np.repeat(np.imag(e), y0.shape[1]), y0.shape)
             x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
         finally:
             np.seterr(**old_np_seterr)
-        xs = np.reshape(np.repeat(np.real(e), 2), y0.shape)
+        xs = np.reshape(np.repeat(np.real(e), y0.shape[1]), y0.shape)
         results = np.sum(x_intercepts <= xs, axis=1)
         results %= 2
         return results
