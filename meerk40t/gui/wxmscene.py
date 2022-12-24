@@ -38,6 +38,7 @@ from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
+from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
@@ -151,6 +152,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
+        context.register("tool/edit", EditTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
