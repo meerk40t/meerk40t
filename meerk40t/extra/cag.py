@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -95,4 +95,5 @@ def plugin(kernel, lifecycle):
                 elements.classify([new_node])
                 return "elements", [node]
             else:
+                channel(_("No solution found (empty path)"))
                 return "elements", []
