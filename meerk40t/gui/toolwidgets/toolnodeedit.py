@@ -166,8 +166,13 @@ class EditTool(ToolWidget):
                     if x <= xp <= x + w and y <= yp <= y + h:
                         self.selected_index = i
                         break
+                else:  # For-else == icky
+                    self.selected_index = None
             response = RESPONSE_CONSUME
         elif event_type == "move":
+            if not self.selected_index:
+                self.scene.request_refresh()
+                return RESPONSE_CONSUME
             current_node = self.nodes[self.selected_index]
             x, y, w, h, node, segment, point = current_node
             point.x += space_pos[4]
