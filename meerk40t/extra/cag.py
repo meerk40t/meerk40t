@@ -14,7 +14,7 @@ def plugin(kernel, lifecycle):
         _ = kernel.translation
         context = kernel.root
 
-        @context.console_option("keep", "k", type=bool, action="store_true", help="consume the original element")
+        @context.console_option("keep", "k", type=bool, action="store_true", help="keep original elements")
         @context.console_command(
             ("intersection", "xor", "union", "difference"),
             input_type="elements",
