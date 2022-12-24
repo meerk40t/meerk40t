@@ -490,12 +490,20 @@ class TextPropertyPanel(ScrolledPanel):
         except AttributeError:
             pass
         mystyle = self.label_fonttest.GetWindowStyle()
-        if self.node.anchor == "start":
-            new_anchor = 0
-            # Align the text to the left.
-            mystyle1 = wx.ALIGN_LEFT
-            mystyle2 = wx.ST_ELLIPSIZE_END
-        elif self.node.anchor == "middle":
+        mystyle1 = wx.ALIGN_LEFT
+        mystyle2 = wx.ST_ELLIPSIZE_END
+        if self.node.anchor is None:
+            self.node.anchor = "start"
+        # try:
+        #     size = self.node.wxfont.GetFractionalPointSize()
+        # except AttributeError:
+        #     size = self.node.wxfont.GetPointSize()
+        # print (f"Anchor: {self.node.anchor}, fontsize={size}")
+        new_anchor = 0
+        # Align the text to the left.
+        mystyle1 = wx.ALIGN_LEFT
+        mystyle2 = wx.ST_ELLIPSIZE_END
+        if self.node.anchor == "middle":
             new_anchor = 1
             mystyle1 = wx.ALIGN_CENTER
             mystyle2 = wx.ST_ELLIPSIZE_MIDDLE
