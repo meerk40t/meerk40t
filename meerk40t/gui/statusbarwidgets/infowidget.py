@@ -66,13 +66,13 @@ class SimpleInfoWidget(StatusBarWidget):
         self.SetActive(self.progress_bar, False)
 
     def SetPercentage(self, newpercentage):
-        self._percentage = newpercentage
+        self._percentage = int(newpercentage)
         if newpercentage < 0:
             self.progress_bar.SetValue(0)
             self.SetActive(self.progress_bar, False)
         else:
             self.SetActive(self.progress_bar, True)
-            self.progress_bar.SetValue(newpercentage)
+            self.progress_bar.SetValue(self._percentage)
         self._percentage = newpercentage
 
     def AppendInformation(self, msg):
