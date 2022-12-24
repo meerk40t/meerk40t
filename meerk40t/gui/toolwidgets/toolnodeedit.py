@@ -19,16 +19,17 @@ class EditTool(ToolWidget):
         ToolWidget.__init__(self, scene)
         self.nodes = None
         self.selected_index = None
+
+    def final(self, context):
+        self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
+
+    def init(self, context):
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
 
     def on_emphasized_changed(self, origin, *args):
         self.nodes = None
         self.selected_index = None
         self.calculate_points()
-
-    def notify_removed_from_parent(self, parent):
-        super().notify_removed_from_parent(parent)
-        self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
 
     def calculate_points(self):
         self.nodes = []
@@ -40,7 +41,6 @@ class EditTool(ToolWidget):
             path = selected_node.path
         except AttributeError:
             return
-        matrix = path.transform
         for segment in path:
             q = type(segment).__name__
             if q in ("Line", "Close"):
@@ -111,7 +111,7 @@ class EditTool(ToolWidget):
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
-
+        gc.SetBrush(wx.TRANSPARENT_BRUSH)
         gc.SetPen(self.pen)
         for pt, segment, path, node in self.nodes:
             ptx, pty = node.matrix.point_in_matrix_space(pt)
@@ -175,4 +175,4 @@ class EditTool(ToolWidget):
                 return RESPONSE_CHAIN
         elif event_type == "leftup":
             return RESPONSE_CONSUME
-        return RESPONSE_CHAIN
+        return RESPONSE_DROP
