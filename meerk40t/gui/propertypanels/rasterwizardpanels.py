@@ -656,7 +656,7 @@ class SharpenPanel(wx.Panel):
         self.op["radius"] = self.original_op["radius"]
         self.op["threshold"] = self.original_op["threshold"]
         self.slider_sharpen_percent.SetValue(int(self.op["percent"]))
-        self.slider_sharpen_radius.SetValue(Int(self.op["radius"]))
+        self.slider_sharpen_radius.SetValue(int(self.op["radius"]))
         self.slider_sharpen_threshold.SetValue(int(self.op["threshold"]))
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
