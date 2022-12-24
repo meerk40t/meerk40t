@@ -5844,7 +5844,7 @@ def init_commands(kernel):
             return
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
-        self.signal("refresh_scene")
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5855,7 +5855,8 @@ def init_commands(kernel):
             channel("No redo available.")
             return
         channel(f"Redo: {self.undo}")
-        self.signal("refresh_scene")
+        self.validate_selected_area()
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5905,6 +5906,8 @@ def init_commands(kernel):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
@@ -5924,13 +5927,27 @@ def init_commands(kernel):
         except (TypeError, KeyError):
             channel(_("Error: Clipboard Empty"))
             return
-        if dx != 0 or dy != 0:
-            matrix = Matrix.translate(float(dx), float(dy))
+        if dx is not None:
+            dx = float(dx)
+        else:
+            dx = 0
+        if dy is not None:
+            dy = float(dy)
+        else:
+            dy = 0
+        if dx !=0 or dy != 0:
+            matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
-        group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        if len(pasted) > 1:
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        else:
+            group = self.elem_branch
         for p in pasted:
-            group.add_node(copy(p))
+            if hasattr(p, "label"):
+                s = "Copy" if p.label is None else f"{p.label} (copy)"
+                p.label = s
+            group.add_node(p)
         self.set_emphasis([group])
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
@@ -5953,6 +5970,8 @@ def init_commands(kernel):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
         self.remove_elements(data)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_command(

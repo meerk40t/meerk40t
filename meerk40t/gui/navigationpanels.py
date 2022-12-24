@@ -1759,7 +1759,7 @@ class Transform(wx.Panel):
             self.context(
                 f"matrix {scale_x} {skew_y} {skew_x} {scale_y} {translate_x} {translate_y}\n"
             )
-            self.context.signal("refresh_scene")
+            self.context.signal("refresh_scene", "Scene")
         except ValueError:
             pass
 

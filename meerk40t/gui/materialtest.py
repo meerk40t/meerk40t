@@ -1029,7 +1029,7 @@ class TemplatePanel(wx.Panel):
         create_operations()
 
         self.context.signal("rebuild_tree")
-        self.context.signal("refresh_scene")
+        self.context.signal("refresh_scene", "Scene")
         self.save_settings()
 
     def setup_settings(self):
