@@ -35,7 +35,10 @@ class SerialConnection:
         return str_response
 
     def write(self, line):
-        self.laser.write(bytes(line, "utf-8"))
+        try:
+            self.laser.write(bytes(line, "utf-8"))
+        except (SerialException, PermissionError) as e:
+            self.channel(f"Error when writing '{line}: {str(e)}'")
 
     def connect(self):
         if self.laser:
