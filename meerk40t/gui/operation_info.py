@@ -220,7 +220,8 @@ class OpInfoPanel(ScrolledPanel):
             if reverse:
                 data = reversed(data)
             for node in data:
-                classified, should_break = opnode.classify(
+                # result is a tuple containing classified, should_break, feedback
+                result = opnode.classify(
                     node,
                     fuzzy=fuzzy,
                     fuzzydistance=fuzzydistance,
