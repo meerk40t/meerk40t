@@ -678,7 +678,8 @@ class InfoPanel(wx.Panel):
             if reverse:
                 data = reversed(data)
             for node in data:
-                classified, should_break = myop.classify(
+                # result is a tuple containing classified, should_break, feedback
+                result = myop.classify(
                     node,
                     fuzzy=fuzzy,
                     fuzzydistance=fuzzydistance,
