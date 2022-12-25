@@ -71,6 +71,7 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.selected_device = selected_device
         self.available_devices = context.kernel.services("device")
         self.filter_device = None
         spools = [s.label for s in self.available_devices]
@@ -134,7 +135,7 @@ class SpoolerPanel(wx.Panel):
         self.splitter.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.on_sash_double)
 
         self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
-        self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
+        # self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
@@ -419,41 +420,41 @@ class SpoolerPanel(wx.Panel):
         # Todo: Drag to reprioritise jobs
         event.Skip()
 
-    def on_item_doubleclick(self, event):
-        def item_info(item):
-            result = ""
-            count = 0
-            if isinstance(item, tuple):
-                attr = item[0]
-                result = f"function(tuple): {attr}"
-                count += 1
-            elif isinstance(item, str):
-                attr = item
-                result = f"function(str): {attr}"
-                count += 1
-            if hasattr(item, "generate"):
-                item = getattr(item, "generate")
-                result = "Generator:"
-                # Generator item
-                for p in item():
-                    dummy, subct = item_info(p)
-                    count += subct
-                    result += "\n" + dummy
-                    count += 1
+    # def on_item_doubleclick(self, event):
+    #     def item_info(item):
+    #         result = ""
+    #         count = 0
+    #         if isinstance(item, tuple):
+    #             attr = item[0]
+    #             result = f"function(tuple): {attr}"
+    #             count += 1
+    #         elif isinstance(item, str):
+    #             attr = item
+    #             result = f"function(str): {attr}"
+    #             count += 1
+    #         if hasattr(item, "generate"):
+    #             item = getattr(item, "generate")
+    #             result = "Generator:"
+    #             # Generator item
+    #             for p in item():
+    #                 dummy, subct = item_info(p)
+    #                 count += subct
+    #                 result += "\n" + dummy
+    #                 count += 1
 
-            return result, count
+    #         return result, count
 
-        index = self.current_item
-        spooler = self.selected_device.spooler
-        try:
-            element = spooler.queue[index]
-        except IndexError:
-            return
-        msgstr = f"{element.label}: \n"
-        for idx, item in enumerate(element.items):
-            info, ct = item_info(item)
-            msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
-        print(msgstr)
+    #     index = self.current_item
+    #     spooler = self.selected_device.spooler
+    #     try:
+    #         element = spooler.queue[index]
+    #     except IndexError:
+    #         return
+    #     msgstr = f"{element.label}: \n"
+    #     for idx, item in enumerate(element.items):
+    #         info, ct = item_info(item)
+    #         msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
+    #     print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
