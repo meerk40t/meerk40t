@@ -223,7 +223,7 @@ class StrokeWidget(StatusBarWidget):
                     best_post = 99999999
                     delta = 0.99999999
                     best_pre = 0
-                    factor = sqrt(mat_default.determinant) if ck_default else 1.0
+                    factor = sqrt(abs(mat_default.determinant)) if ck_default else 1.0
                     node_stroke_width = sw_default * factor
                     for idx, unit in enumerate(self.unit_choices):
                         std = float(Length(f"1{unit}"))
