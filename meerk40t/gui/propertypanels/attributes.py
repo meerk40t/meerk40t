@@ -481,7 +481,7 @@ class StrokeWidthPanel(wx.Panel):
                 )
             )
             stroke_scale = (
-                sqrt(self.node.matrix.determinant) if self.node.stroke_scaled else 1.0
+                sqrt(abs(self.node.matrix.determinant)) if self.node.stroke_scaled else 1.0
             )
             stroke_width = swidth / stroke_scale
             if self.node.stroke_width != stroke_width:
@@ -513,7 +513,7 @@ class StrokeWidthPanel(wx.Panel):
                 delta = 0.99999999
                 best_pre = 0
                 factor = (
-                    sqrt(self.node.matrix.determinant)
+                    sqrt(abs(self.node.matrix.determinant))
                     if self.node.stroke_scaled
                     else 1.0
                 )

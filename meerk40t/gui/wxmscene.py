@@ -972,7 +972,7 @@ class MeerK40tScenePanel(wx.Panel):
         sw = float(Length(stroke_width))
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
-                stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
+                stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
                 e.stroke_width = sw / stroke_scale
                 e.altered()
             except AttributeError:
