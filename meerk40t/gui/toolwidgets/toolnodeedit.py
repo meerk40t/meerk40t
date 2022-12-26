@@ -301,7 +301,6 @@ class EditTool(ToolWidget):
         modified = False
         # Code to follow
         if modified:
-            node = entry["element"]
             self.modify_node(node)
 
     def event(
@@ -314,7 +313,7 @@ class EditTool(ToolWidget):
         keycode=None,
         **kwargs,
     ):
-        if not self.scene.active_tool == "edit":
+        if self.scene.active_tool != "edit":
             return RESPONSE_CHAIN
         # print (f"event: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'")
         offset = 5
@@ -349,7 +348,7 @@ class EditTool(ToolWidget):
                             self.nodes[j]["selected"] = True
                         else:
                             # Shift-Key Pressed?
-                            if not "shift" in modifiers:
+                            if "shift" not in modifiers:
                                 self.clear_selection()
                             entry["selected"] = not entry["selected"]
                         break
@@ -411,8 +410,12 @@ class EditTool(ToolWidget):
             else:
                 return RESPONSE_CHAIN
         elif event_type == "leftup":
-            if self.move_type == "selection" and self.p1 is not None and self.p2 is not None:
-                if not "shift" in modifiers:
+            if (
+                self.move_type == "selection"
+                and self.p1 is not None
+                and self.p2 is not None
+            ):
+                if "shift" not in modifiers:
                     self.clear_selection()
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
