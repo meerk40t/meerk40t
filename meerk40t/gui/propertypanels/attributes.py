@@ -3,6 +3,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.gui.icons import icons8_lock_50
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Color
@@ -568,6 +569,65 @@ class StrokeWidthPanel(wx.Panel):
         pass
 
 
+class PreventChangesPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+
+        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
+
+        self.__set_properties()
+        self.__do_layout()
+        self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
+
+        self.set_widgets(self.node)
+
+    def __do_layout(self):
+        # begin wxGlade: PositionPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_lock = StaticBoxSizer(
+            self, wx.ID_ANY, _("Prevent changes:"), wx.HORIZONTAL
+        )
+        sizer_lock.Add(self.check_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def __set_properties(self):
+        self.check_lock.SetToolTip(
+            _(
+                "If active then this element is effectively prevented from being modified"
+            )
+        )
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.node = node
+        if hasattr(self.node, "lock"):
+            self.check_lock.Enable(True)
+            self.check_lock.SetValue(self.node.lock)
+        else:
+            self.check_lock.SetValue(False)
+            self.check_lock.Enable(False)
+        self.Show()
+
+    def on_check_lock(self, event):
+        flag = self.check_lock.GetValue()
+        if hasattr(self.node, "lock"):
+            self.node.lock = flag
+            self.context.elements.signal("element_property_update", self.node)
+            self.set_widgets(self.node)
+
+
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -587,7 +647,10 @@ class PositionSizePanel(wx.Panel):
         self.text_h = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
         )
-        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
+        self.button_lock_aspect_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.button_lock_aspect_ratio.SetValue(True)
+
+        self._axis = 0
 
         self.__set_properties()
         self.__do_layout()
@@ -596,7 +659,6 @@ class PositionSizePanel(wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
-        self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
 
         self.set_widgets(self.node)
 
@@ -607,20 +669,15 @@ class PositionSizePanel(wx.Panel):
         sizer_w = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.HORIZONTAL)
         sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
         sizer_x = StaticBoxSizer(self, wx.ID_ANY, "X:", wx.HORIZONTAL)
-        sizer_lock = StaticBoxSizer(
-            self, wx.ID_ANY, _("Prevent changes:"), wx.HORIZONTAL
-        )
-        sizer_lock.Add(self.check_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
         sizer_x.Add(self.text_x, 1, wx.EXPAND, 0)
         sizer_y.Add(self.text_y, 1, wx.EXPAND, 0)
         sizer_w.Add(self.text_w, 1, wx.EXPAND, 0)
         sizer_h.Add(self.text_h, 1, wx.EXPAND, 0)
+        sizer_w.Add(self.button_lock_aspect_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_h_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
         sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
-
         self.sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
         self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
@@ -629,7 +686,6 @@ class PositionSizePanel(wx.Panel):
         self.sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
         self.sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
         sizer_main.Add(self.sizer_v_xywh, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -646,10 +702,12 @@ class PositionSizePanel(wx.Panel):
         self.text_y.SetToolTip(
             _("New Y-coordinate of left top corner (enter to apply)")
         )
-        self.check_lock.SetToolTip(
-            _(
-                "If active then this element is effectively prevented from being modified"
-            )
+        self.button_lock_aspect_ratio.SetMinSize((32, 32))
+        self.button_lock_aspect_ratio.SetBitmap(
+            icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+        )
+        self.button_lock_aspect_ratio.SetToolTip(
+            _("Lock the ratio of width / height to the original values")
         )
 
     def pane_hide(self):
@@ -672,8 +730,8 @@ class PositionSizePanel(wx.Panel):
         self.sizer_v_xywh.Layout()
         self.Layout()
 
-    def set_widgets(self, node):
-        self.node = node
+    def _update_position_values(self):
+        node = self.node
         try:
             bb = node.bounds
         except:
@@ -684,18 +742,6 @@ class PositionSizePanel(wx.Panel):
             # Bounds was genuinely none, or node threw an error.
             self._set_widgets_hidden()
             return
-        if hasattr(self.node, "lock"):
-            self.check_lock.Enable(True)
-            self.check_lock.SetValue(self.node.lock)
-        else:
-            self.check_lock.SetValue(False)
-            self.check_lock.Enable(False)
-
-        en_xy = (
-            not getattr(self.node, "lock", False)
-            or self.context.elements.lock_allows_move
-        )
-        en_wh = not getattr(self.node, "lock", False)
         x = bb[0]
         y = bb[1]
         w = bb[2] - bb[0]
@@ -716,6 +762,16 @@ class PositionSizePanel(wx.Panel):
         self.text_h.SetValue(
             f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}"
         )
+
+    def set_widgets(self, node):
+        self.node = node
+        self._update_position_values()
+        en_xy = (
+            not getattr(self.node, "lock", False)
+            or self.context.elements.lock_allows_move
+        )
+        en_wh = not getattr(self.node, "lock", False)
+
         self.text_x.Enable(en_xy)
         self.text_y.Enable(en_xy)
         self.text_w.Enable(en_wh)
@@ -759,17 +815,23 @@ class PositionSizePanel(wx.Panel):
             sy = newh / (bb[3] - bb[1])
         else:
             sy = 1
-        if sx != 1.0 or sy != 1.0:
-            self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
-            self.node.modified()
-            self.context.elements.signal("element_property_update", self.node)
+        if self.button_lock_aspect_ratio.GetValue():
+            if self._axis == 0:
+                sy = sx
+            else:
+                sx = sy
+        if sx == 1.0 and sy == 1:
+            return  # does nothing
+        if sx == 0 or sy == 0:
+            return  # degenerate
 
-    def on_check_lock(self, event):
-        flag = self.check_lock.GetValue()
-        if hasattr(self.node, "lock"):
-            self.node.lock = flag
-            self.context.elements.signal("element_property_update", self.node)
-            self.set_widgets(self.node)
+        self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
+        self.node.modified()
+        self.context.elements.signal("element_property_update", self.node)
+
+        if self.button_lock_aspect_ratio.GetValue():
+            # aspect scaling requires refresh of values.
+            self._update_position_values()
 
     def on_text_x_enter(self):
         self.translate_it()
@@ -778,7 +840,9 @@ class PositionSizePanel(wx.Panel):
         self.translate_it()
 
     def on_text_w_enter(self):
+        self._axis = 0
         self.scale_it()
 
     def on_text_h_enter(self):
+        self._axis = 1
         self.scale_it()
