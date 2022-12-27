@@ -304,6 +304,8 @@ class OperationAssignPanel(wx.Panel):
         if len(args) > 0:
             # Need to do all?!
             element = args[0]
+            if element is None:
+                return
             if isinstance(element, (tuple, list)):
                 for node in element:
                     if node.type.startswith("op "):
