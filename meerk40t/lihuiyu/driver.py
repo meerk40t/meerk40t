@@ -1018,7 +1018,8 @@ class LihuiyuDriver(Parameters):
         @param y_speed: max allowed speed in y direction
         @return:
         """
-
+        if y_speed is None:
+            y_speed = x_speed
         original_accel = self.acceleration
         original_speed = self.speed
         original_steps = self.raster_step_x, self.raster_step_y
@@ -1026,6 +1027,10 @@ class LihuiyuDriver(Parameters):
         # Do not allow custom accel codes, or raster steps.
         self._set_acceleration(None)
         self._set_step(0, 0)
+        # We know we will travel dx, dy. Set the initial direction requests.
+        self._request_leftward = dx < 0
+        self._request_topward = dy < 0
+        self._request_horizontal_major = abs(dx) > abs(dy)
         if y_speed <= x_speed and abs(dy) >= abs(dx):
             # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
             self._set_speed(y_speed)
