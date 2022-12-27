@@ -98,7 +98,7 @@ class TCPOutput:
     def write(self, data):
         self.context.signal("tcp;write", data)
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         with self.lock:
             self.buffer += data
             self.context.signal("tcp;buffer", len(self.buffer))

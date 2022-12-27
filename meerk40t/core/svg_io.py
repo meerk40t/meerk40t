@@ -40,7 +40,8 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText, Use,
+    SVGText,
+    Use,
 )
 from .elements import LaserOperation
 
@@ -174,9 +175,7 @@ class SVGWriter:
                     element.image.save(stream, format="PNG")
                 except OSError:
                     # Edge condition if the original image was CMYK and never touched it can't encode to PNG
-                    element.image.convert("RGBA").save(
-                        stream, format="PNG"
-                    )
+                    element.image.convert("RGBA").save(stream, format="PNG")
                 png = b64encode(stream.getvalue()).decode("utf8")
                 subelement.set("xlink:href", "data:image/png;base64,%s" % png)
                 subelement.set(SVG_ATTR_X, "0")

@@ -128,7 +128,9 @@ class SelectionWidget(Widget):
     def set_colors(self, default=False):
         color_manipulation = "#A07FA0"
         self.scene.context.setting(str, "color_manipulation", color_manipulation)
-        self.scene.context.setting(str, "color_manipulation_handles", color_manipulation)
+        self.scene.context.setting(
+            str, "color_manipulation_handles", color_manipulation
+        )
         if default:
             self.scene.context.color_manipulation = color_manipulation
             self.scene.context.color_manipulation_handles = color_manipulation
@@ -137,7 +139,9 @@ class SelectionWidget(Widget):
             self.selection_pen.SetColour(color1)
             self.color_border = color1
 
-            color2 = wx.Colour(str_to_color(self.scene.context.color_manipulation_handles))
+            color2 = wx.Colour(
+                str_to_color(self.scene.context.color_manipulation_handles)
+            )
             self.handle_pen.SetColour(color2)
             self.color_handle = color2
         except (ValueError, TypeError):

@@ -31,6 +31,7 @@ from .elements import LaserOperation
 
 try:
     from PIL import Image
+
     PILLOW_LOADED = True
 except ImportError:
     PILLOW_LOADED = False
@@ -998,7 +999,12 @@ class CutPlan:
         return ordered
 
     def short_travel_cutcode_candidate(
-        self, context: CutCode, closest: Any, backwards: Any, curr: complex, distance: float
+        self,
+        context: CutCode,
+        closest: Any,
+        backwards: Any,
+        curr: complex,
+        distance: float,
     ) -> Any:
         complete_path = self.context.opt_complete_subpaths
         for cut in context.candidate(

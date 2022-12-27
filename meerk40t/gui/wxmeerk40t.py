@@ -26,9 +26,11 @@ try:
         # This causes a TypeError in python 3.10 wxPython 4.1.1 (or other combinations)
         testcase = wx.Size(0.5, 1)
 except TypeError:
-    print("""The version of wxPython you are running is incompatible with your current Python version.
+    print(
+        """The version of wxPython you are running is incompatible with your current Python version.
 At the time of writing this is especially true for any Python version >= 3.10
-and a wxpython version <= 4.1.1.""")
+and a wxpython version <= 4.1.1."""
+    )
     from ..core.exceptions import Mk40tImportAbort
 
     raise Mk40tImportAbort("wxpython4.2")
