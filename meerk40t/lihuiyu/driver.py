@@ -816,7 +816,7 @@ class LihuiyuDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
+                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM or self.service.rapid_override:
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
                         self.rapid_mode()
@@ -1008,32 +1008,62 @@ class LihuiyuDriver(Parameters):
         """
         self._goto_relative(x - self.native_x, y - self.native_y, cut)
 
+    def _move_override_speed(self, dx, dy, x_speed, y_speed=None):
+        """
+        Rapid movement override. Should make programmed jogs.
+
+        @param dx: change in x
+        @param dy: change in y
+        @param x_speed: max allowed speed in x direction
+        @param y_speed: max allowed speed in y direction
+        @return:
+        """
+
+        original_accel = self.acceleration
+        original_speed = self.speed
+        original_steps = self.raster_step_x, self.raster_step_y
+
+        # Do not allow custom accel codes, or raster steps.
+        self._set_acceleration(None)
+        self._set_step(0, 0)
+        if y_speed <= x_speed and abs(dy) >= abs(dx):
+            # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
+            self._set_speed(y_speed)
+            self.program_mode()
+            self._goto_octent(dx, dy, on=False)
+        elif x_speed <= y_speed and abs(dx) >= abs(dy):
+            # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
+            self._set_speed(y_speed)
+            self.program_mode()
+            self._goto_octent(dx, dy, on=False)
+        else:
+            # The faster speed is going longer. The slower speed is going shorter. Full zig.
+            if dx != 0:
+                self._set_speed(y_speed)
+                self.program_mode()
+                self._goto_octent(dx, 0, on=False)
+            if dy != 0:
+                self._set_speed(y_speed)
+                self.program_mode()
+                self._goto_octent(0, dy, on=False)
+        self.rapid_mode()
+
+        # We always restore the original settings.
+        self._set_acceleration(original_accel)
+        self._set_speed(original_speed)
+        self._set_step(*original_steps)
+
     def _move_in_rapid_mode(self, dx, dy, cut):
         if self.service.rapid_override and (dx != 0 or dy != 0):
-            # Rapid movement override. Should make programmed jogs.
-            self._set_acceleration(None)
-            self._set_step(0, 0)
-            if dx != 0:
-                self.rapid_mode()
-                self._set_speed(self.service.rapid_override_speed_x)
-                self.program_mode()
-                self._goto_octent(dx, 0, cut)
-            if dy != 0:
-                if (
-                    self.service.rapid_override_speed_x
-                    != self.service.rapid_override_speed_y
-                ):
-                    self.rapid_mode()
-                    self._set_speed(self.service.rapid_override_speed_y)
-                    self.program_mode()
-                self._goto_octent(0, dy, cut)
-            self.rapid_mode()
-        else:
-            self(b"I")
-            self._goto_xy(dx, dy)
-            self(b"S1P\n")
-            if not self.service.autolock:
-                self(b"IS2P\n")
+            y_speed = self.service.rapid_override_speed_y
+            x_speed = self.service.rapid_override_speed_x
+            self._move_override_speed(dx, dy, x_speed, y_speed)
+            return
+        self(b"I")
+        self._goto_xy(dx, dy)
+        self(b"S1P\n")
+        if not self.service.autolock:
+            self(b"IS2P\n")
 
     def _commit_mode(self):
         # Unknown utility ported from deleted branch
