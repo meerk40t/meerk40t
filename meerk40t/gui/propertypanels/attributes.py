@@ -4,6 +4,7 @@ import wx
 
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 from meerk40t.gui.wxutils import CheckBox, TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Color
 
@@ -481,7 +482,7 @@ class StrokeWidthPanel(wx.Panel):
                 )
             )
             stroke_scale = (
-                sqrt(self.node.matrix.determinant) if self.node.stroke_scaled else 1.0
+                sqrt(abs(self.node.matrix.determinant)) if self.node.stroke_scaled else 1.0
             )
             stroke_width = swidth / stroke_scale
             if self.node.stroke_width != stroke_width:
@@ -513,7 +514,7 @@ class StrokeWidthPanel(wx.Panel):
                 delta = 0.99999999
                 best_pre = 0
                 factor = (
-                    sqrt(self.node.matrix.determinant)
+                    sqrt(abs(self.node.matrix.determinant))
                     if self.node.stroke_scaled
                     else 1.0
                 )
@@ -588,7 +589,10 @@ class PositionSizePanel(wx.Panel):
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
         )
         self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
-
+        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.btn_lock_ratio.SetValue(True)
+        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
         self.__set_properties()
         self.__do_layout()
 
@@ -597,6 +601,7 @@ class PositionSizePanel(wx.Panel):
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
         self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
+        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
 
         self.set_widgets(self.node)
 
@@ -605,6 +610,7 @@ class PositionSizePanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_h = StaticBoxSizer(self, wx.ID_ANY, _("Height:"), wx.HORIZONTAL)
         sizer_w = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.HORIZONTAL)
+        sizer_opt = wx.BoxSizer(wx.VERTICAL)
         sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
         sizer_x = StaticBoxSizer(self, wx.ID_ANY, "X:", wx.HORIZONTAL)
         sizer_lock = StaticBoxSizer(
@@ -617,6 +623,15 @@ class PositionSizePanel(wx.Panel):
         sizer_w.Add(self.text_w, 1, wx.EXPAND, 0)
         sizer_h.Add(self.text_h, 1, wx.EXPAND, 0)
 
+        self.btn_lock_ratio.SetMinSize((32, 32))
+        self.btn_lock_ratio.SetToolTip(
+            _("Lock the ratio of width / height to the original values")
+        )
+        # Set Bitmap
+        self.on_toggle_ratio(None)
+
+        sizer_opt.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+
         sizer_h_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
         sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
@@ -625,12 +640,16 @@ class PositionSizePanel(wx.Panel):
         self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
         self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
 
+        sizer_h_dimensions = wx.BoxSizer(wx.HORIZONTAL)
+
         self.sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
         self.sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
         self.sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
+        sizer_h_dimensions.Add(self.sizer_v_xywh, 1, wx.EXPAND, 0)
+        sizer_h_dimensions.Add(sizer_opt, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.sizer_v_xywh, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_h_dimensions, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -742,10 +761,11 @@ class PositionSizePanel(wx.Panel):
             self.node.modified()
             self.context.elements.signal("element_property_update", self.node)
 
-    def scale_it(self):
+    def scale_it(self, was_width):
         if getattr(self.node, "lock", False):
             return
         bb = self.node.bounds
+        keep_ratio = self.btn_lock_ratio.GetValue()
         try:
             neww = float(Length(self.text_w.GetValue()))
             newh = float(Length(self.text_h.GetValue()))
@@ -759,9 +779,27 @@ class PositionSizePanel(wx.Panel):
             sy = newh / (bb[3] - bb[1])
         else:
             sy = 1
+        if keep_ratio:
+            if was_width:
+                sy = sx
+            else:
+                sx = sy
         if sx != 1.0 or sy != 1.0:
             self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
             self.node.modified()
+            bb = self.node.bounds
+            w = bb[2] - bb[0]
+            h = bb[3] - bb[1]
+            units = self.context.units_name
+            if units in ("inch", "inches"):
+                units = "in"
+            self.text_w.SetValue(
+                f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}"
+            )
+            self.text_h.SetValue(
+                f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}"
+            )
+
             self.context.elements.signal("element_property_update", self.node)
 
     def on_check_lock(self, event):
@@ -771,6 +809,12 @@ class PositionSizePanel(wx.Panel):
             self.context.elements.signal("element_property_update", self.node)
             self.set_widgets(self.node)
 
+    def on_toggle_ratio(self, event):
+        if self.btn_lock_ratio.GetValue():
+            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+        else:
+            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
+
     def on_text_x_enter(self):
         self.translate_it()
 
@@ -778,7 +822,7 @@ class PositionSizePanel(wx.Panel):
         self.translate_it()
 
     def on_text_w_enter(self):
-        self.scale_it()
+        self.scale_it(True)
 
     def on_text_h_enter(self):
-        self.scale_it()
+        self.scale_it(False)

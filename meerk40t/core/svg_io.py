@@ -472,7 +472,7 @@ class SVGWriter:
 
                     # Note this is the reversed scaling in `implied_stroke_width`
                     # stroke_scale = (
-                    #     math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
+                    #     math.sqrt(abs(c.matrix.determinant)) if c.stroke_scaled else 1.0
                     # )
                     # stroke_width = (
                     #     Length(

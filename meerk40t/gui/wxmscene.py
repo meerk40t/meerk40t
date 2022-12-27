@@ -152,7 +152,6 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
-        context.register("tool/edit", EditTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
@@ -161,6 +160,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
         context.register("tool/linetext", LineTextTool)
+        context.register("tool/edit", EditTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
         from meerk40t.extra.hershey import have_hershey_fonts
@@ -972,7 +972,7 @@ class MeerK40tScenePanel(wx.Panel):
         sw = float(Length(stroke_width))
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
-                stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
+                stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
                 e.stroke_width = sw / stroke_scale
                 e.altered()
             except AttributeError:

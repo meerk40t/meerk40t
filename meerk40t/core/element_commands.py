@@ -3326,6 +3326,13 @@ def init_commands(kernel):
         default=1,
         help=_("How many offsetlines (default 1)"),
     )
+    @self.console_option(
+        "debug",
+        "d",
+        type=bool,
+        action="store_true",
+        help=_("Preserve intermediary objects"),
+    )
     @self.console_argument("offset", type=Length, help="Offset distance")
     @self.console_command(
         "outline",
@@ -3349,6 +3356,7 @@ def init_commands(kernel):
         blacklevel=None,
         outer=None,
         steps=None,
+        debug=False,
         data=None,
         post=None,
         **kwargs,
@@ -3377,7 +3385,8 @@ def init_commands(kernel):
         if data is None or len(data) == 0:
             channel(_("No elements to outline."))
             return
-
+        if debug is None:
+            debug = False
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -3436,11 +3445,21 @@ def init_commands(kernel):
                 e.fill = Color("black")
                 if hasattr(e, "stroke"):
                     e.stroke = Color("black")
+                if hasattr(e, "stroke_width") and e.stroke_width == 0:
+                    e.stroke_width = UNITS_PER_PIXEL
                 if hasattr(e, "fillrule"):
                     e.fillrule = 0
                 mydata.append(e)
             else:
-                mydata.append(node)
+                e = copy(node)
+                if hasattr(e, "stroke_width") and e.stroke_width == 0:
+                    e.stroke_width = UNITS_PER_PIXEL
+                mydata.append(e)
+        if debug:
+            for node in mydata:
+                node.label = "Phase 0: Initial copy"
+                self.elem_branch.add_node(node)
+
 
         ###############################################
         # Phase 1: render and vectorize first outline
@@ -3504,9 +3523,9 @@ def init_commands(kernel):
         data_node.fill = None
         # If you want to debug the phases then uncomment the following lines to
         # see the interim path and interim render image
-
-        # self.elem_branch.add_node(data_node)
-        # self.elem_branch.add_node(image_node_1)
+        if debug:
+            self.elem_branch.add_node(data_node)
+            self.elem_branch.add_node(image_node_1)
 
         copy_data = [image_node_1, data_node]
 
@@ -3580,8 +3599,9 @@ def init_commands(kernel):
 
             # If you want to debug the phases then uncomment the following line to
             # see the interim image
-            # self.elem_branch.add_node(image_node_2)
-            # self.elem_branch.add_node(data_node_2)
+            if debug:
+                self.elem_branch.add_node(image_node_2)
+                self.elem_branch.add_node(data_node_2)
             #######################################################
             # Phase 3: render and vectorize last outline for outer
             #######################################################
@@ -3606,7 +3626,9 @@ def init_commands(kernel):
                     copy_data.append(data_node)
                     # If you want to debug the phases then uncomment the following lines to
                     # see the interim path nodes
-                    # self.elem_branch.add_node(data_node)
+                    if debug:
+                        self.elem_branch.add_node(data_node)
+
                 bounds = Node.union_bounds(copy_data, attr="paint_bounds")
                 # bounds_regular = Node.union_bounds(data)
                 # for idx in range(4):
@@ -4238,7 +4260,7 @@ def init_commands(kernel):
                 else:
                     if e.stroke_scaled:
                         typename = "scaled-stroke"
-                        factor = sqrt(e.matrix.determinant)
+                        factor = sqrt(abs(e.matrix.determinant))
                     else:
                         typename = "non-scaling-stroke"
                         factor = 1.0
@@ -4265,7 +4287,7 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
+            stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
             e.stroke_width = stroke_width / stroke_scale
             e.altered()
         return "elements", data

@@ -378,7 +378,7 @@ class RibbonPanel(wx.Panel):
                     first_button.parent.ToggleButton(first_button.id, True)
 
                     # Clone event and recurse.
-                    if event:
+                    if event and first_button.id != evt_id:
                         _event = event.Clone()
                         _event.SetId(first_button.id)
                         if first_button.id == evt_id:
@@ -526,7 +526,12 @@ class RibbonPanel(wx.Panel):
             # Every registered button in the updated lookup gets created.
             group = button.get("group")
             resize_param = button.get("size")
-            new_id = wx.NewIdRef()
+            # NewIdRef is only available after 4.1
+            try:
+                new_id = wx.NewIdRef()
+            except AttributeError:
+                new_id = wx.NewId()
+
             if "multi" in button:
                 # Button is a multi-type button
                 b = button_bar.AddHybridButton(
