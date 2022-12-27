@@ -38,6 +38,28 @@ Creator-Software: MeerK40t v0.0.0-testing
 %0%0%0%0%
 """
 
+egv_override_speed_1_rect = """Document type : LHYMICRO-GL file
+File version: 1.0.01
+Copyright: Unknown
+Creator-Software: MeerK40t v0.0.0-testing
+
+%0%0%0%0%
+ICV2452421011000060CNBRS1EMzzzvFNSE-
+ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
+"""
+
+egv_override_speed_2_rect = """Document type : LHYMICRO-GL file
+File version: 1.0.01
+Copyright: Unknown
+Creator-Software: MeerK40t v0.0.0-testing
+
+%0%0%0%0%
+ICV2452421011000060CNBRS1EMzzzvFNSE-
+ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
+ICV2452421011000060CNBRS1EMzzzwFNSE-
+ICV2490731016000027CNLBS1EDz139Rz139Tz139Lz139FNSE-
+"""
+
 
 class TestDriverLihuiyu(unittest.TestCase):
     def test_driver_basic_rect_engrave(self):
@@ -128,3 +150,63 @@ class TestDriverLihuiyu(unittest.TestCase):
         with open(file1, "r") as f:
             data = f.read()
         self.assertEqual(data, egv_image)
+
+    def test_driver_override_speed_engrave(self):
+        """
+        This test creates a lihuiyu device, forces the override and speeds in x and y.
+
+        This shall result in the movements not being within rapid speed mode but rather at a given speed:
+        'IBzzzvRzzzvS1P\n'
+
+        replaced with:
+        'ICV2452421011000060CNBRS1EBzzzvRzzzvFNSE-\n'
+
+        @return:
+        """
+        file1 = "test_rapid_override.egv"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("operation* delete\n")
+            device = kernel.device
+            path = kernel.device.path
+            device(f"set -p {path} rapid_override True")
+            device(f"set -p {path} rapid_override_speed_x 10.0")
+            device(f"set -p {path} rapid_override_speed_y 10.0")
+            kernel.console(f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
+        finally:
+            kernel.shutdown()
+        with open(file1, "r") as f:
+            data = f.read()
+        self.assertEqual(egv_override_speed_1_rect, data)
+
+    def test_driver_override_speed_between(self):
+        """
+        This test creates a lihuiyu device, forces the override and speeds in x and y.
+
+        Tests the rapid speed feature between two different objects.
+        @return:
+        """
+        file1 = "test_rapid_override_between.egv"
+        self.addCleanup(os.remove, file1)
+
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            kernel.console("operation* delete\n")
+            device = kernel.device
+            path = kernel.device.path
+            device(f"set -p {path} rapid_override True")
+            device(f"set -p {path} rapid_override_speed_x 10.0")
+            device(f"set -p {path} rapid_override_speed_y 10.0")
+            kernel.console("rect 2cm 2cm 1cm 1cm\n")
+            kernel.console("rect 4cm 4cm 1cm 1cm\n")  # second rect is not overlapping / non-connecting
+            kernel.console(f"element* engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
+        finally:
+            kernel.shutdown()
+        with open(file1, "r") as f:
+            data = f.read()
+            print(data)
+        self.assertEqual(egv_override_speed_2_rect, data)
