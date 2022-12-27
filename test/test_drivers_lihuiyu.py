@@ -257,7 +257,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
-            self.assertEqual("ICV1551941002013022CNBRS1EB100Rzzzzzzz215FNSE-\n", data[-2])
+            self.assertEqual("ICV1551941002013022CNBRS1EM100Rzzzzzzz115FNSE-\n", data[-2])
             self.assertEqual(data[-3], data[-1])
 
             # Y fast, Y long.
@@ -287,7 +287,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
-            self.assertEqual("ICV1551941002013022CNRBS1Ezzzzzzz215R100FNSE-\n", data[-2])
+            self.assertEqual("ICV1551941002013022CNRBS1EM100Bzzzzzzz115FNSE-\n", data[-2])
             self.assertEqual(data[-3], data[-1])
 
         finally:
