@@ -1038,13 +1038,13 @@ class LihuiyuDriver(Parameters):
             self._goto_octent(dx, dy, on=False)
         elif x_speed <= y_speed and abs(dx) >= abs(dy):
             # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
-            self._set_speed(y_speed)
+            self._set_speed(x_speed)
             self.program_mode()
             self._goto_octent(dx, dy, on=False)
         else:
             # The faster speed is going longer. The slower speed is going shorter. Full zig.
             if dx != 0:
-                self._set_speed(y_speed)
+                self._set_speed(x_speed)
                 self.program_mode()
                 self._goto_octent(dx, 0, on=False)
             if dy != 0:
