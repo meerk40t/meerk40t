@@ -1094,6 +1094,9 @@ class SizePanel(wx.Panel):
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+
         # No change of fields during input
         # self.text_height.execute_action_on_change = False
         # self.text_width.execute_action_on_change = False
@@ -1104,6 +1107,7 @@ class SizePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
         )
+        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
         self.text_width.SetActionRoutine(self.on_textenter_width)
         self.text_height.SetActionRoutine(self.on_textenter_height)
 
@@ -1114,12 +1118,11 @@ class SizePanel(wx.Panel):
         self.text_width.SetToolTip(_("Define width of selected object"))
         self.text_height.SetToolTip(_("Define height of selected object"))
         self.btn_lock_ratio.SetMinSize((32, 32))
-        self.btn_lock_ratio.SetBitmap(
-            icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        )
         self.btn_lock_ratio.SetToolTip(
             _("Lock the ratio of width / height to the original values")
         )
+        # Set toggle bitmap
+        self.on_toggle_ratio(None)
         self.text_height.Enable(False)
         self.text_width.Enable(False)
         self.button_navigate_resize.Enable(False)
@@ -1166,6 +1169,12 @@ class SizePanel(wx.Panel):
 
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
+
+    def on_toggle_ratio(self, event):
+        if self.btn_lock_ratio.GetValue():
+            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+        else:
+            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
 
     def update_sizes(self):
         self.object_x = None
