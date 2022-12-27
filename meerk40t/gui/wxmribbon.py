@@ -378,7 +378,7 @@ class RibbonPanel(wx.Panel):
                     first_button.parent.ToggleButton(first_button.id, True)
 
                     # Clone event and recurse.
-                    if event:
+                    if event and first_button.id != evt_id:
                         _event = event.Clone()
                         _event.SetId(first_button.id)
                         if first_button.id == evt_id:
