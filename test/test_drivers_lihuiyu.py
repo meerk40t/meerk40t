@@ -354,5 +354,21 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             # RT switch, RT 0 , T 2000
             self.assertEqual("ICV1551941002013022CNRTS1Ezzzzzzz215FNSE-\n", data[-2])
             self.assertEqual(data[-3], data[-1])
+
+            # Same as previous but changed Y rather than X (should change speed)
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console("rapid_override 1 10\n")
+            kernel.console("rect 2in 2in 1in 1in\n")
+            kernel.console("rect 2in 0in 1in 1in\n")
+            kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
+            kernel.console("plan clear\n")
+            with open(file1, "r") as f:
+                data = f.readlines()
+            self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
+            self.assertEqual(rect_1in_at_15, data[-3])
+            # BL switch, BL 0 , L 2000
+            self.assertEqual("ICV2452421011000060CNBLS1Ezzzzzzz215FNSE-\n", data[-2])
+            self.assertEqual(data[-3], data[-1])
         finally:
             kernel.shutdown()
