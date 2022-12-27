@@ -151,6 +151,8 @@ class TestDriverLihuiyu(unittest.TestCase):
             data = f.read()
         self.assertEqual(data, egv_image)
 
+class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
+
     def test_driver_override_speed_engrave(self):
         """
         This test creates a lihuiyu device, forces the override and speeds in x and y.
@@ -210,3 +212,83 @@ class TestDriverLihuiyu(unittest.TestCase):
             data = f.read()
             print(data)
         self.assertEqual(egv_override_speed_2_rect, data)
+
+    def test_driver_override_speed_shifts(self):
+        """
+        This test creates a lihuiyu device, forces the override and speeds in x and y at different rates.
+
+        Tests the rapid speed feature between two different objects.
+        @return:
+        """
+        file1 = "test_rapid_fast_long.egv"
+        self.addCleanup(os.remove, file1)
+        rect_1in_at_15 = "ICV2490731016000027CNLBS1EDzzz235Rzzz235Tzzz235Lzzz235FNSE-\n"
+
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("service device start -i lhystudios 0\n")
+            for i in range(3):
+                kernel.console(f"service device destroy {i}\n")
+
+            # X fast, X long.
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console("rapid_override 10 1\n")
+            kernel.console("rect 2in 2in 1in 1in\n")
+            kernel.console("rect 4in 2.1in 1in 1in\n")
+            kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
+            kernel.console("plan clear\n")
+            with open(file1, "r") as f:
+                data = f.readlines()
+            self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
+            self.assertEqual(rect_1in_at_15, data[-3])
+            self.assertEqual("ICV2452421011000060CNRBS1Ezzzzzzz215@NSECV1551941002013022CNRBS1ER100FNSE-\n", data[-2])
+            self.assertEqual(data[-3], data[-1])
+
+            # X fast, Y long.
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console("rapid_override 10 1\n")
+            kernel.console("rect 2in 2in 1in 1in\n")
+            kernel.console("rect 2.1in 4in 1in 1in\n")
+            kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1} clear\n")
+            kernel.console("plan clear\n")
+            with open(file1, "r") as f:
+                data = f.readlines()
+            self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
+            self.assertEqual(rect_1in_at_15, data[-3])
+            self.assertEqual("ICV1551941002013022CNBRS1EB100Rzzzzzzz215FNSE-\n", data[-2])
+            self.assertEqual(data[-3], data[-1])
+
+            # Y fast, Y long.
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console("rapid_override 1 10\n")
+            kernel.console("rect 2in 2in 1in 1in\n")
+            kernel.console("rect 2.1in 4in 1in 1in\n")
+            kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1} clear\n")
+            kernel.console("plan clear\n")
+            with open(file1, "r") as f:
+                data = f.readlines()
+            self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
+            self.assertEqual(rect_1in_at_15, data[-3])
+            self.assertEqual("ICV1551941002013022CNBRS1EB100@NSECV2452421011000060CNBRS1Ezzzzzzz215FNSE-\n", data[-2])
+            self.assertEqual(data[-3], data[-1])
+
+            # Y fast, X long
+            kernel.console("operation* delete\n")
+            kernel.console("element* delete\n")
+            kernel.console("rapid_override 1 10\n")
+            kernel.console("rect 2in 2in 1in 1in\n")
+            kernel.console("rect 4in 2.1in 1in 1in\n")
+            kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
+            kernel.console("plan clear\n")
+            with open(file1, "r") as f:
+                data = f.readlines()
+            self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
+            self.assertEqual(rect_1in_at_15, data[-3])
+            self.assertEqual("ICV1551941002013022CNRBS1Ezzzzzzz215R100FNSE-\n", data[-2])
+            self.assertEqual(data[-3], data[-1])
+
+        finally:
+            kernel.shutdown()
