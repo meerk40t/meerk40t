@@ -71,7 +71,7 @@ class EditTool(ToolWidget):
         self.scene.request_refresh()
 
     def calculate_points(self, selected_node):
-        print ("Set points...")
+        # Set points...
         self.element = selected_node
         self.selected_index = None
         self.nodes = []
@@ -228,6 +228,10 @@ class EditTool(ToolWidget):
         if self.element is None:
             return
         self.element.altered()
+        try:
+            bb = self.element.bbox()
+        except AttributeError:
+            pass
         self.scene.context.elements.validate_selected_area()
         self.scene.request_refresh()
         self.scene.context.signal("element_property_reload", [self.element])
@@ -434,7 +438,7 @@ class EditTool(ToolWidget):
         return RESPONSE_DROP
 
     def signal(self, signal, *args, **kwargs):
-        print (f"Signal: {signal}, args={args}")
+        #  print (f"Signal: {signal}, args={args}")
         if signal == "tool_changed":
             if len(args) > 1 and args[1] == "edit":
                 selected_node = self.scene.context.elements.first_element(
