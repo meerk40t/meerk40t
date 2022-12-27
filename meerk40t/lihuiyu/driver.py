@@ -1035,14 +1035,14 @@ class LihuiyuDriver(Parameters):
             # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
             self._set_speed(y_speed)
             self.program_mode()
-            dy_m = math.copysign(dx, dy)  # magnitude of shorter in the direction of longer.
+            dy_m = int(math.copysign(dx, dy))  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx, dy_m, on=False)
             self._goto_octent(0, dy - dy_m, on=False)
         elif x_speed <= y_speed and abs(dx) >= abs(dy):
             # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
             self._set_speed(x_speed)
             self.program_mode()
-            dx_m = math.copysign(dy, dx)  # magnitude of shorter in the direction of longer.
+            dx_m = int(math.copysign(dy, dx))  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx_m, dy, on=False)
             self._goto_octent(dx - dx_m, 0, on=False)
         else:
