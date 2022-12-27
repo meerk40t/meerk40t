@@ -224,7 +224,6 @@ class LihuiyuDriver(Parameters):
         """
         Asks that the laser be paused.
 
-        @param args:
         @return:
         """
         self(b"~PN!\n~")
@@ -250,7 +249,6 @@ class LihuiyuDriver(Parameters):
 
         Asks that the device resets, and clears all current work.
 
-        @param args:
         @return:
         """
         self.service.spooler.clear_queue()
@@ -274,7 +272,7 @@ class LihuiyuDriver(Parameters):
         bunch of .rd code, or Lihuiyu device it could be .egv code. It's a method of sending pre-chewed data to the
         device.
 
-        @param type:
+        @param blob_type:
         @param data:
         @return:
         """
@@ -336,7 +334,6 @@ class LihuiyuDriver(Parameters):
         """
         Turn laser off in place.
 
-        @param values:
         @return:
         """
         if not self.laser:
@@ -359,7 +356,6 @@ class LihuiyuDriver(Parameters):
         """
         Turn laser on in place.
 
-        @param values:
         @return:
         """
         if self.laser:
