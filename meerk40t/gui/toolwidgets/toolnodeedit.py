@@ -21,6 +21,7 @@ class EditTool(ToolWidget):
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.nodes = None
+        self.element = None
         self.selected_index = None
         self.move_type = "node"
         self.p1 = None
@@ -65,16 +66,18 @@ class EditTool(ToolWidget):
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
 
     def on_emphasized_changed(self, origin, *args):
-        self.nodes = None
-        self.selected_index = None
-        self.calculate_points()
+        selected_node = self.scene.context.elements.first_element(emphasized=True)
+        self.calculate_points(selected_node)
+        self.scene.request_refresh()
 
-    def calculate_points(self):
+    def calculate_points(self, selected_node):
+        print ("Set points...")
+        self.element = selected_node
+        self.selected_index = None
         self.nodes = []
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
-        selected_node = self.scene.context.elements.first_element(emphasized=True)
         try:
             path = selected_node.path
         except AttributeError:
@@ -87,7 +90,6 @@ class EditTool(ToolWidget):
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "point",
                         "connector": -1,
                         "selected": False,
@@ -99,7 +101,6 @@ class EditTool(ToolWidget):
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "point",
                         "connector": -1,
                         "selected": False,
@@ -111,7 +112,6 @@ class EditTool(ToolWidget):
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "point",
                         "connector": -1,
                         "selected": False,
@@ -123,7 +123,6 @@ class EditTool(ToolWidget):
                         "point": segment.control,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
@@ -135,7 +134,6 @@ class EditTool(ToolWidget):
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "point",
                         "connector": -1,
                         "selected": False,
@@ -147,7 +145,6 @@ class EditTool(ToolWidget):
                         "point": segment.control1,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
@@ -158,7 +155,6 @@ class EditTool(ToolWidget):
                         "point": segment.control2,
                         "segment": segment,
                         "path": path,
-                        "element": selected_node,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
@@ -185,7 +181,7 @@ class EditTool(ToolWidget):
             idx = -1
             for entry in self.nodes:
                 idx += 1
-                node = entry["element"]
+                node = self.element
                 ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
                 if entry["type"] == "point":
                     if idx == self.selected_index or entry["selected"]:
@@ -228,13 +224,16 @@ class EditTool(ToolWidget):
             for entry in self.nodes:
                 entry["selected"] = False
 
-    def modify_node(self, node, reload=True):
-        node.altered()
+    def modify_element(self, reload=True):
+        if self.element is None:
+            return
+        self.element.altered()
         self.scene.context.elements.validate_selected_area()
         self.scene.request_refresh()
-        self.scene.context.signal("element_property_reload", [node])
+        self.scene.context.signal("element_property_reload", [self.element])
         if reload:
-            self.calculate_points()
+            self.calculate_points(self.element)
+            self.scene.request_refresh()
 
     def delete_nodes(self):
         # Stub for append a line
@@ -243,8 +242,7 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def convert_to_bezier(self):
         # Stub for converting segment to a bezier
@@ -253,8 +251,7 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def convert_to_line(self):
         # Stub for converting segment to a line
@@ -263,8 +260,7 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def convert_to_quad(self):
         # Stub for converting segment to a quad
@@ -273,8 +269,7 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def break_path(self):
         # Stub for breaking the path
@@ -283,8 +278,7 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def insert_midpoint(self):
         # Stub for inserting a point...
@@ -293,15 +287,14 @@ class EditTool(ToolWidget):
             if entry["selected"] and entry["type"] == "point":
                 pass
         if modified:
-            node = entry["element"]
-            self.modify_node(node)
+            self.modify_element(True)
 
     def append_line(self):
         # Stub for append a line
         modified = False
         # Code to follow
         if modified:
-            self.modify_node(node)
+            self.modify_element(True)
 
     def event(
         self,
@@ -334,7 +327,7 @@ class EditTool(ToolWidget):
                 h = offset * 4
                 for i, entry in enumerate(self.nodes):
                     pt = entry["point"]
-                    node = entry["element"]
+                    node = self.element
                     ptx, pty = node.matrix.point_in_matrix_space(pt)
                     x = ptx - 2 * offset
                     y = pty - 2 * offset
@@ -372,12 +365,12 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
-                node = current["element"]
+                node = self.element
                 m = node.matrix.point_in_inverse_space(space_pos[:2])
                 pt.x = m[0]
                 pt.y = m[1]
                 current["point"] = pt
-                self.modify_node(node, False)
+                self.modify_element(False)
             return RESPONSE_CONSUME
         elif event_type == "key_down":
             if not self.scene.tool_active:
@@ -398,7 +391,7 @@ class EditTool(ToolWidget):
                 entry = None
             if keycode in self.commands:
                 action = self.commands[keycode]
-                print(f"Execute {action[1]}")
+                # print(f"Execute {action[1]}")
                 action[0]()
 
             return RESPONSE_CONSUME
@@ -439,3 +432,23 @@ class EditTool(ToolWidget):
             self.p2 = None
             return RESPONSE_CONSUME
         return RESPONSE_DROP
+
+    def signal(self, signal, *args, **kwargs):
+        print (f"Signal: {signal}, args={args}")
+        if signal == "tool_changed":
+            if len(args) > 1 and args[1] == "edit":
+                selected_node = self.scene.context.elements.first_element(
+                    emphasized=True
+                )
+                if selected_node is not None:
+                    self.calculate_points(selected_node)
+                    self.scene.request_refresh()
+            return
+        if self.element is None:
+            return
+        if signal == "nodeedit" and args[0]:
+            keycode = args[0]
+            if keycode in self.commands:
+                action = self.commands[keycode]
+                # print(f"Execute {action[1]}")
+                action[0]()
