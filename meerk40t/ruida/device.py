@@ -88,8 +88,6 @@ class RuidaDevice(Service, ViewPort):
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
         )
-        self.current_x = 0.0
-        self.current_y = 0.0
         self.state = 0
 
         self.spooler = Spooler(self)
