@@ -876,7 +876,7 @@ class GalvoController:
         @param frequency_khz: Frequency to convert
         @return:
         """
-        return int(round(20000.0 / frequency_khz))
+        return int(round(20000.0 / frequency_khz)) & 0xFFFF
 
     def _convert_power(self, power):
         """
