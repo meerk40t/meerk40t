@@ -321,7 +321,7 @@ class GalvoController:
             self.abort_connect()
             self.connection = None
             return
-        if self.connection is None and not self._backbone_error:
+        if self.connection is None:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
                 name = self.service.label
