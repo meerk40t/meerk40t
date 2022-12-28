@@ -1132,16 +1132,19 @@ class BalorDevice(Service, ViewPort):
             help=_("Turns redlight on/off"),
         )
         def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
-            if off == "off":
-                reply = self.driver.connection.light_off()
-                self.driver.connection.write_port()
-                self.redlight_preferred = False
-                channel("Turning off redlight.")
-            else:
-                reply = self.driver.connection.light_on()
-                self.driver.connection.write_port()
-                channel("Turning on redlight.")
-                self.redlight_preferred = True
+            try:
+                if off == "off":
+                    reply = self.driver.connection.light_off()
+                    self.driver.connection.write_port()
+                    self.redlight_preferred = False
+                    channel("Turning off redlight.")
+                else:
+                    reply = self.driver.connection.light_on()
+                    self.driver.connection.write_port()
+                    channel("Turning on redlight.")
+                    self.redlight_preferred = True
+            except ConnectionRefusedError:
+                channel("Could not alter redlight connection was rejected.")
 
         @self.console_argument(
             "filename", type=str, default=None, help="filename or none"
