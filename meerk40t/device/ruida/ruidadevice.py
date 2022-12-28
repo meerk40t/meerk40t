@@ -307,7 +307,10 @@ class RuidaEmulator(Module):
 
     @staticmethod
     def decodeu14(data):
-        return (data[0] & 0x7F) << 7 | (data[1] & 0x7F)
+        if len(data) >= 2:
+            return (data[0] & 0x7F) << 7 | (data[1] & 0x7F)
+        else:
+            return 0
 
     @staticmethod
     def encode14(v):
