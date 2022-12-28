@@ -359,7 +359,10 @@ class ViewPort:
         dy = self.unit_height * self.origin_y
         ops = []
         if sx != 1.0 or sy != 1.0:
-            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+            try:
+                ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+            except ZeroDivisionError:
+                pass
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
