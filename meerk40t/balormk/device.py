@@ -1144,7 +1144,8 @@ class BalorDevice(Service, ViewPort):
                     channel("Turning on redlight.")
                     self.redlight_preferred = True
             except ConnectionRefusedError:
-                channel("Could not alter redlight connection was rejected.")
+                self.signal("warning", _("Connection was aborted. Manual connection required."), _("Not Connected"))
+                channel("Could not alter redlight. Connection is aborted.")
 
         @self.console_argument(
             "filename", type=str, default=None, help="filename or none"
