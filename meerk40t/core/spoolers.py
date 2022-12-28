@@ -497,11 +497,11 @@ class Spooler:
                 fully_executed = program.execute(self.driver)
             except ConnectionAbortedError:
                 # Driver could no longer connect to where it was told to send the data.
-                with self._lock:
-                    self._lock.wait()
-                continue
+                return
             except ConnectionRefusedError:
                 # Driver connection failed but, we are not aborting the spooler thread
+                with self._lock:
+                    self._lock.wait()
                 continue
             if fully_executed:
                 # all work finished
