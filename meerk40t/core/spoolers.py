@@ -443,6 +443,8 @@ class Spooler:
         @return:
         """
         self._shutdown = True
+        with self._lock:
+            self._lock.notify_all()
 
     def restart(self):
         """
