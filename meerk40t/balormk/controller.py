@@ -348,6 +348,7 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
+                    self._is_opening = False
                     self.set_backbone_error(True)
                     self.usb_log("Could not connect to the LMC controller.")
                     raise ConnectionRefusedError(
