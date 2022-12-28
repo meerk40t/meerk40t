@@ -2,6 +2,7 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
+from xml.etree.ElementTree import ParseError
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
 from ..svgelements import (
@@ -279,15 +280,18 @@ class SVGLoader:
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
-        svg = SVG.parse(
-            source=source,
-            reify=True,
-            width="%fmm" % bed_dim.bed_width,
-            height="%fmm" % bed_dim.bed_height,
-            ppi=ppi,
-            color="none",
-            transform="scale(%f)" % scale_factor,
-        )
+        try:
+            svg = SVG.parse(
+                source=source,
+                reify=True,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+                ppi=ppi,
+                color="none",
+                transform="scale(%f)" % scale_factor,
+            )
+        except ParseError as e:
+            raise BadFileError(str(e)) from e
         context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", label=basename)
