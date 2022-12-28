@@ -5,6 +5,7 @@ import time
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
+from .exceptions import BadFileError
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_CONSOLE,
@@ -6176,7 +6177,10 @@ class Elemental(Modifier):
         def reload_file(node, **kwargs):
             filepath = node.filepath
             node.remove_node()
-            self.load(filepath)
+            try:
+                self.load(filepath)
+            except BadFileError as e:
+                self.context.signal("warning", str(e), _("File is Malformed"),)
 
         @self.tree_operation(
             _("Open in System: '{name}'"),
