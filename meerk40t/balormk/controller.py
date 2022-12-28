@@ -317,7 +317,6 @@ class GalvoController:
         self.set_backbone_error(False)
 
     def connect_if_needed(self):
-        # print(f"Connect if needed is called, status={self._backbone_error}...")
         if self._backbone_error:
             self.abort_connect()
             self.connection = None
@@ -364,7 +363,7 @@ class GalvoController:
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
-        except ConnectionError:
+        except (ConnectionError, AttributeError):
             return -1, -1, -1, -1
         if read:
             try:
