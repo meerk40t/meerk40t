@@ -2823,6 +2823,7 @@ class Elemental(Service):
                         return False
                     except BadFileError as e:
                         kernel._console_channel(_("File is Malformed") + ": " + str(e))
+                        self.signal("warning", str(e),  _("File is Malformed"))
                     except OSError:
                         return False
                     finally:
