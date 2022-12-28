@@ -5,6 +5,7 @@ from io import BytesIO
 from xml.etree.ElementTree import ParseError
 from xml.etree.cElementTree import Element, ElementTree, SubElement
 
+from .exceptions import BadFileError
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
