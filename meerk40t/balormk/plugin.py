@@ -10,11 +10,6 @@ def plugin(kernel, lifecycle):
         from meerk40t.balormk.gui import gui
 
         return [gui.plugin]
-    if lifecycle == "invalidate":
-        try:
-            import numpy  # pylint: disable=unused-import
-        except ImportError:
-            return True
     if lifecycle == "register":
         from meerk40t.balormk.device import BalorDevice
 
