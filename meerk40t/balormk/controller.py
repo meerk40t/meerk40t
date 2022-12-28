@@ -320,7 +320,9 @@ class GalvoController:
         if self._backbone_error:
             self.abort_connect()
             self.connection = None
-            return
+            raise ConnectionRefusedError(
+                "LMC was unreachable. Explicit connect required."
+            )
         if self.connection is None:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
@@ -365,7 +367,7 @@ class GalvoController:
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
-        except (ConnectionError, AttributeError):
+        except ConnectionError:
             return -1, -1, -1, -1
         if read:
             try:
