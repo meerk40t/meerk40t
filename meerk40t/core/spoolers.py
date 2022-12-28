@@ -1,6 +1,6 @@
 import time
 from math import isinf
-from threading import Lock
+from threading import Condition
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
@@ -387,7 +387,7 @@ class Spooler:
         self.foreground_only = True
         self._current = None
 
-        self._lock = Lock()
+        self._lock = Condition()
         self._queue = []
 
         self._shutdown = False
@@ -479,16 +479,13 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
-            self._lock.acquire()
-            try:
-                program = self._queue[0]
-            except IndexError:
-                self._lock.release()
-                # There is no work to do.
-                time.sleep(0.1)
-                continue
-            self._lock.release()
-
+            with self._lock:
+                try:
+                    program = self._queue[0]
+                except IndexError:
+                    # There is no work to do.
+                    self._lock.wait()
+                    continue
             priority = program.priority
 
             # Check if the driver holds work at this priority level.
@@ -500,9 +497,11 @@ class Spooler:
                 fully_executed = program.execute(self.driver)
             except ConnectionAbortedError:
                 # Driver could no longer connect to where it was told to send the data.
-                return
+                with self._lock:
+                    self._lock.wait()
+                continue
             except ConnectionRefusedError:
-                # Driver connection failed but we are not aborting the spooler thread
+                # Driver connection failed but, we are not aborting the spooler thread
                 continue
             if fully_executed:
                 # all work finished
@@ -535,6 +534,7 @@ class Spooler:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def command(self, *job, priority=0, helper=True):
@@ -544,6 +544,7 @@ class Spooler:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def send(self, job):
@@ -557,6 +558,7 @@ class Spooler:
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def _stop_lower_priority_running_jobs(self, priority):
@@ -597,7 +599,8 @@ class Spooler:
                 except AttributeError:
                     pass
             self._queue.clear()
-            self.context.signal("spooler;queue", len(self._queue))
+            self._lock.notify()
+        self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element):
         with self._lock:
@@ -634,4 +637,5 @@ class Spooler:
                 e = self._queue[i]
                 if e is element:
                     del self._queue[i]
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
