@@ -200,6 +200,16 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Size of Planning Buffer"),
             },
             {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combo",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _("Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."),
+            },
+            {
                 "attr": "interpolate",
                 "object": self,
                 "default": 50,
