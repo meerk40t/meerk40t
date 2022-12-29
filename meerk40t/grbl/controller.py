@@ -179,9 +179,9 @@ class GrblController:
         @return:
         """
         # reading responses.
-        response = self.connection.read()
-        if not response:
-            return False
+        response = None
+        while not response:
+            response = self.connection.read()
         self.service.signal("serial;response", response)
         self.recv(response)
         if response == "ok":
