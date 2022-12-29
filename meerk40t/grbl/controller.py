@@ -198,6 +198,11 @@ class GrblController:
         elif response.startswith("ALARM"):
             self.service.signal("warning", f"GRBL: {response}", response, 4)
         elif response.startswith("error"):
+            try:
+                error_num = int(response[6:])
+            except ValueError:
+                error_num = -1
+            self.service.signal("grbl;error", error_num, response)
             self.channel(f"ERROR: {response}")
         else:
             self.channel(f"Data: {response}")
