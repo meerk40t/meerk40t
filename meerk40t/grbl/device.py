@@ -164,6 +164,11 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
+        import serial.tools.list_ports
+
+        ports = serial.tools.list_ports.comports()
+        com_ports = [x.device for x in ports]
+
         choices = [
             {
                 "attr": "label",
@@ -178,6 +183,8 @@ class GRBLDevice(Service, ViewPort):
                 "object": self,
                 "default": "com1",
                 "type": str,
+                "style": "combo",
+                "choices": com_ports,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
                 "subsection": "Interface",
