@@ -56,7 +56,7 @@ class LineNode(Node):
 
     @property
     def stroke_scaled(self):
-        return self.stroke_scaled
+        return self.stroke_scale
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
@@ -73,7 +73,7 @@ class LineNode(Node):
         if v and not self.stroke_scale:
             matrix = self.matrix
             self.stroke_width /= sqrt(abs(matrix.determinant))
-        self.stroke_scaled = v
+        self.stroke_scale = v
 
     def implied_stroke_width(self, zoomscale=1.0):
         """If the stroke is not scaled, the matrix scale will scale the stroke and we
