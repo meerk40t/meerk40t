@@ -50,7 +50,27 @@ class SerialControllerPanel(wx.Panel):
         self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
+        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.gcode_commands = (
+            ("$H", _("Home"), _("Send laser to Home-position"), None),
+            ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
+            ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
+            ("$#", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
+            ("$I", _("Info"), _("Show Build-Info"), None),
+            ("?", _("Status"), _("Query status"), None),
+        )
+
+        for entry in self.gcode_commands:
+            btn = wx.Button(self, wx.ID_ANY, entry[1])
+            btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
+            btn.SetToolTip(entry[2])
+            if entry[3] is not None:
+                btn.SetBitmap(entry[3].GetBitmap(size=25, use_theme=False))
+            sizer_2.Add(btn, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
+
         self.gcode_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.gcode_text.SetToolTip(_("Enter a Gcode-Command and send it to the laser"))
         self.gcode_text.SetFocus()
         sizer_1.Add(self.gcode_text, 0, wx.EXPAND, 0)
 
@@ -73,7 +93,13 @@ class SerialControllerPanel(wx.Panel):
             self.service.controller.stop()
         else:
             self.service.controller.start()
+    
+    def send_gcode(self, gcode_cmd):
+        def handler(event):
+            self.service(f"gcode {gcode_cmd}")
 
+        return handler
+    
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         self.service(f"gcode {self.gcode_text.GetValue()}")
         self.gcode_text.Clear()
