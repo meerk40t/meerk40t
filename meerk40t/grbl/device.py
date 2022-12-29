@@ -201,7 +201,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "planning_buffer_size",
                 "object": self,
-                "default": 255,
+                "default": 128,
                 "type": int,
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
