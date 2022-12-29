@@ -74,6 +74,12 @@ class GrblController:
         }
 
     def open(self):
+        """
+        Opens the connection calling connection.connect.
+
+        Reads the first line this should be GRBL version and information.
+        @return:
+        """
         if self.connection.connected:
             return
         self.connection.connect()
@@ -97,10 +103,21 @@ class GrblController:
                 return
 
     def close(self):
+        """
+        Close the GRBL connection.
+
+        @return:
+        """
         if self.connection.connected:
             self.connection.disconnect()
 
     def write(self, data):
+        """
+        Write data to the sending queue.
+
+        @param data:
+        @return:
+        """
         self.start()
         self.service.signal("serial;write", data)
         with self._lock:
@@ -111,6 +128,14 @@ class GrblController:
             self._lock.notify()
 
     def realtime(self, data):
+        """
+        Write data to the realtime queue.
+
+        The realtime queue should preemt the regular dataqueue.
+
+        @param data:
+        @return:
+        """
         self.start()
         self.service.signal("serial;write", data)
         with self._lock:
@@ -123,6 +148,11 @@ class GrblController:
             self._lock.notify()
 
     def start(self):
+        """
+        Starts the driver thread.
+
+        @return:
+        """
         self.open()
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
@@ -133,10 +163,21 @@ class GrblController:
             )
 
     def stop(self, *args):
+        """
+        Processes the stopping of the sending queue.
+
+        @param args:
+        @return:
+        """
         self.sending_thread = None
         self.close()
 
     def _recv_response(self):
+        """
+        Read and process response from grbl.
+
+        @return:
+        """
         # reading responses.
         response = self.connection.read()
         if not response:
