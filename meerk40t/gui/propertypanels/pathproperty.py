@@ -11,6 +11,7 @@ from meerk40t.gui.propertypanels.attributes import (
     IdPanel,
     LinePropPanel,
     PositionSizePanel,
+    PreventChangePanel,
     StrokeWidthPanel,
 )
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
@@ -70,6 +71,10 @@ class PathPropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.panels.append(panel_line)
+        panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panels.append(panel_lock)
         panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )

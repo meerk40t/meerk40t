@@ -588,7 +588,6 @@ class PositionSizePanel(wx.Panel):
         self.text_h = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
         )
-        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
@@ -600,7 +599,6 @@ class PositionSizePanel(wx.Panel):
         self.text_y.SetActionRoutine(self.on_text_y_enter)
         self.text_w.SetActionRoutine(self.on_text_w_enter)
         self.text_h.SetActionRoutine(self.on_text_h_enter)
-        self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
 
         self.set_widgets(self.node)
@@ -613,10 +611,6 @@ class PositionSizePanel(wx.Panel):
         sizer_opt = wx.BoxSizer(wx.VERTICAL)
         sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
         sizer_x = StaticBoxSizer(self, wx.ID_ANY, "X:", wx.HORIZONTAL)
-        sizer_lock = StaticBoxSizer(
-            self, wx.ID_ANY, _("Prevent changes:"), wx.HORIZONTAL
-        )
-        sizer_lock.Add(self.check_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_x.Add(self.text_x, 1, wx.EXPAND, 0)
         sizer_y.Add(self.text_y, 1, wx.EXPAND, 0)
@@ -648,7 +642,6 @@ class PositionSizePanel(wx.Panel):
         sizer_h_dimensions.Add(self.sizer_v_xywh, 1, wx.EXPAND, 0)
         sizer_h_dimensions.Add(sizer_opt, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_h_dimensions, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -664,11 +657,6 @@ class PositionSizePanel(wx.Panel):
         )
         self.text_y.SetToolTip(
             _("New Y-coordinate of left top corner (enter to apply)")
-        )
-        self.check_lock.SetToolTip(
-            _(
-                "If active then this element is effectively prevented from being modified"
-            )
         )
 
     def pane_hide(self):
@@ -703,12 +691,6 @@ class PositionSizePanel(wx.Panel):
             # Bounds was genuinely none, or node threw an error.
             self._set_widgets_hidden()
             return
-        if hasattr(self.node, "lock"):
-            self.check_lock.Enable(True)
-            self.check_lock.SetValue(self.node.lock)
-        else:
-            self.check_lock.SetValue(False)
-            self.check_lock.Enable(False)
 
         en_xy = (
             not getattr(self.node, "lock", False)
@@ -802,13 +784,6 @@ class PositionSizePanel(wx.Panel):
 
             self.context.elements.signal("element_property_update", self.node)
 
-    def on_check_lock(self, event):
-        flag = self.check_lock.GetValue()
-        if hasattr(self.node, "lock"):
-            self.node.lock = flag
-            self.context.elements.signal("element_property_update", self.node)
-            self.set_widgets(self.node)
-
     def on_toggle_ratio(self, event):
         if self.btn_lock_ratio.GetValue():
             self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
@@ -826,3 +801,64 @@ class PositionSizePanel(wx.Panel):
 
     def on_text_h_enter(self):
         self.scale_it(False)
+
+class PreventChangePanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
+        self.__set_properties()
+        self.__do_layout()
+        self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
+        self.set_widgets(self.node)
+
+    def __do_layout(self):
+        # begin wxGlade: PositionPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_lock = StaticBoxSizer(
+            self, wx.ID_ANY, _("Prevent changes:"), wx.HORIZONTAL
+        )
+        sizer_lock.Add(self.check_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def __set_properties(self):
+        self.check_lock.SetToolTip(
+            _(
+                "If active then this element is effectively prevented from being modified"
+            )
+        )
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def _set_widgets_hidden(self):
+        self.Hide()
+
+    def set_widgets(self, node):
+        self.node = node
+        if hasattr(self.node, "lock"):
+            self.check_lock.Enable(True)
+            self.check_lock.SetValue(self.node.lock)
+        else:
+            self.check_lock.SetValue(False)
+            self.check_lock.Enable(False)
+        self.Show()
+
+    def on_check_lock(self, event):
+        flag = self.check_lock.GetValue()
+        if hasattr(self.node, "lock"):
+            self.node.lock = flag
+            self.context.elements.signal("element_property_update", self.node)
+            self.set_widgets(self.node)
+
