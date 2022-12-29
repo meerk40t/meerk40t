@@ -211,8 +211,9 @@ class GrblController:
             self._sending_realtime()
 
         # Send 1, recv 1.
-        self._sending_single_line()
-        self._recv_response()
+        if self._sending_queue:
+            self._sending_single_line()
+            self._recv_response()
 
     def _sending(self):
         """
