@@ -1,7 +1,9 @@
 import os
+import subprocess
 from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
+from ..core.exceptions import BadFileError
 
 from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
@@ -1786,6 +1788,8 @@ class ImageLoader:
             image = PILImage.open(pathname)
         except IOError:
             return False
+        except subprocess.CalledProcessError as e:
+            raise BadFileError("Cannot load an .eps file without GhostScript installed") from e
         image.copy()  # Throws error for .eps without ghostscript
         _dpi = DEFAULT_PPI
         matrix = Matrix(f"scale({UNITS_PER_PIXEL})")

@@ -360,6 +360,27 @@ class Kernel(Settings):
                 return
         self.activate(domain, service, assigned)
 
+    def destroy_service_index(self, domain: str, index: int):
+        """
+        Destroy the service at the given domain and index.
+
+        This cannot be done for the current service.
+
+        @param domain: service domain name
+        @param index: index of the service to destroy.
+        @return:
+        """
+        services = self.services(domain)
+        service = services[index]
+        active = self.services(domain, True)
+        if service == active:
+            raise PermissionError("Cannot destroy the active service.")
+
+        try:
+            service.destroy()
+        except AttributeError:
+            raise PermissionError("Service could not be destroyed.")
+
     def activate(self, domain, service, assigned: bool = False):
         """
         Activate the service specified on the domain specified.
@@ -2831,6 +2852,23 @@ class Kernel(Settings):
             if index is None:
                 raise CommandSyntaxError
             self.activate_service_index(domain, index)
+
+        @self.console_argument("index", type=int, help="Index of service to destroy.")
+        @self.console_command(
+            "destroy",
+            input_type="service",
+            help=_("Destroy the service at the given index"),
+        )
+        def service_destroy(channel, _, data=None, index=None, **kwargs):
+            domain, available, active = data
+            if index is None:
+                raise CommandSyntaxError
+            try:
+                self.destroy_service_index(domain, index)
+            except PermissionError:
+                channel("Could not destroy active service.")
+            except IndexError:
+                channel("Service index did not exist.")
 
         @self.console_argument("name", help="Name of service to start")
         @self.console_option(

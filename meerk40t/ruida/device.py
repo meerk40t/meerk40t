@@ -88,8 +88,6 @@ class RuidaDevice(Service, ViewPort):
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
         )
-        self.current_x = 0.0
-        self.current_y = 0.0
         self.state = 0
 
         self.spooler = Spooler(self)
@@ -104,8 +102,29 @@ class RuidaDevice(Service, ViewPort):
         super().realize()
 
     @property
+    def current(self):
+        """
+        @return: the location in scene units for the current known x value.
+        """
+        return 0,0
+
+    @property
     def native(self):
         """
         @return: the location in device native units for the current known position.
         """
         return 0, 0
+
+    @property
+    def current_x(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return self.current[0]
+
+    @property
+    def current_y(self):
+        """
+        @return: the location in nm for the current known y value.
+        """
+        return self.current[1]
