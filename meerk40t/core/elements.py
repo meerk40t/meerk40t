@@ -2816,18 +2816,18 @@ class Elemental(Service):
                         self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
                         self.remove_empty_groups()
-                        self.signal("freeze_tree", False)
                         self._filename = pathname
+                        self.signal("tree_changed")
+                        return True
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
                         kernel._console_channel(_("File is Malformed") + ": " + str(e))
+                        self.signal("warning", str(e),  _("File is Malformed"))
                     except OSError:
                         return False
-                    else:
-                        if results:
-                            self.signal("tree_changed")
-                            return True
+                    finally:
+                        self.signal("freeze_tree", False)
         return False
 
     def load_types(self, all=True):

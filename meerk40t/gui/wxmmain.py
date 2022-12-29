@@ -2905,7 +2905,7 @@ class MeerK40t(MWindow):
         self.set_needs_save_status(False)
 
     @signal_listener("warning")
-    def on_warning_signal(self, origin, message, caption, style):
+    def on_warning_signal(self, origin, message, caption, style=None):
         if style is None:
             style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
