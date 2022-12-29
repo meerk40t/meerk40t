@@ -203,12 +203,22 @@ class GrblController:
             self.channel(f"Data: {response}")
 
     def _sending_realtime(self):
+        """
+        Send one line of realtime queue.
+
+        @return:
+        """
         line = self._realtime_queue[0]
         self.connection.write(line)
         self.send(line)
         self._realtime_queue.pop(0)
 
     def _sending_single_line(self):
+        """
+        Send one line of sending queue.
+
+        @return:
+        """
         line = self._sending_queue[0]
         self.connection.write(line)
         self.send(line)
@@ -220,6 +230,10 @@ class GrblController:
 
     @property
     def _length_of_next_line(self):
+        """
+        Lookahead and provide length of the next line.
+        @return:
+        """
         if not self._sending_queue:
             return 0
         return len(self._sending_queue[0])
