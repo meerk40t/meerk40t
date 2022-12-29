@@ -280,8 +280,7 @@ class CutOpNode(Node, Parameters):
             if node.type == "reference":
                 node = node.node
             if node.type == "elem image":
-                object_path = node.image
-                box = object_path.bbox()
+                box = node.bbox()
                 path = Path(
                     Polygon(
                         (box[0], box[1]),
