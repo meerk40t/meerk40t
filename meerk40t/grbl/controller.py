@@ -137,18 +137,20 @@ class GrblController:
         self.close()
 
     def _recv_response(self):
+        # reading responses.
         response = self.connection.read()
         if not response:
             return False
-
         self.service.signal("serial;response", response)
         self.recv(response)
         if response == "ok":
             try:
-                self.commands_in_device_buffer.pop(0)
-                self.channel(f"Response: {response}")
+                line = self.commands_in_device_buffer.pop(0)
+                self.buffered_characters -= len(line)
             except IndexError:
                 self.channel(f"Response: {response}, but this was unexpected")
+                raise ConnectionAbortedError
+            self.channel(f"Response: {response}")
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
@@ -159,36 +161,27 @@ class GrblController:
         else:
             self.channel(f"Data: {response}")
 
-    def _sending_sync(self):
-        """
-        Synchronous mode sends 1 line and waits to receive 1 "ok" from the laser
+    def _sending_realtime(self):
+        line = self._realtime_queue[0]
+        self.connection.write(line)
+        self.send(line)
+        self._realtime_queue.pop(0)
 
-        @return:
-        """
-        while self.connection.connected:
-            # Send line if one exists.
-            if len(self._realtime_queue):
-                line = self._realtime_queue[0]
-                self.connection.write(line)
-                self.send(line)
-                self._realtime_queue.pop(0)
-            elif len(self._sending_queue):
-                line = self._sending_queue[0]
-                self.connection.write(line)
-                self.send(line)
-                self.service.signal("serial;buffer", len(self._sending_queue))
-                self._sending_queue.pop(0)
-            else:
-                # No data to send.
-                self.service.signal("pipe;running", False)
-                with self._lock:
-                    # We wait until new data is put in the buffer.
-                    self._lock.wait()
-                continue
-            while not self._recv_response():
-                # We need an OK in sync mode to continue.
-                continue
-            self.service.signal("pipe;running", True)
+    def _sending_single_line(self):
+        line = self._sending_queue[0]
+        self.connection.write(line)
+        self.send(line)
+        self.commands_in_device_buffer.append(line)
+        self.buffered_characters += len(line)
+        self.service.signal("serial;buffer", len(self._sending_queue))
+        self._sending_queue.pop(0)
+        return True
+
+    @property
+    def _length_of_next_line(self):
+        if not self._sending_queue:
+            return 0
+        return len(self._sending_queue[0])
 
     def _sending_buffered(self):
         """
@@ -198,78 +191,47 @@ class GrblController:
 
         @return:
         """
-        while self.connection.connected:
-            write = 0
-            while len(self._realtime_queue):
-                line = self._realtime_queue[0]
-                self.connection.write(line)
-                self.send(line)
-                self._realtime_queue.pop(0)
-                write += 1
+        while self._realtime_queue:
+            self._sending_realtime()
 
-            while len(self._sending_queue):
-                line = self._sending_queue[0]
-                line_length = len(line)
-                buffer_remaining = (
-                    self.device_buffer_size - self.buffered_characters
-                )
-                if buffer_remaining > line_length:
-                    # There is enough buffer to send this line.
-                    self.connection.write(line)
-                    self.send(line)
-                    self.commands_in_device_buffer.append(line)
-                    self.buffered_characters += line_length
-                    self.service.signal("serial;buffer", len(self._sending_queue))
-                    self._sending_queue.pop(0)
-                    write += 1
-                else:
-                    # Planning buffer is full.
-                    break
-            read = 0
-            while self.connection.connected and self.commands_in_device_buffer:
-                # reading responses.
-                response = self.connection.read()
-                if not response:
-                    # Nothing next cycle
-                    break
-                self.service.signal("serial;response", response)
-                self.recv(response)
-                if response == "ok":
-                    try:
-                        # Remove the queue, unbuffer the characters.
-                        line = self.commands_in_device_buffer.pop(0)
-                        self.buffered_characters -= len(line)
-                    except IndexError:
-                        self.channel(f"Response: {response}, but this was unexpected")
-                        continue
-                    self.channel(f"Response: {response}")
-                if response.startswith("echo:"):
-                    self.service.channel("console")(response[5:])
-                if response.startswith("ALARM"):
-                    self.service.signal("warning", f"GRBL: {response}", response, 4)
-                if response.startswith("error"):
-                    self.channel(f"ERROR: {response}")
-                else:
-                    self.channel(f"Data: {response}")
-                read += 1
-            if read == 0 and write == 0:
-                # We didn't read or write anything.
-                with self._lock:
-                    # We wait until new data is put in the buffer.
-                    self._lock.wait()
-                self.service.signal("pipe;running", False)
-            else:
-                self.service.signal("pipe;running", True)
+        while self._sending_queue and self.device_buffer_size > (self.buffered_characters + self._length_of_next_line) :
+            # There is a line and there is enough buffer to send this line.
+            self._sending_single_line()
+
+        while self.commands_in_device_buffer:
+            self._recv_response()
+
+    def _sending_sync(self):
+        """
+        Synchronous mode sends 1 line and waits to receive 1 "ok" from the laser
+
+        @return:
+        """
+        while self._realtime_queue:
+            self._sending_realtime()
+
+        # Send 1, recv 1.
+        self._sending_single_line()
+        self._recv_response()
 
     def _sending(self):
         """
         Generic sender, delegate the function according to the desired mode.
         @return:
         """
-        if self.service.buffer_mode == "sync":
-            self._sending_sync()
-        else:
-            self._sending_buffered()
+        while self.connection.connected:
+            self.service.signal("pipe;running", True)
+            if not self._sending_queue and not self._realtime_queue:
+                # There is nothing to write.
+                self.service.signal("pipe;running", False)
+                with self._lock:
+                    # We wait until new data is put in the buffer.
+                    self._lock.wait()
+                self.service.signal("pipe;running", True)
+            if self.service.buffer_mode == "sync":
+                self._sending_sync()
+            else:
+                self._sending_buffered()
 
     def __repr__(self):
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
