@@ -16,6 +16,7 @@ class GrblController:
         self.service = context
         self.com_port = self.service.com_port
         self.baud_rate = self.service.baud_rate
+
         self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel(f"send-{self.com_port.lower()}", pure=True)
         self.recv = self.service.channel(f"recv-{self.com_port.lower()}", pure=True)
@@ -26,14 +27,11 @@ class GrblController:
         self.driver = self.service.driver
         self.sending_thread = None
 
-        self.lock_sending_queue = threading.RLock()
-        self.sending_queue = []
-
-        self.lock_realtime_queue = threading.RLock()
-        self.realtime_queue = []
+        self._lock = threading.Condition()
+        self._sending_queue = []
+        self._realtime_queue = []
 
         self.commands_in_device_buffer = []
-        self.buffer_mode = 1  # 1:1 okay, send lines.
         self.buffered_characters = 0
         self.device_buffer_size = self.service.planning_buffer_size
         self.old_x = 0
@@ -76,6 +74,12 @@ class GrblController:
         }
 
     def open(self):
+        """
+        Opens the connection calling connection.connect.
+
+        Reads the first line this should be GRBL version and information.
+        @return:
+        """
         if self.connection.connected:
             return
         self.connection.connect()
@@ -99,30 +103,56 @@ class GrblController:
                 return
 
     def close(self):
+        """
+        Close the GRBL connection.
+
+        @return:
+        """
         if self.connection.connected:
             self.connection.disconnect()
 
     def write(self, data):
+        """
+        Write data to the sending queue.
+
+        @param data:
+        @return:
+        """
         self.start()
         self.service.signal("serial;write", data)
-        with self.lock_sending_queue:
-            self.sending_queue.append(data)
+        with self._lock:
+            self._sending_queue.append(data)
             self.service.signal(
-                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
+            self._lock.notify()
 
     def realtime(self, data):
+        """
+        Write data to the realtime queue.
+
+        The realtime queue should preemt the regular dataqueue.
+
+        @param data:
+        @return:
+        """
         self.start()
         self.service.signal("serial;write", data)
-        with self.lock_realtime_queue:
-            self.realtime_queue.append(data)
+        with self._lock:
+            self._realtime_queue.append(data)
             if "\x18" in data:
-                self.sending_queue.clear()
+                self._sending_queue.clear()
             self.service.signal(
-                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
+            self._lock.notify()
 
     def start(self):
+        """
+        Starts the driver thread.
+
+        @return:
+        """
         self.open()
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
@@ -133,66 +163,139 @@ class GrblController:
             )
 
     def stop(self, *args):
+        """
+        Processes the stopping of the sending queue.
+
+        @param args:
+        @return:
+        """
         self.sending_thread = None
         self.close()
 
-    def _sending(self):
-        while self.connection.connected:
-            write = 0
-            while len(self.realtime_queue):
-                line = self.realtime_queue[0]
-                self.connection.write(line)
-                self.send(line)
-                self.realtime_queue.pop(0)
-                write += 1
+    def _recv_response(self):
+        """
+        Read and process response from grbl.
 
-            if len(self.sending_queue):
-                if len(self.commands_in_device_buffer) <= 1:
-                    line = self.sending_queue[0]
-                    line_length = len(line)
-                    buffer_remaining = (
-                        self.device_buffer_size - self.buffered_characters
-                    )
-                    if buffer_remaining > line_length:
-                        self.connection.write(line)
-                        self.send(line)
-                        self.commands_in_device_buffer.append(line)
-                        self.buffered_characters = line_length
-                        self.service.signal("serial;buffer", len(self.sending_queue))
-                        self.sending_queue.pop(0)
-                        write += 1
-            read = 0
-            while self.connection.connected:
-                response = self.connection.read()
-                if not response:
-                    break
-                self.service.signal("serial;response", response)
-                self.recv(response)
-                if response == "ok":
-                    try:
-                        line = self.commands_in_device_buffer.pop(0)
-                        self.buffered_characters -= len(line)
-                    except IndexError:
-                        self.channel(f"Response: {response}, but this was unexpected")
-                        continue
-                    self.channel(f"Response: {response}")
-                if response.startswith("echo:"):
-                    self.service.channel("console")(response[5:])
-                if response.startswith("ALARM"):
-                    self.service.signal("warning", f"GRBL: {response}", response, 4)
-                if response.startswith("error"):
-                    self.channel(f"ERROR: {response}")
-                else:
-                    self.channel(f"Data: {response}")
-                read += 1
-            if read == 0 and write == 0:
-                time.sleep(0.05)
+        @return:
+        """
+        # reading responses.
+        response = None
+        while not response:
+            response = self.connection.read()
+        self.service.signal("serial;response", response)
+        self.recv(response)
+        if response == "ok":
+            try:
+                line = self.commands_in_device_buffer.pop(0)
+                self.buffered_characters -= len(line)
+            except IndexError:
+                self.channel(f"Response: {response}, but this was unexpected")
+                raise ConnectionAbortedError
+            self.channel(f"Response: {response}")
+            return True
+        elif response.startswith("echo:"):
+            self.service.channel("console")(response[5:])
+        elif response.startswith("ALARM"):
+            self.service.signal("warning", f"GRBL: {response}", response, 4)
+        elif response.startswith("error"):
+            try:
+                error_num = int(response[6:])
+            except ValueError:
+                error_num = -1
+            self.service.signal("grbl;error", error_num, response)
+            self.channel(f"ERROR: {response}")
+        else:
+            self.channel(f"Data: {response}")
+
+    def _sending_realtime(self):
+        """
+        Send one line of realtime queue.
+
+        @return:
+        """
+        line = self._realtime_queue[0]
+        self.connection.write(line)
+        self.send(line)
+        self._realtime_queue.pop(0)
+
+    def _sending_single_line(self):
+        """
+        Send one line of sending queue.
+
+        @return:
+        """
+        line = self._sending_queue[0]
+        self.connection.write(line)
+        self.send(line)
+        self.commands_in_device_buffer.append(line)
+        self.buffered_characters += len(line)
+        self.service.signal("serial;buffer", len(self._sending_queue))
+        self._sending_queue.pop(0)
+        return True
+
+    @property
+    def _length_of_next_line(self):
+        """
+        Lookahead and provide length of the next line.
+        @return:
+        """
+        if not self._sending_queue:
+            return 0
+        return len(self._sending_queue[0])
+
+    def _sending_buffered(self):
+        """
+        Buffered connection sends as much data as fits in the planning buffer. Then it waits
+        and for each ok, it reduces the expected size of the plannning buffer and sends the next
+        line of data, only when there's enough room to hold that data.
+
+        @return:
+        """
+        while self._realtime_queue:
+            self._sending_realtime()
+
+        while self._sending_queue and self.device_buffer_size > (self.buffered_characters + self._length_of_next_line) :
+            # There is a line and there is enough buffer to send this line.
+            self._sending_single_line()
+
+        while self.commands_in_device_buffer:
+            self._recv_response()
+
+    def _sending_sync(self):
+        """
+        Synchronous mode sends 1 line and waits to receive 1 "ok" from the laser
+
+        @return:
+        """
+        while self._realtime_queue:
+            self._sending_realtime()
+
+        # Send 1, recv 1.
+        if self._sending_queue:
+            self._sending_single_line()
+            self._recv_response()
+
+    def _sending(self):
+        """
+        Generic sender, delegate the function according to the desired mode.
+        @return:
+        """
+        while self.connection.connected:
+            self.service.signal("pipe;running", True)
+            if not self._sending_queue and not self._realtime_queue:
+                # There is nothing to write.
                 self.service.signal("pipe;running", False)
-            else:
+                with self._lock:
+                    # We wait until new data is put in the buffer.
+                    self._lock.wait()
                 self.service.signal("pipe;running", True)
+            if self.service.buffer_mode == "sync":
+                self._sending_sync()
+            else:
+                self._sending_buffered()
 
     def __repr__(self):
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
-        return len(self.sending_queue) + len(self.realtime_queue)
+        return len(self._sending_queue) + len(self._realtime_queue)
