@@ -933,6 +933,13 @@ class MeerK40tScenePanel(wx.Panel):
         elif len(args) > 1:
             self.scene.signal("linetext", args[0], args[1])
 
+    @signal_listener("nodeedit")
+    def on_signal_nodeedit(self, origin, *args):
+        if len(args) == 1:
+            self.scene.signal("nodeedit", args[0])
+        elif len(args) > 1:
+            self.scene.signal("nodeedit", args[0], args[1])
+
     @signal_listener("element_added")
     @signal_listener("tree_changed")
     def on_elements_added(self, origin, nodes=None, *args):
