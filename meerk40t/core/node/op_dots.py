@@ -249,6 +249,8 @@ class DotsOpNode(Node, Parameters):
         for point_node in self.children:
             if point_node.type != "elem point":
                 continue
+            if point_node.point is None:
+                continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
                 dwell_time=self.dwell_time,
