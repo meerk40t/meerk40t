@@ -16,7 +16,6 @@ class GrblController:
         self.service = context
         self.com_port = self.service.com_port
         self.baud_rate = self.service.baud_rate
-        self.buffer_mode = self.service.buffer_mode
 
         self.channel = self.service.channel("grbl_state", buffer_size=20)
         self.send = self.service.channel(f"send-{self.com_port.lower()}", pure=True)
@@ -267,7 +266,7 @@ class GrblController:
         Generic sender, delegate the function according to the desired mode.
         @return:
         """
-        if self.buffer_mode == "sync":
+        if self.service.buffer_mode == "sync":
             self._sending_sync()
         else:
             self._sending_buffered()
