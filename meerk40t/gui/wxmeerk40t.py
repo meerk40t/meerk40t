@@ -628,6 +628,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
