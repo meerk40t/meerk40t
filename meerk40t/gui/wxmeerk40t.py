@@ -28,6 +28,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
 from .bufferview import BufferView
@@ -48,7 +49,6 @@ from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialtest import TemplateTool
-from ..tools.livinghinges import LivingHingeTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -74,6 +74,7 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
+from .toolwidgets.toolnodeedit import NodeEditWindow
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -667,6 +668,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
+        kernel.register("window/NodeEditIcons", NodeEditWindow)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
