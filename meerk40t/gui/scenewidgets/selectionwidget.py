@@ -2414,6 +2414,9 @@ class SelectionWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         self.clear()  # Clearing children as we are generating them in a bit...
+        # Don't interfere during node editing
+        if self.scene.active_tool.startswith("edit"):
+            return
         context = self.scene.context
         try:
             self.use_handle_rotate = context.enable_sel_rotate
