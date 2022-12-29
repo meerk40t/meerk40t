@@ -219,7 +219,7 @@ class GrblController:
                     self.connection.write(line)
                     self.send(line)
                     self.commands_in_device_buffer.append(line)
-                    self.buffered_characters = line_length
+                    self.buffered_characters += line_length
                     self.service.signal("serial;buffer", len(self._sending_queue))
                     self._sending_queue.pop(0)
                     write += 1
