@@ -11,6 +11,8 @@ from meerk40t.gui.propertypanels.attributes import (
     IdPanel,
     LinePropPanel,
     PositionSizePanel,
+    PreventChangePanel,
+    RoundedRectPanel,
     StrokeWidthPanel,
 )
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
@@ -32,6 +34,11 @@ class PathPropertyPanel(ScrolledPanel):
         # Id at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         self.panels.append(panel_id)
+
+        panel_rect = RoundedRectPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panels.append(panel_rect)
 
         for property_class in self.context.lookup_all("path_attributes/.*"):
             panel = property_class(
@@ -59,6 +66,7 @@ class PathPropertyPanel(ScrolledPanel):
             node=self.node,
         )
         self.panels.append(panel_fill)
+
         # Next one is a placeholder...
         self.panels.append(None)
 
@@ -70,6 +78,10 @@ class PathPropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.panels.append(panel_line)
+        panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panels.append(panel_lock)
         panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -263,7 +275,6 @@ class PathPropertyPanel(ScrolledPanel):
         for panel in self.panels:
             if panel is not None:
                 panel.set_widgets(node)
-
         if node is not None:
             self.node = node
         self.lbl_info_area.SetValue("")

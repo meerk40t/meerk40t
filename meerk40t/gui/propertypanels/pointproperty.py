@@ -5,7 +5,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 from ...core.units import Length
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel, PositionSizePanel
+from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
 _ = wx.GetTranslation
 
@@ -41,6 +41,9 @@ class PointPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             node=self.node,
         )
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -64,6 +67,7 @@ class PointPropertyPanel(ScrolledPanel):
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_xy.set_widgets(node)
 
         if node is not None:
@@ -81,6 +85,7 @@ class PointPropertyPanel(ScrolledPanel):
         sizer_v_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.check_classify, 0, 0, 0)
+        sizer_v_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_classify, self.check_classify)
         self.SetSizer(sizer_v_main)

@@ -9,7 +9,7 @@ from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel, PositionSizePanel
+from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
 _ = wx.GetTranslation
 
@@ -212,6 +212,9 @@ class TextPropertyPanel(ScrolledPanel):
             context=self.context,
             node=self.node,
         )
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -305,6 +308,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_xy.set_widgets(node)
 
         if node is not None:
@@ -433,7 +437,9 @@ class TextPropertyPanel(ScrolledPanel):
 
         page_extended = wx.Panel(self.notebook, wx.ID_ANY)
         sizer_page_extended = wx.BoxSizer(wx.VERTICAL)
+        self.panel_lock.Reparent(page_extended)
         self.panel_xy.Reparent(page_extended)
+        sizer_page_extended.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_page_extended.Add(self.panel_xy, 0, wx.EXPAND, 0)
         page_extended.SetSizer(sizer_page_extended)
 
