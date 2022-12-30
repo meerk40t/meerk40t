@@ -3463,7 +3463,6 @@ def init_commands(kernel):
                 node.label = "Phase 0: Initial copy"
                 self.elem_branch.add_node(node)
 
-
         ###############################################
         # Phase 1: render and vectorize first outline
         ###############################################
@@ -5960,7 +5959,7 @@ def init_commands(kernel):
             dy = float(dy)
         else:
             dy = 0
-        if dx !=0 or dy != 0:
+        if dx != 0 or dy != 0:
             matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
@@ -6206,13 +6205,15 @@ def init_commands(kernel):
             else:
                 bounds = node.bounds
                 if bounds:
-                    pts.extend([
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                        (bounds[0], bounds[1]),
-                    ])
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                            (bounds[0], bounds[1]),
+                        ]
+                    )
         return pts
 
     def generate_hull_shape_quick(data):
@@ -6250,12 +6251,14 @@ def init_commands(kernel):
             except AttributeError:
                 bounds = node.bounds
                 if bounds:
-                    pts.extend([
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ])
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                    )
         hull = list(Point.convex_hull(pts))
         if len(hull) != 0:
             hull.append(hull[0])  # loop
@@ -6284,12 +6287,14 @@ def init_commands(kernel):
             except AttributeError:
                 bounds = node.bounds
                 if bounds:
-                    pts.extend([
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ])
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                    )
         hull = list(Point.convex_hull(pts))
         if len(hull) != 0:
             hull.append(hull[0])  # loop

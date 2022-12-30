@@ -231,6 +231,7 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+
         def single_file_node():
             # do we have more than one element on the top level hierarchy?
             # If no then return True
@@ -711,7 +712,6 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
-
         def is_child(candidate, parent_node):
             if candidate is None:
                 return False

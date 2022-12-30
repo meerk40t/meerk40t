@@ -149,6 +149,7 @@ lookup = {
 class GRBLPlotter:
     def __init__(self):
         from meerk40t.svgelements import Path
+
         self.path = Path()
 
     def plotter(self, command, *args):
@@ -258,7 +259,9 @@ class GRBLParser:
             if isinstance(d, (bytes, bytearray)):
                 d = d.decode("utf-8")
             self.process(d)
-        elements.elem_branch.add(type="elem path", path=plotclass.path, stroke=Color("blue"))
+        elements.elem_branch.add(
+            type="elem path", path=plotclass.path, stroke=Color("blue")
+        )
 
     def grbl_write(self, data):
         if self.reply:

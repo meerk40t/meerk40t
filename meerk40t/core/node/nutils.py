@@ -6,14 +6,7 @@ from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.svgelements import (
-    Close,
-    CubicBezier,
-    Line,
-    Move,
-    Path,
-    QuadraticBezier,
-)
+from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
 
 
 def path_to_cutobjects(

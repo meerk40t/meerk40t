@@ -30,7 +30,7 @@ from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD #, TYPE_RAMP
+from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix

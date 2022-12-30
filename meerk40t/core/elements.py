@@ -4,7 +4,7 @@ from os.path import realpath
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
 
-from ..svgelements import Color, SVGElement, Line, Move, Close
+from ..svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -13,7 +13,7 @@ from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
 from .undos import Undo
-from .units import Length, UNITS_PER_MIL
+from .units import UNITS_PER_MIL, Length
 from .wordlist import Wordlist
 
 
@@ -2824,7 +2824,7 @@ class Elemental(Service):
                         return False
                     except BadFileError as e:
                         kernel._console_channel(_("File is Malformed") + ": " + str(e))
-                        self.signal("warning", str(e),  _("File is Malformed"))
+                        self.signal("warning", str(e), _("File is Malformed"))
                     except OSError:
                         return False
                     finally:
@@ -3253,7 +3253,9 @@ def linearize_path(path, interp=50, point=False):
             elif t in ("Line", "Close"):
                 s.append((segment.end[0], segment.end[1]))
             else:
-                s.extend((s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp)))
+                s.extend(
+                    (s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp))
+                )
         if point:
             s = list(map(Point, s))
         current_polygon.append(s)

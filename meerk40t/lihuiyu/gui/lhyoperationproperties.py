@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -17,7 +17,9 @@ class LhyAdvancedPanel(wx.Panel):
 
         extras_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        advanced_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Speed Code Features:"), wx.VERTICAL)
+        advanced_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Speed Code Features:"), wx.VERTICAL
+        )
         extras_sizer.Add(advanced_sizer, 0, wx.EXPAND, 0)
 
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
@@ -68,7 +70,9 @@ class LhyAdvancedPanel(wx.Panel):
         self.slider_accel.SetToolTip(OPERATION_ACCEL_TOOLTIP)
         sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
 
-        advanced_ppi_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Plot Planner"), wx.HORIZONTAL)
+        advanced_ppi_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Plot Planner"), wx.HORIZONTAL
+        )
         extras_sizer.Add(advanced_ppi_sizer, 0, wx.EXPAND, 0)
 
         sizer_19 = wx.BoxSizer(wx.VERTICAL)

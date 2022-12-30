@@ -214,7 +214,9 @@ class GRBLDevice(Service, ViewPort):
                 "style": "combosmall",
                 "choices": ["buffered", "sync"],
                 "label": _("Sending Protocol"),
-                "tip": _("Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."),
+                "tip": _(
+                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                ),
             },
             {
                 "attr": "interpolate",

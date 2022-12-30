@@ -19,7 +19,6 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 from meerk40t.tools.pathtools import VectorMontonizer
 
-
 _FACTOR = 1000
 
 
@@ -62,7 +61,8 @@ class LivingHinges:
         self._extend_patterns = True
         self.set_cell_values(100, 100)
         self.set_padding_values(50, 50)
-        self.set_predefined_pattern(entry=(
+        self.set_predefined_pattern(
+            entry=(
                 set_line,
                 False,
                 "",
@@ -120,7 +120,9 @@ class LivingHinges:
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
-        self.pattern = list(entry[0](self.param_a, self.param_b, outershape=self.outershape))
+        self.pattern = list(
+            entry[0](self.param_a, self.param_b, outershape=self.outershape)
+        )
         return additional_parameter, info1, info2
 
     def set_additional_parameters(self, param_a, param_b):
@@ -152,11 +154,12 @@ class LivingHinges:
         elif not final and self.preview_path is not None and not force:
             # No need to recalculate...
             return
-        from meerk40t.tools.geomstr import Pattern
-        from meerk40t.tools.geomstr import Clip
+        from meerk40t.tools.geomstr import Clip, Pattern
 
         p = Pattern()
-        p.create_from_pattern(self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape)
+        p.create_from_pattern(
+            self.cutpattern[0], self.param_a, self.param_b, outershape=self.outershape
+        )
         p.set_cell_padding(self.cell_padding_h, self.cell_padding_v)
         p.set_cell_dims(self.cell_width, self.cell_height)
         p.extend_pattern = self._extend_patterns  # Grid type

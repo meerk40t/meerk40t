@@ -12,7 +12,7 @@ def plugin(kernel, lifecycle):
         return [gui.plugin]
     elif lifecycle == "invalidate":
         try:
-            import usb.core   # pylint: disable=unused-import
+            import usb.core  # pylint: disable=unused-import
             import usb.util  # pylint: disable=unused-import
         except ImportError:
             print("Galvo plugin could not load because pyusb is not installed.")

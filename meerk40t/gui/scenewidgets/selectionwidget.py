@@ -13,7 +13,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu_for_node, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
 from meerk40t.svgelements import Point
 
 

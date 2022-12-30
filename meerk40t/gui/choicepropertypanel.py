@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, StaticBoxSizer, TextCtrl
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 

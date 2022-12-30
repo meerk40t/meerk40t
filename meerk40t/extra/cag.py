@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Polygon, Color
+from meerk40t.svgelements import Color, Path, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -8,13 +8,15 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     elif lifecycle == "register":
-        from ..tools import polybool as pb
         from ..core.elements import linearize_path
+        from ..tools import polybool as pb
 
         _ = kernel.translation
         context = kernel.root
 
-        @context.console_option("keep", "k", type=bool, action="store_true", help="keep original elements")
+        @context.console_option(
+            "keep", "k", type=bool, action="store_true", help="keep original elements"
+        )
         @context.console_command(
             ("intersection", "xor", "union", "difference"),
             input_type="elements",

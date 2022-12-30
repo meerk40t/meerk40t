@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
 

@@ -33,6 +33,7 @@ IDX_HISTORY_LOOPS_DONE = 10
 # Amount of columns...
 IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
 
+
 def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
     pane = (
@@ -848,7 +849,9 @@ class SpoolerPanel(wx.Panel):
                     info[IDX_HISTORY_STEPS_DONE] = 0
                 if info[IDX_HISTORY_STEPS_TOTAL] is None:
                     info[IDX_HISTORY_STEPS_TOTAL] = 0
-                stepinfo = f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
+                stepinfo = (
+                    f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
+                )
                 self.list_job_history.SetItem(
                     list_id, self.column_history["steps"], stepinfo
                 )
@@ -862,9 +865,12 @@ class SpoolerPanel(wx.Panel):
                 while len(item) < IDX_HISTORY_MAX_FIELDS:
                     item.append(None)
                 for idx in (
-                    IDX_HISTORY_START, IDX_HISTORY_DURATION,
-                    IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
-                    IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
+                    IDX_HISTORY_START,
+                    IDX_HISTORY_DURATION,
+                    IDX_HISTORY_ESTIMATE,
+                    IDX_HISTORY_LOOPS_DONE,
+                    IDX_HISTORY_STEPS_DONE,
+                    IDX_HISTORY_STEPS_TOTAL,
                 ):
                     if item[idx] is None:
                         item[idx] = 0
@@ -893,7 +899,6 @@ class SpoolerPanel(wx.Panel):
         self.refresh_history()
 
     def save_history(self):
-
         def escaped(s):
             if s is None:
                 s = ""
@@ -904,11 +909,10 @@ class SpoolerPanel(wx.Panel):
         filename = os.path.join(directory, "history.csv")
         try:
             with open(filename, "w", encoding="utf-8") as f:
-                simpleline = (
-                    "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
-                )
+                simpleline = "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
                 f.write(simpleline + "\n")
                 for info in self.history:
+
                     def addnum(idx):
                         if len(info) > idx:
                             return ";" + str(info[idx])
@@ -1076,9 +1080,7 @@ class SpoolerPanel(wx.Panel):
 
             try:
                 pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
-                self.list_job_spool.SetItem(
-                    list_id, self.column_job["steps"], pass_str
-                )
+                self.list_job_spool.SetItem(list_id, self.column_job["steps"], pass_str)
             except AttributeError:
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, self.column_job["steps"], "-")
