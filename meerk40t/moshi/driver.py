@@ -265,6 +265,12 @@ class MoshiDriver(Parameters):
         self.native_x = 0
         self.native_y = 0
 
+    def physical_home(self):
+        """"
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
+
     def unlock_rail(self):
         """
         Unlock the Rail or send a "FreeMotor" command.

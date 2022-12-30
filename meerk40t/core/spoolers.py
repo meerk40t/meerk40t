@@ -302,6 +302,19 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
         @kernel.console_command(
+            "physical_home",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("home the laser (goto endstops)"),
+        )
+        def physical_home(data=None, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.command("physical_home")
+            return "spooler", spooler
+
+        @kernel.console_command(
             "unlock",
             input_type=("spooler", None),
             output_type="spooler",

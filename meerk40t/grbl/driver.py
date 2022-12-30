@@ -311,9 +311,19 @@ class GRBLDriver(Parameters):
             # TODO: Process line does not exist as a function.
             self.process_line(line)
 
+    def physical_home(self):
+        """
+        Home the laser physcially (ie run into endstops).
+
+        @return:
+        """
+        self.native_x = 0
+        self.native_y = 0
+        self.grbl("$H\r")
+
     def home(self):
         """
-        Home the laser.
+        Home the laser (ie goto defined origin)
 
         @return:
         """
