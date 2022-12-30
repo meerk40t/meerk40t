@@ -1782,6 +1782,8 @@ class Transform(wx.Panel):
             translate_x = float(Length(self.text_e.GetValue()))
             translate_y = float(Length(self.text_f.GetValue()))
             f = self.context.elements.first_element(emphasized=True)
+            if f is None:
+                return
             matrix = f.matrix
             if (
                 scale_x == matrix.a

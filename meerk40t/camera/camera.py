@@ -242,7 +242,10 @@ class Camera(Service):
             return False
         self.connection_attempts += 1
         if self.capture is not None:
-            self.capture.release()
+            try:
+                self.capture.release()
+            except cv2.error:
+                pass
             self.capture = None
         uri = self.uri
         self.signal("camera_reconnect")
@@ -327,7 +330,10 @@ class Camera(Service):
 
             if self.capture is not None:
                 channel(f"Releasing Capture: {str(uri)}")
-                self.capture.release()
+                try:
+                    self.capture.release()
+                except cv2.error:
+                    pass
                 self.capture = None
                 channel(f"Released: {str(uri)}")
             if self is not None:

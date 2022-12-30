@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Polygon
+from meerk40t.svgelements import Path, Polygon, Color
 
 
 def plugin(kernel, lifecycle):
@@ -84,12 +84,24 @@ def plugin(kernel, lifecycle):
                         type="elem path",
                     )
                 else:
+                    try:
+                        stroke = node.stroke if node is not None else None
+                    except AttributeError:
+                        stroke = Color("blue")
+                    try:
+                        fill = node.fill if node is not None else None
+                    except AttributeError:
+                        fill = None
+                    try:
+                        stroke_width = node.stroke_width if node is not None else None
+                    except AttributeError:
+                        stroke_width = 1000
                     new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
-                        stroke=node.stroke if node is not None else None,
-                        fill=node.fill if node is not None else None,
-                        stroke_width=node.stroke_width if node is not None else None,
+                        stroke=stroke,
+                        fill=fill,
+                        stroke_width=stroke_width,
                     )
                 context.signal("refresh_scene", "Scene")
                 elements.classify([new_node])

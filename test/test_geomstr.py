@@ -753,7 +753,10 @@ class TestGeomstr(unittest.TestCase):
 
         for i, j in enumerate(pts):
             self.assertEqual(rr[i], r[i])
-        print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+        try:
+            print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+        except ZeroDivisionError:
+            print(f"{t2} vs {t1}")
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)
