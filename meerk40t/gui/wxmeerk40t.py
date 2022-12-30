@@ -879,12 +879,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     try:
         try:
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
-            with open(filename, "w") as file:
+            with open(filename, "w",  encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
