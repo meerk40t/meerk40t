@@ -844,7 +844,8 @@ class Elemental(Service):
         # Selection boundaries
         boundary_points = []
         for node in data:
-            boundary_points.append(node.bounds)
+            if node.bounds is not None:
+                boundary_points.append(node.bounds)
         if not len(boundary_points):
             return
         left_edge = min([e[0] for e in boundary_points])

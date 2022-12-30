@@ -6209,12 +6209,13 @@ def init_commands(kernel):
                         pts += [(p.x, p.y)]
                 else:
                     bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
+                    if bounds:
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
             elif method == "complex":
                 try:
                     path = node.as_path()
@@ -6238,18 +6239,20 @@ def init_commands(kernel):
                             pts += [(p.x, p.y)]
                 else:
                     bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
+                    if bounds:
+                        pts += [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
             elif method == "quick":
                 bounds = node.bounds
-                min_val[0] = min(min_val[0], bounds[0])
-                min_val[1] = min(min_val[1], bounds[1])
-                max_val[0] = max(max_val[0], bounds[2])
-                max_val[1] = max(max_val[1], bounds[3])
+                if bounds:
+                    min_val[0] = min(min_val[0], bounds[0])
+                    min_val[1] = min(min_val[1], bounds[1])
+                    max_val[0] = max(max_val[0], bounds[2])
+                    max_val[1] = max(max_val[1], bounds[3])
         if method == "quick":
             if (
                 not isinf(min_val[0])
