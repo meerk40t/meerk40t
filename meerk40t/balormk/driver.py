@@ -377,6 +377,12 @@ class BalorDriver:
         """
         self.move_abs("50%", "50%")
 
+    def physical_home(self):
+        """"
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
+
     def rapid_mode(self):
         """
         Expects to be in rapid jogging mode.

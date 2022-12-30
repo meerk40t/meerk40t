@@ -524,6 +524,12 @@ class LihuiyuDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
+    def physical_home(self):
+        """"
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
+
     def lock_rail(self):
         """
         For plotter-style lasers this should prevent the laser bar from moving.
