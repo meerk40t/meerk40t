@@ -6211,6 +6211,8 @@ def init_commands(kernel):
         return pts
 
     def generate_hull_shape_quick(data):
+        if not data:
+            return []
         min_val = [float("inf"), float("inf")]
         max_val = [-float("inf"), -float("inf")]
         for node in data:
@@ -6219,43 +6221,37 @@ def init_commands(kernel):
             min_val[1] = min(min_val[1], bounds[1])
             max_val[0] = max(max_val[0], bounds[2])
             max_val[1] = max(max_val[1], bounds[3])
-
-        if (
-            not isinf(min_val[0])
-            and not isinf(min_val[1])
-            and not isinf(max_val[0])
-            and not isinf(max_val[0])
-        ):
-            return [
-                (min_val[0], min_val[1]),
-                (min_val[0], max_val[1]),
-                (max_val[0], min_val[1]),
-                (max_val[0], max_val[1]),
-            ]
-        return []
+        return [
+            (min_val[0], min_val[1]),
+            (max_val[0], min_val[1]),
+            (max_val[0], max_val[1]),
+            (min_val[0], max_val[1]),
+            (min_val[0], min_val[1]),
+        ]
 
     def generate_hull_shape_hull(data):
         pts = []
         for node in data:
             try:
                 path = node.as_path()
-            except AttributeError:
-                path = None
-            if path is not None:
                 p = path.first_point
-                pts += [p]
+                pts.append(p)
                 for segment in path:
-                    p = segment.end
-                    pts += [p]
-            else:
+                    pts.append(segment.end)
+                pts.append(p)
+            except AttributeError:
                 bounds = node.bounds
                 pts += [
                     (bounds[0], bounds[1]),
                     (bounds[0], bounds[3]),
                     (bounds[2], bounds[1]),
                     (bounds[2], bounds[3]),
+                    (bounds[0], bounds[1]),
                 ]
-        return list(Point.convex_hull(pts))
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
 
     def generate_hull_shape_complex(data, resolution=None):
         if resolution is None:
@@ -6266,24 +6262,18 @@ def init_commands(kernel):
         for node in data:
             try:
                 path = node.as_path()
-            except AttributeError:
-                path = None
-
-            if path is not None:
 
                 from numpy import linspace
 
                 for subpath in path.as_subpaths():
                     psp = Path(subpath)
                     p = psp.first_point
-                    pts += [p]
+                    pts.append(p)
                     positions = linspace(0, 1, num=resolution, endpoint=True)
                     subj = psp.npoint(positions)
-                    # Not sure why we need to do that, its already rows x 2
                     s = list(map(Point, subj))
-                    for p in s:
-                        pts += [p]
-            else:
+                    pts.extend(s)
+            except AttributeError:
                 bounds = node.bounds
                 pts += [
                     (bounds[0], bounds[1]),
@@ -6291,7 +6281,7 @@ def init_commands(kernel):
                     (bounds[2], bounds[1]),
                     (bounds[2], bounds[3]),
                 ]
-        hull = [p for p in Point.convex_hull(pts)]
+        hull = list(Point.convex_hull(pts))
         if len(hull) != 0:
             hull.append(hull[0])  # loop
         return hull
