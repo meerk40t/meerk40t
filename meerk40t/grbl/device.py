@@ -164,6 +164,11 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
+        import serial.tools.list_ports
+
+        ports = serial.tools.list_ports.comports()
+        com_ports = [x.device for x in ports]
+
         choices = [
             {
                 "attr": "label",
@@ -178,6 +183,8 @@ class GRBLDevice(Service, ViewPort):
                 "object": self,
                 "default": "com1",
                 "type": str,
+                "style": "combo",
+                "choices": com_ports,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
                 "subsection": "Interface",
@@ -194,10 +201,20 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "planning_buffer_size",
                 "object": self,
-                "default": 255,
+                "default": 128,
                 "type": int,
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
+            },
+            {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _("Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."),
             },
             {
                 "attr": "interpolate",
