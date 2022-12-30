@@ -144,8 +144,44 @@ lookup = {
 }
 
 
+class GRBLPlotter:
+    def __init__(self):
+        from meerk40t.svgelements import Path
+        self.path = Path()
+
+    def plotter(self, command, *args):
+        if command == "move":
+            x0, y0, x1, y1 = args
+            self.path.move(x1, y1)
+        elif command in "line":
+            x0, y0, x1, y1, power = args
+            self.path.line(x1, y1)
+        elif command in "arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            self.path.arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+        elif command == "new":
+            self.path.closed()
+        elif command == "end":
+            pass
+        elif command == "wait":
+            pass
+        elif command == "resume":
+            pass
+        elif command == "pause":
+            pass
+        elif command == "abort":
+            pass
+        elif command == "coolant":
+            # True or False coolant.
+            pass
+        elif command == "jog_abort":
+            pass
+
+
 class GRBLParser:
-    def __init__(self, plotter):
+    def __init__(self, plotter=None):
+        if plotter is None:
+            plotter = GRBLPlotter()
         self.plotter = plotter
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
