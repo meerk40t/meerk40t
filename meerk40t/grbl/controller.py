@@ -172,6 +172,65 @@ class GrblController:
         self.sending_thread = None
         self.close()
 
+    def grbl_alarm_message(self, code):
+        if code == 1:
+            short = "Hard limit"
+            long = (
+                "Hard limit has been triggered."
+                + " Machine position is likely lost due to sudden halt."
+                + " Re-homing is highly recommended."
+            )
+        elif code == 2:
+            short = "Soft limit"
+            long = (
+                "Soft limit alarm. G-code motion target exceeds machine travel."
+                + " Machine position retained. Alarm may be safely unlocked."
+            )
+        elif code == 3:
+            short = "Abort during cycle"
+            long = (
+                "Reset while in motion. Machine position is likely lost due to sudden halt."
+                + " Re-homing is highly recommended. May be due to issuing g-code"
+                + " commands that exceed the limit of the machine."
+            )
+        elif code == 4:
+            short = "Probe fail"
+            long = (
+                "Probe fail. Probe is not in the expected initial state before"
+                + " starting probe cycle when G38.2 and G38.3 is not triggered"
+                + " and G38.4 and G38.5 is triggered."
+            )
+        elif code == 5:
+            short = "Probe fail"
+            long = (
+                "Probe fail. Probe did not contact the workpiece within the programmed"
+                + " travel for G38.2 and G38.4."
+            )
+        elif code == 6:
+            short = "Homing fail"
+            long = "Homing fail. The active homing cycle was reset."
+        elif code == 7:
+            short = "Homing fail"
+            long = "Homing fail. Safety door was opened during homing cycle."
+        elif code == 8:
+            short = "Homing fail"
+            long = (
+                "Homing fail. Pull off travel failed to clear limit switch."
+                + " Try increasing pull-off setting or check wiring."
+            )
+        elif code == 9:
+            short = "Homing fail"
+            long = (
+                "Homing fail. Could not find limit switch within search distances."
+                + " Try increasing max travel, decreasing pull-off distance,"
+                + " or check wiring."
+            )
+        else:
+            short = f"Alarm #{code}"
+            long = "Unknow alarm status"
+        long += "\nTry to clear the alarm status."
+        return short, long
+
     def _recv_response(self):
         """
         Read and process response from grbl.
@@ -196,7 +255,10 @@ class GrblController:
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
         elif response.startswith("ALARM"):
-            self.service.signal("warning", f"GRBL: {response}", response, 4)
+            short, long = self.grbl_alarm_message(response)
+            self.service.signal(
+                "warning", f"GRBL: #{response} {short}\n{long}", response, 4
+            )
         elif response.startswith("error"):
             try:
                 error_num = int(response[6:])
@@ -254,7 +316,9 @@ class GrblController:
         while self._realtime_queue:
             self._sending_realtime()
 
-        while self._sending_queue and self.device_buffer_size > (self.buffered_characters + self._length_of_next_line) :
+        while self._sending_queue and self.device_buffer_size > (
+            self.buffered_characters + self._length_of_next_line
+        ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()
 
