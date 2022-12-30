@@ -725,7 +725,6 @@ class CameraInterface(MWindow):
         self.Layout()
 
     def create_menu(self, append):
-
         def identify_cameras(event=None):
             self.context("camdetect\n")
 
@@ -805,26 +804,31 @@ class CameraInterface(MWindow):
                         "identifier": "cam0",
                         "label": _("Camera {index}").format(index=0),
                         "action": camera_click(0),
+                        "signal": "camset0",
                     },
                     {
                         "identifier": "cam1",
                         "label": _("Camera {index}").format(index=1),
                         "action": camera_click(1),
+                        "signal": "camset1",
                     },
                     {
                         "identifier": "cam2",
                         "label": _("Camera {index}").format(index=2),
                         "action": camera_click(2),
+                        "signal": "camset2",
                     },
                     {
                         "identifier": "cam3",
                         "label": _("Camera {index}").format(index=3),
                         "action": camera_click(3),
+                        "signal": "camset3",
                     },
                     {
                         "identifier": "cam4",
                         "label": _("Camera {index}").format(index=4),
                         "action": camera_click(4),
+                        "signal": "camset4",
                     },
                     {
                         "identifier": "id_cam",
@@ -876,12 +880,15 @@ class CameraInterface(MWindow):
                 style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
             )
             # checks for cameras in the first x USB ports
+            first_found = -1
             index = 0
             keepgoing = True
             while index < max_range and keepgoing:
                 try:
                     cap = cv2.VideoCapture(index)
                     if cap.read()[0]:
+                        if first_found < 0:
+                            first_found = index
                         camera.uris.append(index)
                         cap.release()
                         found += 1
@@ -892,10 +899,13 @@ class CameraInterface(MWindow):
                 )
                 index += 1
             progress.Destroy()
+            if first_found >= 0:
+                kernel.signal(f"camset{first_found}", "camera", (first_found, found))
 
     @staticmethod
     def submenu():
         return ("Camera", "Camera")
+
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
