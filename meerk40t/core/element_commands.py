@@ -6190,101 +6190,146 @@ def init_commands(kernel):
         center, radius = welzl_helper(P_copy, [], len(P_copy))
         return center, radius
 
-    def generate_hull_shape(method, data, resolution=None):
-        if resolution is None:
-            DETAIL = 500  # How coarse / fine shall a subpath be split
-        else:
-            DETAIL = int(resolution)
+    def generate_hull_shape_segment(data):
         pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    p = segment.end
+                    pts.append(p)
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                        (bounds[0], bounds[1]),
+                    ])
+        return pts
+
+    def generate_hull_shape_quick(data):
+        if not data:
+            return []
         min_val = [float("inf"), float("inf")]
         max_val = [-float("inf"), -float("inf")]
         for node in data:
-            if method in ("hull", "segment", "circle"):
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
-                if path is not None:
-                    p = path.first_point
-                    pts += [(p.x, p.y)]
-                    for segment in path:
-                        p = segment.end
-                        pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    if bounds:
-                        pts += [
-                            (bounds[0], bounds[1]),
-                            (bounds[0], bounds[3]),
-                            (bounds[2], bounds[1]),
-                            (bounds[2], bounds[3]),
-                        ]
-            elif method == "complex":
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
+            bounds = node.bounds
+            if bounds:
+                min_val[0] = min(min_val[0], bounds[0])
+                min_val[1] = min(min_val[1], bounds[1])
+                max_val[0] = max(max_val[0], bounds[2])
+                max_val[1] = max(max_val[1], bounds[3])
+        if isinf(min_val[0]):
+            return []
+        return [
+            (min_val[0], min_val[1]),
+            (max_val[0], min_val[1]),
+            (max_val[0], max_val[1]),
+            (min_val[0], max_val[1]),
+            (min_val[0], min_val[1]),
+        ]
 
-                if path is not None:
-
-                    from numpy import linspace
-
-                    for subpath in path.as_subpaths():
-                        psp = Path(subpath)
-                        p = psp.first_point
-                        pts += [(p.x, p.y)]
-                        positions = linspace(0, 1, num=DETAIL, endpoint=True)
-                        subj = psp.npoint(positions)
-                        # Not sure why we need to do that, its already rows x 2
-                        # subj.reshape((2, DETAIL))
-                        s = list(map(Point, subj))
-                        for p in s:
-                            pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    if bounds:
-                        pts += [
-                            (bounds[0], bounds[1]),
-                            (bounds[0], bounds[3]),
-                            (bounds[2], bounds[1]),
-                            (bounds[2], bounds[3]),
-                        ]
-            elif method == "quick":
+    def generate_hull_shape_hull(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    pts.append(segment.end)
+                pts.append(p)
+            except AttributeError:
                 bounds = node.bounds
                 if bounds:
-                    min_val[0] = min(min_val[0], bounds[0])
-                    min_val[1] = min(min_val[1], bounds[1])
-                    max_val[0] = max(max_val[0], bounds[2])
-                    max_val[1] = max(max_val[1], bounds[3])
-        if method == "quick":
-            if (
-                not isinf(min_val[0])
-                and not isinf(min_val[1])
-                and not isinf(max_val[0])
-                and not isinf(max_val[0])
-            ):
-                pts += [
-                    (min_val[0], min_val[1]),
-                    (min_val[0], max_val[1]),
-                    (max_val[0], min_val[1]),
-                    (max_val[0], max_val[1]),
-                ]
-        if method == "segment":
-            hull = [p for p in pts]
-        elif method == "circle":
-            mec_center, mec_radius = welzl(pts)
-            # So now we have a circle with (mec[0], mec[1]), and mec_radius
-            hull = []
-            RES = 100
-            for i in range(RES):
-                hull += [
-                    (
-                        mec_center[0] + mec_radius * cos(i / RES * tau),
-                        mec_center[1] + mec_radius * sin(i / RES * tau),
-                    )
-                ]
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ])
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_complex(data, resolution=None):
+        if resolution is None:
+            resolution = 500  # How coarse / fine shall a subpath be split
         else:
-            hull = [p for p in Point.convex_hull(pts)]
+            resolution = int(resolution)
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+
+                from numpy import linspace
+
+                for subpath in path.as_subpaths():
+                    psp = Path(subpath)
+                    p = psp.first_point
+                    pts.append(p)
+                    positions = linspace(0, 1, num=resolution, endpoint=True)
+                    subj = psp.npoint(positions)
+                    s = list(map(Point, subj))
+                    pts.extend(s)
+            except AttributeError:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ])
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_circle(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts += [p]
+                for segment in path:
+                    p = segment.end
+                    pts += [p]
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+
+        mec_center, mec_radius = welzl(pts)
+
+        # So now we have a circle with (mec[0], mec[1]), and mec_radius
+        hull = []
+        RES = 100
+        for i in range(RES):
+            hull += [
+                (
+                    mec_center[0] + mec_radius * cos(i / RES * tau),
+                    mec_center[1] + mec_radius * sin(i / RES * tau),
+                )
+            ]
         if len(hull) != 0:
             hull.append(hull[0])  # loop
         return hull
@@ -6332,7 +6377,18 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No elements bounds to trace"))
             return
-        hull = generate_hull_shape(method, data, resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if start is None:
             # Lets take system default
             start = self.trace_start_method
@@ -6407,7 +6463,18 @@ def init_commands(kernel):
 
         if data is None:
             data = list(self.elems(emphasized=True))
-        hull = generate_hull_shape(method, data, resolution=resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return
