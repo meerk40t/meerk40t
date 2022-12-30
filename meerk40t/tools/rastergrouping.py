@@ -33,8 +33,12 @@ def group_overlapped_rasters(
     # We are using old fashioned iterators because Python cannot cope with consolidating a list whilst iterating over it.
     for i in range(len(groups) - 2, -1, -1):
         g1 = groups[i]
+        if g1 is None:
+            continue
         for j in range(len(groups) - 1, i, -1):
             g2 = groups[j]
+            if g2 is None:
+                continue
             if group_elements_overlap(g1, g2):
                 # print("g1", list(map(lambda e: e[0].id,g1)))
                 # print("g2", list(map(lambda e: e[0].id,g2)))

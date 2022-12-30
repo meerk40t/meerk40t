@@ -92,6 +92,10 @@ class DxfLoader:
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
+                if w == 0:
+                    w = 1
+                if h == 0:
+                    h = 1
                 if w > bw or h > bh:
                     # Cannot fit to bed. Scale.
                     vb = Viewbox("%f %f %f %f" % (bx, by, bw, bh))

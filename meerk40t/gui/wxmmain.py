@@ -7,6 +7,7 @@ import wx
 from PIL import Image
 from wx import aui
 
+from ..core.exceptions import BadFileError
 from ..kernel import ConsoleFunction
 from ..svgelements import Color, Length, Matrix, Path, SVGImage
 from .icons import (
@@ -2138,11 +2139,11 @@ class MeerK40t(MWindow):
                     channel=self.context.channel("load"),
                     svg_ppi=self.context.svg_ppi,
                 )
-            except SyntaxError as e:
+            except BadFileError as e:
                 dlg = wx.MessageDialog(
                     None,
-                    str(e.msg),
-                    _("File is Malformed."),
+                    str(e),
+                    _("File is Malformed"),
                     wx.OK | wx.ICON_WARNING,
                 )
                 dlg.ShowModal()

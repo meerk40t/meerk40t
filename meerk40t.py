@@ -3,6 +3,7 @@
 
 import re
 import sys
+
 from meerk40t import main
 
 if __name__ == "__main__":

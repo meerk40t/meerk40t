@@ -3,6 +3,7 @@ import os
 from base64 import b64encode
 from io import BytesIO
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+from xml.etree.ElementTree import ParseError
 
 from ..svgelements import (
     SVG,
@@ -40,9 +41,11 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText, Use,
+    SVGText,
+    Use,
 )
 from .elements import LaserOperation
+from .exceptions import BadFileError
 
 MILS_IN_MM = 39.3701
 
@@ -174,9 +177,7 @@ class SVGWriter:
                     element.image.save(stream, format="PNG")
                 except OSError:
                     # Edge condition if the original image was CMYK and never touched it can't encode to PNG
-                    element.image.convert("RGBA").save(
-                        stream, format="PNG"
-                    )
+                    element.image.convert("RGBA").save(stream, format="PNG")
                 png = b64encode(stream.getvalue()).decode("utf8")
                 subelement.set("xlink:href", "data:image/png;base64,%s" % png)
                 subelement.set(SVG_ATTR_X, "0")
@@ -280,15 +281,18 @@ class SVGLoader:
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
-        svg = SVG.parse(
-            source=source,
-            reify=True,
-            width="%fmm" % bed_dim.bed_width,
-            height="%fmm" % bed_dim.bed_height,
-            ppi=ppi,
-            color="none",
-            transform="scale(%f)" % scale_factor,
-        )
+        try:
+            svg = SVG.parse(
+                source=source,
+                reify=True,
+                width="%fmm" % bed_dim.bed_width,
+                height="%fmm" % bed_dim.bed_height,
+                ppi=ppi,
+                color="none",
+                transform="scale(%f)" % scale_factor,
+            )
+        except ParseError as e:
+            raise BadFileError(str(e)) from e
         context_node = elements_modifier.get(type="branch elems")
         basename = os.path.basename(pathname)
         file_node = context_node.add(type="file", label=basename)

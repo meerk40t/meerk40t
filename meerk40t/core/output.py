@@ -89,6 +89,9 @@ class TCPOutput:
             self.context.signal("tcp;status", "connected")
         except (ConnectionError, TimeoutError):
             self.disconnect()
+        except socket.gaierror as e:
+            self.disconnect()
+            self.context.signal("warning", "Socket Error", f"Socket error: {e}")
 
     def disconnect(self):
         self.context.signal("tcp;status", "disconnected")
@@ -98,7 +101,7 @@ class TCPOutput:
     def write(self, data):
         self.context.signal("tcp;write", data)
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         with self.lock:
             self.buffer += data
             self.context.signal("tcp;buffer", len(self.buffer))

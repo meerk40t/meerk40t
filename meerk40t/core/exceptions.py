@@ -14,3 +14,7 @@ class Mk40tImportAbort(ImportError, Mk40tError):
     except ImportError as e:
         raise Mk40tImportAbort("wx") from e
     """
+
+
+class BadFileError(Mk40tError):
+    """Abort loading a malformed file"""
