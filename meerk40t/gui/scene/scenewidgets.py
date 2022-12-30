@@ -934,6 +934,8 @@ class SelectionWidget(Widget):
 
             # b = elements.selected_area()
             b = elements._emphasized_bounds
+            if isinstance(b, tuple):
+                b = list(b)
 
             if "n" in method:
                 b[1] = b[3] - self.save_height
