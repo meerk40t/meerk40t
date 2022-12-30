@@ -9301,8 +9301,8 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
             xml_tree.set(SVG_ATTR_RADIUS, str(node.rx))
     elif isinstance(node, Image):
         xml_tree = subxml(xml_tree, SVG_TAG_IMAGE)
-        from io import BytesIO
         from base64 import b64encode
+        from io import BytesIO
 
         if node.image is not None:
             stream = BytesIO()

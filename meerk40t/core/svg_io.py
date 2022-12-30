@@ -2,10 +2,9 @@ import gzip
 import os
 from base64 import b64encode
 from io import BytesIO
-from xml.etree.ElementTree import ParseError
 from xml.etree.cElementTree import Element, ElementTree, SubElement
+from xml.etree.ElementTree import ParseError
 
-from .exceptions import BadFileError
 from ..svgelements import (
     SVG,
     SVG_ATTR_DATA,
@@ -46,6 +45,7 @@ from ..svgelements import (
     Use,
 )
 from .elements import LaserOperation
+from .exceptions import BadFileError
 
 MILS_IN_MM = 39.3701
 

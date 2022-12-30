@@ -5,7 +5,6 @@ import time
 from copy import copy
 from math import cos, gcd, pi, sin, tau
 
-from .exceptions import BadFileError
 from ..device.lasercommandconstants import (
     COMMAND_BEEP,
     COMMAND_CONSOLE,
@@ -63,6 +62,7 @@ from .cutcode import (
     QuadCut,
     RasterCut,
 )
+from .exceptions import BadFileError
 
 
 def plugin(kernel, lifecycle=None):
@@ -6180,7 +6180,11 @@ class Elemental(Modifier):
             try:
                 self.load(filepath)
             except BadFileError as e:
-                self.context.signal("warning", str(e), _("File is Malformed"),)
+                self.context.signal(
+                    "warning",
+                    str(e),
+                    _("File is Malformed"),
+                )
 
         @self.tree_operation(
             _("Open in System: '{name}'"),

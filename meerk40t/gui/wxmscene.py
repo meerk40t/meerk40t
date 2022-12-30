@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from ..core.bindalias import keymap_execute
-from ..svgelements import Angle, Length, Color
+from ..svgelements import Angle, Color, Length
 from .icons import icon_meerk40t
 from .laserrender import LaserRender
 from .mwindow import MWindow

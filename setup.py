@@ -1,4 +1,5 @@
 from setuptools import setup
+
 setup(
     install_requires=[
         "pyusb>=1.0.0",

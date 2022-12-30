@@ -1361,7 +1361,9 @@ class Kernel:
                         try:
                             kwargs[key].append(value)
                         except AttributeError as e:
-                            raise ValueError(f"{command} {remainder} syntax is malformed. Please report.")
+                            raise ValueError(
+                                f"{command} {remainder} syntax is malformed. Please report."
+                            )
 
                 # Any singleton list arguments should become their only element.
                 for a in range(len(stack)):
