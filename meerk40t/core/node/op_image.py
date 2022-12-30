@@ -234,7 +234,7 @@ class ImageOpNode(Node, Parameters):
 
             def actual(image_node):
                 def process_images():
-                   if hasattr(image_node, "process_image"):
+                    if hasattr(image_node, "process_image"):
                         image_node._context = context
                         image_node.process_image()
 
