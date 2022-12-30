@@ -51,14 +51,17 @@ class SerialControllerPanel(wx.Panel):
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.gcode_commands = (
-            ("$H", _("Home"), _("Send laser to Home-position"), None),
+        self.gcode_commands = [
             ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
             ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
             ("$#", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
             ("$I", _("Info"), _("Show Build-Info"), None),
             ("?", _("Status"), _("Query status"), None),
-        )
+        ]
+        if self.service.has_endstops:
+            self.gcode_commands.insert(0, ("$H", _("Physical Home"), _("Send laser to physical home-position"), None))
+        else:
+            self.gcode_commands.insert(0, ("G28", _("Home"), _("Send laser to logical home-position"), None))
 
         for entry in self.gcode_commands:
             btn = wx.Button(self, wx.ID_ANY, entry[1])
@@ -93,13 +96,13 @@ class SerialControllerPanel(wx.Panel):
             self.service.controller.stop()
         else:
             self.service.controller.start()
-    
+
     def send_gcode(self, gcode_cmd):
         def handler(event):
             self.service(f"gcode {gcode_cmd}")
 
         return handler
-    
+
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         self.service(f"gcode {self.gcode_text.GetValue()}")
         self.gcode_text.Clear()
