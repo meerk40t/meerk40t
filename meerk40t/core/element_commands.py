@@ -6208,6 +6208,7 @@ def init_commands(kernel):
                         (bounds[0], bounds[3]),
                         (bounds[2], bounds[1]),
                         (bounds[2], bounds[3]),
+                        (bounds[0], bounds[1]),
                     ])
         return pts
 
@@ -6306,12 +6307,13 @@ def init_commands(kernel):
                     pts += [p]
             else:
                 bounds = node.bounds
-                pts += [
-                    (bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[1]),
-                    (bounds[2], bounds[3]),
-                ]
+                if bounds:
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
 
         mec_center, mec_radius = welzl(pts)
 
