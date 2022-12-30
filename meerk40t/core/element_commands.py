@@ -6202,12 +6202,13 @@ def init_commands(kernel):
                     pts.append(p)
             else:
                 bounds = node.bounds
-                pts.extend([
-                    (bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[1]),
-                    (bounds[2], bounds[3]),
-                ])
+                if bounds:
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ])
         return pts
 
     def generate_hull_shape_quick(data):
@@ -6217,10 +6218,13 @@ def init_commands(kernel):
         max_val = [-float("inf"), -float("inf")]
         for node in data:
             bounds = node.bounds
-            min_val[0] = min(min_val[0], bounds[0])
-            min_val[1] = min(min_val[1], bounds[1])
-            max_val[0] = max(max_val[0], bounds[2])
-            max_val[1] = max(max_val[1], bounds[3])
+            if bounds:
+                min_val[0] = min(min_val[0], bounds[0])
+                min_val[1] = min(min_val[1], bounds[1])
+                max_val[0] = max(max_val[0], bounds[2])
+                max_val[1] = max(max_val[1], bounds[3])
+        if isinf(min_val[0]):
+            return []
         return [
             (min_val[0], min_val[1]),
             (max_val[0], min_val[1]),
@@ -6241,13 +6245,13 @@ def init_commands(kernel):
                 pts.append(p)
             except AttributeError:
                 bounds = node.bounds
-                pts += [
-                    (bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[1]),
-                    (bounds[2], bounds[3]),
-                    (bounds[0], bounds[1]),
-                ]
+                if bounds:
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ])
         hull = list(Point.convex_hull(pts))
         if len(hull) != 0:
             hull.append(hull[0])  # loop
@@ -6275,12 +6279,13 @@ def init_commands(kernel):
                     pts.extend(s)
             except AttributeError:
                 bounds = node.bounds
-                pts += [
-                    (bounds[0], bounds[1]),
-                    (bounds[0], bounds[3]),
-                    (bounds[2], bounds[1]),
-                    (bounds[2], bounds[3]),
-                ]
+                if bounds:
+                    pts.extend([
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ])
         hull = list(Point.convex_hull(pts))
         if len(hull) != 0:
             hull.append(hull[0])  # loop
