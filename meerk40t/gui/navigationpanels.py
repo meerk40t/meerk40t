@@ -723,6 +723,8 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
+        self.button_navigate_home.Bind(wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home)
+
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left
@@ -757,6 +759,7 @@ class Jog(wx.Panel):
         self.button_navigate_left.SetToolTip(_("Move laser in the left direction"))
         self.button_navigate_left.SetSize(self.button_navigate_left.GetBestSize())
         self.button_navigate_home.SetSize(self.button_navigate_home.GetBestSize())
+        self.button_navigate_home.SetToolTip(_("Send laser to home position (right click: to physical home)"))
         self.button_navigate_right.SetToolTip(_("Move laser in the right direction"))
         self.button_navigate_right.SetSize(self.button_navigate_right.GetBestSize())
         self.button_navigate_down_left.SetToolTip(
@@ -854,6 +857,9 @@ class Jog(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         self.context("home\n")
+
+    def on_button_navigate_physical_home(self, event=None):
+        self.context("physical_home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
