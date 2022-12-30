@@ -2581,8 +2581,11 @@ def init_commands(kernel):
             x = "100%"
         if y is None:
             y = "100%"
-        x = float(Length(x, relative_length=Length(amount=width).length_mm))
-        y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        try:
+            x = float(Length(x, relative_length=Length(amount=width).length_mm))
+            y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        except ValueError:
+            raise CommandSyntaxError("Length could not be parsed.")
         if origin is None:
             origin = (1, 1)
         cx, cy = origin
