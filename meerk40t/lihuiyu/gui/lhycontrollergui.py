@@ -323,7 +323,10 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_connection_status_change(self, origin, status):
         if origin != self.context._path:
             return
-        self.text_connection_status.SetValue(str(status))
+        try:
+            self.text_connection_status.SetValue(str(status))
+        except RuntimeError:
+            pass
 
     @signal_listener("pipe;state")
     def on_connection_state_change(self, origin, state):
