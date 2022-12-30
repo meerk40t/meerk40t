@@ -87,6 +87,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self._buffer_lock = threading.Lock()
         self.set_widgets()
         self.SetupScrolling()
+        self._channel_watching = None
 
     def __set_properties(self):
         self.SetFont(
@@ -245,13 +246,15 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.pane_hide()
 
     def pane_show(self):
-        self.context.channel(f"{self.context.label}/usb", buffer_size=500).watch(
+        # Channel watching is to make sure we unwatch the channel we watched even if label changes.
+        self._channel_watching = f"{self.context.label}/usb"
+        self.context.channel(self._channel_watching, buffer_size=500).watch(
             self.update_text
         )
         self.on_network_update()
 
     def pane_hide(self):
-        self.context.channel(f"{self.context.label}/usb").unwatch(self.update_text)
+        self.context.channel(self._channel_watching).unwatch(self.update_text)
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
