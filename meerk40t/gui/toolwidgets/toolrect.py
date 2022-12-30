@@ -103,6 +103,16 @@ class RectTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
+                dx = self.p1.real - self.p2.real
+                dy = self.p1.imag - self.p2.imag
+                if abs(dx) < 1e-10 or abs(dy) < 1e-10:
+                    # Degenerate? Ignore!
+                    self.p1 = None
+                    self.p2 = None
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 rect = Rect(x0, y0, x1 - x0, y1 - y0)
                 if not rect.is_degenerate():
                     elements = self.scene.context.elements

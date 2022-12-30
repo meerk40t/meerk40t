@@ -87,6 +87,8 @@ class ViewPort:
         swap_xy=False,
         show_origin_x=None,
         show_origin_y=None,
+        show_flip_x=None,
+        show_flip_y=None,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -110,8 +112,14 @@ class ViewPort:
             show_origin_x = origin_x
         if show_origin_y is None:
             show_origin_y = origin_y
+        if show_flip_x is None:
+            show_flip_x = flip_x
+        if show_flip_y is None:
+            show_flip_y = flip_y
         self.show_origin_x = show_origin_x
         self.show_origin_y = show_origin_y
+        self.show_flip_x = show_flip_x
+        self.show_flip_y = show_flip_y
 
         self._width = None
         self._height = None
@@ -351,13 +359,16 @@ class ViewPort:
         dy = self.unit_height * self.origin_y
         ops = []
         if sx != 1.0 or sy != 1.0:
-            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({dx:.13f}, {dy:.13f})")
+            try:
+                ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+            except ZeroDivisionError:
+                pass
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
@@ -369,9 +380,9 @@ class ViewPort:
         dx = self.unit_width * self.show_origin_x
         dy = self.unit_height * self.show_origin_y
         ops = []
-        if self.flip_x:
+        if self.show_flip_x:
             ops.append("scale(-1.0, 1.0)")
-        if self.flip_y:
+        if self.show_flip_y:
             ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
@@ -454,9 +465,9 @@ class ViewPort:
     def contains(self, x, y):
         x = self.length(x, 0)
         y = self.length(y, 1)
-        if x >= self._width:
+        if x > self._width:
             return False
-        if y >= self._height:
+        if y > self._height:
             return False
         if x < 0:
             return False
@@ -933,35 +944,43 @@ class Length(object):
 
     @property
     def length_pixels(self):
-        return f"{self.pixels}px"
+        amount = self.pixels
+        return f"{round(amount, 8)}px"
 
     @property
     def length_inches(self):
-        return f"{self.inches}in"
+        amount = self.inches
+        return f"{round(amount, 8)}in"
 
     @property
     def length_cm(self):
-        return f"{self.cm}cm"
+        amount = self.cm
+        return f"{round(amount, 8)}cm"
 
     @property
     def length_mm(self):
-        return f"{self.mm}mm"
+        amount = self.mm
+        return f"{round(amount, 8)}mm"
 
     @property
     def length_nm(self):
-        return f"{self.nm}nm"
+        amount = self.nm
+        return f"{round(amount, 8)}nm"
 
     @property
     def length_mil(self):
-        return f"{self.mil}mil"
+        amount = self.mil
+        return f"{round(amount, 8)}mil"
 
     @property
     def length_um(self):
-        return f"{self.um}um"
+        amount = self.um
+        return f"{round(amount, 8)}um"
 
     @property
     def length_pt(self):
-        return f"{self.pt}pt"
+        amount = self.pt
+        return f"{round(amount, 8)}pt"
 
     @property
     def length_units(self):

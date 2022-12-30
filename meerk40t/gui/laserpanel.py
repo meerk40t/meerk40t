@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
     icons8_save_50,
 )
-from meerk40t.gui.wxutils import disable_window
+from meerk40t.gui.wxutils import disable_window, StaticBoxSizer
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -20,8 +20,15 @@ _ = wx.GetTranslation
 
 def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
+    from copy import copy
+
+    prechoices = context.lookup("choices/optimize")
+    choices = list(map(copy, prechoices))
+    # Clear the page-entry
+    for entry in choices:
+        entry["page"] = ""
     optimize_panel = ChoicePropertyPanel(
-        window, wx.ID_ANY, context=context, choices="optimize"
+        window, wx.ID_ANY, context=context, choices=choices
     )
     notebook = wx.aui.AuiNotebook(
         window,
@@ -74,9 +81,7 @@ class LaserPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_devices = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Device")), wx.HORIZONTAL
-        )
+        sizer_devices = StaticBoxSizer(self, wx.ID_ANY, _("Device"), wx.HORIZONTAL)
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
         # Devices Initialize.
@@ -225,6 +230,23 @@ class LaserPanel(wx.Panel):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
         self.button_save_file.Enable(hasattr(self.context.device, "extension"))
+        self.set_pause_color()
+
+    def set_pause_color(self):
+        new_color = None
+        new_caption = _("Pause")
+        try:
+            if self.context.device.driver.paused:
+                new_color = wx.YELLOW
+                new_caption = _("Resume")
+        except AttributeError:
+            pass
+        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetLabelText(new_caption)
+
+    @signal_listener("pause")
+    def on_device_pause_toggle(self, origin, *args):
+        self.set_pause_color()
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -376,3 +398,4 @@ class LaserPanel(wx.Panel):
         # Device change, so let's focus properly...
         zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
+        self.set_pause_color()

@@ -42,7 +42,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -723,6 +723,8 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
+        self.button_navigate_home.Bind(wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home)
+
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left
@@ -757,6 +759,7 @@ class Jog(wx.Panel):
         self.button_navigate_left.SetToolTip(_("Move laser in the left direction"))
         self.button_navigate_left.SetSize(self.button_navigate_left.GetBestSize())
         self.button_navigate_home.SetSize(self.button_navigate_home.GetBestSize())
+        self.button_navigate_home.SetToolTip(_("Send laser to home position (right click: to physical home)"))
         self.button_navigate_right.SetToolTip(_("Move laser in the right direction"))
         self.button_navigate_right.SetSize(self.button_navigate_right.GetBestSize())
         self.button_navigate_down_left.SetToolTip(
@@ -854,6 +857,9 @@ class Jog(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         self.context("home\n")
+
+    def on_button_navigate_physical_home(self, event=None):
+        self.context("physical_home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
@@ -955,9 +961,7 @@ class MovePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
-        main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Move Laser to:")), wx.HORIZONTAL
-        )
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Move Laser to:"), wx.HORIZONTAL)
         v_main_sizer = wx.BoxSizer(wx.VERTICAL)
         h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1047,9 +1051,7 @@ class PulsePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: PulsePanel.__do_layout
-        sizer_5 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
-        )
+        sizer_5 = StaticBoxSizer(self, wx.ID_ANY, _("Short Pulse:"), wx.HORIZONTAL)
         sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
@@ -1082,8 +1084,8 @@ class SizePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        self.mainsizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Object Dimensions")), wx.HORIZONTAL
+        self.mainsizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
         )
         self.button_navigate_resize = wx.BitmapButton(
             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
@@ -1098,6 +1100,9 @@ class SizePanel(wx.Panel):
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+
         # No change of fields during input
         # self.text_height.execute_action_on_change = False
         # self.text_width.execute_action_on_change = False
@@ -1108,6 +1113,7 @@ class SizePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
         )
+        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
         self.text_width.SetActionRoutine(self.on_textenter_width)
         self.text_height.SetActionRoutine(self.on_textenter_height)
 
@@ -1118,12 +1124,11 @@ class SizePanel(wx.Panel):
         self.text_width.SetToolTip(_("Define width of selected object"))
         self.text_height.SetToolTip(_("Define height of selected object"))
         self.btn_lock_ratio.SetMinSize((32, 32))
-        self.btn_lock_ratio.SetBitmap(
-            icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        )
         self.btn_lock_ratio.SetToolTip(
             _("Lock the ratio of width / height to the original values")
         )
+        # Set toggle bitmap
+        self.on_toggle_ratio(None)
         self.text_height.Enable(False)
         self.text_width.Enable(False)
         self.button_navigate_resize.Enable(False)
@@ -1170,6 +1175,12 @@ class SizePanel(wx.Panel):
 
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
+
+    def on_toggle_ratio(self, event):
+        if self.btn_lock_ratio.GetValue():
+            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+        else:
+            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
 
     def update_sizes(self):
         self.object_x = None
@@ -1763,7 +1774,7 @@ class Transform(wx.Panel):
             self.context(
                 f"matrix {scale_x} {skew_y} {skew_x} {scale_y} {translate_x} {translate_y}\n"
             )
-            self.context.signal("refresh_scene")
+            self.context.signal("refresh_scene", "Scene")
         except ValueError:
             pass
 
@@ -1783,9 +1794,7 @@ class JogDistancePanel(wx.Panel):
             value="10mm",
             check="length",
         )
-        main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
-        )
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Jog Distance:"), wx.VERTICAL)
         main_sizer.Add(self.text_jog_amount, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)

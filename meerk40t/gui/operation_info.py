@@ -126,7 +126,7 @@ class OpInfoPanel(ScrolledPanel):
             "elem ellipse": 0,
             "elem image": 0,
             "elem path": 0,
-            "elem numpath": 0,
+            "elem geomstr": 0,
             "elem point": 0,
             "elem polyline": 0,
             "elem rect": 0,
@@ -220,7 +220,8 @@ class OpInfoPanel(ScrolledPanel):
             if reverse:
                 data = reversed(data)
             for node in data:
-                classified, should_break = opnode.classify(
+                # result is a tuple containing classified, should_break, feedback
+                result = opnode.classify(
                     node,
                     fuzzy=fuzzy,
                     fuzzydistance=fuzzydistance,

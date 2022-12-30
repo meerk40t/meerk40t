@@ -106,8 +106,9 @@ class DummyDevice(Service, ViewPort):
         def spool(command, channel, _, data=None, remainder=None, **kwgs):
             spooler = self.spooler
             if data is not None:
+                label = None
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.laserjob(data.plan)
+                spooler.laserjob(data.plan, label=label)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 

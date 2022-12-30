@@ -185,6 +185,9 @@ class SVGWriter:
             if hasattr(n, "label") and n.label is not None and n.label != "":
                 has_labels = True
                 break
+            if n.type == "file":
+                has_labels = True
+                break
         if not has_labels:
             for n in elements.regmarks_nodes():
                 if hasattr(n, "label") and n.label is not None and n.label != "":
@@ -228,6 +231,14 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+        def single_file_node():
+            # do we have more than one element on the top level hierarchy?
+            # If no then return True
+            flag = True
+            if len(elem_tree.children) > 1:
+                flag = False
+            return flag
+
         for c in elem_tree.children:
             if c.type == "elem ellipse":
                 element = c.shape
@@ -238,10 +249,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
                 subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
                 t = Matrix(c.matrix)
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem image":
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
@@ -262,10 +274,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem line":
                 element = c.shape
                 copy_attributes(c, element)
@@ -275,10 +288,11 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_X2, str(element.x2))
                 subelement.set(SVG_ATTR_Y2, str(element.y2))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
 
             elif c.type == "elem path":
                 element = c.path
@@ -286,20 +300,22 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem point":
                 element = Point(c.point)
-                c.settings["x"] = element.x
-                c.settings["y"] = element.y
+                c.x = element.x
+                c.y = element.y
                 subelement = SubElement(xml_tree, "element")
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
                 SVGWriter._write_custom(subelement, c)
             elif c.type == "elem polyline":
                 element = c.shape
@@ -310,10 +326,11 @@ class SVGWriter:
                     " ".join([f"{e[0]} {e[1]}" for e in element.points]),
                 )
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem rect":
                 element = c.shape
                 copy_attributes(c, element)
@@ -325,18 +342,20 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_WIDTH, str(element.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(element.height))
                 t = c.matrix
-                subelement.set(
-                    "transform",
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        "transform",
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
             elif c.type == "elem text":
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = c.text
                 t = c.matrix
-                subelement.set(
-                    SVG_ATTR_TRANSFORM,
-                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
-                )
+                if not t.is_identity():
+                    subelement.set(
+                        SVG_ATTR_TRANSFORM,
+                        f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                    )
                 # Font features are covered by the `font` value shorthand
                 if c.font_family:
                     subelement.set(SVG_ATTR_FONT_FAMILY, c.font_family)
@@ -374,7 +393,14 @@ class SVGWriter:
                 continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write values.
-                SVGWriter._write_elements(xml_tree, c)
+                # is this the only file node? If yes then no need to generate an additional group
+                if single_file_node():
+                    SVGWriter._write_elements(xml_tree, c)
+                else:
+                    group_element = SubElement(xml_tree, SVG_TAG_GROUP)
+                    if hasattr(c, "name") and c.name is not None and c.name != "":
+                        group_element.set("inkscape:label", c.name)
+                    SVGWriter._write_elements(group_element, c)
                 continue
             else:
                 # This is a non-standard element. Save custom.
@@ -442,11 +468,12 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_scale = (
-                        math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
-                    )
+                    stroke_width = str(c.stroke_width)  # Natively sized
+
                     # Note this is the reversed scaling in `implied_stroke_width`
-                    stroke_width = str(c.stroke_width * stroke_scale)
+                    # stroke_scale = (
+                    #     math.sqrt(abs(c.matrix.determinant)) if c.stroke_scaled else 1.0
+                    # )
                     # stroke_width = (
                     #     Length(
                     #         amount=c.stroke_width * stroke_scale,
@@ -512,21 +539,19 @@ class SVGWriter:
         @return:
         """
         subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
-        SVGWriter._write_custom(subelement, node)
-
-    @staticmethod
-    def _write_custom(subelement, node):
-        subelement.set("type", node.type)
+        subelement.set("type", str(node.type))
+        if node.label is not None:
+            subelement.set("label", str(node.label))
+        if node.lock is not None:
+            subelement.set("lock", str(node.lock))
         try:
-            settings = node.settings
-            for key in settings:
+            for key, value in node.settings.items():
                 if not key:
                     # If key is None, do not save.
                     continue
-                if key in ("references", "tag"):
-                    # References key is obsolete
+                if key in ("references", "tag", "type"):
+                    # References key from previous loaded version (filter out, rebuild)
                     continue
-                value = settings[key]
                 subelement.set(key, str(value))
         except AttributeError:
             pass
@@ -537,6 +562,32 @@ class SVGWriter:
             contains.append(c.id)
         if contains:
             subelement.set("references", " ".join(contains))
+        subelement.set(SVG_ATTR_ID, str(node.id))
+
+    @staticmethod
+    def _write_custom(subelement, node):
+        subelement.set("type", node.type)
+        for key, value in node.__dict__.items():
+            if not key:
+                # If key is None, do not save.
+                continue
+            if key.startswith("_"):
+                continue
+            if value is None:
+                continue
+            if key in ("references", "tag", "type", "draw", "stroke_width", "matrix"):
+                # References key from previous loaded version (filter out, rebuild)
+                continue
+            subelement.set(key, str(value))
+
+        contains = list()
+        for c in node.children:
+            if c.type == "reference":
+                c = c.node  # Contain direct reference not reference node reference.
+            contains.append(c.id)
+        if contains:
+            subelement.set("references", " ".join(contains))
+
         subelement.set(SVG_ATTR_ID, str(node.id))
 
     @staticmethod
@@ -660,8 +711,21 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
+
+        def is_child(candidate, parent_node):
+            if candidate is None:
+                return False
+            if candidate is parent_node:
+                return True
+            if candidate.parent is None:
+                return False
+            return is_child(candidate.parent, parent_node)
+
         if element.values.get("visibility") == "hidden":
-            context_node = self.regmark
+            # This does not allow substructures...
+            # Are we already underneath regmark?
+            if not is_child(context_node, self.regmark):
+                context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
@@ -892,10 +956,12 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, Group):
-            if _label == "regmarks":
+            if _label == "regmarks" or ident == "regmarks":
+                # We don't need a top-level group here, the regmarks node is a kind of a group...
                 context_node = self.regmark
                 e_list = self.regmark_list
-            context_node = context_node.add(type="group", id=ident, label=_label)
+            else:
+                context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
@@ -967,6 +1033,12 @@ class SVGProcessor:
 
                 try:
                     op = self.elements.op_branch.add(type=node_type, **attrs)
+                    overlooked_attributes = [
+                        "output",
+                    ]
+                    for overlooked in overlooked_attributes:
+                        if overlooked in element.values and hasattr(op, overlooked):
+                            setattr(op, overlooked, element.values.get(overlooked))
                     op.validate()
                     op.id = node_id
                 except AttributeError:

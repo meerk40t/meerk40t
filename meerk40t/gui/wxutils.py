@@ -92,8 +92,10 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
 
 def create_choices_for_node(node, elements) -> List[dict]:
     choices = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
 
-    for func in elements.tree_operations_for_node(node):
+    tree_operations_for_node = get_tree_operation_for_node(elements)
+    for func in tree_operations_for_node(node):
         choice = {}
         choices.append(choice)
         choice["action"] = func
@@ -136,6 +138,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     menu = wx.Menu()
     submenus = {}
     radio_check_not_needed = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
+
+    tree_operations_for_node = get_tree_operation_for_node(elements)
 
     def menu_functions(f, node):
         func_dict = dict(f.func_dict)
@@ -155,7 +160,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     if optional_2nd_node is not None:
         mc1 = menu.MenuItemCount
         last_was_separator = False
-        for func in elements.tree_operations_for_node(optional_2nd_node):
+
+        for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
             if submenu_name in submenus:
@@ -227,7 +233,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         if not last_was_separator and mc2 - mc1 > 0:
             menu.AppendSeparator()
 
-    for func in elements.tree_operations_for_node(node):
+    for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
         if submenu_name in submenus:
@@ -413,7 +419,7 @@ class TextCtrl(wx.TextCtrl):
     def validate_widths(self):
         minw = 35
         maxw = 100
-        minpattern = "00000"
+        minpattern = "0000"
         maxpattern = "999999999.99mm"
         # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
@@ -502,6 +508,20 @@ class TextCtrl(wx.TextCtrl):
         return status
 
     def SetValue(self, newvalue):
+        identical = False
+        current = super().GetValue()
+        if self._check == "float":
+            try:
+                v1 = float(current)
+                v2 = float(newvalue)
+                if v1 == v2:
+                    identical = True
+            except ValueError:
+                pass
+        if identical:
+            # print (f"...ignored {current}={v1}, {newvalue}={v2}")
+            return
+        # print(f"SetValue called: {current} != {newvalue}")
         self._last_valid_value = newvalue
         status = self.get_warn_status(newvalue)
         self.warn_status = status
@@ -655,6 +675,10 @@ class TextCtrl(wx.TextCtrl):
                     self._event_generated = None
 
     @property
+    def is_changed(self):
+        return self.GetValue() != self._last_valid_value
+
+    @property
     def Value(self):
         return self.GetValue()
 
@@ -707,6 +731,29 @@ class CheckBox(wx.CheckBox):
         self._tool_tip = tooltip
         super().SetToolTip(self._tool_tip)
 
+
+class StaticBoxSizer(wx.StaticBoxSizer):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        label="",
+        orientation=wx.HORIZONTAL,
+        *args,
+        **kwargs,
+    ):
+        self.sbox = wx.StaticBox(parent, id, label=label)
+        self.sbox.SetMinSize(wx.Size(50, 50))
+        super().__init__(self.sbox, orientation)
+
+    def Show(self, show=True):
+        self.sbox.Show(show)
+
+    def SetLabel(self, label):
+        self.sbox.SetLabel(label)
+
+    def Refresh(self, *args):
+        self.sbox.Refresh(*args)
 
 class ScrolledPanel(SP):
     """

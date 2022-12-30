@@ -1,25 +1,8 @@
-import platform
 from math import ceil, isnan, sqrt
 
 import wx
 from PIL import Image
 
-from meerk40t.core.cutcode import (
-    CubicCut,
-    CutCode,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    RasterCut,
-    RawCut,
-    SetOriginCut,
-    WaitCut,
-)
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -33,7 +16,21 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
+from ..core.cutcode.cubiccut import CubicCut
+from ..core.cutcode.cutcode import CutCode
+from ..core.cutcode.dwellcut import DwellCut
+from ..core.cutcode.gotocut import GotoCut
+from ..core.cutcode.homecut import HomeCut
+from ..core.cutcode.inputcut import InputCut
+from ..core.cutcode.linecut import LineCut
+from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
+from ..core.cutcode.quadcut import QuadCut
+from ..core.cutcode.rastercut import RasterCut
+from ..core.cutcode.rawcut import RawCut
+from ..core.cutcode.setorigincut import SetOriginCut
+from ..core.cutcode.waitcut import WaitCut
+from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD #, TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -61,6 +58,7 @@ DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
+DRAW_MODE_ORIGIN = 0x4000000
 
 
 def swizzlecolor(c):
@@ -229,8 +227,8 @@ class LaserRender:
             except AttributeError:
                 if node.type == "elem path":
                     node.draw = self.draw_path_node
-                elif node.type == "elem numpath":
-                    node.draw = self.draw_numpath_node
+                elif node.type == "elem geomstr":
+                    node.draw = self.draw_geomstr_node
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in (
@@ -288,7 +286,7 @@ class LaserRender:
                     )
         return p
 
-    def make_numpath(self, gc, path):
+    def make_geomstr(self, gc, path):
         """
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
@@ -307,7 +305,7 @@ class LaserRender:
                 c1 = e[3]
                 end = e[4]
 
-                if seg_type in (TYPE_LINE, TYPE_RAMP):
+                if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
@@ -424,11 +422,17 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        highlight_color = Color("magenta")
+        wx_color = wx.Colour(swizzlecolor(highlight_color))
+        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
         p = None
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.line_color
+            if cut.highlighted:
+                c = highlight_color
+            else:
+                c = cut.color
             if c is None:
                 c = 0
             try:
@@ -479,8 +483,8 @@ class LaserRender:
                 )  # Adjust image xy
                 gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
-                    cache = cut.cache
-                    cache_id = cut.cache_id
+                    cache = cut._cache
+                    cache_id = cut._cache_id
                 except AttributeError:
                     cache = None
                     cache_id = -1
@@ -491,15 +495,17 @@ class LaserRender:
                     # No valid cache. Generate.
                     cut._cache_width, cut._cache_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=5000)
+                        cut._cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
-                        cut.cache = None
-                    cut.cache_id = id(image)
-                if cut.cache is not None:
+                        cut._cache = None
+                    cut._cache_id = id(image)
+                if cut._cache is not None:
                     # Cache exists and is valid.
-                    gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
-                    # gc.SetBrush(wx.RED_BRUSH)
-                    # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                    gc.DrawBitmap(cut._cache, 0, 0, cut._cache_width, cut._cache_height)
+                    if cut.highlighted:
+                        # gc.SetBrush(wx.RED_BRUSH)
+                        gc.SetPen(highlight_pen)
+                        gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
@@ -547,9 +553,9 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
+        if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_path(gc, Path(node.shape))
-            node.cache = cache
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -568,9 +574,9 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -579,9 +585,9 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
+        if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_path(gc, node.path)
-            node.cache = cache
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -600,20 +606,20 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
-    def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+    def draw_geomstr_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
         try:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_numpath(gc, node.path)
-            node.cache = cache
+        if not hasattr(node, "_cache") or node._cache is None:
+            cache = self.make_geomstr(gc, node.path)
+            node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
@@ -632,9 +638,9 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
+            gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -661,6 +667,8 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
+        if node is None:
+            return
         text = node.text
         if text is None or text == "":
             return
@@ -696,7 +704,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, node)
+            text = self.context.elements.wordlist_translate(text, elemnode=node)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -733,7 +741,7 @@ class LaserRender:
             if draw_mode & DRAW_MODE_CACHE == 0:
                 cache = None
                 try:
-                    cache = node.cache
+                    cache = node._cache
                 except AttributeError:
                     pass
                 if cache is None:
@@ -742,12 +750,12 @@ class LaserRender:
                     except AttributeError:
                         max_allowed = 2048
                     node._cache_width, node._cache_height = image.size
-                    node.cache = self.make_thumbnail(
+                    node._cache = self.make_thumbnail(
                         image,
                         maximum=max_allowed,
                         alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
                     )
-                gc.DrawBitmap(node.cache, 0, 0, node._cache_width, node._cache_height)
+                gc.DrawBitmap(node._cache, 0, 0, node._cache_width, node._cache_height)
             else:
                 node._cache_width, node._cache_height = image.size
                 try:
@@ -780,18 +788,20 @@ class LaserRender:
         @param node:
         @return:
         """
-
-        bmp = wx.Bitmap(1000, 500, 32)
+        dimension_x = 1000
+        dimension_y = 500
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.BLACK_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
+
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.wordlist_translate(
-                node.text, node, increment=False
+                node.text, elemnode=node, increment=False
             )
             node.bounds_with_variables_translated = True
         else:
@@ -807,8 +817,25 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         gc.SetFont(node.wxfont, wx.WHITE)
-        gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        needs_revision = False
+        revision_factor = 3
+        if revision_factor * f_width >= dimension_x:
+            dimension_x = revision_factor * f_width
+            needs_revision = True
+        if revision_factor * f_height > dimension_y:
+            dimension_y = revision_factor * f_height
+            needs_revision = True
+        if needs_revision:
+            bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            dc.SetBackground(wx.BLACK_BRUSH)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetFont(node.wxfont, wx.WHITE)
+
+        gc.DrawText(text, 0, 0)
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()

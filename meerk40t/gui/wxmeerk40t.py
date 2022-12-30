@@ -48,14 +48,15 @@ from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialtest import TemplateTool
+from ..tools.livinghinges import LivingHingeTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
 from .propertypanels.imageproperty import (
-    ImagePropertyPanel,
     ImageModificationPanel,
+    ImagePropertyPanel,
     ImageVectorisationPanel,
 )
 from .propertypanels.operationpropertymain import ParameterPanel
@@ -627,6 +628,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
@@ -646,7 +648,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
 
         kernel.register("property/ImageNode/ImageModification", ImageModificationPanel)
-        kernel.register("property/ImageNode/ImageVectorisation", ImageVectorisationPanel)
+        kernel.register(
+            "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
+        )
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)
@@ -668,6 +672,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
+        kernel.register("window/Hingetool", LivingHingeTool)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 

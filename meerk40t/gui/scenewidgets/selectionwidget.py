@@ -13,7 +13,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu_for_node
+from meerk40t.gui.wxutils import create_menu_for_node, StaticBoxSizer
 from meerk40t.svgelements import Point
 
 
@@ -75,7 +75,10 @@ def process_event(
 
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
+        # as these will extend / reduce the selection
+        if widget_identifier == "move" or (
+            not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers))
+        ):
             cx = (widget.left + widget.right) / 2
             cy = (widget.top + widget.bottom) / 2
             # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
@@ -422,8 +425,13 @@ class RotationWidget(Widget):
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 e.modified()
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(None)
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
@@ -692,11 +700,16 @@ class CornerWidget(Widget):
             dy = position[5]
 
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(None)
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
@@ -923,11 +936,16 @@ class SideWidget(Widget):
             dy = position[5]
 
         if event == 1:
+            images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(None)
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
@@ -1132,11 +1150,16 @@ class SkewWidget(Widget):
             self.last_skew = 0
 
             self.master.rotated_angle = self.last_skew
+            images = []
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
+                if hasattr(e, "update"):
+                    images.append(e)
+            for e in images:
+                e.update(None)
         elif event == -1:
             pass
         elif event == 0:  # move
@@ -1231,6 +1254,8 @@ class MoveWidget(Widget):
             self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
         )
         self.cursor = "sizing"
+        self.total_dx = 0
+        self.total_dy = 0
         self.update()
 
     def update(self):
@@ -1334,6 +1359,10 @@ class MoveWidget(Widget):
         """
 
         def move_to(dx, dy):
+            if dx == 0 and dy == 0:
+                return
+            self.total_dx += dx
+            self.total_dy += dy
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
@@ -1342,9 +1371,7 @@ class MoveWidget(Widget):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:
                     continue
                 e.matrix.post_translate(dx, dy)
-
             self.translate(dx, dy)
-
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
@@ -1384,18 +1411,25 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
+            if nearest_snap is None:
+                move_to(lastdx, lastdy)
+            else:
+                move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+            if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
+                # Did we actually move?
+                for e in elements.flat(types=elem_group_nodes, emphasized=True):
+                    try:
+                        e.modified()
+                    except AttributeError:
+                        pass
             self.scene.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
             self.scene.modif_active = True
+            self.total_dx = 0
+            self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy)
@@ -1843,9 +1877,7 @@ class RefAlign(wx.Dialog):
         sizer_options = wx.BoxSizer(wx.HORIZONTAL)
         sizer_ref_align.Add(sizer_options, 0, wx.EXPAND, 0)
 
-        sizer_pos = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Position")), wx.HORIZONTAL
-        )
+        sizer_pos = StaticBoxSizer(self, wx.ID_ANY, _("Position"), wx.HORIZONTAL)
         sizer_options.Add(sizer_pos, 1, wx.EXPAND, 0)
 
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
@@ -1905,9 +1937,7 @@ class RefAlign(wx.Dialog):
         )
         sizer_8.Add(self.radio_btn_9, 0, 0, 0)
 
-        sizer_scale = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Scaling")), wx.VERTICAL
-        )
+        sizer_scale = StaticBoxSizer(self, wx.ID_ANY, _("Scaling"), wx.VERTICAL)
         sizer_options.Add(sizer_scale, 1, wx.EXPAND, 0)
 
         self.radio_btn_10 = wx.RadioButton(

@@ -1,13 +1,16 @@
 import time
+from copy import copy
 from math import isinf
 
 import wx
 
-from ...core.element_types import elem_nodes
-from ...core.spoolers import LaserJob
-from ...core.units import Length
-from ..icons import icons8_up_50
-from .statusbarwidget import StatusBarWidget
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.laserjob import LaserJob
+from meerk40t.core.node.node import Node
+from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.gui.icons import icons8_up_50
+from meerk40t.gui.statusbarwidgets.statusbarwidget import StatusBarWidget
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -63,13 +66,13 @@ class SimpleInfoWidget(StatusBarWidget):
         self.SetActive(self.progress_bar, False)
 
     def SetPercentage(self, newpercentage):
-        self._percentage = newpercentage
+        self._percentage = int(newpercentage)
         if newpercentage < 0:
             self.progress_bar.SetValue(0)
             self.SetActive(self.progress_bar, False)
         else:
             self.SetActive(self.progress_bar, True)
-            self.progress_bar.SetValue(newpercentage)
+            self.progress_bar.SetValue(self._percentage)
         self._percentage = newpercentage
 
     def AppendInformation(self, msg):
@@ -153,6 +156,85 @@ class InformationWidget(SimpleInfoWidget):
         else:
             self._needs_generation = True
 
+    def covered_area(self, nodes):
+        area_with_stroke = 0
+        area_without_stroke = 0
+        make_raster = self.context.root.lookup("render-op/make_raster")
+        if nodes is None or len(nodes) == 0 or not make_raster:
+            return 0, 0
+        ratio = 0
+        dpi = 300
+        dots_per_units = dpi / UNITS_PER_INCH
+        _mm = float(Length("1mm"))
+        data = []
+        for node in nodes:
+            e = copy(node)
+            if hasattr(e, "fill"):
+                e.fill = Color("black")
+            data.append(e)
+
+        for with_stroke in (True, False):
+            no_stroke = True
+            for e in data:
+                if hasattr(e, "stroke"):
+                    no_stroke = False
+                    e.stroke = Color("black")
+                    if not with_stroke:
+                        e.stroke_width = 1
+                    e.altered()
+
+            if with_stroke:
+                bounds = Node.union_bounds(data, attr="paint_bounds")
+            else:
+                bounds = Node.union_bounds(data)
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            new_width = int(width * dots_per_units)
+            new_height = int(height * dots_per_units)
+            # print(f"Width: {width:.0f} -> {new_width}")
+            # print(f"Height: {height:.0f} -> {new_height}")
+            keep_ratio = True
+            ratio = 0
+
+            all_pixel = new_height * new_width
+            if all_pixel > 0:
+                image = make_raster(
+                    data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                    keep_ratio=keep_ratio,
+                )
+                white_pixel = sum(
+                    image.point(lambda x: 255 if x else 0)
+                    .convert("L")
+                    .point(bool)
+                    .getdata()
+                )
+                black_pixel = all_pixel - white_pixel
+                # print(
+                #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
+                # )
+                ratio = black_pixel / all_pixel
+                area = (
+                    ratio
+                    * (bounds[2] - bounds[0])
+                    * (bounds[3] - bounds[1])
+                    / (_mm * _mm)
+                )
+                if with_stroke:
+                    area_with_stroke = area
+                else:
+                    area_without_stroke = area
+                if no_stroke:
+                    # No sense of doing it again
+                    if area_without_stroke == 0:
+                        area_without_stroke = area_with_stroke
+                    break
+
+        # print(f"Area, with: {area_with_stroke:.0f}, without: {area_without_stroke:.0f}")
+        return area_with_stroke, area_without_stroke
+
     def calculate_infos(self):
         msg = ""
         if self._info_active:
@@ -161,14 +243,18 @@ class InformationWidget(SimpleInfoWidget):
             total_area = 0
             total_length = 0
             _mm = float(Length("1mm"))
-            for e in elements.flat(types=elem_nodes, emphasized=True):
+            mydata = list(elements.flat(types=elem_nodes, emphasized=True))
+            total_area, second_area = self.covered_area(mydata)
+            for e in mydata:
                 ct += 1
-                this_area, this_length = elements.get_information(e, density=50)
-                total_area += this_area
+                if hasattr(e, "as_path"):
+                    path = e.as_path()
+                    this_length = path.length()
+                else:
+                    this_length = 0
                 total_length += this_length
 
             if ct > 0:
-                total_area = total_area / (_mm * _mm)
                 total_length = total_length / _mm
                 msg = f"# = {ct}, A = {total_area:.1f} mm², D = {total_length:.1f} mm"
         else:

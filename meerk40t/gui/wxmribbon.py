@@ -381,6 +381,9 @@ class RibbonPanel(wx.Panel):
                     if event:
                         _event = event.Clone()
                         _event.SetId(first_button.id)
+                        if first_button.id == evt_id:
+                            # Can't recurse.
+                            return
                         self.button_click(_event)
                         self._button_click_id(first_button.id, _event)
                         return
@@ -523,7 +526,12 @@ class RibbonPanel(wx.Panel):
             # Every registered button in the updated lookup gets created.
             group = button.get("group")
             resize_param = button.get("size")
-            new_id = wx.NewIdRef()
+            # NewIdRef is only available after 4.1
+            try:
+                new_id = wx.NewIdRef()
+            except AttributeError:
+                new_id = wx.NewId()
+
             if "multi" in button:
                 # Button is a multi-type button
                 b = button_bar.AddHybridButton(
@@ -605,8 +613,21 @@ class RibbonPanel(wx.Panel):
                                 resize=small_resize, color=Color("grey")
                             ),
                         )
+                    if "signal" in v:
+
+                        def make_multi_click(_tb, _key):
+                            def multi_click(origin, set_value):
+                                self._restore_button_aspect(_tb, _key)
+
+                            return multi_click
+
+                        signal_multi_listener = make_multi_click(b, key)
+                        self.context.listen(v["signal"], signal_multi_listener)
+                        self.toggle_signals.append((v["signal"], signal_multi_listener))
+
                     if key == initial_id:
                         self._restore_button_aspect(b, key)
+
             if "toggle" in button:
                 # Store toggle and original aspects for toggle-buttons
 
@@ -691,6 +712,10 @@ class RibbonPanel(wx.Panel):
             except:
                 pass
 
+    @lookup_listener("button/basicediting")
+    def set_editing_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.basicediting_button_bar)
+
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.project_button_bar)
@@ -713,7 +738,7 @@ class RibbonPanel(wx.Panel):
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.tool_extended_button_bar)
+        self.set_buttons(new_values, self.extended_button_bar)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
@@ -740,12 +765,20 @@ class RibbonPanel(wx.Panel):
     def set_align_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.align_button_bar)
 
+    @lookup_listener("button/properties")
+    def set_property_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.property_button_bar)
+
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
         self.apply_enable_rules()
 
     @signal_listener("selected")
     def on_selected_change(self, origin, node=None, *args):
+        self.apply_enable_rules()
+
+    @signal_listener("icons")
+    def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
 
     # @signal_listener("ribbonbar")
@@ -937,6 +970,18 @@ class RibbonPanel(wx.Panel):
         self.tool_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
+        panel_style = RB.RIBBON_PANEL_MINIMISE_BUTTON
+        self.basicediting_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Edit"),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.basicediting_panel)
+        button_bar = RibbonButtonBar(self.basicediting_panel)
+        self.basicediting_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
         self.group_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
@@ -949,16 +994,28 @@ class RibbonPanel(wx.Panel):
         self.group_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.tool_extended_panel = MyRibbonPanel(
+        self.extended_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Extended Tools"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.extended_panel)
+        button_bar = RibbonButtonBar(self.extended_panel)
+        self.extended_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.property_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Properties"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
-        self.ribbon_panels.append(self.tool_extended_panel)
-        button_bar = RibbonButtonBar(self.tool_extended_panel)
-        self.tool_extended_button_bar = button_bar
+        self.ribbon_panels.append(self.property_panel)
+        button_bar = RibbonButtonBar(self.property_panel)
+        self.property_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.modify_panel = MyRibbonPanel(

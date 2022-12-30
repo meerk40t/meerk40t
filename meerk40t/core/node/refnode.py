@@ -4,21 +4,15 @@ from meerk40t.core.node.node import Node
 class ReferenceNode(Node):
     """
     ReferenceNode is the bootstrapped node type for the reference type.
-
-    ReferenceNode track referenced nodes within the tree.
     """
 
-    def __init__(self, node, **kwargs):
+    def __init__(self, **kwargs):
+        self.node = None
         super(ReferenceNode, self).__init__(type="reference", **kwargs)
-        node._references.append(self)
         self._formatter = "*{reference}"
-        self.node = node
 
     def __repr__(self):
         return f"ReferenceNode('{self.type}', {str(self.node)}, {str(self._parent)})"
-
-    def __copy__(self):
-        return ReferenceNode(self.node)
 
     @property
     def bounds(self):

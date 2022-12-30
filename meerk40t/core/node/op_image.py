@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -16,18 +16,10 @@ class ImageOpNode(Node, Parameters):
     This is a Node of type "op image".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op image", **kwargs)
-        # Is this op out of useful bounds?
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op image", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
-        self.settings.update(kwargs)
-        self.dangerous = False
-        # self.settings["stopop"] = True
 
         if len(args) == 1:
             obj = args[0]
@@ -39,6 +31,9 @@ class ImageOpNode(Node, Parameters):
         self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self._allowed_elements = ("elem image",)
+
+        # Is this op out of useful bounds?
+        self.dangerous = False
         self.stopop = True
         self.allowed_attributes = []
 
@@ -59,6 +54,7 @@ class ImageOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
+        default_map["dpi"] = str(self.dpi)
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -100,7 +96,10 @@ class ImageOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self._allowed_elements_dnd:
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -130,7 +129,7 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def valid_node(self, node):
+    def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
         else:
@@ -154,7 +153,7 @@ class ImageOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -196,14 +195,16 @@ class ImageOpNode(Node, Parameters):
                     scanlines * width_in_inches / speed_in_per_s
                     + height_in_inches / speed_in_per_s
                 )
+                this_len = scanlines * width_in_inches + height_in_inches
+                estimate += this_len / speed_in_per_s
+                # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
             if self.raster_direction in (2, 3, 4):
                 scanlines = width_in_inches * dpi
                 if self.raster_swing:
                     scanlines *= 2
-                estimate += (
-                    scanlines * height_in_inches / speed_in_per_s
-                    + width_in_inches / speed_in_per_s
-                )
+                this_len = scanlines * height_in_inches + width_in_inches
+                estimate += this_len / speed_in_per_s
+                # print (f"Vertical scanlines: {scanlines}, Length: {this_len:.1f}")
 
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
@@ -233,8 +234,9 @@ class ImageOpNode(Node, Parameters):
 
             def actual(image_node):
                 def process_images():
-                    image_node._context = context
-                    image_node.process_image()
+                    if hasattr(image_node, "process_image"):
+                        image_node._context = context
+                        image_node.process_image()
 
                 return process_images
 
@@ -348,18 +350,3 @@ class ImageOpNode(Node, Parameters):
                 cut.path = path
                 cut.original_op = self.type
                 yield cut
-
-    def add_reference(self, node=None, pos=None, **kwargs):
-        """
-        Add a new node bound to the data_object of the type to the current node.
-        If the data_object itself is a node already it is merely attached.
-
-        @param node:
-        @param pos:
-        @return:
-        """
-        if node is not None:
-            if not self.valid_node(node):
-                # We could raise a ValueError but that will break things...
-                return
-        return super().add_reference(node=node, pos=pos, **kwargs)

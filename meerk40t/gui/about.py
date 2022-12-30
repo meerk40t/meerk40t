@@ -3,18 +3,18 @@ import wx
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .icons import icon_meerk40t, icons8_about_50
 from .mwindow import MWindow
+from .wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
 
-HEADER_TEXT = _(
-    """MeerK40t is a free MIT Licensed open source project
-for lasering on K40 Devices.
-
-Participation in the project is highly encouraged.
-Past participation, and continuing participation is graciously thanked.
-This program is mostly the brainchild of Tatarize,
-who sincerely hopes his contributions will be but the barest trickle
-that becomes a raging river."""
+HEADER_TEXT = (
+    "MeerK40t is a free MIT Licensed open source project\n"
+    + "for lasering on K40 Devices.\n\n"
+    + "Participation in the project is highly encouraged.\n"
+    + "Past participation, and continuing participation is graciously thanked.\n"
+    + "This program is mostly the brainchild of Tatarize,\n"
+    + "who sincerely hopes his contributions will be but\n"
+    + "the barest trickle that becomes a raging river."
 )
 
 
@@ -63,7 +63,7 @@ class AboutPanel(wx.Panel):
         self.meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            HEADER_TEXT,
+            _(HEADER_TEXT),
         )
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
@@ -215,31 +215,25 @@ class InformationPanel(wx.Panel):
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_mk = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "MeerK40t"), wx.HORIZONTAL
-        )
+        sizer_mk = StaticBoxSizer(self, wx.ID_ANY, "MeerK40t", wx.HORIZONTAL)
         sizer_mk.Add(self.mk_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_mk, 0, wx.EXPAND, 0)
 
-        sizer_py = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Python"), wx.HORIZONTAL
-        )
+        sizer_py = StaticBoxSizer(self, wx.ID_ANY, "Python", wx.HORIZONTAL)
         sizer_py.Add(self.py_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_py, 0, wx.EXPAND, 0)
 
-        sizer_wx = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "wxPython"), wx.HORIZONTAL
-        )
+        sizer_wx = StaticBoxSizer(self, wx.ID_ANY, "wxPython", wx.HORIZONTAL)
         sizer_wx.Add(self.wx_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_wx, 0, wx.EXPAND, 0)
 
-        sizer_cfg = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Configuration-Path")), wx.HORIZONTAL
+        sizer_cfg = StaticBoxSizer(
+            self, wx.ID_ANY, _("Configuration-Path"), wx.HORIZONTAL
         )
         sizer_cfg.Add(self.config_path, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_cfg, 0, wx.EXPAND, 0)
 
-        sizer_os = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "OS"), wx.HORIZONTAL)
+        sizer_os = StaticBoxSizer(self, wx.ID_ANY, "OS", wx.HORIZONTAL)
         sizer_os.Add(self.os_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_os, 1, wx.EXPAND, 0)  # This one may grow
 

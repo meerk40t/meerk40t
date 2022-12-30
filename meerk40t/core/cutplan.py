@@ -21,7 +21,11 @@ from typing import Optional
 
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
-from .cutcode import CutCode, CutGroup, CutObject, RasterCut
+from .cutcode.cutcode import CutCode
+from .cutcode.cutgroup import CutGroup
+from .cutcode.cutobject import CutObject
+from .cutcode.rastercut import RasterCut
+from .units import Length
 
 
 class CutPlanningFailedError(Exception):
@@ -219,22 +223,22 @@ class CutPlan:
                 ):
                     yield op
                     continue
+                if op.type == "op hatch":
+                    # hatch passes duplicated sub-objects, while pre-processing
+                    yield from self._blob_convert(op, copies=1, passes=1)
+                    continue
+                passes = op.implicit_passes
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first
                 ):
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
+
                     # So, we only need 1 copy and to set the passes.
-                    passes = op.implicit_passes
-                    copies = 1
+                    yield from self._blob_convert(op, copies=1, passes=passes)
                 else:
-                    passes = 1
-                    copies = op.implicit_passes
-                if op.type == "op hatch":
-                    # hatch duplicates sub-objects, within convert to blob.
-                    passes = 1
-                    copies = 1
-                yield from self._blob_convert(op, copies, passes)
+                    # We do passes by making copies of the cutcode.
+                    yield from self._blob_convert(op, copies=passes, passes=1)
 
     def _blob_convert(self, op, copies, passes, force_idx=None):
         """
@@ -249,9 +253,14 @@ class CutPlan:
         """
         context = self.context
         for pass_idx in range(copies):
+            # if the settings dictionary doesn't exist we use the defined instance dictionary
+            try:
+                settings_dict = op.settings
+            except AttributeError:
+                settings_dict = op.__dict__
             # If passes isn't equal to implicit passes then we need a different settings to permit change
             settings = (
-                op.settings if op.implicit_passes == passes else dict(op.settings)
+                settings_dict if op.implicit_passes == passes else dict(settings_dict)
             )
             cutcode = CutCode(
                 op.as_cutobjects(
@@ -422,12 +431,30 @@ class CutPlan:
         Optimize cuts at optimize stage on cutcode
         @return:
         """
+        tolerance = 0
+        if self.context.opt_inner_first:
+            stol = self.context.opt_inner_tolerance
+            try:
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
+            except ValueError:
+                pass
+        # print(f"Tolerance: {tolerance}")
+
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -444,12 +471,30 @@ class CutPlan:
             last = self.context.device.native
         except AttributeError:
             last = None
+        tolerance = 0
+        if self.context.opt_inner_first:
+            stol = self.context.opt_inner_tolerance
+            try:
+                tolerance = (
+                    float(Length(stol))
+                    * 2
+                    / (
+                        self.context.device.native_scale_x
+                        + self.context.device.native_scale_y
+                    )
+                )
+            except ValueError:
+                pass
+        # print(f"Tolerance: {tolerance}")
+
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel)
+                    self.plan[i] = inner_first_ident(
+                        c, channel=channel, tolerance=tolerance
+                    )
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
@@ -478,15 +523,19 @@ class CutPlan:
         self.commands.clear()
 
 
-def is_inside(inner, outer):
+def is_inside(inner, outer, tolerance=0):
     """
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
     @return: whether path1 is wholly inside path2.
     """
+    # We still consider a path to be inside another path if it is
+    # within a certain tolerance
     inner_path = inner
     outer_path = outer
+    if outer == inner:  # This is the same object.
+        return False
     if hasattr(inner, "path") and inner.path is not None:
         inner_path = inner.path
     if hasattr(outer, "path") and outer.path is not None:
@@ -502,21 +551,21 @@ def is_inside(inner, outer):
     # Raster is inner if the bboxes overlap anywhere
     if isinstance(inner, RasterCut):
         return (
-            inner.bounding_box[0] <= outer.bounding_box[2]
-            and inner.bounding_box[1] <= outer.bounding_box[3]
-            and inner.bounding_box[2] >= outer.bounding_box[0]
-            and inner.bounding_box[3] >= outer.bounding_box[1]
+            inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
+            and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
+            and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
+            and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
         )
-    if outer.bounding_box[0] > inner.bounding_box[0]:
+    if outer.bounding_box[0] > inner.bounding_box[0] + tolerance:
         # outer minx > inner minx (is not contained)
         return False
-    if outer.bounding_box[1] > inner.bounding_box[1]:
+    if outer.bounding_box[1] > inner.bounding_box[1] + tolerance:
         # outer miny > inner miny (is not contained)
         return False
-    if outer.bounding_box[2] < inner.bounding_box[2]:
+    if outer.bounding_box[2] < inner.bounding_box[2] - tolerance:
         # outer maxx < inner maxx (is not contained)
         return False
-    if outer.bounding_box[3] < inner.bounding_box[3]:
+    if outer.bounding_box[3] < inner.bounding_box[3] - tolerance:
         # outer maxy < inner maxy (is not contained)
         return False
     if outer.bounding_box == inner.bounding_box:
@@ -539,11 +588,11 @@ def is_inside(inner, outer):
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
         )
         vm = VectorMontonizer()
-        vm.add_cluster(outer_path)
+        vm.add_polyline(outer_path)
         outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
-        if not outer.vm.is_point_inside(p.x, p.y):
+        if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
             return False
     return True
 
@@ -597,7 +646,7 @@ def correct_empty(context: CutGroup):
             del context[index]
 
 
-def inner_first_ident(context: CutGroup, channel=None):
+def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     """
     Identifies closed CutGroups and then identifies any other CutGroups which
     are entirely inside.
@@ -625,7 +674,8 @@ def inner_first_ident(context: CutGroup, channel=None):
             # if outer is inside inner, then inner cannot be inside outer
             if inner.contains and outer in inner.contains:
                 continue
-            if is_inside(inner, outer):
+
+            if is_inside(inner, outer, tolerance):
                 constrained = True
                 if outer.contains is None:
                     outer.contains = list()
@@ -705,7 +755,7 @@ def short_travel_cutcode(
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = False
                     start = closest.start
@@ -713,7 +763,7 @@ def short_travel_cutcode(
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.burns_done < cut.implicit_passes:
+                if cut and cut.burns_done < cut.passes:
                     closest = cut
                     backwards = True
                     end = closest.end
@@ -721,7 +771,7 @@ def short_travel_cutcode(
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
-                and last_segment.burns_done < last_segment.implicit_passes
+                and last_segment.burns_done < last_segment.passes
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):

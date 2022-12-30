@@ -1,5 +1,6 @@
 import platform
 import random
+from math import sqrt
 
 import wx
 from wx import aui
@@ -37,6 +38,7 @@ from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
+from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
@@ -150,6 +152,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
+        context.register("tool/edit", EditTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
@@ -969,7 +972,8 @@ class MeerK40tScenePanel(wx.Panel):
         sw = float(Length(stroke_width))
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
-                e.stroke_width = sw
+                stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
+                e.stroke_width = sw / stroke_scale
                 e.altered()
             except AttributeError:
                 # Ignore and carry on...

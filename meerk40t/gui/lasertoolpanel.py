@@ -574,6 +574,9 @@ class LaserToolPanel(wx.Panel):
 
     def calculate_frame(self):
         result = False
+        left_top = (0, 0)
+        width = 0
+        height = 0
         if self.coord_a is not None and self.coord_b is not None:
             x0 = self.coord_a[0]
             x1 = self.coord_b[0]
@@ -754,7 +757,7 @@ class LaserTool(MWindow):
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Laser-Tools"))
+        self.SetTitle(_("Place Template"))
 
     def window_open(self):
         pass
@@ -767,4 +770,4 @@ class LaserTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Laser-Tools")
+        return ("Laser-Tools", "Place Template")

@@ -34,7 +34,7 @@ class PlannerPanel(wx.Panel):
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
-        choices = self.context.lookup("choices/optimize")[:7]
+        choices = self.context.lookup("choices/optimize")  # [:7]
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
@@ -88,9 +88,6 @@ class PlannerPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: Preview.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
-        # sizer_optimizations = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
-        # )
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)

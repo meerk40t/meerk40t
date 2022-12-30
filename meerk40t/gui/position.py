@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
-from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -136,14 +136,10 @@ class PositionPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_h = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL
-        )
-        sizer_w = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL
-        )
-        sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
-        sizer_x = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "X:"), wx.HORIZONTAL)
+        sizer_h = StaticBoxSizer(self, wx.ID_ANY, _("Height:"), wx.HORIZONTAL)
+        sizer_w = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.HORIZONTAL)
+        sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
+        sizer_x = StaticBoxSizer(self, wx.ID_ANY, "X:", wx.HORIZONTAL)
 
         sizer_x.Add(self.text_x, 1, wx.EXPAND, 0)
         sizer_y.Add(self.text_y, 1, wx.EXPAND, 0)
@@ -274,16 +270,20 @@ class PositionPanel(wx.Panel):
         self.position_aspect_ratio = self.chk_lock.GetValue()
 
     def on_text_w_enter(self):
-        self.on_text_w_action(True)
+        if self.text_w.is_changed:
+            self.on_text_w_action(True)
 
     def on_text_h_enter(self):
-        self.on_text_h_action(True)
+        if self.text_h.is_changed:
+            self.on_text_h_action(True)
 
     def on_text_x_enter(self):
-        self.on_text_x_action(True)
+        if self.text_x.is_changed:
+            self.on_text_x_action(True)
 
     def on_text_y_enter(self):
-        self.on_text_y_action(True)
+        if self.text_y.is_changed:
+            self.on_text_y_action(True)
 
     def execute_wh_changes(self, refresh_after=True):
         delta = 1.0e-6

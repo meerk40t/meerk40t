@@ -50,7 +50,27 @@ class SerialControllerPanel(wx.Panel):
         self.data_exchange = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_MULTILINE)
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
+        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.gcode_commands = (
+            ("$H", _("Home"), _("Send laser to Home-position"), None),
+            ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
+            ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
+            ("$#", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
+            ("$I", _("Info"), _("Show Build-Info"), None),
+            ("?", _("Status"), _("Query status"), None),
+        )
+
+        for entry in self.gcode_commands:
+            btn = wx.Button(self, wx.ID_ANY, entry[1])
+            btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
+            btn.SetToolTip(entry[2])
+            if entry[3] is not None:
+                btn.SetBitmap(entry[3].GetBitmap(size=25, use_theme=False))
+            sizer_2.Add(btn, 1, wx.EXPAND, 0)
+        sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
+
         self.gcode_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.gcode_text.SetToolTip(_("Enter a Gcode-Command and send it to the laser"))
         self.gcode_text.SetFocus()
         sizer_1.Add(self.gcode_text, 0, wx.EXPAND, 0)
 
@@ -73,7 +93,13 @@ class SerialControllerPanel(wx.Panel):
             self.service.controller.stop()
         else:
             self.service.controller.start()
+    
+    def send_gcode(self, gcode_cmd):
+        def handler(event):
+            self.service(f"gcode {gcode_cmd}")
 
+        return handler
+    
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
         self.service(f"gcode {self.gcode_text.GetValue()}")
         self.gcode_text.Clear()
@@ -112,6 +138,24 @@ class SerialControllerPanel(wx.Panel):
             )
             self.button_device_connect.Enable()
 
+    def pane_show(self):
+        if self.state is None or self.state == "uninitialized" or self.state == "disconnected":
+            self.button_device_connect.SetBackgroundColour("#ffff00")
+            self.button_device_connect.SetLabel(_("Connect"))
+            self.button_device_connect.SetBitmap(
+                icons8_disconnected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+        elif self.state == "connected":
+            self.button_device_connect.SetBackgroundColour("#00ff00")
+            self.button_device_connect.SetLabel(_("Disconnect"))
+            self.button_device_connect.SetBitmap(
+                icons8_connected_50.GetBitmap(use_theme=False)
+            )
+            self.button_device_connect.Enable()
+
+    def pane_hide(self):
+        return
 
 class SerialController(MWindow):
     def __init__(self, *args, **kwds):
@@ -139,6 +183,7 @@ class SerialController(MWindow):
         self.context.channel(f"recv-{self._opened_port}").watch(
             self.serial_panel.update_recv
         )
+        self.serial_panel.pane_show()
 
     def window_close(self):
         self.context.channel(f"send-{self._opened_port}").unwatch(
@@ -147,6 +192,7 @@ class SerialController(MWindow):
         self.context.channel(f"recv-{self._opened_port}").unwatch(
             self.serial_panel.update_recv
         )
+        self.serial_panel.pane_hide()
 
     def delegates(self):
         yield self.serial_panel

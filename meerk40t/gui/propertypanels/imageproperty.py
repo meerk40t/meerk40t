@@ -1,15 +1,21 @@
 # import threading
 import wx
+from PIL import Image
 
-from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.units import UNITS_PER_INCH
+
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel, PreventChangePanel
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
+
+# The default value needs to be true, as the static method will be called before init happened...
+HAS_VECTOR_ENGINE = True
+
 
 class CropPanel(wx.Panel):
     name = _("Crop")
@@ -127,9 +133,7 @@ class CropPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ContrastPanel.__do_layout
-        sizer_main = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image-Dimensions")), wx.VERTICAL
-        )
+        sizer_main = StaticBoxSizer(self, wx.ID_ANY, _("Image-Dimensions"), wx.VERTICAL)
         sizer_info = wx.BoxSizer(wx.HORIZONTAL)
         sizer_info.Add(self.check_enable_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_info.Add(self.button_reset, 0, wx.EXPAND, 0)
@@ -235,7 +239,7 @@ class CropPanel(wx.Panel):
             self.slider_left.SetMin(0)
             self.slider_left.SetMax(value - 1 if constraint else self._width)
             if self._bounds[0] != self.slider_left.GetValue():
-                self.slider_left.SetValue(self._bounds[0])
+                self.slider_left.SetValue(int(self._bounds[0]))
                 dvalue = self._bounds[0]
                 if dvalue == 0:
                     self.text_left.SetValue("---")
@@ -246,7 +250,7 @@ class CropPanel(wx.Panel):
             self.slider_right.SetMin(value + 1 if constraint else 0)
             self.slider_right.SetMax(self._width)
             if self._bounds[2] != self.slider_right.GetValue():
-                self.slider_right.SetValue(self._bounds[2])
+                self.slider_right.SetValue(int(self._bounds[2]))
                 dvalue = self._width - self._bounds[2]
                 if dvalue == 0:
                     self.text_right.SetValue("---")
@@ -257,7 +261,7 @@ class CropPanel(wx.Panel):
             self.slider_top.SetMin(0)
             self.slider_top.SetMax(value - 1 if constraint else self._height)
             if self._bounds[1] != self.slider_top.GetValue():
-                self.slider_top.SetValue(self._bounds[1])
+                self.slider_top.SetValue(int(self._bounds[1]))
                 dvalue = self._bounds[1]
                 if dvalue == 0:
                     self.text_top.SetValue("---")
@@ -268,7 +272,7 @@ class CropPanel(wx.Panel):
             self.slider_bottom.SetMin(value + 1 if constraint else 0)
             self.slider_bottom.SetMax(self._height)
             if self._bounds[3] != self.slider_bottom.GetValue():
-                self.slider_bottom.SetValue(self._bounds[3])
+                self.slider_bottom.SetValue(int(self._bounds[3]))
                 dvalue = self._height - self._bounds[3]
                 if dvalue == 0:
                     self.text_bottom.SetValue("---")
@@ -287,7 +291,7 @@ class CropPanel(wx.Panel):
         # print(f"Set left to: {value}")
         self._bounds[0] = value
         if self.slider_left.GetValue() != value:
-            self.slider_left.SetValue(value)
+            self.slider_left.SetValue(int(value))
         if value == 0:
             self.text_left.SetValue("---")
         else:
@@ -311,7 +315,7 @@ class CropPanel(wx.Panel):
         # print(f"Set right to: {value}")
         self._bounds[2] = value
         if self.slider_right.GetValue() != value:
-            self.slider_right.SetValue(value)
+            self.slider_right.SetValue(int(value))
         dvalue = self._width - value
         if dvalue == 0:
             self.text_right.SetValue("---")
@@ -336,7 +340,7 @@ class CropPanel(wx.Panel):
         # print(f"Set top to: {value}")
         self._bounds[1] = value
         if self.slider_top.GetValue() != value:
-            self.slider_top.SetValue(value)
+            self.slider_top.SetValue(int(value))
         if value == 0:
             self.text_top.SetValue("---")
         else:
@@ -359,7 +363,7 @@ class CropPanel(wx.Panel):
     def cropbottom(self, value):
         self._bounds[3] = value
         if self.slider_bottom.GetValue() != value:
-            self.slider_bottom.SetValue(value)
+            self.slider_bottom.SetValue(int(value))
         # We need to adjust the boundaries of the top slider.
         self.set_slider_limits("t")
         if self.op is not None:
@@ -412,13 +416,10 @@ class ImageModificationPanel(ScrolledPanel):
         )
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_script = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("RasterWizard")), wx.HORIZONTAL
-        )
+        sizer_script = StaticBoxSizer(self, wx.ID_ANY, _("RasterWizard"), wx.HORIZONTAL)
 
         sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
         sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
-
         sizer_main.Add(sizer_script, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
 
@@ -471,7 +472,8 @@ class ImageModificationPanel(ScrolledPanel):
             self.update_node()
 
     def update_node(self):
-        self.node.update(self.context.elements)
+        self.context.elements.emphasized()
+        self.node.update(self.context)
         self.context.signal("element_property_update", self.node)
         self.context.signal("selected", self.node)
 
@@ -616,10 +618,27 @@ class ImageVectorisationPanel(ScrolledPanel):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # self.vector_lock = threading.Lock()
         # self.alive = True
+        # Only display if we have a vector engine
+        make_vector = self.context.kernel.lookup("render-op/make_vector")
+        if make_vector:
+            global HAS_VECTOR_ENGINE
+            HAS_VECTOR_ENGINE = True
+        if not make_vector:
+            main_sizer.Add(
+                wx.StaticText(
+                    self, wx.ID_ANY, "No vector engine installed, you need potrace"
+                ),
+                1,
+                wx.EXPAND,
+                0,
+            )
+            self.SetSizer(main_sizer)
+            main_sizer.Fit(self)
+            self.Layout()
+            self.Centre()
+            return
 
-        sizer_options = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
-        )
+        sizer_options = StaticBoxSizer(self, wx.ID_ANY, _("Options"), wx.VERTICAL)
         main_sizer.Add(sizer_options, 1, wx.EXPAND, 0)
 
         sizer_turn = wx.BoxSizer(wx.HORIZONTAL)
@@ -744,9 +763,7 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.button_generate.SetToolTip(_("Generate a preview of the result"))
         sizer_buttons.Add(self.button_generate, 0, 0, 0)
 
-        sizer_preview = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Preview")), wx.VERTICAL
-        )
+        sizer_preview = StaticBoxSizer(self, wx.ID_ANY, _("Preview"), wx.VERTICAL)
         main_sizer.Add(sizer_preview, 2, wx.EXPAND, 0)
 
         self.bitmap_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
@@ -824,14 +841,26 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.context(cmd)
 
     def set_images(self, refresh=False):
+        def opaque(source):
+            img = source
+            if img is not None:
+                if img.mode == "RGBA":
+                    r, g, b, a = img.split()
+                    background = Image.new("RGB", img.size, "white")
+                    background.paste(img, mask=a)
+                    img = background
+            return img
+
         if not self._visible:
             return
         if self.node is None or self.node.image is None:
             self.wximage = wx.NullBitmap
         else:
             if refresh:
+                source_image = self.node.active_image
+                source_image = opaque(source_image)
                 pw, ph = self.bitmap_preview.GetSize()
-                iw, ih = self.node.image.size
+                iw, ih = source_image.size
                 wfac = pw / iw
                 hfac = ph / ih
                 # The smaller of the two decide how to scale the picture
@@ -841,9 +870,9 @@ class ImageVectorisationPanel(ScrolledPanel):
                     factor = hfac
                 # print (f"Window: {pw} x {ph}, Image= {iw} x {ih}, factor={factor:.3f}")
                 if factor < 1.0:
-                    image = self.node.opaque_image.resize((int(iw * factor), int(ih * factor)))
+                    image = source_image.resize((int(iw * factor), int(ih * factor)))
                 else:
-                    image = self.node.opaque_image
+                    image = source_image
                 self.wximage = self.img_2_wx(image)
 
         self.bitmap_preview.SetBitmap(self.wximage)
@@ -921,7 +950,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 path=abs(path),
                 stroke_width=0,
                 stroke_scaled=False,
-                fillrule=0,   # Fillrule.FILLRULE_NONZERO
+                fillrule=0,  # Fillrule.FILLRULE_NONZERO
             )
             if dummynode is None:
                 return
@@ -946,7 +975,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 height=ph,
                 keep_ratio=True,
             )
-            rw, rh  = image.size
+            rw, rh = image.size
             # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
             # if factor < 1.0:
             #     image = image.resize((int(iw * factor), int(ih * factor)))
@@ -956,7 +985,10 @@ class ImageVectorisationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if node.type == "elem image":
+        # Changing the staticmethod into a regular method will cause a crash, so therefore this circumvention
+        # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
+        global HAS_VECTOR_ENGINE
+        if node.type == "elem image" and HAS_VECTOR_ENGINE:
             return True
         return False
 
@@ -991,7 +1023,11 @@ class ImagePropertyPanel(ScrolledPanel):
             check="float",
             limited=True,
         )
+        self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
 
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -1058,13 +1094,11 @@ class ImagePropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
-        )
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither)
+        self.Bind(wx.EVT_COMBOBOX, self.on_dither, self.combo_dither)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_dither, self.combo_dither)
 
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
 
@@ -1089,7 +1123,11 @@ class ImagePropertyPanel(ScrolledPanel):
             self.on_slider_grayscale_component,
             self.slider_grayscale_blue,
         )
+        self.check_prevent_crop.Bind(wx.EVT_CHECKBOX, self.on_crop_option)
+
         # self.check_enable_grayscale.SetValue(op["enable"])
+        if node.invert is None:
+            node.invert = False
         self.check_invert_grayscale.SetValue(node.invert)
 
         self.slider_grayscale_red.SetValue(int(node.red * 500.0))
@@ -1116,6 +1154,7 @@ class ImagePropertyPanel(ScrolledPanel):
             node = self.node
         self.panel_id.set_widgets(node)
         self.panel_xy.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_crop.set_widgets(node)
         self.node = node
         if node is None:
@@ -1124,8 +1163,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
+        self.check_prevent_crop.SetValue(node.prevent_crop)
 
     def __set_properties(self):
+        self.check_prevent_crop.SetToolTip(_("Prevent final crop after all operations"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
@@ -1152,50 +1193,36 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
         sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_dpi = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
-        )
+        sizer_dpi = StaticBoxSizer(self, wx.ID_ANY, _("DPI:"), wx.HORIZONTAL)
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
-        sizer_dither = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
-        )
+        sizer_crop = StaticBoxSizer(self, wx.ID_ANY, _("Auto-Crop:"), wx.HORIZONTAL)
+        sizer_crop.Add(self.check_prevent_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_dpi_dither.Add(sizer_crop, 1, wx.EXPAND, 0)
+
+        sizer_dither = StaticBoxSizer(self, wx.ID_ANY, _("Dither"), wx.HORIZONTAL)
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_dpi_dither.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_dpi_dither.Add(sizer_dither, 2, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
 
-        # sizer_rasterwizard = wx.StaticBoxSizer(
-        #     wx.StaticBox(self, wx.ID_ANY, _("Image-Operation")), wx.HORIZONTAL
-        # )
-        # sizer_rasterwizard.Add(self.combo_operations, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        # sizer_main.Add(sizer_rasterwizard, 0, wx.EXPAND, 0)
-
-        # -----
-
         sizer_rg = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bl = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_grayscale = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Grayscale")), wx.VERTICAL
+        sizer_grayscale = StaticBoxSizer(self, wx.ID_ANY, _("Grayscale"), wx.VERTICAL)
+        sizer_grayscale_lightness = StaticBoxSizer(
+            self, wx.ID_ANY, _("Lightness"), wx.HORIZONTAL
         )
-        sizer_grayscale_lightness = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Lightness")), wx.HORIZONTAL
+        sizer_grayscale_blue = StaticBoxSizer(self, wx.ID_ANY, _("Blue"), wx.HORIZONTAL)
+        sizer_grayscale_green = StaticBoxSizer(
+            self, wx.ID_ANY, _("Green"), wx.HORIZONTAL
         )
-        sizer_grayscale_blue = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Blue")), wx.HORIZONTAL
-        )
-        sizer_grayscale_green = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Green")), wx.HORIZONTAL
-        )
-        sizer_grayscale_red = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Red")), wx.HORIZONTAL
-        )
+        sizer_grayscale_red = StaticBoxSizer(self, wx.ID_ANY, _("Red"), wx.HORIZONTAL)
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
         sizer_grayscale_red.Add(self.slider_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
@@ -1219,6 +1246,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
+        sizer_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -1226,28 +1254,42 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Centre()
         # end wxGlade
 
+    def node_update(self):
+        self.context.elements.emphasized()
+        self.node.update(self.context)
+        self.context.signal("element_property_update", self.node)
+
     def on_text_dpi(self):
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
+        self.node_update()
 
-    def on_check_enable_dither(
-        self, event=None
-    ):  # wxGlade: RasterWizard.<event_handler>
-        self.node.dither = self.check_enable_dither.GetValue()
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+    def on_crop_option(self, event):
+        self.node.prevent_crop = self.check_prevent_crop.GetValue()
+        self.node_update()
 
-    def on_combo_dither_type(self, event=None):  # wxGlade: RasterWizard.<event_handler>
-        self.node.dither_type = self.choices[self.combo_dither.GetSelection()]
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+    def on_dither(self, event=None):
+        # Dither can be set by two different means:
+        # a) directly b) via a script
+        dither_op = None
+        for op in self.node.operations:
+            if op["name"] == "dither":
+                dither_op = op
+                break
+        dither_flag = self.check_enable_dither.GetValue()
+        dither_type = self.choices[self.combo_dither.GetSelection()]
+        if dither_op is not None:
+            dither_op["enable"] = dither_flag
+            dither_op["type"] = dither_type
+        self.node.dither = dither_flag
+        self.node.dither_type = dither_type
+        self.node_update()
 
     def on_check_invert_grayscale(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.node.invert = self.check_invert_grayscale.GetValue()
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
 
     def on_slider_grayscale_component(
         self, event=None
@@ -1265,8 +1307,7 @@ class ImagePropertyPanel(ScrolledPanel):
             int(self.slider_grayscale_lightness.GetValue()) / 500.0
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
+        self.node_update()
 
     # def on_combo_operation(self, event):
     #     idx = self.combo_operations.GetSelection()

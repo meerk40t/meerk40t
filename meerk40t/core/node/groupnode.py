@@ -7,9 +7,8 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, label=None, **kwargs):
+    def __init__(self, **kwargs):
         super(GroupNode, self).__init__(type="group", **kwargs)
-        self.label = label
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
@@ -34,9 +33,20 @@ class GroupNode(Node):
         )
 
     def default_map(self, default_map=None):
+        def elem_count(node):
+            res = 0
+            for e in node.children:
+                res += 1
+                if e.type in ("file", "group"):
+                    res += elem_count(e)
+            return res
+
         default_map = super(GroupNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Group"
+
         default_map["children"] = str(len(self.children))
+        elemcount = elem_count(self)
+        default_map["total"] = str(elemcount)
         default_map["id"] = str(self.id)
         return default_map
 

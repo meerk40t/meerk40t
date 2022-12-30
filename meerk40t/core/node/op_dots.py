@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import DwellCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -16,15 +16,10 @@ class DotsOpNode(Node, Parameters):
     This is a Node of type "op dots".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op dots", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op dots", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
@@ -37,7 +32,7 @@ class DotsOpNode(Node, Parameters):
         self.allowed_attributes = []
         # Is this op out of useful bounds?
         self.dangerous = False
-        self.settings["stopop"] = True
+        self.stopop = True
 
     def __repr__(self):
         return "DotsOpNode()"
@@ -87,7 +82,10 @@ class DotsOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self._allowed_elements_dnd:
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -130,7 +128,7 @@ class DotsOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
-    def valid_node(self, node):
+    def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
         else:
@@ -167,7 +165,7 @@ class DotsOpNode(Node, Parameters):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
-                                if self.valid_node(node):
+                                if self.valid_node_for_reference(node):
                                     result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
@@ -175,7 +173,7 @@ class DotsOpNode(Node, Parameters):
                     if result:
                         return True, self.stopop, feedback
                 else:  # empty ? Anything goes
-                    if self.valid_node(node):
+                    if self.valid_node_for_reference(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
                         feedback.append("stroke")
@@ -183,7 +181,7 @@ class DotsOpNode(Node, Parameters):
                         return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                if self.valid_node(node):
+                if self.valid_node_for_reference(node):
                     self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
@@ -198,7 +196,7 @@ class DotsOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -251,23 +249,11 @@ class DotsOpNode(Node, Parameters):
         for point_node in self.children:
             if point_node.type != "elem point":
                 continue
+            if point_node.point is None:
+                continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),
+                dwell_time=self.dwell_time,
                 settings=settings,
                 passes=passes,
             )
-
-    def add_reference(self, node=None, pos=None, **kwargs):
-        """
-        Add a new node bound to the data_object of the type to the current node.
-        If the data_object itself is a node already it is merely attached.
-
-        @param node:
-        @param pos:
-        @return:
-        """
-        if node is not None:
-            if not self.valid_node(node):
-                # We could raise a ValueError but that will break things...
-                return
-        return super().add_reference(node=node, pos=pos, **kwargs)

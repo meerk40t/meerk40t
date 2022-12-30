@@ -1,19 +1,23 @@
+"""
+Galvo Driver
+
+The Driver has a set of different commands which are standardly sent and utilizes those which can be performed by this
+driver.
+"""
 import time
 
-from meerk40t.balormk.lmc_controller import GalvoController
-from meerk40t.core.cutcode import (
-    CubicCut,
-    DwellCut,
-    GotoCut,
-    HomeCut,
-    InputCut,
-    LineCut,
-    OutputCut,
-    PlotCut,
-    QuadCut,
-    SetOriginCut,
-    WaitCut,
-)
+from meerk40t.balormk.controller import GalvoController
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.setorigincut import SetOriginCut
+from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 
@@ -372,6 +376,12 @@ class BalorDriver:
         @return:
         """
         self.move_abs("50%", "50%")
+
+    def physical_home(self):
+        """"
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
 
     def rapid_mode(self):
         """

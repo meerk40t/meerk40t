@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -8,20 +8,20 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     elif lifecycle == "register":
-        from meerk40t.tools.clipper import Clipper, ClipType, PolyFillType, PolyType
+        from ..tools import polybool as pb
+        from ..core.elements import linearize_path
 
         _ = kernel.translation
         context = kernel.root
 
+        @context.console_option("keep", "k", type=bool, action="store_true", help="keep original elements")
         @context.console_command(
             ("intersection", "xor", "union", "difference"),
             input_type="elements",
             output_type="elements",
             help=_("Constructive Additive Geometry: Add"),
         )
-        def cag(command, channel, _, data=None, **kwargs):
-            import numpy as np
-
+        def cag(command, channel, _, keep=False, data=None, **kwargs):
             if len(data) < 2:
                 channel(
                     _(
@@ -31,14 +31,6 @@ def plugin(kernel, lifecycle):
                 return "elements", []
 
             elements = context.elements
-            if command == "intersection":
-                ct = ClipType.Intersection
-            elif command == "xor":
-                ct = ClipType.Xor
-            elif command == "union":
-                ct = ClipType.Union
-            else:  # difference
-                ct = ClipType.Difference
             solution_path = Path(
                 stroke=elements.default_stroke,
                 fill=elements.default_fill,
@@ -47,36 +39,40 @@ def plugin(kernel, lifecycle):
 
             # reorder elements
             data.sort(key=lambda n: n.emphasized_time)
-            last_polygon = None
-            node = None
 
+            node = None
+            segment_list = []
             for i in range(len(data)):
                 node = data[i]
                 try:
                     path = node.as_path()
                 except AttributeError:
                     return "elements", data
+                c = linearize_path(path)
+                c = pb.Polygon(c)
+                c = pb.segments(c)
+                segment_list.append(c)
+            if len(segment_list) == 0:
+                return "elements", data
+            if not keep:
+                for node in data:
+                    node.remove_node()
+            segs = segment_list[0]
+            for s in segment_list[1:]:
+                combined = pb.combine(segs, s)
+                if command == "intersection":
+                    segs = pb.selectIntersect(combined)
+                elif command == "xor":
+                    segs = pb.selectXor(combined)
+                elif command == "union":
+                    segs = pb.selectUnion(combined)
+                else:
+                    # difference
+                    segs = pb.selectDifference(combined)
 
-                current_polygon = []
-                for subpath in path.as_subpaths():
-                    subj = Path(subpath).npoint(np.linspace(0, 1, 1000))
-                    subj.reshape((2, 1000))
-                    s = list(map(Point, subj))
-                    current_polygon.append(s)
-
-                if last_polygon is not None:
-                    pc = Clipper()
-                    solution = []
-                    pc.AddPolygons(last_polygon, PolyType.Subject)
-                    pc.AddPolygons(current_polygon, PolyType.Clip)
-                    result = pc.Execute(
-                        ct, solution, PolyFillType.EvenOdd, PolyFillType.EvenOdd
-                    )
-                    current_polygon = solution
-                last_polygon = current_polygon
-
-            for se in last_polygon:
-                r = Polygon(*se)
+            last_polygon = pb.polygon(segs)
+            for se in last_polygon.regions:
+                r = Polygon(*[(p.x, p.y) for p in se])
                 if solution_path is None:
                     solution_path = Path(r)
                 else:
@@ -99,4 +95,5 @@ def plugin(kernel, lifecycle):
                 elements.classify([new_node])
                 return "elements", [node]
             else:
+                channel(_("No solution found (empty path)"))
                 return "elements", []

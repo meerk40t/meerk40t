@@ -17,8 +17,7 @@ class InputPropertyPanel(wx.Panel):
 
         self.choices = [
             {
-                "attr": "value",
-                # "mask": "mask",
+                "attr": "input_value",
                 "object": self.operation,
                 "default": 0,
                 "type": int,
@@ -35,8 +34,8 @@ class InputPropertyPanel(wx.Panel):
         self.SetSizer(main_sizer)
         self.Layout()
 
-    @signal_listener("mask")
-    @signal_listener("value")
+    @signal_listener("input_mask")
+    @signal_listener("input_value")
     def wait_changed(self, *args):
         self.context.elements.signal("element_property_update", self.operation)
 

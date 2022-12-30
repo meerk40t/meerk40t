@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+import ast
 from copy import copy
 from enum import IntEnum
 from time import time
@@ -54,17 +55,47 @@ class Fillrule(IntEnum):
 class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
+
+    All nodes have children, root, parent, and reference links. The children are subnodes,
+    the root points to the tree root, the parent points to the immediate parent, and references
+    refers to nodes that point to this node type.
+
+    All nodes have type, id, label, and lock values.
+
+    Type is a string value of the given node type and is used to delineate nodes.
+    Label is a string value that will often describe the node.
+    Id is a string value, during saving, we make sure this is a unique id.
+
+
+    Node bounds exist, but not all nodes are have geometric bounds.
+    Node paint_bounds exists, not all nodes have painted area bounds.
+
+    Nodes can be emphasized. This is selecting the given node.
+    Nodes can be highlighted.
+    Nodes can be targeted.
     """
 
-    def __init__(self, type=None, *args, **kwargs):
-        super().__init__()
-        self._formatter = "{element_type}:{id}"
+    def __init__(self, *args, **kwargs):
+        self.type = None
+        self.id = None
+        self.label = None
+        self.lock = False
+
+        for k, v in kwargs.items():
+            if k.startswith("_"):
+                continue
+            if isinstance(v, str):
+                try:
+                    v = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
+            self.__dict__[k] = v
+
         self._children = list()
         self._root = None
         self._parent = None
         self._references = list()
-
-        self.type = type
+        self._formatter = "{element_type}:{id}"
 
         self._points = list()
         self._points_dirty = True
@@ -83,21 +114,14 @@ class Node:
         self._paint_bounds = None
         self._paint_bounds_dirty = True
 
-        self.item = None
-        self.icon = None
-        self.cache = None
-        self.id = None
-        # Label
-        self.label = None
+        self._item = None
+        self._cache = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        settings = {}
-        if hasattr(self, "settings"):
-            settings.update(self.settings)
-        return self.create(type=self.type, id=self.id, **settings)
+        return self.__class__(**self.node_dict)
 
     def __str__(self):
         text = self._formatter
@@ -116,6 +140,17 @@ class Node:
 
     def __hash__(self):
         return id(self)
+
+    @property
+    def node_dict(self):
+        nd = dict()
+        for k, v in self.__dict__.items():
+            if k.startswith("_"):
+                continue
+            if k == "type":
+                continue
+            nd[k] = v
+        return nd
 
     @property
     def children(self):
@@ -195,6 +230,50 @@ class Node:
         return self._root
 
     @property
+    def can_emphasize(self):
+        return not self.lock
+
+    @property
+    def can_highlight(self):
+        return not self.lock
+
+    @property
+    def can_target(self):
+        return not self.lock
+
+    @property
+    def can_move(self):
+        return not self.lock
+
+    @property
+    def can_scale(self):
+        return not self.lock
+
+    @property
+    def can_rotate(self):
+        return not self.lock
+
+    @property
+    def can_skew(self):
+        return not self.lock
+
+    @property
+    def can_modify(self):
+        return not self.lock
+
+    @property
+    def can_alter(self):
+        return not self.lock
+
+    @property
+    def can_update(self):
+        return not self.lock
+
+    @property
+    def can_remove(self):
+        return not self.lock
+
+    @property
     def bounds(self):
         if not self._bounds_dirty:
             return self._bounds
@@ -260,11 +339,17 @@ class Node:
             assert c._parent is self
             assert c._root is self._root
             assert c in c._parent._children
+            for q in c._references:
+                assert q.node is c
+            if c.type == "reference":
+                assert c in c.node._references
             c._validate_tree()
 
-    def _build_links(self, links=None):
+    def _build_copy_nodes(self, links=None):
         """
-        Build links and copy nodes.
+        Creates a copy of each node, linked to the ID of the original node. This will create
+        a map between id of original node and copy node. Without any structure. The original
+        root will link to `None` since root copies are in-effective.
 
         @param links:
         @return:
@@ -272,7 +357,7 @@ class Node:
         if links is None:
             links = {id(self): (self, None)}
         for c in self._children:
-            c._build_links(links=links)
+            c._build_copy_nodes(links=links)
             node_copy = copy(c)
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
@@ -280,30 +365,34 @@ class Node:
 
     def backup_tree(self):
         """
-        Copy of tree creates a copy of a rooted tree at the current node. It should create a copy of the tree structure
-        with the children replaced with copied children and the parents replaced with copied parents and the root also
-        replaced with a copy of the root (assuming it was called at the rootnode).
+        Creates structured copy of the branches of the tree at the current node.
 
-        @param root:
+        This creates copied nodes, relinks the structure and returns branches of
+        the current node.
         @return:
         """
-        links = self._build_links()
-        for node_id, n in links.items():
+        links = self._build_copy_nodes()
 
+        # Rebuild structure.
+        for uid, n in links.items():
             node, node_copy = n
-            if node.type == "reference":
-                continue
             if node._parent is None:
                 # Root.
                 continue
+            # Find copy-parent of copy-node and link.
             original_parent, copied_parent = links[id(node._parent)]
             if copied_parent is None:
+                # copy_parent should have been copied root, but roots don't copy
                 node_copy._parent = self._root
                 continue
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
-        backup = [links[id(c)][1] for c in self._children]
-        return backup
+            if node.type == "reference":
+                original_referenced, copied_referenced = links[id(node.node)]
+                node_copy.node = copied_referenced
+                copied_referenced._references.append(node_copy)
+        branches = [links[id(c)][1] for c in self._children]
+        return branches
 
     def create_label(self, text=None):
         if text is None:
@@ -349,10 +438,20 @@ class Node:
         default_map["node_type"] = self.type
         return default_map
 
-    def is_movable(self):
+    def valid_node_for_reference(self, node):
+        return True
+
+    def is_draggable(self):
         return True
 
     def drop(self, drag_node, modify=True):
+        """
+        Process drag and drop node values for tree reordering.
+
+        @param drag_node:
+        @param modify:
+        @return:
+        """
         return False
 
     def reverse(self):
@@ -360,10 +459,26 @@ class Node:
         self.notify_reorder()
 
     def load(self, settings, section):
-        pass
+        """
+        Default loading will read the persistence object, such that any values found in the given section of the
+        settings file. Will load parse the file to the correct type and set the attributes on this node.
+
+        @param settings:
+        @param section:
+        @return:
+        """
+        settings.read_persistent_object(section, self)
 
     def save(self, settings, section):
-        pass
+        """
+        The default node saving to a settings will write the persistence dictionary of the instance dictionary. This
+        will save to that section any non `_` attributes.
+
+        @param settings:
+        @param section:
+        @return:
+        """
+        settings.write_persistent_dict(section, self.__dict__)
 
     def revalidate_points(self):
         """
@@ -556,6 +671,12 @@ class Node:
         if self._parent is not None:
             self._parent.invalidated()
 
+    def updated(self):
+        """
+        The nodes display information may have changed but nothing about the matrix or the internal data is altered.
+        """
+        self.notify_update(self)
+
     def modified(self):
         """
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
@@ -569,30 +690,24 @@ class Node:
         The data structure was changed. Any assumptions about what this object is/was are void.
         """
         try:
-            self.cache.UnGetNativePath(self.cache.NativePath)
+            self._cache.UnGetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
-            del self.icon
+            del self._cache
         except AttributeError:
             pass
-        self.cache = None
-        self.icon = None
+        self._cache = None
         self.invalidated()
         self.notify_altered(self)
 
     def unregister_object(self):
         try:
-            self.cache.UngetNativePath(self.cache.NativePath)
+            self._cache.UngetNativePath(self._cache.NativePath)
         except AttributeError:
             pass
         try:
-            del self.cache
-        except AttributeError:
-            pass
-        try:
-            del self.icon
+            del self._cache
         except AttributeError:
             pass
 
@@ -614,46 +729,73 @@ class Node:
         @param pos:
         @return:
         """
-        return self.add(node=node, type="reference", pos=pos, **kwargs)
+        if node is None:
+            return
+        if not self.valid_node_for_reference(node):
+            # We could raise a ValueError but that will break things...
+            return
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
 
     def add_node(self, node, pos=None):
+        """
+        Attach an already created node to the tree.
+
+        Requires that this node be validated to avoid loops.
+
+        @param node:
+        @param pos:
+        @return:
+        """
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
+        self._attach_node(node, pos=pos)
+
+    def create(self, type, **kwargs):
+        """
+        Create node of type with attributes via node bootstrapping. Apply node defaults to values with defaults.
+
+        @param type:
+        @param kwargs:
+        @return:
+        """
+        from .bootstrap import bootstrap, defaults
+        node_class = bootstrap.get(type, Node)
+        node_defaults = defaults.get(type, {})
+        nd = dict(node_defaults)
+        nd.update(kwargs)
+        node = node_class(**nd)
+        if self._root is not None:
+            self._root.notify_created(node)
+        return node
+
+    def _attach_node(self, node, pos=None):
+        """
+        Attach a valid and created node to tree.
+        @param node:
+        @param pos:
+        @return:
+        """
         node._parent = self
         node._root = self._root
         if pos is None:
             self._children.append(node)
         else:
             self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
-
-    def create(self, type=None, id=None, **kwargs):
-        node_class = self._root.bootstrap.get(type, Node)
-        node = node_class(**kwargs)
-        node.type = type
-        node.id = id
-        if self._root is not None:
-            self._root.notify_created(node)
+        node.notify_attached(node, parent=self, pos=pos)
         return node
 
-    def add(self, type=None, id=None, pos=None, **kwargs):
+    def add(self, type=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param type: Node type to be bootstrapped
-        @param id: Node id to be set
         @param pos: Position within current node to add this node
         @return:
         """
-        node = self.create(type=type, id=id, **kwargs)
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
+        node = self.create(type=type, **kwargs)
+        self._attach_node(node, pos=pos)
         return node
 
     def _flatten(self, node):
@@ -787,7 +929,7 @@ class Node:
                 ref._parent = node
                 # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None
@@ -807,7 +949,7 @@ class Node:
         if references:
             for ref in list(self._references):
                 ref.remove_node()
-        self.item = None
+        self._item = None
         self._parent = None
         self._root = None
         self.type = None

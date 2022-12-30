@@ -3,6 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.gui.wxutils import StaticBoxSizer
 
 _ = wx.GetTranslation
 
@@ -73,8 +74,8 @@ class ContrastPanel(wx.Panel):
         self.check_enable_contrast.SetValue(self.op["enable"])
         self.text_contrast_contrast.SetValue(str(self.op["contrast"]))
         self.text_contrast_brightness.SetValue(str(self.op["brightness"]))
-        self.slider_contrast_contrast.SetValue(self.op["contrast"])
-        self.slider_contrast_brightness.SetValue(self.op["brightness"])
+        self.slider_contrast_contrast.SetValue(int(self.op["contrast"]))
+        self.slider_contrast_brightness.SetValue(int(self.op["brightness"]))
 
     def __set_properties(self):
         # begin wxGlade: ContrastPanel.__set_properties
@@ -93,14 +94,12 @@ class ContrastPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ContrastPanel.__do_layout
-        sizer_contrast = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Contrast")), wx.VERTICAL
+        sizer_contrast = StaticBoxSizer(self, wx.ID_ANY, _("Contrast"), wx.VERTICAL)
+        sizer_contrast_brightness = StaticBoxSizer(
+            self, wx.ID_ANY, _("Brightness Amount"), wx.HORIZONTAL
         )
-        sizer_contrast_brightness = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Brightness Amount")), wx.HORIZONTAL
-        )
-        sizer_contrast_contrast = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Contrast Amount")), wx.HORIZONTAL
+        sizer_contrast_contrast = StaticBoxSizer(
+            self, wx.ID_ANY, _("Contrast Amount"), wx.HORIZONTAL
         )
         sizer_contrast_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_contrast_main.Add(self.check_enable_contrast, 0, 0, 0)
@@ -225,11 +224,11 @@ class HalftonePanel(wx.Panel):
         self.check_enable_halftone.SetValue(self.op["enable"])
         self.check_halftone_black.SetValue(self.op["black"])
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.slider_halftone_sample.SetValue(self.op["sample"])
+        self.slider_halftone_sample.SetValue(int(self.op["sample"]))
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.slider_halftone_angle.SetValue(self.op["angle"])
+        self.slider_halftone_angle.SetValue(int(self.op["angle"]))
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.slider_halftone_oversample.SetValue(self.op["oversample"])
+        self.slider_halftone_oversample.SetValue(int(self.op["oversample"]))
 
     def __set_properties(self):
         # begin wxGlade: HalftonePanel.__set_properties
@@ -249,17 +248,15 @@ class HalftonePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: HalftonePanel.__do_layout
-        sizer_halftone = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Halftone")), wx.VERTICAL
+        sizer_halftone = StaticBoxSizer(self, wx.ID_ANY, _("Halftone"), wx.VERTICAL)
+        sizer_halftone_oversample = StaticBoxSizer(
+            self, wx.ID_ANY, _("Oversample"), wx.HORIZONTAL
         )
-        sizer_halftone_oversample = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Oversample")), wx.HORIZONTAL
+        sizer_halftone_angle = StaticBoxSizer(
+            self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL
         )
-        sizer_halftone_angle = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Angle")), wx.HORIZONTAL
-        )
-        sizer_halftone_sample = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Sample")), wx.HORIZONTAL
+        sizer_halftone_sample = StaticBoxSizer(
+            self, wx.ID_ANY, _("Sample"), wx.HORIZONTAL
         )
         sizer_halftone_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_halftone_main.Add(self.check_enable_halftone, 0, 0, 0)
@@ -297,11 +294,11 @@ class HalftonePanel(wx.Panel):
         self.check_enable_halftone.SetValue(self.op["enable"])
         self.check_halftone_black.SetValue(self.op["black"])
         self.text_halftone_sample.SetValue(str(self.op["sample"]))
-        self.slider_halftone_sample.SetValue(self.op["sample"])
+        self.slider_halftone_sample.SetValue(int(self.op["sample"]))
         self.text_halftone_angle.SetValue(str(self.op["angle"]))
-        self.slider_halftone_angle.SetValue(self.op["angle"])
+        self.slider_halftone_angle.SetValue(int(self.op["angle"]))
         self.text_halftone_oversample.SetValue(str(self.op["oversample"]))
-        self.slider_halftone_oversample.SetValue(self.op["oversample"])
+        self.slider_halftone_oversample.SetValue(int(self.op["oversample"]))
         self.node.update(self.context)
 
     def on_check_halftone_black(
@@ -406,9 +403,7 @@ class ToneCurvePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ToneCurvePanel.__do_layout
-        sizer_tone = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Tone Curve")), wx.VERTICAL
-        )
+        sizer_tone = StaticBoxSizer(self, wx.ID_ANY, _("Tone Curve"), wx.VERTICAL)
         sizer_tone_curve = wx.BoxSizer(wx.HORIZONTAL)
         sizer_tone_curve.Add(self.check_enable_tone, 0, 0, 0)
         sizer_tone_curve.Add(self.button_reset_tone, 0, 0, 0)
@@ -524,6 +519,8 @@ class SharpenPanel(wx.Panel):
     def accepts(node):
         if node.type != "elem image":
             return False
+        if node.operations is None:
+            node.operations = list()
         for n in node.operations:
             if n.get("name") == "unsharp_mask":
                 return True
@@ -592,9 +589,9 @@ class SharpenPanel(wx.Panel):
         self.op = op
         self.original_op = deepcopy(op)
         self.check_enable_sharpen.SetValue(op["enable"])
-        self.slider_sharpen_percent.SetValue(op["percent"])
-        self.slider_sharpen_radius.SetValue(op["radius"])
-        self.slider_sharpen_threshold.SetValue(op["threshold"])
+        self.slider_sharpen_percent.SetValue(int(op["percent"]))
+        self.slider_sharpen_radius.SetValue(int(op["radius"]))
+        self.slider_sharpen_threshold.SetValue(int(op["threshold"]))
         self.text_sharpen_percent.SetValue(str(op["percent"]))
         self.text_sharpen_radius.SetValue(str(op["radius"]))
         self.text_sharpen_threshold.SetValue(str(op["threshold"]))
@@ -618,17 +615,15 @@ class SharpenPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: SharpenPanel.__do_layout
-        sizer_sharpen = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Sharpen")), wx.VERTICAL
+        sizer_sharpen = StaticBoxSizer(self, wx.ID_ANY, _("Sharpen"), wx.VERTICAL)
+        sizer_sharpen_threshold = StaticBoxSizer(
+            self, wx.ID_ANY, _("Threshold"), wx.HORIZONTAL
         )
-        sizer_sharpen_threshold = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Threshold")), wx.HORIZONTAL
+        sizer_sharpen_radius = StaticBoxSizer(
+            self, wx.ID_ANY, _("Radius"), wx.HORIZONTAL
         )
-        sizer_sharpen_radius = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Radius")), wx.HORIZONTAL
-        )
-        sizer_sharpen_percent = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Percent")), wx.HORIZONTAL
+        sizer_sharpen_percent = StaticBoxSizer(
+            self, wx.ID_ANY, _("Percent"), wx.HORIZONTAL
         )
         sizer_sharpen_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_sharpen_main.Add(self.check_enable_sharpen, 0, 0, 0)
@@ -660,9 +655,9 @@ class SharpenPanel(wx.Panel):
         self.op["percent"] = self.original_op["percent"]
         self.op["radius"] = self.original_op["radius"]
         self.op["threshold"] = self.original_op["threshold"]
-        self.slider_sharpen_percent.SetValue(self.op["percent"])
-        self.slider_sharpen_radius.SetValue(self.op["radius"])
-        self.slider_sharpen_threshold.SetValue(self.op["threshold"])
+        self.slider_sharpen_percent.SetValue(int(self.op["percent"]))
+        self.slider_sharpen_radius.SetValue(int(self.op["radius"]))
+        self.slider_sharpen_threshold.SetValue(int(self.op["threshold"]))
         self.text_sharpen_percent.SetValue(str(self.op["percent"]))
         self.text_sharpen_radius.SetValue(str(self.op["radius"]))
         self.text_sharpen_threshold.SetValue(str(self.op["threshold"]))
@@ -746,7 +741,7 @@ class GammaPanel(wx.Panel):
         self.op = op
         self.original_op = deepcopy(op)
         self.text_gamma_factor.SetValue(str(op["factor"]))
-        self.slider_gamma_factor.SetValue(op["factor"] * 100.0)
+        self.slider_gamma_factor.SetValue(int(op["factor"] * 100.0))
         self.check_enable_gamma.SetValue(op["enable"])
 
     def __set_properties(self):
@@ -760,11 +755,9 @@ class GammaPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: GammaPanel.__do_layout
-        sizer_gamma = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Gamma")), wx.VERTICAL
-        )
-        sizer_gamma_factor = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Gamma Factor")), wx.HORIZONTAL
+        sizer_gamma = StaticBoxSizer(self, wx.ID_ANY, _("Gamma"), wx.VERTICAL)
+        sizer_gamma_factor = StaticBoxSizer(
+            self, wx.ID_ANY, _("Gamma Factor"), wx.HORIZONTAL
         )
         sizer_gamma_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_gamma_main.Add(self.check_enable_gamma, 0, 0, 0)
@@ -788,7 +781,7 @@ class GammaPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.op["factor"] = self.original_op["factor"]
-        self.slider_gamma_factor.SetValue(self.op["factor"] * 100.0)
+        self.slider_gamma_factor.SetValue(int(self.op["factor"] * 100.0))
         self.text_gamma_factor.SetValue(str(self.op["factor"]))
         self.node.update(self.context)
 
@@ -849,9 +842,7 @@ class EdgePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: OutputPanel.__do_layout
-        sizer_output = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Enable")), wx.VERTICAL
-        )
+        sizer_output = StaticBoxSizer(self, wx.ID_ANY, _("Enable"), wx.VERTICAL)
         sizer_output.Add(self.check_enable, 0, 0, 0)
         self.SetSizer(sizer_output)
         sizer_output.Fit(self)
@@ -909,9 +900,7 @@ class AutoContrastPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: OutputPanel.__do_layout
-        sizer_output = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Enable")), wx.VERTICAL
-        )
+        sizer_output = StaticBoxSizer(self, wx.ID_ANY, _("Enable"), wx.VERTICAL)
         sizer_output.Add(self.check_enable, 0, 0, 0)
         self.SetSizer(sizer_output)
         sizer_output.Fit(self)

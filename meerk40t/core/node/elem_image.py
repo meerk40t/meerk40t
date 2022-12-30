@@ -16,85 +16,74 @@ class ImageNode(Node):
     The processed matrix must be concatenated with the main matrix to be accurate.
     """
 
-    def __init__(
-        self,
-        image=None,
-        matrix=None,
-        overscan=None,
-        direction=None,
-        dpi=500,
-        operations=None,
-        invert=None,
-        dither=None,
-        dither_type=None,
-        red=None,
-        green=None,
-        blue=None,
-        lightness=None,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-        super(ImageNode, self).__init__(type="elem image", **settings)
-        self.__formatter = "{element_type} {id} {width}x{height}"
-        if matrix is None:
-            matrix = Matrix()
+    def __init__(self, **kwargs):
+        self.image = None
+        self.matrix = None
+        self.overscan = None
+        self.direction = None
+        self.dpi = 500
+        self.operations = list()
+        self.invert = None
+        self.dither = True
+        self.dither_type = "Floyd-Steinberg"
+        self.red = 1.0
+        self.green = 1.0
+        self.blue = 1.0
+        self.lightness = 1.0
+        self.view_invert = False
+        self.prevent_crop = False
 
-        self.matrix = matrix
-        if "href" in settings:
+        self.passthrough = False
+        super(ImageNode, self).__init__(type="elem image", **kwargs)
+        # kwargs can actually reset quite a lot of the properties to none
+        # so we need to revert these changes...
+        if self.red is None:
+            self.red = 1.0
+        if self.green is None:
+            self.green = 1.0
+        if self.blue is None:
+            self.blue = 1.0
+        if self.lightness is None:
+            self.lightness = 1.0
+        if self.operations is None:
+            self.operations = list()
+        if self.dither_type is None:
+            self.dither_type = "Floyd-Steinberg"
+
+        self.__formatter = "{element_type} {id} {width}x{height}"
+        if self.matrix is None:
+            self.matrix = Matrix()
+        if hasattr(self, "href"):
             try:
                 from PIL import Image as PILImage
 
-                self.image = PILImage.open(settings["href"])
-                if "x" in settings:
-                    self.matrix.post_translate_x(settings["x"])
-                if "y" in settings:
-                    self.matrix.post_translate_x(settings["y"])
+                self.image = PILImage.open(self.href)
+                if hasattr(self, "x"):
+                    self.matrix.post_translate_x(self.x)
+                if hasattr(self, "y"):
+                    self.matrix.post_translate_x(self.y)
                 real_width, real_height = self.image.size
                 declared_width, declared_height = real_width, real_height
-                if "width" in settings:
-                    declared_width = settings["width"]
-                if "height" in settings:
-                    declared_height = settings["height"]
+                if hasattr(self, "width"):
+                    declared_width = self.width
+                if hasattr(self, "height"):
+                    declared_height = self.height
                 try:
                     sx = declared_width / real_width
                     sy = declared_height / real_height
                     self.matrix.post_scale(sx, sy)
                 except ZeroDivisionError:
                     pass
+                delattr(self, "href")
+                delattr(self, "x")
+                delattr(self, "y")
+                delattr(self, "height")
+                delattr(self, "width")
             except ImportError:
                 self.image = None
-        else:
-            self.image = image
 
-        self.settings = settings
-
-        self.overscan = overscan
-        self.direction = direction
-        self.dpi = dpi
         self.step_x = None
         self.step_y = None
-        self.label = label
-        self.lock = lock
-
-        self.invert = False if invert is None else invert
-        self.red = 1.0 if red is None else red
-        self.green = 1.0 if green is None else green
-        self.blue = 1.0 if blue is None else blue
-        self.lightness = 1.0 if lightness is None else lightness
-        self.dither = True if dither is None else dither
-        self.dither_type = "Floyd-Steinberg" if dither_type is None else dither_type
-
-        if operations is None:
-            operations = list()
-        self.operations = operations
-        self.view_invert = False
 
         self._needs_update = False
         self._update_thread = None
@@ -103,37 +92,30 @@ class ImageNode(Node):
         self._processed_matrix = None
         self._process_image_failed = False
         self._processing_message = None
-        if self.operations:
+        if self.operations or self.dither or self.prevent_crop:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
 
     def __copy__(self):
-        return ImageNode(
-            image=self.image,
-            matrix=copy(self.matrix),
-            overscan=self.overscan,
-            direction=self.direction,
-            dpi=self.dpi,
-            operations=self.operations,
-            invert=self.invert,
-            dither=self.dither,
-            dither_type=self.dither_type,
-            red=self.red,
-            green=self.green,
-            blue=self.blue,
-            lightness=self.lightness,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd["matrix"] = copy(self.matrix)
+        nd["operations"] = copy(self.operations)
+        return ImageNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
 
     @property
     def active_image(self):
+        if self._processed_image is None and (
+            (self.operations is not None and len(self.operations) > 0) or self.dither
+        ):
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y, not self.prevent_crop)
         if self._processed_image is not None:
             return self._processed_image
         else:
@@ -154,7 +136,7 @@ class ImageNode(Node):
         self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
-        self.process_image(self.step_x, self.step_y)
+        self.process_image(self.step_x, self.step_y, not self.prevent_crop)
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -172,15 +154,11 @@ class ImageNode(Node):
 
     def default_map(self, default_map=None):
         default_map = super(ImageNode, self).default_map(default_map=default_map)
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         image = self.active_image
         default_map["width"] = image.width
         default_map["height"] = image.height
         default_map["element_type"] = "Image"
-        default_map["matrix"] = self.matrix
-        default_map["dpi"] = self.dpi
-        default_map["overscan"] = self.overscan
-        default_map["direction"] = self.direction
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -226,27 +204,40 @@ class ImageNode(Node):
         @return:
         """
         self._needs_update = True
-        self._processing_message = "Processing..."
-        context.signal("refresh_scene", "Scene")
+        if context is not None:
+            self._processing_message = "Processing..."
+            context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
-                if self._process_image_failed:
-                    self._processing_message = (
-                        "Process image could not exist in memory."
-                    )
-                else:
-                    self._processing_message = None
                 self._needs_update = False
                 self._update_thread = None
-                context.signal("refresh_scene", "Scene")
-                context.signal("image updated", self)
+                if context is not None:
+                    if self._process_image_failed:
+                        self._processing_message = (
+                            "Process image could not exist in memory."
+                        )
+                    else:
+                        self._processing_message = None
+                    context.signal("refresh_scene", "Scene")
+                    context.signal("image_updated", self)
 
             self._processed_image = None
             # self.processed_matrix = None
-            self._update_thread = context.threaded(
-                self._process_image_thread, result=clear, daemon=True
-            )
+            if context is None:
+                # Direct execution
+                self._needs_update = False
+                # Calculate scene step_x, step_y values
+                step = UNITS_PER_INCH / self.dpi
+                step_x = step
+                step_y = step
+                self.process_image(step_x, step_y, not self.prevent_crop)
+                # Unset cache.
+                self._cache = None
+            else:
+                self._update_thread = context.threaded(
+                    self._process_image_thread, result=clear, daemon=True
+                )
 
     def _process_image_thread(self):
         """
@@ -260,10 +251,9 @@ class ImageNode(Node):
             step = UNITS_PER_INCH / self.dpi
             step_x = step
             step_y = step
-            self.process_image(step_x, step_y)
+            self.process_image(step_x, step_y, not self.prevent_crop)
             # Unset cache.
-            self.wx_bitmap_image = None
-            self.cache = None
+            self._cache = None
 
     def process_image(self, step_x=None, step_y=None, crop=True):
         """
@@ -293,9 +283,12 @@ class ImageNode(Node):
             self._processed_matrix = actualized_matrix * inverted_main_matrix
             self._processed_image = image
             self._process_image_failed = False
+            bb = self.bbox()
+            self._bounds = bb
+            self._paint_bounds = bb
         except (MemoryError, Image.DecompressionBombError):
             self._process_image_failed = True
-        self.altered()
+        self.updated()
 
     @property
     def opaque_image(self):
@@ -311,22 +304,28 @@ class ImageNode(Node):
         return img
 
     def _convert_image_to_grayscale(self, image):
-        # Precalculate RGB for L conversion.
-        r = self.red * 0.299
-        g = self.green * 0.587
-        b = self.blue * 0.114
-        v = self.lightness
-        c = r + g + b
-        try:
-            c /= v
-            r = r / c
-            g = g / c
-            b = b / c
-        except ZeroDivisionError:
-            pass
-
         # Convert image to L type.
         if image.mode != "L":
+            # Precalculate RGB for L conversion.
+            # if self.red is None:
+            #     self.red = 1
+            if self.red is None or self.green is None or self.blue is None:
+                r = 1
+                g = 1
+                b = 1
+            else:
+                r = self.red * 0.299
+                g = self.green * 0.587
+                b = self.blue * 0.114
+                v = self.lightness
+                c = r + g + b
+                try:
+                    c /= v
+                    r = r / c
+                    g = g / c
+                    b = b / c
+                except ZeroDivisionError:
+                    pass
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
         return image
@@ -518,6 +517,18 @@ class ImageNode(Node):
                             oversample=op["oversample"],
                             black=op["black"],
                         )
+                except KeyError:
+                    pass
+            elif name == "dither":
+                # Set dither
+                try:
+                    if op["enable"] and op["type"] is not None:
+                        self.dither_type = op["type"]
+                        self.dither = True
+                    else:
+                        # Takes precedence
+                        self.dither = False
+                        # image = self._apply_dither(image)
                 except KeyError:
                     pass
             else:

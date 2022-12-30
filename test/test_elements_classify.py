@@ -43,7 +43,11 @@ class TestElementClassification(unittest.TestCase):
                 if not operations:
                     return "cornflower blue"
                 random_op = operations[random.randint(0, len(operations) - 1)]
-                return random_op.color.hexrgb
+                try:
+                    return random_op.color.hexrgb
+                except AttributeError:
+                    # Some already extant operations exist some don't have colors like console
+                    return "cornflower blue"
 
         def random_x():
             return f"{random.random() * 10}{random_units()}"

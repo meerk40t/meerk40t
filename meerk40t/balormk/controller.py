@@ -1,3 +1,10 @@
+"""
+Galvo Controller
+
+The balor controller takes low level lmc galvo commands and converts them into lists and shorts commands to send
+to the hardware controller.
+"""
+
 import struct
 import time
 from copy import copy
@@ -236,6 +243,7 @@ class GalvoController:
         self.connection = None
         self._is_opening = False
         self._abort_open = False
+        self._backbone_error = False
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -271,6 +279,9 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
+    def set_backbone_error(self, status):
+        self._backbone_error = status
+
     def added(self):
         pass
 
@@ -302,8 +313,14 @@ class GalvoController:
         except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
+        # Reset error to allow another attempt
+        self.set_backbone_error(False)
 
     def connect_if_needed(self):
+        if self._backbone_error:
+            self.abort_connect()
+            self.connection = None
+            return
         if self.connection is None:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
@@ -322,6 +339,7 @@ class GalvoController:
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
                 count += 1
+                # self.usb_log(f"Error-Routine pass #{count}")
                 if self.is_shutdown or self._abort_open:
                     self._is_opening = False
                     self._abort_open = False
@@ -329,7 +347,11 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
-                    raise ConnectionRefusedError("Could not connect to the LMC controller.")
+                    self.set_backbone_error(True)
+                    self.usb_log("Could not connect to the LMC controller.")
+                    raise ConnectionRefusedError(
+                        "Could not connect to the LMC controller."
+                    )
                 time.sleep(0.3)
                 continue
         self._is_opening = False
@@ -341,7 +363,7 @@ class GalvoController:
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
-        except ConnectionError:
+        except (ConnectionError, AttributeError):
             return -1, -1, -1, -1
         if read:
             try:
@@ -854,7 +876,7 @@ class GalvoController:
         @param frequency_khz: Frequency to convert
         @return:
         """
-        return int(round(20000.0 / frequency_khz))
+        return int(round(20000.0 / frequency_khz)) & 0xFFFF
 
     def _convert_power(self, power):
         """

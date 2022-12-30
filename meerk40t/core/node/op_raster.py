@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode import RasterCut
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
@@ -18,17 +18,12 @@ class RasterOpNode(Node, Parameters):
     This is a Node of type "op raster".
     """
 
-    def __init__(self, *args, **kwargs):
-        if "setting" in kwargs:
-            kwargs = kwargs["settings"]
-            if "type" in kwargs:
-                del kwargs["type"]
-        Node.__init__(self, type="op raster", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op raster", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         )
-        self.settings.update(kwargs)
 
         if len(args) == 1:
             obj = args[0]
@@ -81,6 +76,7 @@ class RasterOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
+        default_map["dpi"] = str(self.dpi)
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -131,7 +127,10 @@ class RasterOpNode(Node, Parameters):
         count = 0
         existing = 0
         result = False
-        if drag_node.type.startswith("elem"):
+        if (
+            drag_node.type.startswith("elem")
+            and not drag_node._parent.type == "branch reg"
+        ):
             existing += 1
             # if drag_node.type == "elem image":
             #     return False
@@ -184,7 +183,7 @@ class RasterOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
-    def valid_node(self, node):
+    def valid_node_for_reference(self, node):
         if node.type in self._allowed_elements_dnd:
             return True
         else:
@@ -221,7 +220,7 @@ class RasterOpNode(Node, Parameters):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
-                                if self.valid_node(node):
+                                if self.valid_node_for_reference(node):
                                     result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
@@ -229,7 +228,7 @@ class RasterOpNode(Node, Parameters):
                     if result:
                         return True, self.stopop, feedback
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
-                    if self.valid_node(node):
+                    if self.valid_node_for_reference(node):
                         addit = False
                         if node.type == "elem image":
                             addit = True
@@ -255,7 +254,7 @@ class RasterOpNode(Node, Parameters):
                             return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                if self.valid_node(node):
+                if self.valid_node_for_reference(node):
                     self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
@@ -270,7 +269,7 @@ class RasterOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -297,18 +296,16 @@ class RasterOpNode(Node, Parameters):
             scanlines = height_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += (
-                scanlines * width_in_inches / speed_in_per_s
-                + height_in_inches / speed_in_per_s
-            )
+            this_len = scanlines * width_in_inches + height_in_inches
+            estimate += this_len / speed_in_per_s
+            # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.raster_direction in (2, 3, 4):
             scanlines = width_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += (
-                scanlines * height_in_inches / speed_in_per_s
-                + width_in_inches / speed_in_per_s
-            )
+            this_len = scanlines * height_in_inches + width_in_inches
+            estimate += this_len / speed_in_per_s
+            # print (f"Vertical scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 
@@ -349,7 +346,7 @@ class RasterOpNode(Node, Parameters):
         if make_raster is None:
 
             def strip_rasters():
-                self.remove_node()
+                self.remove_all_children()
 
             commands.append(strip_rasters)
             return
@@ -503,18 +500,3 @@ class RasterOpNode(Node, Parameters):
                 cut.path = path
                 cut.original_op = self.type
                 yield cut
-
-    def add_reference(self, node=None, pos=None, **kwargs):
-        """
-        Add a new node bound to the data_object of the type to the current node.
-        If the data_object itself is a node already it is merely attached.
-
-        @param node:
-        @param pos:
-        @return:
-        """
-        if node is not None:
-            if not self.valid_node(node):
-                # We could raise a ValueError but that will break things...
-                return
-        return super().add_reference(node=node, pos=pos, **kwargs)

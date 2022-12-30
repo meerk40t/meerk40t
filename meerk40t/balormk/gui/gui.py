@@ -2,10 +2,6 @@ def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/balor"
     if lifecycle == "invalidate":
-        try:
-            import numpy  # pylint: disable=unused-import
-        except ImportError:
-            return True
         return not service.has_feature("wx")
     if lifecycle == "added":
         # Needed to test wx import.

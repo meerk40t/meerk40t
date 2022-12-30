@@ -1,4 +1,9 @@
-from meerk40t.core.cutcode import CutCode, RawCut
+"""
+Lihuiyu Parser
+
+Parses the LHYMicro-GL code with a state diagram to reinterpret the given laser bytecode.
+"""
+
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Color
@@ -18,6 +23,8 @@ class LihuiyuParser:
         self.count_lines = 0
         self.count_flag = 0
         self.settings = Parameters({"speed": 20.0, "power": 1000.0})
+
+        self.path = None
 
         self.speed_code = None
 
@@ -48,9 +55,10 @@ class LihuiyuParser:
         self.number_consumer = {}
 
     def parse(self, data, elements):
-        from meerk40t.numpath import Numpath
 
-        self.path = Numpath()
+        from meerk40t.tools.geomstr import Geomstr
+
+        self.path = Geomstr()
 
         def position(p):
             if p is None:
@@ -65,7 +73,7 @@ class LihuiyuParser:
         self.write(data)
         self.path.uscale(UNITS_PER_MIL)
         elements.elem_branch.add(
-            type="elem numpath",
+            type="elem geomstr",
             path=self.path,
             stroke=Color("black"),
             **self.settings.settings,
@@ -105,7 +113,7 @@ class LihuiyuParser:
 
     def header_write(self, data):
         """
-        Write data to the emulator including the header. This is intended for saved .egv files which include a default
+        Write data to the parser including the header. This is intended for saved .egv files which include a default
         header.
         """
         if self.header_skipped:
@@ -399,86 +407,3 @@ class LihuiyuParser:
                 self.channel(
                     f"Diagonal {'Top' if self.top else 'Bottom'} {'Left' if self.left else 'Right'}"
                 )
-
-
-class EGVBlob:
-    def __init__(self, data: bytearray, name=None):
-        self.name = name
-        self.data = data
-        self.operation = "blob"
-        self._cutcode = None
-        self._cut = None
-
-    def __repr__(self):
-        return f"EGV({self.name}, {len(self.data)} bytes)"
-
-    def as_cutobjects(self):
-        parser = LihuiyuParser()
-        self._cutcode = CutCode()
-        self._cut = RawCut()
-
-        def new_cut():
-            if self._cut is not None and len(self._cut):
-                self._cutcode.append(self._cut)
-            self._cut = RawCut()
-            self._cut.settings = dict(parser.settings)
-
-        def position(p):
-            if p is None or self._cut is None:
-                new_cut()
-                return
-
-            from_x, from_y, to_x, to_y = p
-
-            if parser.program_mode:
-                if len(self._cut.plot) == 0:
-                    self._cut.plot_append(int(from_x), int(from_y), parser.laser)
-                self._cut.plot_append(int(to_x), int(to_y), parser.laser)
-            else:
-                new_cut()
-
-        parser.position = position
-        parser.header_write(self.data)
-
-        cutcode = self._cutcode
-        self._cut = None
-        self._cutcode = None
-        return cutcode
-
-    def generate(self):
-        yield "blob", "egv", LihuiyuParser.remove_header(self.data)
-
-
-class EgvLoader:
-    @staticmethod
-    def remove_header(data):
-        count_lines = 0
-        count_flag = 0
-        for i in range(len(data)):
-            b = data[i]
-            c = chr(b)
-            if c == "\n":
-                count_lines += 1
-            elif c == "%":
-                count_flag += 1
-            if count_lines >= 3 and count_flag >= 5:
-                return data[i:]
-
-    @staticmethod
-    def load_types():
-        yield "Engrave Files", ("egv",), "application/x-egv"
-
-    @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
-        import os
-
-        basename = os.path.basename(pathname)
-        with open(pathname, "rb") as f:
-            op_branch = elements_modifier.get(type="branch ops")
-            op_branch.add(
-                data=bytearray(EgvLoader.remove_header(f.read())),
-                data_type="egv",
-                type="blob",
-                name=basename,
-            )
-        return True

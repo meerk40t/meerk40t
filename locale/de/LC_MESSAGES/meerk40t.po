@@ -3430,8 +3430,11 @@ msgid "Rotate 90° CCW"
 msgstr "Drehe 90° nach links"
 
 #: meerk40t/core/elements.py:7964
-msgid "Save output.png"
-msgstr "Speichern als .png"
+msgid "Save original image to output.png"
+msgstr "Speichere Original als output.png"
+
+msgid "Save processed image to output.png"
+msgstr "Speichere bearbeitetes Bild als output.png"
 
 #: meerk40t/core/elements.py:7971
 msgid "Expand all children"
@@ -4342,22 +4345,20 @@ msgstr ""
 #: meerk40t/gui/about.py:9
 msgid ""
 "MeerK40t is a free MIT Licensed open source project\n"
-"for lasering on K40 Devices.\n"
-"\n"
+"for lasering on K40 Devices.\n\n"
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but the barest trickle\n"
-"that becomes a raging river."
+"who sincerely hopes his contributions will be but\n"
+"the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t ist ein kostenloses, auf der MIT Lizenz ba-\n"
-"sierendes Open-Source Projekt, um auf K40 Geräten\n"
-"zu lasern.\n"
+"Meerk40t ist ein auf der MIT Lizenz basierendes\n"
+"Open-Source Projekt, um auf K40 Geräten zu lasern.\n\n"
 "Mithilfe bei diesem Projekt ist jederzeit willkommen.\n"
-"Vielen Dank für vergangene und künftige Hilfe.\n"
-"Dieses Programm ist v.a. das Werk von Tartarize,\n"
-"der hofft, dass seine Arbeit am Ende ein kleiner Teil\n"
-"viel größeren Werks sein wird."
+"Herzlichen Dank für vergangene und künftige Hilfe.\n"
+"Dieses Programm ist v.a. das Werk von Tatarize,\n"
+"der hofft, dass seine Arbeit am Ende ein kleiner\n"
+"Teil eines viel größeren Werks sein wird."
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
@@ -5008,12 +5009,12 @@ msgid "Keyhole operation"
 msgstr "Schlüsselloch-Arbeitsgang"
 
 #: meerk40t/gui/imagesplitter.py:485
-msgid "Splitter"
-msgstr "Zerlegen"
+msgid "Image ops"
+msgstr "Bild-Manip."
 
 #: meerk40t/gui/imagesplitter.py:487
-msgid "Open create split image dialog"
-msgstr "Öffnet den Dialog um Bilder zu zerlegen"
+msgid "Open create split image dialog / keyhole generation"
+msgstr "Öffnet den Dialog, um Bilder zu zerlegen bzw. Bildaussschnitte zu erzeugen"
 
 #: meerk40t/gui/keymap.py:25
 msgid "Add Hotkey"
@@ -5211,6 +5212,18 @@ msgstr "Aktualisiee Plan..."
 msgid "Preparing simulation..."
 msgstr "Bereite Simulation vor..."
 
+msgid "Please select a cutcode entry"
+msgstr "Bitte zunächst einen cutcode-Eintrag"
+
+msgid "from the operations panel"
+msgstr "aus der Arbeitsablauf-Liste auswählen"
+
+msgid "Tolerance to decide if a shape is truly inside another one."
+msgstr ""
+"Toleranz bei der Überprüfung, ob ein Element wirklich vollständig\n"
+"innerhalb eines anderen liegt. Sollte maximal auf Laserschnittbreite\n"
+"gesetzt werden."
+
 #: meerk40t/gui/lasertoolpanel.py:40
 msgid "Find center"
 msgstr "Finde Mittelpunkt"
@@ -5373,6 +5386,9 @@ msgstr "Gefährliche Koordinaten"
 #: meerk40t/gui/lasertoolpanel.py:733
 msgid "Laser-Tools"
 msgstr "Laser-Tools"
+
+msgid "Place Template"
+msgstr "Vorlage platzieren"
 
 #: meerk40t/gui/materialtest.py:32
 msgid "Cut"
@@ -6416,12 +6432,24 @@ msgid "Send to Laser"
 msgstr "An Laser senden"
 
 #: meerk40t/gui/simulation.py:173 meerk40t/gui/simulation.py:176
+msgid "Distance Estimate: while Lasering"
+msgstr "Fahrweg während Laser an ist"
+
+msgid "Distance Estimate: Traveling"
+msgstr "Fahrweg während Laser aus ist"
+
+msgid "Distance Estimate: Total"
+msgstr "Gesamter Fahrweg"
+
 msgid "Time Estimate: Lasering Time"
 msgstr "Zeitschätzung: Laser-Dauer"
 
 #: meerk40t/gui/simulation.py:174 meerk40t/gui/simulation.py:177
 msgid "Time Estimate: Traveling Time"
 msgstr "Zeitschätzung: Schlitten-Bewegung-Dauer"
+
+msgid "Time Estimate: Extra Time (ie to swing around)"
+msgstr "Zeitschätzung: Extra-Dauer (etwa für Bewegungsumkehr)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
 msgid "Time Estimate: Total Time"
@@ -6528,6 +6556,42 @@ msgstr "Simulation"
 #: meerk40t/gui/simulation.py:832
 msgid "Simulate the current laser job"
 msgstr "Simuliere den aktuellen Laser-Job"
+
+msgid "Mode"
+msgstr "Modus"
+
+msgid "Steps"
+msgstr "Schritte"
+
+msgid "Time (sec.)"
+msgstr "Zeit (sec)"
+
+msgid "Time (min)"
+msgstr "Zeit (min)"
+
+msgid "Cut operations Playback-Mode: play will jump from one completed operations to next"
+msgstr "Wiedergabe-Modus: springt vom kompletten Einzelbrennvorgang zum Nächsten"
+
+msgid "Timed Playback-Mode: play will jump from one second to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Sekunde zu Sekunde"
+
+msgid "Timed Playback-Mode: play will jump from one minute to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Minute zu Minute"
+
+msgid "Modify operation parameter, press Enter to apply"
+msgstr "Modifiziere den Parameter der Operation, drücke Return um Änderungen zu übernehmen"
+
+msgid "Remove operation"
+msgstr "Entferne Brenn-Operation"
+
+msgid "Removes the current operation from the active cutplan"
+msgstr "Entfernt den aktuellen Eintrag aus der Liste aller Brennvorgänge"
+
+msgid "Insert '{operation}' before"
+msgstr "Einfügen '{operation}'"
+
+msgid "Appends '{operation}' at end"
+msgstr "Anhängen: '{operation}'"
 
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
@@ -6793,7 +6857,7 @@ msgstr "Wortliste"
 
 #: meerk40t/gui/wordlisteditor.py:623
 msgid "Manages Wordlist-Entries"
-msgstr ""
+msgstr "Wortlisten-Einträge ändern/erstellen"
 
 #: meerk40t/gui/wxmeerk40t.py:89
 msgid "Processing and sending..."
@@ -7646,6 +7710,12 @@ msgid "Don't use icons in the tree"
 msgstr "Verzichte auf die Anzeige von Icons im Baum"
 
 #: meerk40t/gui/wxmmain.py:2114
+msgid "Hide Origin-Indicator"
+msgstr "Ursprung ausblenden"
+
+msgid "Don't show the origin indicator"
+msgstr "Unterdrücke die Anzeige des Ursprungs-Indikator"
+
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 
@@ -8189,6 +8259,15 @@ msgstr ""
 #: meerk40t/image/imagetools.py:33
 msgid "Image DPI Scaling"
 msgstr "Bild-DPI-Skalierung"
+
+msgid "Create a file-node for imported image"
+msgstr "Erzeuge Datei-Element für ein importiertes Bild"
+
+msgid "Unset: Attach the image directly to elements."
+msgstr "Inaktiv: Fügt das Bild direkt in die Elemente ein"
+
+msgid "Set: Put the image under a file-node created for it."
+msgstr "Aktiv: Fügt das Bild unterhalb eines Datei-Elements ein"
 
 #: meerk40t/image/imagetools.py:36
 msgid "Unset: Use the image as if it were 1000 pixels per inch."
@@ -10197,7 +10276,7 @@ msgid "Prevent changes:"
 msgstr "Verhindere Veränderungen:"
 
 #: meerk40t/gui/propertypanels/attributes.py:372
-msgid "If active then this element is effectly prevented from being modified"
+msgid "If active then this element is effectively prevented from being modified"
 msgstr "Falls aktiv ist das Element vor allen Veränderungen geschützt."
 
 #: meerk40t/gui/propertypanels/consoleproperty.py:19
@@ -10207,6 +10286,15 @@ msgstr "Konsolen-Eigenschaften"
 #: meerk40t/gui/propertypanels/groupproperties.py:55
 msgid "Group Properties"
 msgstr "Gruppen-Eigenschaften"
+
+msgid "Auto-Crop:"
+msgstr "Auto-Zuschneiden:"
+
+msgid "No final crop"
+msgstr "Kein Zuschneiden"
+
+msgid "Prevent final crop after all operations"
+msgstr "Kein automatisches Zuschneiden des Bildes am Ende aller Manipulations-Operationen"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:35
 #: meerk40t/gui/propertypanels/imageproperty.py:175
@@ -10225,6 +10313,99 @@ msgstr "Algorithmus ausführen"
 
 msgid "Image-Operation"
 msgstr "Bild-Manipulation"
+
+msgid "Image-Dimensions"
+msgstr "Bild zuschneiden"
+
+msgid "How many pixels do you want to crop from the left?"
+msgstr "Wieviele Pixel sollen auf der linken Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the lefright?"
+msgstr "Wieviele Pixel sollen auf der rechten Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the top?"
+msgstr "Wieviele Pixel sollen auf der oberen Kante abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the bottom?"
+msgstr "Wieviele Pixel sollen auf der unteren Kante abgeschnitten werden?"
+
+msgid "Apply Script"
+msgstr "Skript anwenden"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "Vectorisation"
+msgstr "Vektorisieren"
+
+msgid "Vectorize"
+msgstr "Vektorisieren"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Turnpolicy"
+msgstr ""
+
+msgid "Despeckle"
+msgstr "Flecken"
+
+msgid "Corners"
+msgstr "Ecken"
+
+msgid "Simplify"
+msgstr "Vereinfachen"
+
+msgid "Tolerance"
+msgstr "Toleranz"
+
+msgid "Black-Level"
+msgstr "Schwarzwert"
+
+msgid "Generate a preview of the result"
+msgstr "Erzeuge Vorschau des Ergebnisses"
+
+msgid ""
+"This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
+"BLACK: prefers to connect black (foreground) components.\n"
+"WHITE: prefers to connect white (background) components.\n"
+"LEFT: always take a left turn.\n"
+"RIGHT: always take a right turn.\n"
+"MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
+"RANDOM: choose randomly."
+msgstr ""
+"Dieser Parameter legt fest, wie mit Doppeldeutigkeiten beim Zerlegen der Grafik in Vektorpfade verfahren wird.\n\n"
+"BLACK: bevorzugt schwarze (Vordergrund) Komponenten zu verbinden.\n"
+"WHITE: bevorzugt weiße (Hintergrund) Komponenten zu verbinden.\n"
+"LEFT: geht immer zum linksliegenden Punkt.\n"
+"RIGHT: geht immer zum rechtsliegenden Punkt.\n"
+"MINORITY: bevorzugt die Farbe (schwarz oder weiß), die am wenigsten häufig in der Umgebung vorkommt.\n"
+"MAJORITY: bevorzugt die Farbe (schwarz oder weiß), die am häufigsten in der Umgebung vorkommt.\n"
+"RANDOM: zufällige Auswahl."
+
+msgid "Suppress speckles of up to this size (default 2 px)"
+msgstr "Unterdrückt Flecken bis zu dieser Größe (Standard 2 px)"
+
+msgid ""
+"This parameter is a threshold for the detection of corners. "
+"It controls the smoothness of the traced curve."
+msgstr ""
+"Dieser Parameter ist ein Schwellwert für das Erkennen von Ecken. "
+"Er bestimmt die 'Glattheit' der erzeugten Kurve."
+
+msgid "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
+msgstr "Versucht die Kurve zu 'vereinfachen', indem die Zahl der Bezier-Segment verringert wird."
+
+msgid ""
+"This defines the amount of error allowed in this simplification.\n"
+"Larger values tend to decrease the number of segments, at the expense of less accuracy."
+msgstr ""
+"Legt die erlaubte Toleranz beim Vereinfachen fest. Größere Werte führen zu einer geringeren "
+"Anzahl von Segmenten, aber auf Kosten der Genauigkeit."
+
+msgid "Establish when 'black' starts"
+msgstr "Definiert, wann 'Schwarz' beginnt"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:146
 msgid "Select dither algorithm to use"
@@ -10666,6 +10847,9 @@ msgstr "Länge"
 #: meerk40t/gui/propertypanels/pathproperty.py:175
 msgid "Area"
 msgstr "Fläche"
+
+msgid "Area (w/wo stroke)"
+msgstr "Fläche (mit/ohne Rand)"
 
 msgid "Perimeter"
 msgstr "Umfang"
@@ -12063,9 +12247,6 @@ msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
-
-#~ msgid "About %s v%s"
-#~ msgstr "Über %s v%s"
 
 msgid "GUI Appearance"
 msgstr "GUI Erscheinungsbild"
@@ -14722,3 +14903,178 @@ msgstr "Gehe zum nächsten Wortlisten-Eintrag"
 
 msgid "Wordlist: go to prev entry"
 msgstr "Gehe zum vorherigen Wortlisten-Eintrag"
+
+msgid "Vector Text"
+msgstr "Vektor Text"
+
+msgid "Add a vector text element"
+msgstr "Erstellt ein Vektor-Text-Element"
+
+msgid "Font-Manager"
+msgstr "Font-Manager"
+
+msgid "Open the vector-font management window."
+msgstr "Öffnet das Tool zum Verwalten der Vektor-Zeichensätze"
+
+msgid "Fonts"
+msgstr "Zeichensätze"
+
+msgid "Font-Directory"
+msgstr "Verzeichnis für die Zeichensätze"
+
+msgid "Goto a font-source..."
+msgstr "Gehe zu Zeichensatz-Quelle..."
+
+msgid "Hershey Fonts - #1"
+msgstr ""
+
+msgid "Hershey Fonts - #2"
+msgstr ""
+
+msgid "Autocad-SHX-Fonts"
+msgstr ""
+
+msgid ""
+"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+msgstr ""
+"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+
+msgid "Choose font directory"
+msgstr "Zeichensatz-Verzeichnis auswählen"
+
+msgid "Select a font-file to be imported into the the font-directory {fontdir}"
+msgstr "Zeichensatz auswählen, der in das Verzeichnis {fontdir} importiert werden soll"
+
+msgid "Fonts imported: {count}"
+msgstr "Importierte Zeichensätze: {count}"
+
+msgid "Import completed"
+msgstr "Import abgeschlossen"
+
+msgid "Font-Import completed.\nImported: {ok}\nFailed: {fail}\nTotal: {total}"
+msgstr "Zeichensatz-Import abgeschlossen.\nImportiert: {ok}\nFehler: {fail}\nGesamt: {total}"
+
+msgid "Do you really want to delete this font: {font}"
+msgstr "Soll der Zeichensatz {font} wirklich gelöscht werden?"
+
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgid ""
+"You will be led now to a source in the web, where you can download free fonts.\n"
+"Please be respect individual property rights!\nDestination: {url}\n"
+msgstr ""
+"Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
+"Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
+
+msgid ""
+"Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
+msgstr ""
+"Bitte das vollständig heruntergeladene Archiv nach dem Download entpacken. "
+"Danach die Zeichensätze mit Hilfe der 'Import'-Funktion importieren."
+
+msgid "Complete text-entry by pressing either Enter or Escape"
+msgstr "Text-Eingabe mit Eingabetaste oder Escape abschließen."
+
+msgid "Outline element(s)..."
+msgstr "Umrande Elemente..."
+
+msgid "...with {offset}mm distance"
+msgstr "...mit {offset}mm Abstand"
+
+msgid "Hinge"
+msgstr "Flex"
+
+msgid "Fill area with a living hinge pattern"
+msgstr "Fülle einen Bereich mit einem Flex-Muster"
+
+msgid "Living-Hinges"
+msgstr "Flexible Bereiche"
+
+msgid "Preview Pattern"
+msgstr "Zeige Muster"
+
+msgid "Preview Shape"
+msgstr "Zeige Umriss"
+
+msgid "Generate"
+msgstr "Erzeugen"
+
+msgid "Generates the hinge"
+msgstr "Erzeuge den Flex-Bereich"
+
+msgid "Cell-Width:"
+msgstr "Zellen-Breite:"
+
+msgid "Cell-Height:"
+msgstr "Zellen-Höhe:"
+
+msgid "Offset X:"
+msgstr ""
+
+msgid "Offset Y:"
+msgstr ""
+
+msgid "Pattern:"
+msgstr "Muster:"
+
+msgid "Choose the hinge pattern"
+msgstr "Muster im Flex-Bereich"
+
+msgid "X-Coordinate of the hinge area"
+msgstr "X-Koordinate des Flex-Bereiches"
+
+msgid "Y-Coordinate of the hinge area"
+msgstr "Y-Koordinate des Flex-Bereiches"
+
+msgid "Width of the hinge area"
+msgstr "Breite des Flex-Bereiches"
+
+msgid "Height of the hinge area"
+msgstr "Höhe des Flex-Bereiches"
+
+msgid "Default Values"
+msgstr "Standard-Werte"
+
+msgid "Select the ratio of the cell width compared to the overall width"
+msgstr "Lege das Breiten-Verhältnis einer Einzel-Zelle zum Gesamt-Bereich fest"
+
+msgid "Select the ratio of the cell height compared to the overall height"
+msgstr "Lege das Höhen-Verhältnis einer Einzel-Zelle zum Gesamt-Bereich fest"
+
+msgid "Select the pattern-offset in X-direction"
+msgstr "Offset der Zellen in X-Richtung"
+
+msgid "Select the pattern-offset in Y-direction"
+msgstr "Offset der Zellen in Y-Richtung"
+
+msgid "Change the shape appearance"
+msgstr "Beeinflusse das Aussehen des Musters"
+
+msgid "Number of copies"
+msgstr "Kopien"
+
+msgid "Number of segments"
+msgstr "Segmente"
+
+msgid "Position of left side"
+msgstr "Linke Seite"
+
+msgid "Distance of second line"
+msgstr "Abstand zur zweiten Linie"
+
+msgid "Left/Right Bowl"
+msgstr "Linke/Rechte Wölbung"
+
+msgid "Top/Bottom Bowl"
+msgstr "Obere/Untere Wölbung"
+
+msgid "Left/Right Indentation"
+msgstr "Linker/Rechter Einzug"
+
+msgid "Top/Bottom Indentation"
+msgstr "Oberer/Unterer Einzug"

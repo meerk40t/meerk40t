@@ -18,6 +18,20 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+# History Indices
+IDX_HISTORY_JOBNAME = 0
+IDX_HISTORY_START = 1
+IDX_HISTORY_DURATION = 2
+IDX_HISTORY_DEVICE = 3
+IDX_HISTORY_PASSES = 4
+IDX_HISTORY_STATUS = 5
+IDX_HISTORY_INFO = 6
+IDX_HISTORY_ESTIMATE = 7
+IDX_HISTORY_STEPS_DONE = 8
+IDX_HISTORY_STEPS_TOTAL = 9
+IDX_HISTORY_LOOPS_DONE = 10
+# Amount of columns...
+IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
 
 def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
@@ -57,6 +71,7 @@ class SpoolerPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.selected_device = selected_device
         self.available_devices = context.kernel.services("device")
         self.filter_device = None
         spools = [s.label for s in self.available_devices]
@@ -120,7 +135,7 @@ class SpoolerPanel(wx.Panel):
         self.splitter.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.on_sash_double)
 
         self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
-        self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
+        # self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
@@ -144,10 +159,11 @@ class SpoolerPanel(wx.Panel):
             "entries": 3,
             "status": 4,
             "type": 5,
-            "passes": 6,
-            "priority": 7,
-            "runtime": 8,
-            "estimate": 9,
+            "steps": 6,
+            "passes": 7,
+            "priority": 8,
+            "runtime": 9,
+            "estimate": 10,
         }
 
         self.column_history = {
@@ -157,13 +173,16 @@ class SpoolerPanel(wx.Panel):
             "start": 3,
             "end": 4,
             "runtime": 5,
-            "passes": 6,
-            "status": 7,
-            "jobinfo": 8,
+            "estimate": 6,
+            "steps": 7,
+            "passes": 8,
+            "status": 9,
+            "jobinfo": 10,
         }
         if not self.clear_data:
             self.reload_history()
 
+        self.set_pause_color()
         # if index == -1:
         #     disable_window(self)
 
@@ -190,7 +209,10 @@ class SpoolerPanel(wx.Panel):
             _("Type"), format=wx.LIST_FORMAT_LEFT, width=60
         )
         self.list_job_spool.AppendColumn(
-            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=83
+            _("Steps"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_spool.AppendColumn(
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_spool.AppendColumn(
             _("Priority"), format=wx.LIST_FORMAT_LEFT, width=73
@@ -218,6 +240,12 @@ class SpoolerPanel(wx.Panel):
         )
         self.list_job_history.AppendColumn(
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Steps"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_history.AppendColumn(
             _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
@@ -386,46 +414,47 @@ class SpoolerPanel(wx.Panel):
         self.update_spooler = True
         self.refresh_spooler_list()
         self.refresh_history()
+        self.set_pause_color()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         # Todo: Drag to reprioritise jobs
         event.Skip()
 
-    def on_item_doubleclick(self, event):
-        def item_info(item):
-            result = ""
-            count = 0
-            if isinstance(item, tuple):
-                attr = item[0]
-                result = f"function(tuple): {attr}"
-                count += 1
-            elif isinstance(item, str):
-                attr = item
-                result = f"function(str): {attr}"
-                count += 1
-            if hasattr(item, "generate"):
-                item = getattr(item, "generate")
-                result = "Generator:"
-                # Generator item
-                for p in item():
-                    dummy, subct = item_info(p)
-                    count += subct
-                    result += "\n" + dummy
-                    count += 1
+    # def on_item_doubleclick(self, event):
+    #     def item_info(item):
+    #         result = ""
+    #         count = 0
+    #         if isinstance(item, tuple):
+    #             attr = item[0]
+    #             result = f"function(tuple): {attr}"
+    #             count += 1
+    #         elif isinstance(item, str):
+    #             attr = item
+    #             result = f"function(str): {attr}"
+    #             count += 1
+    #         if hasattr(item, "generate"):
+    #             item = getattr(item, "generate")
+    #             result = "Generator:"
+    #             # Generator item
+    #             for p in item():
+    #                 dummy, subct = item_info(p)
+    #                 count += subct
+    #                 result += "\n" + dummy
+    #                 count += 1
 
-            return result, count
+    #         return result, count
 
-        index = self.current_item
-        spooler = self.selected_device.spooler
-        try:
-            element = spooler.queue[index]
-        except IndexError:
-            return
-        msgstr = f"{element.label}: \n"
-        for idx, item in enumerate(element.items):
-            info, ct = item_info(item)
-            msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
-        print(msgstr)
+    #     index = self.current_item
+    #     spooler = self.selected_device.spooler
+    #     try:
+    #         element = spooler.queue[index]
+    #     except IndexError:
+    #         return
+    #     msgstr = f"{element.label}: \n"
+    #     for idx, item in enumerate(element.items):
+    #         info, ct = item_info(item)
+    #         msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
+    #     print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
@@ -440,8 +469,10 @@ class SpoolerPanel(wx.Panel):
         menu = wx.Menu()
         if element.status.lower() == "running":
             action = _("Stop")
+            remove_mode = "stop"
         else:
             action = _("Remove")
+            remove_mode = "remove"
         item = menu.Append(
             wx.ID_ANY,
             "{action} {name} [{label}]".format(
@@ -450,7 +481,7 @@ class SpoolerPanel(wx.Panel):
             "",
             wx.ITEM_NORMAL,
         )
-        info_tuple = [spooler, element]
+        info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(info_tuple), item)
 
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
@@ -480,7 +511,13 @@ class SpoolerPanel(wx.Panel):
     def on_tree_popup_delete(self, element):
         def delete(event=None):
             spooler = element[0]
-            spooler.remove(element[1])
+            mode = element[2]
+            job = element[1]
+            spooler.remove(job)
+            # That will remove the job but create a log entry if needed.
+            if mode == "stop":
+                # Force stop of laser.
+                self.context("estop\n")
             self.refresh_spooler_list()
 
         return delete
@@ -581,6 +618,16 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         pass
 
+                    # STEPS
+                    try:
+                        pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["steps"], pass_str
+                        )
+                    except AttributeError:
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["steps"], "-"
+                        )
                     # PASSES
                     try:
                         loop = spool_obj.loops_executed
@@ -589,7 +636,6 @@ class SpoolerPanel(wx.Panel):
                         if isinf(total):
                             total = "∞"
                         pass_str = f"{loop}/{total}"
-                        pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
                         self.list_job_spool.SetItem(
                             list_id, self.column_job["passes"], pass_str
                         )
@@ -644,6 +690,8 @@ class SpoolerPanel(wx.Panel):
 
     @staticmethod
     def timestr(t, oneday):
+        if t is None:
+            return ""
         if oneday:
             localt = time.localtime(t)
             hours = localt[3]
@@ -659,6 +707,8 @@ class SpoolerPanel(wx.Panel):
 
     @staticmethod
     def datestr(t):
+        if t is None:
+            return ""
         localt = time.localtime(t)
         lyear = localt[0]
         lmonth = int(localt[1])
@@ -679,7 +729,7 @@ class SpoolerPanel(wx.Panel):
         # That would be the right thing, so if the bug is ever fixed, that will work
         pattern = pattern.replace("07", "{mm}")
         pattern = pattern.replace("7", "{mm}")
-        # And this the bug...
+        # And this is needed to deal with the bug...
         pattern = pattern.replace("08", "{mm}")
         pattern = pattern.replace("8", "{mm}")
         result = pattern.format(
@@ -698,24 +748,38 @@ class SpoolerPanel(wx.Panel):
             addit = True
             # No helper jobs....
             if (
-                len(newestinfo) >= 7
-                and newestinfo[6]
+                len(newestinfo) > IDX_HISTORY_INFO
+                and newestinfo[IDX_HISTORY_INFO]
                 and self.context.spool_ignore_helper_jobs
             ):
                 addit = False
+            if addit and len(self.history) > 0:
+                # is it identical to the last entry?
+                # Should not happen per se, but there were some reports of duplicate entries...
+                lastentry = self.history[0]
+                identical = True
+                for idx in range(IDX_HISTORY_STATUS + 1):
+                    if lastentry[idx] != newestinfo[idx]:
+                        identical = False
+                        break
+                if identical:
+                    addit = False
             if addit:
                 # We dont need the helper-flag, we use this for a jobinfo column
-                if len(newestinfo) >= 7:
+                if len(newestinfo) > IDX_HISTORY_INFO:
                     newestinfo = list(newestinfo)
-                    newestinfo[6] = ""
+                    newestinfo[IDX_HISTORY_INFO] = ""
                 self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         idx = 0
         hlen = len(self.history)
         for info in self.history:
+            if len(info) < IDX_HISTORY_DURATION or not isinstance(info, (tuple, list)):
+                # print (f"Corrupt entry: {info}")
+                continue
             addit = True
             if self.filter_device is not None:
-                if info[3] != self.filter_device:
+                if info[IDX_HISTORY_DEVICE] != self.filter_device:
                     addit = False
             if not addit:
                 continue
@@ -724,100 +788,164 @@ class SpoolerPanel(wx.Panel):
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx2}"
             )
-            if info[1] is None:
+            if info[IDX_HISTORY_START] is None:
                 continue
             self.list_job_history.SetItem(
-                list_id, self.column_history["jobname"], info[0]
+                list_id, self.column_history["jobname"], info[IDX_HISTORY_JOBNAME]
             )
-            starttime = self.datestr(info[1]) + " " + self.timestr(info[1], True)
+            starttime = (
+                self.datestr(info[IDX_HISTORY_START])
+                + " "
+                + self.timestr(info[IDX_HISTORY_START], True)
+            )
             self.list_job_history.SetItem(
                 list_id, self.column_history["start"], starttime
             )
-            starttime = self.timestr(info[1] + info[2], True)
+            starttime = self.timestr(
+                info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
+            )
             self.list_job_history.SetItem(
                 list_id, self.column_history["end"], starttime
             )
-            runtime = self.timestr(info[2], False)
+            runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
             self.list_job_history.SetItem(
                 list_id, self.column_history["runtime"], runtime
             )
             # First passes then device
             if len(info) >= 5:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["passes"], info[4]
+                    list_id, self.column_history["passes"], info[IDX_HISTORY_PASSES]
                 )
             else:
                 self.list_job_history.SetItem(
                     list_id, self.column_history["passes"], "???"
                 )
             self.list_job_history.SetItem(
-                list_id, self.column_history["device"], info[3]
+                list_id, self.column_history["device"], info[IDX_HISTORY_DEVICE]
             )
-            if len(info) >= 6:
+            if len(info) > IDX_HISTORY_STATUS:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["status"], info[5]
+                    list_id, self.column_history["status"], info[IDX_HISTORY_STATUS]
                 )
-            if len(info) >= 7:
-                if isinstance(info[6], bool):
+            if len(info) > IDX_HISTORY_INFO:
+                if isinstance(info[IDX_HISTORY_INFO], bool):
                     # Old data, where helper flag was saved
-                    info[6] = ""
-                if info[6] is None:
-                    info[6] = ""
+                    info[IDX_HISTORY_INFO] = ""
+                if info[IDX_HISTORY_INFO] is None:
+                    info[IDX_HISTORY_INFO] = ""
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["jobinfo"], info[6]
+                    list_id, self.column_history["jobinfo"], info[IDX_HISTORY_INFO]
+                )
+            if len(info) > IDX_HISTORY_ESTIMATE:
+                if info[IDX_HISTORY_ESTIMATE] is None:
+                    info[IDX_HISTORY_ESTIMATE] = 0
+                runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["estimate"], runtime
+                )
+            if len(info) > IDX_HISTORY_STEPS_TOTAL:
+                if info[IDX_HISTORY_STEPS_DONE] is None:
+                    info[IDX_HISTORY_STEPS_DONE] = 0
+                if info[IDX_HISTORY_STEPS_TOTAL] is None:
+                    info[IDX_HISTORY_STEPS_TOTAL] = 0
+                stepinfo = f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["steps"], stepinfo
                 )
             self.list_job_history.SetItemData(list_id, idx - 1)
 
     def reload_history(self):
+        def fixitems():
+            # make sure we extend the fields for those entries
+            # that were saved with a previous version
+            for item in self.history:
+                while len(item) < IDX_HISTORY_MAX_FIELDS:
+                    item.append(None)
+                for idx in (
+                    IDX_HISTORY_START, IDX_HISTORY_DURATION,
+                    IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
+                    IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
+                ):
+                    if item[idx] is None:
+                        item[idx] = 0
+
         self.history = []
         directory = os.path.dirname(self.context.elements.op_data._config_file)
         filename = os.path.join(directory, "history.json")
         if os.path.exists(filename):
+            # backward compatibility: read once, store in new format, delete...
             try:
                 with open(filename, "r") as f:
                     self.history = json.load(f)
+                fixitems()
+                # Store in new format...
+                self.save_history()
+                # Now delete the file...
+                os.remove(filename)
             except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
                 pass
-        if len(self.history) > 0:
-            if len(self.history[0]) < 5:
-                # Incompatible
-                self.history = []
+        if len(self.history) == 0:
+            spooler_log = self.context.logging.logs.get("spooler", dict())
+            self.history = spooler_log.get("history", list())
+            # Even if no old json file exists, the logged items could
+            # still have some compatibility issues...
+            fixitems()
         self.refresh_history()
 
     def save_history(self):
+
         def escaped(s):
+            if s is None:
+                s = ""
             return s.replace('"', "'")
 
+        self.context.logging.logs["spooler"] = {"history": self.history}
         directory = os.path.dirname(self.context.elements.op_data._config_file)
-        filename = os.path.join(directory, "history.json")
-        try:
-            with open(filename, "w") as f:
-                json.dump(self.history, f)
-        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
-            pass
         filename = os.path.join(directory, "history.csv")
         try:
             with open(filename, "w", encoding="utf-8") as f:
-                simpleline = "device;jobname;start;end;duration;passes"
+                simpleline = (
+                    "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
+                )
                 f.write(simpleline + "\n")
                 for info in self.history:
-                    if info[1] is None:
+                    def addnum(idx):
+                        if len(info) > idx:
+                            return ";" + str(info[idx])
+                        else:
+                            return ";0"
+
+                    def addstr(idx):
+                        if len(info) > idx:
+                            return ";" + escaped(info[idx])
+                        else:
+                            return ";''"
+
+                    if info[IDX_HISTORY_START] is None:
                         continue
-                    simpleline = escaped(info[3])
-                    simpleline += ";" + escaped(info[0])
+                    simpleline = escaped(info[IDX_HISTORY_DEVICE])
+                    simpleline += addstr(IDX_HISTORY_JOBNAME)
                     starttime = (
-                        self.datestr(info[1]) + " " + self.timestr(info[1], True)
+                        self.datestr(info[IDX_HISTORY_START])
+                        + " "
+                        + self.timestr(info[IDX_HISTORY_START], True)
                     )
                     simpleline += ";" + starttime
-                    starttime = self.timestr(info[1] + info[2], True)
+                    starttime = self.timestr(
+                        info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
+                    )
                     simpleline += ";" + starttime
-                    runtime = self.timestr(info[2], False)
+                    runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
                     simpleline += ";" + runtime
+                    runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
+                    simpleline += ";" + runtime
+                    simpleline += addnum(IDX_HISTORY_STEPS_DONE)
+                    simpleline += addnum(IDX_HISTORY_STEPS_TOTAL)
+                    simpleline += addnum(IDX_HISTORY_LOOPS_DONE)
                     # First passes then device
-                    if len(info) >= 5:
-                        simpleline += ";" + escaped(info[4])
-                    else:
-                        simpleline += ";''"
+                    simpleline += addstr(IDX_HISTORY_PASSES)
+                    simpleline += addstr(IDX_HISTORY_STATUS)
+                    simpleline += addstr(IDX_HISTORY_INFO)
                     f.write(simpleline + "\n")
 
         except (PermissionError, OSError, FileNotFoundError):
@@ -844,6 +972,22 @@ class SpoolerPanel(wx.Panel):
             # Set the new data in the listctrl
             self.list_job_history.SetItem(list_id, col_id, new_data)
 
+    def set_pause_color(self):
+        new_color = None
+        new_caption = _("Pause")
+        try:
+            if self.context.device.driver.paused:
+                new_color = wx.YELLOW
+                new_caption = _("Resume")
+        except AttributeError:
+            pass
+        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetLabelText(new_caption)
+
+    @signal_listener("pause")
+    def on_device_pause_toggle(self, origin, *args):
+        self.set_pause_color()
+
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.available_devices = self.context.kernel.services("device")
@@ -865,6 +1009,7 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetItems(spools)
         self.combo_device.SetSelection(index)
         self.on_combo_device(None)
+        self.set_pause_color()
 
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):
@@ -872,7 +1017,7 @@ class SpoolerPanel(wx.Panel):
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
             return
-        if len(info) > 1 and info[1] is None:
+        if len(info) > 1 and info[IDX_HISTORY_START] is None:
             return
         self.refresh_history(newestinfo=info)
         self.save_history()
@@ -930,14 +1075,22 @@ class SpoolerPanel(wx.Panel):
                     refresh_needed = True
 
             try:
+                pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
+                self.list_job_spool.SetItem(
+                    list_id, self.column_job["steps"], pass_str
+                )
+            except AttributeError:
+                if list_id < self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, self.column_job["steps"], "-")
+                else:
+                    refresh_needed = True
+            try:
                 loop = spool_obj.loops_executed
                 total = spool_obj.loops
 
                 if isinf(total):
                     total = "∞"
                 pass_str = f"{loop}/{total}"
-                pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
-
                 self.list_job_spool.SetItem(
                     list_id, self.column_job["passes"], pass_str
                 )

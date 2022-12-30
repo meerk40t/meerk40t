@@ -360,6 +360,27 @@ class Kernel(Settings):
                 return
         self.activate(domain, service, assigned)
 
+    def destroy_service_index(self, domain: str, index: int):
+        """
+        Destroy the service at the given domain and index.
+
+        This cannot be done for the current service.
+
+        @param domain: service domain name
+        @param index: index of the service to destroy.
+        @return:
+        """
+        services = self.services(domain)
+        service = services[index]
+        active = self.services(domain, True)
+        if service == active:
+            raise PermissionError("Cannot destroy the active service.")
+
+        try:
+            service.destroy()
+        except AttributeError:
+            raise PermissionError("Service could not be destroyed.")
+
     def activate(self, domain, service, assigned: bool = False):
         """
         Activate the service specified on the domain specified.
@@ -2101,7 +2122,7 @@ class Kernel(Settings):
 
     def _console_parse(self, text: str, channel: "Channel"):
         """
-        Console parse takes single line console commands.
+        Takes single line console commands and executes them.
         """
         # Silence echo if started with '.'
         if text.startswith("."):
@@ -2109,11 +2130,14 @@ class Kernel(Settings):
         else:
             channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
 
-        data = None  # Initial data is null
-        input_type = None  # Initial type is None
+        data = None  # Initial command context data is null
+        input_type = None  # Initial command context is None
+        post = list()
+        post_data = dict()
+        _ = self.translation
 
         while len(text) > 0:
-            # Divide command from remainder.
+            # Split command from remainder.
             pos = text.find(" ")
             if pos != -1:
                 remainder = text[pos + 1 :]
@@ -2122,38 +2146,37 @@ class Kernel(Settings):
                 remainder = ""
                 command = text
 
-            _ = self.translation
             command = command.lower()
             command_executed = False
             # Process command matches.
-            for command_funct, command_name, cmd_re in self.find(
-                "command", str(input_type), ".*"
-            ):
-                if command_funct.regex:
-                    match = re.compile(cmd_re)
+            for funct, name, regex in self.find("command", str(input_type), ".*"):
+                # Find all commands with matching input_type.
+                if funct.regex:
+                    # This function is a regex match.
+                    match = re.compile(regex)
                     if not match.match(command):
                         continue
                 else:
-                    if cmd_re != command:
+                    # Exact match only.
+                    if regex != command:
                         continue
+
                 try:
-                    data, remainder, input_type = command_funct(
-                        command,
-                        remainder,
-                        channel,
+                    data, remainder, input_type = funct(
+                        command=command,
+                        channel=channel,
+                        _=_,
                         data=data,
                         data_type=input_type,
-                        _=_,
+                        remainder=remainder,
+                        post=post,
+                        post_data=post_data,
                     )
                     command_executed = True
-                    break
+                    break  # command found and executed.
                 except CommandSyntaxError as e:
                     # If command function raises a syntax error, we abort the rest of the command.
-
-                    # ToDo
-                    # Don't use command help, which is or should be descriptive - use command syntax instead
-                    # If CommandSyntaxError has a msg then that needs to be provided AS WELL as the syntax.
-                    message = command_funct.help
+                    message = funct.help
                     if str(e):
                         message = str(e)
                     channel(
@@ -2165,23 +2188,42 @@ class Kernel(Settings):
                     )
                     return None
                 except CommandMatchRejected:
-                    # If the command function raises a CommandMatchRejected more commands should be matched.
+                    # Command match was rejected, more commands should be searched.
                     continue
-            if command_executed:
-                text = remainder.strip()
-            else:
-                if input_type is None:
-                    ctx_name = "Base"
-                else:
-                    ctx_name = input_type
+            if not command_executed:
+                context_name = "Base" if input_type is None else input_type
                 channel(
                     "[red][bold]"
                     + _(
                         "{command} is not a registered command in this context: {context}"
-                    ).format(command=command, context=ctx_name),
+                    ).format(command=command, context=context_name),
                     ansi=True,
                 )
                 return None
+
+            # Process remainder as commands
+            text = remainder.strip()
+
+            if input_type is None and text:
+                # Context returned to base after chained command.
+                channel(
+                    "[red][bold]"
+                    + _(
+                        "Command: {command} terminated. Cannot chain remaining commands: {remainder}"
+                    ).format(command=command, remainder=text),
+                    ansi=True,
+                )
+                return None
+
+        # If post execution commands were added along the way, run them now.
+        for post_execute_command in post:
+            post_execute_command(
+                channel=channel,
+                _=_,
+                data=data,
+                data_type=input_type,
+                **post_data,
+            )
         return data
 
     # ==========
@@ -2811,6 +2853,23 @@ class Kernel(Settings):
                 raise CommandSyntaxError
             self.activate_service_index(domain, index)
 
+        @self.console_argument("index", type=int, help="Index of service to destroy.")
+        @self.console_command(
+            "destroy",
+            input_type="service",
+            help=_("Destroy the service at the given index"),
+        )
+        def service_destroy(channel, _, data=None, index=None, **kwargs):
+            domain, available, active = data
+            if index is None:
+                raise CommandSyntaxError
+            try:
+                self.destroy_service_index(domain, index)
+            except PermissionError:
+                channel("Could not destroy active service.")
+            except IndexError:
+                channel("Service index did not exist.")
+
         @self.console_argument("name", help="Name of service to start")
         @self.console_option(
             "label", "l", help="optional label for the service to start"
@@ -3027,13 +3086,14 @@ class Kernel(Settings):
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
+        @self.console_option("close", "c", type=bool, action="store_true")
         @self.console_command(
             "print",
             help=_("print this channel to the standard out"),
             input_type="channel",
             output_type="channel",
         )
-        def channel_print(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, close=False, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
             try:
@@ -3044,8 +3104,14 @@ class Kernel(Settings):
                         break
             except ValueError:
                 pass
-            channel(_("Printing Channel: {name}").format(name=channel_name))
-            self.channel(channel_name).watch(print)
+            if close:
+                channel(
+                    _("No longer printing Channel: {name}").format(name=channel_name)
+                )
+                self.channel(channel_name).unwatch(print)
+            else:
+                channel(_("Printing Channel: {name}").format(name=channel_name))
+                self.channel(channel_name).watch(print)
             return "channel", channel_name
 
         @self.console_option(
