@@ -248,6 +248,16 @@ class GRBLDevice(Service, ViewPort):
                     "Uses M3 rather than M4 for laser start (see GRBL docs for additional info)"
                 ),
             },
+            {
+                "attr": "has_endstops",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Device has endstops"),
+                "tip": _(
+                    "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
+                ),
+            },
         ]
         self.register_choices("grbl-global", choices)
 

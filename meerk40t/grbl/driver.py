@@ -313,13 +313,16 @@ class GRBLDriver(Parameters):
 
     def physical_home(self):
         """
-        Home the laser physcially (ie run into endstops).
+        Home the laser physically (ie run into endstops).
 
         @return:
         """
         self.native_x = 0
         self.native_y = 0
-        self.grbl("$H\r")
+        if self.service.has_endstops:
+            self.grbl("$H\r")
+        else:
+            self.grbl("G28\r")
 
     def home(self):
         """
