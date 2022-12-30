@@ -759,8 +759,9 @@ class Node:
         @param kwargs:
         @return:
         """
-        node_class = self._root.bootstrap.get(type, Node)
-        node_defaults = self._root.defaults.get(type, {})
+        from .bootstrap import bootstrap, defaults
+        node_class = bootstrap.get(type, Node)
+        node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)
         node = node_class(**nd)
