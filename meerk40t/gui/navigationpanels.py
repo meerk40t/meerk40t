@@ -859,7 +859,14 @@ class Jog(wx.Panel):
         self.context("home\n")
 
     def on_button_navigate_physical_home(self, event=None):
-        self.context("physical_home\n")
+        physical = False
+        if hasattr(self.context.device, "has_endstops"):
+            if self.context.device.has_endstops:
+                physical = True
+        if physical:
+            self.context("physical_home\n")
+        else:
+            self.context("home\n")
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
@@ -906,6 +913,23 @@ class Jog(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         self.context("lock\n")
+
+    def set_home_logic(self):
+        tip = _("Send laser to home position")
+        if hasattr(self.context.device, "has_endstops"):
+            if self.context.device.has_endstops:
+                tip = _("Send laser to home position (right click: to physical home)")
+        self.button_navigate_home.SetToolTip(tip)
+
+    def on_update(self, origin, *args):
+        self.set_home_logic()
+
+    def pane_show(self):
+        self.context.listen("activate;device", self.on_update)
+        self.set_home_logic()
+
+    def pane_hide(self):
+        self.context.unlisten("activate;device", self.on_update)
 
 
 class MovePanel(wx.Panel):
