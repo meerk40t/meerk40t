@@ -75,13 +75,17 @@ class LineNode(Node):
         @param v:
         @return:
         """
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
+        if bool(v) == bool(self.stroke_scale):
+            # Unchanged.
+            return
+        matrix = self.matrix
+        stroke_one = sqrt(abs(matrix.determinant))
+        stroke_factor = stroke_one / self.stroke_zero
+        if not v:
+            self.stroke_width *= stroke_factor
+        self.stroke_zero = stroke_one
         self.stroke_scale = v
+
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()

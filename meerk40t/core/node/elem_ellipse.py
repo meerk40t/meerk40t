@@ -80,10 +80,15 @@ class EllipseNode(Node):
         @param v:
         @return:
         """
-        if not v and self.stroke_scale:
-            self.stroke_width *= sqrt(abs(self.matrix.determinant))
-        if v and not self.stroke_scale:
-            self.stroke_width /= sqrt(abs(self.matrix.determinant))
+        if bool(v) == bool(self.stroke_scale):
+            # Unchanged.
+            return
+        matrix = self.matrix
+        stroke_one = sqrt(abs(matrix.determinant))
+        stroke_factor = stroke_one / self.stroke_zero
+        if not v:
+            self.stroke_width *= stroke_factor
+        self.stroke_zero = stroke_one
         self.stroke_scale = v
 
     def preprocess(self, context, matrix, plan):

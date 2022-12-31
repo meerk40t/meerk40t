@@ -70,13 +70,24 @@ class PolylineNode(Node):
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
+        """
+        Setting stroke_scale directly will not resize the stroke-width based on current scaling. This function allows
+        the toggling of the stroke-scaling without the current stroke_width being affected.
+
+        @param v:
+        @return:
+        """
+        if bool(v) == bool(self.stroke_scale):
+            # Unchanged.
+            return
+        matrix = self.matrix
+        stroke_one = sqrt(abs(matrix.determinant))
+        stroke_factor = stroke_one / self.stroke_zero
+        if not v:
+            self.stroke_width *= stroke_factor
+        self.stroke_zero = stroke_one
         self.stroke_scale = v
+
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
