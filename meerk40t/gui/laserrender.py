@@ -253,19 +253,30 @@ class LaserRender:
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
         p = gc.CreatePath()
-        first_point = path.first_point
-        if first_point is not None:
-            p.MoveToPoint(first_point[0], first_point[1])
-        for e in path:
+        init = False
+        for e in path.segments(transformed=True):
             if isinstance(e, Move):
                 p.MoveToPoint(e.end[0], e.end[1])
+                init = True
             elif isinstance(e, Line):
+                if not init:
+                    init = True
+                    p.MoveToPoint(e.start[0], e.start[1])
                 p.AddLineToPoint(e.end[0], e.end[1])
             elif isinstance(e, Close):
+                if not init:
+                    init = True
+                    p.MoveToPoint(e.start[0], e.start[1])
                 p.CloseSubpath()
             elif isinstance(e, QuadraticBezier):
+                if not init:
+                    init = True
+                    p.MoveToPoint(e.start[0], e.start[1])
                 p.AddQuadCurveToPoint(e.control[0], e.control[1], e.end[0], e.end[1])
             elif isinstance(e, CubicBezier):
+                if not init:
+                    init = True
+                    p.MoveToPoint(e.start[0], e.start[1])
                 p.AddCurveToPoint(
                     e.control1[0],
                     e.control1[1],
@@ -275,6 +286,9 @@ class LaserRender:
                     e.end[1],
                 )
             elif isinstance(e, Arc):
+                if not init:
+                    init = True
+                    p.MoveToPoint(e.start[0], e.start[1])
                 for curve in e.as_cubic_curves():
                     p.AddCurveToPoint(
                         curve.control1[0],
@@ -554,19 +568,13 @@ class LaserRender:
         except AttributeError:
             matrix = None
         if not hasattr(node, "_cache") or node._cache is None:
-            cache = self.make_path(gc, Path(node.shape))
+            cache = self.make_path(gc, node.shape)
             node._cache = cache
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
-            self._set_penwidth(1000 / stroke_scale)
-        else:
-            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self._set_penwidth(node.stroke_width)
         self.set_pen(
             gc,
             node.stroke,
@@ -581,10 +589,6 @@ class LaserRender:
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
         if not hasattr(node, "_cache") or node._cache is None:
             cache = self.make_path(gc, node.path)
             node._cache = cache
@@ -592,13 +596,7 @@ class LaserRender:
         self._set_linejoin_by_node(node)
 
         gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
-            self._set_penwidth(1000 / stroke_scale)
-        else:
-            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self._set_penwidth(node.stroke_width)
         self.set_pen(
             gc,
             node.stroke,
