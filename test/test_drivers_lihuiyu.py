@@ -1,14 +1,12 @@
 import os
 import unittest
+from test import bootstrap
 
-from PIL import ImageDraw
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Matrix
-from test import bootstrap
-
 
 egv_rect = """Document type : LHYMICRO-GL file
 File version: 1.0.01

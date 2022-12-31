@@ -408,7 +408,7 @@ class ConsolePanel(wx.ScrolledWindow):
     def save_log(self, last_command):
         fname, fexists = self.history_filename()
         try:
-            history_file = open(fname, "a")  # Append mode
+            history_file = open(fname, "a", encoding="utf-8")  # Append mode
             history_file.write(last_command + "\n")
             history_file.close()
         except (PermissionError, IOError):

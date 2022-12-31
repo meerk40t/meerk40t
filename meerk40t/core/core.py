@@ -1,4 +1,3 @@
-
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":

@@ -671,7 +671,7 @@ class RibbonPanel(wx.Panel):
                         ),
                     )
                     if resize_param is None:
-                        siz = v_icon.GetBitmap().GetSize()
+                        siz = toggle_icon.GetBitmap().GetSize()
                         small_resize = 0.5 * siz[0]
                     else:
                         small_resize = 0.5 * resize_param

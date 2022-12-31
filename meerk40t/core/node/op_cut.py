@@ -6,11 +6,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import (
-    Color,
-    Path,
-    Polygon,
-)
+from meerk40t.svgelements import Color, Path, Polygon
 
 
 class CutOpNode(Node, Parameters):

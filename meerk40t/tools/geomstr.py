@@ -970,7 +970,6 @@ class Geomstr:
         else:
             return None
 
-
     #######################
     # Universal Functions
     #######################
@@ -1361,7 +1360,11 @@ class Geomstr:
         """
         Performs deCasteljau's algorithm unrolled.
         """
-        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
+        if (
+            not isinstance(e, (np.ndarray, tuple, list))
+            or len(e) == 0
+            or not isinstance(e[0], complex)
+        ):
             e = self.segments[e]
         if isinstance(t, (np.ndarray, tuple, list)):
             if len(t) == 1:
@@ -1385,7 +1388,11 @@ class Geomstr:
         yield r2, r1_1, info, r1_1, end
 
     def _split_cubic(self, e, t):
-        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
+        if (
+            not isinstance(e, (np.ndarray, tuple, list))
+            or len(e) == 0
+            or not isinstance(e[0], complex)
+        ):
             e = self.segments[e]
         if isinstance(t, (np.ndarray, tuple, list)):
             if len(t) == 1:
@@ -1409,7 +1416,6 @@ class Geomstr:
         r3 = t * (r2_1 - r2_0) + r2_0
         yield start, r1_0, info, r2_0, r3
         yield r3, r2_1, info, r1_2, end
-
 
     def normal(self, e, t):
         """
@@ -2469,7 +2475,7 @@ class Geomstr:
     def as_path(self):
         open = True
         path = Path()
-        for p in self.segments[:self.index]:
+        for p in self.segments[: self.index]:
             s, c0, i, c1, e = p
             if np.real(i) == TYPE_END:
                 open = True
@@ -2490,7 +2496,6 @@ class Geomstr:
                 path.move(s)
                 path.closed()
         return path
-
 
     def as_subpaths(self):
         """

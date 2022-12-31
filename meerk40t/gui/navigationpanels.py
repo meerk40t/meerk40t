@@ -42,7 +42,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -723,7 +723,9 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
-        self.button_navigate_home.Bind(wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home)
+        self.button_navigate_home.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
+        )
 
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
         self.Bind(
@@ -759,7 +761,9 @@ class Jog(wx.Panel):
         self.button_navigate_left.SetToolTip(_("Move laser in the left direction"))
         self.button_navigate_left.SetSize(self.button_navigate_left.GetBestSize())
         self.button_navigate_home.SetSize(self.button_navigate_home.GetBestSize())
-        self.button_navigate_home.SetToolTip(_("Send laser to home position (right click: to physical home)"))
+        self.button_navigate_home.SetToolTip(
+            _("Send laser to home position (right click: to physical home)")
+        )
         self.button_navigate_right.SetToolTip(_("Move laser in the right direction"))
         self.button_navigate_right.SetSize(self.button_navigate_right.GetBestSize())
         self.button_navigate_down_left.SetToolTip(
@@ -1782,6 +1786,8 @@ class Transform(wx.Panel):
             translate_x = float(Length(self.text_e.GetValue()))
             translate_y = float(Length(self.text_f.GetValue()))
             f = self.context.elements.first_element(emphasized=True)
+            if f is None:
+                return
             matrix = f.matrix
             if (
                 scale_x == matrix.a

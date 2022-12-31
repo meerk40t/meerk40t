@@ -43,7 +43,7 @@ class TestGetSafePath(unittest.TestCase):
         Tests the get_safe_path method for all o/ses
         """
         sep = os.sep
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Darwin")),
             (
                 os.path.expanduser("~")
@@ -55,11 +55,11 @@ class TestGetSafePath(unittest.TestCase):
                 + "test"
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Windows")),
             (os.path.expandvars("%LOCALAPPDATA%") + sep + "test"),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Linux")),
             (os.path.expanduser("~") + sep + ".config" + sep + "test"),
         )

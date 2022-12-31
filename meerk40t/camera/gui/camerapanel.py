@@ -1028,7 +1028,10 @@ class CameraURIPanel(wx.Panel):
                 _("Camera URI"),
                 "",
             )
-            dlg.SetValue(self.context.uris[index])
+            try:
+                dlg.SetValue(self.context.uris[index])
+            except IndexError:
+                return
             if dlg.ShowModal() == wx.ID_OK:
                 self.context.uris[index] = dlg.GetValue()
                 self.changed = True

@@ -357,6 +357,7 @@ class GrblController:
                 self._sending_sync()
             else:
                 self._sending_buffered()
+        self.service.signal("pipe;running", False)
 
     def __repr__(self):
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
