@@ -618,24 +618,19 @@ class LaserRender:
 
     def draw_geomstr_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
+        matrix = node.matrix
+        gc.PushState()
         if not hasattr(node, "_cache") or node._cache is None:
+            node._cache_matrix = copy(matrix)
             cache = self.make_geomstr(gc, node.path)
             node._cache = cache
+        elif matrix != node._cache_matrix:
+            q = ~node._cache_matrix * matrix
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
-            self._set_penwidth(1000 / stroke_scale)
-        else:
-            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self._set_penwidth(node.stroke_width)
         self.set_pen(
             gc,
             node.stroke,
