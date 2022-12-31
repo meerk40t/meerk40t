@@ -602,13 +602,21 @@ class LaserRender:
             cache_matrix = node._cache_matrix
         except AttributeError:
             cache_matrix = None
+        stroke_factor = 1
         if matrix != cache_matrix:
+            # Calculate the relative change matrix and apply it to this shape.
             q = ~node._cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
+            # Applying the matrix will scale our stroke, so we scale the stroke back down.
+            stroke_factor = 1.0 / sqrt(abs(q.determinant))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
+        if node.stroke_scaled:
+            # our stroke is scaled, so we scale it up by the change between stroke1 and stroke2
+            stroke_one = sqrt(abs(matrix.determinant))
+            stroke_factor *= stroke_one / node.stroke_zero
 
-        self._set_penwidth(node.stroke_width)
+        self._set_penwidth(node.stroke_width * stroke_factor)
         self.set_pen(
             gc,
             node.stroke,
