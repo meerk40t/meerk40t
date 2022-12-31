@@ -18,6 +18,7 @@ class GeomstrNode(Node, Parameters):
         self.stroke = None
         self.stroke_width = 1000
         self.stroke_scale = False
+        self.stroke_zero = 1.0
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
