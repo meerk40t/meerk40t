@@ -2,7 +2,7 @@ from glob import glob
 from os.path import exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
 from meerk40t.tools.jhfparser import JhfFont
@@ -199,6 +199,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     path_node.mktext = text
     path_node.mkcoordx = x
     path_node.mkcoordy = y
+    path_node.stroke_width = UNITS_PER_PIXEL
 
     return path_node
 
