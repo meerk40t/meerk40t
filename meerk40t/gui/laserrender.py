@@ -564,18 +564,18 @@ class LaserRender:
 
     def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
-        if not hasattr(node, "_cache") or node._cache is None or matrix != node._cache_matrix:
+        matrix = node.matrix
+        gc.PushState()
+        if not hasattr(node, "_cache") or node._cache is None:
             node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.shape)
             node._cache = cache
+        elif matrix != node._cache_matrix:
+            q = ~node._cache_matrix * matrix
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
-        gc.PushState()
         self._set_penwidth(node.stroke_width)
         self.set_pen(
             gc,
@@ -591,18 +591,18 @@ class LaserRender:
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        try:
-            matrix = node.matrix
-        except AttributeError:
-            matrix = None
-        if not hasattr(node, "_cache") or node._cache is None or matrix != node._cache_matrix:
+        matrix = node.matrix
+        gc.PushState()
+        if not hasattr(node, "_cache") or node._cache is None:
             node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.path)
             node._cache = cache
+        elif matrix != node._cache_matrix:
+            q = ~node._cache_matrix * matrix
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
-        gc.PushState()
         self._set_penwidth(node.stroke_width)
         self.set_pen(
             gc,
