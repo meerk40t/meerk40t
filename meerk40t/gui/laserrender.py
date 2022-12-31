@@ -1,3 +1,4 @@
+from copy import copy
 from math import ceil, isnan, sqrt
 
 import wx
@@ -567,7 +568,8 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        if not hasattr(node, "_cache") or node._cache is None:
+        if not hasattr(node, "_cache") or node._cache is None or matrix != node._cache_matrix:
+            node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.shape)
             node._cache = cache
         self._set_linecap_by_node(node)
@@ -589,7 +591,12 @@ class LaserRender:
 
     def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the laser path element."""
-        if not hasattr(node, "_cache") or node._cache is None:
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = None
+        if not hasattr(node, "_cache") or node._cache is None or matrix != node._cache_matrix:
+            node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.path)
             node._cache = cache
         self._set_linecap_by_node(node)
