@@ -415,11 +415,14 @@ class GRBLDevice(Service, ViewPort):
                     self.red_dot_level = strength
                     channel(f"Laser strength for red dot is now: {self.red_dot_level}%")
             if off == "off":
+                self.driver.laser_off()
                 self.redlight_preferred = False
                 channel("Turning off redlight.")
                 self.signal("grbl_red_dot", True)
             else:
                 self.redlight_preferred = True
+                self.driver.set("power", int(self.red_dot_level / 100 * 1000))
+                self.driver.laser_on()
                 channel("Turning on redlight.")
                 self.signal("grbl_red_dot", False)
 
