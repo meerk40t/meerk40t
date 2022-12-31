@@ -48,6 +48,8 @@ class PathNode(Node):
             # This defines the stroke-width zero point scale
             m = Matrix(self.path.values.get("viewport_transform", ""))
             self.stroke_zero = sqrt(abs(m.determinant))
+            if self.stroke_width is not None:
+                self.stroke_width *= self.stroke_zero
 
         self.set_dirty_bounds()
 
