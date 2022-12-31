@@ -227,9 +227,11 @@ class LaserRender:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
                 if node.type == "elem path":
-                    node.draw = self.draw_path_node
+                    node.draw = self.draw_vector
+                    node.make_cache = self.cache_path
                 elif node.type == "elem geomstr":
-                    node.draw = self.draw_geomstr_node
+                    node.draw = self.draw_vector
+                    node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in (
@@ -238,7 +240,8 @@ class LaserRender:
                     "elem polyline",
                     "elem ellipse",
                 ):
-                    node.draw = self.draw_shape_node
+                    node.draw = self.draw_vector
+                    node.make_cache = self.cache_shape
                 elif node.type == "elem image":
                     node.draw = self.draw_image_node
                 elif node.type == "elem text":
@@ -562,8 +565,31 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the shape element."""
+    def cache_shape(self, node, gc):
+        matrix = node.matrix
+        node._cache_matrix = copy(matrix)
+        cache = self.make_path(gc, node.shape)
+        node._cache = cache
+
+    def cache_path(self, node, gc):
+        matrix = node.matrix
+        node._cache_matrix = copy(matrix)
+        cache = self.make_path(gc, node.path)
+        node._cache = cache
+
+    def cache_geomstr(self, node, gc):
+        matrix = node.matrix
+        node._cache_matrix = copy(matrix)
+        cache = self.make_geomstr(gc, node.path)
+        node._cache = cache
+
+    def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """
+        Draw routine for vector objects.
+
+        Vector objects are expected to have a make_cache routine which attaches a `_cache_matrix` and a `_cache`
+        attribute to them which can be drawn as a GraphicsPath.
+        """
         matrix = node.matrix
         gc.PushState()
         try:
@@ -571,79 +597,7 @@ class LaserRender:
         except AttributeError:
             cache = None
         if cache is None:
-            node._cache_matrix = copy(matrix)
-            cache = self.make_path(gc, node.shape)
-            node._cache = cache
-        try:
-            cache_matrix = node._cache_matrix
-        except AttributeError:
-            cache_matrix = None
-        if matrix != cache_matrix:
-            q = ~node._cache_matrix * matrix
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
-        self._set_linecap_by_node(node)
-        self._set_linejoin_by_node(node)
-
-        self._set_penwidth(node.stroke_width)
-        self.set_pen(
-            gc,
-            node.stroke,
-            alpha=alpha,
-        )
-        self.set_brush(gc, node.fill, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
-        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node._cache)
-        gc.PopState()
-
-    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the laser path element."""
-        matrix = node.matrix
-        gc.PushState()
-        try:
-            cache = node._cache
-        except AttributeError:
-            cache = None
-        if cache is None:
-            node._cache_matrix = copy(matrix)
-            cache = self.make_path(gc, node.path)
-            node._cache = cache
-        try:
-            cache_matrix = node._cache_matrix
-        except AttributeError:
-            cache_matrix = None
-        if matrix != cache_matrix:
-            q = ~node._cache_matrix * matrix
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
-        self._set_linecap_by_node(node)
-        self._set_linejoin_by_node(node)
-
-        self._set_penwidth(node.stroke_width)
-        self.set_pen(
-            gc,
-            node.stroke,
-            alpha=alpha,
-        )
-        self.set_brush(gc, node.fill, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
-        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node._cache)
-        gc.PopState()
-
-    def draw_geomstr_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the laser path element."""
-        matrix = node.matrix
-        gc.PushState()
-        try:
-            cache = node._cache
-        except AttributeError:
-            cache = None
-        if cache is None:
-            node._cache_matrix = copy(matrix)
-            cache = self.make_geomstr(gc, node.path)
-            node._cache = cache
+            node.make_cache(node, gc)
         try:
             cache_matrix = node._cache_matrix
         except AttributeError:
