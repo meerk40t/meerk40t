@@ -23,6 +23,7 @@ class GRBLDevice(Service, ViewPort):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
+        self.redlight_preferred = False
 
         self.setting(str, "label", path)
         _ = self._
@@ -258,6 +259,33 @@ class GRBLDevice(Service, ViewPort):
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
                 ),
             },
+            {
+                "attr": "use_red_dot",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Simulate reddot"),
+                "tip": _(
+                    "If active then you can turn on the laser at a very low power to get a visual representation " +
+                    "of the current position to help with focusing and positioning. Use with care!"
+                ),
+                "signals": "icons",   # Update ribbonbar if needed
+            },
+            {
+                "attr": "red_dot_level",
+                "object": self,
+                "default": 5,
+                "type": int,
+                "style": "slider",
+                "min": 0,
+                "max": 100,
+                "label": _("Reddot Laser strength"),
+                "trailer": "%",
+                "tip": _(
+                    "Provide the power level of the red dot indicator"
+                ),
+                "conditional": (self, "use_red_dot"),
+            },
         ]
         self.register_choices("grbl-global", choices)
 
@@ -368,6 +396,22 @@ class GRBLDevice(Service, ViewPort):
             self.origin_y = 1.0 if self.home_bottom else 0.0
             self.show_origin_y = self.origin_y
             self.realize()
+
+        @self.console_argument("off", type=str)
+        @self.console_command(
+            "red",
+            help=_("Turns redlight on/off"),
+        )
+        def red_dot_on(command, channel, _, off=None, remainder=None, **kwgs):
+            if not self.use_red_dot:
+                self.redlight_preferred = False
+                return
+            if off == "off":
+                self.redlight_preferred = False
+                channel("Turning off redlight.")
+            else:
+                self.redlight_preferred = True
+                channel("Turning on redlight.")
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
