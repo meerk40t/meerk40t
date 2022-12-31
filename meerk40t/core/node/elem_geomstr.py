@@ -52,18 +52,6 @@ class GeomstrNode(Node, Parameters):
             self.stroke_width /= sqrt(abs(matrix.determinant))
         self.stroke_scale = v
 
-    def implied_stroke_width(self, zoomscale=1.0):
-        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
-        need to countermand that scaling by dividing by the square root of the absolute
-        value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scaled:
-            # Our implied stroke-width is prescaled.
-            return self.stroke_width
-        else:
-            sw = self.stroke_width / scalefactor
-            return sw
-
     def bbox(self, transformed=True, with_stroke=False):
         return self.path.bbox(self.matrix)
 
