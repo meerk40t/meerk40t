@@ -27,4 +27,3 @@ class Logging(Service):
 
     def service_attach(self, *args, **kwargs):
         pass
-

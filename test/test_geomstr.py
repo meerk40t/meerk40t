@@ -1,17 +1,22 @@
 import random
 import time
 import unittest
-
-from meerk40t.tools.geomstr import Geomstr, Scanbeam, TYPE_LINE, Pattern, Clip, Polygon, MergeGraph
-
-import unittest
 from copy import copy
 from math import tau
 
 import numpy as np
 
 from meerk40t.fill.fills import scanline_fill
-from meerk40t.svgelements import Matrix, CubicBezier, Line, QuadraticBezier, Arc
+from meerk40t.svgelements import Arc, CubicBezier, Line, Matrix, QuadraticBezier
+from meerk40t.tools.geomstr import (
+    TYPE_LINE,
+    Clip,
+    Geomstr,
+    MergeGraph,
+    Pattern,
+    Polygon,
+    Scanbeam,
+)
 
 
 def draw(segments, w, h, filename="test.png"):
@@ -339,7 +344,7 @@ class TestGeomstr(unittest.TestCase):
             self.assertEqual(c.bbox(), path.bbox(0))
 
     def test_geomstr_point_functions(self):
-        from math import sqrt, radians
+        from math import radians, sqrt
 
         p = Geomstr()
         p.point(complex(4, 4))
@@ -753,7 +758,10 @@ class TestGeomstr(unittest.TestCase):
 
         for i, j in enumerate(pts):
             self.assertEqual(rr[i], r[i])
-        print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+        try:
+            print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+        except ZeroDivisionError:
+            print(f"{t2} vs {t1}")
 
     def test_point_towards_numpy(self):
         p1 = complex(0, 100)

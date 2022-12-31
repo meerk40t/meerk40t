@@ -106,7 +106,7 @@ class RuidaDevice(Service, ViewPort):
         """
         @return: the location in scene units for the current known x value.
         """
-        return 0,0
+        return 0, 0
 
     @property
     def native(self):

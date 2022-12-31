@@ -525,7 +525,7 @@ class LihuiyuDriver(Parameters):
         )
 
     def physical_home(self):
-        """"
+        """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
         self.home()
@@ -822,7 +822,11 @@ class LihuiyuDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM or self.service.rapid_override:
+                    if (
+                        on & PLOT_RAPID
+                        or self.state != DRIVER_STATE_PROGRAM
+                        or self.service.rapid_override
+                    ):
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
                         self.rapid_mode()
@@ -1041,14 +1045,18 @@ class LihuiyuDriver(Parameters):
             # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
             self._set_speed(y_speed)
             self.program_mode()
-            dy_m = int(math.copysign(dx, dy))  # magnitude of shorter in the direction of longer.
+            dy_m = int(
+                math.copysign(dx, dy)
+            )  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx, dy_m, on=False)
             self._goto_octent(0, dy - dy_m, on=False)
         elif x_speed <= y_speed and abs(dx) >= abs(dy):
             # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
             self._set_speed(x_speed)
             self.program_mode()
-            dx_m = int(math.copysign(dy, dx))  # magnitude of shorter in the direction of longer.
+            dx_m = int(
+                math.copysign(dy, dx)
+            )  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx_m, dy, on=False)
             self._goto_octent(dx - dx_m, 0, on=False)
         else:

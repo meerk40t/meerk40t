@@ -497,7 +497,6 @@ class PanelFontManager(wx.Panel):
         # Let the world know we have fonts
         self.context.signal("icons")
 
-
     def on_btn_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
         dlg = wx.DirDialog(

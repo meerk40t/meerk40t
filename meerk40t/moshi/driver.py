@@ -266,7 +266,7 @@ class MoshiDriver(Parameters):
         self.native_y = 0
 
     def physical_home(self):
-        """"
+        """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
         self.home()

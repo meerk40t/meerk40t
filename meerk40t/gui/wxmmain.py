@@ -45,6 +45,7 @@ from .icons import (
     icons8_circle_50,
     icons8_circled_left_50,
     icons8_circled_right_50,
+    icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_flip_vertical,
@@ -53,26 +54,25 @@ from .icons import (
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_oval_50,
+    icons8_paste_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
     icons8_point_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
+    icons8_redo_50,
+    icons8_replicate_rows_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
     icons8_save_50,
+    icons8_scissors_50,
     icons8_type_50,
+    icons8_undo_50,
     icons8_ungroup_objects_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_scissors_50,
-    icons8_copy_50,
-    icons8_paste_50,
-    icons8_replicate_rows_50,
-    icons8_undo_50,
-    icons8_redo_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -818,9 +818,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Cut"),
                 "icon": icons8_scissors_50,
-                "tip": _(
-                    "Cut selected elements"
-                ),
+                "tip": _("Cut selected elements"),
                 "action": lambda v: kernel.elements("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
@@ -835,9 +833,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Copy"),
                 "icon": icons8_copy_50,
-                "tip": _(
-                    "Copy selected elements to clipboard"
-                ),
+                "tip": _("Copy selected elements to clipboard"),
                 "action": lambda v: kernel.elements("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
@@ -863,10 +859,10 @@ class MeerK40t(MWindow):
             {
                 "label": _("Paste"),
                 "icon": icons8_paste_50,
-                "tip": _(
-                    "Paste elements from clipboard"
+                "tip": _("Paste elements from clipboard"),
+                "action": lambda v: kernel.elements(
+                    "clipboard paste -dx 3mm -dy 3mm\n"
                 ),
-                "action": lambda v: kernel.elements("clipboard paste -dx 3mm -dy 3mm\n"),
                 "size": bsize_small,
                 "identifier": "editpaste",
                 "rule_enabled": lambda cond: clipboard_filled(),
@@ -894,9 +890,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Undo"),
                 "icon": icons8_undo_50,
-                "tip": _(
-                    "Undo last operation"
-                ),
+                "tip": _("Undo last operation"),
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
@@ -908,9 +902,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Redo"),
                 "icon": icons8_redo_50,
-                "tip": _(
-                    "Redo last operation"
-                ),
+                "tip": _("Redo last operation"),
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
@@ -2883,7 +2875,6 @@ class MeerK40t(MWindow):
         if context.print_shutdown:
             context.channel("shutdown").watch(print)
         self.context(".timer 0 1 quit\n")
-
 
     def set_needs_save_status(self, newstatus):
         self.needs_saving = newstatus

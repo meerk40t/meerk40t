@@ -28,6 +28,8 @@ The channel callable is given any additional information about the gcode.
 
 import re
 
+from meerk40t.svgelements import Color
+
 MM_PER_INCH = 25.4
 MIL_PER_INCH = 1000.0
 
@@ -144,8 +146,45 @@ lookup = {
 }
 
 
+class GRBLPlotter:
+    def __init__(self):
+        from meerk40t.svgelements import Path
+
+        self.path = Path()
+
+    def plotter(self, command, *args):
+        if command == "move":
+            x0, y0, x1, y1 = args
+            self.path.move(x1, y1)
+        elif command in "line":
+            x0, y0, x1, y1, power = args
+            if not self.path:
+                self.path.move(x0, y0)
+            self.path.line(x1, y1)
+        elif command in "arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            self.path.arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+        elif command == "new":
+            pass
+        elif command == "end":
+            pass
+        elif command == "wait":
+            pass
+        elif command == "resume":
+            pass
+        elif command == "pause":
+            pass
+        elif command == "abort":
+            pass
+        elif command == "coolant":
+            # True or False coolant.
+            pass
+        elif command == "jog_abort":
+            pass
+
+
 class GRBLParser:
-    def __init__(self, plotter):
+    def __init__(self, plotter=None):
         self.plotter = plotter
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
@@ -212,6 +251,17 @@ class GRBLParser:
 
     def __repr__(self):
         return "GRBLParser()"
+
+    def parse(self, data, elements):
+        plotclass = GRBLPlotter()
+        self.plotter = plotclass.plotter
+        for d in data:
+            if isinstance(d, (bytes, bytearray)):
+                d = d.decode("utf-8")
+            self.process(d)
+        elements.elem_branch.add(
+            type="elem path", path=plotclass.path, stroke=Color("blue")
+        )
 
     def grbl_write(self, data):
         if self.reply:

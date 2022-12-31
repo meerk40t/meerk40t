@@ -17,7 +17,7 @@ from meerk40t.gui.icons import (
     icons8_up_50,
     icons8_visit_20,
 )
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
 

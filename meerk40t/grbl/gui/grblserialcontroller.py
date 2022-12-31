@@ -59,9 +59,19 @@ class SerialControllerPanel(wx.Panel):
             ("?", _("Status"), _("Query status"), None),
         ]
         if self.service.has_endstops:
-            self.gcode_commands.insert(0, ("$H", _("Physical Home"), _("Send laser to physical home-position"), None))
+            self.gcode_commands.insert(
+                0,
+                (
+                    "$H",
+                    _("Physical Home"),
+                    _("Send laser to physical home-position"),
+                    None,
+                ),
+            )
         else:
-            self.gcode_commands.insert(0, ("G28", _("Home"), _("Send laser to logical home-position"), None))
+            self.gcode_commands.insert(
+                0, ("G28", _("Home"), _("Send laser to logical home-position"), None)
+            )
 
         for entry in self.gcode_commands:
             btn = wx.Button(self, wx.ID_ANY, entry[1])
@@ -142,7 +152,11 @@ class SerialControllerPanel(wx.Panel):
             self.button_device_connect.Enable()
 
     def pane_show(self):
-        if self.state is None or self.state == "uninitialized" or self.state == "disconnected":
+        if (
+            self.state is None
+            or self.state == "uninitialized"
+            or self.state == "disconnected"
+        ):
             self.button_device_connect.SetBackgroundColour("#ffff00")
             self.button_device_connect.SetLabel(_("Connect"))
             self.button_device_connect.SetBitmap(
@@ -159,6 +173,7 @@ class SerialControllerPanel(wx.Panel):
 
     def pane_hide(self):
         return
+
 
 class SerialController(MWindow):
     def __init__(self, *args, **kwds):

@@ -7,8 +7,12 @@ from meerk40t.core.units import UNITS_PER_INCH
 
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel, PreventChangePanel
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
+from meerk40t.gui.propertypanels.attributes import (
+    IdPanel,
+    PositionSizePanel,
+    PreventChangePanel,
+)
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation

@@ -352,7 +352,7 @@ class DevicePanel(wx.Panel):
     def get_selected_device(self):
         service = None
         idx = self.current_item
-        if idx >= 0:
+        if 0 <= idx < self.devices_list.GetItemCount():
             item = self.devices_list.GetItem(idx)
             dev_index = item.GetData()
             service = self.devices[dev_index]

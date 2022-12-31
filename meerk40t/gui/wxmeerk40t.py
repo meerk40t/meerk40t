@@ -28,6 +28,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
 from .bufferview import BufferView
@@ -48,7 +49,6 @@ from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialtest import TemplateTool
-from ..tools.livinghinges import LivingHingeTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -880,12 +880,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     try:
         try:
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
     except Exception:

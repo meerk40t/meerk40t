@@ -1395,6 +1395,7 @@ def init_tree(kernel):
             else:
                 for ref in list(rnode._references):
                     ref.remove_node()
+
         for node in list(self.elems(emphasized=True)):
             rem_node(node)
         self.signal("tree_changed")

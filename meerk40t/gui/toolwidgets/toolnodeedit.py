@@ -5,7 +5,8 @@ import wx
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
-    RESPONSE_CONSUME, RESPONSE_DROP,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
@@ -157,12 +158,7 @@ class EditTool(ToolWidget):
             m = node.matrix.point_in_inverse_space(space_pos[:2])
             pt.x = m[0]
             pt.y = m[1]
-            self.nodes[self.selected_index] = (
-                pt,
-                segment,
-                path,
-                node
-            )
+            self.nodes[self.selected_index] = (pt, segment, path, node)
             node.altered()
             self.scene.request_refresh()
             return RESPONSE_CONSUME

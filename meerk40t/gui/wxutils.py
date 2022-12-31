@@ -755,6 +755,7 @@ class StaticBoxSizer(wx.StaticBoxSizer):
     def Refresh(self, *args):
         self.sbox.Refresh(*args)
 
+
 class ScrolledPanel(SP):
     """
     We sometimes delete things fast enough that they call _SetupAfter when dead and crash.

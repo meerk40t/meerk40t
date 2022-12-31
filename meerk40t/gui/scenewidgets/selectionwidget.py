@@ -13,7 +13,7 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu_for_node, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
 from meerk40t.svgelements import Point
 
 
@@ -994,8 +994,11 @@ class SideWidget(Widget):
                 scaley = scale
 
             # Correct, but slow...
-            # b = elements.selected_area()
             b = elements._emphasized_bounds
+            if b is None:
+                b = elements.selected_area()
+                if b is None:
+                    return
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -1366,6 +1369,9 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
+                if b is None:
+                    # There is no emphasized bounds or selected area.
+                    return
             allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:

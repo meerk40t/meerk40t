@@ -14,7 +14,7 @@ from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Circle, Color, Matrix, Rect
 
