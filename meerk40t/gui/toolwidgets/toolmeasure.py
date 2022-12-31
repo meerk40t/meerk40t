@@ -31,6 +31,7 @@ class MeasureTool(ToolWidget):
         self.line_pen = wx.Pen()
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.line_pen.SetWidth(1000)
 
     def process_draw(self, gc):
         matrix = gc.GetTransform().Get()
