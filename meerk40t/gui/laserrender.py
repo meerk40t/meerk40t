@@ -566,11 +566,19 @@ class LaserRender:
         """Default draw routine for the shape element."""
         matrix = node.matrix
         gc.PushState()
-        if not hasattr(node, "_cache") or node._cache is None:
+        try:
+            cache = node._cache
+        except AttributeError:
+            cache = None
+        if cache is None:
             node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.shape)
             node._cache = cache
-        elif matrix != node._cache_matrix:
+        try:
+            cache_matrix = node._cache_matrix
+        except AttributeError:
+            cache_matrix = None
+        if matrix != cache_matrix:
             q = ~node._cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
@@ -593,11 +601,19 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         matrix = node.matrix
         gc.PushState()
-        if not hasattr(node, "_cache") or node._cache is None:
+        try:
+            cache = node._cache
+        except AttributeError:
+            cache = None
+        if cache is None:
             node._cache_matrix = copy(matrix)
             cache = self.make_path(gc, node.path)
             node._cache = cache
-        elif matrix != node._cache_matrix:
+        try:
+            cache_matrix = node._cache_matrix
+        except AttributeError:
+            cache_matrix = None
+        if matrix != cache_matrix:
             q = ~node._cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
@@ -620,11 +636,19 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         matrix = node.matrix
         gc.PushState()
-        if not hasattr(node, "_cache") or node._cache is None:
+        try:
+            cache = node._cache
+        except AttributeError:
+            cache = None
+        if cache is None:
             node._cache_matrix = copy(matrix)
             cache = self.make_geomstr(gc, node.path)
             node._cache = cache
-        elif matrix != node._cache_matrix:
+        try:
+            cache_matrix = node._cache_matrix
+        except AttributeError:
+            cache_matrix = None
+        if matrix != cache_matrix:
             q = ~node._cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
         self._set_linecap_by_node(node)
