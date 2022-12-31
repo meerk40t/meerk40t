@@ -6,7 +6,7 @@ from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Path,
-    SimpleLine,
+    SimpleLine, Matrix,
 )
 
 
@@ -22,6 +22,7 @@ class LineNode(Node):
         self.stroke = None
         self.stroke_width = None
         self.stroke_scale = None
+        self.stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
@@ -41,6 +42,11 @@ class LineNode(Node):
                 self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                 != SVG_VALUE_NON_SCALING_STROKE
             )
+        if self.stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = Matrix(self.shape.values.get("viewport_transform", ""))
+            self.stroke_zero = sqrt(abs(m.determinant))
+
         self.set_dirty_bounds()
 
     def __copy__(self):
