@@ -280,11 +280,11 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "style": "slider",
                 "min": 0,
-                "max": 100,
+                "max": 50,
                 "label": _("Reddot Laser strength"),
                 "trailer": "%",
                 "tip": _(
-                    "Provide the power level of the red dot indicator"
+                    "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
                 ),
                 "conditional": (self, "use_red_dot"),
             },
@@ -399,21 +399,29 @@ class GRBLDevice(Service, ViewPort):
             self.show_origin_y = self.origin_y
             self.realize()
 
+        @self.console_option("strength", "s", type=int, help="Set the dot laser strength.")
         @self.console_argument("off", type=str)
         @self.console_command(
             "red",
             help=_("Turns redlight on/off"),
         )
-        def red_dot_on(command, channel, _, off=None, remainder=None, **kwgs):
+        def red_dot_on(command, channel, _, off=None, strength=None, remainder=None, **kwgs):
             if not self.use_red_dot:
+                channel ("Red Dot feature is not enabled, see config")
                 self.redlight_preferred = False
                 return
+            if strength is not None:
+                if strength >= 0 and strength <= 100:
+                    self.red_dot_level = strength
+                    channel(f"Laser strength for red dot is now: {self.red_dot_level}%")
             if off == "off":
                 self.redlight_preferred = False
                 channel("Turning off redlight.")
+                self.signal("grbl_red_dot", True)
             else:
                 self.redlight_preferred = True
                 channel("Turning on redlight.")
+                self.signal("grbl_red_dot", False)
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")

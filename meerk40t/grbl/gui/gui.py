@@ -85,6 +85,7 @@ def plugin(service, lifecycle):
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off_50,
+                    "signal": "grbl_red_dot",
                 },
                 "rule_enabled": lambda v: has_red_dot_enabled(),
             },
