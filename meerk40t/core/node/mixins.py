@@ -50,5 +50,9 @@ class Stroked:
             return 1.0
 
     def stroke_width_zero(self):
+        """
+        Ensures the current stroke scale is marked as stroke_zero.
+        @return:
+        """
         matrix = self.matrix
         self.stroke_zero = sqrt(abs(matrix.determinant))

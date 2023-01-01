@@ -4266,9 +4266,8 @@ def init_commands(kernel):
                     continue
                 if e.stroke_scaled:
                     typename = "scaled-stroke"
-                    stroke_one = sqrt(abs(e.matrix.determinant))
                     try:
-                        factor = stroke_one / e.stroke_zero
+                        factor = e.stroke_factor
                     except AttributeError:
                         factor = 1.0
                 else:
@@ -4296,9 +4295,11 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_one = sqrt(abs(e.matrix.determinant))
             e.stroke_width = stroke_width
-            e.stroke_zero = stroke_one
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
             e.modified()
         return "elements", data
 
