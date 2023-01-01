@@ -26,7 +26,7 @@ class EllipseNode(Node, Stroked):
         self.stroke = None
         self.stroke_width = None
         self.stroke_scale = None
-        self.stroke_zero = None
+        self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
@@ -47,10 +47,10 @@ class EllipseNode(Node, Stroked):
                 self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                 != SVG_VALUE_NON_SCALING_STROKE
             )
-        if self.stroke_zero is None:
+        if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             m = Matrix(self.shape.values.get("viewport_transform", ""))
-            self.stroke_zero = sqrt(abs(m.determinant))
+            self._stroke_zero = sqrt(abs(m.determinant))
 
         self.set_dirty_bounds()
 

@@ -45,7 +45,7 @@ class Stroked:
         matrix = self.matrix
         stroke_one = sqrt(abs(matrix.determinant))
         try:
-            return stroke_one / self.stroke_zero
+            return stroke_one / self._stroke_zero
         except AttributeError:
             return 1.0
 
@@ -55,4 +55,4 @@ class Stroked:
         @return:
         """
         matrix = self.matrix
-        self.stroke_zero = sqrt(abs(matrix.determinant))
+        self._stroke_zero = sqrt(abs(matrix.determinant))

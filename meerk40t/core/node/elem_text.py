@@ -55,7 +55,7 @@ class TextNode(Node, Stroked):
         self.stroke = None
         self.stroke_width = 0
         self.stroke_scale = True
-        self.stroke_zero = None
+        self._stroke_zero = None
         self.underline = False
         self.strikethrough = False
         # For sake of completeness, afaik there is no way to display it with wxpython
@@ -101,10 +101,10 @@ class TextNode(Node, Stroked):
             self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, None)
             self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, None)
             self.validate_font()
-        if self.stroke_zero is None:
+        if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             m = Matrix(kwargs.get("viewport_transform", ""))
-            self.stroke_zero = sqrt(abs(m.determinant))
+            self._stroke_zero = sqrt(abs(m.determinant))
 
     def __copy__(self):
         nd = self.node_dict
