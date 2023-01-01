@@ -926,6 +926,7 @@ class RoundedRectPanel(wx.Panel):
         self.slider_x.Bind(wx.EVT_SLIDER, self.on_slider_x)
         self.slider_y.Bind(wx.EVT_SLIDER, self.on_slider_y)
         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
+        self.set_widgets(node)
 
     def pane_hide(self):
         pass
@@ -947,8 +948,8 @@ class RoundedRectPanel(wx.Panel):
             return
         # Set values for rx and ry
         bb = self.node.bbox()
-        width = bb[2] - bb[0]
-        height = bb[3] - bb[1]
+        width = self.node.shape.width
+        height = self.node.shape.height
         if self.node.shape.rx is None:
             rx = 0
         else:
@@ -960,7 +961,6 @@ class RoundedRectPanel(wx.Panel):
         flag = bool(rx == ry)
         self.btn_lock_ratio.SetValue(flag)
         self.on_toggle_ratio(None)
-
         if width == 0:
             int_rx = 0
         else:
@@ -979,9 +979,8 @@ class RoundedRectPanel(wx.Panel):
 
     def set_values(self, axis, value):
         sync = self.btn_lock_ratio.GetValue()
-        bb = self.node.bbox()
-        width = bb[2] - bb[0]
-        height = bb[3] - bb[1]
+        width = self.node.shape.width
+        height = self.node.shape.height
         if axis == 0:  # x
             rx = value / 100 * width
             self.node.shape.rx = rx
