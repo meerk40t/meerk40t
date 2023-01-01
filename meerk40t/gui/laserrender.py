@@ -611,12 +611,11 @@ class LaserRender:
             stroke_factor = 1.0 / sqrt(abs(q.determinant))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
-        if node.stroke_scaled:
-            # our stroke is scaled, so we scale it up by the change between stroke1 and stroke2
-            stroke_one = sqrt(abs(matrix.determinant))
-            stroke_factor *= stroke_one / node.stroke_zero
-
-        self._set_penwidth(node.stroke_width * stroke_factor)
+        sw = node.implied_stroke_width * stroke_factor
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            # No stroke rendering.
+            sw = 1000
+        self._set_penwidth(sw)
         self.set_pen(
             gc,
             node.stroke,
@@ -666,17 +665,18 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
-            self._set_penwidth(1000 / stroke_scale)
-        else:
-            self._set_penwidth(node.implied_stroke_width(zoomscale))
-        self.set_pen(
-            gc,
-            node.stroke,
-            alpha=alpha,
-        )
-        self.set_brush(gc, node.fill, alpha=255)
+        #
+        # sw = node.implied_stroke_width
+        # if draw_mode & DRAW_MODE_LINEWIDTH:
+        #     # No stroke rendering.
+        #     sw = 1000
+        # self._set_penwidth(sw)
+        # self.set_pen(
+        #     gc,
+        #     node.stroke,
+        #     alpha=alpha,
+        # )
+        # self.set_brush(gc, node.fill, alpha=255)
 
         if node.fill is None or node.fill == "none":
             fill_color = wx.BLACK
