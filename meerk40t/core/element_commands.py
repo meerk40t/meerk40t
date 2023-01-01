@@ -4238,47 +4238,54 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if stroke_width is None:
+            # Display data about stroke widths.
             channel("----------")
             channel(_("Stroke-Width Values:"))
-            i = 0
-            for e in self.elems():
+            for i, e in enumerate(self.elems()):
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
-                if not hasattr(e, "stroke_width"):
-                    pass
-                elif not hasattr(e, "stroke_scaled"):
+                try:
+                    stroke_width = e.stroke_width
+                except AttributeError:
+                    # Has no stroke width.
+                    continue
+                if not hasattr(e, "stroke_scaled"):
+                    # Can't have a scaled stroke.
                     channel(
                         _(
                             "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
                         ).format(
                             index=i,
                             typename="scaled-stroke",
-                            stroke_width=width_string(e.stroke_width),
+                            stroke_width=width_string(stroke_width),
                             scaled_stroke_width=width_string(None),
                             name=name,
                         )
                     )
-                else:
-                    if e.stroke_scaled:
-                        typename = "scaled-stroke"
-                        factor = sqrt(abs(e.matrix.determinant))
-                    else:
-                        typename = "non-scaling-stroke"
+                    continue
+                if e.stroke_scaled:
+                    typename = "scaled-stroke"
+                    stroke_one = sqrt(abs(e.matrix.determinant))
+                    try:
+                        factor = stroke_one / e.stroke_zero
+                    except AttributeError:
                         factor = 1.0
-                    implied_value = factor * e.stroke_width
-                    channel(
-                        _(
-                            "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
-                        ).format(
-                            index=i,
-                            typename=typename,
-                            stroke_width=width_string(e.stroke_width),
-                            scaled_stroke_width=width_string(implied_value),
-                            name=name,
-                        )
+                else:
+                    typename = "non-scaling-stroke"
+                    factor = 1.0
+                implied_value = factor * stroke_width
+                channel(
+                    _(
+                        "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+                    ).format(
+                        index=i,
+                        typename=typename,
+                        stroke_width=width_string(stroke_width),
+                        scaled_stroke_width=width_string(implied_value),
+                        name=name,
                     )
-                i += 1
+                )
             channel("----------")
             return
 
@@ -4289,6 +4296,7 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
+
             stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
             e.stroke_width = stroke_width / stroke_scale
             e.altered()
