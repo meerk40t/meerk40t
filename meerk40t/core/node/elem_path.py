@@ -1,6 +1,7 @@
 from copy import copy
 from math import sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
@@ -10,7 +11,7 @@ from meerk40t.svgelements import (
 )
 
 
-class PathNode(Node):
+class PathNode(Node, Stroked):
     """
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
@@ -64,30 +65,6 @@ class PathNode(Node):
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
-
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
-
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        """
-        Setting stroke_scale directly will not resize the stroke-width based on current scaling. This function allows
-        the toggling of the stroke-scaling without the current stroke_width being affected.
-
-        @param v:
-        @return:
-        """
-        if bool(v) == bool(self.stroke_scale):
-            # Unchanged.
-            return
-        matrix = self.matrix
-        stroke_one = sqrt(abs(matrix.determinant))
-        stroke_factor = stroke_one / self.stroke_zero
-        if not v:
-            self.stroke_width *= stroke_factor
-        self.stroke_zero = stroke_one
-        self.stroke_scale = v
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
