@@ -610,16 +610,16 @@ class Drag(wx.Panel):
         self.drag_ready(True)
 
     def on_button_align_trace_hull(self, event=None):
-        self.context("trace hull\n")
+        self.context("element* trace hull\n")
 
     def on_button_align_trace_complex(self, event=None):
-        self.context("trace complex\n")
+        self.context("element* trace complex\n")
 
     def on_button_align_trace_circle(self, event=None):
-        self.context("trace circle\n")
+        self.context("element* trace circle\n")
 
     def on_button_align_trace_quick(self, event=None):
-        self.context("trace quick\n")
+        self.context("element* trace quick\n")
         self.drag_ready(True)
 
     def pane_show(self, *args):
