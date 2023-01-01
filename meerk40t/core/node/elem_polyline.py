@@ -3,6 +3,7 @@ from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
@@ -41,6 +42,7 @@ class PolylineNode(Node, Stroked):
             self.stroke = self.shape.stroke
         if self.stroke_width is None:
             self.stroke_width = self.shape.stroke_width
+            self.stroke_width *= UNITS_PER_PIXEL
         if self.stroke_scale is None:
             self.stroke_scale = (
                 self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
@@ -50,8 +52,6 @@ class PolylineNode(Node, Stroked):
             # This defines the stroke-width zero point scale
             m = Matrix(self.shape.values.get("viewport_transform", ""))
             self.stroke_zero = sqrt(abs(m.determinant))
-            if self.stroke_width is not None:
-                self.stroke_width *= self.stroke_zero
 
         self.set_dirty_bounds()
 
