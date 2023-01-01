@@ -1,15 +1,18 @@
 from copy import copy
 from math import sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
+    Matrix,
     Path,
 )
 
 
-class PathNode(Node):
+class PathNode(Node, Stroked):
     """
     PathNode is the bootstrapped node type for the 'elem path' type.
     """
@@ -23,6 +26,7 @@ class PathNode(Node):
         self.stroke = None
         self.stroke_width = None
         self.stroke_scale = None
+        self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
@@ -37,12 +41,17 @@ class PathNode(Node):
         if self.stroke is None:
             self.stroke = self.path.stroke
         if self.stroke_width is None:
-            self.stroke_width = self.path.stroke_width
+            self.stroke_width = self.path.implicit_stroke_width
         if self.stroke_scale is None:
             self.stroke_scale = (
                 self.path.values.get(SVG_ATTR_VECTOR_EFFECT)
                 != SVG_VALUE_NON_SCALING_STROKE
             )
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = Matrix(self.path.values.get("viewport_transform", ""))
+            self._stroke_zero = sqrt(abs(m.determinant))
+
         self.set_dirty_bounds()
 
     def __copy__(self):
@@ -55,32 +64,6 @@ class PathNode(Node):
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
-
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
-
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
-        self.stroke_scale = v
-
-    def implied_stroke_width(self, zoomscale=1.0):
-        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
-        need to countermand that scaling by dividing by the square root of the absolute
-        value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scaled:
-            # Our implied stroke-width is prescaled.
-            return self.stroke_width
-        else:
-            sw = self.stroke_width / scalefactor
-            return sw
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()

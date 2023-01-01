@@ -965,23 +965,6 @@ class MeerK40tScenePanel(wx.Panel):
             color = Color(rgb[0], rgb[1], rgb[2])
         self.widget_scene.context.elements.default_fill = color
 
-    @signal_listener("selstrokewidth")
-    def on_selstrokewidth(self, origin, stroke_width, *args):
-        # Stroke_width is a text
-        # print("Signal with %s" % stroke_width)
-        sw = float(Length(stroke_width))
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            try:
-                stroke_scale = (
-                    sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
-                )
-                e.stroke_width = sw / stroke_scale
-                e.altered()
-            except AttributeError:
-                # Ignore and carry on...
-                continue
-        self.request_refresh()
-
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
         ignore = self.widget_scene.tool_active

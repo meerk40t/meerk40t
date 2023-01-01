@@ -1,5 +1,3 @@
-from math import sqrt
-
 import wx
 
 from ...core.element_types import elem_nodes
@@ -157,7 +155,13 @@ class StrokeWidget(StatusBarWidget):
         )
         self.combo_units.SetMinSize(wx.Size(30, -1))
         self.combo_units.SetMaxSize(wx.Size(120, -1))
-        self.combo_units.SetSelection(0)
+        self.context.setting(int, "strokewidth_default_units", 0)
+        if (
+            0 > self.context.strokewidth_default_units
+            or self.context.strokewidth_default_units >= len(self.unit_choices)
+        ):
+            self.context.strokewidth_default_units = 0
+        self.combo_units.SetSelection(self.context.strokewidth_default_units)
 
         self.chk_scale = wx.CheckBox(self.parent, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
@@ -168,8 +172,7 @@ class StrokeWidget(StatusBarWidget):
             + _("Inactive: stroke grows/shrink with scaled element")
         )
 
-        self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        # self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+        self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width_combo, self.combo_units)
         self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.parent.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.Add(self.strokewidth_label, 0, 0, 0)
@@ -184,85 +187,64 @@ class StrokeWidget(StatusBarWidget):
             self.context("enable_stroke_scale")
         else:
             self.context("disable_stroke_scale")
+        self.update_stroke_magnitude()
+
+    def on_stroke_width_combo(self, event):
+        if self.startup or self.combo_units.GetSelection() < 0:
+            return
+        if self.context.strokewidth_default_units == self.combo_units.GetSelection():
+            # No change.
+            return
+        original = self.unit_choices[self.context.strokewidth_default_units]
+        units = self.unit_choices[self.combo_units.GetSelection()]
+        new_text = Length(
+            f"{float(self.spin_width.GetValue())}{original}", preferred_units=units
+        )
+        self.spin_width.SetValue(f"{new_text.preferred:.3f}")
+        try:
+            self.context(f"stroke-width {float(self.spin_width.GetValue())}{units}")
+        except ValueError:
+            pass
+        self.context.strokewidth_default_units = self.combo_units.GetSelection()
 
     def on_stroke_width(self, event):
         if self.startup or self.combo_units.GetSelection() < 0:
             return
         try:
-            self.context.signal(
-                "selstrokewidth",
-                f"{float(self.spin_width.GetValue()):.2f}"
-                f"{self.unit_choices[self.combo_units.GetSelection()]}",
-            )
+            units = self.unit_choices[self.combo_units.GetSelection()]
+            self.context(f"stroke-width {float(self.spin_width.GetValue())}{units}")
         except ValueError:
             pass
 
+    def update_stroke_magnitude(self):
+        sw_default = None
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            if hasattr(e, "stroke_width"):
+                sw_default = e.stroke_width
+                try:
+                    sw_default = e.implied_stroke_width
+                except AttributeError:
+                    pass
+                break
+        if sw_default is None:
+            # Nothing
+            return
+        self.context.setting(int, "strokewidth_default_units", 0)
+        unit = self.unit_choices[self.context.strokewidth_default_units]
+        std = float(Length(f"1{unit}"))
+        value = sw_default / std
+        self.spin_width.SetValue(str(round(value, 4)))
+
+    def update_stroke_scale_check(self):
+        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+            if hasattr(e, "stroke_scaled"):
+                self.chk_scale.SetValue(e.stroke_scaled)
+                return
+
     def Signal(self, signal, *args):
         if signal == "emphasized":
-            value = self.context.elements.has_emphasis()
-            sw_default = None
-            ck_default = True
-            mat_default = None
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                if hasattr(e, "stroke_width") and hasattr(e, "stroke_scaled"):
-                    if sw_default is None:
-                        sw_default = e.stroke_width
-                        mat_default = e.matrix
-                        ck_default = e.stroke_scaled
-                        break
-            if sw_default is not None:
-                # Set Values
-                self.startup = True
-                # Lets establish which unit might be the best to represent the display
-                found_something = False
-                if sw_default == 0:
-                    value = 0
-                    idxunit = 0  # px
-                    found_something = True
-                else:
-                    best_post = 99999999
-                    delta = 0.99999999
-                    best_pre = 0
-                    factor = sqrt(abs(mat_default.determinant)) if ck_default else 1.0
-                    node_stroke_width = sw_default * factor
-                    for idx, unit in enumerate(self.unit_choices):
-                        std = float(Length(f"1{unit}"))
-                        fraction = abs(node_stroke_width / std)
-                        if fraction == 0:
-                            continue
-                        curr_post = 0
-                        curr_pre = int(fraction)
-                        while fraction < 1:
-                            curr_post += 1
-                            fraction *= 10
-                        fraction -= curr_pre
-                        # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
-                        takespref = False
-                        if fraction < delta:
-                            takespref = True
-                        elif fraction == delta and curr_pre > best_pre:
-                            takespref = True
-                        elif fraction == delta and curr_post < best_post:
-                            takespref = True
-                        if takespref:
-                            best_pre = curr_pre
-                            delta = fraction
-                            best_post = curr_post
-                            idxunit = idx
-                            value = node_stroke_width / std
-                            found_something = True
-
-                    if not found_something:
-                        std = float(Length(f"1mm"))
-                        if node_stroke_width / std < 0.1:
-                            idxunit = 0  # px
-                        else:
-                            idxunit = 2  # mm
-                        unit = self.unit_choices[idxunit]
-                        std = float(Length(f"1{unit}"))
-                        value = node_stroke_width / std
-
-                self.spin_width.SetValue(str(round(value, 4)))
-                self.combo_units.SetSelection(idxunit)
-                self.chk_scale.SetValue(ck_default)
-                self.startup = False
+            self.update_stroke_magnitude()
+            self.update_stroke_scale_check()
+            self.startup = False
+        if signal == "modified":
+            self.update_stroke_magnitude()
