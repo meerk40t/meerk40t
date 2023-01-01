@@ -4296,10 +4296,10 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-
-            stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
-            e.stroke_width = stroke_width / stroke_scale
-            e.altered()
+            stroke_one = sqrt(abs(e.matrix.determinant))
+            e.stroke_width = stroke_width
+            e.stroke_zero = stroke_one
+            e.modified()
         return "elements", data
 
     @self.console_command(
