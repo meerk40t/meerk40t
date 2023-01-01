@@ -53,7 +53,10 @@ from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.groupproperties import (
+    FilePropertiesPanel,
+    GroupPropertiesPanel, 
+)
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
@@ -625,6 +628,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
+        kernel.register("property/FileNode/Property", FilePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
