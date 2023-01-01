@@ -1,5 +1,3 @@
-from math import sqrt
-
 import wx
 
 from ...core.element_types import elem_nodes
@@ -199,7 +197,9 @@ class StrokeWidget(StatusBarWidget):
             return
         original = self.unit_choices[self.context.strokewidth_default_units]
         units = self.unit_choices[self.combo_units.GetSelection()]
-        new_text = Length(f"{float(self.spin_width.GetValue())}{original}", preferred_units=units)
+        new_text = Length(
+            f"{float(self.spin_width.GetValue())}{original}", preferred_units=units
+        )
         self.spin_width.SetValue(f"{new_text.preferred:.3f}")
         try:
             self.context(f"stroke-width {float(self.spin_width.GetValue())}{units}")

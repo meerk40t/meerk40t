@@ -9,8 +9,8 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Circle,
     Ellipse,
-    Path,
     Matrix,
+    Path,
 )
 
 

@@ -289,7 +289,6 @@ class MeerK40t(MWindow):
         if self.widgets_created:
             self.main_statusbar.Signal("modified", *args)
 
-
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
     @signal_listener("tree_changed")
