@@ -24,6 +24,18 @@ class Stroked:
         self.stroke_scale = v
 
     @property
+    def implied_stroke_width(self):
+        """
+        The implied stroke width is stroke_width if not scaled or the scaled stroke_width if scaled.
+
+        @return:
+        """
+        if self.stroke_scale:
+            return self.stroke_width * self.stroke_factor
+        else:
+            return self.stroke_width
+
+    @property
     def stroke_factor(self):
         """
         The stroke factor is the ratio of the new to old stroke-width scale.
