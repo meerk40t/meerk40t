@@ -189,11 +189,8 @@ class StrokeWidget(StatusBarWidget):
         if self.startup or self.combo_units.GetSelection() < 0:
             return
         try:
-            self.context.signal(
-                "selstrokewidth",
-                f"{float(self.spin_width.GetValue()):.2f}"
-                f"{self.unit_choices[self.combo_units.GetSelection()]}",
-            )
+            units = self.unit_choices[self.combo_units.GetSelection()]
+            self.context(f"stroke-width {float(self.spin_width.GetValue())}{units}")
         except ValueError:
             pass
 
