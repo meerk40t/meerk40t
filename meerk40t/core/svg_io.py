@@ -469,7 +469,13 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = str(c.stroke_width)  # Natively sized
+                    if hasattr(c, "stroke_scaled") and c.stroke_scaled:
+                        # Natively sized
+                        stroke_width = str(c.stroke_width)
+                    else:
+                        # Non-scaling stroke, px sized.
+                        stroke_width = str(c.stroke_width / UNITS_PER_PIXEL)
+
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError as Err:
                     # print (f"Shit happened when trying to set stroke_width: {Err}")
