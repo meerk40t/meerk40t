@@ -39,8 +39,7 @@ class LineNode(Node, Stroked):
         if self.stroke is None:
             self.stroke = self.shape.stroke
         if self.stroke_width is None:
-            self.stroke_width = self.shape.stroke_width
-            self.stroke_width *= UNITS_PER_PIXEL
+            self.stroke_width = self.shape.implicit_stroke_width
         if self.stroke_scale is None:
             self.stroke_scale = (
                 self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
