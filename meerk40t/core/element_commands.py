@@ -5379,6 +5379,11 @@ def init_commands(kernel):
             if len(name) > 50:
                 name = name[:50] + "…"
             try:
+                e.stroke_reify()
+            except AttributeError:
+                pass
+
+            try:
                 e.shape.reify()
             except AttributeError as err:
                 try:
@@ -5386,6 +5391,10 @@ def init_commands(kernel):
                 except AttributeError:
                     channel(_("Couldn't reify - %s - %s") % (name, err))
                     return "elements", data
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
             e.altered()
             channel(_("reified - %s") % name)
         return "elements", data

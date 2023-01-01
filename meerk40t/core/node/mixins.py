@@ -49,6 +49,12 @@ class Stroked:
         except AttributeError:
             return 1.0
 
+    def stroke_reify(self):
+        """Set the stroke width to the real stroke width."""
+        if self.stroke_scale:
+            self.stroke_width *= self.stroke_factor
+        self.stroke_width_zero()
+
     def stroke_width_zero(self):
         """
         Ensures the current stroke scale is marked as stroke_zero.
