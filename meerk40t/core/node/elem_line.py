@@ -6,7 +6,8 @@ from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Path,
-    SimpleLine, Matrix,
+    SimpleLine,
+    Matrix,
 )
 
 
@@ -85,7 +86,6 @@ class LineNode(Node):
             self.stroke_width *= stroke_factor
         self.stroke_zero = stroke_one
         self.stroke_scale = v
-
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()

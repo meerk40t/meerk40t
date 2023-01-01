@@ -7,7 +7,8 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Path,
     Polygon,
-    Polyline, Matrix,
+    Polyline,
+    Matrix,
 )
 
 
@@ -87,7 +88,6 @@ class PolylineNode(Node):
             self.stroke_width *= stroke_factor
         self.stroke_zero = stroke_one
         self.stroke_scale = v
-
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
