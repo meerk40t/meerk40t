@@ -559,24 +559,29 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 display_list = list(map(str, c.get("display")))
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                try:
+                    index = choice_list.index(str(data))
+                except ValueError:
+                    # Value was not in list.
+                    index = 0
+                    if data is None:
+                        data = c.get("default")
+                    display_list.insert(0, str(data))
+                    choice_list.insert(0, str(data))
                 control = wx.ComboBox(
                     self,
                     wx.ID_ANY,
                     choices=display_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
+                control.SetSelection(index)
+
                 # Constrain the width
                 testsize = control.GetBestSize()
                 control.SetMaxSize(wx.Size(testsize[0] + 30, -1))
                 # print ("Display: %s" % display_list)
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
-                if data is not None:
-                    try:
-                        index = choice_list.index(str(data))
-                        control.SetSelection(index)
-                    except ValueError:
-                        control.SetValue("n/a")
 
                 def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
                     def select(event=None):
