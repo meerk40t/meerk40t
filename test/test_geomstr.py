@@ -727,6 +727,109 @@ class TestGeomstr(unittest.TestCase):
             f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x"
         )
 
+    def test_point_in_polygon_scanline_beat(self):
+        """
+        Test point in poly for Scanbeam against simplified version of same algorithm
+        @return:
+        """
+
+        def build_edge_list(polygon):
+            edge_list = []
+            for i in range(0, len(polygon) - 1):
+                if (polygon[i].imag, polygon[i].real) < (
+                    polygon[i + 1].imag,
+                    polygon[i + 1].real,
+                ):
+                    edge_list.append((polygon[i], i))
+                    edge_list.append((polygon[i + 1], ~i))
+                else:
+                    edge_list.append((polygon[i], ~i))
+                    edge_list.append((polygon[i + 1], i))
+
+            def sort_key(e):
+                return e[0].imag, e[0].real, ~e[1]
+
+            edge_list.sort(key=sort_key)
+            return edge_list
+
+        def build_scanbeam(edge_list):
+            actives = []
+            actives_table = []
+            events = []
+            y = -float("inf")
+            for pt, index in edge_list:
+                if y != pt.imag:
+                    actives_table.append(list(actives))
+                    events.append(pt.imag)
+                if index >= 0:
+                    actives.append(index)
+                else:
+                    actives.remove(~index)
+                y = pt.imag
+            actives_table.append(list(actives))
+            largest_actives = max([len(a) for a in actives_table])
+            scan = np.zeros((len(actives_table), largest_actives), dtype=int)
+            scan -= 1
+            for i, active in enumerate(actives_table):
+                scan[i, 0 : len(active)] = active
+            return scan, events
+
+        def points_in_polygon(polygon, point):
+            edge_list = build_edge_list(polygon)
+            scan, events = build_scanbeam(edge_list)
+            pts_y = np.imag(point)
+            idx = np.searchsorted(events, pts_y)
+            actives = scan[idx]
+            a = polygon[actives]
+            b = polygon[actives + 1]
+
+            a = np.where(actives == -1, np.nan + np.nan * 1j, a)
+            b = np.where(actives == -1, np.nan + np.nan * 1j, b)
+
+            old_np_seterr = np.seterr(invalid="ignore", divide="ignore")
+            try:
+                # If horizontal slope is undefined. But, all x-ints are at x since x0=x1
+                m = (b.imag - a.imag) / (b.real - a.real)
+                y0 = a.imag - (m * a.real)
+                ys = np.reshape(np.repeat(np.imag(point), y0.shape[1]), y0.shape)
+                x_intercepts = np.where(~np.isinf(m), (ys - y0) / m, a.real)
+            finally:
+                np.seterr(**old_np_seterr)
+
+            xs = np.reshape(np.repeat(np.real(point), y0.shape[1]), y0.shape)
+            results = np.sum(x_intercepts <= xs, axis=1)
+            results %= 2
+            return results
+
+        N = 5000
+        lenpoly = 1000
+        polygon = [
+            [np.sin(x) + 0.5, np.cos(x) + 0.5]
+            for x in np.linspace(0, 2 * np.pi, lenpoly)
+        ]
+        polygon = np.array(polygon, dtype="float32")
+
+        points = np.random.uniform(-1.5, 1.5, size=(N, 2)).astype("float32")
+        points = points[:, 0] + points[:, 1] * 1j
+        pg = polygon[:, 0] + polygon[:, 1] * 1j
+
+        t = time.time()
+        mask = points_in_polygon(pg, points)
+        t1 = time.time() - t
+
+        # Convert to correct format.
+
+        poly = Polygon(*pg)
+        t = time.time()
+        q = Scanbeam(poly.geomstr)
+        r = q.points_in_polygon(points)
+        t2 = time.time() - t
+        for p1, p2 in zip(r, mask):
+            assert (bool(p1), bool(p2))
+        print(
+            f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
+        )
+
     def test_point_in_polygon(self):
         from meerk40t.fill.patternfill import set_diamond1
 
@@ -759,7 +862,9 @@ class TestGeomstr(unittest.TestCase):
         for i, j in enumerate(pts):
             self.assertEqual(rr[i], r[i])
         try:
-            print(f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x")
+            print(
+                f"is_point_inside takes {t2} numpy version takes {t1} speedup {t2/t1}x"
+            )
         except ZeroDivisionError:
             print(f"{t2} vs {t1}")
 
