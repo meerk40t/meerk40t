@@ -30,6 +30,8 @@ class GrblController:
         self._lock = threading.Condition()
         self._sending_queue = []
         self._realtime_queue = []
+        # buffer for feedback...
+        self._assembled_response = []
 
         self.commands_in_device_buffer = []
         self.buffered_characters = 0
@@ -325,15 +327,18 @@ class GrblController:
         self.service.signal("serial;response", response)
         if response == "ok":
             try:
-                line = self.commands_in_device_buffer.pop(0)
-                self.buffered_characters -= len(line)
+                cmd_issued = self.commands_in_device_buffer.pop(0)
+                self.buffered_characters -= len(cmd_issued)
             except IndexError:
                 self.channel(f"Response: {response}, but this was unexpected")
+                self._assembled_response = []
                 raise ConnectionAbortedError
             self.channel(f"Response: {response}")
             self.recv(
-                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}"
+                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {cmd_issued}"
             )
+            self.service.signal("grbl;response", cmd_issued, self._assembled_response)
+            self._assembled_response = []
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
@@ -348,6 +353,7 @@ class GrblController:
             )
             self.recv(f"Alarm #{error_num} {short}\n{long}")
             self.channel(f"Alarm #{error_num} {short}\n{long}")
+            self._assembled_response = []
         elif response.startswith("error"):
             try:
                 error_num = int(response[6:])
@@ -357,9 +363,11 @@ class GrblController:
             self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
             self.recv(f"ERROR #{error_num} {short}\n{long}")
             self.channel(f"ERROR #{error_num} {short}\n{long}")
+            self._assembled_response = []
         else:
             self.recv(f"{response}")
             self.channel(f"Data: {response}")
+            self._assembled_response.append(response)
 
     def _sending_realtime(self):
         """
