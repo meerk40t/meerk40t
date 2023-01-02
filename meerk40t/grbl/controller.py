@@ -328,6 +328,8 @@ class GrblController:
         if response == "ok":
             try:
                 cmd_issued = self.commands_in_device_buffer.pop(0)
+                if cmd_issued[-1] == "\r":
+                    cmd_issued = cmd_issued[:-1]
                 self.buffered_characters -= len(cmd_issued)
             except IndexError:
                 self.channel(f"Response: {response}, but this was unexpected")
