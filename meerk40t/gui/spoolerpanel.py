@@ -815,7 +815,9 @@ class SpoolerPanel(wx.Panel):
             # First passes then device
             if len(info) >= 5:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["passes"], str(info[IDX_HISTORY_PASSES])
+                    list_id,
+                    self.column_history["passes"],
+                    str(info[IDX_HISTORY_PASSES]),
                 )
             else:
                 self.list_job_history.SetItem(

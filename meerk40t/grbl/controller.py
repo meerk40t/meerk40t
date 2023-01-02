@@ -252,7 +252,9 @@ class GrblController:
                 self.channel(f"Response: {response}, but this was unexpected")
                 raise ConnectionAbortedError
             self.channel(f"Response: {response}")
-            self.recv(f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}")
+            self.recv(
+                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}"
+            )
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
@@ -348,7 +350,11 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._realtime_queue and not self.commands_in_device_buffer:
+            if (
+                not self._sending_queue
+                and not self._realtime_queue
+                and not self.commands_in_device_buffer
+            ):
                 # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
