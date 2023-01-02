@@ -127,7 +127,6 @@ class GrblController:
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
-            print("notify")
             self._lock.notify()
 
     def realtime(self, data):
@@ -148,7 +147,6 @@ class GrblController:
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
-            print("notify")
             self._lock.notify()
 
     def start(self):
@@ -279,10 +277,10 @@ class GrblController:
 
         @return:
         """
-        line = self._realtime_queue[0]
+        with self._lock:
+            line = self._realtime_queue.pop(0)
         self.connection.write(line)
         self.send(line)
-        self._realtime_queue.pop(0)
 
     def _sending_single_line(self):
         """
@@ -290,13 +288,13 @@ class GrblController:
 
         @return:
         """
-        line = self._sending_queue[0]
+        with self._lock:
+            line = self._sending_queue.pop(0)
+            self.commands_in_device_buffer.append(line)
         self.connection.write(line)
         self.send(line)
-        self.commands_in_device_buffer.append(line)
         self.buffered_characters += len(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
-        self._sending_queue.pop(0)
         return True
 
     @property
@@ -349,12 +347,12 @@ class GrblController:
         @return:
         """
         while self.connection.connected:
+            print(f"sending ... {self.buffered_characters} ...")
             self.service.signal("pipe;running", True)
             if not self._sending_queue and not self._realtime_queue and not self.commands_in_device_buffer:
                 # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
-                    print("wait")
                     # We wait until new data is put in the buffer.
                     self._lock.wait()
                 self.service.signal("pipe;running", True)
