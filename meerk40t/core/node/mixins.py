@@ -1,7 +1,8 @@
 from math import sqrt
+from abc import ABC, abstractmethod as abstract
 
 
-class Stroked:
+class Stroked(ABC):
     @property
     def stroke_scaled(self):
         return self.stroke_scale

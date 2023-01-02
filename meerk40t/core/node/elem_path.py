@@ -3,7 +3,6 @@ from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
@@ -49,8 +48,11 @@ class PathNode(Node, Stroked):
             )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = Matrix(self.path.values.get("viewport_transform", ""))
-            self._stroke_zero = sqrt(abs(m.determinant))
+            m = self.path.values.get("viewport_transform")
+            if m:
+                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
+            else:
+                self.stroke_width_zero()
 
         self.set_dirty_bounds()
 
@@ -70,6 +72,7 @@ class PathNode(Node, Stroked):
         return self.path.bbox(transformed=transformed, with_stroke=with_stroke)
 
     def preprocess(self, context, matrix, plan):
+        self.stroke_scaled = False
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
