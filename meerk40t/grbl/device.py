@@ -191,7 +191,7 @@ class GRBLDevice(Service, ViewPort):
             {
                 "attr": "serial_port",
                 "object": self,
-                "default": "com1",
+                "default": "UNCONFIGURED",
                 "type": str,
                 "style": "option",
                 "label": "",
