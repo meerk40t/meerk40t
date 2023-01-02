@@ -30,6 +30,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         "label": The label will be used for labelling the to be created UI-elements
         "trailer": this text will be displayed immediately after the element
         "tip": The tooltip that will be used for this element
+        "dynamic": a function called with the current dictionary choice. This is to update
+            values that may have changed since the choice was first established.
         "type": This can be one of (no quotation marks, real python data types):
             bool: will always be represented by a checkbox
             str: normally be represented by a textbox (may be influenced by style)
