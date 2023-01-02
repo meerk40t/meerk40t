@@ -49,6 +49,16 @@ class SerialConnection:
         try:
             self.channel("Attempting to Connect...")
             serial_port = self.service.serial_port
+            if serial_port == "UNCONFIGURED":
+                self.channel("Laser port is not set.")
+                signal_load = "error"
+                self.service.signal(
+                    "warning",
+                    "Serial Port is not set. Go to config, select the serial port for this device.",
+                    "Serial Port: UNCONFIGURED",
+                )
+                return
+
             baud_rate = self.service.baud_rate
             self.laser = serial.Serial(
                 serial_port,
