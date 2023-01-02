@@ -23,7 +23,7 @@ class TestKernel(unittest.TestCase):
                 if "interrupt" in command:
                     continue
                 if not cmd.regex:
-                    print("Testing command: %s" % command)
+                    print(f"Testing command: {command}")
                     # command should be generated with something like
                     # kernel.console(" ".join(command.split("/")[1:]) + "\n")
                     # if first parameter is not base but this fails so not
@@ -109,7 +109,7 @@ class TestEchoCommand(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             for echo in echo_commands:
-                print("Testing echo command: %s" % echo)
+                print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
         finally:
             kernel.shutdown()

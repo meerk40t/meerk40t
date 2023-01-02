@@ -476,9 +476,7 @@ class SpoolerPanel(wx.Panel):
             remove_mode = "remove"
         item = menu.Append(
             wx.ID_ANY,
-            "{action} {name} [{label}]".format(
-                action=action, name=str(element)[:30], label=spooler.context.label
-            ),
+            f"{action} {str(element)[:30]} [{spooler.context.label}]",
             "",
             wx.ITEM_NORMAL,
         )
