@@ -168,7 +168,7 @@ class GRBLDevice(Service, ViewPort):
 
         def update(choice_dict):
             """
-            Sets the choices and display of the com_port values dynamically
+            Sets the choices and display of the serial_port values dynamically
             @param choice_dict:
             @return:
             """
@@ -189,7 +189,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
             },
             {
-                "attr": "com_port",
+                "attr": "serial_port",
                 "object": self,
                 "default": "com1",
                 "type": str,

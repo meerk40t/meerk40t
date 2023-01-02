@@ -14,12 +14,12 @@ from .serial_connection import SerialConnection
 class GrblController:
     def __init__(self, context):
         self.service = context
-        self.com_port = self.service.com_port
+        self.serial_port = self.service.serial_port
         self.baud_rate = self.service.baud_rate
 
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel(f"send-{self.com_port.lower()}", pure=True)
-        self.recv = self.service.channel(f"recv-{self.com_port.lower()}", pure=True)
+        self.send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
+        self.recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
@@ -157,7 +157,7 @@ class GrblController:
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
-                thread_name=f"sender-{self.com_port.lower()}",
+                thread_name=f"sender-{self.serial_port.lower()}",
                 result=self.stop,
                 daemon=True,
             )
@@ -360,7 +360,7 @@ class GrblController:
         self.service.signal("pipe;running", False)
 
     def __repr__(self):
-        return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
+        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)

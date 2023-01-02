@@ -48,10 +48,10 @@ class SerialConnection:
         signal_load = "uninitialized"
         try:
             self.channel("Attempting to Connect...")
-            com_port = self.service.com_port
+            serial_port = self.service.serial_port
             baud_rate = self.service.baud_rate
             self.laser = serial.Serial(
-                com_port,
+                serial_port,
                 baud_rate,
                 timeout=0,
             )
