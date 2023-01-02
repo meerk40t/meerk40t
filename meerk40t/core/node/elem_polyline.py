@@ -49,8 +49,11 @@ class PolylineNode(Node, Stroked):
             )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = Matrix(self.shape.values.get("viewport_transform", ""))
-            self._stroke_zero = sqrt(abs(m.determinant))
+            m = self.shape.values.get("viewport_transform")
+            if m:
+                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
+            else:
+                self.stroke_width_zero()
 
         self.set_dirty_bounds()
 
@@ -70,6 +73,7 @@ class PolylineNode(Node, Stroked):
         return self.shape.bbox(transformed=True, with_stroke=with_stroke)
 
     def preprocess(self, context, matrix, plan):
+        self.stroke_scaled = False
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False

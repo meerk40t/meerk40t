@@ -4264,15 +4264,15 @@ def init_commands(kernel):
                         )
                     )
                     continue
+                factor = 1.0
                 if e.stroke_scaled:
                     typename = "scaled-stroke"
                     try:
                         factor = e.stroke_factor
                     except AttributeError:
-                        factor = 1.0
+                        pass
                 else:
                     typename = "non-scaling-stroke"
-                    factor = 1.0
                 implied_value = factor * stroke_width
                 channel(
                     _(

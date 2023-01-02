@@ -105,6 +105,13 @@ class TextNode(Node, Stroked):
             # This defines the stroke-width zero point scale
             m = Matrix(kwargs.get("viewport_transform", ""))
             self._stroke_zero = sqrt(abs(m.determinant))
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = Matrix(kwargs.get("viewport_transform"))
+            if m:
+                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
+            else:
+                self.stroke_width_zero()
 
     def __copy__(self):
         nd = self.node_dict
@@ -133,6 +140,7 @@ class TextNode(Node, Stroked):
             commands.append(self.remove_text)
             return
         self.text = context.elements.wordlist_translate(self.text, self)
+        self.stroke_scaled = False
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False

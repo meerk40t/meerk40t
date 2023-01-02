@@ -695,6 +695,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
         self._cache = None
@@ -708,6 +709,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
 
