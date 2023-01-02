@@ -446,7 +446,8 @@ class GrblController:
             else:
                 self._buffer_fail += 1
                 if self._buffer_fail > 10:
-                    x = 1 / 0
+                    pass
+                    # we should do something like raising an error... for tat to decide
 
     def _sending_sync(self):
         """
