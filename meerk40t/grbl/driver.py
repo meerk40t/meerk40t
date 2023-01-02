@@ -528,6 +528,7 @@ class GRBLDriver(Parameters):
     ####################
 
     def _move(self, x, y, absolute=False):
+        old_current = self.service.current
         if self._absolute:
             self.native_x = x
             self.native_y = y
@@ -551,6 +552,11 @@ class GRBLDriver(Parameters):
             line.append(f"F{self.feed_convert(self.speed):.1f}")
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def _clean(self):
         if self.absolute_dirty:
