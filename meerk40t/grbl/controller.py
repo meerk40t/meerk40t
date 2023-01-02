@@ -87,9 +87,15 @@ class GrblController:
             self.channel("Could not connect.")
             return
         self.channel("Connecting to GRBL...")
+        tries = 3
         while True:
             response = self.connection.read()
             if response is None:
+                if tries == 0:
+                    # We might not get a hello.
+                    return
+                time.sleep(0.2)
+                tries -= 1
                 continue
             self.channel(response)
             self.recv(response)
