@@ -25,11 +25,13 @@ class ChoicePropertyPanel(ScrolledPanel):
     The dictionary recognizes the following entries:
 
         "object": The object to which the property defined in attr belongs to
-        "attr": The name of the atttribute
+        "attr": The name of the attribute
         "default": The default value if no value has been given before
         "label": The label will be used for labelling the to be created UI-elements
         "trailer": this text will be displayed immediately after the element
         "tip": The tooltip that will be used for this element
+        "dynamic": a function called with the current dictionary choice. This is to update
+            values that may have changed since the choice was first established.
         "type": This can be one of (no quotation marks, real python data types):
             bool: will always be represented by a checkbox
             str: normally be represented by a textbox (may be influenced by style)
@@ -44,7 +46,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 this recognizes a further property "wildcard"
             "slider:" Creates a slider (for int and float) that will use two additional
                 entries, "min" and "max.
-            "combo":
+            "combo": see combosmall (but larger).
+            "option": Creates a combo box but also takes "display" as a parameter
+                that displays these strings rather than the underlying choices.
             "combosmall": Available for str, int, float will fill the combo
                 with values defined in "choices" (additional parameter)
             "binary": uses two additional settings "mask" and "bit" to
@@ -121,6 +125,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 choices.append(c)
             if choices is None:
                 return
+        for c in choices:
+            needs_dynamic_call = c.get("dynamic")
+            if needs_dynamic_call:
+                # Calls dynamic function to update this dictionary before production
+                needs_dynamic_call(c)
         if injector is not None:
             # We have additional stuff to be added, so be it
             for c in injector:
@@ -557,20 +566,29 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 display_list = list(map(str, c.get("display")))
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                try:
+                    index = choice_list.index(str(data))
+                except ValueError:
+                    # Value was not in list.
+                    index = 0
+                    if data is None:
+                        data = c.get("default")
+                    display_list.insert(0, str(data))
+                    choice_list.insert(0, str(data))
                 control = wx.ComboBox(
                     self,
                     wx.ID_ANY,
                     choices=display_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
+                control.SetSelection(index)
+
                 # Constrain the width
                 testsize = control.GetBestSize()
                 control.SetMaxSize(wx.Size(testsize[0] + 30, -1))
                 # print ("Display: %s" % display_list)
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
-                if data is not None:
-                    control.SetSelection(choice_list.index(str(data)))
 
                 def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
                     def select(event=None):

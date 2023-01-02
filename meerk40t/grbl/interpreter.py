@@ -42,8 +42,8 @@ class GRBLInterpreter(Module):
 
     def module_open(self, *args, **kwargs):
         self._attached_device = "none"
-        if hasattr(self.context, "com_port"):
-            self._attached_device = self.context.com_port.lower()
+        if hasattr(self.context, "serial_port"):
+            self._attached_device = self.context.serial_port.lower()
         send = self.context.channel(f"send-{self._attached_device}")
         send.watch(self.parser.write)
 

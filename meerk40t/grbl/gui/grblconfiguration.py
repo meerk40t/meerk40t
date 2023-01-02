@@ -28,6 +28,7 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.panels = []
+
         panel_main = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-connection"
         )

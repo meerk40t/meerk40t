@@ -5,6 +5,7 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 from time import sleep
+import serial.tools.list_ports
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -165,10 +166,18 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
-        import serial.tools.list_ports
+        def update(choice_dict):
+            """
+            Sets the choices and display of the serial_port values dynamically
+            @param choice_dict:
+            @return:
+            """
+            ports = serial.tools.list_ports.comports()
+            serial_interface = [x.device for x in ports]
+            serial_interface_display = [str(x) for x in ports]
 
-        ports = serial.tools.list_ports.comports()
-        com_ports = [x.device for x in ports]
+            choice_dict["choices"] = serial_interface
+            choice_dict["display"] = serial_interface_display
 
         choices = [
             {
@@ -180,15 +189,15 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
             },
             {
-                "attr": "com_port",
+                "attr": "serial_port",
                 "object": self,
-                "default": "com1",
+                "default": "UNCONFIGURED",
                 "type": str,
-                "style": "combo",
-                "choices": com_ports,
-                "label": _("COM Port"),
-                "tip": _("What com port does this device connect to?"),
-                "subsection": "Interface",
+                "style": "option",
+                "label": "",
+                "tip": _("What serial interface does this device connect to?"),
+                "subsection": "Serial Interface",
+                "dynamic": update,
             },
             {
                 "attr": "baud_rate",
@@ -197,7 +206,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
-                "subsection": "Interface",
+                "subsection": "Serial Interface",
             },
             {
                 "attr": "planning_buffer_size",
@@ -327,7 +336,7 @@ class GRBLDevice(Service, ViewPort):
 
                 channel("Available COM ports")
                 for x in ports:
-                    channel(x.description)
+                    channel(str(x))
 
         @self.console_command(
             "gcode",

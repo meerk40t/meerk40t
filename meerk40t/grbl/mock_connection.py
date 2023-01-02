@@ -17,7 +17,7 @@ class MockConnection:
         self.laser = None
         self.read_buffer = bytearray()
         self.just_connected = False
-        self.write_lines = 0
+        self.time_stamps = []
 
     @property
     def connected(self):
@@ -27,15 +27,14 @@ class MockConnection:
         if self.just_connected:
             self.just_connected = False
             return "grbl version fake"
-        if self.write_lines:
-            time.sleep(0.01)  # takes some time
-            self.write_lines -= 1
-            return "ok"
-        else:
-            return ""
+        if self.time_stamps:
+            if self.time_stamps[0] < (time.time() - 0.3):
+                self.time_stamps.pop(0)
+                return "ok"
+        return ""
 
     def write(self, line):
-        self.write_lines += 1
+        self.time_stamps.append(time.time())
 
     def connect(self):
         if self.laser:

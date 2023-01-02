@@ -14,12 +14,12 @@ from .serial_connection import SerialConnection
 class GrblController:
     def __init__(self, context):
         self.service = context
-        self.com_port = self.service.com_port
+        self.serial_port = self.service.serial_port
         self.baud_rate = self.service.baud_rate
 
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel(f"send-{self.com_port.lower()}", pure=True)
-        self.recv = self.service.channel(f"recv-{self.com_port.lower()}", pure=True)
+        self.send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
+        self.recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
@@ -87,14 +87,16 @@ class GrblController:
             self.channel("Could not connect.")
             return
         self.channel("Connecting to GRBL...")
+        t = time.time()
         while True:
             response = self.connection.read()
-            if response is None:
+            if not response:
+                if (time.time() - t) > 5.0:
+                    # 5 second timeout.
+                    return
                 continue
             self.channel(response)
             self.recv(response)
-            if not response:
-                time.sleep(0.1)
             if "grbl" in response.lower():
                 self.channel("GRBL Connection Established.")
                 return
@@ -157,7 +159,7 @@ class GrblController:
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
-                thread_name=f"sender-{self.com_port.lower()}",
+                thread_name=f"sender-{self.serial_port.lower()}",
                 result=self.stop,
                 daemon=True,
             )
@@ -242,7 +244,6 @@ class GrblController:
         while not response:
             response = self.connection.read()
         self.service.signal("serial;response", response)
-        self.recv(response)
         if response == "ok":
             try:
                 line = self.commands_in_device_buffer.pop(0)
@@ -251,6 +252,7 @@ class GrblController:
                 self.channel(f"Response: {response}, but this was unexpected")
                 raise ConnectionAbortedError
             self.channel(f"Response: {response}")
+            self.recv(f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}")
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
@@ -275,10 +277,10 @@ class GrblController:
 
         @return:
         """
-        line = self._realtime_queue[0]
+        with self._lock:
+            line = self._realtime_queue.pop(0)
         self.connection.write(line)
         self.send(line)
-        self._realtime_queue.pop(0)
 
     def _sending_single_line(self):
         """
@@ -286,13 +288,13 @@ class GrblController:
 
         @return:
         """
-        line = self._sending_queue[0]
+        with self._lock:
+            line = self._sending_queue.pop(0)
+            self.commands_in_device_buffer.append(line)
         self.connection.write(line)
         self.send(line)
-        self.commands_in_device_buffer.append(line)
         self.buffered_characters += len(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
-        self._sending_queue.pop(0)
         return True
 
     @property
@@ -316,14 +318,14 @@ class GrblController:
         while self._realtime_queue:
             self._sending_realtime()
 
-        while self._sending_queue and self.device_buffer_size > (
+        if self._sending_queue and self.device_buffer_size > (
             self.buffered_characters + self._length_of_next_line
         ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()
-
-        while self.commands_in_device_buffer:
-            self._recv_response()
+        else:
+            if self.commands_in_device_buffer:
+                self._recv_response()
 
     def _sending_sync(self):
         """
@@ -346,8 +348,8 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._realtime_queue:
-                # There is nothing to write.
+            if not self._sending_queue and not self._realtime_queue and not self.commands_in_device_buffer:
+                # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
                     # We wait until new data is put in the buffer.
@@ -360,7 +362,7 @@ class GrblController:
         self.service.signal("pipe;running", False)
 
     def __repr__(self):
-        return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
+        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)
