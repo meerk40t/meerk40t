@@ -90,7 +90,6 @@ class GrblController:
         while True:
             response = self.connection.read()
             if not response:
-                time.sleep(0.1)
                 continue
             self.channel(response)
             self.recv(response)
