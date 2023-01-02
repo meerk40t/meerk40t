@@ -21,9 +21,8 @@ class SerialConnection:
 
     def read(self):
         try:
-            if self.laser.in_waiting:
-                self.read_buffer += self.laser.readall()
-        except (SerialException, AttributeError, OSError):
+            self.read_buffer += self.laser.readall()
+        except (SerialException, AttributeError, OSError, TypeError):
             return None
         f = self.read_buffer.find(b"\n")
         if f == -1:
