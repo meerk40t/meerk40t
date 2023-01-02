@@ -572,12 +572,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
                 if data is not None:
-                    try:
-                        idx = choice_list.index(str(data))
-                        control.SetSelection(idx)
-                    except ValueError:
-                        # default value is not in the list, cannot set selection
-                        pass
+                    control.SetValue(str(data))
 
                 def on_combosmall_option(param, ctrl, obj, dtype, addsig, choice_list):
                     def select(event=None):
