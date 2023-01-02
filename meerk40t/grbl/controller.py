@@ -89,12 +89,10 @@ class GrblController:
         self.channel("Connecting to GRBL...")
         while True:
             response = self.connection.read()
-            if response is None:
-                continue
-            self.channel(response)
-            self.recv(response)
             if not response:
                 time.sleep(0.1)
+            self.channel(response)
+            self.recv(response)
             if "grbl" in response.lower():
                 self.channel("GRBL Connection Established.")
                 return
