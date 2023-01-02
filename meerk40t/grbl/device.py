@@ -333,7 +333,7 @@ class GRBLDevice(Service, ViewPort):
 
                 channel("Available COM ports")
                 for x in ports:
-                    channel(x.description)
+                    channel(str(x))
 
         @self.console_command(
             "gcode",
