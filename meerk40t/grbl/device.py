@@ -169,6 +169,7 @@ class GRBLDevice(Service, ViewPort):
 
         ports = serial.tools.list_ports.comports()
         com_ports = [x.device for x in ports]
+        com_desc = [x.description for x in ports]
 
         choices = [
             {
@@ -184,8 +185,9 @@ class GRBLDevice(Service, ViewPort):
                 "object": self,
                 "default": "com1",
                 "type": str,
-                "style": "combo",
+                "style": "option",
                 "choices": com_ports,
+                "display": com_desc,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
                 "subsection": "Interface",

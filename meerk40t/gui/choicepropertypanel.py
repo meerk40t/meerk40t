@@ -25,7 +25,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     The dictionary recognizes the following entries:
 
         "object": The object to which the property defined in attr belongs to
-        "attr": The name of the atttribute
+        "attr": The name of the attribute
         "default": The default value if no value has been given before
         "label": The label will be used for labelling the to be created UI-elements
         "trailer": this text will be displayed immediately after the element
@@ -44,7 +44,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 this recognizes a further property "wildcard"
             "slider:" Creates a slider (for int and float) that will use two additional
                 entries, "min" and "max.
-            "combo":
+            "combo": see combosmall (but larger).
+            "option": Creates a combo box but also takes "display" as a parameter
+                that displays these strings rather than the underlying choices.
             "combosmall": Available for str, int, float will fill the combo
                 with values defined in "choices" (additional parameter)
             "binary": uses two additional settings "mask" and "bit" to
