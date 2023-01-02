@@ -2941,7 +2941,7 @@ class MeerK40t(MWindow):
     def on_cutplan_error(self, origin, error):
         dlg = wx.MessageDialog(
             None,
-            _("Cut planning failed because: {error}".format(error=error)),
+            _("Cut planning failed because: {error}").format(error=error),
             _("Cut Planning Failed"),
             wx.OK | wx.ICON_WARNING,
         )
