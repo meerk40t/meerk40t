@@ -242,7 +242,7 @@ class GrblController:
         while not response:
             response = self.connection.read()
         self.service.signal("serial;response", response)
-        self.recv(response)
+        self.recv(f"{response} / {self.buffered_characters}")
         if response == "ok":
             try:
                 line = self.commands_in_device_buffer.pop(0)
