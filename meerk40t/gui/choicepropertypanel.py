@@ -123,6 +123,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 choices.append(c)
             if choices is None:
                 return
+        for c in choices:
+            needs_dynamic_call = c.get("dynamic")
+            if needs_dynamic_call:
+                # Calls dynamic function to update this dictionary before production
+                needs_dynamic_call(c)
         if injector is not None:
             # We have additional stuff to be added, so be it
             for c in injector:
