@@ -87,19 +87,14 @@ class GrblController:
             self.channel("Could not connect.")
             return
         self.channel("Connecting to GRBL...")
-        something_was_sent = False
         t = time.time()
         while True:
             response = self.connection.read()
             if not response:
-                if something_was_sent:
-                    # Hello was not sent, but something was, and that's done.
-                    return
-                if (time.time() - t) > 1.0:
-                    # 1 second timeout.
+                if (time.time() - t) > 5.0:
+                    # 5 second timeout.
                     return
                 continue
-            something_was_sent = True
             self.channel(response)
             self.recv(response)
             if "grbl" in response.lower():
