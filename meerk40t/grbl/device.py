@@ -6,7 +6,6 @@ Registers relevant commands and options.
 """
 from time import sleep
 import serial.tools.list_ports
-import platform
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -169,11 +168,7 @@ class GRBLDevice(Service, ViewPort):
 
         ports = serial.tools.list_ports.comports()
         serial_interface = [x.device for x in ports]
-
-        if platform.system() == "Windows":
-            serial_interface_display = [x.description for x in ports]
-        else:
-            serial_interface_display = [f"{x.description} ({x.device})" for x in ports]
+        serial_interface_display = [str(x) for x in ports]
 
         choices = [
             {
