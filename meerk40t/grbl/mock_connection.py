@@ -5,7 +5,6 @@ Mock Connection for GRBL
 The mock connection is used for debug and research purposes. And simply prints the data sent to it rather than engaging
 any hardware.
 """
-import random
 import time
 
 from serial import SerialException

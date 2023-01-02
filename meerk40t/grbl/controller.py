@@ -347,7 +347,6 @@ class GrblController:
         @return:
         """
         while self.connection.connected:
-            print(f"sending ... {self.buffered_characters} ...")
             self.service.signal("pipe;running", True)
             if not self._sending_queue and not self._realtime_queue and not self.commands_in_device_buffer:
                 # There is nothing to write, or read
