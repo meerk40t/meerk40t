@@ -187,6 +187,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                "width": 250,
             },
             {
                 "attr": "serial_port",
