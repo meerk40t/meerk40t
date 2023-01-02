@@ -67,8 +67,7 @@ class CutGroup(list, CutObject, ABC):
             if not isinstance(c, CutGroup):
                 yield c
                 continue
-            for s in c.flat():
-                yield s
+            yield from c.flat()
 
     def candidate(
         self,

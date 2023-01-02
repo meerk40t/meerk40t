@@ -29,7 +29,7 @@ class WaitOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(WaitOperation, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Wait"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["wait"] = self.wait

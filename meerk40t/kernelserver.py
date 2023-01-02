@@ -247,7 +247,7 @@ class TCPServer(Module):
                         _("Connection to {address} timed out.").format(address=address)
                     )
                     break
-                except socket.error:
+                except OSError:
                     if connection is not None:
                         connection.close()
                     break

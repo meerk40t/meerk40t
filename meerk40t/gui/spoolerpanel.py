@@ -883,7 +883,7 @@ class SpoolerPanel(wx.Panel):
         if os.path.exists(filename):
             # backward compatibility: read once, store in new format, delete...
             try:
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     self.history = json.load(f)
                 fixitems()
                 # Store in new format...

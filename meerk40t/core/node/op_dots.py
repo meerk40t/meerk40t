@@ -49,7 +49,7 @@ class DotsOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(DotsOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Dots"
         default_map["power"] = "default"
         default_map["frequency"] = "default"

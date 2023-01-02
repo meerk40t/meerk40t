@@ -11,11 +11,11 @@ class BranchOperationsNode(Node):
         self.loop_enabled = False
         self.loop_continuous = False
         self.loop_n = 1
-        super(BranchOperationsNode, self).__init__(type="branch ops", **kwargs)
+        super().__init__(type="branch ops", **kwargs)
         self._formatter = "{element_type} {loops}"
 
     def default_map(self, default_map=None):
-        default_map = super(BranchOperationsNode, self).default_map(
+        default_map = super().default_map(
             default_map=default_map
         )
         default_map["element_type"] = "Operations"

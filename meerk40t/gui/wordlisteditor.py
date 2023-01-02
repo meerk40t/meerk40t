@@ -798,7 +798,7 @@ class ImportPanel(wx.Panel):
         buffer = ""
         if os.path.exists(filename):
             try:
-                with open(filename, newline="", mode="r") as csvfile:
+                with open(filename, newline="") as csvfile:
                     buffer = csvfile.read(1024)
             except (PermissionError, OSError, FileNotFoundError):
                 pass
