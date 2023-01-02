@@ -723,9 +723,12 @@ class TestGeomstr(unittest.TestCase):
                 self.assertTrue(r[i])
             else:
                 self.assertFalse(r[i])
-        print(
-            f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x"
-        )
+        try:
+            print(
+                f"geomstr points in poly took {t2} seconds. Raytraced-numpy took {t1}. Speed-up {t1/t2}x"
+            )
+        except ZeroDivisionError:
+            pass
 
     def test_point_in_polygon_scanline_beat(self):
         """
@@ -826,9 +829,12 @@ class TestGeomstr(unittest.TestCase):
         t2 = time.time() - t
         for p1, p2 in zip(r, mask):
             assert (bool(p1), bool(p2))
-        print(
-            f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
-        )
+        try:
+            print(
+                f"geomstr points in poly took {t2} seconds. Simple Scanline {t1}. Speed-up {t1 / t2}x"
+            )
+        except ZeroDivisionError:
+            pass
 
     def test_point_in_polygon(self):
         from meerk40t.fill.patternfill import set_diamond1
