@@ -281,6 +281,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             this_subsection = c.get("subsection", "")
             this_section = c.get("section", "")
             this_page = c.get("page", "")
+            ctrl_width = c.get("width", 0)
             # Do we have a parameter to add a trailing label after the control
             trailer = c.get("trailer")
             # Is there another signal to send?
@@ -403,6 +404,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_BUTTON,
                     on_button(attr, obj, additional_signal),
                 )
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == bool:
                 # Bool type objects get a checkbox.
@@ -464,6 +467,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return click
 
                 set_file(data)
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_BUTTON,
@@ -508,6 +513,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return select
 
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_SLIDER,
@@ -556,6 +563,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return select
 
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
@@ -666,6 +675,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
                     # label_text.SetMinSize((-1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
@@ -811,6 +822,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 datastr = data
                 data = Color(datastr)
                 set_color(control, data)
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
                 color_info = wx.StaticText(self, wx.ID_ANY, label)
                 control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
@@ -819,6 +832,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_BUTTON,
                     on_button_color(attr, control, obj, additional_signal),
                 )
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
 
             elif data_type in (str, int, float):
@@ -849,6 +864,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control.SetValue(str(data))
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_generic_text(param, ctrl, obj, dtype, addsig):
@@ -892,6 +909,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if data._preferred_units in ("mm", "cm", "in", "inch"):
                             data._digits = 4
                 control.SetValue(str(data))
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_length_text(param, ctrl, obj, dtype, addsig):
@@ -931,6 +950,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     limited=True,
                 )
                 control.SetValue(str(data))
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
                 def on_angle_text(param, ctrl, obj, dtype, addsig):
@@ -1001,12 +1022,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return click
 
                 set_color(control, data)
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(
                     wx.EVT_BUTTON,
                     on_button_color(attr, control, obj, additional_signal),
                 )
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
