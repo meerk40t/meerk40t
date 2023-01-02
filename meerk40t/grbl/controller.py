@@ -244,7 +244,6 @@ class GrblController:
         while not response:
             response = self.connection.read()
         self.service.signal("serial;response", response)
-        self.recv(f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)}")
         if response == "ok":
             try:
                 line = self.commands_in_device_buffer.pop(0)
@@ -253,6 +252,7 @@ class GrblController:
                 self.channel(f"Response: {response}, but this was unexpected")
                 raise ConnectionAbortedError
             self.channel(f"Response: {response}")
+            self.recv(f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}")
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
