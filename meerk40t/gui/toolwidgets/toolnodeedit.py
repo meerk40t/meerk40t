@@ -127,9 +127,7 @@ class EditTool(ToolWidget):
         elements = self.scene.context.elements
         if event_type == "leftdown":
             self.pen = wx.Pen()
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(elements.default_stroke))
-            )
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(elements.default_strokewidth)
             xp = space_pos[0]
             yp = space_pos[1]

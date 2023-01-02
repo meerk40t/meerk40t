@@ -32,18 +32,14 @@ class PolygonTool(ToolWidget):
             if elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(elements.default_stroke))
-                )
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             gc.SetPen(self.pen)
             if elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(
-                            swizzlecolor(elements.default_fill)
-                        ),
+                        wx.Colour(swizzlecolor(elements.default_fill)),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )

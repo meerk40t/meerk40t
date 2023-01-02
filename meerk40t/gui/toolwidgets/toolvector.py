@@ -66,9 +66,7 @@ class VectorTool(ToolWidget):
             elements = self.scene.context.elements
             if self.path is None:
                 self.pen = wx.Pen()
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(elements.default_stroke))
-                )
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
                 self.pen.SetWidth(elements.default_strokewidth)
                 self.path = Path()
                 if nearest_snap is None:

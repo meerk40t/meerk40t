@@ -55,7 +55,7 @@ from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import (
     FilePropertiesPanel,
-    GroupPropertiesPanel, 
+    GroupPropertiesPanel,
 )
 from .propertypanels.imageproperty import (
     ImageModificationPanel,

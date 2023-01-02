@@ -446,7 +446,7 @@ class GRBLParser:
                         commands[g].append(c[1])
                     else:
                         commands[g].append(None)
-                return 3 # not yet supported
+                return 3  # not yet supported
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
 

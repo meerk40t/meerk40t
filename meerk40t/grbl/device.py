@@ -268,10 +268,10 @@ class GRBLDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Simulate reddot"),
                 "tip": _(
-                    "If active then you can turn on the laser at a very low power to get a visual representation " +
-                    "of the current position to help with focusing and positioning. Use with care!"
+                    "If active then you can turn on the laser at a very low power to get a visual representation "
+                    + "of the current position to help with focusing and positioning. Use with care!"
                 ),
-                "signals": "icons",   # Update ribbonbar if needed
+                "signals": "icons",  # Update ribbonbar if needed
             },
             {
                 "attr": "red_dot_level",
@@ -399,19 +399,23 @@ class GRBLDevice(Service, ViewPort):
             self.show_origin_y = self.origin_y
             self.realize()
 
-        @self.console_option("strength", "s", type=int, help="Set the dot laser strength.")
+        @self.console_option(
+            "strength", "s", type=int, help="Set the dot laser strength."
+        )
         @self.console_argument("off", type=str)
         @self.console_command(
             "red",
             help=_("Turns redlight on/off"),
         )
-        def red_dot_on(command, channel, _, off=None, strength=None, remainder=None, **kwgs):
+        def red_dot_on(
+            command, channel, _, off=None, strength=None, remainder=None, **kwgs
+        ):
             if not self.use_red_dot:
-                channel ("Red Dot feature is not enabled, see config")
+                channel("Red Dot feature is not enabled, see config")
                 # self.redlight_preferred = False
                 return
             if not self.spooler.is_idle:
-                channel ("Won't interfere with a running job, abort...")
+                channel("Won't interfere with a running job, abort...")
                 return
             if strength is not None:
                 if strength >= 0 and strength <= 100:
@@ -428,7 +432,9 @@ class GRBLDevice(Service, ViewPort):
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
                 self.driver._clean()
-                self.driver.laser_on(power=int(self.red_dot_level / 100 * 1000), speed=1000)
+                self.driver.laser_on(
+                    power=int(self.red_dot_level / 100 * 1000), speed=1000
+                )
                 # By default any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
                 self.driver.move_mode = 1
@@ -471,8 +477,8 @@ class GRBLDevice(Service, ViewPort):
                 yield "laser_off"
 
             if self.spooler.is_idle:
-                self.driver.laser_on(power = 1000, speed=1000)
-                sleep(time/1000)
+                self.driver.laser_on(power=1000, speed=1000)
+                sleep(time / 1000)
                 self.driver.laser_off()
                 label = _("Pulse laser for {time}ms").format(time=time)
                 channel(label)

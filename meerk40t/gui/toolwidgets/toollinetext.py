@@ -59,11 +59,7 @@ class LineTextTool(ToolWidget):
                 if elements.default_stroke is None:
                     self.pen.SetColour(wx.BLUE)
                 else:
-                    self.pen.SetColour(
-                        wx.Colour(
-                            swizzlecolor(elements.default_stroke)
-                        )
-                    )
+                    self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             else:
                 self.color = self.node.stroke
                 offsetx = self.node.bounds[2] - self.node.bounds[0]

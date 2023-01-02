@@ -28,9 +28,7 @@ class RibbonTool(ToolWidget):
         if elements.default_stroke is None:
             self.pen.SetColour(wx.BLUE)
         else:
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(elements.default_stroke))
-            )
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
         gc.SetPen(self.pen)
         gc.SetBrush(wx.RED_BRUSH)
         gc.DrawEllipse(self.track_object[0], self.track_object[1], 5000, 5000)

@@ -44,9 +44,7 @@ class DrawTool(ToolWidget):
         if event_type == "leftdown":
             self.pen = wx.Pen()
             elements = self.scene.context.elements
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(elements.default_stroke))
-            )
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(elements.default_strokewidth)
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME

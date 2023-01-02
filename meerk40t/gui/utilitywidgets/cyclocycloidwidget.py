@@ -114,7 +114,10 @@ class CyclocycloidWidget(Widget):
         """
         try:
             elements = self.scene.context.elements
-            t = Path(stroke=elements.default_stroke, stroke_width=elements.default_strokewidth)
+            t = Path(
+                stroke=elements.default_stroke,
+                stroke_width=elements.default_strokewidth,
+            )
             t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
             for m in self.series:
                 t.line((m[0] + self.x, m[1] + self.y))
