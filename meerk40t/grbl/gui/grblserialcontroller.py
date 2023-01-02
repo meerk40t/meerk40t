@@ -80,6 +80,10 @@ class SerialControllerPanel(wx.Panel):
             if entry[3] is not None:
                 btn.SetBitmap(entry[3].GetBitmap(size=25, use_theme=False))
             sizer_2.Add(btn, 1, wx.EXPAND, 0)
+        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
+        self.btn_clear.SetToolTip(_("Clear log window"))
+        self.btn_clear.Bind(wx.EVT_BUTTON, self.on_clear_log)
+        sizer_2.Add(self.btn_clear, 0, wx.EXPAND), 0
         sizer_1.Add(sizer_2, 0, wx.EXPAND, 0)
 
         self.gcode_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
@@ -98,6 +102,9 @@ class SerialControllerPanel(wx.Panel):
         self._buffer = ""
         self._buffer_lock = threading.Lock()
         # end wxGlade
+
+    def on_clear_log(self, event):
+        self.data_exchange.SetValue("")
 
     def on_button_start_connection(
         self, event
