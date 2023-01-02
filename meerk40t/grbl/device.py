@@ -5,6 +5,8 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 from time import sleep
+import serial.tools.list_ports
+import platform
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -165,11 +167,13 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
-        import serial.tools.list_ports
-
         ports = serial.tools.list_ports.comports()
-        com_ports = [x.device for x in ports]
-        com_desc = [x.description for x in ports]
+        serial_interface = [x.device for x in ports]
+
+        if platform.system() == "Windows":
+            serial_interface_display = [x.description for x in ports]
+        else:
+            serial_interface_display = [f"{x.description} ({x.device})" for x in ports]
 
         choices = [
             {
@@ -186,10 +190,10 @@ class GRBLDevice(Service, ViewPort):
                 "default": "com1",
                 "type": str,
                 "style": "option",
-                "choices": com_ports,
-                "display": com_desc,
-                "label": _("COM Port"),
-                "tip": _("What com port does this device connect to?"),
+                "choices": serial_interface,
+                "display": serial_interface_display,
+                "label": _("Serial Interface"),
+                "tip": _("What serial interface does this device connect to?"),
                 "subsection": "Interface",
             },
             {
