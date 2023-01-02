@@ -96,10 +96,10 @@ class Point:
         return abs(self.x - __o.x) < tolerance and abs(self.y - __o.y) < tolerance
 
     def __repr__(self) -> str:
-        return "{},{}".format(self.x, self.y)
+        return f"{self.x},{self.y}"
 
     def __str__(self) -> str:
-        return "{},{}".format(self.x, self.y)
+        return f"{self.x},{self.y}"
 
 
 class Fill:
@@ -108,10 +108,10 @@ class Fill:
         self.above = above
 
     def __repr__(self) -> str:
-        return "{},{}".format(self.above, self.below)
+        return f"{self.above},{self.below}"
 
     def __str__(self) -> str:
-        return "{},{}".format(self.above, self.below)
+        return f"{self.above},{self.below}"
 
 
 class Segment:
@@ -124,10 +124,10 @@ class Segment:
         self.otherfill = otherfill
 
     def __repr__(self) -> str:
-        return "S: {}, E: {}".format(self.start, self.end)
+        return f"S: {self.start}, E: {self.end}"
 
     def __str__(self) -> str:
-        return "S: {}, E: {}".format(self.start, self.end)
+        return f"S: {self.start}, E: {self.end}"
 
 
 class PolySegments:
