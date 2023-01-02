@@ -468,8 +468,8 @@ class Elemental(Service):
 
     @property
     def default_strokewidth(self):
-        if self._default_stroke is not None:
-            return self._default_stroke
+        if self._default_strokewidth is not None:
+            return self._default_strokewidth
         return 1000.0
 
     @default_strokewidth.setter
