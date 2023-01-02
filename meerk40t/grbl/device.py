@@ -4,7 +4,7 @@ GRBL Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
-
+from time import sleep
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -23,6 +23,7 @@ class GRBLDevice(Service, ViewPort):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
+        # self.redlight_preferred = False
 
         self.setting(str, "label", path)
         _ = self._
@@ -260,6 +261,33 @@ class GRBLDevice(Service, ViewPort):
                     "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
                 ),
             },
+            {
+                "attr": "use_red_dot",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Simulate reddot"),
+                "tip": _(
+                    "If active then you can turn on the laser at a very low power to get a visual representation " +
+                    "of the current position to help with focusing and positioning. Use with care!"
+                ),
+                "signals": "icons",   # Update ribbonbar if needed
+            },
+            {
+                "attr": "red_dot_level",
+                "object": self,
+                "default": 3,
+                "type": int,
+                "style": "slider",
+                "min": 0,
+                "max": 50,
+                "label": _("Reddot Laser strength"),
+                "trailer": "%",
+                "tip": _(
+                    "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
+                ),
+                "conditional": (self, "use_red_dot"),
+            },
         ]
         self.register_choices("grbl-global", choices)
 
@@ -370,6 +398,87 @@ class GRBLDevice(Service, ViewPort):
             self.origin_y = 1.0 if self.home_bottom else 0.0
             self.show_origin_y = self.origin_y
             self.realize()
+
+        @self.console_option("strength", "s", type=int, help="Set the dot laser strength.")
+        @self.console_argument("off", type=str)
+        @self.console_command(
+            "red",
+            help=_("Turns redlight on/off"),
+        )
+        def red_dot_on(command, channel, _, off=None, strength=None, remainder=None, **kwgs):
+            if not self.use_red_dot:
+                channel ("Red Dot feature is not enabled, see config")
+                # self.redlight_preferred = False
+                return
+            if not self.spooler.is_idle:
+                channel ("Won't interfere with a running job, abort...")
+                return
+            if strength is not None:
+                if strength >= 0 and strength <= 100:
+                    self.red_dot_level = strength
+                    channel(f"Laser strength for red dot is now: {self.red_dot_level}%")
+            if off == "off":
+                self.driver.laser_off()
+                # self.driver.grbl("G0")
+                self.driver.move_mode = 0
+                # self.redlight_preferred = False
+                channel("Turning off redlight.")
+                self.signal("grbl_red_dot", True)
+            else:
+                # self.redlight_preferred = True
+                # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
+                self.driver._clean()
+                self.driver.laser_on(power=int(self.red_dot_level / 100 * 1000), speed=1000)
+                # By default any move is a G0 move which will not activate the laser,
+                # so we need to switch to G1 mode:
+                self.driver.move_mode = 1
+                # An arbitrary move to turn the laser really on!
+                # self.driver.grbl("G1")
+                channel("Turning on redlight.")
+                self.signal("grbl_red_dot", False)
+
+        @self.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help=_("override one second laser fire pulse duration"),
+        )
+        @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
+        @self.console_command(
+            "pulse",
+            help=_("pulse <time>: Pulse the laser in place."),
+        )
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+            if time is None:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            if time > 1000.0:
+                channel(
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
+                )
+                try:
+                    if not idonotlovemyhouse:
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield "wait_finish"
+                yield "laser_on"
+                yield "wait", time
+                yield "laser_off"
+
+            if self.spooler.is_idle:
+                self.driver.laser_on(power = 1000, speed=1000)
+                sleep(time/1000)
+                self.driver.laser_off()
+                label = _("Pulse laser for {time}ms").format(time=time)
+                channel(label)
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")

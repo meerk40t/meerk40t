@@ -159,16 +159,27 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r")
+        self.grbl("M5\r")
 
-    def laser_on(self, *values):
+    def laser_on(self, power=None, speed=None, *values):
         """
         Turn laser on in place.
 
         @param values:
         @return:
         """
-        self.grbl("M5\r")
+        spower = ""
+        sspeed = ""
+        if power is not None:
+            spower = f" S{power:.1f}"
+            # We already established power, so no need for power_dirty
+            self.power = power
+            self.power_dirty = False
+        if speed is not None:
+            sspeed = f"G1 F{speed}\r"
+            self.speed = speed
+            self.speed_dirty = False
+        self.grbl(f"M3{spower}\r{sspeed}")
 
     def plot(self, plot):
         """
