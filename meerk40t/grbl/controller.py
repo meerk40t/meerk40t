@@ -345,8 +345,8 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._realtime_queue:
-                # There is nothing to write.
+            if not self._sending_queue and not self._realtime_queue and not self.commands_in_device_buffer:
+                # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
                     # We wait until new data is put in the buffer.
