@@ -127,6 +127,7 @@ class GrblController:
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
+            print("notify")
             self._lock.notify()
 
     def realtime(self, data):
@@ -147,6 +148,7 @@ class GrblController:
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
+            print("notify")
             self._lock.notify()
 
     def start(self):
@@ -352,6 +354,7 @@ class GrblController:
                 # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
+                    print("wait")
                     # We wait until new data is put in the buffer.
                     self._lock.wait()
                 self.service.signal("pipe;running", True)

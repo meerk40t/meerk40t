@@ -5,6 +5,7 @@ Mock Connection for GRBL
 The mock connection is used for debug and research purposes. And simply prints the data sent to it rather than engaging
 any hardware.
 """
+import random
 import time
 
 from serial import SerialException
@@ -29,6 +30,8 @@ class MockConnection:
             return "grbl version fake"
         if self.write_lines:
             time.sleep(0.01)  # takes some time
+            if random.randint(0,5) == 0:
+                return ""  # Didn't respond in tine.
             self.write_lines -= 1
             return "ok"
         else:
