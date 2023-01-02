@@ -475,7 +475,7 @@ class Elemental(Service):
     @default_stroke.setter
     def default_stroke(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_stroke = color
 
     @property
@@ -485,7 +485,7 @@ class Elemental(Service):
     @default_fill.setter
     def default_fill(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_fill = color
 
     @property
