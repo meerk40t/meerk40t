@@ -322,14 +322,14 @@ class GrblController:
         while self._realtime_queue:
             self._sending_realtime()
 
-        while self._sending_queue and self.device_buffer_size > (
+        if self._sending_queue and self.device_buffer_size > (
             self.buffered_characters + self._length_of_next_line
         ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()
-
-        while self.commands_in_device_buffer:
-            self._recv_response()
+        else:
+            if self.commands_in_device_buffer:
+                self._recv_response()
 
     def _sending_sync(self):
         """
