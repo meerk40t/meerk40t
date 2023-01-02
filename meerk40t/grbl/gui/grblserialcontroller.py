@@ -54,7 +54,7 @@ class SerialControllerPanel(wx.Panel):
         self.gcode_commands = [
             ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
             ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
-            ("$#", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
+            ("$$", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
             ("$I", _("Info"), _("Show Build-Info"), None),
             ("?", _("Status"), _("Query status"), None),
         ]
