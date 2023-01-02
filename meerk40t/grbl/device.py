@@ -4,7 +4,7 @@ GRBL Device
 Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
-
+from time import sleep
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -410,6 +410,9 @@ class GRBLDevice(Service, ViewPort):
                 channel ("Red Dot feature is not enabled, see config")
                 # self.redlight_preferred = False
                 return
+            if not self.spooler.is_idle:
+                channel ("Won't interfere with a running job, abort...")
+                return
             if strength is not None:
                 if strength >= 0 and strength <= 100:
                     self.red_dot_level = strength
@@ -433,6 +436,49 @@ class GRBLDevice(Service, ViewPort):
                 # self.driver.grbl("G1")
                 channel("Turning on redlight.")
                 self.signal("grbl_red_dot", False)
+
+        @self.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help=_("override one second laser fire pulse duration"),
+        )
+        @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
+        @self.console_command(
+            "pulse",
+            help=_("pulse <time>: Pulse the laser in place."),
+        )
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+            if time is None:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            if time > 1000.0:
+                channel(
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
+                )
+                try:
+                    if not idonotlovemyhouse:
+                        return
+                except IndexError:
+                    return
+
+            def timed_fire():
+                yield "wait_finish"
+                yield "laser_on"
+                yield "wait", time
+                yield "laser_off"
+
+            if self.spooler.is_idle:
+                self.driver.laser_on(power = 1000, speed=1000)
+                sleep(time/1000)
+                self.driver.laser_off()
+                label = _("Pulse laser for {time}ms").format(time=time)
+                channel(label)
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
 
         @self.console_argument("filename", type=str)
         @self.console_command("save_job", help=_("save job export"), input_type="plan")
