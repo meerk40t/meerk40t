@@ -13,6 +13,7 @@ _ = wx.GetTranslation
 
 DOLLAR_INFO = re.compile(r"\$([0-9]+)=(.*)")
 
+
 class GRBLConfiguration(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(345, 415, *args, **kwds)
@@ -49,7 +50,10 @@ class GRBLConfiguration(MWindow):
         ]
 
         panel_main = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="grbl-connection",
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices="grbl-connection",
             injector=inject_choices,
         )
         panel_global = ChoicePropertyPanel(
@@ -131,16 +135,20 @@ class GRBLConfiguration(MWindow):
                         if index >= 0 and value is not None:
                             self.context.controller.grbl_settings[index] = value
                         if index == 21:
-                            flag = bool(int(value)==1)
+                            flag = bool(int(value) == 1)
                             self.context.has_endstops = flag
                             self.context.signal("has_endstops", flag, self.context)
                         elif index == 130:
                             self.context.bedwidth = f"{value}mm"
-                            self.context.signal("bedwidth", self.context.bedwidth, self.context)
+                            self.context.signal(
+                                "bedwidth", self.context.bedwidth, self.context
+                            )
                             changes = True
                         elif index == 131:
                             self.context.bedheight = f"{value}mm"
-                            self.context.signal("bedheight", self.context.bedheight, self.context)
+                            self.context.signal(
+                                "bedheight", self.context.bedheight, self.context
+                            )
                             changes = True
                     if changes:
                         self.context("viewport_update\n")
