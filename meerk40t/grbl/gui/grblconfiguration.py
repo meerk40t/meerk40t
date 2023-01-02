@@ -28,15 +28,9 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.panels = []
-        grbl_connection = self.context.lookup("choices/grbl-connection")
-
-        import serial.tools.list_ports
-        ports = serial.tools.list_ports.comports()
-        grbl_connection[1]["choices"] = [x.device for x in ports]
-        grbl_connection[1]["display"] = [str(x) for x in ports]
 
         panel_main = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=grbl_connection
+            self, wx.ID_ANY, context=self.context, choices="grbl-connection"
         )
         panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-global"

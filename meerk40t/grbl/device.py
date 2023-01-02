@@ -166,9 +166,18 @@ class GRBLDevice(Service, ViewPort):
         self.settings = dict()
         self.state = 0
 
-        ports = serial.tools.list_ports.comports()
-        serial_interface = [x.device for x in ports]
-        serial_interface_display = [str(x) for x in ports]
+        def update(choice_dict):
+            """
+            Sets the choices and display of the com_port values dynamically
+            @param choice_dict:
+            @return:
+            """
+            ports = serial.tools.list_ports.comports()
+            serial_interface = [x.device for x in ports]
+            serial_interface_display = [str(x) for x in ports]
+
+            choice_dict["choices"] = serial_interface
+            choice_dict["display"] = serial_interface_display
 
         choices = [
             {
@@ -185,11 +194,10 @@ class GRBLDevice(Service, ViewPort):
                 "default": "com1",
                 "type": str,
                 "style": "option",
-                "choices": serial_interface,
-                "display": serial_interface_display,
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
                 "subsection": "Serial Interface",
+                "dynamic": update,
             },
             {
                 "attr": "baud_rate",
