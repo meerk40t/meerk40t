@@ -125,9 +125,9 @@ class EllipseTool(ToolWidget):
                     node = elements.elem_branch.add(
                         shape=ellipse,
                         type="elem ellipse",
-                        stroke_width=1000.0,
-                        stroke=self.scene.context.elements.default_stroke,
-                        fill=self.scene.context.elements.default_fill,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
                     )
                     if elements.classify_new:
                         elements.classify([node])

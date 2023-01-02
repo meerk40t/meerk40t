@@ -113,11 +113,11 @@ class CyclocycloidWidget(Widget):
         @return:
         """
         try:
-            t = Path(stroke="blue", stroke_width=1000)
+            elements = self.scene.context.elements
+            t = Path(stroke=elements.default_stroke, stroke_width=elements.default_strokewidth)
             t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
             for m in self.series:
                 t.line((m[0] + self.x, m[1] + self.y))
-            elements = self.scene.context.elements
             node = elements.elem_branch.add(path=t, type="elem path")
             elements.classify([node])
             self.parent.remove_widget(self)

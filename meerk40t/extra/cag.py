@@ -35,8 +35,8 @@ def plugin(kernel, lifecycle):
             elements = context.elements
             solution_path = Path(
                 stroke=elements.default_stroke,
+                stroke_width=elements.default_strokewidth,
                 fill=elements.default_fill,
-                stroke_width=1000,
             )
 
             # reorder elements
@@ -97,7 +97,7 @@ def plugin(kernel, lifecycle):
                     try:
                         stroke_width = node.stroke_width if node is not None else None
                     except AttributeError:
-                        stroke_width = 1000
+                        stroke_width = elements.default_strokewidth
                     new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",

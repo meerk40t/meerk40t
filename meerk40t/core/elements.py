@@ -444,6 +444,7 @@ class Elemental(Service):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
         self._default_stroke = None
+        self._default_strokewidth = None
         self._default_fill = None
         self._first_emphasized = None
         self._align_mode = "default"
@@ -466,6 +467,18 @@ class Elemental(Service):
         return result
 
     @property
+    def default_strokewidth(self):
+        if self._default_strokewidth is not None:
+            return self._default_strokewidth
+        return 1000.0
+
+    @default_strokewidth.setter
+    def default_strokewidth(self, width):
+        if isinstance(width, str):
+            width = float(Length(width))
+        self._default_strokewidth = width
+
+    @property
     def default_stroke(self):
         # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
         if self._default_stroke is not None:
@@ -475,7 +488,7 @@ class Elemental(Service):
     @default_stroke.setter
     def default_stroke(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_stroke = color
 
     @property
@@ -485,7 +498,7 @@ class Elemental(Service):
     @default_fill.setter
     def default_fill(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_fill = color
 
     @property

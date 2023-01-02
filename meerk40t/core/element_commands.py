@@ -3028,6 +3028,7 @@ def init_commands(kernel):
             data = list()
         node = self.elem_branch.add(shape=poly_path, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3718,6 +3719,7 @@ def init_commands(kernel):
             shape=circ,
             type="elem ellipse",
             stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
             fill=self.default_fill,
         )
         self.set_emphasis([node])
@@ -3744,6 +3746,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=circ, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3777,6 +3780,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=ellip, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3839,6 +3843,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=rect, type="elem rect")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3868,6 +3873,7 @@ def init_commands(kernel):
         simple_line = SimpleLine(x0, y0, x1, y1)
         node = self.elem_branch.add(shape=simple_line, type="elem line")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -3899,6 +3905,7 @@ def init_commands(kernel):
         )
         node.font_size = size
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4014,6 +4021,7 @@ def init_commands(kernel):
         node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         node.focus()
@@ -4044,6 +4052,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4192,6 +4201,7 @@ def init_commands(kernel):
 
         node = self.elem_branch.add(path=path, type="elem path")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -6507,6 +6517,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
