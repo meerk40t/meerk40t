@@ -23,7 +23,7 @@ class SerialConnection:
         try:
             self.read_buffer += self.laser.readall()
         except (SerialException, AttributeError, OSError, TypeError):
-            return None
+            pass
         f = self.read_buffer.find(b"\n")
         if f == -1:
             return None
