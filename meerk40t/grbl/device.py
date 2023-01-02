@@ -192,9 +192,9 @@ class GRBLDevice(Service, ViewPort):
                 "style": "option",
                 "choices": serial_interface,
                 "display": serial_interface_display,
-                "label": _("Serial Interface"),
+                "label": "",
                 "tip": _("What serial interface does this device connect to?"),
-                "subsection": "Interface",
+                "subsection": "Serial Interface",
             },
             {
                 "attr": "baud_rate",
@@ -203,7 +203,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
-                "subsection": "Interface",
+                "subsection": "Serial Interface",
             },
             {
                 "attr": "planning_buffer_size",
