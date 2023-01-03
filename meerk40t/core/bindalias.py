@@ -144,7 +144,8 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+i": ("element* select^",),
     "ctrl+d": ("element copy",),
-    "ctrl+g": ("planz clear copy preprocess validate blob preopt optimize spool",),
+    "ctrl+g": ("",
+               "planz clear copy preprocess validate blob preopt optimize spool",),
     "ctrl+o": (
         "",
         "outline",
