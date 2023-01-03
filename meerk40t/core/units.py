@@ -160,8 +160,8 @@ class ViewPort:
         """
         unit_x = Length(x, relative_length=self._width, unitless=unitless).units
         unit_y = Length(y, relative_length=self._height, unitless=unitless).units
-        if self.swap_xy:
-            return unit_y, unit_x
+        # if self.swap_xy:
+        #     return unit_y, unit_x
         return unit_x, unit_y
 
     def physical_to_show_position(self, x, y, unitless=1):
