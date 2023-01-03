@@ -324,6 +324,8 @@ class BalorDriver:
         """
         old_current = self.service.current
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
+        if self.service.swap_xy:
+            self.native_x, self.native_y = self.native_y, self.native_x
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
         if self.native_x < 0:
@@ -350,6 +352,8 @@ class BalorDriver:
         """
         old_current = self.service.current
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
+        if self.service.swap_xy:
+            unit_dx, unit_dy = unit_dy, unit_dx
         self.native_x += unit_dx
         self.native_y += unit_dy
 
