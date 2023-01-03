@@ -253,7 +253,7 @@ class Settings:
         """
         try:
             for section_name in list(self._config_dict):
-                if section_name.startswith(section):
+                if section_name == section:
                     del self._config_dict[section_name]
         except KeyError:
             pass
