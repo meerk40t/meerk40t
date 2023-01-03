@@ -848,11 +848,13 @@ class TemplatePanel(wx.Panel):
                     if shapetype == "image":
                         imgsx = int(size_x / UNITS_PER_PIXEL)
                         imgsy = int(size_y / UNITS_PER_PIXEL)
+                        # print (f"Image to create: {imgsx} x {imgsy} pixel, {size_x} x {size_y}")
                         image = PIL.Image.new(
                             "RGBA",
                             size=(imgsx, imgsy),
                             color=(set_color.red, set_color.green, set_color.blue, 255),
                         )
+
                         elemnode = ImageNode(image=image)
                         elemnode.matrix.post_translate(xx, yy)
                         elemnode.matrix.post_scale(
@@ -1012,20 +1014,22 @@ class TemplatePanel(wx.Panel):
             gap_2 = 5
 
         message = _("This will delete all existing operations and elements") + "\n"
-        message += _("and replace them by the test-pattern! Are you really sure?")
+        message += _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        message += _("(Yes=Empty and Create, No=Keep existing)")
         caption = _("Create Test-Pattern")
         dlg = wx.MessageDialog(
             self,
             message,
             caption,
-            wx.YES_NO | wx.ICON_WARNING,
+            wx.YES_NO | wx.CANCEL | wx.ICON_WARNING,
         )
         result = dlg.ShowModal()
         dlg.Destroy()
-        if result == wx.ID_NO:
+        if result == wx.ID_YES:
+            clear_all()
+        elif result == wx.ID_CANCEL:
             return
 
-        clear_all()
         create_operations()
 
         self.context.signal("rebuild_tree")
