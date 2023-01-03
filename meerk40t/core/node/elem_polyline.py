@@ -31,7 +31,7 @@ class PolylineNode(Node, Stroked):
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
-        super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
+        super().__init__(type="elem polyline", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, (Polyline, Polygon))
         if self.matrix is None:
@@ -81,7 +81,7 @@ class PolylineNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(PolylineNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Polyline"
         default_map.update(self.__dict__)
         return default_map

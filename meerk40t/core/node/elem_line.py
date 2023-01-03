@@ -29,7 +29,7 @@ class LineNode(Node, Stroked):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        super(LineNode, self).__init__(type="elem line", **kwargs)
+        super().__init__(type="elem line", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, SimpleLine)
         if self.matrix is None:
@@ -79,7 +79,7 @@ class LineNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(LineNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Line"
         default_map.update(self.__dict__)
         return default_map

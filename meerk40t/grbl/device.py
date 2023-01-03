@@ -509,7 +509,7 @@ class GRBLDevice(Service, ViewPort):
                     driver.grbl = f.write
                     job.execute()
 
-            except (PermissionError, IOError):
+            except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(

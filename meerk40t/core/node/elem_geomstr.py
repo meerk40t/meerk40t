@@ -48,7 +48,7 @@ class GeomstrNode(Node, Parameters, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(GeomstrNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Geomstr"
         default_map.update(self.__dict__)
         return default_map

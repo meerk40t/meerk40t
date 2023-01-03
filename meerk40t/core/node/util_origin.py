@@ -28,7 +28,7 @@ class SetOriginOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(SetOriginOperation, self).default_map(
+        default_map = super().default_map(
             default_map=default_map
         )
         default_map["element_type"] = "SetOrigin"

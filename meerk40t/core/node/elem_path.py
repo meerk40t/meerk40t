@@ -29,7 +29,7 @@ class PathNode(Node, Stroked):
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        super(PathNode, self).__init__(type="elem path", **kwargs)
+        super().__init__(type="elem path", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.path, Path)
 
@@ -76,7 +76,7 @@ class PathNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(PathNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Path"
         default_map.update(self.__dict__)
         return default_map

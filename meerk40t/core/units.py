@@ -643,7 +643,7 @@ ACCEPTED_UNITS = (
 )
 
 
-class Length(object):
+class Length:
     """
     Amounts are converted to UNITS.
     Initial unit is saved as preferred units.
@@ -990,7 +990,7 @@ class Length(object):
         return 100.00 * self._amount / Length(relative_length).units
 
 
-class Angle(object):
+class Angle:
     """
     Angle conversion and math, stores angle as a float in radians and
     converts to other forms of angle. Failures to parse raise ValueError.

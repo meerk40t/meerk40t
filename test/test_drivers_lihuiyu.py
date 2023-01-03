@@ -74,7 +74,7 @@ class TestDriverLihuiyu(unittest.TestCase):
             kernel.console(f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
 
@@ -93,7 +93,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_rect)
 
@@ -114,7 +114,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_blank)
 
@@ -145,7 +145,7 @@ class TestDriverLihuiyu(unittest.TestCase):
                 f"element0 imageop -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
         self.assertEqual(data, egv_image)
 
@@ -178,7 +178,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console(f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
         self.assertEqual(egv_override_speed_1_rect, data)
 
@@ -206,7 +206,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console(f"element* engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
         finally:
             kernel.shutdown()
-        with open(file1, "r") as f:
+        with open(file1) as f:
             data = f.read()
             print(data)
         self.assertEqual(egv_override_speed_2_rect, data)
@@ -236,7 +236,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 4in 2.1in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -251,7 +251,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 2.1in 4in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1} clear\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -266,7 +266,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 2.1in 4in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1} clear\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -281,7 +281,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 4in 2.1in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -297,7 +297,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 0in 0.1in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -313,7 +313,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 4in 0.1in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -329,7 +329,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 0in 2.1in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -345,7 +345,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 0in 2in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])
@@ -361,7 +361,7 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             kernel.console("rect 2in 0in 1in 1in\n")
             kernel.console(f"element* engrave -s 15 plan preprocess validate blob save_job {file1}\n")
             kernel.console("plan clear\n")
-            with open(file1, "r") as f:
+            with open(file1) as f:
                 data = f.readlines()
             self.assertEqual("ICV1551941002013022CNBRS1EMzzzzzzz215FNSE-\n", data[-4])
             self.assertEqual(rect_1in_at_15, data[-3])

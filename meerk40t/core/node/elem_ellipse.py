@@ -29,7 +29,7 @@ class EllipseNode(Node, Stroked):
         self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
-        super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
+        super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, (Ellipse, Circle))
 
@@ -80,7 +80,7 @@ class EllipseNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(EllipseNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Ellipse"
         default_map.update(self.__dict__)
         return default_map

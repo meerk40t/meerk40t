@@ -28,7 +28,7 @@ class RectNode(Node, Stroked):
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
-        super(RectNode, self).__init__(type="elem rect", **kwargs)
+        super().__init__(type="elem rect", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, Rect)
 
@@ -79,7 +79,7 @@ class RectNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(RectNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Rect"
         default_map.update(self.__dict__)
         return default_map

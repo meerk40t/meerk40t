@@ -196,7 +196,7 @@ class InformationPanel(wx.Panel):
                 ref_prefix = "ref: refs/heads/"
                 ref = ""
                 try:
-                    with open(head_file, "r") as f:
+                    with open(head_file) as f:
                         ref = f.readline()
                 except Exception:
                     pass

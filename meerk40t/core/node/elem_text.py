@@ -82,7 +82,7 @@ class TextNode(Node, Stroked):
             del kwargs["font"]
         else:
             font = None
-        super(TextNode, self).__init__(type="elem text", **kwargs)
+        super().__init__(type="elem text", **kwargs)
         self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
@@ -150,7 +150,7 @@ class TextNode(Node, Stroked):
         self.remove_node()
 
     def default_map(self, default_map=None):
-        default_map = super(TextNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Text"
         default_map.update(self.__dict__)
         return default_map

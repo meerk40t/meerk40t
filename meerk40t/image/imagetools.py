@@ -1786,7 +1786,7 @@ class ImageLoader:
             return False
         try:
             image = PILImage.open(pathname)
-        except IOError:
+        except OSError:
             return False
         except subprocess.CalledProcessError as e:
             raise BadFileError(

@@ -28,7 +28,7 @@ class GotoOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(GotoOperation, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         origin = self.x == 0 and self.y == 0
         default_map["element_type"] = "Origin" if origin else "Goto"
         default_map["enabled"] = "(Disabled) " if not self.output else ""

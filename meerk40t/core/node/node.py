@@ -809,8 +809,7 @@ class Node:
         @return:
         """
         yield node
-        for c in self._flatten_children(node):
-            yield c
+        yield from self._flatten_children(node)
 
     def _flatten_children(self, node):
         """
@@ -821,8 +820,7 @@ class Node:
         """
         for child in node.children:
             yield child
-            for c in self._flatten_children(child):
-                yield c
+            yield from self._flatten_children(child)
 
     def flat(
         self,

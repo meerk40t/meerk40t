@@ -65,7 +65,7 @@ class CutOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(CutOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Cut"
         default_map["speed"] = "default"
         default_map["power"] = "default"
