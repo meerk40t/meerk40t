@@ -13,7 +13,7 @@ from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -1576,7 +1576,10 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
-    def realize(self):
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
         self.width = self.lens_size
         self.height = self.lens_size
         super().realize()
