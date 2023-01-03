@@ -14,6 +14,7 @@ def plugin(service, lifecycle):
             icons8_light_off_50,
             icons8_light_on_50,
             icons8_quick_mode_on_50,
+            icons8_center_of_gravity_50,
         )
 
         from .balorconfig import BalorConfiguration
@@ -116,6 +117,16 @@ def plugin(service, lifecycle):
                 },
             },
         )
+        service.register(
+            "button/control/Center",
+            {
+                "label": _("Center"),
+                "icon": icons8_center_of_gravity_50,
+                "tip": _("Center selection on laserbed"),
+                "action": lambda v: service("align bed group xy center center\n"),
+            },
+        )
+
         service.add_service_delegate(BalorGui(service))
 
 
