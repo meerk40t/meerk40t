@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from math import isinf
+from math import isinf, isnan
 
 import wx
 import wx.lib.mixins.listctrl as listmix
@@ -691,6 +691,9 @@ class SpoolerPanel(wx.Panel):
     def timestr(t, oneday):
         if t is None:
             return ""
+        if isinf(t) or isnan(t) or t < 0:
+            return "∞"
+
         if oneday:
             localt = time.localtime(t)
             hours = localt[3]
@@ -745,6 +748,12 @@ class SpoolerPanel(wx.Panel):
 
         if newestinfo is not None:
             addit = True
+            newestinfo = list(newestinfo)
+            # Deal with infinite numbers, as they will invalidate the logging class and crash afterwards...
+            if isinf(newestinfo[IDX_HISTORY_ESTIMATE]):
+                newestinfo[IDX_HISTORY_ESTIMATE] = -1
+            if isinf(newestinfo[IDX_HISTORY_DURATION]):
+                newestinfo[IDX_HISTORY_ESTIMATE] = -1
             # No helper jobs....
             if (
                 len(newestinfo) > IDX_HISTORY_INFO
@@ -863,6 +872,9 @@ class SpoolerPanel(wx.Panel):
         def fixitems():
             # make sure we extend the fields for those entries
             # that were saved with a previous version
+            if isinstance(self.history, str):
+                # Flawed !! At least recover gracefully
+                self.history = []
             for item in self.history:
                 while len(item) < IDX_HISTORY_MAX_FIELDS:
                     item.append(None)
