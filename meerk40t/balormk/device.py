@@ -993,9 +993,9 @@ class BalorDevice(Service, ViewPort):
                             with open(input, "br") as f:
                                 remainder = f.read().hex()
                         else:
-                            with open(input, "r") as f:
+                            with open(input) as f:
                                 remainder = f.read()
-                    except IOError:
+                    except OSError:
                         channel("File could not be read.")
                 else:
                     channel(f"The file at {os.path.realpath(input)} does not exist.")
@@ -1074,7 +1074,7 @@ class BalorDevice(Service, ViewPort):
                             )
                         with open(output, "w") as f:
                             f.writelines(lines)
-                except IOError:
+                except OSError:
                     channel("File could not be written.")
                 return  # If we output to file, we do not output to device.
 

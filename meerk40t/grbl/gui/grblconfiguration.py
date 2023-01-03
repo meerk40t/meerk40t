@@ -1,3 +1,4 @@
+import re
 import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
@@ -6,8 +7,11 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
+
+DOLLAR_INFO = re.compile(r"\$([0-9]+)=(.*)")
 
 
 class GRBLConfiguration(MWindow):
@@ -28,9 +32,29 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.panels = []
+        self._requested_status = False
+
+        inject_choices = [
+            {
+                "attr": "aquire_properties",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Query properties"),
+                "tip": _("Connect to laser and try to establish some properties"),
+                "section": "_ZZ_Auto-Configuration",
+                "width": 250,
+                "weight": 0,
+            },
+        ]
 
         panel_main = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="grbl-connection"
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices="grbl-connection",
+            injector=inject_choices,
         )
         panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-global"
@@ -47,6 +71,7 @@ class GRBLConfiguration(MWindow):
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(newpanel)
+
         self.notebook_main.AddPage(panel_main, _("Connection"))
         self.notebook_main.AddPage(panel_dim, _("Dimensions"))
         self.notebook_main.AddPage(panel_global, _("Global Settings"))
@@ -71,3 +96,72 @@ class GRBLConfiguration(MWindow):
     @staticmethod
     def submenu():
         return ("Device-Settings", "GRBL-Configuration")
+
+    @property
+    def aquire_properties(self):
+        # Not relevant
+        return False
+
+    @aquire_properties.setter
+    def aquire_properties(self, value):
+        if not value:
+            return
+        try:
+            self.context.driver.grbl("$$\r")
+            self._requested_status = True
+        except:
+            wx.MessageBox(
+                _("Could not query laser-data!"),
+                _("Connect failed"),
+                wx.OK | wx.ICON_ERROR,
+            )
+
+    @signal_listener("grbl;response")
+    def on_serial_status(self, origin, cmd_issued, responses):
+        if cmd_issued == "$$":
+            # Right command
+            if self._requested_status:
+                # coming from myself
+                if responses is not None:
+                    changes = False
+                    for resp in responses:
+                        index = -1
+                        value = None
+                        match = DOLLAR_INFO.match(resp)
+                        if match:
+                            # $xx=yy
+                            index = int(match.group(1))
+                            value = match.group(2)
+                        if index >= 0 and value is not None:
+                            self.context.controller.grbl_settings[index] = value
+                        if index == 21:
+                            flag = bool(int(value) == 1)
+                            self.context.has_endstops = flag
+                            self.context.signal("has_endstops", flag, self.context)
+                        elif index == 130:
+                            self.context.bedwidth = f"{value}mm"
+                            self.context.signal(
+                                "bedwidth", self.context.bedwidth, self.context
+                            )
+                            changes = True
+                        elif index == 131:
+                            self.context.bedheight = f"{value}mm"
+                            self.context.signal(
+                                "bedheight", self.context.bedheight, self.context
+                            )
+                            changes = True
+                    if changes:
+                        self.context("viewport_update\n")
+                        self.context.signal("guide")
+                        self.context.signal("grid")
+                        self.context.signal("refresh_scene", "Scene")
+                self._requested_status = False
+                wx.MessageBox(
+                    _("Successfully queried laser-data!"),
+                    _("Connect succeeded"),
+                    wx.OK | wx.ICON_INFORMATION,
+                )
+
+        else:
+            # Different command
+            pass

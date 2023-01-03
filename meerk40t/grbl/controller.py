@@ -33,12 +33,15 @@ class GrblController:
         self._lock = threading.Condition()
         self._sending_queue = []
         self._realtime_queue = []
+        # buffer for feedback...
+        self._assembled_response = []
 
         self.commands_in_device_buffer = []
         self.buffered_characters = 0
         self.device_buffer_size = self.service.planning_buffer_size
         self.old_x = 0
         self.old_y = 0
+        self._buffer_fail = 0
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -181,6 +184,85 @@ class GrblController:
         self.sending_thread = None
         self.close()
 
+    def grbl_error_code(self, code):
+        long = ""
+        short = f"Error #{code}"
+        if code == 1:
+            long = "GCode Command letter was not found."
+        elif code == 2:
+            long = "GCode Command value invalid or missing."
+        elif code == 3:
+            long = "Grbl '$' not recognized or supported."
+        elif code == 4:
+            long = "Negative value for an expected positive value."
+        elif code == 5:
+            long = "Homing fail. Homing not enabled in settings."
+        elif code == 6:
+            long = "Min step pulse must be greater than 3usec."
+        elif code == 7:
+            long = "EEPROM read failed. Default values used."
+        elif code == 8:
+            long = "Grbl '$' command Only valid when Idle."
+        elif code == 9:
+            long = "GCode commands invalid in alarm or jog state."
+        elif code == 10:
+            long = "Soft limits require homing to be enabled."
+        elif code == 11:
+            long = "Max characters per line exceeded. Ignored."
+        elif code == 12:
+            long = "Grbl '$' setting exceeds the maximum step rate."
+        elif code == 13:
+            long = "Safety door opened and door state initiated."
+        elif code == 14:
+            long = "Build info or start-up line > EEPROM line length"
+        elif code == 15:
+            long = "Jog target exceeds machine travel, ignored."
+        elif code == 16:
+            long = "Jog Cmd missing '=' or has prohibited GCode."
+        elif code == 17:
+            long = "Laser mode requires PWM output."
+        elif code == 20:
+            long = "Unsupported or invalid GCode command."
+        elif code == 21:
+            long = "> 1 GCode command in a modal group in block."
+        elif code == 22:
+            long = "Feed rate has not yet been set or is undefined."
+        elif code == 23:
+            long = "GCode command requires an integer value."
+        elif code == 24:
+            long = "> 1 GCode command using axis words found."
+        elif code == 25:
+            long = "Repeated GCode word found in block."
+        elif code == 26:
+            long = "No axis words found in command block."
+        elif code == 27:
+            long = "Line number value is invalid."
+        elif code == 28:
+            long = "GCode Cmd missing a required value word."
+        elif code == 29:
+            long = "G59.x WCS are not supported."
+        elif code == 30:
+            long = "G53 only valid with G0 and G1 motion modes."
+        elif code == 31:
+            long = "Unneeded Axis words found in block."
+        elif code == 32:
+            long = "G2/G3 arcs need >= 1 in-plane axis word."
+        elif code == 33:
+            long = "Motion command target is invalid."
+        elif code == 34:
+            long = "Arc radius value is invalid."
+        elif code == 35:
+            long = "G2/G3 arcs need >= 1 in-plane offset word."
+        elif code == 36:
+            long = "Unused value words found in block."
+        elif code == 37:
+            long = "G43.1 offset not assigned to tool length axis."
+        elif code == 38:
+            long = "Tool number greater than max value."
+        else:
+            long = f"Unrecodgnised error code #{code}"
+        return short, long
+
     def grbl_alarm_message(self, code):
         if code == 1:
             short = "Hard limit"
@@ -251,34 +333,52 @@ class GrblController:
         while not response:
             response = self.connection.read()
         self.service.signal("serial;response", response)
+        # print(f"Response: '{response}'")
         if response == "ok":
             try:
-                line = self.commands_in_device_buffer.pop(0)
-                self.buffered_characters -= len(line)
+                cmd_issued = self.commands_in_device_buffer.pop(0)
+                self.buffered_characters -= len(cmd_issued)
+                if cmd_issued[-1] == "\r":
+                    cmd_issued = cmd_issued[:-1]
             except IndexError:
                 self.channel(f"Response: {response}, but this was unexpected")
+                self._assembled_response = []
                 raise ConnectionAbortedError
             self.channel(f"Response: {response}")
             self.recv(
-                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {line}"
+                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {cmd_issued}"
             )
+            self.service.signal("grbl;response", cmd_issued, self._assembled_response)
+            self._assembled_response = []
             return True
         elif response.startswith("echo:"):
             self.service.channel("console")(response[5:])
         elif response.startswith("ALARM"):
-            short, long = self.grbl_alarm_message(response)
+            try:
+                error_num = int(response[6:])
+            except ValueError:
+                error_num = -1
+            short, long = self.grbl_alarm_message(error_num)
             self.service.signal(
-                "warning", f"GRBL: #{response} {short}\n{long}", response, 4
+                "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
             )
+            self.recv(f"Alarm #{error_num} {short}\n{long}")
+            self.channel(f"Alarm #{error_num} {short}\n{long}")
+            self._assembled_response = []
         elif response.startswith("error"):
             try:
                 error_num = int(response[6:])
             except ValueError:
                 error_num = -1
-            self.service.signal("grbl;error", error_num, response)
-            self.channel(f"ERROR: {response}")
+            short, long = self.grbl_error_code(error_num)
+            self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
+            self.recv(f"ERROR #{error_num} {short}\n{long}")
+            self.channel(f"ERROR #{error_num} {short}\n{long}")
+            self._assembled_response = []
         else:
+            self.recv(f"{response}")
             self.channel(f"Data: {response}")
+            self._assembled_response.append(response)
 
     def _sending_realtime(self):
         """
@@ -286,10 +386,14 @@ class GrblController:
 
         @return:
         """
+        line = None
         with self._lock:
             line = self._realtime_queue.pop(0)
-        self.connection.write(line)
-        self.send(line)
+        if line is not None:
+            self.connection.write(line)
+            self.send(line)
+        # else:
+        #     print ("Was empty in sending_realtime")
 
     def _sending_single_line(self):
         """
@@ -299,7 +403,12 @@ class GrblController:
         """
         with self._lock:
             line = self._sending_queue.pop(0)
-            self.commands_in_device_buffer.append(line)
+            if line is not None:
+                self.commands_in_device_buffer.append(line)
+            #     print (f"Appended '{line[:10]}...', len={len(self.commands_in_device_buffer)}")
+            # else:
+            #     print ("Was empty in sending_single_line")
+
         self.connection.write(line)
         self.send(line)
         self.buffered_characters += len(line)
@@ -328,15 +437,26 @@ class GrblController:
         """
         while self._realtime_queue:
             self._sending_realtime()
-
+        # print (
+        #     f"Send Queue: {len(self._sending_queue)}\n" +
+        #     f"commands_in_device: {len(self.commands_in_device_buffer)}\n"
+        #     f"buffered={self.buffered_characters}\n" +
+        #     f"next: {self._length_of_next_line}"
+        # )
         if self._sending_queue and self.device_buffer_size > (
             self.buffered_characters + self._length_of_next_line
         ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()
+            self._buffer_fail = 0
         else:
             if self.commands_in_device_buffer:
                 self._recv_response()
+            else:
+                self._buffer_fail += 1
+                if self._buffer_fail > 10:
+                    pass
+                    # we should do something like raising an error... for tat to decide
 
     def _sending_sync(self):
         """

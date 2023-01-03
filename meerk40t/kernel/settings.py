@@ -307,4 +307,4 @@ class Settings:
         Finds all derivable paths within the config from the set path location.
         @return:
         """
-        yield from set([s.split(" ")[0] for s in self._config_dict])
+        yield from {s.split(" ")[0] for s in self._config_dict}

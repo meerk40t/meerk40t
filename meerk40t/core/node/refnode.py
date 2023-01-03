@@ -8,7 +8,7 @@ class ReferenceNode(Node):
 
     def __init__(self, **kwargs):
         self.node = None
-        super(ReferenceNode, self).__init__(type="reference", **kwargs)
+        super().__init__(type="reference", **kwargs)
         self._formatter = "*{reference}"
 
     def __repr__(self):
@@ -22,7 +22,7 @@ class ReferenceNode(Node):
         return self.node.bbox(transformed=transformed, with_stroke=with_stroke)
 
     def default_map(self, default_map=None):
-        default_map = super(ReferenceNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Reference"
         default_map["reference"] = str(self.node)
         default_map["ref_nid"] = str(self.node.id)
@@ -44,4 +44,4 @@ class ReferenceNode(Node):
 
     def notify_destroyed(self, node=None, **kwargs):
         self.node._references.remove(self)
-        super(ReferenceNode, self).notify_destroyed()
+        super().notify_destroyed()

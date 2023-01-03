@@ -166,7 +166,7 @@ class Kernel(Settings):
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
 
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
                 debug_file.write(start + "\n")

@@ -68,7 +68,7 @@ class ZinglPlotter:
             p_c1 = (p_start[0] + alpha * ePrimen1x, p_start[1] + alpha * ePrimen1y)
             p_c2 = (p_end[0] - alpha * ePrimen2x, p_end[1] - alpha * ePrimen2y)
 
-            for value in ZinglPlotter.plot_cubic_bezier(
+            yield from ZinglPlotter.plot_cubic_bezier(
                 p_start[0],
                 p_start[1],
                 p_c1[0],
@@ -77,8 +77,7 @@ class ZinglPlotter:
                 p_c2[1],
                 p_end[0],
                 p_end[1],
-            ):
-                yield value
+            )
             p_start = Point(p_end)
             current_t = next_t
 
@@ -584,10 +583,9 @@ class ZinglPlotter:
                 fy2 *= fy0
             if x0 != x3 or y0 != y3:  # /* segment t1 - t2 */
                 # plotCubicBezierSeg(x0,y0, x0+fx1,y0+fy1, x0+fx2,y0+fy2, x3,y3)
-                for plot in ZinglPlotter.plot_cubic_bezier_seg(
+                yield from ZinglPlotter.plot_cubic_bezier_seg(
                     x0, y0, x0 + fx1, y0 + fy1, x0 + fx2, y0 + fy2, x3, y3
-                ):
-                    yield plot
+                )
             x0 = x3
             y0 = y3
             fx0 = fx3

@@ -30,7 +30,7 @@ class LaserCodeNode(Node):
                 yield cmd[0]
 
     def default_map(self, default_map=None):
-        default_map = super(LaserCodeNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "LaserCode"
         default_map["command_count"] = str(len(self.commands))
         default_map["commands"] = " ".join(self._str_commands())
@@ -57,5 +57,4 @@ class LaserCodeNode(Node):
         return False
 
     def generate(self):
-        for cmd in self.commands:
-            yield cmd
+        yield from self.commands

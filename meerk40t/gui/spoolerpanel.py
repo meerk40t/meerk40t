@@ -476,9 +476,7 @@ class SpoolerPanel(wx.Panel):
             remove_mode = "remove"
         item = menu.Append(
             wx.ID_ANY,
-            "{action} {name} [{label}]".format(
-                action=action, name=str(element)[:30], label=spooler.context.label
-            ),
+            f"{action} {str(element)[:30]} [{spooler.context.label}]",
             "",
             wx.ITEM_NORMAL,
         )
@@ -885,7 +883,7 @@ class SpoolerPanel(wx.Panel):
         if os.path.exists(filename):
             # backward compatibility: read once, store in new format, delete...
             try:
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     self.history = json.load(f)
                 fixitems()
                 # Store in new format...
