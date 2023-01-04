@@ -68,16 +68,15 @@ class TrueTypeFont:
             glyph = self.glyphs[index]
             path.new_path()
             for contour in glyph:
+                contour = list(contour)
+                contour.append(contour[0])
                 segments = [
                     [
                         contour[0],
                     ],
                 ]
-                for j in range(0, len(contour) + 1):
-                    try:
-                        c = contour[j]
-                    except IndexError:
-                        c = contour[0]
+                for j in range(0, len(contour)):
+                    c = contour[j]
                     segments[-1].append(c)
                     if c[-1] & 1:
                         segments.append(
@@ -117,8 +116,7 @@ class TrueTypeFont:
                             (offset_x + segment[1][0]) * scale,
                             (offset_y + segment[1][1]) * scale,
                         )
-                    else:
-                        path.close()
+            path.close()
             offset_x += self.horizontal_metrics[index][0]
             offset_y += 0
 
@@ -400,7 +398,7 @@ class TrueTypeFont:
     def _parse_simple_glyph(self, num_contours, data):
         end_pts = struct.unpack(f">{num_contours}H", data.read(2 * num_contours))
         inst_len = struct.unpack(">H", data.read(2))[0]
-        instuctions = data.read(inst_len)
+        instruction = data.read(inst_len)
         num_points = max(end_pts) + 1
         flags = []
         while len(flags) < num_points:
@@ -413,7 +411,7 @@ class TrueTypeFont:
         y_coords = list(self._read_coords(num_points, 0x4, 0x20, flags, data))
         start = 0
         for end in end_pts:
-            yield list(zip(x_coords[start:end], y_coords[start:end], flags[start:end]))
+            yield list(zip(x_coords[start:end + 1], y_coords[start:end + 1], flags[start:end + 1]))
             start = end
 
     def _read_coords(self, num_points, bit_byte, bit_delta, flags, data):
