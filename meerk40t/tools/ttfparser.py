@@ -68,6 +68,10 @@ class TrueTypeFont:
             glyph = self.glyphs[index]
             path.new_path()
             for contour in glyph:
+                path.move(
+                    (offset_x + contour[0][0]) * scale,
+                    (offset_y + contour[0][1]) * scale,
+                )
                 contour = list(contour)
                 contour.append(contour[0])
                 segments = [
@@ -84,10 +88,6 @@ class TrueTypeFont:
                                 c,
                             ]
                         )
-                path.move(
-                    (offset_x + segments[0][0][0]) * scale,
-                    (offset_y + segments[0][0][1]) * scale,
-                )
                 for segment in segments:
                     if len(segment) == 3:
                         path.quad(
@@ -116,7 +116,7 @@ class TrueTypeFont:
                             (offset_x + segment[1][0]) * scale,
                             (offset_y + segment[1][1]) * scale,
                         )
-            path.close()
+                path.close()
             offset_x += self.horizontal_metrics[index][0]
             offset_y += 0
 
@@ -412,7 +412,7 @@ class TrueTypeFont:
         start = 0
         for end in end_pts:
             yield list(zip(x_coords[start:end + 1], y_coords[start:end + 1], flags[start:end + 1]))
-            start = end
+            start = end + 1
 
     def _read_coords(self, num_points, bit_byte, bit_delta, flags, data):
         value = 0
