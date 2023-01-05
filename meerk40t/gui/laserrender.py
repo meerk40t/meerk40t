@@ -608,7 +608,11 @@ class LaserRender:
             q = ~node._cache_matrix * matrix
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(q)))
             # Applying the matrix will scale our stroke, so we scale the stroke back down.
-            stroke_factor = 1.0 / sqrt(abs(q.determinant))
+            if q.determinant == 0:
+                # That should not be the case, but is often true for degenerate objects...
+                stroke_factor = 1.0
+            else:
+                stroke_factor = 1.0 / sqrt(abs(q.determinant))
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
         sw = node.implied_stroke_width * stroke_factor
