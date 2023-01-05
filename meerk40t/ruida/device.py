@@ -31,6 +31,8 @@ class RuidaDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "bedheight",
@@ -39,6 +41,8 @@ class RuidaDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",

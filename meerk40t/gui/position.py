@@ -40,10 +40,10 @@ class PositionPanel(wx.Panel):
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
         )
         self.text_w = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, nonzero=True,
         )
         self.text_h = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, nonzero=True,
         )
         self.text_x.SetMinSize((70, 23))
         self.text_y.SetMinSize((70, 23))

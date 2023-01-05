@@ -38,6 +38,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "bedheight",
@@ -48,6 +49,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",

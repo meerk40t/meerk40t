@@ -1026,6 +1026,7 @@ class ImagePropertyPanel(ScrolledPanel):
             style=wx.TE_PROCESS_ENTER,
             check="float",
             limited=True,
+            nonzero=True,
         )
         self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
 

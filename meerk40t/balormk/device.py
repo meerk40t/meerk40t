@@ -120,6 +120,7 @@ class BalorDevice(Service, ViewPort):
                 "section": "_00_General",
                 "priority": "20",
                 "signals": "bedsize",
+                "nonzero": True,
                 # intentionally not bed_size
             },
             {

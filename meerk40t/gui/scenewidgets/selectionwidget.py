@@ -16,6 +16,7 @@ from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
 from meerk40t.svgelements import Point
 
+NEARLY_ZERO = 1.0E-6
 
 def process_event(
     widget,
@@ -754,6 +755,8 @@ class CornerWidget(Widget):
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
+            if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+                return
 
             b = elements._emphasized_bounds
             if "n" in self.method:
@@ -950,7 +953,6 @@ class SideWidget(Widget):
         elif event == -1:
             self.scene.modif_active = True
         elif event == 0:
-            # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
             # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
@@ -992,7 +994,8 @@ class SideWidget(Widget):
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
-
+            if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+                return
             # Correct, but slow...
             b = elements._emphasized_bounds
             if b is None:
@@ -1035,7 +1038,9 @@ class SideWidget(Widget):
             elif "w" in self.method:
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
-
+            # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
+            # print (f"New width: {b[2] - b[0]:.4f}, New height: {b[3] - b[1]:.4f}")
+            # print (f"Applied: scalex={scalex:.4f}, scaley={scaley:.4f}, orgx={orgx:.4f}, orgy={orgx:.4f}")
             for node in elements.elems(emphasized=True):
                 try:
                     if node.lock:
@@ -2208,6 +2213,9 @@ class SelectionWidget(Widget):
             return
         dx = (scalex - 1) * (cc[2] - cc[0])
         dy = (scaley - 1) * (cc[3] - cc[1])
+
+        if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+            return
 
         for e in elements.flat(types=elem_nodes, emphasized=True):
             if e.lock:

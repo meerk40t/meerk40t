@@ -897,12 +897,16 @@ class ChoicePropertyPanel(ScrolledPanel):
                     )
                 else:
                     control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                nonzero = c.get("nonzero", False)
+                if nonzero is None or not isinstance(nonzero, bool):
+                    nonzero = False
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
                     style=wx.TE_PROCESS_ENTER,
                     limited=True,
                     check="length",
+                    nonzero=nonzero,
                 )
                 if isinstance(data, Length):
                     if not data._digits:

@@ -22,10 +22,10 @@ class RotarySettingsPanel(ScrolledPanel):
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
         self.text_rotary_scalex = TextCtrl(
-            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER, nonzero=True,
         )
         self.text_rotary_scaley = TextCtrl(
-            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER, nonzero=True,
         )
         # self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
         # self.text_rotary_rotation = wx.TextCtrl(self, wx.ID_ANY, "360.0")

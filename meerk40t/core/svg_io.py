@@ -475,8 +475,12 @@ class SVGWriter:
                             factor = c.stroke_factor
                     except AttributeError:
                         pass
+                    if c.matrix.determinant == 0:
+                        c_m_d = 1
+                    else:
+                        c_m_d = math.sqrt(abs(c.matrix.determinant))
                     stroke_width = str(
-                        factor * c.stroke_width / math.sqrt(abs(c.matrix.determinant))
+                        factor * c.stroke_width / c_m_d
                     )
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
