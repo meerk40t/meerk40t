@@ -1122,10 +1122,10 @@ class SizePanel(wx.Panel):
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
         self.text_width = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length", nonzero=True,
         )
         self.text_height = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length", nonzero=True,
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
