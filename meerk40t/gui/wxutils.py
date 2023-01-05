@@ -343,6 +343,7 @@ class TextCtrl(wx.TextCtrl):
         name="",
         check="",
         limited=False,
+        nonzero=False,
     ):
         super().__init__(
             parent,
@@ -358,6 +359,9 @@ class TextCtrl(wx.TextCtrl):
         self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
+        self._nonzero = nonzero
+        if self._nonzero is None:
+            self._nonzero = False
         # For the sake of readability we allow multiple occurrences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
@@ -502,6 +506,8 @@ class TextCtrl(wx.TextCtrl):
                 if self.lower_limit_err is not None and value < self.lower_limit_err:
                     status = "error"
                 if self.upper_limit_err is not None and value > self.upper_limit_err:
+                    status = "error"
+                if self._nonzero and value == 0:
                     status = "error"
         except ValueError:
             status = "error"
