@@ -206,7 +206,7 @@ class TrueTypeFont:
     def _parse_cmap_format_0(self, data):
         length, language = struct.unpack(">HH", data.read(4))
         for i, c in enumerate(data.read(256)):
-            self._character_map[chr(c)] = i
+            self._character_map[chr(i+1)] = c
 
     def _parse_cmap_format_2(self, data):
         length, language = struct.unpack(">HH", data.read(4))
@@ -234,18 +234,16 @@ class TrueTypeFont:
         ):
             if offset == 0:
                 for i in range(start, end):
-                    self._character_map[chr((i + delta) % 0xFFFF)] = i
+                    self._character_map[chr(i+1)] = (delta + i) % 0xFFFF
             else:
                 for i in range(start, end):
-                    gia = offset + 2 * (i - start)
-                    data.seek(original + gia)
+                    data.seek(original + (i - start) * 2 + offset)
                     q = data.read(2)
-                    if q:
-                        # Strong assumption that this is bugged.
+                    if not q:
+                        self._character_map[chr(i+1)] = 0
+                    else:
                         b = struct.unpack(f">H", q)[0]
-                        if b != 0:
-                            b = (b + delta) % 0xFFFF
-                        self._character_map[chr(b)] = i
+                        self._character_map[chr(i+1)] = (delta + b) % 0xFFFF
 
     def _parse_cmap_format_6(self, data):
         (
@@ -255,7 +253,7 @@ class TrueTypeFont:
             entry_count,
         ) = struct.unpack(">HHHHHH", data.read(12))
         for i, c in struct.unpack(f">{entry_count}H", data.read(entry_count * 2)):
-            self._character_map[chr(c + first_code)] = i
+            self._character_map[chr(i + 1 + first_code)] = c
 
     def _parse_cmap_format_8(self, data):
         pass
