@@ -65,60 +65,63 @@ class TrueTypeFont:
         offset_y = 0
         for c in text:
             index = self._character_map.get(c, 0)
-            glyph = self.glyphs[index]
-            path.new_path()
-            for contour in glyph:
-                path.move(
-                    (offset_x + contour[0][0]) * scale,
-                    (offset_y + contour[0][1]) * scale,
-                )
-                contour = list(contour)
-                contour.append(contour[0])
-                segments = [
-                    [
-                        contour[0],
-                    ],
-                ]
-                for j in range(0, len(contour)):
-                    c = contour[j]
-                    segments[-1].append(c)
-                    if c[-1] & 1:
-                        segments.append(
-                            [
-                                c,
-                            ]
-                        )
-                for segment in segments:
-                    if len(segment) == 3:
-                        path.quad(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
-                            (offset_x + segment[2][0]) * scale,
-                            (offset_y + segment[2][1]) * scale,
-                        )
-                    elif len(segment) == 4:
-                        path.cubic(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
-                            (offset_x + segment[2][0]) * scale,
-                            (offset_y + segment[2][1]) * scale,
-                            (offset_x + segment[3][0]) * scale,
-                            (offset_y + segment[3][1]) * scale,
-                        )
-                    elif len(segment) == 2:
-                        path.line(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
-                        )
-                path.close()
-            offset_x += self.horizontal_metrics[index][0]
-            offset_y += 0
+            advance_x = self.horizontal_metrics[index][0]
+            advance_y = 0
+            if index != 0:
+                glyph = self.glyphs[index]
+                path.new_path()
+                for contour in glyph:
+                    path.move(
+                        (offset_x + contour[0][0]) * scale,
+                        (offset_y + contour[0][1]) * scale,
+                    )
+                    contour = list(contour)
+                    contour.append(contour[0])
+                    segments = [
+                        [
+                            contour[0],
+                        ],
+                    ]
+                    for j in range(0, len(contour)):
+                        c = contour[j]
+                        segments[-1].append(c)
+                        if c[-1] & 1:
+                            segments.append(
+                                [
+                                    c,
+                                ]
+                            )
+                    for segment in segments:
+                        if len(segment) == 3:
+                            path.quad(
+                                (offset_x + segment[0][0]) * scale,
+                                (offset_y + segment[0][1]) * scale,
+                                (offset_x + segment[1][0]) * scale,
+                                (offset_y + segment[1][1]) * scale,
+                                (offset_x + segment[2][0]) * scale,
+                                (offset_y + segment[2][1]) * scale,
+                            )
+                        elif len(segment) == 4:
+                            path.cubic(
+                                (offset_x + segment[0][0]) * scale,
+                                (offset_y + segment[0][1]) * scale,
+                                (offset_x + segment[1][0]) * scale,
+                                (offset_y + segment[1][1]) * scale,
+                                (offset_x + segment[2][0]) * scale,
+                                (offset_y + segment[2][1]) * scale,
+                                (offset_x + segment[3][0]) * scale,
+                                (offset_y + segment[3][1]) * scale,
+                            )
+                        elif len(segment) == 2:
+                            path.line(
+                                (offset_x + segment[0][0]) * scale,
+                                (offset_y + segment[0][1]) * scale,
+                                (offset_x + segment[1][0]) * scale,
+                                (offset_y + segment[1][1]) * scale,
+                            )
+                    path.close()
+            offset_x += advance_x
+            offset_y += advance_y
 
     def parse_ttf(self, font_path, require_checksum=True):
         with open(font_path, "rb") as f:
@@ -324,10 +327,12 @@ class TrueTypeFont:
         num_contours, x_min, y_min, x_max, y_max = struct.unpack(
             ">hhhhh", data.read(10)
         )
-        if num_contours < 0:
+        if num_contours > 0:
+            yield from self._parse_simple_glyph(num_contours, data)
+        elif num_contours < 0:
             yield from self._parse_compound_glyph(data)
         else:
-            yield from self._parse_simple_glyph(num_contours, data)
+            return
 
     def _parse_compound_glyph(self, data):
         flags = MORE_COMPONENTS
