@@ -76,6 +76,7 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
+from .propertypanels.opblobproperty import BlobPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
@@ -637,6 +638,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
