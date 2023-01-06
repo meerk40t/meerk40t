@@ -285,8 +285,10 @@ class TrueTypeFont:
             (hm[2 * i], hm[2 * i + 1]) for i in range(len(hm) // 2)
         ]
         last_advance = hm[-2]
-        if len(data) > count * 4:
-            left_bearing = struct.unpack(f">{(len(data) / 4) - count}h")
+        table_start = count * 4
+        if len(data) > table_start:
+            remaining = (len(data) - table_start) // 2
+            left_bearing = struct.unpack(f">{remaining}h", data[count * 4:count * 4 + remaining * 2])
             self.horizontal_metrics.extend((last_advance, left_bearing))
 
     def parse_loca(self):
