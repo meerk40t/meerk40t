@@ -63,12 +63,11 @@ class VectorTool(ToolWidget):
 
         if event_type == "leftclick":
             self.scene.tool_active = True
+            elements = self.scene.context.elements
             if self.path is None:
                 self.pen = wx.Pen()
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-                )
-                self.pen.SetWidth(1000)
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+                self.pen.SetWidth(elements.default_strokewidth)
                 self.path = Path()
                 if nearest_snap is None:
                     self.path.move((space_pos[0], space_pos[1]))
@@ -134,9 +133,9 @@ class VectorTool(ToolWidget):
                 node = elements.elem_branch.add(
                     path=t,
                     type="elem path",
-                    stroke_width=1000.0,
-                    stroke=self.scene.context.elements.default_stroke,
-                    fill=self.scene.context.elements.default_fill,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
                 if elements.classify_new:
                     elements.classify([node])

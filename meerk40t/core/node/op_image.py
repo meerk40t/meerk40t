@@ -52,7 +52,7 @@ class ImageOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(ImageOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Image"
         default_map["dpi"] = str(self.dpi)
         default_map["danger"] = "❌" if self.dangerous else ""
@@ -234,7 +234,7 @@ class ImageOpNode(Node, Parameters):
 
             def actual(image_node):
                 def process_images():
-                   if hasattr(image_node, "process_image"):
+                    if hasattr(image_node, "process_image"):
                         image_node._context = context
                         image_node.process_image()
 

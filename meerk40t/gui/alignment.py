@@ -19,7 +19,7 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import TextCtrl, StaticBoxSizer
+from ..gui.wxutils import StaticBoxSizer, TextCtrl
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange_50
 from .mwindow import MWindow

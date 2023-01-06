@@ -119,3 +119,17 @@ class TestElements(unittest.TestCase):
 
         finally:
             kernel.shutdown()
+
+    def test_elements_bad_grid(self):
+        """
+        Intro test for elements
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel_root = kernel.get_context("/")
+            kernel_root("shape 5 2in 2in 1in\n")
+            kernel_root("grid 2 2 1in 1foo\n")
+        finally:
+            kernel.shutdown()

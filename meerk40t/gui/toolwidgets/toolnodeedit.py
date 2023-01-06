@@ -5,7 +5,8 @@ import wx
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
-    RESPONSE_CONSUME, RESPONSE_DROP,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
@@ -123,13 +124,11 @@ class EditTool(ToolWidget):
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
-
+        elements = self.scene.context.elements
         if event_type == "leftdown":
             self.pen = wx.Pen()
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-            )
-            self.pen.SetWidth(1000)
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+            self.pen.SetWidth(elements.default_strokewidth)
             xp = space_pos[0]
             yp = space_pos[1]
             if self.nodes:
@@ -157,12 +156,7 @@ class EditTool(ToolWidget):
             m = node.matrix.point_in_inverse_space(space_pos[:2])
             pt.x = m[0]
             pt.y = m[1]
-            self.nodes[self.selected_index] = (
-                pt,
-                segment,
-                path,
-                node
-            )
+            self.nodes[self.selected_index] = (pt, segment, path, node)
             node.altered()
             self.scene.request_refresh()
             return RESPONSE_CONSUME

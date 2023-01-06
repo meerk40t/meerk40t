@@ -13,7 +13,7 @@ from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -120,6 +120,7 @@ class BalorDevice(Service, ViewPort):
                 "section": "_00_General",
                 "priority": "20",
                 "signals": "bedsize",
+                "nonzero": True,
                 # intentionally not bed_size
             },
             {
@@ -993,9 +994,9 @@ class BalorDevice(Service, ViewPort):
                             with open(input, "br") as f:
                                 remainder = f.read().hex()
                         else:
-                            with open(input, "r") as f:
+                            with open(input) as f:
                                 remainder = f.read()
-                    except IOError:
+                    except OSError:
                         channel("File could not be read.")
                 else:
                     channel(f"The file at {os.path.realpath(input)} does not exist.")
@@ -1074,7 +1075,7 @@ class BalorDevice(Service, ViewPort):
                             )
                         with open(output, "w") as f:
                             f.writelines(lines)
-                except IOError:
+                except OSError:
                     channel("File could not be written.")
                 return  # If we output to file, we do not output to device.
 
@@ -1577,7 +1578,10 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
-    def realize(self):
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
         self.width = self.lens_size
         self.height = self.lens_size
         super().realize()

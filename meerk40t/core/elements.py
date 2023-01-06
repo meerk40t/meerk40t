@@ -4,7 +4,7 @@ from os.path import realpath
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
 
-from ..svgelements import Color, SVGElement, Line, Move, Close
+from ..svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -13,7 +13,7 @@ from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
 from .undos import Undo
-from .units import Length, UNITS_PER_MIL
+from .units import UNITS_PER_MIL, Length
 from .wordlist import Wordlist
 
 
@@ -444,6 +444,7 @@ class Elemental(Service):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
         self._default_stroke = None
+        self._default_strokewidth = None
         self._default_fill = None
         self._first_emphasized = None
         self._align_mode = "default"
@@ -466,6 +467,18 @@ class Elemental(Service):
         return result
 
     @property
+    def default_strokewidth(self):
+        if self._default_strokewidth is not None:
+            return self._default_strokewidth
+        return 1000.0
+
+    @default_strokewidth.setter
+    def default_strokewidth(self, width):
+        if isinstance(width, str):
+            width = float(Length(width))
+        self._default_strokewidth = width
+
+    @property
     def default_stroke(self):
         # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
         if self._default_stroke is not None:
@@ -475,7 +488,7 @@ class Elemental(Service):
     @default_stroke.setter
     def default_stroke(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_stroke = color
 
     @property
@@ -485,7 +498,7 @@ class Elemental(Service):
     @default_fill.setter
     def default_fill(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_fill = color
 
     @property
@@ -844,7 +857,8 @@ class Elemental(Service):
         # Selection boundaries
         boundary_points = []
         for node in data:
-            boundary_points.append(node.bounds)
+            if node.bounds is not None:
+                boundary_points.append(node.bounds)
         if not len(boundary_points):
             return
         left_edge = min([e[0] for e in boundary_points])
@@ -1151,23 +1165,19 @@ class Elemental(Service):
 
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=elem_nodes, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_nodes, **kwargs)
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def regmarks(self, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(types=elem_nodes, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_nodes, **kwargs)
 
     def regmarks_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def top_element(self, **kwargs):
         """
@@ -2823,7 +2833,7 @@ class Elemental(Service):
                         return False
                     except BadFileError as e:
                         kernel._console_channel(_("File is Malformed") + ": " + str(e))
-                        self.signal("warning", str(e),  _("File is Malformed"))
+                        self.signal("warning", str(e), _("File is Malformed"))
                     except OSError:
                         return False
                     finally:
@@ -3252,7 +3262,9 @@ def linearize_path(path, interp=50, point=False):
             elif t in ("Line", "Close"):
                 s.append((segment.end[0], segment.end[1]))
             else:
-                s.extend((s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp)))
+                s.extend(
+                    (s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp))
+                )
         if point:
             s = list(map(Point, s))
         current_polygon.append(s)

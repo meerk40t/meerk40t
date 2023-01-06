@@ -1,5 +1,3 @@
-# -*- coding: ISO-8859-1 -*-
-
 import wx
 
 from meerk40t.core.units import Length

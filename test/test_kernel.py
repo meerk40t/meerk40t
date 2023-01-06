@@ -23,7 +23,7 @@ class TestKernel(unittest.TestCase):
                 if "interrupt" in command:
                     continue
                 if not cmd.regex:
-                    print("Testing command: %s" % command)
+                    print(f"Testing command: {command}")
                     # command should be generated with something like
                     # kernel.console(" ".join(command.split("/")[1:]) + "\n")
                     # if first parameter is not base but this fails so not
@@ -43,7 +43,7 @@ class TestGetSafePath(unittest.TestCase):
         Tests the get_safe_path method for all o/ses
         """
         sep = os.sep
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Darwin")),
             (
                 os.path.expanduser("~")
@@ -55,11 +55,11 @@ class TestGetSafePath(unittest.TestCase):
                 + "test"
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Windows")),
             (os.path.expandvars("%LOCALAPPDATA%") + sep + "test"),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Linux")),
             (os.path.expanduser("~") + sep + ".config" + sep + "test"),
         )
@@ -109,7 +109,7 @@ class TestEchoCommand(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             for echo in echo_commands:
-                print("Testing echo command: %s" % echo)
+                print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
         finally:
             kernel.shutdown()

@@ -28,6 +28,8 @@ The channel callable is given any additional information about the gcode.
 
 import re
 
+from meerk40t.svgelements import Color
+
 MM_PER_INCH = 25.4
 MIL_PER_INCH = 1000.0
 
@@ -144,8 +146,45 @@ lookup = {
 }
 
 
+class GRBLPlotter:
+    def __init__(self):
+        from meerk40t.svgelements import Path
+
+        self.path = Path()
+
+    def plotter(self, command, *args):
+        if command == "move":
+            x0, y0, x1, y1 = args
+            self.path.move(x1, y1)
+        elif command in "line":
+            x0, y0, x1, y1, power = args
+            if not self.path:
+                self.path.move(x0, y0)
+            self.path.line(x1, y1)
+        elif command in "arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            self.path.arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+        elif command == "new":
+            pass
+        elif command == "end":
+            pass
+        elif command == "wait":
+            pass
+        elif command == "resume":
+            pass
+        elif command == "pause":
+            pass
+        elif command == "abort":
+            pass
+        elif command == "coolant":
+            # True or False coolant.
+            pass
+        elif command == "jog_abort":
+            pass
+
+
 class GRBLParser:
-    def __init__(self, plotter):
+    def __init__(self, plotter=None):
         self.plotter = plotter
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
@@ -212,6 +251,17 @@ class GRBLParser:
 
     def __repr__(self):
         return "GRBLParser()"
+
+    def parse(self, data, elements):
+        plotclass = GRBLPlotter()
+        self.plotter = plotclass.plotter
+        for d in data:
+            if isinstance(d, (bytes, bytearray)):
+                d = d.decode("utf-8")
+            self.process(d)
+        elements.elem_branch.add(
+            type="elem path", path=plotclass.path, stroke=Color("blue")
+        )
 
     def grbl_write(self, data):
         if self.reply:
@@ -333,6 +383,70 @@ class GRBLParser:
                     return 0
                 else:
                     return 5  # Homing cycle not enabled by settings.
+            elif data.startswith("$J="):
+                """
+                $Jx=line - Run jogging motion
+
+                New to Grbl v1.1, this command will execute a special jogging motion. There are three main
+                differences between a jogging motion and a motion commanded by a g-code line.
+
+                    Like normal g-code commands, several jog motions may be queued into the planner buffer,
+                    but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command.
+                    Grbl will immediately hold the current jog and then automatically purge the buffers
+                    of any remaining commands.
+                    Jog commands are completely independent of the g-code parser state. It will not change
+                    any modes like G91 incremental distance mode. So, you no longer have to make sure
+                    that you change it back to G90 absolute distance mode afterwards. This helps reduce
+                    the chance of starting with the wrong g-code modes enabled.
+                    If soft-limits are enabled, any jog command that exceeds a soft-limit will simply
+                    return an error. It will not throw an alarm as it would with a normal g-code command.
+                    This allows for a much more enjoyable and fluid GUI or joystick interaction.
+
+                Executing a jog requires a specific command structure, as described below:
+
+                    The first three characters must be '$J=' to indicate the jog.
+
+                    The jog command follows immediate after the '=' and works like a normal G1 command.
+
+                    Feed rate is only interpreted in G94 units per minute. A prior G93 state is
+                    ignored during jog.
+
+                    Required words:
+                        XYZ: One or more axis words with target value.
+                        F - Feed rate value. NOTE: Each jog requires this value and is not treated as modal.
+
+                    Optional words: Jog executes based on current G20/G21 and G90/G91 g-code parser state.
+                    If one of the following optional words is passed, that state is overridden for one command only.
+                        G20 or G21 - Inch and millimeter mode
+                        G90 or G91 - Absolute and incremental distances
+                        G53 - Move in machine coordinates
+
+                    All other g-codes, m-codes, and value words are not accepted in the jog command.
+
+                    Spaces and comments are allowed in the command. These are removed by the pre-parser.
+
+                    Example: G21 and G90 are active modal states prior to jogging. These are sequential commands.
+                        $J=X10.0 Y-1.5 will move to X=10.0mm and Y=-1.5mm in work coordinate frame (WPos).
+                        $J=G91 G20 X0.5 will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
+                        Note that G91 and G20 are only applied to this jog command.
+                        $J=G53 Y5.0 will move the machine to Y=5.0mm in the machine coordinate frame (MPos).
+                        If the work coordinate offset for the y-axis is 2.0mm, then Y is 3.0mm in (WPos).
+
+                Jog commands behave almost identically to normal g-code streaming. Every jog command
+                will return an 'ok' when the jogging motion has been parsed and is setup for execution.
+                If a command is not valid or exceeds a soft-limit, Grbl will return an 'error:'.
+                Multiple jogging commands may be queued in sequence.
+                """
+                commands = {}
+                for c in _tokenize_code(data):
+                    g = c[0]
+                    if g not in commands:
+                        commands[g] = []
+                    if len(c) >= 2:
+                        commands[g].append(c[1])
+                    else:
+                        commands[g].append(None)
+                return 3  # not yet supported
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
 

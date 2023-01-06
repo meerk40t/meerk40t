@@ -42,7 +42,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -610,16 +610,16 @@ class Drag(wx.Panel):
         self.drag_ready(True)
 
     def on_button_align_trace_hull(self, event=None):
-        self.context("trace hull\n")
+        self.context("element* trace hull\n")
 
     def on_button_align_trace_complex(self, event=None):
-        self.context("trace complex\n")
+        self.context("element* trace complex\n")
 
     def on_button_align_trace_circle(self, event=None):
-        self.context("trace circle\n")
+        self.context("element* trace circle\n")
 
     def on_button_align_trace_quick(self, event=None):
-        self.context("trace quick\n")
+        self.context("element* trace quick\n")
         self.drag_ready(True)
 
     def pane_show(self, *args):
@@ -723,6 +723,10 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
+        self.button_navigate_home.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
+        )
+
         self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left
@@ -757,6 +761,9 @@ class Jog(wx.Panel):
         self.button_navigate_left.SetToolTip(_("Move laser in the left direction"))
         self.button_navigate_left.SetSize(self.button_navigate_left.GetBestSize())
         self.button_navigate_home.SetSize(self.button_navigate_home.GetBestSize())
+        self.button_navigate_home.SetToolTip(
+            _("Send laser to home position (right click: to physical home)")
+        )
         self.button_navigate_right.SetToolTip(_("Move laser in the right direction"))
         self.button_navigate_right.SetSize(self.button_navigate_right.GetBestSize())
         self.button_navigate_down_left.SetToolTip(
@@ -855,6 +862,16 @@ class Jog(wx.Panel):
     ):  # wxGlade: Navigation.<event_handler>
         self.context("home\n")
 
+    def on_button_navigate_physical_home(self, event=None):
+        physical = False
+        if hasattr(self.context.device, "has_endstops"):
+            if self.context.device.has_endstops:
+                physical = True
+        if physical:
+            self.context("physical_home\n")
+        else:
+            self.context("home\n")
+
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
             f"-{self.context.jog_amount}",
@@ -900,6 +917,23 @@ class Jog(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         self.context("lock\n")
+
+    def set_home_logic(self):
+        tip = _("Send laser to home position")
+        if hasattr(self.context.device, "has_endstops"):
+            if self.context.device.has_endstops:
+                tip = _("Send laser to home position (right click: to physical home)")
+        self.button_navigate_home.SetToolTip(tip)
+
+    def on_update(self, origin, *args):
+        self.set_home_logic()
+
+    def pane_show(self):
+        self.context.listen("activate;device", self.on_update)
+        self.set_home_logic()
+
+    def pane_hide(self):
+        self.context.unlisten("activate;device", self.on_update)
 
 
 class MovePanel(wx.Panel):
@@ -1088,10 +1122,10 @@ class SizePanel(wx.Panel):
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
         self.text_width = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length", nonzero=True,
         )
         self.text_height = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length", nonzero=True,
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
@@ -1752,6 +1786,8 @@ class Transform(wx.Panel):
             translate_x = float(Length(self.text_e.GetValue()))
             translate_y = float(Length(self.text_f.GetValue()))
             f = self.context.elements.first_element(emphasized=True)
+            if f is None:
+                return
             matrix = f.matrix
             if (
                 scale_x == matrix.a

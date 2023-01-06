@@ -16,6 +16,8 @@ def plugin(service, lifecycle):
             icons8_emergency_stop_button_50,
             icons8_info_50,
             icons8_pause_50,
+            icons8_quick_mode_on_50,
+            icons8_flash_off_50,
         )
 
         service.register("window/Serial-Controller", SerialController)
@@ -61,6 +63,31 @@ def plugin(service, lifecycle):
                 "icon": icons8_emergency_stop_button_50,
                 "tip": _("Emergency stop the laser"),
                 "action": lambda v: service("estop\n"),
+            },
+        )
+
+        def has_red_dot_enabled():
+            # Does the current device have an active use_red_dot?
+            res = False
+            if hasattr(service, "use_red_dot"):
+                if service.use_red_dot:
+                    res = True
+            return res
+
+        service.register(
+            "button/control/Redlight",
+            {
+                "label": _("Red Dot On"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+                "toggle": {
+                    "label": _("Red Dot Off"),
+                    "action": lambda v: service("red off\n"),
+                    "icon": icons8_flash_off_50,
+                    "signal": "grbl_red_dot",
+                },
+                "rule_enabled": lambda v: has_red_dot_enabled(),
             },
         )
 

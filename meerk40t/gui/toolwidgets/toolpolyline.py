@@ -28,21 +28,18 @@ class PolylineTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.point_series:
-            if self.scene.context.elements.default_stroke is None:
+            elements = self.scene.context.elements
+            if elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-                )
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             gc.SetPen(self.pen)
-            if self.scene.context.elements.default_fill is None:
+            if elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(
-                            swizzlecolor(self.scene.context.elements.default_fill)
-                        ),
+                        wx.Colour(swizzlecolor(elements.default_fill)),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
@@ -151,9 +148,9 @@ class PolylineTool(ToolWidget):
         node = elements.elem_branch.add(
             shape=polyline,
             type="elem polyline",
-            stroke_width=1000.0,
-            stroke=self.scene.context.elements.default_stroke,
-            fill=self.scene.context.elements.default_fill,
+            stroke_width=elements.default_strokewidth,
+            stroke=elements.default_stroke,
+            fill=elements.default_fill,
         )
         if elements.classify_new:
             elements.classify([node])

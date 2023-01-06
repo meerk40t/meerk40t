@@ -87,6 +87,8 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         self._g91_absolute()
         self._clean()
         old_current = self.service.current
@@ -106,6 +108,8 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         self._g91_absolute()
         self._clean()
         old_current = self.service.current
@@ -125,6 +129,8 @@ class GRBLDriver(Parameters):
         @param dy:
         @return:
         """
+        if self.service.swap_xy:
+            dx, dy = dy, dx
         self._g90_relative()
         self._clean()
         old_current = self.service.current
@@ -159,16 +165,27 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r")
+        self.grbl("M5\r")
 
-    def laser_on(self, *values):
+    def laser_on(self, power=None, speed=None, *values):
         """
         Turn laser on in place.
 
         @param values:
         @return:
         """
-        self.grbl("M5\r")
+        spower = ""
+        sspeed = ""
+        if power is not None:
+            spower = f" S{power:.1f}"
+            # We already established power, so no need for power_dirty
+            self.power = power
+            self.power_dirty = False
+        if speed is not None:
+            sspeed = f"G1 F{speed}\r"
+            self.speed = speed
+            self.speed_dirty = False
+        self.grbl(f"M3{spower}\r{sspeed}")
 
     def plot(self, plot):
         """
@@ -311,9 +328,22 @@ class GRBLDriver(Parameters):
             # TODO: Process line does not exist as a function.
             self.process_line(line)
 
+    def physical_home(self):
+        """
+        Home the laser physically (ie run into endstops).
+
+        @return:
+        """
+        self.native_x = 0
+        self.native_y = 0
+        if self.service.has_endstops:
+            self.grbl("$H\r")
+        else:
+            self.grbl("G28\r")
+
     def home(self):
         """
-        Home the laser.
+        Home the laser (ie goto defined origin)
 
         @return:
         """

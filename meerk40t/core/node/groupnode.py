@@ -8,7 +8,7 @@ class GroupNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(GroupNode, self).__init__(type="group", **kwargs)
+        super().__init__(type="group", **kwargs)
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
@@ -41,7 +41,7 @@ class GroupNode(Node):
                     res += elem_count(e)
             return res
 
-        default_map = super(GroupNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Group"
 
         default_map["children"] = str(len(self.children))

@@ -2581,8 +2581,11 @@ def init_commands(kernel):
             x = "100%"
         if y is None:
             y = "100%"
-        x = float(Length(x, relative_length=Length(amount=width).length_mm))
-        y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        try:
+            x = float(Length(x, relative_length=Length(amount=width).length_mm))
+            y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        except ValueError:
+            raise CommandSyntaxError("Length could not be parsed.")
         if origin is None:
             origin = (1, 1)
         cx, cy = origin
@@ -3025,6 +3028,7 @@ def init_commands(kernel):
             data = list()
         node = self.elem_branch.add(shape=poly_path, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3460,7 +3464,6 @@ def init_commands(kernel):
                 node.label = "Phase 0: Initial copy"
                 self.elem_branch.add_node(node)
 
-
         ###############################################
         # Phase 1: render and vectorize first outline
         ###############################################
@@ -3716,6 +3719,7 @@ def init_commands(kernel):
             shape=circ,
             type="elem ellipse",
             stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
             fill=self.default_fill,
         )
         self.set_emphasis([node])
@@ -3742,6 +3746,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=circ, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3775,6 +3780,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=ellip, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3837,6 +3843,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=rect, type="elem rect")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3866,6 +3873,7 @@ def init_commands(kernel):
         simple_line = SimpleLine(x0, y0, x1, y1)
         node = self.elem_branch.add(shape=simple_line, type="elem line")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -3897,6 +3905,7 @@ def init_commands(kernel):
         )
         node.font_size = size
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4012,6 +4021,7 @@ def init_commands(kernel):
         node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         node.focus()
@@ -4042,6 +4052,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4190,6 +4201,7 @@ def init_commands(kernel):
 
         node = self.elem_branch.add(path=path, type="elem path")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4236,47 +4248,53 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if stroke_width is None:
+            # Display data about stroke widths.
             channel("----------")
             channel(_("Stroke-Width Values:"))
-            i = 0
-            for e in self.elems():
+            for i, e in enumerate(self.elems()):
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
-                if not hasattr(e, "stroke_width"):
-                    pass
-                elif not hasattr(e, "stroke_scaled"):
+                try:
+                    stroke_width = e.stroke_width
+                except AttributeError:
+                    # Has no stroke width.
+                    continue
+                if not hasattr(e, "stroke_scaled"):
+                    # Can't have a scaled stroke.
                     channel(
                         _(
                             "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
                         ).format(
                             index=i,
                             typename="scaled-stroke",
-                            stroke_width=width_string(e.stroke_width),
+                            stroke_width=width_string(stroke_width),
                             scaled_stroke_width=width_string(None),
                             name=name,
                         )
                     )
+                    continue
+                factor = 1.0
+                if e.stroke_scaled:
+                    typename = "scaled-stroke"
+                    try:
+                        factor = e.stroke_factor
+                    except AttributeError:
+                        pass
                 else:
-                    if e.stroke_scaled:
-                        typename = "scaled-stroke"
-                        factor = sqrt(abs(e.matrix.determinant))
-                    else:
-                        typename = "non-scaling-stroke"
-                        factor = 1.0
-                    implied_value = factor * e.stroke_width
-                    channel(
-                        _(
-                            "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
-                        ).format(
-                            index=i,
-                            typename=typename,
-                            stroke_width=width_string(e.stroke_width),
-                            scaled_stroke_width=width_string(implied_value),
-                            name=name,
-                        )
+                    typename = "non-scaling-stroke"
+                implied_value = factor * stroke_width
+                channel(
+                    _(
+                        "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+                    ).format(
+                        index=i,
+                        typename=typename,
+                        stroke_width=width_string(stroke_width),
+                        scaled_stroke_width=width_string(implied_value),
+                        name=name,
                     )
-                i += 1
+                )
             channel("----------")
             return
 
@@ -4287,9 +4305,12 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
-            e.stroke_width = stroke_width / stroke_scale
-            e.altered()
+            e.stroke_width = stroke_width
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
+            e.modified()
         return "elements", data
 
     @self.console_command(
@@ -5368,6 +5389,11 @@ def init_commands(kernel):
             if len(name) > 50:
                 name = name[:50] + "…"
             try:
+                e.stroke_reify()
+            except AttributeError:
+                pass
+
+            try:
                 e.shape.reify()
             except AttributeError as err:
                 try:
@@ -5375,6 +5401,10 @@ def init_commands(kernel):
                 except AttributeError:
                     channel(_("Couldn't reify - %s - %s") % (name, err))
                     return "elements", data
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
             e.altered()
             channel(_("reified - %s") % name)
         return "elements", data
@@ -5957,7 +5987,7 @@ def init_commands(kernel):
             dy = float(dy)
         else:
             dy = 0
-        if dx !=0 or dy != 0:
+        if dx != 0 or dy != 0:
             matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
@@ -6187,98 +6217,152 @@ def init_commands(kernel):
         center, radius = welzl_helper(P_copy, [], len(P_copy))
         return center, radius
 
-    def generate_hull_shape(method, data, resolution=None):
-        if resolution is None:
-            DETAIL = 500  # How coarse / fine shall a subpath be split
-        else:
-            DETAIL = int(resolution)
+    def generate_hull_shape_segment(data):
         pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    p = segment.end
+                    pts.append(p)
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                            (bounds[0], bounds[1]),
+                        ]
+                    )
+        return pts
+
+    def generate_hull_shape_quick(data):
+        if not data:
+            return []
         min_val = [float("inf"), float("inf")]
         max_val = [-float("inf"), -float("inf")]
         for node in data:
-            if method in ("hull", "segment", "circle"):
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
-                if path is not None:
-                    p = path.first_point
-                    pts += [(p.x, p.y)]
-                    for segment in path:
-                        p = segment.end
-                        pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            elif method == "complex":
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
-
-                if path is not None:
-
-                    from numpy import linspace
-
-                    for subpath in path.as_subpaths():
-                        psp = Path(subpath)
-                        p = psp.first_point
-                        pts += [(p.x, p.y)]
-                        positions = linspace(0, 1, num=DETAIL, endpoint=True)
-                        subj = psp.npoint(positions)
-                        # Not sure why we need to do that, its already rows x 2
-                        # subj.reshape((2, DETAIL))
-                        s = list(map(Point, subj))
-                        for p in s:
-                            pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            elif method == "quick":
-                bounds = node.bounds
+            bounds = node.bounds
+            if bounds:
                 min_val[0] = min(min_val[0], bounds[0])
                 min_val[1] = min(min_val[1], bounds[1])
                 max_val[0] = max(max_val[0], bounds[2])
                 max_val[1] = max(max_val[1], bounds[3])
-        if method == "quick":
-            if (
-                not isinf(min_val[0])
-                and not isinf(min_val[1])
-                and not isinf(max_val[0])
-                and not isinf(max_val[0])
-            ):
-                pts += [
-                    (min_val[0], min_val[1]),
-                    (min_val[0], max_val[1]),
-                    (max_val[0], min_val[1]),
-                    (max_val[0], max_val[1]),
-                ]
-        if method == "segment":
-            hull = [p for p in pts]
-        elif method == "circle":
-            mec_center, mec_radius = welzl(pts)
-            # So now we have a circle with (mec[0], mec[1]), and mec_radius
-            hull = []
-            RES = 100
-            for i in range(RES):
-                hull += [
-                    (
-                        mec_center[0] + mec_radius * cos(i / RES * tau),
-                        mec_center[1] + mec_radius * sin(i / RES * tau),
+        if isinf(min_val[0]):
+            return []
+        return [
+            (min_val[0], min_val[1]),
+            (max_val[0], min_val[1]),
+            (max_val[0], max_val[1]),
+            (min_val[0], max_val[1]),
+            (min_val[0], min_val[1]),
+        ]
+
+    def generate_hull_shape_hull(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    pts.append(segment.end)
+                pts.append(p)
+            except AttributeError:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
                     )
-                ]
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_complex(data, resolution=None):
+        if resolution is None:
+            resolution = 500  # How coarse / fine shall a subpath be split
         else:
-            hull = [p for p in Point.convex_hull(pts)]
+            resolution = int(resolution)
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+
+                from numpy import linspace
+
+                for subpath in path.as_subpaths():
+                    psp = Path(subpath)
+                    p = psp.first_point
+                    pts.append(p)
+                    positions = linspace(0, 1, num=resolution, endpoint=True)
+                    subj = psp.npoint(positions)
+                    s = list(map(Point, subj))
+                    pts.extend(s)
+            except AttributeError:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                    )
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_circle(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts += [p]
+                for segment in path:
+                    p = segment.end
+                    pts += [p]
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+
+        mec_center, mec_radius = welzl(pts)
+
+        # So now we have a circle with (mec[0], mec[1]), and mec_radius
+        hull = []
+        RES = 100
+        for i in range(RES):
+            hull += [
+                (
+                    mec_center[0] + mec_radius * cos(i / RES * tau),
+                    mec_center[1] + mec_radius * sin(i / RES * tau),
+                )
+            ]
         if len(hull) != 0:
             hull.append(hull[0])  # loop
         return hull
@@ -6326,7 +6410,18 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No elements bounds to trace"))
             return
-        hull = generate_hull_shape(method, data, resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if start is None:
             # Lets take system default
             start = self.trace_start_method
@@ -6401,7 +6496,18 @@ def init_commands(kernel):
 
         if data is None:
             data = list(self.elems(emphasized=True))
-        hull = generate_hull_shape(method, data, resolution=resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return
@@ -6411,6 +6517,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])

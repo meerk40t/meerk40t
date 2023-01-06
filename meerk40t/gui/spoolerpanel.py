@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from math import isinf
+from math import isinf, isnan
 
 import wx
 import wx.lib.mixins.listctrl as listmix
@@ -32,6 +32,7 @@ IDX_HISTORY_STEPS_TOTAL = 9
 IDX_HISTORY_LOOPS_DONE = 10
 # Amount of columns...
 IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
+
 
 def register_panel_spooler(window, context):
     panel = SpoolerPanel(window, wx.ID_ANY, context=context)
@@ -475,9 +476,7 @@ class SpoolerPanel(wx.Panel):
             remove_mode = "remove"
         item = menu.Append(
             wx.ID_ANY,
-            "{action} {name} [{label}]".format(
-                action=action, name=str(element)[:30], label=spooler.context.label
-            ),
+            f"{action} {str(element)[:30]} [{spooler.context.label}]",
             "",
             wx.ITEM_NORMAL,
         )
@@ -692,6 +691,9 @@ class SpoolerPanel(wx.Panel):
     def timestr(t, oneday):
         if t is None:
             return ""
+        if isinf(t) or isnan(t) or t < 0:
+            return "∞"
+
         if oneday:
             localt = time.localtime(t)
             hours = localt[3]
@@ -746,6 +748,12 @@ class SpoolerPanel(wx.Panel):
 
         if newestinfo is not None:
             addit = True
+            newestinfo = list(newestinfo)
+            # Deal with infinite numbers, as they will invalidate the logging class and crash afterwards...
+            if isinf(newestinfo[IDX_HISTORY_ESTIMATE]):
+                newestinfo[IDX_HISTORY_ESTIMATE] = -1
+            if isinf(newestinfo[IDX_HISTORY_DURATION]):
+                newestinfo[IDX_HISTORY_ESTIMATE] = -1
             # No helper jobs....
             if (
                 len(newestinfo) > IDX_HISTORY_INFO
@@ -814,16 +822,20 @@ class SpoolerPanel(wx.Panel):
             # First passes then device
             if len(info) >= 5:
                 self.list_job_history.SetItem(
-                    list_id, self.column_history["passes"], info[IDX_HISTORY_PASSES]
+                    list_id,
+                    self.column_history["passes"],
+                    str(info[IDX_HISTORY_PASSES]),
                 )
             else:
                 self.list_job_history.SetItem(
                     list_id, self.column_history["passes"], "???"
                 )
             self.list_job_history.SetItem(
-                list_id, self.column_history["device"], info[IDX_HISTORY_DEVICE]
+                list_id, self.column_history["device"], str(info[IDX_HISTORY_DEVICE])
             )
             if len(info) > IDX_HISTORY_STATUS:
+                if info[IDX_HISTORY_INFO] is None:
+                    info[IDX_HISTORY_INFO] = ""
                 self.list_job_history.SetItem(
                     list_id, self.column_history["status"], info[IDX_HISTORY_STATUS]
                 )
@@ -848,7 +860,9 @@ class SpoolerPanel(wx.Panel):
                     info[IDX_HISTORY_STEPS_DONE] = 0
                 if info[IDX_HISTORY_STEPS_TOTAL] is None:
                     info[IDX_HISTORY_STEPS_TOTAL] = 0
-                stepinfo = f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
+                stepinfo = (
+                    f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
+                )
                 self.list_job_history.SetItem(
                     list_id, self.column_history["steps"], stepinfo
                 )
@@ -858,13 +872,19 @@ class SpoolerPanel(wx.Panel):
         def fixitems():
             # make sure we extend the fields for those entries
             # that were saved with a previous version
+            if isinstance(self.history, str):
+                # Flawed !! At least recover gracefully
+                self.history = []
             for item in self.history:
                 while len(item) < IDX_HISTORY_MAX_FIELDS:
                     item.append(None)
                 for idx in (
-                    IDX_HISTORY_START, IDX_HISTORY_DURATION,
-                    IDX_HISTORY_ESTIMATE, IDX_HISTORY_LOOPS_DONE,
-                    IDX_HISTORY_STEPS_DONE, IDX_HISTORY_STEPS_TOTAL,
+                    IDX_HISTORY_START,
+                    IDX_HISTORY_DURATION,
+                    IDX_HISTORY_ESTIMATE,
+                    IDX_HISTORY_LOOPS_DONE,
+                    IDX_HISTORY_STEPS_DONE,
+                    IDX_HISTORY_STEPS_TOTAL,
                 ):
                     if item[idx] is None:
                         item[idx] = 0
@@ -875,7 +895,7 @@ class SpoolerPanel(wx.Panel):
         if os.path.exists(filename):
             # backward compatibility: read once, store in new format, delete...
             try:
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     self.history = json.load(f)
                 fixitems()
                 # Store in new format...
@@ -893,7 +913,6 @@ class SpoolerPanel(wx.Panel):
         self.refresh_history()
 
     def save_history(self):
-
         def escaped(s):
             if s is None:
                 s = ""
@@ -904,11 +923,10 @@ class SpoolerPanel(wx.Panel):
         filename = os.path.join(directory, "history.csv")
         try:
             with open(filename, "w", encoding="utf-8") as f:
-                simpleline = (
-                    "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
-                )
+                simpleline = "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
                 f.write(simpleline + "\n")
                 for info in self.history:
+
                     def addnum(idx):
                         if len(info) > idx:
                             return ";" + str(info[idx])
@@ -1076,9 +1094,7 @@ class SpoolerPanel(wx.Panel):
 
             try:
                 pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
-                self.list_job_spool.SetItem(
-                    list_id, self.column_job["steps"], pass_str
-                )
+                self.list_job_spool.SetItem(list_id, self.column_job["steps"], pass_str)
             except AttributeError:
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, self.column_job["steps"], "-")

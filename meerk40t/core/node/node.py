@@ -695,6 +695,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
         self._cache = None
@@ -708,6 +709,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
 
@@ -759,8 +761,10 @@ class Node:
         @param kwargs:
         @return:
         """
-        node_class = self._root.bootstrap.get(type, Node)
-        node_defaults = self._root.defaults.get(type, {})
+        from .bootstrap import bootstrap, defaults
+
+        node_class = bootstrap.get(type, Node)
+        node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)
         node = node_class(**nd)
@@ -805,8 +809,7 @@ class Node:
         @return:
         """
         yield node
-        for c in self._flatten_children(node):
-            yield c
+        yield from self._flatten_children(node)
 
     def _flatten_children(self, node):
         """
@@ -817,8 +820,7 @@ class Node:
         """
         for child in node.children:
             yield child
-            for c in self._flatten_children(child):
-                yield c
+            yield from self._flatten_children(child)
 
     def flat(
         self,

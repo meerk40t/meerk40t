@@ -28,6 +28,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
 from .bufferview import BufferView
@@ -48,12 +49,14 @@ from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .materialtest import TemplateTool
-from ..tools.livinghinges import LivingHingeTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.groupproperties import (
+    FilePropertiesPanel,
+    GroupPropertiesPanel,
+)
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
@@ -625,9 +628,11 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
+        kernel.register("property/FileNode/Property", FilePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
@@ -768,7 +773,7 @@ def send_file_to_developers(filename):
     @return:
     """
     try:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             data = f.read()
     except:
         return  # There is no file, there is no data.
@@ -879,12 +884,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     try:
         try:
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
@@ -903,7 +908,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             ref_prefix = "ref: refs/heads/"
             ref = ""
             try:
-                with open(head_file, "r") as f:
+                with open(head_file) as f:
                     ref = f.readline()
             except Exception:
                 pass

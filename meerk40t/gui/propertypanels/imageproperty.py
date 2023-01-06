@@ -7,8 +7,12 @@ from meerk40t.core.units import UNITS_PER_INCH
 
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
+from meerk40t.gui.propertypanels.attributes import (
+    IdPanel,
+    PositionSizePanel,
+    PreventChangePanel,
+)
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -1022,9 +1026,13 @@ class ImagePropertyPanel(ScrolledPanel):
             style=wx.TE_PROCESS_ENTER,
             check="float",
             limited=True,
+            nonzero=True,
         )
         self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
 
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -1151,6 +1159,7 @@ class ImagePropertyPanel(ScrolledPanel):
             node = self.node
         self.panel_id.set_widgets(node)
         self.panel_xy.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_crop.set_widgets(node)
         self.node = node
         if node is None:
@@ -1242,6 +1251,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
+        sizer_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)

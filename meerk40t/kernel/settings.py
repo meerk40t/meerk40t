@@ -253,7 +253,7 @@ class Settings:
         """
         try:
             for section_name in list(self._config_dict):
-                if section_name.startswith(section):
+                if section_name == section:
                     del self._config_dict[section_name]
         except KeyError:
             pass
@@ -307,4 +307,4 @@ class Settings:
         Finds all derivable paths within the config from the set path location.
         @return:
         """
-        yield from set([s.split(" ")[0] for s in self._config_dict])
+        yield from {s.split(" ")[0] for s in self._config_dict}

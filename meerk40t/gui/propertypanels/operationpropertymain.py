@@ -344,6 +344,7 @@ class SpeedPpiPanel(wx.Panel):
             limited=True,
             check="float",
             style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_speed.set_error_level(0, None)
         self.text_speed.set_warn_level(speed_min, speed_max)

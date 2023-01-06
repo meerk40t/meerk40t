@@ -1,5 +1,6 @@
-from meerk40t.tools.rasterplotter import RasterPlotter
 from meerk40t.core.cutcode.cutobject import CutObject
+from meerk40t.tools.rasterplotter import RasterPlotter
+
 
 class RasterCut(CutObject):
     """

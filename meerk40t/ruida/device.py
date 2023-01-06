@@ -31,6 +31,8 @@ class RuidaDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "bedheight",
@@ -39,6 +41,8 @@ class RuidaDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",
@@ -106,7 +110,7 @@ class RuidaDevice(Service, ViewPort):
         """
         @return: the location in scene units for the current known x value.
         """
-        return 0,0
+        return 0, 0
 
     @property
     def native(self):

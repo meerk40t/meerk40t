@@ -6,11 +6,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import (
-    Color,
-    Path,
-    Polygon,
-)
+from meerk40t.svgelements import Color, Path, Polygon
 
 
 class EngraveOpNode(Node, Parameters):
@@ -71,7 +67,7 @@ class EngraveOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Engrave"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["danger"] = "❌" if self.dangerous else ""
@@ -278,8 +274,7 @@ class EngraveOpNode(Node, Parameters):
             if node.type == "reference":
                 node = node.node
             if node.type == "elem image":
-                object_path = node.image
-                box = object_path.bbox()
+                box = node.bbox()
                 path = Path(
                     Polygon(
                         (box[0], box[1]),

@@ -337,7 +337,7 @@ class Wordlist:
         if filename is None:
             filename = self.default_filename
         try:
-            with open(filename, "r") as f:
+            with open(filename) as f:
                 self.content = json.load(f)
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
             pass
@@ -385,7 +385,7 @@ class Wordlist:
         self.empty_csv()
         headers = []
         try:
-            with open(filename, newline="", mode="r") as csvfile:
+            with open(filename, newline="") as csvfile:
                 buffer = csvfile.read(1024)
                 if force_header is None:
                     has_header = csv.Sniffer().has_header(buffer)

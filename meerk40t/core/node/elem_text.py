@@ -2,6 +2,7 @@ import re
 from copy import copy
 from math import sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import (
@@ -38,7 +39,7 @@ REGEX_CSS_FONT_FAMILY = re.compile(
 )
 
 
-class TextNode(Node):
+class TextNode(Node, Stroked):
     """
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
@@ -54,6 +55,7 @@ class TextNode(Node):
         self.stroke = None
         self.stroke_width = 0
         self.stroke_scale = True
+        self._stroke_zero = None
         self.underline = False
         self.strikethrough = False
         # For sake of completeness, afaik there is no way to display it with wxpython
@@ -80,7 +82,7 @@ class TextNode(Node):
             del kwargs["font"]
         else:
             font = None
-        super(TextNode, self).__init__(type="elem text", **kwargs)
+        super().__init__(type="elem text", **kwargs)
         self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
@@ -99,6 +101,17 @@ class TextNode(Node):
             self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, None)
             self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, None)
             self.validate_font()
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = Matrix(kwargs.get("viewport_transform", ""))
+            self._stroke_zero = sqrt(abs(m.determinant))
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = Matrix(kwargs.get("viewport_transform"))
+            if m:
+                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
+            else:
+                self.stroke_width_zero()
 
     def __copy__(self):
         nd = self.node_dict
@@ -121,38 +134,13 @@ class TextNode(Node):
     def font(self, value):
         self.parse_font(value)
 
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
-
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
-        self.stroke_scale = v
-
-    def implied_stroke_width(self, zoomscale=1.0):
-        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
-        need to countermand that scaling by dividing by the square root of the absolute
-        value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scale:
-            # Our implied stroke-width is prescaled.
-            return self.stroke_width
-        else:
-            sw = self.stroke_width / scalefactor
-            return sw
-
     def preprocess(self, context, matrix, plan):
         commands = plan.commands
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
             return
         self.text = context.elements.wordlist_translate(self.text, self)
+        self.stroke_scaled = False
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
@@ -162,7 +150,7 @@ class TextNode(Node):
         self.remove_node()
 
     def default_map(self, default_map=None):
-        default_map = super(TextNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Text"
         default_map.update(self.__dict__)
         return default_map
@@ -332,16 +320,16 @@ class TextNode(Node):
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
         delta = 0.0
-        if (
-            with_stroke
-            and self.stroke_width is not None
-            and not (self.stroke is None or self.stroke.value is None)
-        ):
-            delta = (
-                float(self.implied_stroke_width())
-                if transformed
-                else float(self.stroke_width)
-            ) / 2.0
+        # if (
+        #     with_stroke
+        #     and self.stroke_width is not None
+        #     and not (self.stroke is None or self.stroke.value is None)
+        # ):
+        #     delta = (
+        #         float(self.implied_stroke_width)
+        #         if transformed
+        #         else float(self.stroke_width)
+        #     ) / 2.0
         return (
             xmin - delta,
             ymin - delta,
