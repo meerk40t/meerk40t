@@ -509,9 +509,15 @@ class ShadowTree:
         @param node:
         @return:
         """
-        item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        okay = False
+        item = None
+        if node is not None and hasattr(node, "_item"):
+            item = node._item
+            if item is not None and item.IsOk():
+                okay = True
+        # print (f"Modified: {node}\nItem: {item}, Status={okay}")
+        if not okay:
+            return
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
