@@ -477,7 +477,7 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0:
+            if len(op._children) == 0 and not op.type=="blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
             self.remove_operations(to_delete)
