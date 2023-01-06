@@ -515,15 +515,18 @@ class StrokeWidthPanel(wx.Panel):
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0
-                factor = (
-                    sqrt(abs(self.node.matrix.determinant))
-                    if self.node.stroke_scaled
-                    else 1.0
-                )
+                # # We don't need to scale it here...
+                # factor = (
+                #     sqrt(abs(self.node.matrix.determinant))
+                #     if self.node.stroke_scaled
+                #     else 1.0
+                # )
+                factor = 1
                 node_stroke_width = self.node.stroke_width * factor
+                # print (f"Stroke-width={self.node.stroke_width} ({node_stroke_width}), scaled={self.node.stroke_scaled}")
                 for idx, unit in enumerate(self.unit_choices):
                     std = float(Length(f"1{unit}"))
-                    fraction = abs(node_stroke_width / std)
+                    fraction = abs(round(node_stroke_width / std, 6))
                     if fraction == 0:
                         continue
                     curr_post = 0
@@ -532,7 +535,7 @@ class StrokeWidthPanel(wx.Panel):
                         curr_post += 1
                         fraction *= 10
                     fraction -= curr_pre
-                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={node_stroke_width / std}")
                     takespref = False
                     if fraction < delta:
                         takespref = True
