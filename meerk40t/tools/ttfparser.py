@@ -67,59 +67,60 @@ class TrueTypeFont:
             index = self._character_map.get(c, 0)
             advance_x = self.horizontal_metrics[index][0]
             advance_y = 0
-            if index != 0:
-                glyph = self.glyphs[index]
-                path.new_path()
-                for contour in glyph:
-                    path.move(
-                        (offset_x + contour[0][0]) * scale,
-                        (offset_y + contour[0][1]) * scale,
-                    )
-                    contour = list(contour)
-                    contour.append(contour[0])
-                    segments = [
-                        [
-                            contour[0],
-                        ],
-                    ]
-                    for j in range(0, len(contour)):
-                        c = contour[j]
-                        segments[-1].append(c)
-                        if c[-1] & 1:
-                            segments.append(
-                                [
-                                    c,
-                                ]
-                            )
-                    for segment in segments:
-                        if len(segment) == 3:
-                            path.quad(
-                                (offset_x + segment[0][0]) * scale,
-                                (offset_y + segment[0][1]) * scale,
-                                (offset_x + segment[1][0]) * scale,
-                                (offset_y + segment[1][1]) * scale,
-                                (offset_x + segment[2][0]) * scale,
-                                (offset_y + segment[2][1]) * scale,
-                            )
-                        elif len(segment) == 4:
-                            path.cubic(
-                                (offset_x + segment[0][0]) * scale,
-                                (offset_y + segment[0][1]) * scale,
-                                (offset_x + segment[1][0]) * scale,
-                                (offset_y + segment[1][1]) * scale,
-                                (offset_x + segment[2][0]) * scale,
-                                (offset_y + segment[2][1]) * scale,
-                                (offset_x + segment[3][0]) * scale,
-                                (offset_y + segment[3][1]) * scale,
-                            )
-                        elif len(segment) == 2:
-                            path.line(
-                                (offset_x + segment[0][0]) * scale,
-                                (offset_y + segment[0][1]) * scale,
-                                (offset_x + segment[1][0]) * scale,
-                                (offset_y + segment[1][1]) * scale,
-                            )
-                    path.close()
+            glyph = self.glyphs[index]
+            path.new_path()
+            for contour in glyph:
+                if len(contour) == 0:
+                    continue
+                path.move(
+                    (offset_x + contour[0][0]) * scale,
+                    (offset_y + contour[0][1]) * scale,
+                )
+                contour = list(contour)
+                contour.append(contour[0])
+                segments = [
+                    [
+                        contour[0],
+                    ],
+                ]
+                for j in range(0, len(contour)):
+                    c = contour[j]
+                    segments[-1].append(c)
+                    if c[-1] & 1:
+                        segments.append(
+                            [
+                                c,
+                            ]
+                        )
+                for segment in segments:
+                    if len(segment) == 3:
+                        path.quad(
+                            (offset_x + segment[0][0]) * scale,
+                            (offset_y + segment[0][1]) * scale,
+                            (offset_x + segment[1][0]) * scale,
+                            (offset_y + segment[1][1]) * scale,
+                            (offset_x + segment[2][0]) * scale,
+                            (offset_y + segment[2][1]) * scale,
+                        )
+                    elif len(segment) == 4:
+                        path.cubic(
+                            (offset_x + segment[0][0]) * scale,
+                            (offset_y + segment[0][1]) * scale,
+                            (offset_x + segment[1][0]) * scale,
+                            (offset_y + segment[1][1]) * scale,
+                            (offset_x + segment[2][0]) * scale,
+                            (offset_y + segment[2][1]) * scale,
+                            (offset_x + segment[3][0]) * scale,
+                            (offset_y + segment[3][1]) * scale,
+                        )
+                    elif len(segment) == 2:
+                        path.line(
+                            (offset_x + segment[0][0]) * scale,
+                            (offset_y + segment[0][1]) * scale,
+                            (offset_x + segment[1][0]) * scale,
+                            (offset_y + segment[1][1]) * scale,
+                        )
+                path.close()
             offset_x += advance_x
             offset_y += advance_y
 
@@ -226,27 +227,27 @@ class TrueTypeFont:
             range_shift,
         ) = struct.unpack(">HHHHHH", data.read(12))
         seg_count = int(seg_count_x2 / 2)
-        endcodes = struct.unpack(f">{seg_count}H", data.read(seg_count_x2))
-        reserved = data.read(2)
-        startcodes = struct.unpack(f">{seg_count}H", data.read(seg_count_x2))
-        id_delta = struct.unpack(f">{seg_count}H", data.read(seg_count_x2))
-        id_range_offset = struct.unpack(f">{seg_count}H", data.read(seg_count_x2))
-        original = data.tell()
-        for end, start, delta, offset in zip(
-            endcodes, startcodes, id_delta, id_range_offset
-        ):
-            if offset == 0:
-                for i in range(start, end):
-                    self._character_map[chr(i+1)] = (delta + i) % 0xFFFF
-            else:
-                for i in range(start, end):
-                    data.seek(original + (i - start) * 2 + offset)
-                    q = data.read(2)
-                    if not q:
-                        self._character_map[chr(i+1)] = 0
-                    else:
-                        b = struct.unpack(f">H", q)[0]
-                        self._character_map[chr(i+1)] = (delta + b) % 0xFFFF
+        data = data.read()
+        data = struct.unpack(f">{int(len(data)/2)}H", data)
+        ends = data[:seg_count]
+        starts = data[seg_count+1:seg_count*2+1]
+        deltas = data[seg_count*2+1:seg_count*3+1]
+        offsets = data[seg_count*3+1:]
+        for seg in range(seg_count):
+            end = ends[seg]
+            start = starts[seg]
+            delta = deltas[seg]
+            offset = offsets[seg]
+
+            for c in range(start, end + 1):
+                if offset == 0:
+                    self._character_map[chr(c)] = (c + delta) & 0xFFFF
+                else:
+                    v = (c - start) + seg + (offset >> 2)
+                    glyph_index = offsets[v]
+                    if glyph_index != 0:
+                        glyph_index = (glyph_index + delta) & 0xFFFF
+                    self._character_map[chr(c)] = glyph_index
 
     def _parse_cmap_format_6(self, data):
         (
@@ -317,13 +318,19 @@ class TrueTypeFont:
             self._glyph_offsets = struct.unpack(f">{n}I", data)
 
     def parse_glyf(self):
-        data = BytesIO(self._raw_tables[b"glyf"])
-        for index in range(len(self._glyph_offsets) - 1):
-            yield list(self._parse_glyph(data, index))
+        for i in range(len(self._glyph_offsets) - 1):
+            yield list(self._parse_glyph_index(i))
 
-    def _parse_glyph(self, data, index):
-        offset = self._glyph_offsets[index]
-        data.seek(offset)
+    def _parse_glyph_index(self, index):
+        data = self._raw_tables[b"glyf"]
+        start = self._glyph_offsets[index]
+        end = self._glyph_offsets[index+1]
+        if start == end:
+            yield list()
+            return
+        yield from self._parse_glyph(BytesIO(data[start:end]))
+
+    def _parse_glyph(self, data):
         num_contours, x_min, y_min, x_max, y_max = struct.unpack(
             ">hhhhh", data.read(10)
         )
@@ -331,8 +338,6 @@ class TrueTypeFont:
             yield from self._parse_simple_glyph(num_contours, data)
         elif num_contours < 0:
             yield from self._parse_compound_glyph(data)
-        else:
-            return
 
     def _parse_compound_glyph(self, data):
         flags = MORE_COMPONENTS
@@ -377,7 +382,7 @@ class TrueTypeFont:
             if abs(abs(b) - abs(c)) < 33.0 / s:
                 n *= 2
             if flags & ROUND_XY_TO_GRID:
-                for contour in self._parse_glyph(data, glyph_index):
+                for contour in self._parse_glyph_index(glyph_index):
                     yield [
                         (
                             round(m * (x * a / m + y * b / m + e)),
@@ -387,7 +392,7 @@ class TrueTypeFont:
                         for x, y, flag in contour
                     ]
             else:
-                for contour in self._parse_glyph(data, glyph_index):
+                for contour in self._parse_glyph_index(glyph_index):
                     yield [
                         (
                             m * (x * a / m + y * b / m + e),
