@@ -30,13 +30,9 @@ def create_preview_image(context, fontfile):
     base, ext = os.path.splitext(fontfile)
     bmpfile = base + ".png"
     pattern = "The quick brown fox..."
-    try:
-        node = create_linetext_node(
-            context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
-        )
-    except:
-        # Couldnt create the node...
-        node = None
+    node = create_linetext_node(
+        context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
+    )
     if node is None:
         return False
     if node.bounds is None:

@@ -7,6 +7,7 @@ from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
+from meerk40t.tools.ttfparser import TrueTypeFont
 
 
 class FontPath:
@@ -22,6 +23,15 @@ class FontPath:
     def line(self, x0, y0, x1, y1):
         self.path.line((x1, -y1))
 
+    def quad(self, x0, y0, x1, y1, x2, y2):
+        self.path.quad((x1, -y1), (x2, -y2))
+
+    def cubic(self, x0, y0, x1, y1, x2, y2, x3, y3):
+        self.path.cubic((x1, -y1), (x2, -y2), (x3, -y3))
+
+    def close(self):
+        self.path.closed()
+
     def arc(self, x0, y0, cx, cy, x1, y1):
         arc = Arc(start=(x0, -y0), control=(cx, -cy), end=(x1, -y1))
         self.path += arc
@@ -31,6 +41,7 @@ def fonts_registered():
     registered_fonts = {
         "shx": ("Autocad", ShxFont),
         "jhf": ("Hershey", JhfFont),
+        "ttf": ("TrueType", TrueTypeFont)
     }
     return registered_fonts
 
