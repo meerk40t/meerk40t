@@ -76,7 +76,7 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
-from .propertypanels.opblobproperty import BlobPropertyPanel
+from .propertypanels.blobproperty import BlobPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t

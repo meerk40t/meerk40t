@@ -20,7 +20,9 @@ class BlobPropertyPanel(ScrolledPanel):
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.operation
         )
-        self.text_blob = wx.TextCtrl(self, id=wx.ID_ANY, value="", style = wx.TE_MULTILINE | wx.TE_READONLY)
+        self.text_blob = wx.TextCtrl(
+            self, id=wx.ID_ANY, value="", style=wx.TE_MULTILINE | wx.TE_READONLY
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -51,17 +53,9 @@ class BlobPropertyPanel(ScrolledPanel):
             d = len(data)
             buffer = []
             for entry in data:
-                # if debug <= 2:
-                #     print (f"Data, {type(entry).__name__}: {entry}")
-                if isinstance(entry, (list, tuple, str, bytes)):
+                if isinstance(entry, bytes):
                     for single in entry:
-                        # if debug <= 2:
-                        #     print (f"Single: {single}, {type(single).__name__}, {chr(single)}")
                         buffer.append(single)
-                else:
-                    buffer.append(entry)
-                debug += 1
-            # print (buffer)
             d = len(buffer)
         else:
             d = 0
@@ -120,13 +114,12 @@ class BlobPropertyPanel(ScrolledPanel):
     def update_label(self):
         return
 
+
 class BlobProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(288, 303, *args, **kwds)
 
-        self.panel = BlobPropertyPanel(
-            self, wx.ID_ANY, context=self.context, node=node
-        )
+        self.panel = BlobPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())
