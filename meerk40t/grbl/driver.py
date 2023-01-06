@@ -325,8 +325,7 @@ class GRBLDriver(Parameters):
         if data_type != "gcode":
             return
         for line in data:
-            # TODO: Process line does not exist as a function.
-            self.process_line(line)
+            self.grbl(line)
 
     def physical_home(self):
         """
