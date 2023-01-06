@@ -2,6 +2,7 @@ from io import BytesIO
 
 import struct
 
+ON_CURVE_POINT = 1
 ARG_1_AND_2_ARE_WORDS = 1 << 0
 ARGS_ARE_XY_VALUES = 1 << 1
 ROUND_XY_TO_GRID = 1 << 2
@@ -72,53 +73,33 @@ class TrueTypeFont:
             for contour in glyph:
                 if len(contour) == 0:
                     continue
-                path.move(
-                    (offset_x + contour[0][0]) * scale,
-                    (offset_y + contour[0][1]) * scale,
-                )
                 contour = list(contour)
-                contour.append(contour[0])
-                segments = [
-                    [
-                        contour[0],
-                    ],
-                ]
-                for j in range(0, len(contour)):
-                    c = contour[j]
-                    segments[-1].append(c)
-                    if c[-1] & 1:
-                        segments.append(
-                            [
-                                c,
-                            ]
-                        )
-                for segment in segments:
-                    if len(segment) == 3:
+                curr = contour[-1]
+                next = contour[0]
+                if curr[2] & ON_CURVE_POINT:
+                    path.move((offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale)
+                else:
+                    if next[2] & ON_CURVE_POINT:
+                        path.move((offset_x + next[0]) * scale, (offset_y + next[1]) * scale)
+                    else:
+                        path.move((offset_x + (curr[0] + next[0]) / 2) * scale, (offset_y + (curr[1] + next[1]) / 2) * scale)
+                for i in range(len(contour)):
+                    prev = curr
+                    curr = next
+                    next = contour[(i+1) % len(contour)]
+                    if curr[2] & ON_CURVE_POINT:
+                        path.line(None, None, (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale)
+                    else:
+                        next2 = next
+                        if not next[2] & ON_CURVE_POINT:
+                            next2 = (curr[0] + next[0]) / 2, (curr[1] + next[1]) / 2
                         path.quad(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
-                            (offset_x + segment[2][0]) * scale,
-                            (offset_y + segment[2][1]) * scale,
-                        )
-                    elif len(segment) == 4:
-                        path.cubic(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
-                            (offset_x + segment[2][0]) * scale,
-                            (offset_y + segment[2][1]) * scale,
-                            (offset_x + segment[3][0]) * scale,
-                            (offset_y + segment[3][1]) * scale,
-                        )
-                    elif len(segment) == 2:
-                        path.line(
-                            (offset_x + segment[0][0]) * scale,
-                            (offset_y + segment[0][1]) * scale,
-                            (offset_x + segment[1][0]) * scale,
-                            (offset_y + segment[1][1]) * scale,
+                            None,
+                            None,
+                            (offset_x + curr[0]) * scale,
+                            (offset_y + curr[1]) * scale,
+                            (offset_x + next2[0]) * scale,
+                            (offset_y + next2[1]) * scale,
                         )
                 path.close()
             offset_x += advance_x
@@ -342,6 +323,7 @@ class TrueTypeFont:
     def _parse_compound_glyph(self, data):
         flags = MORE_COMPONENTS
         s = 1 << 14
+        last_contour = None
         while flags & MORE_COMPONENTS:
             a, b, c, d, e, f = (
                 1.0,
@@ -351,7 +333,7 @@ class TrueTypeFont:
                 0.0,
                 0.0,
             )
-            dest, src = 0, 0
+            dest, src = -1, -1
             flags, glyph_index = struct.unpack(">HH", data.read(4))
             if flags & ARGS_ARE_XY_VALUES:
                 if flags & ARG_1_AND_2_ARE_WORDS:
@@ -381,8 +363,12 @@ class TrueTypeFont:
             n = max(abs(c), abs(d))
             if abs(abs(b) - abs(c)) < 33.0 / s:
                 n *= 2
+            contours = list(self._parse_glyph_index(glyph_index))
+            if src != -1 and dest != -1:
+                pass  # Not properly supported.
+            last_contour = contours
             if flags & ROUND_XY_TO_GRID:
-                for contour in self._parse_glyph_index(glyph_index):
+                for contour in contours:
                     yield [
                         (
                             round(m * (x * a / m + y * b / m + e)),
@@ -392,7 +378,7 @@ class TrueTypeFont:
                         for x, y, flag in contour
                     ]
             else:
-                for contour in self._parse_glyph_index(glyph_index):
+                for contour in contours:
                     yield [
                         (
                             m * (x * a / m + y * b / m + e),
