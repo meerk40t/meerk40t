@@ -243,7 +243,7 @@ class TrueTypeFont:
                 if offset == 0:
                     self._character_map[chr(c)] = (c + delta) & 0xFFFF
                 else:
-                    v = (c - start) + seg + (offset >> 2)
+                    v = (c - start) + seg + (offset >> 1)
                     glyph_index = offsets[v]
                     if glyph_index != 0:
                         glyph_index = (glyph_index + delta) & 0xFFFF
