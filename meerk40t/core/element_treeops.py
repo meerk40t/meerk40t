@@ -618,6 +618,20 @@ def init_tree(kernel):
         self.signal("operation_removed")
 
     @tree_conditional(
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types="blob")))
+        == 1
+    )
+    @tree_operation(
+        _("Delete blob '{name}' fully"),
+        node_type="blob",
+        help="",
+    )
+    def remove_type_blob(node, **kwargs):
+        node.remove_node()
+        self.set_emphasis(None)
+        self.signal("operation_removed")
+
+    @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
         > 1
     )
