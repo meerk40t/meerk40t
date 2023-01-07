@@ -470,7 +470,7 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0:
+            if len(op._children) == 0 and not op.type=="blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
             self.remove_operations(to_delete)
@@ -606,6 +606,20 @@ def init_tree(kernel):
     )
     def remove_type_op(node, **kwargs):
 
+        node.remove_node()
+        self.set_emphasis(None)
+        self.signal("operation_removed")
+
+    @tree_conditional(
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types="blob")))
+        == 1
+    )
+    @tree_operation(
+        _("Delete blob '{name}' fully"),
+        node_type="blob",
+        help="",
+    )
+    def remove_type_blob(node, **kwargs):
         node.remove_node()
         self.set_emphasis(None)
         self.signal("operation_removed")
