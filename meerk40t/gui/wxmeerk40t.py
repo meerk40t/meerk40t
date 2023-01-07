@@ -420,6 +420,7 @@ class wxMeerK40t(wx.App, Module):
         def window_list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
+            context = kernel.root
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
                 channel(f"{i + 1}: {name}")
