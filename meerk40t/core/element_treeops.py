@@ -261,11 +261,11 @@ def init_tree(kernel):
             activate(node)
             self.signal("propupdate", node)
 
-    def radio_match(node, speed=0, **kwargs):
+    def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
 
     @tree_submenu(_("Speed for Raster-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
@@ -278,7 +278,7 @@ def init_tree(kernel):
         self.signal("element_property_reload", data)
 
     @tree_submenu(_("Speed for Engrave-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
@@ -295,7 +295,7 @@ def init_tree(kernel):
         self.signal("element_property_reload", data)
 
     @tree_submenu(_("Speed for Cut-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
     @tree_operation(
         _("{speed}mm/s"),
@@ -311,11 +311,11 @@ def init_tree(kernel):
             data.append(n)
         self.signal("element_property_reload", data)
 
-    def radio_match(node, power=0, **kwargs):
+    def radio_match_power(node, power=0, **kwargs):
         return node.power == float(power)
 
     @tree_submenu(_("Power"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_power)
     @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
     @tree_operation(
         _("{power}ppi"),
@@ -353,13 +353,13 @@ def init_tree(kernel):
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", data)
 
-    def radio_match(node, passvalue=1, **kwargs):
+    def radio_match_passes(node, passvalue=1, **kwargs):
         return (node.passes_custom and passvalue == node.passes) or (
             not node.passes_custom and passvalue == 1
         )
 
     @tree_submenu(_("Set operation passes"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_passes)
     @tree_iterate("passvalue", 1, 10)
     @tree_operation(_("Passes {passvalue}"), node_type=op_parent_nodes, help="")
     def set_n_passes(node, passvalue=1, **kwargs):
