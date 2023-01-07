@@ -41,7 +41,7 @@ def fonts_registered():
     registered_fonts = {
         "shx": ("Autocad", ShxFont),
         "jhf": ("Hershey", JhfFont),
-        "ttf": ("TrueType", TrueTypeFont)
+        "ttf": ("TrueType", TrueTypeFont),
     }
     return registered_fonts
 

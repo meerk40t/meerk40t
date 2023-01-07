@@ -349,6 +349,3 @@ class TestViewport(unittest.TestCase):
                     cx, cy = view.device_to_scene_position(0x7FFF, 0x7FFF)
                     self.assertAlmostEqual(sx, cx, delta=10)
                     self.assertAlmostEqual(sy, cy, delta=10)
-
-
-

@@ -1014,7 +1014,9 @@ class TemplatePanel(wx.Panel):
             gap_2 = 5
 
         message = _("This will delete all existing operations and elements") + "\n"
-        message += _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        message += (
+            _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        )
         message += _("(Yes=Empty and Create, No=Keep existing)")
         caption = _("Create Test-Pattern")
         dlg = wx.MessageDialog(

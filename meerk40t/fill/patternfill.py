@@ -395,6 +395,7 @@ class LivingHinges:
         def approximate_line(part_of_path, current_x, current_y):
             # print(f"Check: {type(part_of_path).__name__} {part_of_path.bbox()} {clipbb}")
             from numpy import linspace
+
             added = 0
             partial = 0
             ignored = 0

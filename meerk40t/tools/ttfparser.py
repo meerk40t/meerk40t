@@ -76,18 +76,30 @@ class TrueTypeFont:
                 curr = contour[-1]
                 next = contour[0]
                 if curr[2] & ON_CURVE_POINT:
-                    path.move((offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale)
+                    path.move(
+                        (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale
+                    )
                 else:
                     if next[2] & ON_CURVE_POINT:
-                        path.move((offset_x + next[0]) * scale, (offset_y + next[1]) * scale)
+                        path.move(
+                            (offset_x + next[0]) * scale, (offset_y + next[1]) * scale
+                        )
                     else:
-                        path.move((offset_x + (curr[0] + next[0]) / 2) * scale, (offset_y + (curr[1] + next[1]) / 2) * scale)
+                        path.move(
+                            (offset_x + (curr[0] + next[0]) / 2) * scale,
+                            (offset_y + (curr[1] + next[1]) / 2) * scale,
+                        )
                 for i in range(len(contour)):
                     prev = curr
                     curr = next
-                    next = contour[(i+1) % len(contour)]
+                    next = contour[(i + 1) % len(contour)]
                     if curr[2] & ON_CURVE_POINT:
-                        path.line(None, None, (offset_x + curr[0]) * scale, (offset_y + curr[1]) * scale)
+                        path.line(
+                            None,
+                            None,
+                            (offset_x + curr[0]) * scale,
+                            (offset_y + curr[1]) * scale,
+                        )
                     else:
                         next2 = next
                         if not next[2] & ON_CURVE_POINT:
@@ -190,7 +202,7 @@ class TrueTypeFont:
     def _parse_cmap_format_0(self, data):
         length, language = struct.unpack(">HH", data.read(4))
         for i, c in enumerate(data.read(256)):
-            self._character_map[chr(i+1)] = c
+            self._character_map[chr(i + 1)] = c
 
     def _parse_cmap_format_2(self, data):
         length, language = struct.unpack(">HH", data.read(4))
@@ -210,9 +222,9 @@ class TrueTypeFont:
         data = data.read()
         data = struct.unpack(f">{int(len(data)/2)}H", data)
         ends = data[:seg_count]
-        starts = data[seg_count+1:seg_count*2+1]
-        deltas = data[seg_count*2+1:seg_count*3+1]
-        offsets = data[seg_count*3+1:]
+        starts = data[seg_count + 1 : seg_count * 2 + 1]
+        deltas = data[seg_count * 2 + 1 : seg_count * 3 + 1]
+        offsets = data[seg_count * 3 + 1 :]
         for seg in range(seg_count):
             end = ends[seg]
             start = starts[seg]
@@ -287,7 +299,9 @@ class TrueTypeFont:
         table_start = count * 4
         if len(data) > table_start:
             remaining = (len(data) - table_start) // 2
-            left_bearing = struct.unpack(f">{remaining}h", data[count * 4:count * 4 + remaining * 2])
+            left_bearing = struct.unpack(
+                f">{remaining}h", data[count * 4 : count * 4 + remaining * 2]
+            )
             self.horizontal_metrics.extend((last_advance, left_bearing))
 
     def parse_loca(self):
@@ -306,7 +320,7 @@ class TrueTypeFont:
     def _parse_glyph_index(self, index):
         data = self._raw_tables[b"glyf"]
         start = self._glyph_offsets[index]
-        end = self._glyph_offsets[index+1]
+        end = self._glyph_offsets[index + 1]
         if start == end:
             yield list()
             return
@@ -406,7 +420,13 @@ class TrueTypeFont:
         y_coords = list(self._read_coords(num_points, 0x4, 0x20, flags, data))
         start = 0
         for end in end_pts:
-            yield list(zip(x_coords[start:end + 1], y_coords[start:end + 1], flags[start:end + 1]))
+            yield list(
+                zip(
+                    x_coords[start : end + 1],
+                    y_coords[start : end + 1],
+                    flags[start : end + 1],
+                )
+            )
             start = end + 1
 
     def _read_coords(self, num_points, bit_byte, bit_delta, flags, data):

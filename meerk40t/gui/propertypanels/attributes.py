@@ -582,16 +582,33 @@ class PositionSizePanel(wx.Panel):
         self.context = context
         self.node = node
         self.text_x = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length",
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
         )
         self.text_y = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
         )
         self.text_w = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length", nonzero=True,
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+            nonzero=True,
         )
         self.text_h = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length", nonzero=True,
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+            nonzero=True,
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
