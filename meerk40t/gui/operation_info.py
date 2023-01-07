@@ -1,6 +1,5 @@
 import wx
 
-from meerk40t.core.element_types import op_parent_nodes
 from meerk40t.gui.icons import (
     icons8_computer_support_50,
     icons8_diagonal_20,

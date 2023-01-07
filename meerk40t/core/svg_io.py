@@ -21,7 +21,6 @@ from ..svgelements import (
     SVG_ATTR_FONT_STRETCH,
     SVG_ATTR_FONT_STYLE,
     SVG_ATTR_FONT_VARIANT,
-    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_POINTS,
@@ -70,21 +69,18 @@ from ..svgelements import (
     Color,
     Ellipse,
     Group,
-    Line,
     Matrix,
-    Move,
     Path,
     Point,
     Polygon,
     Polyline,
     Rect,
-    Shape,
     SimpleLine,
     SVGImage,
     SVGText,
     Use,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"

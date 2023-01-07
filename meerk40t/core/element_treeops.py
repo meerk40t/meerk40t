@@ -8,12 +8,6 @@ from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_hatch import HatchOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
 from .treeop import (
     get_tree_operation,
     tree_calc,
@@ -23,7 +17,6 @@ from .treeop import (
     tree_iterate,
     tree_prompt,
     tree_radio,
-    tree_reference,
     tree_separator_after,
     tree_separator_before,
     tree_submenu,

@@ -1,6 +1,5 @@
-from io import BytesIO
-
 import struct
+from io import BytesIO
 
 ON_CURVE_POINT = 1
 ARG_1_AND_2_ARE_WORDS = 1 << 0

@@ -13,7 +13,6 @@ from meerk40t.svgelements import (
     Line,
     Matrix,
     Move,
-    Path,
     QuadraticBezier,
 )
 

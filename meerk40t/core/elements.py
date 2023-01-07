@@ -2,7 +2,7 @@ import os.path
 from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
+from meerk40t.kernel import ConsoleFunction, Service, Settings
 
 from ..svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
