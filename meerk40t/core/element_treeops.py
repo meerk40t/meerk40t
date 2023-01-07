@@ -752,7 +752,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Elements"),
         node_type="blob",
-        help="Convert blob to elements ",
+        help=_("Convert blob to elements"),
     )
     def blob2path(node, **kwargs):
         parser_class = kernel.lookup(f"parser/{node.data_type}")
@@ -1514,7 +1514,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help="Adjusts the reference value for a wordlist, ie {name} to {name#+1}",
+        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -1540,7 +1540,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help="Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}",
+        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()
@@ -1585,7 +1585,7 @@ def init_tree(kernel):
             "elem text",
             "elem image",
         ),
-        help="Vectorize the given element",
+        help=_("Vectorize the given element"),
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
@@ -1917,7 +1917,7 @@ def init_tree(kernel):
             "file",
             "root",
         ),
-        help="Expand all children of this given node.",
+        help=_("Expand all children of this given node."),
     )
     def expand_all_children(node, **kwargs):
         node.notify_expand()
@@ -1939,7 +1939,7 @@ def init_tree(kernel):
             "file",
             "root",
         ),
-        help="Collapse all children of this given node.",
+        help=_("Collapse all children of this given node."),
     )
     def collapse_all_children(node, **kwargs):
         node.notify_collapse()
