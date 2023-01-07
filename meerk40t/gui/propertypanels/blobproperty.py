@@ -55,14 +55,7 @@ class BlobPropertyPanel(ScrolledPanel):
         data = self.operation.data
         hexcodes = ""
         cleartext = ""
-        if data is not None:
-            d = len(data)
-        else:
-            d = 0
-        self.hex_content += f"Data-Type: {self.operation.data_type}, Length={d}\n"
-        self.ascii_content += f"Data-Type: {self.operation.data_type}, Length={d}\n"
-        self.hex_content += "Offset | Hex                                             | Ascii          \n"
-        self.hex_content += "-------+-------------------------------------------------+----------------\n"
+        data_len = 0
         if data is not None:
             offset = 0
             index = 0
@@ -76,6 +69,7 @@ class BlobPropertyPanel(ScrolledPanel):
                 if isinstance(entry, bytes):
                     self.ascii_content += entry.decode("utf-8")
                     for single in entry:
+                        data_len += 1
                         code = int(single)
                         hexa = hex(code)[2:]
                         while len(hexa) < 2:
@@ -105,6 +99,12 @@ class BlobPropertyPanel(ScrolledPanel):
                     index += 1
                 hexcodes += " | " + cleartext + "\n"
                 self.hex_content += hexcodes
+
+        header1 = f"Data-Type: {self.operation.data_type}, Length={data_len}\n"
+        header2 = "Offset | Hex                                             | Ascii          \n"
+        header2 += "-------+-------------------------------------------------+----------------\n"
+        self.hex_content = header1 + header2 + self.hex_content
+        self.ascii_content = header1 + self.ascii_content
 
     def on_option_view(self, event):
         hex_view = bool(self.option_view.GetSelection() == 0)
