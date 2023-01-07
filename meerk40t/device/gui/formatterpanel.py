@@ -1,9 +1,8 @@
 import wx
 
-from meerk40t.core.element_types import elem_group_nodes, elem_ref_nodes, op_nodes
+from meerk40t.core.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
-    icons8_detective_50,
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_file_20,

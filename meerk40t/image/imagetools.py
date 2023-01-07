@@ -5,7 +5,7 @@ from copy import copy
 from meerk40t.kernel import CommandSyntaxError
 
 from ..core.exceptions import BadFileError
-from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
+from ..core.units import DEFAULT_PPI, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
 
 

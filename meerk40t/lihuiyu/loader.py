@@ -3,8 +3,8 @@ EGV Loader
 
 Registered loader for egv (engrave) data of lhymicro-gl.
 """
-
-from meerk40t.core.cutcode import CutCode, RawCut
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.rawcut import RawCut
 from meerk40t.lihuiyu.parser import LihuiyuParser
 
 

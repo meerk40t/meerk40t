@@ -1,5 +1,5 @@
+from abc import ABC
 from math import sqrt
-from abc import ABC, abstractmethod as abstract
 
 
 class Stroked(ABC):

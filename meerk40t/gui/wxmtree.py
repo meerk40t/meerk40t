@@ -4,7 +4,6 @@ from wx import aui
 from ..kernel import signal_listener
 from ..svgelements import Color
 from .icons import (
-    get_default_icon_size,
     get_default_scale_factor,
     icon_meerk40t,
     icons8_bell_20,
