@@ -18,6 +18,22 @@ class Logging(Service):
         self._setting_config = Settings(self.kernel.name, "meerk40t.log")
         self.logs = self._setting_config.literal_dict()
 
+    def uid(self, prefix):
+        if "uid" not in self.logs:
+            self.logs["uid"] = dict()
+        uids = self.logs["uid"]
+        if "event_id" not in uids:
+            uids[prefix] = 0
+        return uids[prefix]
+
+    def event(self, event):
+        if "uid" in event:
+            uid = event["uid"]
+            del event["uid"]
+        else:
+            uid = self.uid("event")
+        self.logs[uid] = event
+
     def shutdown(self, *args, **kwargs):
         self._setting_config.set_dict(self.logs)
         self._setting_config.write_configuration()
