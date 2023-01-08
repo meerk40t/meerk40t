@@ -5296,11 +5296,13 @@ def init_commands(kernel):
     def element_matrix(
         command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
     ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
         if ty is None:
             channel("----------")
             channel(_("Matrix Values:"))
             i = 0
-            for node in self.elems():
+            for node in data:
                 name = str(node)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -5308,8 +5310,6 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        if data is None:
-            data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
