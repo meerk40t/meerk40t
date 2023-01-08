@@ -124,16 +124,16 @@ class BalorControllerPanel(wx.ScrolledWindow):
         try:
             if self.service.driver.connection.is_connecting:
                 self.service.driver.connection.abort_connect()
-                self.service.driver.connection.set_backbone_error(False)
+                self.service.driver.connection.set_disable_connect(False)
                 return
         except AttributeError:
             pass
 
         if connected:
             self.context("usb_disconnect\n")
-            self.service.driver.connection.set_backbone_error(False)
+            self.service.driver.connection.set_disable_connect(False)
         else:
-            self.service.driver.connection.set_backbone_error(False)
+            self.service.driver.connection.set_disable_connect(False)
             self.context("usb_connect\n")
 
     def pane_show(self):
