@@ -91,7 +91,7 @@ def register_panel_console(window, context):
     context.register("pane/console", pane)
 
     @context.console_command(
-        "cls",
+        ("cls", "clear"),
         help=_("Clear console screen"),
     )
     def clear_console(channel, _, *args, **kwargs):

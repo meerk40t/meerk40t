@@ -243,7 +243,7 @@ class GalvoController:
         self.connection = None
         self._is_opening = False
         self._abort_open = False
-        self._backbone_error = False
+        self._disable_connect = False
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -279,8 +279,8 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
-    def set_backbone_error(self, status):
-        self._backbone_error = status
+    def set_disable_connect(self, status):
+        self._disable_connect = status
 
     def added(self):
         pass
@@ -314,13 +314,16 @@ class GalvoController:
             pass
         self.connection = None
         # Reset error to allow another attempt
-        self.set_backbone_error(False)
+        self.set_disable_connect(False)
 
     def connect_if_needed(self):
-        if self._backbone_error:
+        if self._disable_connect:
+            # After many failures automatic connects are disabled. We require a manual connection.
             self.abort_connect()
             self.connection = None
-            return
+            raise ConnectionRefusedError(
+                "LMC was unreachable. Explicit connect required."
+            )
         if self.connection is None:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
@@ -338,6 +341,7 @@ class GalvoController:
                     raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
+                time.sleep(0.3)
                 count += 1
                 # self.usb_log(f"Error-Routine pass #{count}")
                 if self.is_shutdown or self._abort_open:
@@ -347,8 +351,11 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
-                    self.set_backbone_error(True)
+                    # We have failed too many times.
+                    self._is_opening = False
+                    self.set_disable_connect(True)
                     self.usb_log("Could not connect to the LMC controller.")
+                    self.usb_log("Automatic connections disabled.")
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -363,7 +370,7 @@ class GalvoController:
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
-        except (ConnectionError, AttributeError):
+        except ConnectionError:
             return -1, -1, -1, -1
         if read:
             try:
