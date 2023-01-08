@@ -4865,30 +4865,27 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-        rot = angle.as_degrees
 
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
-        matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
         images = []
         try:
             if not absolute:
                 for node in data:
                     if hasattr(node, "lock") and node.lock:
                         continue
-
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
             else:
                 for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     start_angle = node.matrix.rotation
-                    amount = rot - start_angle
-                    matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle - start_angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
