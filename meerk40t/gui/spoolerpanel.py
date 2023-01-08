@@ -419,15 +419,15 @@ class SpoolerPanel(wx.Panel):
             wx.ITEM_NORMAL,
         )
         info_tuple = [spooler, element, remove_mode]
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(info_tuple), item)
+        self.Bind(wx.EVT_MENU, self.on_menu_popup_delete(info_tuple), item)
 
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), item)
+        self.Bind(wx.EVT_MENU, self.on_menu_popup_clear(element), item)
 
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def on_tree_popup_clear(self, element=None):
+    def on_menu_popup_clear(self, element=None):
         def clear(event=None):
             spoolers = []
             for device in self.available_devices:
@@ -445,7 +445,7 @@ class SpoolerPanel(wx.Panel):
 
         return clear
 
-    def on_tree_popup_delete(self, element):
+    def on_menu_popup_delete(self, element):
         def delete(event=None):
             spooler = element[0]
             mode = element[2]
