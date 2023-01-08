@@ -86,7 +86,6 @@ class SpoolerPanel(wx.Panel):
         self.queue_entries = []
         self.context.setting(int, "spooler_sash_position", 0)
         self.context.setting(bool, "spool_history_clear_on_start", False)
-        self.clear_data = self.context.spool_history_clear_on_start
         self.context.setting(bool, "spool_ignore_helper_jobs", True)
 
         self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
@@ -161,6 +160,8 @@ class SpoolerPanel(wx.Panel):
         self.map_item_key = {}
         self.refresh_history()
         self.set_pause_color()
+        if self.context.spool_history_clear_on_start:
+            self.clear_history()
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
