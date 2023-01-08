@@ -594,8 +594,8 @@ class Spooler:
                     "device": self.context.label,
                     "important": getattr(element, "helper"),
                     "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
-                    "loops_done": getattr(element, "steps_done"),
-                    "loops_total": getattr(element, "steps_total"),
+                    "steps_done": getattr(element, "steps_done"),
+                    "steps_total": getattr(element, "steps_total"),
                 })
                 self.context.signal("spooler;completed")
                 element.stop()
@@ -620,8 +620,8 @@ class Spooler:
                 "device": self.context.label,
                 "important": getattr(element, "helper"),
                 "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
-                "loops_done": getattr(element, "steps_done"),
-                "loops_total": getattr(element, "steps_total"),
+                "steps_done": getattr(element, "steps_done"),
+                "steps_total": getattr(element, "steps_total"),
             })
             self.context.signal("spooler;completed")
             element.stop()
