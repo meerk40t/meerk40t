@@ -34,10 +34,10 @@ class Logging(Service):
     def uid(self, prefix):
         if "uid" not in self.logs:
             self.logs["uid"] = dict()
-        uids = self.logs["uid"]
-        if "event_id" not in uids:
-            uids[prefix] = 0
-        return f"{prefix}{uids[prefix]}"
+        if prefix not in self.logs["uid"]:
+            self.logs["uid"][prefix] = 0
+        self.logs["uid"][prefix] += 1
+        return f"{prefix}{self.logs['uid'][prefix]}"
 
     def event(self, event):
         if "uid" in event:
