@@ -471,6 +471,8 @@ class Spooler:
             def clear_thread(*a):
                 self._shutdown = True
                 self._thread = None
+                with self._lock:
+                    self._lock.notify_all()
 
             self._thread = self.context.threaded(
                 self.run,
