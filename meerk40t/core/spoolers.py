@@ -397,7 +397,6 @@ class Spooler:
     def __init__(self, context, driver=None, **kwargs):
         self.context = context
         self.driver = driver
-        self.foreground_only = True
         self._current = None
 
         self._lock = Condition()
@@ -426,26 +425,6 @@ class Spooler:
         @return:
         """
         self.restart()
-
-    def service_attach(self, *args, **kwargs):
-        """
-        device service is attached to the kernel.
-
-        @param args:
-        @param kwargs:
-        @return:
-        """
-        if self.foreground_only:
-            self.restart()
-
-    def service_detach(self):
-        """
-        device service is detached from the kernel.
-
-        @return:
-        """
-        if self.foreground_only:
-            self.shutdown()
 
     def shutdown(self, *args, **kwargs):
         """
