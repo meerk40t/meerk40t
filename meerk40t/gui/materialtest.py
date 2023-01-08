@@ -32,11 +32,20 @@ class TemplatePanel(wx.Panel):
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
+        # A tuple defining whether a free color-selection scheme is allowed, linked to default_op
+        self.color_scheme_free = []
         self.default_op.append(CutOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(EngraveOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(RasterOpNode())
+        self.color_scheme_free.append(False)
         self.default_op.append(ImageOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(HatchOpNode())
+        self.color_scheme_free.append(True)
+
+        self._freecolor = True
 
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
@@ -397,10 +406,16 @@ class TemplatePanel(wx.Panel):
 
         if opidx < 0:
             opnode = None
+            self._freecolor = True
         else:
             opnode = self.default_op[opidx]
+            self._freecolor = self.color_scheme_free[opidx]
         if self.callback is not None:
             self.callback(opnode)
+        self.combo_color_1.Enable(self._freecolor)
+        self.combo_color_2.Enable(self._freecolor)
+        self.check_color_direction_1.Enable(self._freecolor)
+        self.check_color_direction_2.Enable(self._freecolor)
 
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
         self.parameters = [
@@ -618,37 +633,42 @@ class TemplatePanel(wx.Panel):
 
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2, aspect1, growing1, aspect2, growing2):
-            r = 0
-            g = 0
-            b = 0
+            if self._freecolor:
+                r = 0
+                g = 0
+                b = 0
 
-            rel = max1 - 1
-            if rel < 1:
-                rel = 1
-            if growing1:
-                val1 = int(idx1 / rel * 255.0)
-            else:
-                val1 = 255 - int(idx1 / rel * 255.0)
+                rel = max1 - 1
+                if rel < 1:
+                    rel = 1
+                if growing1:
+                    val1 = int(idx1 / rel * 255.0)
+                else:
+                    val1 = 255 - int(idx1 / rel * 255.0)
 
-            rel = max2 - 1
-            if rel < 1:
-                rel = 1
-            if growing2:
-                val2 = int(idx2 / rel * 255.0)
+                rel = max2 - 1
+                if rel < 1:
+                    rel = 1
+                if growing2:
+                    val2 = int(idx2 / rel * 255.0)
+                else:
+                    val2 = 255 - int(idx2 / rel * 255.0)
+                if aspect1 == 1:
+                    g = val1
+                elif aspect1 == 2:
+                    b = val1
+                else:
+                    r = val1
+                if aspect2 == 1:
+                    g = val1
+                elif aspect2 == 2:
+                    b = val2
+                else:
+                    r = val2
             else:
-                val2 = 255 - int(idx2 / rel * 255.0)
-            if aspect1 == 1:
-                g = val1
-            elif aspect1 == 2:
-                b = val1
-            else:
-                r = val1
-            if aspect2 == 1:
-                g = val1
-            elif aspect2 == 2:
-                b = val2
-            else:
-                r = val2
+                r = 0
+                g = 0
+                b = 0
             mycolor = Color(r, g, b)
             return mycolor
 
@@ -1014,7 +1034,9 @@ class TemplatePanel(wx.Panel):
             gap_2 = 5
 
         message = _("This will delete all existing operations and elements") + "\n"
-        message += _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        message += (
+            _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        )
         message += _("(Yes=Empty and Create, No=Keep existing)")
         caption = _("Create Test-Pattern")
         dlg = wx.MessageDialog(

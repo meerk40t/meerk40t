@@ -4865,30 +4865,27 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-        rot = angle.as_degrees
 
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
-        matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
         images = []
         try:
             if not absolute:
                 for node in data:
                     if hasattr(node, "lock") and node.lock:
                         continue
-
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
             else:
                 for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     start_angle = node.matrix.rotation
-                    amount = rot - start_angle
-                    matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle - start_angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
@@ -5299,11 +5296,13 @@ def init_commands(kernel):
     def element_matrix(
         command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
     ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
         if ty is None:
             channel("----------")
             channel(_("Matrix Values:"))
             i = 0
-            for node in self.elems():
+            for node in data:
                 name = str(node)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -5311,8 +5310,6 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        if data is None:
-            data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return

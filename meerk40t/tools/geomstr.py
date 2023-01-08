@@ -1471,7 +1471,7 @@ class Geomstr:
             return unit_tangent
 
         if info.real == TYPE_ARC:
-            dseg = self.derivative(t)
+            dseg = self.derivative(e, t)
             return dseg / abs(dseg)
 
     def _rational_limit(self, f, g, t0):

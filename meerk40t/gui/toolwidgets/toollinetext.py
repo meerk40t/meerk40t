@@ -5,11 +5,7 @@ import wx
 from meerk40t.core.units import Length
 from meerk40t.extra.hershey import create_linetext_node, update_linetext
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_ABORT,
-    RESPONSE_CHAIN,
-    RESPONSE_CONSUME,
-)
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color
 

@@ -53,10 +53,7 @@ from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.groupproperties import (
-    FilePropertiesPanel,
-    GroupPropertiesPanel,
-)
+from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
@@ -76,6 +73,7 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
+from .propertypanels.blobproperty import BlobPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
@@ -420,6 +418,7 @@ class wxMeerK40t(wx.App, Module):
         def window_list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
+            context = kernel.root
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
                 channel(f"{i + 1}: {name}")
@@ -637,6 +636,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
