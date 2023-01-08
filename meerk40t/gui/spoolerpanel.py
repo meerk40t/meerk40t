@@ -294,22 +294,12 @@ class SpoolerPanel(wx.Panel):
         self.current_item = event.Index
 
     def clear_history(self, older_than=None):
-        # print (f"Delete history: {self.filter_device} - {older_than}")
-        # if older_than is not None:
-        #     print (f"{self.datestr(older_than)}")
-        idx = 0
-        while idx < len(self.history):
-            toremove = False
-            if self.filter_device is None or self.history[idx][3] == self.filter_device:
-                if older_than is None:
-                    toremove = True
-                elif self.history[idx][1] < older_than:
-                    toremove = True
-
-            if toremove:
-                self.history.pop(idx)
-            else:
-                idx += 1
+        if self.filter_device:
+            to_remove = list(self.context.logging.matching_events("job", device=self.context.device.label))
+        else:
+            to_remove = list(self.context.logging.matching_events("job"))
+        for key, event in to_remove:
+            del self.context.logging.logs[key]
         self.refresh_history()
 
     def on_btn_clear(self, event):
