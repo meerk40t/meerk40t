@@ -29,13 +29,7 @@ The channel callable is given any additional information about the gcode.
 import re
 
 from meerk40t.svgelements import Color
-
-MM_PER_INCH = 25.4
-MIL_PER_INCH = 1000.0
-
-MM_PER_MIL = MM_PER_INCH / MIL_PER_INCH
-INCH_PER_MIL = 1.0 / MIL_PER_INCH
-MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
+from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
 
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
@@ -153,14 +147,15 @@ class GRBLPlotter:
         self.path = Path()
 
     def plotter(self, command, *args):
+        # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
-            self.path.move(x1, y1)
+            self.path.move((x1, y1))
         elif command in "line":
             x0, y0, x1, y1, power = args
             if not self.path:
-                self.path.move(x0, y0)
-            self.path.line(x1, y1)
+                self.path.move((x0, y0))
+            self.path.line((x1, y1))
         elif command in "arc":
             x0, y0, cx, cy, x1, y1, power = args
             self.path.arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
@@ -235,8 +230,8 @@ class GRBLParser:
         self.home = None
         self.home2 = None
 
-        # Initially assume mm mode 39.4 mils in a mm. G21 mm DEFAULT
-        self.scale = MIL_PER_MM
+        # Initially assume mm mode. G21 mm DEFAULT
+        self.scale = UNITS_PER_MM
 
         # G94 feedrate default, mm mode
         self.g94_feedrate()
@@ -258,10 +253,15 @@ class GRBLParser:
         for d in data:
             if isinstance(d, (bytes, bytearray)):
                 d = d.decode("utf-8")
-            self.process(d)
+            # Lets split lines...
+            splitted_lines = d.splitlines()
+            for singleline in splitted_lines:
+                self.process(singleline)
+        # We need to add a matrix to scale grbl coordinates ?!
         elements.elem_branch.add(
-            type="elem path", path=plotclass.path, stroke=Color("blue")
+            type="elem path", path=abs(plotclass.path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL,
         )
+        elements.signal("tree_changed")
 
     def grbl_write(self, data):
         if self.reply:
@@ -489,7 +489,7 @@ class GRBLParser:
                     self.plotter("coolant", True)
                 elif v == 9:
                     # Flood coolant Off
-                    self.plotter("coolant", True)
+                    self.plotter("coolant", False)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -539,10 +539,10 @@ class GRBLParser:
                     return 2
                 elif v in (20, 70):
                     # g20 is inch mode.
-                    self.scale = MIL_PER_INCH
+                    self.scale = UNITS_PER_INCH
                 elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
-                    self.scale = MIL_PER_MM
+                    self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
                     self.plotter("home")
@@ -673,15 +673,51 @@ class GRBLParser:
                 self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
         return 0
 
+    ### THE CODE FOR G93 / G94 NEEDS A THOROUGH REVIEW
+    # According to my understanding they have to be given in the context of the active unit
+    # (mm or inch)
+
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
+        # G93 - is Inverse Time Mode. In inverse time feed rate mode, an F word means the move
+        # should be completed in [one divided by the F number] minutes. For example, if the
+        # F number is 2.0, the move should be completed in half a minute.
+        # When the inverse time feed rate mode is active, an F word must appear on every line
+        # which has a G1, G2, or G3 motion, and an F word on a line that does not have
+        # G1, G2, or G3 is ignored. Being in inverse time feed rate mode does not
+        # affect G0 (rapid move) motions.
+        if self.scale == UNITS_PER_INCH:
+            self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_INCH) / s
+            self.feed_invert = lambda s: (60.0 * UNITS_PER_INCH / self.scale) / s
+        else:
+            self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_MM) / s
+            self.feed_invert = lambda s: (60.0 * UNITS_PER_MM / self.scale) / s
+
+        # Original code:
+        # MM_PER_INCH = 25.4
+        # MIL_PER_INCH = 1000.0
+        # MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
+        # self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
+        # self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
+        # G94 - is Units per Minute Mode. In units per minute feed mode, an F word is interpreted
+        # to mean the controlled point should move at a certain number of inches per minute,
+        # millimeters per minute, or degrees per minute, depending upon what length units
+        # are being used and which axis or axes are moving.
+        if self.scale == UNITS_PER_INCH:
+            self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
+            self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+        else:
+            self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
+            self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
+        # units to mm, seconds to minutes.
+
+        # Original code:
+        # MIL_PER_INCH = 1000.0
+        # self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
+        # self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
         # units to mm, seconds to minutes.
 
     @property
