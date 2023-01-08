@@ -46,8 +46,6 @@ class TextNode(Node, Stroked):
 
     def __init__(self, **kwargs):
         self.text = None
-        self.x = 0
-        self.y = 0
         self.anchor = "start"  # start, middle, end.
         self.baseline = "hanging"
         self.matrix = None
@@ -87,8 +85,14 @@ class TextNode(Node, Stroked):
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
             self.matrix = Matrix()
-        if self.x != 0 or self.y != 0:
+        try:
+            # If there is an x or y this is an SVG pretranslate offset.
             self.matrix.pre_translate(self.x, self.y)
+            # It must be deleted to avoid applying it again to copies.
+            del self.x
+            del self.y
+        except AttributeError:
+            pass
         self.bounds_with_variables_translated = None
 
         if font is not None:
