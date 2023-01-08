@@ -3008,7 +3008,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.Signal("spooler;update")
 
     @signal_listener("spooler;completed")
-    def on_spool_finished(self, origin, pos):
+    def on_spool_finished(self, origin, pos=None):
         self.main_statusbar.Signal("spooler;completed")
 
     @signal_listener("export-image")
