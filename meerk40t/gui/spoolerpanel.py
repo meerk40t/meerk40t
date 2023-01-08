@@ -283,9 +283,7 @@ class SpoolerPanel(wx.Panel):
     def clear_history(self, older_than=None):
         if self.filter_device:
             to_remove = list(
-                self.context.logging.matching_events(
-                    "job", device=self.filter_device
-                )
+                self.context.logging.matching_events("job", device=self.filter_device)
             )
         else:
             to_remove = list(self.context.logging.matching_events("job"))
