@@ -15,21 +15,17 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
-# History Indices
-IDX_HISTORY_JOBNAME = 0
-IDX_HISTORY_START = 1
-IDX_HISTORY_DURATION = 2
-IDX_HISTORY_DEVICE = 3
-IDX_HISTORY_PASSES = 4
-IDX_HISTORY_STATUS = 5
-IDX_HISTORY_INFO = 6
-IDX_HISTORY_ESTIMATE = 7
-IDX_HISTORY_STEPS_DONE = 8
-IDX_HISTORY_STEPS_TOTAL = 9
-IDX_HISTORY_LOOPS_DONE = 10
-# Amount of columns...
-IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
-
+JC_INDEX = 0
+JC_DEVICE = 1
+JC_JOBNAME = 2
+JC_ENTRIES = 3
+JC_STATUS = 4
+JC_TYPE = 5
+JC_STEPS = 6
+JC_PASSES = 7
+JC_PRIORITY = 8
+JC_RUNTIME = 9
+JC_ESTIMATE = 10
 
 HC_INDEX = 0
 HC_DEVICE = 1
@@ -162,19 +158,6 @@ class SpoolerPanel(wx.Panel):
         self.command_index = 0
         self.listener_list = None
         self.list_lookup = {}
-        self.column_job = {
-            "idx": 0,
-            "device": 1,
-            "jobname": 2,
-            "entries": 3,
-            "status": 4,
-            "type": 5,
-            "steps": 6,
-            "passes": 7,
-            "priority": 8,
-            "runtime": 9,
-            "estimate": 10,
-        }
         self.map_item_key = {}
         self.refresh_history()
         self.set_pause_color()
@@ -507,7 +490,7 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItemData(list_id, queue_idx)
                     # DEVICE
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["device"], device.label
+                        list_id, JC_DEVICE, device.label
                     )
                     # Jobname
                     to_display = ""
@@ -530,7 +513,7 @@ class SpoolerPanel(wx.Panel):
                             to_display = to_display[:cpos]
 
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["jobname"], to_display
+                        list_id, JC_JOBNAME, to_display
                     )
                     # Entries
                     joblen = 1
@@ -542,7 +525,7 @@ class SpoolerPanel(wx.Panel):
                     except AttributeError:
                         joblen = 1
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["entries"], str(joblen)
+                        list_id, JC_ENTRIES, str(joblen)
                     )
                     # STATUS
                     # try:
@@ -550,14 +533,14 @@ class SpoolerPanel(wx.Panel):
                     # except AttributeError:
                     # status = _("Queued")
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["status"], status
+                        list_id, JC_STATUS, status
                     )
 
                     # TYPE
                     try:
                         self.list_job_spool.SetItem(
                             list_id,
-                            self.column_job["type"],
+                            JC_TYPE,
                             str(spool_obj.__class__.__name__),
                         )
                     except AttributeError:
@@ -567,11 +550,11 @@ class SpoolerPanel(wx.Panel):
                     try:
                         pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["steps"], pass_str
+                            list_id, JC_STEPS, pass_str
                         )
                     except AttributeError:
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["steps"], "-"
+                            list_id, JC_STEPS, "-"
                         )
                     # PASSES
                     try:
@@ -582,23 +565,23 @@ class SpoolerPanel(wx.Panel):
                             total = "∞"
                         pass_str = f"{loop}/{total}"
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["passes"], pass_str
+                            list_id, JC_PASSES, pass_str
                         )
                     except AttributeError:
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["passes"], "-"
+                            list_id, JC_PASSES, "-"
                         )
 
                     # Priority
                     try:
                         self.list_job_spool.SetItem(
                             list_id,
-                            self.column_job["priority"],
+                            JC_PRIORITY,
                             f"{spool_obj.priority}",
                         )
                     except AttributeError:
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["priority"], "-"
+                            list_id, JC_PRIORITY, "-"
                         )
 
                     # Runtime
@@ -608,11 +591,11 @@ class SpoolerPanel(wx.Panel):
                         minutes, seconds = divmod(remainder, 60)
                         runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["runtime"], runtime
+                            list_id, JC_RUNTIME, runtime
                         )
                     except AttributeError:
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["runtime"], "-"
+                            list_id, JC_RUNTIME, "-"
                         )
 
                     # Estimate Time
@@ -625,11 +608,11 @@ class SpoolerPanel(wx.Panel):
                             minutes, seconds = divmod(remainder, 60)
                             runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["estimate"], runtime
+                            list_id, JC_ESTIMATE, runtime
                         )
                     except AttributeError:
                         self.list_job_spool.SetItem(
-                            list_id, self.column_job["estimate"], "-"
+                            list_id, JC_ESTIMATE, "-"
                         )
         self._last_invokation = time.time()
 
@@ -857,22 +840,22 @@ class SpoolerPanel(wx.Panel):
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["runtime"], runtime
+                        list_id, JC_RUNTIME, runtime
                     )
             except (AttributeError, AssertionError):
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["runtime"], "-"
+                        list_id, JC_RUNTIME, "-"
                     )
                 else:
                     refresh_needed = True
 
             try:
                 pass_str = f"{spool_obj.steps_done}/{spool_obj.steps_total}"
-                self.list_job_spool.SetItem(list_id, self.column_job["steps"], pass_str)
+                self.list_job_spool.SetItem(list_id, JC_STEPS, pass_str)
             except AttributeError:
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, self.column_job["steps"], "-")
+                    self.list_job_spool.SetItem(list_id, JC_STEPS, "-")
                 else:
                     refresh_needed = True
             try:
@@ -883,11 +866,11 @@ class SpoolerPanel(wx.Panel):
                     total = "∞"
                 pass_str = f"{loop}/{total}"
                 self.list_job_spool.SetItem(
-                    list_id, self.column_job["passes"], pass_str
+                    list_id, JC_PASSES, pass_str
                 )
             except AttributeError:
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, self.column_job["passes"], "-")
+                    self.list_job_spool.SetItem(list_id, JC_PASSES, "-")
                 else:
                     refresh_needed = True
 
@@ -903,12 +886,12 @@ class SpoolerPanel(wx.Panel):
 
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["estimate"], runtime
+                        list_id, JC_ESTIMATE, runtime
                     )
             except (AttributeError, AssertionError):
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(
-                        list_id, self.column_job["estimate"], "-"
+                        list_id, JC_ESTIMATE, "-"
                     )
                 else:
                     refresh_needed = True
