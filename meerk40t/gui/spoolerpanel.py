@@ -284,7 +284,7 @@ class SpoolerPanel(wx.Panel):
         if self.filter_device:
             to_remove = list(
                 self.context.logging.matching_events(
-                    "job", device=self.context.device.label
+                    "job", device=self.filter_device
                 )
             )
         else:
@@ -661,7 +661,7 @@ class SpoolerPanel(wx.Panel):
         self.map_item_key.clear()
         if self.filter_device:
             events = self.context.logging.matching_events(
-                "job", device=self.context.device.label
+                "job", device=self.filter_device
             )
         else:
             events = self.context.logging.matching_events("job")
