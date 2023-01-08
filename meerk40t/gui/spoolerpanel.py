@@ -160,7 +160,6 @@ class SpoolerPanel(wx.Panel):
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
-        self.history = []
         self.listener_list = None
         self.list_lookup = {}
         self.column_job = {
@@ -306,9 +305,15 @@ class SpoolerPanel(wx.Panel):
         self.clear_history(None)
 
     def on_btn_clear_right(self, event):
+        idx = -1
+        listid = self.list_job_history.GetFirstSelected()
+        if listid >= 0:
+            idx = self.list_job_history.GetItemData(listid)
+        key = self.map_item_key[listid]
+
         def on_menu_index(idx_to_delete):
-            def check(event):
-                self.history.pop(idx_to_delete)
+            def check(event_c):
+                del self.context.logging.logs[key]
                 self.refresh_history()
 
             return check
@@ -336,10 +341,6 @@ class SpoolerPanel(wx.Panel):
             cutoff_time = now - week * week_seconds
             options.append((_("Older than {week} week").format(week=week), cutoff_time))
         menu = wx.Menu()
-        idx = -1
-        listid = self.list_job_history.GetFirstSelected()
-        if listid >= 0:
-            idx = self.list_job_history.GetItemData(listid)
         if idx >= 0:
             menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
             self.Bind(
