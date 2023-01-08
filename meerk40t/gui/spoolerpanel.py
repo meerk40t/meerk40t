@@ -116,7 +116,7 @@ class SpoolerPanel(wx.Panel):
         self.info_label = wx.StaticText(
             self.win_bottom, wx.ID_ANY, _("Completed jobs:")
         )
-        self.btn_clear = wx.Button(self.win_bottom, wx.ID_ANY, _("Clear History"))
+        self.button_clear_history = wx.Button(self.win_bottom, wx.ID_ANY, _("Clear History"))
         self.list_job_history = EditableListCtrl(
             self.win_bottom,
             wx.ID_ANY,
@@ -126,9 +126,9 @@ class SpoolerPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
         self.current_item = None
-        self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
-        self.btn_clear.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
-        self.list_job_history.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
+        self.Bind(wx.EVT_BUTTON, self.on_button_clear_history, self.button_clear_history)
+        self.button_clear_history.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_history)
+        self.list_job_history.Bind(wx.EVT_RIGHT_DOWN, self.on_right_mouse_history)
         self.list_job_history.Bind(
             wx.EVT_LIST_BEGIN_LABEL_EDIT, self.before_history_update
         )
@@ -252,7 +252,7 @@ class SpoolerPanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
+        hsizer.Add(self.button_clear_history, 0, wx.EXPAND, 0)
         sizer_bottom.Add(hsizer, 0, wx.EXPAND, 0)
         sizer_bottom.Add(self.list_job_history, 2, wx.EXPAND, 0)
         self.win_bottom.SetSizer(sizer_bottom)
@@ -284,10 +284,10 @@ class SpoolerPanel(wx.Panel):
             del self.context.logging.logs[key]
         self.refresh_history()
 
-    def on_btn_clear(self, event):
+    def on_button_clear_history(self, event):
         self.clear_history(None)
 
-    def on_btn_clear_right(self, event):
+    def on_right_mouse_history(self, event):
         idx = -1
         listid = self.list_job_history.GetFirstSelected()
         if listid >= 0:
