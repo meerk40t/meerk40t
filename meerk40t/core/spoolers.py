@@ -574,9 +574,9 @@ class Spooler:
 
     def clear_queue(self):
         with self._lock:
-            for e in self._queue:
-                loop = e.loops_executed
-                total = e.loops
+            for element in self._queue:
+                loop = element.loops_executed
+                total = element.loops
                 if isinf(total):
                     status = "stopped"
                 elif loop < total:
@@ -584,20 +584,21 @@ class Spooler:
                 else:
                     status = "completed"
                 self.context.logging.event({
-                    "uid": getattr(e, "uid"),
+                    "uid": getattr(element, "uid"),
                     "status": status,
-                    "loop": getattr(e, "loops_executed"),
-                    "total": getattr(e, "loops"),
-                    "label": getattr(e, "label"),
-                    "start_time": getattr(e, "time_started"),
-                    "duration": getattr(e, "runtime"),
+                    "loop": getattr(element, "loops_executed"),
+                    "total": getattr(element, "loops"),
+                    "label": getattr(element, "label"),
+                    "start_time": getattr(element, "time_started"),
+                    "duration": getattr(element, "runtime"),
                     "device": self.context.label,
-                    "important": getattr(e, "helper"),
-                    "estimate": e.estimate_time() if hasattr(e, "estimate_time") else None,
-                    "loops_done": getattr(e, "steps_done"),
-                    "loops_total": getattr(e, "steps_total"),
+                    "important": getattr(element, "helper"),
+                    "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
+                    "loops_done": getattr(element, "steps_done"),
+                    "loops_total": getattr(element, "steps_total"),
                 })
-                e.stop()
+                self.context.signal("spooler;completed")
+                element.stop()
             self._queue.clear()
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
@@ -622,6 +623,7 @@ class Spooler:
                 "loops_done": getattr(element, "steps_done"),
                 "loops_total": getattr(element, "steps_total"),
             })
+            self.context.signal("spooler;completed")
             element.stop()
             for i in range(len(self._queue) - 1, -1, -1):
                 e = self._queue[i]
