@@ -450,6 +450,11 @@ class Spooler:
             def clear_thread(*a):
                 self._shutdown = True
                 self._thread = None
+                try:
+                    # If something is currently processing stop it.
+                    self._current.stop()
+                except AttributeError:
+                    pass
                 with self._lock:
                     self._lock.notify_all()
 
@@ -496,6 +501,8 @@ class Spooler:
                 return
             except ConnectionRefusedError:
                 # Driver connection failed but, we are not aborting the spooler thread
+                if self._shutdown:
+                    return
                 with self._lock:
                     self._lock.wait()
                 continue
