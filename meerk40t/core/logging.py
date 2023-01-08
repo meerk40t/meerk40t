@@ -24,7 +24,7 @@ class Logging(Service):
         uids = self.logs["uid"]
         if "event_id" not in uids:
             uids[prefix] = 0
-        return uids[prefix]
+        return f"{prefix}{uids[prefix]}"
 
     def event(self, event):
         if "uid" in event:
