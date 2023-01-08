@@ -1,5 +1,3 @@
-import json
-import os
 import time
 from math import isinf, isnan
 
@@ -31,6 +29,19 @@ IDX_HISTORY_STEPS_TOTAL = 9
 IDX_HISTORY_LOOPS_DONE = 10
 # Amount of columns...
 IDX_HISTORY_MAX_FIELDS = IDX_HISTORY_LOOPS_DONE + 1
+
+
+HC_INDEX = 0
+HC_DEVICE = 1
+HC_JOBNAME = 2
+HC_START = 3
+HC_END = 4
+HC_RUNTIME = 5
+HC_ESTIMATE = 6
+HC_STEPS = 7
+HC_PASSES = 8
+HC_STATUS = 9
+HC_JOBINFO = 10
 
 
 def register_panel_spooler(window, context):
@@ -165,26 +176,9 @@ class SpoolerPanel(wx.Panel):
             "runtime": 9,
             "estimate": 10,
         }
-
-        self.column_history = {
-            "idx": 0,
-            "device": 1,
-            "jobname": 2,
-            "start": 3,
-            "end": 4,
-            "runtime": 5,
-            "estimate": 6,
-            "steps": 7,
-            "passes": 8,
-            "status": 9,
-            "jobinfo": 10,
-        }
-        if not self.clear_data:
-            self.reload_history()
-
+        self.map_item_key = {}
+        self.refresh_history()
         self.set_pause_color()
-        # if index == -1:
-        #     disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
@@ -316,7 +310,6 @@ class SpoolerPanel(wx.Panel):
                 self.history.pop(idx)
             else:
                 idx += 1
-        self.save_history()
         self.refresh_history()
 
     def on_btn_clear(self, event):
@@ -326,7 +319,6 @@ class SpoolerPanel(wx.Panel):
         def on_menu_index(idx_to_delete):
             def check(event):
                 self.history.pop(idx_to_delete)
-                self.save_history()
                 self.refresh_history()
 
             return check
@@ -419,42 +411,6 @@ class SpoolerPanel(wx.Panel):
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         # Todo: Drag to reprioritise jobs
         event.Skip()
-
-    # def on_item_doubleclick(self, event):
-    #     def item_info(item):
-    #         result = ""
-    #         count = 0
-    #         if isinstance(item, tuple):
-    #             attr = item[0]
-    #             result = f"function(tuple): {attr}"
-    #             count += 1
-    #         elif isinstance(item, str):
-    #             attr = item
-    #             result = f"function(str): {attr}"
-    #             count += 1
-    #         if hasattr(item, "generate"):
-    #             item = getattr(item, "generate")
-    #             result = "Generator:"
-    #             # Generator item
-    #             for p in item():
-    #                 dummy, subct = item_info(p)
-    #                 count += subct
-    #                 result += "\n" + dummy
-    #                 count += 1
-
-    #         return result, count
-
-    #     index = self.current_item
-    #     spooler = self.selected_device.spooler
-    #     try:
-    #         element = spooler.queue[index]
-    #     except IndexError:
-    #         return
-    #     msgstr = f"{element.label}: \n"
-    #     for idx, item in enumerate(element.items):
-    #         info, ct = item_info(item)
-    #         msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
-    #     print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
@@ -743,235 +699,72 @@ class SpoolerPanel(wx.Panel):
         # print(f"res={result}, wxd={result2}, manual={result1}, pattern={pattern}")
         return result
 
-    def refresh_history(self, newestinfo=None):
-
-        if newestinfo is not None:
-            addit = True
-            newestinfo = list(newestinfo)
-            # Deal with infinite numbers, as they will invalidate the logging class and crash afterwards...
-            if isinf(newestinfo[IDX_HISTORY_ESTIMATE]):
-                newestinfo[IDX_HISTORY_ESTIMATE] = -1
-            if isinf(newestinfo[IDX_HISTORY_DURATION]):
-                newestinfo[IDX_HISTORY_ESTIMATE] = -1
-            # No helper jobs....
-            if (
-                len(newestinfo) > IDX_HISTORY_INFO
-                and newestinfo[IDX_HISTORY_INFO]
-                and self.context.spool_ignore_helper_jobs
-            ):
-                addit = False
-            if addit and len(self.history) > 0:
-                # is it identical to the last entry?
-                # Should not happen per se, but there were some reports of duplicate entries...
-                lastentry = self.history[0]
-                identical = True
-                for idx in range(IDX_HISTORY_STATUS + 1):
-                    if lastentry[idx] != newestinfo[idx]:
-                        identical = False
-                        break
-                if identical:
-                    addit = False
-            if addit:
-                # We dont need the helper-flag, we use this for a jobinfo column
-                if len(newestinfo) > IDX_HISTORY_INFO:
-                    newestinfo = list(newestinfo)
-                    newestinfo[IDX_HISTORY_INFO] = ""
-                self.history.insert(0, newestinfo)
+    def refresh_history(self):
         self.list_job_history.DeleteAllItems()
-        idx = 0
-        hlen = len(self.history)
-        for info in self.history:
-            if len(info) < IDX_HISTORY_DURATION or not isinstance(info, (tuple, list)):
-                # print (f"Corrupt entry: {info}")
-                continue
-            addit = True
-            if self.filter_device is not None:
-                if info[IDX_HISTORY_DEVICE] != self.filter_device:
-                    addit = False
-            if not addit:
-                continue
-            idx2 = hlen - idx
-            idx += 1
+        self.map_item_key.clear()
+        if self.filter_device:
+            events = self.context.logging.matching_events(
+                "job", device=self.context.device.label
+            )
+        else:
+            events = self.context.logging.matching_events("job")
+        for idx, event_and_key in enumerate(reversed(list(events))):
+            key, info = event_and_key
             list_id = self.list_job_history.InsertItem(
-                self.list_job_history.GetItemCount(), f"#{idx2}"
+                self.list_job_history.GetItemCount(), f"#{idx}"
             )
-            if info[IDX_HISTORY_START] is None:
-                continue
+            self.map_item_key[list_id] = key
             self.list_job_history.SetItem(
-                list_id, self.column_history["jobname"], info[IDX_HISTORY_JOBNAME]
-            )
-            starttime = (
-                self.datestr(info[IDX_HISTORY_START])
-                + " "
-                + self.timestr(info[IDX_HISTORY_START], True)
+                list_id, HC_JOBNAME, info.get("label")
             )
             self.list_job_history.SetItem(
-                list_id, self.column_history["start"], starttime
-            )
-            starttime = self.timestr(
-                info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
+                list_id,
+                HC_START,
+                f"{self.datestr(info.get('start_time'))} {self.timestr(info.get('start_time'), True)}",
             )
             self.list_job_history.SetItem(
-                list_id, self.column_history["end"], starttime
+                list_id,
+                HC_END,
+                self.timestr(info.get("start_time", 0) + info.get("duration", 0), True),
             )
-            runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
             self.list_job_history.SetItem(
-                list_id, self.column_history["runtime"], runtime
+                list_id,
+                HC_RUNTIME,
+                self.timestr(info.get("duration"), False),
             )
-            # First passes then device
-            if len(info) >= 5:
-                self.list_job_history.SetItem(
-                    list_id,
-                    self.column_history["passes"],
-                    str(info[IDX_HISTORY_PASSES]),
-                )
-            else:
-                self.list_job_history.SetItem(
-                    list_id, self.column_history["passes"], "???"
-                )
             self.list_job_history.SetItem(
-                list_id, self.column_history["device"], str(info[IDX_HISTORY_DEVICE])
+                list_id,
+                HC_PASSES,
+                str(info.get("loops_total")),
             )
-            if len(info) > IDX_HISTORY_STATUS:
-                if info[IDX_HISTORY_INFO] is None:
-                    info[IDX_HISTORY_INFO] = ""
-                self.list_job_history.SetItem(
-                    list_id, self.column_history["status"], info[IDX_HISTORY_STATUS]
-                )
-            if len(info) > IDX_HISTORY_INFO:
-                if isinstance(info[IDX_HISTORY_INFO], bool):
-                    # Old data, where helper flag was saved
-                    info[IDX_HISTORY_INFO] = ""
-                if info[IDX_HISTORY_INFO] is None:
-                    info[IDX_HISTORY_INFO] = ""
-                self.list_job_history.SetItem(
-                    list_id, self.column_history["jobinfo"], info[IDX_HISTORY_INFO]
-                )
-            if len(info) > IDX_HISTORY_ESTIMATE:
-                if info[IDX_HISTORY_ESTIMATE] is None:
-                    info[IDX_HISTORY_ESTIMATE] = 0
-                runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
-                self.list_job_history.SetItem(
-                    list_id, self.column_history["estimate"], runtime
-                )
-            if len(info) > IDX_HISTORY_STEPS_TOTAL:
-                if info[IDX_HISTORY_STEPS_DONE] is None:
-                    info[IDX_HISTORY_STEPS_DONE] = 0
-                if info[IDX_HISTORY_STEPS_TOTAL] is None:
-                    info[IDX_HISTORY_STEPS_TOTAL] = 0
-                stepinfo = (
-                    f"{info[IDX_HISTORY_STEPS_DONE]}/{info[IDX_HISTORY_STEPS_TOTAL]}"
-                )
-                self.list_job_history.SetItem(
-                    list_id, self.column_history["steps"], stepinfo
-                )
-            self.list_job_history.SetItemData(list_id, idx - 1)
+            self.list_job_history.SetItem(
+                list_id, HC_DEVICE, str(info.get("device"))
+            )
+            self.list_job_history.SetItem(
+                list_id, HC_STATUS, info.get("status", "")
+            )
+            self.list_job_history.SetItem(
+                list_id, HC_JOBINFO, info.get("info", "")
+            )
+            self.list_job_history.SetItem(
+                list_id,
+                HC_ESTIMATE,
+                self.timestr(info.get("estimate", 0), False),
+            )
+            self.list_job_history.SetItem(
+                list_id,
+                HC_STEPS,
+                f"{info.get('steps_done',0)}/{info.get('steps_total',0)}",
+            )
+            self.list_job_history.SetItemData(list_id, idx)
 
     def reload_history(self):
-        def fixitems():
-            # make sure we extend the fields for those entries
-            # that were saved with a previous version
-            if isinstance(self.history, str):
-                # Flawed !! At least recover gracefully
-                self.history = []
-            for item in self.history:
-                while len(item) < IDX_HISTORY_MAX_FIELDS:
-                    item.append(None)
-                for idx in (
-                    IDX_HISTORY_START,
-                    IDX_HISTORY_DURATION,
-                    IDX_HISTORY_ESTIMATE,
-                    IDX_HISTORY_LOOPS_DONE,
-                    IDX_HISTORY_STEPS_DONE,
-                    IDX_HISTORY_STEPS_TOTAL,
-                ):
-                    if item[idx] is None:
-                        item[idx] = 0
-
-        self.history = []
-        directory = os.path.dirname(self.context.elements.op_data._config_file)
-        filename = os.path.join(directory, "history.json")
-        if os.path.exists(filename):
-            # backward compatibility: read once, store in new format, delete...
-            try:
-                with open(filename) as f:
-                    self.history = json.load(f)
-                fixitems()
-                # Store in new format...
-                self.save_history()
-                # Now delete the file...
-                os.remove(filename)
-            except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
-                pass
-        if len(self.history) == 0:
-            spooler_log = self.context.logging.logs.get("spooler", dict())
-            self.history = spooler_log.get("history", list())
-            # Even if no old json file exists, the logged items could
-            # still have some compatibility issues...
-            fixitems()
         self.refresh_history()
-
-    def save_history(self):
-        def escaped(s):
-            if s is None:
-                s = ""
-            return s.replace('"', "'")
-
-        self.context.logging.logs["spooler"] = {"history": self.history}
-        directory = os.path.dirname(self.context.elements.op_data._config_file)
-        filename = os.path.join(directory, "history.csv")
-        try:
-            with open(filename, "w", encoding="utf-8") as f:
-                simpleline = "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
-                f.write(simpleline + "\n")
-                for info in self.history:
-
-                    def addnum(idx):
-                        if len(info) > idx:
-                            return ";" + str(info[idx])
-                        else:
-                            return ";0"
-
-                    def addstr(idx):
-                        if len(info) > idx:
-                            return ";" + escaped(info[idx])
-                        else:
-                            return ";''"
-
-                    if info[IDX_HISTORY_START] is None:
-                        continue
-                    simpleline = escaped(info[IDX_HISTORY_DEVICE])
-                    simpleline += addstr(IDX_HISTORY_JOBNAME)
-                    starttime = (
-                        self.datestr(info[IDX_HISTORY_START])
-                        + " "
-                        + self.timestr(info[IDX_HISTORY_START], True)
-                    )
-                    simpleline += ";" + starttime
-                    starttime = self.timestr(
-                        info[IDX_HISTORY_START] + info[IDX_HISTORY_DURATION], True
-                    )
-                    simpleline += ";" + starttime
-                    runtime = self.timestr(info[IDX_HISTORY_DURATION], False)
-                    simpleline += ";" + runtime
-                    runtime = self.timestr(info[IDX_HISTORY_ESTIMATE], False)
-                    simpleline += ";" + runtime
-                    simpleline += addnum(IDX_HISTORY_STEPS_DONE)
-                    simpleline += addnum(IDX_HISTORY_STEPS_TOTAL)
-                    simpleline += addnum(IDX_HISTORY_LOOPS_DONE)
-                    # First passes then device
-                    simpleline += addstr(IDX_HISTORY_PASSES)
-                    simpleline += addstr(IDX_HISTORY_STATUS)
-                    simpleline += addstr(IDX_HISTORY_INFO)
-                    f.write(simpleline + "\n")
-
-        except (PermissionError, OSError, FileNotFoundError):
-            pass
 
     def before_history_update(self, event):
         list_id = event.GetIndex()  # Get the current row
         col_id = event.GetColumn()  # Get the current column
-        if col_id == self.column_history["jobinfo"]:
+        if col_id == HC_JOBINFO:
             event.Allow()
         else:
             event.Veto()
@@ -980,12 +773,11 @@ class SpoolerPanel(wx.Panel):
         list_id = event.GetIndex()  # Get the current row
         col_id = event.GetColumn()  # Get the current column
         new_data = event.GetLabel()  # Get the changed data
-        if list_id >= 0 and col_id == self.column_history["jobinfo"]:
+        if list_id >= 0 and col_id == HC_JOBINFO:
             idx = self.list_job_history.GetItemData(list_id)
-            while len(self.history[idx]) < 7:
-                self.history[idx].append(None)
-            self.history[idx][6] = new_data
-            self.save_history()
+            key = self.map_item_key[idx]
+            self.context.logging.logs[key]["jobinfo"] = new_data
+
             # Set the new data in the listctrl
             self.list_job_history.SetItem(list_id, col_id, new_data)
 
@@ -1029,15 +821,8 @@ class SpoolerPanel(wx.Panel):
         self.set_pause_color()
 
     @signal_listener("spooler;completed")
-    def on_spooler_completed(self, origin, info, *args):
-        # Info is just a tuple with the label and the runtime
-        # print ("Signalled...", type(origin).__name__, type(info).__name__)
-        if info is None:
-            return
-        if len(info) > 1 and info[IDX_HISTORY_START] is None:
-            return
-        self.refresh_history(newestinfo=info)
-        self.save_history()
+    def on_spooler_completed(self, origin, *args):
+        self.refresh_history()
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")
@@ -1138,7 +923,7 @@ class SpoolerPanel(wx.Panel):
                     refresh_needed = True
         if refresh_needed:
             self.refresh_spooler_list()
-            self.reload_history()
+            self.refresh_history()
 
 
 class JobSpooler(MWindow):
