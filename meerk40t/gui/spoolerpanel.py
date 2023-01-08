@@ -776,7 +776,7 @@ class SpoolerPanel(wx.Panel):
         if list_id >= 0 and col_id == HC_JOBINFO:
             idx = self.list_job_history.GetItemData(list_id)
             key = self.map_item_key[idx]
-            self.context.logging.logs[key]["jobinfo"] = new_data
+            self.context.logging.logs[key]["info"] = new_data
 
             # Set the new data in the listctrl
             self.list_job_history.SetItem(list_id, col_id, new_data)
