@@ -322,10 +322,12 @@ class GRBLDriver(Parameters):
         @param data:
         @return:
         """
-        if data_type != "gcode":
+        if data_type != "grbl":
             return
         for line in data:
-            self.grbl(line)
+            grbl = bytes.decode(line, "utf-8")
+            for split in grbl.split("\r"):
+                self.grbl(f"{split.strip()}\r")
 
     def physical_home(self):
         """
