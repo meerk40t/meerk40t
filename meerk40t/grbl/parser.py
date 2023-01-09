@@ -159,7 +159,7 @@ class GRBLPlotter:
             self.path.line((x1, y1))
         elif command == "cw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            arc = Arc(start=(x0, y0), end=(x1, y1), center=(cx, cy), ccw=False)
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
             if isnan(arc.sweep):
                 # This arc is not valid.
                 self.path.line((x1, x1))
@@ -167,7 +167,7 @@ class GRBLPlotter:
                 self.path.append(arc)
         elif command == "ccw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            arc = Arc(start=(x0, y0), end=(x1, y1), center=(cx, cy), ccw=True)
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
             if isnan(arc.sweep):
                 # This arc is not valid.
                 self.path.line((x1, x1))
@@ -273,7 +273,10 @@ class GRBLParser:
                 self.process(singleline)
         # We need to add a matrix to scale grbl coordinates ?!
         elements.elem_branch.add(
-            type="elem path", path=abs(plotclass.path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL,
+            type="elem path",
+            path=abs(plotclass.path),
+            stroke=Color("blue"),
+            stroke_width=UNITS_PER_PIXEL,
         )
         elements.signal("tree_changed")
 
@@ -641,7 +644,7 @@ class GRBLParser:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 self.settings["power"] = v
             del gc["s"]
-        if "x" in gc or "y" in gc:
+        if "x" in gc or "y" in gc or ("i" in gc or "j" in gc and self.move_mode in (2, 3)):
             ox = self.x
             oy = self.y
             if "x" in gc:
@@ -670,31 +673,51 @@ class GRBLParser:
             else:
                 self.x = x
                 self.y = y
+
             power = self.settings.get("power", 0)
             if self.move_mode == 0:
                 self.plotter("move", ox, oy, self.x, self.y)
             elif self.move_mode == 1:
                 self.plotter("line", ox, oy, self.x, self.y, power / 1000.0)
-            elif self.move_mode == 2:
-                # CW ARC
+            elif self.move_mode in (2, 3):
+                # 2 = CW ARC
+                # 3 = CCW ARC
                 cx = ox
                 cy = oy
                 if "i" in gc:
-                    cx += gc["i"].pop(0)
+                    ix = gc["i"].pop(0) * self.scale
+                    cx += ix
                 if "j" in gc:
-                    cy += gc["j"].pop(0)
+                    jy = gc["j"].pop(0) * self.scale
+                    cy += jy
 
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0, ccw=True)
-            elif self.move_mode == 3:
-                # CCW ARC
-                cx = ox
-                cy = oy
-                if "i" in gc:
-                    cx += gc["i"].pop(0)
-                if "j" in gc:
-                    cy += gc["j"].pop(0)
-
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
+                r0 = complex(cx-self.x, cy-self.y)
+                r1 = complex(cx-ox, cy-oy)
+                d = abs(abs(r0) - abs(r1))
+                if d > 100:
+                    print("there's something wrong here.")
+                if "r" in gc:
+                    self.plotter(
+                        "cw-arc-r" if self.move_mode == 2 else "ccw-arc-r",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
+                else:
+                    self.plotter(
+                        "ccw-arc" if self.move_mode == 3 else "cw-arc",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
         return 0
 
     ### THE CODE FOR G93 / G94 NEEDS A THOROUGH REVIEW
