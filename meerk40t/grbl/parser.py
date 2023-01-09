@@ -27,9 +27,11 @@ The channel callable is given any additional information about the gcode.
 """
 
 import re
+from math import isnan
 
 from meerk40t.svgelements import Arc, Color
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
+from meerk40t.core.node.node import Linejoin
 
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
@@ -146,22 +148,31 @@ class GRBLPlotter:
 
         self.path = Path()
 
-    def plotter(self, command, *args):
+    def plotter(self, command, *args, **kwargs):
         # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
             self.path.move((x1, y1))
-        elif command in "line":
+        elif command == "line":
             x0, y0, x1, y1, power = args
             if not self.path:
                 self.path.move((x0, y0))
             self.path.line((x1, y1))
-        elif command in "arc":
+        elif command == "cw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            if (x0 == cx and y0 == cy) or (x1 == cx and x1 == cy):
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
+            if isnan(arc.sweep):
+                # This arc is not valid.
                 self.path.line((x1, x1))
             else:
-                arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+                self.path.append(arc)
+        elif command == "ccw-arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
+            if isnan(arc.sweep):
+                # This arc is not valid.
+                self.path.line((x1, x1))
+            else:
                 self.path.append(arc)
         elif command == "new":
             pass
@@ -263,7 +274,11 @@ class GRBLParser:
                 self.process(singleline)
         # We need to add a matrix to scale grbl coordinates ?!
         elements.elem_branch.add(
-            type="elem path", path=abs(plotclass.path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL,
+            type="elem path",
+            path=abs(plotclass.path),
+            stroke=Color("blue"),
+            stroke_width=UNITS_PER_PIXEL,
+            linejoin=Linejoin.JOIN_BEVEL,
         )
         elements.signal("tree_changed")
 
@@ -631,7 +646,7 @@ class GRBLParser:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 self.settings["power"] = v
             del gc["s"]
-        if "x" in gc or "y" in gc:
+        if "x" in gc or "y" in gc or ("i" in gc or "j" in gc and self.move_mode in (2, 3)):
             ox = self.x
             oy = self.y
             if "x" in gc:
@@ -643,7 +658,10 @@ class GRBLParser:
                 if len(gc["x"]) == 0:
                     del gc["x"]
             else:
-                x = 0
+                if self.relative:
+                    x = 0
+                else:
+                    x = self.x
             if "y" in gc:
                 y = gc["y"].pop(0)
                 if y is None:
@@ -653,28 +671,61 @@ class GRBLParser:
                 if len(gc["y"]) == 0:
                     del gc["y"]
             else:
-                y = 0
+                if self.relative:
+                    y = 0
+                else:
+                    y = self.y
             if self.relative:
                 self.x += x
                 self.y += y
             else:
                 self.x = x
                 self.y = y
+
             power = self.settings.get("power", 0)
             if self.move_mode == 0:
                 self.plotter("move", ox, oy, self.x, self.y)
             elif self.move_mode == 1:
                 self.plotter("line", ox, oy, self.x, self.y, power / 1000.0)
-            elif self.move_mode == 2:
-                # CW ARC
+            elif self.move_mode in (2, 3):
+                # 2 = CW ARC
+                # 3 = CCW ARC
                 cx = ox
                 cy = oy
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
-            elif self.move_mode == 3:
-                # CCW ARC
-                cx = ox
-                cy = oy
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
+                if "i" in gc:
+                    ix = gc["i"].pop(0) #* self.scale
+                    cx += ix
+                if "j" in gc:
+                    jy = gc["j"].pop(0) #* self.scale
+                    cy += jy
+
+                r0 = complex(cx-self.x, cy-self.y)
+                r1 = complex(cx-ox, cy-oy)
+                d = abs(abs(r0) - abs(r1))
+                # if d > 100:
+                #     print("there's something wrong here.")
+                if "r" in gc:
+                    self.plotter(
+                        "cw-arc-r" if self.move_mode == 2 else "ccw-arc-r",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
+                else:
+                    self.plotter(
+                        "ccw-arc" if self.move_mode == 3 else "cw-arc",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
         return 0
 
     ### THE CODE FOR G93 / G94 NEEDS A THOROUGH REVIEW
