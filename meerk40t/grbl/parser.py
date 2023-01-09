@@ -152,14 +152,22 @@ class GRBLPlotter:
         if command == "move":
             x0, y0, x1, y1 = args
             self.path.move((x1, y1))
-        elif command in "line":
+        elif command == "line":
             x0, y0, x1, y1, power = args
             if not self.path:
                 self.path.move((x0, y0))
             self.path.line((x1, y1))
-        elif command in "arc":
+        elif command == "cw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+            arc = Arc(start=(x0, y0), end=(x1, y1), center=(cx, cy), ccw=False)
+            if isnan(arc.sweep):
+                # This arc is not valid.
+                self.path.line((x1, x1))
+            else:
+                self.path.append(arc)
+        elif command == "ccw-arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            arc = Arc(start=(x0, y0), end=(x1, y1), center=(cx, cy), ccw=True)
             if isnan(arc.sweep):
                 # This arc is not valid.
                 self.path.line((x1, x1))
