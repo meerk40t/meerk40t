@@ -685,17 +685,17 @@ class GRBLParser:
                 cx = ox
                 cy = oy
                 if "i" in gc:
-                    ix = gc["i"].pop(0) * self.scale
+                    ix = gc["i"].pop(0) #* self.scale
                     cx += ix
                 if "j" in gc:
-                    jy = gc["j"].pop(0) * self.scale
+                    jy = gc["j"].pop(0) #* self.scale
                     cy += jy
 
                 r0 = complex(cx-self.x, cy-self.y)
                 r1 = complex(cx-ox, cy-oy)
                 d = abs(abs(r0) - abs(r1))
-                if d > 100:
-                    print("there's something wrong here.")
+                # if d > 100:
+                #     print("there's something wrong here.")
                 if "r" in gc:
                     self.plotter(
                         "cw-arc-r" if self.move_mode == 2 else "ccw-arc-r",
