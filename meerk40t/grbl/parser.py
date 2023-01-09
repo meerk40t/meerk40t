@@ -31,6 +31,7 @@ from math import isnan
 
 from meerk40t.svgelements import Arc, Color
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
+from meerk40t.core.node.node import Linejoin
 
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
@@ -277,6 +278,7 @@ class GRBLParser:
             path=abs(plotclass.path),
             stroke=Color("blue"),
             stroke_width=UNITS_PER_PIXEL,
+            linejoin=Linejoin.JOIN_BEVEL,
         )
         elements.signal("tree_changed")
 
