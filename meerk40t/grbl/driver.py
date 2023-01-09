@@ -21,6 +21,7 @@ from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from ..kernel import signal_listener
 
 
 class GRBLDriver(Parameters):
@@ -28,7 +29,8 @@ class GRBLDriver(Parameters):
         super().__init__(**kwargs)
         self.service = service
         self.name = str(service)
-        self.line_end = self.service.setting(str, "line_end", "\r")
+        self.line_end = None
+        self._set_line_end()
         self.hold = False
         self.paused = False
         self.native_x = 0
@@ -69,6 +71,14 @@ class GRBLDriver(Parameters):
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
+
+    @signal_listener("line_end")
+    def _set_line_end(self, origin=None, *args):
+        line_end = self.service.setting(str, "line_end", "CR")
+        line_end = line_end.replace(" ", "")
+        line_end = line_end.replace("CR", "\r")
+        line_end = line_end.replace("LF", "\n")
+        self.line_end = line_end
 
     def hold_work(self, priority):
         """

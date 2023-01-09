@@ -323,6 +323,7 @@ class GRBLDevice(Service, ViewPort):
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
+        self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
 
