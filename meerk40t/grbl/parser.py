@@ -29,7 +29,7 @@ The channel callable is given any additional information about the gcode.
 import re
 from math import isnan
 
-from meerk40t.svgelements import Arc, Color
+from meerk40t.svgelements import Arc, Color, Path, Move
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
 from meerk40t.core.node.node import Linejoin
 
@@ -144,9 +144,14 @@ lookup = {
 
 class GRBLPlotter:
     def __init__(self):
-        from meerk40t.svgelements import Path
-
+        self.last_x = 0
+        self.last_y = 0
+        self.power = 0
+        self.speed = 0
+        self.paths = list()
         self.path = Path()
+        self.operations = {}
+        self.paths.append(self.path)
 
     def plotter(self, command, *args, **kwargs):
         # print (f"{command} - {args}")
@@ -175,7 +180,35 @@ class GRBLPlotter:
             else:
                 self.path.append(arc)
         elif command == "new":
-            pass
+            # We break the path here and create a new one
+            if len(self.path):
+                # # Is the trailing segment a move ?
+                while len(self.path) > 0 and isinstance(self.path._segments[-1], Move):
+                    self.path._segments.pop(-1)
+                if len(self.path) == 0:
+                    # Degenerate...
+                    index = len(self.paths) - 1
+                    for op in self.operations:
+                        if index in self.operations[op]:
+                            opindex = self.operations[op].index(index)
+                            self.operations[op].pop(opindex)
+                    self.paths.pop(-1)
+                self.path = Path()
+                self.paths.append(self.path)
+            if len(args) > 1:
+                feed = args[0]
+                power = args[1]
+                if feed != 0:
+                    self.speed = feed
+                if power != 0:
+                    self.power = power
+                if self.speed != 0 and self.power != 0:
+                    # Do we have this operation already?!
+                    id_string = f"{self.speed}|{self.power}"
+                    if id_string not in self.operations:
+                        self.operations[id_string] = list()
+                    index = len(self.paths) - 1
+                    self.operations[id_string].append(index)
         elif command == "end":
             pass
         elif command == "wait":
@@ -273,13 +306,41 @@ class GRBLParser:
             for singleline in splitted_lines:
                 self.process(singleline)
         # We need to add a matrix to scale grbl coordinates ?!
-        elements.elem_branch.add(
-            type="elem path",
-            path=abs(plotclass.path),
-            stroke=Color("blue"),
-            stroke_width=UNITS_PER_PIXEL,
-            linejoin=Linejoin.JOIN_BEVEL,
-        )
+        self.plotter("end")
+        # We need to add a matrix to scale grbl coordinates ?!
+        op_nodes = {}
+        colorindex = 0
+        color_array = ("blue", "green", "red", "black", "teal", "orange")
+        for index, path in enumerate(plotclass.paths):
+            if path is None or len(path) == 0:
+                continue
+            node = elements.elem_branch.add(
+                type="elem path", path=abs(path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL, linejoin=Linejoin.JOIN_BEVEL,
+            )
+            for op in plotclass.operations:
+                values = op.split("|")
+                if len(values) > 1:
+                    speed = float(values[0])
+                    power = float(values[1])
+                else:
+                    # Should not happen...
+                    continue
+                if index in plotclass.operations[op]:
+                    if op in op_nodes:
+                        opnode = op_nodes[op]
+                    else:
+                        from meerk40t.core.node.op_engrave import EngraveOpNode
+                        opnode = EngraveOpNode(label=f"Grbl - P={power}, S={speed}")
+                        opnode.speed = speed
+                        opnode.power = power
+                        opnode.color = Color(color_array[colorindex])
+                        colorindex += 1
+                        if colorindex >= len(color_array):
+                            colorindex = 0
+
+                        node.stroke = opnode.color
+                        elements.op_branch.add_node(opnode)
+                    opnode.add_reference(node)
         elements.signal("tree_changed")
 
     def grbl_write(self, data):
@@ -636,7 +697,8 @@ class GRBLParser:
                 if self.settings.get("speed", 0) != feed_rate:
                     self.settings["speed"] = feed_rate
                     # On speed change we start a new plot.
-                    self.plotter("new")
+                    # On speed change we start a new plot.
+                    self.plotter("new", v, 0)
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -644,6 +706,8 @@ class GRBLParser:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                if self.settings["power"] != v:
+                    self.plotter("new", 0, v)
                 self.settings["power"] = v
             del gc["s"]
         if "x" in gc or "y" in gc or ("i" in gc or "j" in gc and self.move_mode in (2, 3)):
