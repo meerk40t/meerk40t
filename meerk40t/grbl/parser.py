@@ -28,7 +28,7 @@ The channel callable is given any additional information about the gcode.
 
 import re
 
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Arc, Color
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
 
 
@@ -158,7 +158,11 @@ class GRBLPlotter:
             self.path.line((x1, y1))
         elif command in "arc":
             x0, y0, cx, cy, x1, y1, power = args
-            self.path.arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+            if (x0 == cx and y0 == cy) or (x1 == cx and x1 == cy):
+                self.path.line((x1, x1))
+            else:
+                arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+                self.path.append(arc)
         elif command == "new":
             pass
         elif command == "end":
