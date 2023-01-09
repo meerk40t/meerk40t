@@ -28,7 +28,7 @@ The channel callable is given any additional information about the gcode.
 
 import re
 
-from meerk40t.svgelements import Arc, Color
+from meerk40t.svgelements import Arc, Color, Path, Move
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
 
 
@@ -141,32 +141,90 @@ lookup = {
 
 
 class GRBLPlotter:
-    def __init__(self):
-        from meerk40t.svgelements import Path
 
-        self.path = Path()
+    def __init__(self):
+        self.paths = list()
+        self._path = Path()
+        self.operations = {}
+        self.paths.append(self._path)
+        self.last_x = 0
+        self.last_y = 0
+        self.power = 0
+        self.speed = 0
+        self.debugstring = ""
+
+    def setdebug(self, msg):
+        self.debugstring = msg
 
     def plotter(self, command, *args):
         # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
-            self.path.move((x1, y1))
+            if len(self._path)>0 and isinstance(self._path._segments[-1], Move):
+                # The last segment is already a move, so let's update it instead
+                self._path._segments[-1].end.x = x1
+                self._path._segments[-1].end.y = y1
+            else:
+                self._path.move((x1, y1))
+            self.last_x = x1
+            self.last_y = y1
         elif command in "line":
             x0, y0, x1, y1, power = args
-            if not self.path:
-                self.path.move((x0, y0))
-            self.path.line((x1, y1))
+            # Initial move?
+            if not self._path:
+                self._path.move((x0, y0))
+            self._path.line((x1, y1))
+            self.last_x = x1
+            self.last_y = y1
         elif command in "arc":
             x0, y0, cx, cy, x1, y1, power = args
             if (x0 == cx and y0 == cy) or (x1 == cx and x1 == cy):
-                self.path.line((x1, x1))
+                self._path.line((x1, x1))
             else:
                 arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
-                self.path.append(arc)
+                self._path.append(arc)
+            self.last_x = x1
+            self.last_y = y1
         elif command == "new":
-            pass
+            # We break the path here and create a new one
+            if len(self._path):
+                # Is the trailing segment a move ?
+                while len(self._path) > 0 and isinstance(self._path._segments[-1], Move):
+                    self._path._segments.pop()
+                if len(self._path) == 0:
+                    # Degenerate...
+                    for op in self.operations:
+                        if self._path in self.operations[op]:
+                            # Should be the last...
+                            self.operations[op].pop()
+                    self.paths.pop()
+                self._path = Path()
+                self.paths.append(self._path)
+            if len(args) > 1:
+                feed = args[0]
+                power = args[1]
+                if feed != 0:
+                    self.speed = feed
+                if power != 0:
+                    self.power = power
+                if self.speed != 0 and self.power != 0:
+                    # Do we have this operation already?!
+                    id_string = f"{self.speed}|{self.power}"
+                    if id_string not in self.operations:
+                        self.operations[id_string] = list()
+                    self.operations[id_string].append(self._path)
         elif command == "end":
-            pass
+            if len(self._path):
+                # Is the trailing segment a move ?
+                while len(self._path) > 0 and isinstance(self._path._segments[-1], Move):
+                    self._path._segments.pop()
+                if len(self._path) == 0:
+                    # Degenerate...
+                    for op in self.operations:
+                        if self._path in self.operations[op]:
+                            # Should be the last...
+                            self.operations[op].pop()
+                    self.paths.pop()
         elif command == "wait":
             pass
         elif command == "resume":
@@ -180,7 +238,6 @@ class GRBLPlotter:
             pass
         elif command == "jog_abort":
             pass
-
 
 class GRBLParser:
     def __init__(self, plotter=None):
@@ -261,10 +318,38 @@ class GRBLParser:
             splitted_lines = d.splitlines()
             for singleline in splitted_lines:
                 self.process(singleline)
+        # Terminate
+        self.plotter("end")
         # We need to add a matrix to scale grbl coordinates ?!
-        elements.elem_branch.add(
-            type="elem path", path=abs(plotclass.path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL,
-        )
+        op_nodes = {}
+        for path in plotclass.paths:
+            if path is None or len(path) == 0:
+                continue
+            node = elements.elem_branch.add(
+                type="elem path", path=abs(path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL,
+            )
+            for op in plotclass.operations:
+                values = op.split("|")
+                if len(values) > 1:
+                    speed = float(values[0])
+                    power = float(values[1])
+                else:
+                    # Should not happen...
+                    continue
+                if path in plotclass.operations[op]:
+                    if op in op_nodes:
+                        opnode = op_nodes[op]
+                    else:
+                        from meerk40t.core.node.op_engrave import EngraveOpNode
+                        opnode = EngraveOpNode(label=f"Grbl - P={power}, S={speed}")
+                        opnode.speed = speed
+                        opnode.power = power
+                        opnode.color = Color("blue")
+                        node.stroke = opnode.color
+                        elements.op_branch.add_node(opnode)
+                        op_nodes[op] = opnode
+                    opnode.add_reference(node)
+
         elements.signal("tree_changed")
 
     def grbl_write(self, data):
@@ -617,11 +702,12 @@ class GRBLParser:
             for v in gc["f"]:
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
+
                 feed_rate = self.feed_convert(v)
                 if self.settings.get("speed", 0) != feed_rate:
                     self.settings["speed"] = feed_rate
                     # On speed change we start a new plot.
-                    self.plotter("new")
+                    self.plotter("new", v, 0)
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -629,6 +715,8 @@ class GRBLParser:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                if self.settings["power"] != v:
+                    self.plotter("new", 0, v)
                 self.settings["power"] = v
             del gc["s"]
         if "x" in gc or "y" in gc:
@@ -643,7 +731,10 @@ class GRBLParser:
                 if len(gc["x"]) == 0:
                     del gc["x"]
             else:
-                x = 0
+                if self.relative:
+                    x = 0
+                else:
+                    x = self.x
             if "y" in gc:
                 y = gc["y"].pop(0)
                 if y is None:
@@ -653,7 +744,10 @@ class GRBLParser:
                 if len(gc["y"]) == 0:
                     del gc["y"]
             else:
-                y = 0
+                if self.relative:
+                    y = 0
+                else:
+                    y = self.y
             if self.relative:
                 self.x += x
                 self.y += y
