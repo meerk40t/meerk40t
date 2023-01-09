@@ -27,6 +27,7 @@ The channel callable is given any additional information about the gcode.
 """
 
 import re
+from math import isnan
 
 from meerk40t.svgelements import Arc, Color
 from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
@@ -146,7 +147,7 @@ class GRBLPlotter:
 
         self.path = Path()
 
-    def plotter(self, command, *args):
+    def plotter(self, command, *args, **kwargs):
         # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
@@ -158,10 +159,11 @@ class GRBLPlotter:
             self.path.line((x1, y1))
         elif command in "arc":
             x0, y0, cx, cy, x1, y1, power = args
-            if (x0 == cx and y0 == cy) or (x1 == cx and x1 == cy):
+            arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
+            if isnan(arc.sweep):
+                # This arc is not valid.
                 self.path.line((x1, x1))
             else:
-                arc = Arc(start=(x0, y0), end=(x1, y1), control=(cx, cy))
                 self.path.append(arc)
         elif command == "new":
             pass
@@ -669,11 +671,21 @@ class GRBLParser:
                 # CW ARC
                 cx = ox
                 cy = oy
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
+                if "i" in gc:
+                    cx += gc["i"].pop(0)
+                if "j" in gc:
+                    cy += gc["j"].pop(0)
+
+                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0, ccw=True)
             elif self.move_mode == 3:
                 # CCW ARC
                 cx = ox
                 cy = oy
+                if "i" in gc:
+                    cx += gc["i"].pop(0)
+                if "j" in gc:
+                    cy += gc["j"].pop(0)
+
                 self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
         return 0
 
