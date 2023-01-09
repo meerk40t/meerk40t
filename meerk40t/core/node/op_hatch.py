@@ -355,7 +355,7 @@ class HatchOpNode(Node, Parameters):
                     )
                 for polyline in HatchOpNode.split(hatches):
                     node = PolylineNode(shape=Polyline(*polyline), **chain_settings)
-                    # node.settings.update(chain_settings)
+                    node.settings = chain_settings
                     self.add_node(node)
 
         if self.children:
