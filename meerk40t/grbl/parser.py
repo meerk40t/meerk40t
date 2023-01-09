@@ -656,7 +656,10 @@ class GRBLParser:
                 if len(gc["x"]) == 0:
                     del gc["x"]
             else:
-                x = 0
+                if self.relative:
+                    x = 0
+                else:
+                    x = self.x
             if "y" in gc:
                 y = gc["y"].pop(0)
                 if y is None:
@@ -666,7 +669,10 @@ class GRBLParser:
                 if len(gc["y"]) == 0:
                     del gc["y"]
             else:
-                y = 0
+                if self.relative:
+                    y = 0
+                else:
+                    y = self.y
             if self.relative:
                 self.x += x
                 self.y += y
