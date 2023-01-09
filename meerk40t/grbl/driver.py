@@ -327,7 +327,9 @@ class GRBLDriver(Parameters):
         for line in data:
             grbl = bytes.decode(line, "utf-8")
             for split in grbl.split("\r"):
-                self.grbl(f"{split.strip()}\r")
+                g = split.strip()
+                if g:
+                    self.grbl(f"{g}\r\n")
 
     def physical_home(self):
         """
