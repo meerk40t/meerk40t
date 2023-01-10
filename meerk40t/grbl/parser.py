@@ -376,7 +376,17 @@ class GRBLParser:
 
         op_nodes = {}
         colorindex = 0
-        color_array = ("blue", "green", "red", "black", "teal", "orange")
+        color_array = []
+        color_array = ("blue", "green", "red", "black", "magenta", "cyan", "yellow", "teal", "orange")
+        no_duplication = True
+        if no_duplication:
+            for idx1 in range(0, len(plotclass.paths) - 1):
+                path1 = plotclass.paths[idx1]
+                for idx2 in range(idx1+1, len(plotclass.paths)):
+                    path2 = plotclass.paths[idx2]
+                    if path1 == path2:
+                        plotclass.paths[idx2] = None
+
         # print (f"Paths created: {len(plotclass.paths)}, Operations created: {len(plotclass.operations)}")
         # for op in plotclass.operations:
         #     values = op.split("|")
