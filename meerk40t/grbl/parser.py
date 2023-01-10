@@ -219,7 +219,7 @@ class GRBLPlotter:
                 arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
                 if isnan(arc.sweep):
                     # This arc is not valid.
-                    self.path.line((x1, x1))
+                    self.path.line((x1, y1))
                 else:
                     self.path.append(arc)
         elif command == "ccw-arc":
@@ -234,7 +234,7 @@ class GRBLPlotter:
                 arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
                 if isnan(arc.sweep):
                     # This arc is not valid.
-                    self.path.line((x1, x1))
+                    self.path.line((x1, y1))
                 else:
                     self.path.append(arc)
         elif command == "new":
