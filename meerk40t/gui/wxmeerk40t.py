@@ -721,6 +721,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Home", register_panel_home)
         kernel.register("wxpane/Pause", register_panel_pause)
 
+        from meerk40t.gui.dialogoptions import DialogOptions
+        kernel.register("dialog/options", DialogOptions)
+
         context = kernel.root
 
         context.setting(bool, "developer_mode", False)
