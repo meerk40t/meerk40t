@@ -19,6 +19,7 @@ values to the self.plotter. These commands consist of a command and some number 
 "abort": Abort the laser operations
 "jog_abort": Abort the current jog action for the laser (usually $J)
 "coolant", <boolean>: Turns the coolant on or off.
+"parameter", name, value: a parameter to affect the parsing logic (internal)
 
 These commands are called on the `plotter` function which should be passed during the init.
 
@@ -29,10 +30,10 @@ The channel callable is given any additional information about the gcode.
 import re
 from math import isnan
 
-from meerk40t.svgelements import Arc, Color, Path, Move
-from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_INCH
 from meerk40t.core.node.node import Linejoin
-
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_PIXEL, Length
+from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
 CODE_RE = re.compile(r"([A-Za-z])")
@@ -148,53 +149,102 @@ class GRBLPlotter:
         self.last_y = 0
         self.power = 0
         self.speed = 0
+        self.depth = 0
         self.paths = list()
         self.path = Path()
         self.operations = {}
         self.paths.append(self.path)
+        self.settings = {}
+        self.settings["split_path"] = True
+        self.settings["treat_z_as_power"] = True
+
+    def getsetting(self, key, default):
+        if key in self.settings:
+            return self.settings[key]
+        else:
+            return default
+
+    def check_operation_need(self):
+        has_power = bool(self.power != 0)
+        if self.getsetting("treat_z_as_power", True) and self.depth < 0:
+            has_power = True
+        if self.speed != 0 and has_power:
+            # Do we have this operation already?!
+            id_string = f"{self.speed}|{self.power}|{self.depth}"
+            if id_string not in self.operations:
+                self.operations[id_string] = list()
+            index = len(self.paths) - 1
+            self.operations[id_string].append(index)
 
     def plotter(self, command, *args, **kwargs):
+        def remove_trailing_moves():
+            # Is the trailing segment a move ?
+            while len(self.path) > 0 and isinstance(self.path._segments[-1], Move):
+                self.path._segments.pop(-1)
+            if len(self.path) == 0:
+                # Degenerate...
+                index = len(self.paths) - 1
+                for op in self.operations:
+                    if index in self.operations[op]:
+                        opindex = self.operations[op].index(index)
+                        self.operations[op].pop(opindex)
+                self.paths.pop(-1)
+
         # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
             self.path.move((x1, y1))
         elif command == "line":
             x0, y0, x1, y1, power = args
-            if not self.path:
-                self.path.move((x0, y0))
-            self.path.line((x1, y1))
+            # Do we need it added?
+            needsadding = False
+            if power is None:
+                power = 0
+            if power != 0 or (self.getsetting("treat_z_as_power", True) and self.depth < 0):
+                needsadding = True
+            if needsadding:
+                if not self.path:
+                    self.path.move((x0, y0))
+
+                self.path.line((x1, y1))
         elif command == "cw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
-            if isnan(arc.sweep):
-                # This arc is not valid.
-                self.path.line((x1, x1))
-            else:
-                self.path.append(arc)
+            # Do we need it added?
+            needsadding = False
+            if power is None:
+                power = 0
+            if power != 0 or (self.getsetting("treat_z_as_power", True) and self.depth < 0):
+                needsadding = True
+            if needsadding:
+                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
+                if isnan(arc.sweep):
+                    # This arc is not valid.
+                    self.path.line((x1, x1))
+                else:
+                    self.path.append(arc)
         elif command == "ccw-arc":
             x0, y0, cx, cy, x1, y1, power = args
-            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
-            if isnan(arc.sweep):
-                # This arc is not valid.
-                self.path.line((x1, x1))
-            else:
-                self.path.append(arc)
+            # Do we need it added?
+            needsadding = False
+            if power is None:
+                power = 0
+            if power != 0 or (self.getsetting("treat_z_as_power", True) and self.depth < 0):
+                needsadding = True
+            if needsadding:
+                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
+                if isnan(arc.sweep):
+                    # This arc is not valid.
+                    self.path.line((x1, x1))
+                else:
+                    self.path.append(arc)
         elif command == "new":
             # We break the path here and create a new one
-            if len(self.path):
-                # # Is the trailing segment a move ?
-                while len(self.path) > 0 and isinstance(self.path._segments[-1], Move):
-                    self.path._segments.pop(-1)
-                if len(self.path) == 0:
-                    # Degenerate...
-                    index = len(self.paths) - 1
-                    for op in self.operations:
-                        if index in self.operations[op]:
-                            opindex = self.operations[op].index(index)
-                            self.operations[op].pop(opindex)
-                    self.paths.pop(-1)
+            splitter = self.getsetting("split_path", True)
+            if splitter and len(self.path):
+                remove_trailing_moves()
                 self.path = Path()
                 self.paths.append(self.path)
+                # print (f"Z at time of path start: {self.depth}")
             if len(args) > 1:
                 feed = args[0]
                 power = args[1]
@@ -202,15 +252,20 @@ class GRBLPlotter:
                     self.speed = feed
                 if power != 0:
                     self.power = power
-                if self.speed != 0 and self.power != 0:
-                    # Do we have this operation already?!
-                    id_string = f"{self.speed}|{self.power}"
-                    if id_string not in self.operations:
-                        self.operations[id_string] = list()
-                    index = len(self.paths) - 1
-                    self.operations[id_string].append(index)
+                self.check_operation_need()
         elif command == "end":
-            pass
+            # Is the trailing segment a move ?
+            remove_trailing_moves()
+        elif command == "zaxis":
+            splitter = self.getsetting("split_path", True)
+            if splitter and len(self.path):
+                remove_trailing_moves()
+                self.path = Path()
+                self.paths.append(self.path)
+                # print (f"Z at time of path start: {self.depth}")
+            depth = args[0]
+            self.depth = depth
+            self.check_operation_need()
         elif command == "wait":
             pass
         elif command == "resume":
@@ -224,7 +279,9 @@ class GRBLPlotter:
             pass
         elif command == "jog_abort":
             pass
-
+        elif command == "parameter":
+            pname, pvalue = args
+            self.settings[pname] = pvalue
 
 class GRBLParser:
     def __init__(self, plotter=None):
@@ -275,6 +332,7 @@ class GRBLParser:
         self.move_mode = 0
         self.x = 0
         self.y = 0
+        self.z = 0
         self.home = None
         self.home2 = None
 
@@ -305,32 +363,54 @@ class GRBLParser:
             splitted_lines = d.splitlines()
             for singleline in splitted_lines:
                 self.process(singleline)
-        # We need to add a matrix to scale grbl coordinates ?!
         self.plotter("end")
-        # We need to add a matrix to scale grbl coordinates ?!
+        # We need to add a matrix to fix the element orientation:
+        # mirror the y component at the midpoint between 0 and bedsize
+        # scale_x = 1.0  # no change
+        # scale_y = -1.0  # mirror
+        # device_width = elements.length_x("100%")
+        # device_height = elements.length_y("100%")
+        # px = 0  # Origin left
+        # py = 0.5 * device_height
+        # grbl_mat = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
+
         op_nodes = {}
         colorindex = 0
         color_array = ("blue", "green", "red", "black", "teal", "orange")
+        # print (f"Paths created: {len(plotclass.paths)}, Operations created: {len(plotclass.operations)}")
+        # for op in plotclass.operations:
+        #     values = op.split("|")
+        #     speed = 0
+        #     power = 0
+        #     zvalue = 0
+        #     if len(values) > 1:
+        #         speed = float(values[0])
+        #         power = float(values[1])
+        #         if len(values) > 2:
+        #             zvalue = float(values[2])
+        #     print (f"Operation: {op}, S={speed}, P={power}, Z={zvalue}")
+        #     print (plotclass.operations[op])
+
         for index, path in enumerate(plotclass.paths):
             if path is None or len(path) == 0:
                 continue
-            node = elements.elem_branch.add(
-                type="elem path", path=abs(path), stroke=Color("blue"), stroke_width=UNITS_PER_PIXEL, linejoin=Linejoin.JOIN_BEVEL,
-            )
+            color = Color("blue")
+            opnode = None
             for op in plotclass.operations:
                 values = op.split("|")
-                if len(values) > 1:
-                    speed = float(values[0])
-                    power = float(values[1])
-                else:
-                    # Should not happen...
-                    continue
+                speed = float(values[0])
+                power = float(values[1])
+                zvalue = float(values[2])
                 if index in plotclass.operations[op]:
                     if op in op_nodes:
                         opnode = op_nodes[op]
                     else:
-                        from meerk40t.core.node.op_engrave import EngraveOpNode
-                        opnode = EngraveOpNode(label=f"Grbl - P={power}, S={speed}")
+                        lbl = f"Grbl - P={power}, S={speed}"
+                        if zvalue != 0:
+                            # convert into a length
+                            zlen = Length(amount=zvalue, digits=4).length_mm
+                            lbl += f", Z={zlen}"
+                        opnode = EngraveOpNode(label=lbl)
                         opnode.speed = speed
                         opnode.power = power
                         opnode.color = Color(color_array[colorindex])
@@ -338,9 +418,20 @@ class GRBLParser:
                         if colorindex >= len(color_array):
                             colorindex = 0
 
-                        node.stroke = opnode.color
                         elements.op_branch.add_node(opnode)
-                    opnode.add_reference(node)
+                        op_nodes[op] = opnode
+                    break
+            if opnode is not None:
+                color = opnode.color
+            node = elements.elem_branch.add(
+                type="elem path",
+                path=abs(path),
+                stroke=color,
+                stroke_width=UNITS_PER_PIXEL,
+                linejoin=Linejoin.JOIN_BEVEL,
+            )
+            if opnode is not None:
+                opnode.add_reference(node)
         elements.signal("tree_changed")
 
     def grbl_write(self, data):
@@ -629,6 +720,7 @@ class GRBLParser:
                     self.plotter("move", self.x, self.y, 0, 0)
                     self.x = 0
                     self.y = 0
+                    self.z = 0
                 elif v == 38.1:
                     # Touch Plate
                     pass
@@ -710,7 +802,24 @@ class GRBLParser:
                     self.plotter("new", 0, v)
                 self.settings["power"] = v
             del gc["s"]
-        if "x" in gc or "y" in gc or ("i" in gc or "j" in gc and self.move_mode in (2, 3)):
+        if "z" in gc:
+            oz = self.z
+            v = gc["z"].pop(0)
+            if v is None:
+                z = 0
+            else:
+                z = self.scale * v
+            if len(gc["z"]) == 0:
+                del gc["z"]
+            self.z = z
+            if oz != self.z:
+                self.plotter("zaxis", self.z)
+
+        if (
+            "x" in gc
+            or "y" in gc
+            or ("i" in gc or "j" in gc and self.move_mode in (2, 3))
+        ):
             ox = self.x
             oy = self.y
             if "x" in gc:
@@ -757,14 +866,14 @@ class GRBLParser:
                 cx = ox
                 cy = oy
                 if "i" in gc:
-                    ix = gc["i"].pop(0) #* self.scale
+                    ix = gc["i"].pop(0)  # * self.scale
                     cx += ix
                 if "j" in gc:
-                    jy = gc["j"].pop(0) #* self.scale
+                    jy = gc["j"].pop(0)  # * self.scale
                     cy += jy
 
-                r0 = complex(cx-self.x, cy-self.y)
-                r1 = complex(cx-ox, cy-oy)
+                r0 = complex(cx - self.x, cy - self.y)
+                r1 = complex(cx - ox, cy - oy)
                 d = abs(abs(r0) - abs(r1))
                 # if d > 100:
                 #     print("there's something wrong here.")
