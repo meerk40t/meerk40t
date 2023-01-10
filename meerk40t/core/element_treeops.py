@@ -755,9 +755,19 @@ def init_tree(kernel):
         help=_("Convert blob to elements"),
     )
     def blob2path(node, **kwargs):
+        cancelled = False
         parser_class = kernel.lookup(f"parser/{node.data_type}")
         parser = parser_class()
-        parser.parse(node.data, self)
+        dialog_class = kernel.lookup("dialog/options")
+        if dialog_class and hasattr(parser, "options"):
+            parser_choices = getattr(parser, "options", None)
+            if parser_choices is not None:
+                dialog = dialog_class(self.kernel, choices=parser_choices)
+                res = dialog.dialog_options(title=_("GCode-Conversion"), intro=_("You can influence the way MK will process the GCode data:"))
+                if not res:
+                    cancelled = True
+        if not cancelled:
+            parser.parse(node.data, self)
         return True
 
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
