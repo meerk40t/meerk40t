@@ -293,6 +293,7 @@ class GRBLPlotter:
         elif command == "jog_abort":
             pass
 
+
 class GRBLParser:
     def __init__(self, plotter=None, kernel=None):
         self.plotter = plotter
@@ -556,13 +557,13 @@ class GRBLParser:
         self.plotter("end")
         # We need to add a matrix to fix the element orientation:
         # mirror the y component at the midpoint between 0 and bedsize
-        # scale_x = 1.0  # no change
-        # scale_y = -1.0  # mirror
-        # device_width = elements.length_x("100%")
-        # device_height = elements.length_y("100%")
-        # px = 0  # Origin left
-        # py = 0.5 * device_height
-        # grbl_mat = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
+        scale_x = 1.0  # no change
+        scale_y = -1.0  # mirror
+        device_width = elements.length_x("100%")
+        device_height = elements.length_y("100%")
+        px = 0  # Origin left
+        py = 0.5 * device_height
+        grbl_mat = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
 
         op_nodes = {}
         colorindex = 0
@@ -590,20 +591,42 @@ class GRBLParser:
                     path2 = plotclass.paths[idx2]
                     if path1 == path2:
                         plotclass.paths[idx2] = None
-
-        # print (f"Paths created: {len(plotclass.paths)}, Operations created: {len(plotclass.operations)}")
-        # for op in plotclass.operations:
-        #     values = op.split("|")
-        #     speed = 0
-        #     power = 0
-        #     zvalue = 0
-        #     if len(values) > 1:
-        #         speed = float(values[0])
-        #         power = float(values[1])
-        #         if len(values) > 2:
-        #             zvalue = float(values[2])
-        #     print (f"Operation: {op}, S={speed}, P={power}, Z={zvalue}")
-        #     print (plotclass.operations[op])
+        minspeed = None
+        maxspeed = None
+        minpower = None
+        maxpower = None
+        if self.scale_power or self.scale_speed:
+            for op in plotclass.operations:
+                values = op.split("|")
+                if len(values) > 1:
+                    speed = float(values[0])
+                    power = float(values[1])
+                    if speed != 0:
+                        if minspeed is None:
+                            minspeed = speed
+                        else:
+                            minspeed = min(minspeed, speed)
+                        if maxspeed is None:
+                            maxspeed = speed
+                        else:
+                            maxspeed = max(maxspeed, speed)
+                    if power != 0:
+                        if minpower is None:
+                            minpower = power
+                        else:
+                            minpower = min(minpower, power)
+                        if maxpower is None:
+                            maxpower = power
+                        else:
+                            maxpower = max(maxpower, power)
+        if minpower is None or maxpower is None:
+            self.scale_power = False
+        elif minpower == maxpower:
+            maxpower = minpower + 1
+        if minspeed is None or maxspeed is None:
+            self.scale_speed = False
+        elif minspeed == maxspeed:
+            maxspeed = minspeed + 1
 
         for index, path in enumerate(plotclass.paths):
             if path is None or len(path) == 0:
@@ -620,6 +643,14 @@ class GRBLParser:
                         if op in op_nodes:
                             opnode = op_nodes[op]
                         else:
+                            if self.scale_power and power != 0:
+                                power = self.scale_power_lower + (power - minpower) / (
+                                    maxpower - minpower
+                                ) * (self.scale_power_higher - self.scale_power_lower)
+                            if self.scale_speed and speed != 0:
+                                speed = self.scale_speed_lower + (speed - minspeed) / (
+                                    maxspeed - minspeed
+                                ) * (self.scale_speed_higher - self.scale_speed_lower)
                             lbl = f"Grbl - P={power}, S={speed}"
                             if zvalue != 0:
                                 # convert into a length
@@ -648,6 +679,9 @@ class GRBLParser:
                 linejoin=Linejoin.JOIN_BEVEL,
                 linecap=Linecap.CAP_SQUARE,
             )
+            if self.mirror_y:
+                node.matrix *= grbl_mat
+                node.modified()
             if opnode is not None:
                 opnode.add_reference(node)
         elements.signal("tree_changed")
