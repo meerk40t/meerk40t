@@ -1,5 +1,6 @@
 import time
 from math import isinf, isnan
+from pathlib import Path
 
 import wx
 import wx.lib.mixins.listctrl as listmix
@@ -11,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_route_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, get_safe_path
 
 _ = wx.GetTranslation
 
@@ -280,6 +281,50 @@ class SpoolerPanel(wx.Panel):
     def on_item_selected(self, event):
         self.current_item = event.Index
 
+    def write_csv(self):
+        filename = Path(get_safe_path(self.context.kernel.name, create=True)).joinpath(
+            "history.csv"
+        )
+        if self.filter_device:
+            events = self.context.logging.matching_events(
+                "job", device=self.filter_device
+            )
+        else:
+            events = self.context.logging.matching_events("job")
+        try:
+            with open(filename, "w", encoding="utf-8") as f:
+                simpleline = "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
+                f.write(simpleline + "\n")
+                for key, info in events:
+                    print(info)
+                    line_items = []
+                    if info["start_time"] is None:
+                        continue
+                    line_items.append(info.get("device", "''"))
+                    line_items.append(info.get("label", "''"))
+                    line_items.append(
+                        f"{self.datestr(info.get('start_time',0))} {self.timestr(info.get('start_time',0), True)}"
+                    )
+
+                    line_items.append(
+                        self.timestr(
+                            info.get("start_time", 0) + info.get("duration", 0), True
+                        )
+                    )
+                    line_items.append(self.timestr(info.get("duration", 0), False))
+                    line_items.append(self.timestr(info.get("estimate", 0), False))
+                    line_items.append(str(info.get("steps_done", 0)))
+                    line_items.append(str(info.get("steps_total", 0)))
+                    line_items.append(str(info.get("loop", 0)))
+                    # First passes then device
+                    line_items.append(str(info.get("passes", "''")))
+                    line_items.append(str(info.get("status", "''")))
+                    line_items.append(str(info.get("info", "''")))
+                    f.write(f'{";".join(line_items)}\n')
+
+        except (PermissionError, OSError, FileNotFoundError):
+            pass
+
     def clear_history(self, older_than=None):
         if self.filter_device:
             to_remove = list(
@@ -368,6 +413,10 @@ class SpoolerPanel(wx.Panel):
             toggle_2,
             id=menuitem.GetId(),
         )
+
+        item = menu.Append(wx.ID_ANY, _("Write CSV"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, lambda e: self.write_csv(), item)
+
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
@@ -705,9 +754,6 @@ class SpoolerPanel(wx.Panel):
             )
             self.list_job_history.SetItemData(list_id, idx)
 
-    def reload_history(self):
-        self.refresh_history()
-
     def before_history_update(self, event):
         list_id = event.GetIndex()  # Get the current row
         col_id = event.GetColumn()  # Get the current column
@@ -748,7 +794,6 @@ class SpoolerPanel(wx.Panel):
     def on_activate_device(self, origin, device):
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
-        spools = []
         index = -1
         for i, s in enumerate(self.available_devices):
             if s is self.selected_device:
@@ -759,7 +804,7 @@ class SpoolerPanel(wx.Panel):
         # This might not be relevant if you have a stable device set, but there might always be
         # changes to add / rename devices etc.
         if self.combo_device.GetSelection() == 0:
-            # all devices is a superset of any device, so we can leave it...
+            # all-devices is a superset of any device, so we can leave it...
             index = 0
         self.combo_device.Clear()
         self.combo_device.SetItems(spools)
