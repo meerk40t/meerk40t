@@ -1078,6 +1078,8 @@ class MeerK40t(MWindow):
                     if group_node is None:
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
+                    node.emphasized = True
+                group_node.emphasized = True
                 kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
