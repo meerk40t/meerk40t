@@ -1019,7 +1019,10 @@ class Elemental(Service):
 
     def save_persistent_operations(self, name):
         settings = self.op_data
-        settings.clear_persistent(name)
+        subitems = list(settings.derivable(name))
+        for section in subitems:
+            settings.clear_persistent(section)
+        # settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
