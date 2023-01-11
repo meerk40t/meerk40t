@@ -155,6 +155,7 @@ class GRBLPlotter:
         self.operations = {}
         self.paths.append(self.path)
         self.split_path = True
+        self.ignore_travel = True
         self.treat_z_as_power = True
         self.z_only_negative = True
 
@@ -198,6 +199,17 @@ class GRBLPlotter:
                 # print (f"only negative: {self.z_only_negative}, depth={self.depth}, res={res}")
             return res
 
+        def needsadding(power):
+            result = False
+            if power is None:
+                power = 0
+            if self.ignore_travel:
+                if power != 0 or proper_z():
+                    result = True
+            else:
+                result = True
+            return result
+
         # print (f"{command} - {args}")
         if command == "move":
             x0, y0, x1, y1 = args
@@ -205,12 +217,7 @@ class GRBLPlotter:
         elif command == "line":
             x0, y0, x1, y1, power = args
             # Do we need it added?
-            needsadding = False
-            if power is None:
-                power = 0
-            if power != 0 or proper_z():
-                needsadding = True
-            if needsadding:
+            if needsadding(power):
                 if not self.path:
                     self.path.move((x0, y0))
                 self.path.line((x1, y1))
@@ -219,12 +226,7 @@ class GRBLPlotter:
         elif command == "cw-arc":
             x0, y0, cx, cy, x1, y1, power = args
             # Do we need it added?
-            needsadding = False
-            if power is None:
-                power = 0
-            if power != 0 or proper_z():
-                needsadding = True
-            if needsadding:
+            if needsadding(power):
                 arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
                 if isnan(arc.sweep):
                     # This arc is not valid.
@@ -236,12 +238,7 @@ class GRBLPlotter:
         elif command == "ccw-arc":
             x0, y0, cx, cy, x1, y1, power = args
             # Do we need it added?
-            needsadding = False
-            if power is None:
-                power = 0
-            if power != 0 or proper_z():
-                needsadding = True
-            if needsadding:
+            if needsadding(power):
                 arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
                 if isnan(arc.sweep):
                     # This arc is not valid.
@@ -341,9 +338,10 @@ class GRBLParser:
         else:
             _ = self.kernel.translation
 
-        self.mirror_y = False
+        self.mirror_y = True
         self.split_path = True
-        self.treat_z_as_power = True
+        self.ignore_travel = True
+        self.treat_z_as_power = False
         self.z_only_negative = True
         self.no_duplicates = False
         self.create_operations = True
@@ -354,6 +352,15 @@ class GRBLParser:
         self.scale_power_lower = 200
         self.scale_power_higher = 1000
         self.options = [
+            {
+                "attr": "ignore_travel",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Ignore travel"),
+                "tip": _("Try to take only 'valid' movements"),
+                "section": "_10_Path",
+            },
             {
                 "attr": "mirror_y",
                 "object": self,
@@ -392,6 +399,7 @@ class GRBLParser:
                 "tip": _(
                     "Use negative Z-Values as a Power-On indicator, positive values as travel"
                 ),
+                "conditional": (self, "ignore_travel"),
                 "section": "_10_Path",
                 "subsection": "_10_Z-Axis",
             },
