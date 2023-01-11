@@ -318,6 +318,8 @@ class HatchOpNode(Node, Parameters):
             hatch_cache = dict()
             for p in range(self.implicit_passes):
                 chain_settings = dict(settings)
+                if "type" in chain_settings:
+                    del chain_settings["type"]
                 if penbox_pass is not None:
                     try:
                         chain_settings.update(penbox_pass[p])
