@@ -343,6 +343,9 @@ class SpoolerPanel(wx.Panel):
         listid = self.list_job_history.GetFirstSelected()
         if listid >= 0:
             idx = self.list_job_history.GetItemData(listid)
+        else:
+            # Bad selection.
+            return
         key = self.map_item_key[listid]
 
         def on_menu_index(idx_to_delete):
