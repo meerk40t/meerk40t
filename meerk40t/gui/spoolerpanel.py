@@ -339,7 +339,6 @@ class SpoolerPanel(wx.Panel):
         self.clear_history(None)
 
     def on_right_mouse_history(self, event):
-        idx = -1
         listid = self.list_job_history.GetFirstSelected()
         if listid >= 0:
             idx = self.list_job_history.GetItemData(listid)
