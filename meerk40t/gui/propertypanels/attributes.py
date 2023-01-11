@@ -225,12 +225,15 @@ class ColorPanel(wx.Panel):
 
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, **kwds):
+    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
+        # Shall we display id / label?
+        self.showid = showid
+        self.showlabel = showlabel
         self.text_id = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
@@ -282,15 +285,18 @@ class IdPanel(wx.Panel):
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
-        if hasattr(self.node, "id"):
+        if hasattr(self.node, "id") and self.showid:
             vis1 = True
             self.text_id.SetValue(mklabel(node.id))
         self.text_id.Show(vis1)
-        if hasattr(self.node, "label"):
+        self.sizer_id.Show(vis1)
+
+        if hasattr(self.node, "label") and self.showlabel:
             vis2 = True
             self.text_label.SetValue(mklabel(node.label))
-
         self.text_label.Show(vis2)
+        self.sizer_label.Show(vis2)
+
         if vis1 or vis2:
             self.Show()
         else:
