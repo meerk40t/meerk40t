@@ -1293,14 +1293,77 @@ class MoveWidget(Widget):
         copy_nodes = list()
         changed_nodes = list()
         delta_wordlist = 1
-        for e in list(elements.elems(emphasized=True)):
+
+        # The alt-drag will leave a copy in the original location.
+        # This copy will lose all hierarchy attributes,
+        # so let's do something basic at least
+        to_be_copied = []
+        emph_list = list(elements.elems(emphasized=True))
+        for e in emph_list:
+            if e.type in ("file", "group"):
+                for f in e.children:
+                    if not f.emphasized:
+                        f.emphasized = True
+                        emph_list.append(f)
+        for e in emph_list:
+            new_parent = None
+            org_parent = e.parent
+            # First make sure we have all child elements as well
+            if e.type in ("file", "group"):
+                for f in e.children:
+                    if not f.emphasized:
+                        f.emphasized = True
+
+            if org_parent is elements.elem_branch:
+                new_parent = elements.elem_branch
+            else:
+                # Are all other elements of this group selected as well?
+                # If yes create another group...
+                # (that would actually need to travel down?!)
+                all_selected = True
+                if not org_parent.emphasized:
+                    for sibling in org_parent.children:
+                        if not sibling.emphasized:
+                            all_selected = False
+                            break
+                if not all_selected:
+                    new_parent = org_parent
+            to_be_copied.append([e, org_parent, new_parent])
+
+        for entry in to_be_copied:
+            e = entry[0]
+            oldparent = entry[1]
+            newparent = entry[2]
+            if newparent is None:
+              # Add a new group...
+                if oldparent.label is None:
+                    newlabel = "Copy"
+                else:
+                    newlabel = f"Copy of {oldparent.label}"
+                if oldparent.id is None:
+                    newid = "Copy"
+                else:
+                    newid = f"Copy of {oldparent.id}"
+                newparent = oldparent.parent.add(
+                    type="group",
+                    label=newlabel,
+                    id=newid,
+                )
+                # and amend all other entries
+                for others in to_be_copied:
+                    if others[1] is oldparent and others[2] is None:
+                        others[2] = newparent
+
             copy_node = copy(e)
+            copy_node.emphasized = False
+            copy_node.selected = False
+
             had_optional = False
             for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
                     had_optional = True
-            e.parent.add_node(copy_node)
+            newparent.add_node(copy_node)
             copy_nodes.append(copy_node)
             # The copy remains at the same place, we are moving the originals,
             # to provide the impression we are doing the right thing, we amend
