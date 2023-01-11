@@ -533,6 +533,7 @@ class Spooler:
             label, list(job), driver=self.driver, priority=priority, loops=loops
         )
         ljob.helper = helper
+        ljob.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
@@ -541,11 +542,12 @@ class Spooler:
         self.context.signal("spooler;queue", len(self._queue))
 
     def command(self, *job, priority=0, helper=True):
-        laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
-        laserjob.helper = helper
+        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        ljob.helper = helper
+        ljob.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
-            self._queue.append(laserjob)
+            self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
@@ -557,6 +559,7 @@ class Spooler:
         @param job: job to send to the spooler.
         @return:
         """
+        job.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
@@ -571,36 +574,31 @@ class Spooler:
 
     def clear_queue(self):
         with self._lock:
-            for e in self._queue:
-                try:
+            for element in self._queue:
+                loop = element.loops_executed
+                total = element.loops
+                if isinf(total):
+                    status = "stopped"
+                elif loop < total:
+                    status = "stopped"
+                else:
                     status = "completed"
-                    needs_signal = e.is_running() and e.time_started is not None
-                    loop = e.loops_executed
-                    total = e.loops
-                    if isinf(total):
-                        status = "stopped"
-                        total = "∞"
-                    elif loop < total:
-                        status = "stopped"
-                    passinfo = f"{loop}/{total}"
-                    e.stop()
-                    if needs_signal:
-                        info = (
-                            e.label,
-                            e.time_started,
-                            e.runtime,
-                            self.context.label,
-                            passinfo,
-                            status,
-                            e.helper,
-                            e.estimate_time(),
-                            e.steps_done,
-                            e.steps_total,
-                            loop,
-                        )
-                        self.context.signal("spooler;completed", info)
-                except AttributeError:
-                    pass
+                self.context.logging.event({
+                    "uid": getattr(element, "uid"),
+                    "status": status,
+                    "loop": getattr(element, "loops_executed"),
+                    "total": getattr(element, "loops"),
+                    "label": getattr(element, "label"),
+                    "start_time": getattr(element, "time_started"),
+                    "duration": getattr(element, "runtime"),
+                    "device": self.context.label,
+                    "important": not getattr(element, "helper", False),
+                    "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
+                    "steps_done": getattr(element, "steps_done"),
+                    "steps_total": getattr(element, "steps_total"),
+                })
+                self.context.signal("spooler;completed")
+                element.stop()
             self._queue.clear()
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
@@ -611,30 +609,21 @@ class Spooler:
             if element.status == "running":
                 element.stop()
                 status = "stopped"
-            try:
-                loop = element.loops_executed
-                total = element.loops
-                if isinf(element.loops):
-                    status = "stopped"
-                    total = "∞"
-                elif loop < total:
-                    status = "stopped"
-                info = (
-                    element.label,
-                    element.time_started,
-                    element.runtime,
-                    self.context.label,
-                    f"{loop}/{total}",
-                    status,
-                    element.helper,
-                    element.estimate_time(),
-                    element.steps_done,
-                    element.steps_total,
-                    loop,
-                )
-                self.context.signal("spooler;completed", info)
-            except AttributeError:
-                pass
+            self.context.logging.event({
+                "uid": getattr(element, "uid"),
+                "status": status,
+                "loop": getattr(element, "loops_executed"),
+                "total": getattr(element, "loops"),
+                "label": getattr(element, "label"),
+                "start_time": getattr(element, "time_started"),
+                "duration": getattr(element, "runtime"),
+                "device": self.context.label,
+                "important": not getattr(element, "helper", False),
+                "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
+                "steps_done": getattr(element, "steps_done"),
+                "steps_total": getattr(element, "steps_total"),
+            })
+            self.context.signal("spooler;completed")
             element.stop()
             for i in range(len(self._queue) - 1, -1, -1):
                 e = self._queue[i]
