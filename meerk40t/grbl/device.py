@@ -242,6 +242,16 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Distance of the curve interpolation in mils"),
             },
             {
+                "attr": "line_end",
+                "object": self,
+                "default": "CR",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["CR", "LF", "CRLF"],
+                "label": _("Line Ending"),
+                "tip": _("CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"),
+            },
+            {
                 "attr": "mock",
                 "object": self,
                 "default": False,
@@ -306,12 +316,14 @@ class GRBLDevice(Service, ViewPort):
         self.register_choices("grbl-global", choices)
 
         self.driver = GRBLDriver(self)
+
         self.controller = GrblController(self)
         self.channel("grbl").watch(self.controller.write)
         self.channel("grbl-realtime").watch(self.controller.realtime)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
+        self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
 

@@ -828,6 +828,8 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
+                        if param_type_1 == "hatch_distance":
+                            value = f"{value}mm"
                         setattr(this_op, param_type_1, value)
                     else:  # Try setting
                         this_op.settings[param_type_1] = value
@@ -843,6 +845,8 @@ class TemplatePanel(wx.Panel):
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
+                        if param_type_2 == "hatch_distance":
+                            value = f"{value}mm"
                         setattr(this_op, param_type_2, value)
                     else:  # Try setting
                         this_op.settings[param_type_2] = value
