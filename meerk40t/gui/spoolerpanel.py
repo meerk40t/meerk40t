@@ -296,7 +296,6 @@ class SpoolerPanel(wx.Panel):
                 simpleline = "device;jobname;start;end;duration;estimate;steps;total;loops;passes;status;info"
                 f.write(simpleline + "\n")
                 for key, info in events:
-                    print(info)
                     line_items = []
                     if info["start_time"] is None:
                         continue
