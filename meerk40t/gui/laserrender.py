@@ -1,6 +1,7 @@
 from copy import copy
 from math import ceil, isnan, sqrt
 
+import numpy as np
 import wx
 from PIL import Image
 
@@ -255,52 +256,37 @@ class LaserRender:
         """
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
-        p = gc.CreatePath()
+        p = []
         init = False
         for e in path.segments(transformed=True):
             if isinstance(e, Move):
-                p.MoveToPoint(e.end[0], e.end[1])
+                p.append((e.end[0], e.end[1]))
                 init = True
             elif isinstance(e, Line):
                 if not init:
                     init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddLineToPoint(e.end[0], e.end[1])
+                    p.append((e.start[0], e.start[1]))
+                p.append((e.end[0], e.end[1]))
             elif isinstance(e, Close):
                 if not init:
                     init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.CloseSubpath()
+                    p.append((e.start[0], e.start[1]))
+                p.append(p[0])
             elif isinstance(e, QuadraticBezier):
                 if not init:
                     init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddQuadCurveToPoint(e.control[0], e.control[1], e.end[0], e.end[1])
+                    p.append((e.start[0], e.start[1]))
+                p.extend((e.npoint(np.linspace(0,1,20))))
             elif isinstance(e, CubicBezier):
                 if not init:
                     init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddCurveToPoint(
-                    e.control1[0],
-                    e.control1[1],
-                    e.control2[0],
-                    e.control2[1],
-                    e.end[0],
-                    e.end[1],
-                )
+                    p.append((e.start[0], e.start[1]))
+                p.extend((e.npoint(np.linspace(0,1,20))))
             elif isinstance(e, Arc):
                 if not init:
                     init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                for curve in e.as_cubic_curves():
-                    p.AddCurveToPoint(
-                        curve.control1[0],
-                        curve.control1[1],
-                        curve.control2[0],
-                        curve.control2[1],
-                        curve.end[0],
-                        curve.end[1],
-                    )
+                    p.append((e.start[0], e.start[1]))
+                p.extend((e.npoint(np.linspace(0,1,20))))
         return p
 
     def make_geomstr(self, gc, path):
@@ -626,9 +612,11 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
+            gc.DrawLines(node._cache,fillStyle=self._get_fillstyle(node))
+            # gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node._cache)
+            gc.StrokeLines(node._cache)
+            # gc.StrokePath(node._cache)
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
