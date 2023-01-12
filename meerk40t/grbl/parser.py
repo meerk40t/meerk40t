@@ -338,7 +338,7 @@ class GRBLParser:
         else:
             _ = self.kernel.translation
 
-        self.origin = 1 # 0 top left, 1 bottom left, 2 center
+        self.origin = 1  # 0 top left, 1 bottom left, 2 center
         self.split_path = True
         self.ignore_travel = True
         self.treat_z_as_power = False
@@ -414,7 +414,12 @@ class GRBLParser:
                 "type": int,
                 "style": "option",
                 "choices": (0, 1, 2, 3),
-                "display": (_("Top Left"), _("Bottom Left"), _("Center"), "Center (Y mirrored)"),
+                "display": (
+                    _("Top Left"),
+                    _("Bottom Left"),
+                    _("Center"),
+                    "Center (Y mirrored)",
+                ),
                 "label": _("Bed-Origin"),
                 "tip": _("Correct starting point"),
                 "section": "_20_Correct Orientation",
