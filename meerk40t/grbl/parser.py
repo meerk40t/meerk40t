@@ -338,7 +338,7 @@ class GRBLParser:
         else:
             _ = self.kernel.translation
 
-        self.mirror_y = True
+        self.origin = 1 # 0 top left, 1 bottom left, 2 center
         self.split_path = True
         self.ignore_travel = True
         self.treat_z_as_power = False
@@ -359,15 +359,6 @@ class GRBLParser:
                 "type": bool,
                 "label": _("Ignore travel"),
                 "tip": _("Try to take only 'valid' movements"),
-                "section": "_10_Path",
-            },
-            {
-                "attr": "mirror_y",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Correct orientation"),
-                "tip": _("Correct path orientation, ie flip in Y-direction"),
                 "section": "_10_Path",
             },
             {
@@ -417,13 +408,25 @@ class GRBLParser:
                 "subsection": "_10_Z-Axis",
             },
             {
+                "attr": "origin",
+                "object": self,
+                "default": 1,
+                "type": int,
+                "style": "option",
+                "choices": (0, 1, 2, 3),
+                "display": (_("Top Left"), _("Bottom Left"), _("Center"), "Center (Y mirrored)"),
+                "label": _("Bed-Origin"),
+                "tip": _("Correct starting point"),
+                "section": "_20_Correct Orientation",
+            },
+            {
                 "attr": "create_operations",
                 "object": self,
                 "default": False,
                 "type": bool,
                 "label": _("Create operations"),
                 "tip": _("Create corresponding operations for Power and Speed pairs"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
             },
             {
                 "attr": "scale_speed",
@@ -437,7 +440,7 @@ class GRBLParser:
                     + "Maximum speed used will be mapped to upper level"
                 ),
                 "conditional": (self, "create_operations"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Speed",
             },
             {
@@ -449,7 +452,7 @@ class GRBLParser:
                 "trailer": "mm/sec",
                 "tip": _("Minimum speed used will be mapped to lower level"),
                 "conditional": (self, "scale_speed"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Speed",
             },
             {
@@ -461,7 +464,7 @@ class GRBLParser:
                 "trailer": "mm/sec",
                 "tip": _("Maximum speed used will be mapped to upper level"),
                 "conditional": (self, "scale_speed"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Speed",
             },
             {
@@ -475,7 +478,7 @@ class GRBLParser:
                     + "Minimum power used will be mapped to lower level\n"
                     + "Maximum power used will be mapped to upper level"
                 ),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Power",
             },
             {
@@ -487,7 +490,7 @@ class GRBLParser:
                 "trailer": "ppi",
                 "tip": _("Minimum power used will be mapped to lower level"),
                 "conditional": (self, "scale_power"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Power",
             },
             {
@@ -499,7 +502,7 @@ class GRBLParser:
                 "trailer": "",
                 "tip": _("Maximum power used will be mapped to upper level"),
                 "conditional": (self, "scale_power"),
-                "section": "_20_Operation",
+                "section": "_30_Operation",
                 "subsection": "_20_Power",
             },
         ]
@@ -565,13 +568,46 @@ class GRBLParser:
         self.plotter("end")
         # We need to add a matrix to fix the element orientation:
         # mirror the y component at the midpoint between 0 and bedsize
-        scale_x = 1.0  # no change
-        scale_y = -1.0  # mirror
+        amended = False
         device_width = elements.length_x("100%")
         device_height = elements.length_y("100%")
-        px = 0  # Origin left
-        py = 0.5 * device_height
-        grbl_mat = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
+        scale_x = 1.0  # no change
+        scale_y = 1.0  # no change
+        px = 0
+        py = 0
+        tx = 0
+        ty = 0
+        if self.origin == 0:
+            # Top Left, no change
+            pass
+        elif self.origin == 1:
+            # Bottom Left, mirror y around center
+            amended = True
+            scale_y = -1.0
+            px = 0
+            py = 0.5 * device_height
+        elif self.origin == 2:
+            # Center
+            # No adjustment of scale but translation
+            amended = True
+            tx = 0.5 * device_width
+            ty = 0.5 * device_height
+        elif self.origin == 3:
+            # Center and mirrored
+            amended = True
+            tx = 0.5 * device_width
+            ty = 0.5 * device_height
+            scale_y = -1.0
+            px = 0
+            py = 0.5 * device_height
+
+        matrix_str = ""
+        if scale_x != 0 or scale_y != 0:
+            matrix_str += f" scale({scale_x},{scale_y},{px},{py})"
+        if tx != 0 or ty != 0:
+            matrix_str += f" translate({tx},{ty})"
+        matrix_str = matrix_str.strip()
+        grbl_mat = Matrix(matrix_str)
 
         op_nodes = {}
         colorindex = 0
@@ -636,6 +672,7 @@ class GRBLParser:
         elif minspeed == maxspeed:
             maxspeed = minspeed + 1
 
+        elements.signal("freeze_tree", True)
         for index, path in enumerate(plotclass.paths):
             if path is None or len(path) == 0:
                 continue
@@ -687,11 +724,13 @@ class GRBLParser:
                 linejoin=Linejoin.JOIN_BEVEL,
                 linecap=Linecap.CAP_SQUARE,
             )
-            if self.mirror_y:
+            if amended:
                 node.matrix *= grbl_mat
                 node.modified()
             if opnode is not None:
                 opnode.add_reference(node)
+
+        elements.signal("freeze_tree", False)
         elements.signal("tree_changed")
 
     def grbl_write(self, data):
