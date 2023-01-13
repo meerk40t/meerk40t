@@ -58,6 +58,11 @@ class RasterOpNode(Node, Parameters):
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = False
+        if label is None:
+            self.label = "Raster"
+        else:
+            self.label = label
+
 
     def __repr__(self):
         return "RasterOp()"
