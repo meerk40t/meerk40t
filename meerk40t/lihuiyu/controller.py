@@ -17,6 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 
+from meerk40t.ch341.ch341 import CH341
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -192,7 +193,6 @@ class LihuiyuController:
         self.usb_send_channel = context.channel(f"{name}/usb_send")
         self.recv_channel = context.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
-        self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
 
     @property
@@ -229,21 +229,44 @@ class LihuiyuController:
     def open(self):
         self.pipe_channel("open()")
         if self.connection is None:
-            self.connection = self.ch341.connect(
-                driver_index=self.context.usb_index,
-                chipv=self.context.usb_version,
-                bus=self.context.usb_bus,
-                address=self.context.usb_address,
-                mock=self.context.mock,
-            )
+            self.connection = CH341(self.context, log=self.usb_log)
+            if self.context.mock:
+                self.connection.mock = True
+        if self.context.usb_index != -1:
+            self._open_at_index(self.context.usb_index)
         else:
-            try:
-                self.connection.open()
-            except AttributeError:
-                raise ConnectionRefusedError("Mock Driver cannot connect with USB")
+            for i in range(16):
+                try:
+                    self._open_at_index(i)
+                except ConnectionRefusedError:
+                    pass
+            raise ConnectionRefusedError("No valid connection matched any given criteria.")
 
-        if self.connection is None:
+    def _open_at_index(self, usb_index):
+        self.connection.open(usb_index=usb_index)
+        if not self.connection.is_connected:
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
+        if self.context.usb_bus != -1 and self.connection.bus != -1:
+            if self.connection.bus != self.context.usb_bus:
+                self.connection.close()
+                raise ConnectionRefusedError("Could not match USB bus.")
+        if self.context.usb_address != -1 and self.connection.address != -1:
+            if self.connection.address != self.context.usb_address:
+                self.connection.close()
+                raise ConnectionRefusedError("Could not match USB address")
+        if self.context.usb_version != -1:
+            version = self.connection.get_chip_version
+            if version != self.context.usb_version:
+                self.connection.close()
+                raise ConnectionRefusedError("Could not match CH341 chip version.")
+        if self.connection.get_status() != STATUS_OK:
+            self.connection.close()
+            raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
+        if self.context.serial_enabled:
+            self.challenge(self.context.serial_number)
+            if not self._is_serial_confirmed:
+                self.connection.close()
+                raise ConnectionRefusedError("Serial number confirmation failed.")
 
     def close(self):
         self.pipe_channel("close()")
