@@ -949,7 +949,8 @@ class Elemental(Service):
                             continue
                         try:
                             c.matrix.post_translate(dx, dy)
-                            c.modified()
+                            # c.modified()
+                            c.translated(dx, dy)
                         except AttributeError:
                             pass
                             # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
@@ -957,7 +958,8 @@ class Elemental(Service):
                     try:
                         # q.matrix *= matrix
                         q.matrix.post_translate(dx, dy)
-                        q.modified()
+                        # q.modified()
+                        q.translated(dx, dy)
                     except AttributeError:
                         pass
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
@@ -1103,6 +1105,13 @@ class Elemental(Service):
         self.schedule(self._save_restore_job)
 
     def modified(self, *args):
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.schedule(self._save_restore_job)
+
+    def translated(self, node=None, dx=0, dy=0, *args):
+        # It's safer to just recompute the selection area...
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
@@ -1674,7 +1683,8 @@ class Elemental(Service):
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 continue
             node.matrix.post_translate(dx, dy)
-            node.modified()
+            # node.modified()
+            node.translated(dx, dy)
 
     def set_emphasized_by_position(
         self,
