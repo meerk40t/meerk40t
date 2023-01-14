@@ -36,6 +36,10 @@ class ImageOpNode(Node, Parameters):
         self.dangerous = False
         self.stopop = True
         self.allowed_attributes = []
+        if label is None:
+            self.label = "Image"
+        else:
+            self.label = label
 
     def __repr__(self):
         return "ImageOpNode()"
