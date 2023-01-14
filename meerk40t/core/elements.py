@@ -1679,6 +1679,7 @@ class Elemental(Service):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
         # We dont know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
+        self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
