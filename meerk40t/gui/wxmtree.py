@@ -7,6 +7,7 @@ from .icons import (
     get_default_scale_factor,
     icon_meerk40t,
     icons8_bell_20,
+    icons8_canvas_20,
     icons8_close_window_20,
     icons8_diagonal_20,
     icons8_direction_20,
@@ -15,10 +16,16 @@ from .icons import (
     icons8_home_20,
     icons8_image_20,
     icons8_input_20,
+    icons8_journey_20,
     icons8_laser_beam_20,
+    icons8_line_20,
     icons8_lock_50,
     icons8_output_20,
+    icons8_oval_20,
+    icons8_polyline_50,
+    icons8_prototype_20,
     icons8_r_white,
+    icons8_rectangular_20,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -26,16 +33,9 @@ from .icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
+    icons8_type_50,
     icons8_vector_20,
     icons8_visit_20,
-    icons8_canvas_20,
-    icons8_prototype_20,
-    icons8_rectangular_20,
-    icons8_oval_20,
-    icons8_polyline_50,
-    icons8_type_50,
-    icons8_line_20,
-    icons8_journey_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -841,7 +841,8 @@ class ShadowTree:
         # let's try to remember which branches were expanded:
         self._freeze = True
         self.reset_expanded()
-        # Safety net - if we have too many elements it will take too log to create all preview icons...
+        # Safety net - if we have too many elements it will
+        # take too log to create all preview icons...
         count = self.elements.count_elems() + self.elements.count_op()
         self._too_big = bool(count > 1000)
         # print(f"Was too big?! {count} -> {self._too_big}")
@@ -926,8 +927,7 @@ class ShadowTree:
     def unregister_children(self, node):
         """
         All children of this node are unregistered.
-l
-        @param node:l
+        @param node:
         @return:
         """
         for child in node.children:
