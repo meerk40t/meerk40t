@@ -467,6 +467,7 @@ class Elemental(Service):
             stime = self._timing_stack[key]
             etime = time()
             duration = etime - stime[0]
+            stime[0] = etime
             stime[1] += duration
             stime[2] += 1
             if display:
@@ -479,7 +480,7 @@ class Elemental(Service):
         self.signal("freeze_tree", True)
 
     def resume_updates(self, source, force_an_update=True):
-        print (f"Resume update called from {source}")
+        # print (f"Resume update called from {source}")
         self.suppress_updates = False
         self.signal("freeze_tree", False)
         if force_an_update:
@@ -1111,7 +1112,9 @@ class Elemental(Service):
         self.schedule(self._save_restore_job)
 
     def translated(self, node=None, dx=0, dy=0, *args):
-        # It's safer to just recompute the selection area...
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
