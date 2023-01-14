@@ -3172,10 +3172,21 @@ class MeerK40t(MWindow):
 
     def clear_project(self):
         context = self.context
-        self.working_file = None
-        context.elements.clear_all()
-        self.context(".laserpath_clear\n")
-        self.validate_save()
+        try:
+            with wx.BusyInfo(
+                wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")
+            ):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
+        except AttributeError:
+            # wxPython 4.0
+            with wx.BusyInfo(_("Cleaning up...")):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
 
     def clear_and_open(self, pathname):
         self.clear_project()
