@@ -472,7 +472,9 @@ class Elemental(Service):
             stime[2] += 1
             if display:
                 # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
-                self.kernel._console_channel(f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                self.kernel._console_channel(
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
+                )
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -2891,7 +2893,6 @@ class Elemental(Service):
                         results = loader.load(self, self, pathname, **kwargs)
                         self.remove_empty_groups()
                         # self.listen_tree(self)
-                        end_time = time()
                         self._filename = pathname
                         self.set_end_time("load", True)
                         return True
