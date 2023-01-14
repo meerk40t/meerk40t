@@ -457,14 +457,21 @@ class Elemental(Service):
         self._timing_stack = {}
 
     def set_start_time(self, key):
-        self._timing_stack[key] = time()
+        if key in self._timing_stack:
+            self._timing_stack[key][0] = time()
+        else:
+            self._timing_stack[key] = [time(), 0, 0]
 
-    def set_end_time(self, key):
+    def set_end_time(self, key, display=True):
         if key in self._timing_stack:
             stime = self._timing_stack[key]
             etime = time()
-            print (f"Duration for {key}: {etime-stime:.2f} sec")
-            self.kernel._console_channel(f"Duration for {key}: {etime-stime:.2f} sec")
+            duration = etime - stime[0]
+            stime[1] += duration
+            stime[2] += 1
+            if display:
+                print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                self.kernel._console_channel(f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -1330,12 +1337,16 @@ class Elemental(Service):
         self.clear_operations()
 
     def clear_all(self):
+        self.set_start_time("clear_all")
+        self.stop_updates("clear_all")
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
         self.clear_note()
         self.clear_regmarks()
         self.validate_selected_area()
+        self.resume_updates("clear_all")
+        self.set_end_time("clear_all", True)
 
     def clear_note(self):
         self.note = None
@@ -2868,7 +2879,7 @@ class Elemental(Service):
                         # self.listen_tree(self)
                         end_time = time()
                         self._filename = pathname
-                        self.set_end_time("load")
+                        self.set_end_time("load", True)
                         return True
                     except FileNotFoundError:
                         return False
