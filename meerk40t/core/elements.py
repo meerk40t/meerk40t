@@ -471,7 +471,7 @@ class Elemental(Service):
             stime[1] += duration
             stime[2] += 1
             if display:
-                print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
                 self.kernel._console_channel(f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
 
     def stop_updates(self, source):
