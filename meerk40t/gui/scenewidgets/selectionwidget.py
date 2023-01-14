@@ -18,7 +18,6 @@ from meerk40t.svgelements import Point
 
 NEARLY_ZERO = 1.0e-6
 
-
 def process_event(
     widget,
     widget_identifier=None,
@@ -1352,6 +1351,8 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.revised_magnet_bound(b)
+            self.total_dx += dx
+            self.total_dy += dy
             if dx != 0 or dy != 0:
                 for e in elements.flat(types=elem_nodes, emphasized=True):
                     if hasattr(e, "lock") and e.lock and not allowlockmove:
@@ -1432,7 +1433,8 @@ class MoveWidget(Widget):
                 # Did we actually move?
                 for e in elements.flat(types=elem_group_nodes, emphasized=True):
                     try:
-                        e.modified()
+                        # e.modified()
+                        e.translated(self.total_dx, self.total_dy)
                     except AttributeError:
                         pass
             self.scene.modif_active = False

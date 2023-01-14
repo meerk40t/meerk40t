@@ -5186,7 +5186,8 @@ def init_commands(kernel):
             dy = ty - dbounds[1]
             if dx != 0 or dy != 0:
                 node.matrix.post_translate(dx, dy)
-            node.modified()
+                # node.modified()
+                node.translated(dx, dy)
         return "elements", data
 
     @self.console_command(
@@ -5212,7 +5213,8 @@ def init_commands(kernel):
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     continue
                 node.matrix.post_translate(ntx, nty)
-                node.modified()
+                # node.modified()
+                node.translated(ntx, nty)
         except ValueError:
             raise CommandSyntaxError
         return "elements", data
