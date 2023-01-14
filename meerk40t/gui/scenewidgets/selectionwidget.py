@@ -1431,12 +1431,17 @@ class MoveWidget(Widget):
             self.check_for_magnets()
             if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
                 # Did we actually move?
+                # Remember this, it is still okay
+                bx0, by0, bx1, by1 = elements._emphasized_bounds
                 for e in elements.flat(types=elem_group_nodes, emphasized=True):
                     try:
                         # e.modified()
                         e.translated(self.total_dx, self.total_dy)
                     except AttributeError:
                         pass
+                # .translated will set the scene emphasized bounds dirty, that's not needed, so...
+                elements.update_bounds([bx0, by0, bx1, by1])
+
             self.scene.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
