@@ -741,48 +741,36 @@ class ShadowTree:
                 return
 
     def refresh_tree(self, node=None, level=0, source=""):
-        """Any tree elements currently displaying wrong data as per elements should be updated to display
-        the proper values and contexts and icons."""
-        starttime = None
-        if node is None:
-            self.context.elements.set_start_time("refresh_tree")
-            self.refresh_tree_counter = 0
-            elemtree = self.elements._tree
-            node = elemtree._item
-            level = 0
-        else:
-            self.refresh_tree_counter += 1
+        """
+        This no longer has any relevance, as the updates are properly done outside...
+        """
+        # if node is None:
+        #     self.context.elements.set_start_time("refresh_tree")
+        #     self.refresh_tree_counter = 0
+        #     elemtree = self.elements._tree
+        #     node = elemtree._item
+        #     level = 0
+        # else:
+        #     self.refresh_tree_counter += 1
 
-        if node is None:
-            return
-        tree = self.wxtree
-        if False:
-            child, cookie = tree.GetFirstChild(node)
-            while child.IsOk():
-                child_node = self.wxtree.GetItemData(child)
-                if child_node.type in ("group", "file"):
-                    self.update_decorations(child_node, force=True)
-                ct = self.wxtree.GetChildrenCount(child, recursively=False)
-                if ct > 0:
-                    self.refresh_tree(child, level + 1)
+        # if node is None:
+        #     return
+        # tree = self.wxtree
+        # child, cookie = tree.GetFirstChild(node)
+        # while child.IsOk():
+        #     child_node = self.wxtree.GetItemData(child)
+        #     if child_node.type in ("group", "file"):
+        #         self.update_decorations(child_node, force=True)
+        #     ct = self.wxtree.GetChildrenCount(child, recursively=False)
+        #     if ct > 0:
+        #         self.refresh_tree(child, level + 1)
+        #     child, cookie = tree.GetNextChild(node, cookie)
 
-            # An empty node needs to be expanded at least once is it has children...
-            # ct = self.wxtree.GetChildrenCount(child, recursively=False)
-            # if ct > 0:
-            #     former_state = self.was_expanded(child, level)
-            #     if not former_state:
-            #         self.wxtree.Expand(child)
-            #         self.set_expanded(child, level)
-            child, cookie = tree.GetNextChild(node, cookie)
-            if level == 0:
-                self.update_op_labels()
-        if level == 0:
-            self.wxtree._freeze = False
-            self.wxtree.Expand(self.elements.get(type="branch ops")._item)
-            self.wxtree.Expand(self.elements.get(type="branch elems")._item)
-            self.wxtree.Expand(self.elements.get(type="branch reg")._item)
-            self.context.elements.set_end_time("refresh_tree", True)
-            self.context.elements.set_end_time("full_load", True)
+        self.wxtree._freeze = False
+        self.wxtree.Expand(self.elements.get(type="branch ops")._item)
+        self.wxtree.Expand(self.elements.get(type="branch elems")._item)
+        self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        self.context.elements.set_end_time("full_load", True)
 
     def freeze_tree(self, status=None):
         if status is None:
