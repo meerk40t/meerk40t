@@ -356,7 +356,7 @@ class MeerK40t(MWindow):
             {
                 "attr": "mini_icon",
                 "object": self.context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Mini icon in tree:"),
                 "tip": _(
