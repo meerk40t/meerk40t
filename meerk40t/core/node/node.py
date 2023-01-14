@@ -290,6 +290,7 @@ class Node:
 
     @property
     def paint_bounds(self):
+        # Make sure that bounds is valid
         if not self._paint_bounds_dirty:
             return self._paint_bounds
 
@@ -614,6 +615,12 @@ class Node:
                 node = self
             self._root.notify_modified(node=node, **kwargs)
 
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+
     def notify_altered(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
@@ -657,7 +664,6 @@ class Node:
         """
         Invalidation of the individual node.
         """
-        self._points_dirty = True
         self.set_dirty_bounds()
         self._bounds = None
         self._paint_bounds = None
@@ -684,6 +690,29 @@ class Node:
         """
         self.invalidated()
         self.notify_modified(self)
+
+    def translated(self, dx, dy):
+        """
+        This is a special case of the modfied call, we are translating the node without fundamentally altering it's properties
+
+        """
+        if self._points_dirty:
+            # A pity but we need proper data
+            self.modified()
+            return
+        self._bounds = [
+            self._bounds[0] + dx,
+            self._bounds[1] + dy,
+            self._bounds[2] + dx,
+            self._bounds[3] + dy,
+        ]
+        self._paint_bounds = [
+            self._paint_bounds[0] + dx,
+            self._paint_bounds[1] + dy,
+            self._paint_bounds[2] + dx,
+            self._paint_bounds[3] + dy,
+        ]
+        self.notify_translated(self, dx=dx, dy=dy)
 
     def altered(self):
         """
