@@ -354,6 +354,18 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Mini icon in tree:"),
+                "tip": _(
+                    "Display a miniature representation of the icon in the tree beside an element"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -3182,7 +3194,6 @@ class MeerK40t(MWindow):
             try:
                 # Reset to standard tool
                 self.context("tool none\n")
-                self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(
                     wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
@@ -3193,10 +3204,8 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
             except AttributeError:
                 # wxPython 4.0
-                self.context.signal("freeze_tree", True)
                 with wx.BusyInfo(_("Loading File...")):
                     n = self.context.elements.note
                     results = self.context.elements.load(
@@ -3204,7 +3213,6 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,

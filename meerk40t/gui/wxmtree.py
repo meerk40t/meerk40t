@@ -28,6 +28,13 @@ from .icons import (
     icons8_timer_20,
     icons8_vector_20,
     icons8_visit_20,
+    icons8_rectangular_50,
+    icons8_circle_50,
+    icons8_oval_50,
+    icons8_image_20,
+    icons8_vector_50,
+    icons8_polyline_50,
+    icons8_type_50,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -243,6 +250,8 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
+        self.shadow_tree.cache_hits = 0
+        self.shadow_tree.cache_requests = 0
         self.shadow_tree.refresh_tree(source=f"signal_{origin}")
         if nodes is not None:
             if isinstance(nodes, (tuple, list)):
@@ -271,6 +280,7 @@ class TreePanel(wx.Panel):
             rootitem = self.shadow_tree.wxtree.GetRootItem()
             if not node is None and not node._item is None and node._item != rootitem:
                 self.shadow_tree.wxtree.EnsureVisible(node._item)
+
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
@@ -362,7 +372,20 @@ class ShadowTree:
             "elem point": icons8_scatter_plot_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
+            "elem rect": icons8_rectangular_50,
+            "elem circle": icons8_circle_50,
+            "elem ellipse": icons8_oval_50,
+            "elem image": icons8_image_20,
+            "elem path": icons8_vector_50,
+            "elem line": icons8_polyline_50,
+            "elem polyline": icons8_polyline_50,
+            "elem text": icons8_type_50,
         }
+        self.image_cache = []
+        self.cache_hits = 0
+        self.cache_requests = 0
+        self._too_big = False
+        self.refresh_tree_counter = 0
 
     def service_attach(self, *args):
         self.elements.listen_tree(self)
@@ -701,11 +724,16 @@ class ShadowTree:
     def refresh_tree(self, node=None, level=0, source=""):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
         the proper values and contexts and icons."""
+        starttime = None
         if node is None:
-            # print ("refresh tree called: %s" % source)
+            self.context.elements.set_start_time("refresh_tree")
+            self.refresh_tree_counter = 0
             elemtree = self.elements._tree
             node = elemtree._item
             level = 0
+        else:
+            self.refresh_tree_counter += 1
+
         if node is None:
             return
         tree = self.wxtree
@@ -715,7 +743,10 @@ class ShadowTree:
             child_node = self.wxtree.GetItemData(child)
             if child_node.type in ("group", "file"):
                 self.update_decorations(child_node, force=True)
-            self.refresh_tree(child, level + 1)
+            ct = self.wxtree.GetChildrenCount(child, recursively=False)
+            if ct > 0:
+                self.refresh_tree(child, level + 1)
+
             # An empty node needs to be expanded at least once is it has children...
             # ct = self.wxtree.GetChildrenCount(child, recursively=False)
             # if ct > 0:
@@ -729,6 +760,10 @@ class ShadowTree:
         self.wxtree.Expand(self.elements.get(type="branch ops")._item)
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        self.wxtree._freeze = False
+        if level == 0:
+            self.context.elements.set_end_time("refresh_tree")
+            self.context.elements.set_end_time("full_load")
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -761,7 +796,7 @@ class ShadowTree:
             return
         while pnode.IsOk():
             txt = self.wxtree.GetItemText(pnode)
-            # That it s not working as advertised...
+            # That is not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
             state = False  # otherwise every thing gets expanded...
             if state:
@@ -796,9 +831,13 @@ class ShadowTree:
 
         @return:
         """
-
         # let's try to remember which branches were expanded:
+        self._freeze = True
         self.reset_expanded()
+        # Safety net - if we have too many elements it will take too log to create all preview icons...
+        count = self.elements.count_elems() + self.elements.count_op()
+        self._too_big = bool(count > 1000)
+        print (f"Was too big?! {count} -> {self._too_big}")
 
         self.parse_tree(self.wxtree.GetRootItem(), 0)
         # Rebuild tree destroys the emphasis, so let's store it...
@@ -861,6 +900,7 @@ class ShadowTree:
         for e in emphasized_list:
             e.emphasized = True
         self.restore_tree(self.wxtree.GetRootItem(), 0)
+        self._freeze = False
 
     def register_children(self, node):
         """
@@ -869,6 +909,10 @@ class ShadowTree:
         @param node:
         @return:
         """
+        if node is self.context.elements.elem_branch:
+            print (f"Elements branch will be registered: suppress={self.context.elements.suppress_updates}, freeze={self._freeze}")
+        elif node is self.context.elements.op_branch:
+            print (f"Elements branch will be registered: suppress={self.context.elements.suppress_updates}, freeze={self._freeze}")
         for child in node.children:
             self.node_register(child)
             self.register_children(child)
@@ -944,7 +988,7 @@ class ShadowTree:
         else:
             node._item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node._item, node)
-        self.update_decorations(node)
+        self.update_decorations(node, False)
         wxcolor = self.wxtree.GetForegroundColour()
         if node.type == "elem text":
             attribute_to_try = "fill"
@@ -989,7 +1033,7 @@ class ShadowTree:
         node_item = node._item
         if node_item is None:
             return
-        if self._freeze:
+        if self._freeze or self.context.elements.suppress_updates:
             return
         tree.SetItemBackgroundColour(node_item, None)
         try:
@@ -1013,7 +1057,7 @@ class ShadowTree:
         item = node._item
         if item is None:
             return
-        if self._freeze:
+        if self._freeze or self.context.elements.suppress_updates:
             return
         tree = self.wxtree
         wxcolor = self.safe_color(color)
@@ -1021,15 +1065,46 @@ class ShadowTree:
 
     def create_image_from_node(self, node):
         image = None
+        mini_icon = self.context.root.mini_icon and not self._too_big
         c = None
+        self.cache_requests += 1
+        cached_id = -1
         # Do we have a standard representation?
         defaultcolor = Color("black")
-        if node.type == "elem image":
-            image = self.renderer.make_thumbnail(
-                node.active_image, width=self.iconsize, height=self.iconsize
-            )
+        if mini_icon:
+            if node.type == "elem image":
+                    image = self.renderer.make_thumbnail(
+                        node.active_image, width=self.iconsize, height=self.iconsize
+                    )
+            else:
+                # Establish colors (and some images)
+                if node.type.startswith("op ") or node.type.startswith("util "):
+                    if (
+                        hasattr(node, "color")
+                        and node.color is not None
+                        and node.color.argb is not None
+                    ):
+                        c = node.color
+                elif node.type == "reference":
+                    c, image, cached_id = self.create_image_from_node(node.node)
+                elif node.type.startswith("elem "):
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and node.stroke.argb is not None
+                    ):
+                        c = node.stroke
+                if node.type.startswith("elem ") and node.type != "elem point":
+                    image = self.renderer.make_raster(
+                        node,
+                        node.paint_bounds,
+                        width=self.iconsize,
+                        height=self.iconsize,
+                        bitmap=True,
+                        keep_ratio=True,
+                    )
         else:
-            # Establish colors (and some images)
+            # Establish at least colors (and an image for a reference)
             if node.type.startswith("op ") or node.type.startswith("util "):
                 if (
                     hasattr(node, "color")
@@ -1038,7 +1113,14 @@ class ShadowTree:
                 ):
                     c = node.color
             elif node.type == "reference":
-                c, image = self.create_image_from_node(node.node)
+                c, image, cached_id = self.create_image_from_node(node.node)
+            elif node.type == "elem text":
+                if (
+                    hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
+                ):
+                    c = node.fill
             elif node.type.startswith("elem "):
                 if (
                     hasattr(node, "stroke")
@@ -1046,47 +1128,45 @@ class ShadowTree:
                     and node.stroke.argb is not None
                 ):
                     c = node.stroke
-            if node.type.startswith("elem ") and node.type != "elem point":
-                image = self.renderer.make_raster(
-                    node,
-                    node.paint_bounds,
-                    width=self.iconsize,
-                    height=self.iconsize,
-                    bitmap=True,
-                    keep_ratio=True,
-                )
 
-            # Have we already established an image, if no let's use the default
-            if image is None:
-                img_obj = None
-                tofind = node.type
-                if tofind == "util console":
-                    # Let's see whether we find the keyword...
-                    for key in self.default_images:
-                        if key.startswith("console "):
-                            skey = key[8:]
-                            if node.command is not None and skey in node.command:
-                                try:
-                                    img_obj = self.default_images[key]
-                                except (IndexError, KeyError):
-                                    img_obj = None
-                                if img_obj is not None:
-                                    break
+        # Have we already established an image, if no let's use the default
+        if image is None:
+            img_obj = None
+            found = ""
+            tofind = node.type
+            if tofind == "util console":
+                # Let's see whether we find the keyword...
+                for key in self.default_images:
+                    if key.startswith("console "):
+                        skey = key[8:]
+                        if node.command is not None and skey in node.command:
+                            found = key
+                            break
 
-                if img_obj is None:
-                    try:
-                        img_obj = self.default_images[tofind]
-                    except (IndexError, KeyError):
-                        img_obj = None
-                if img_obj is not None:
+            if not found and tofind in self.default_images:
+                found = tofind
+
+            if found:
+                for stored_key, stored_color, img_obj, c_id in self.image_cache:
+                    if stored_key == found and stored_color == c:
+                        image = img_obj
+                        cached_id = c_id
+                        self.cache_hits += 1
+                        break
+                if image is None:
+                    # has not been found yet...
+                    img_obj = self.default_images[found]
                     image = img_obj.GetBitmap(
                         color=c,
                         resize=(self.iconsize, self.iconsize),
                         noadjustment=True,
                     )
+                    cached_id = self.tree_images.Add(bitmap=image)
+                    self.image_cache.append((found, c, image, cached_id))
+
         if c is None:
             c = defaultcolor
-        return c, image
+        return c, image, cached_id
 
     def set_icon(self, node, icon=None, force=False):
         """
@@ -1100,8 +1180,8 @@ class ShadowTree:
         drawmode = self.elements.root.draw_mode
         if drawmode & DRAW_MODE_ICONS != 0:
             return
-        if self._freeze:
-            return
+        # if self._freeze or self.context.elements.suppress_updates:
+        #     return
         if node is None:
             return
         try:
@@ -1122,9 +1202,12 @@ class ShadowTree:
                 return image_id
 
             # print ("Default size for iconsize, tree_images", self.iconsize, self.tree_images.GetSize())
-            c, image = self.create_image_from_node(node)
+            c, image, cached_id = self.create_image_from_node(node)
+
             if image is not None:
-                if image_id < 0:
+                if cached_id >= 0:
+                    image_id = cached_id
+                elif image_id < 0:
                     image_id = self.tree_images.Add(bitmap=image)
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)

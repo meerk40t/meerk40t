@@ -143,6 +143,7 @@ def init_tree(kernel):
         _("Remove all items from operation"), node_type=op_parent_nodes, help=""
     )
     def clear_all_op_entries(node, **kwargs):
+        self.stop_updates("clear_all_op")
         data = list()
         removed = False
         for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
@@ -150,8 +151,7 @@ def init_tree(kernel):
         for item in data:
             removed = True
             item.remove_all_children()
-        if removed:
-            self.signal("tree_changed")
+        self.resume_updates("clear_all_op", force_update=removed)
 
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
@@ -473,8 +473,9 @@ def init_tree(kernel):
             if len(op._children) == 0 and not op.type=="blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
+            self.stop_updates("clear_unused")
             self.remove_operations(to_delete)
-            self.signal("tree_changed")
+            self.resume_updates("clear_unused")
 
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_ops(node, **kwargs):
@@ -805,13 +806,14 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(_("Make {copies} copies"), node_type=("reference",), help="")
     def clone_element_op(node, copies=1, **kwargs):
+        self.stop_updates("clone_elem_op")
         nodes = list(self.flat(selected=True, cascade=False, types="reference"))
         for snode in nodes:
             index = snode.parent.children.index(snode)
             for i in range(copies):
                 snode.parent.add_reference(snode.node, pos=index)
             snode.modified()
-        self.signal("tree_changed")
+        self.resume_updates("clone_elem_op")
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_operation(
@@ -1096,10 +1098,11 @@ def init_tree(kernel):
         help=_("Any existing assignment of elements to operations will be removed"),
     )
     def remove_all_assignments(node, **kwargs):
+        self.stop_updates("remove_all_assign")
         for node in self.elems():
             for ref in list(node._references):
                 ref.remove_node()
-        self.signal("tree_changed")
+        self.resume_updates("remove_all_assign")
 
     @tree_operation(
         _("Duplicate operation(s)"),
@@ -1107,6 +1110,7 @@ def init_tree(kernel):
         help=_("duplicate operation nodes"),
     )
     def duplicate_operation(node, **kwargs):
+        self.stop_updates("duplicate_operation")
         operations = self._tree.get(type="branch ops").children
         for op in self.ops(emphasized=True):
             try:
@@ -1120,7 +1124,7 @@ def init_tree(kernel):
                     copy_op.add_reference(child.node)
                 except AttributeError:
                     pass
-        self.signal("tree_changed")
+        self.resume_updates("duplicate_operation")
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_submenu(_("Passes"))
@@ -1413,9 +1417,10 @@ def init_tree(kernel):
                 for ref in list(rnode._references):
                     ref.remove_node()
 
+        self.stop_updates("remove_assign")
         for node in list(self.elems(emphasized=True)):
             rem_node(node)
-        self.signal("tree_changed")
+        self.resume_updates("remove_assign")
 
     @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
@@ -1794,6 +1799,7 @@ def init_tree(kernel):
     @tree_operation(_("Move back to elements"), node_type=elem_group_nodes, help="")
     def move_back(node, **kwargs):
         # Drag and Drop
+        self.stop_updates("move_back")
         signal_needed = False
         drop_node = self.elem_branch
         data = list()
@@ -1803,15 +1809,14 @@ def init_tree(kernel):
         for item in data:
             drop_node.drop(item)
             signal_needed = True
-        if signal_needed:
-            self.signal("tree_changed")
+        self.resume_updates("move_back", signal_needed)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()
     @tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
     def move_to_regmark(node, **kwargs):
         # Drag and Drop
-        signal_needed = False
+        self.stop_updates("move_to_reg")
         drop_node = self.reg_branch
         data = list()
         for item in list(self.elems_nodes()):
@@ -1822,11 +1827,7 @@ def init_tree(kernel):
             if hasattr(item, "lock"):
                 item.lock = False
             drop_node.drop(item)
-            signal_needed = True
-        if signal_needed:
-            self.signal("tree_changed")
-        drop_node.drop(node)
-        self.signal("tree_changed")
+        self.resume_updates("move_to_reg")
 
     @tree_conditional(lambda node: not node.lock)
     @tree_conditional_try(lambda node: not node.lock)
