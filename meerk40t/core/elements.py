@@ -1,3 +1,4 @@
+from time import time
 import os.path
 from os.path import realpath
 
@@ -406,6 +407,7 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -451,6 +453,38 @@ class Elemental(Service):
         self._align_boundaries = None
         self._align_group = False
         self._align_stack = []
+
+        self._timing_stack = {}
+
+    def set_start_time(self, key):
+        if key in self._timing_stack:
+            self._timing_stack[key][0] = time()
+        else:
+            self._timing_stack[key] = [time(), 0, 0]
+
+    def set_end_time(self, key, display=True):
+        if key in self._timing_stack:
+            stime = self._timing_stack[key]
+            etime = time()
+            duration = etime - stime[0]
+            stime[0] = etime
+            stime[1] += duration
+            stime[2] += 1
+            if display:
+                # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                self.kernel._console_channel(f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+
+    def stop_updates(self, source):
+        # print (f"Stop update called from {source}")
+        self.suppress_updates = True
+        self.signal("freeze_tree", True)
+
+    def resume_updates(self, source, force_an_update=True):
+        # print (f"Resume update called from {source}")
+        self.suppress_updates = False
+        self.signal("freeze_tree", False)
+        if force_an_update:
+            self.signal("tree_changed")
 
     @property
     def filename(self):
@@ -916,7 +950,8 @@ class Elemental(Service):
                             continue
                         try:
                             c.matrix.post_translate(dx, dy)
-                            c.modified()
+                            # c.modified()
+                            c.translated(dx, dy)
                         except AttributeError:
                             pass
                             # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
@@ -924,11 +959,12 @@ class Elemental(Service):
                     try:
                         # q.matrix *= matrix
                         q.matrix.post_translate(dx, dy)
-                        q.modified()
+                        # q.modified()
+                        q.translated(dx, dy)
                     except AttributeError:
                         pass
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
-        self.signal("tree_changed")
+        self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
         newtext = self.mywordlist.wordlist_delta(orgtext, increase)
@@ -1075,6 +1111,15 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self.schedule(self._save_restore_job)
 
+    def translated(self, node=None, dx=0, dy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.schedule(self._save_restore_job)
+
     def node_attached(self, node, **kwargs):
         self.schedule(self._save_restore_job)
 
@@ -1088,6 +1133,7 @@ class Elemental(Service):
         self._tree.unlisten(listener)
 
     def load_default(self, performclassify=True):
+        self.stop_updates("load default")
         self.clear_operations()
         self.op_branch.add(
             type="op image",
@@ -1101,9 +1147,10 @@ class Elemental(Service):
         self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        self.resume_updates("load default")
 
     def load_default2(self, performclassify=True):
+        self.stop_updates("load default 2")
         self.clear_operations()
         self.op_branch.add(
             type="op image",
@@ -1122,7 +1169,7 @@ class Elemental(Service):
         self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        self.resume_updates("load default 2")
 
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
@@ -1302,12 +1349,16 @@ class Elemental(Service):
         self.clear_operations()
 
     def clear_all(self):
+        self.set_start_time("clear_all")
+        self.stop_updates("clear_all")
         self.clear_elements()
         self.clear_operations()
         self.clear_files()
         self.clear_note()
         self.clear_regmarks()
         self.validate_selected_area()
+        self.resume_updates("clear_all")
+        self.set_end_time("clear_all", True)
 
     def clear_note(self):
         self.note = None
@@ -1628,6 +1679,7 @@ class Elemental(Service):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
         # We dont know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
+        self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
@@ -1635,7 +1687,8 @@ class Elemental(Service):
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 continue
             node.matrix.post_translate(dx, dy)
-            node.modified()
+            # node.modified()
+            node.translated(dx, dy)
 
     def set_emphasized_by_position(
         self,
@@ -2825,12 +2878,22 @@ class Elemental(Service):
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
+                    self.set_start_time("load")
+                    self.set_start_time("full_load")
+                    self.stop_updates("load elements")
                     try:
-                        self.signal("freeze_tree", True)
+                        # We could stop the attachment to shadowtree for the duration
+                        # of the load to avoid unnecessary actions, will provide
+                        # about 8% speed increase, but probably not worth the risk
+                        # with attachment: 77.2 sec
+                        # without attachm: 72.1 sec
+                        # self.unlisten_tree(self)
                         results = loader.load(self, self, pathname, **kwargs)
                         self.remove_empty_groups()
+                        # self.listen_tree(self)
+                        end_time = time()
                         self._filename = pathname
-                        self.signal("tree_changed")
+                        self.set_end_time("load", True)
                         return True
                     except FileNotFoundError:
                         return False
@@ -2840,7 +2903,9 @@ class Elemental(Service):
                     except OSError:
                         return False
                     finally:
-                        self.signal("freeze_tree", False)
+                        # This will be executed regardless of the return statements above
+                        self.resume_updates("load elements (finally)", True)
+
         return False
 
     def load_types(self, all=True):

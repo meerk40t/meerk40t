@@ -558,6 +558,7 @@ class GRBLParser:
             options (disctionary, optional): A dictionary with settings. Defaults to None.
         """
         # self.debug_options("Now:")
+        elements.stop_updates("grbl_parse")
         plotclass = GRBLPlotter()
         for opt in self.options:
             if hasattr(plotclass, opt["attr"]):
@@ -734,9 +735,8 @@ class GRBLParser:
                 node.modified()
             if opnode is not None:
                 opnode.add_reference(node)
+        elements.resume_updates("grbl_parse")
 
-        elements.signal("freeze_tree", False)
-        elements.signal("tree_changed")
 
     def grbl_write(self, data):
         if self.reply:

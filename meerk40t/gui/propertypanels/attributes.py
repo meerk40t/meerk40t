@@ -768,7 +768,8 @@ class PositionSizePanel(wx.Panel):
         dy = newy - bb[1]
         if dx != 0 or dy != 0:
             self.node.matrix.post_translate(dx, dy)
-            self.node.modified()
+            # self.node.modified()
+            self.node.translated(dx, dy)
             self.context.elements.signal("element_property_update", self.node)
 
     def scale_it(self, was_width):
