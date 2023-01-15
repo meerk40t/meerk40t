@@ -2065,7 +2065,7 @@ class SelectionWidget(Widget):
 
     @property
     def key_control_pressed(self):
-        return "control" in self.modifiers
+        return "ctrl" in self.modifiers
 
     @property
     def key_alt_pressed(self):
