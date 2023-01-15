@@ -876,8 +876,9 @@ class MeerK40tScenePanel(wx.Panel):
         if self.context is None:
             return
         self.Layout()
-        self.scene.signal("guide")
-        self.request_refresh()
+        # Refresh not needed as scenepanel already does it...
+        # self.scene.signal("guide")
+        # self.request_refresh()
 
     @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
