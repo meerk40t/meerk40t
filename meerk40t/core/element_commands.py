@@ -1584,12 +1584,11 @@ def init_commands(kernel):
     )
     def e_delete(command, channel, _, data=None, data_type=None, **kwargs):
         channel(_("Deleting…"))
-        self.stop_updates("e_delete")
-        if data_type == "elements":
-            self.remove_elements(data)
-        else:
-            self.remove_operations(data)
-        self.resume_updates("e_delete")
+        with self.static("e_delete"):
+            if data_type == "elements":
+                self.remove_elements(data)
+            else:
+                self.remove_operations(data)
 
     # ==========
     # ELEMENT BASE
@@ -1664,35 +1663,34 @@ def init_commands(kernel):
     )
     def regmark(command, channel, _, data, cmd=None, **kwargs):
         # Move regmarks into the regular element tree and vice versa
-        self.stop_updates("regmark")
-        if cmd == "free":
-            target = self.elem_branch
-        else:
-            target = self.reg_branch
-
-        if data is None:
-            data = list()
+        with self.static("regmark"):
             if cmd == "free":
-                for item in list(self.regmarks()):
-                    data.append(item)
+                target = self.elem_branch
             else:
-                for item in list(self.elems(emphasized=True)):
-                    data.append(item)
-        if cmd in ("free", "add"):
-            if len(data) == 0:
-                channel(_("No elements to transfer"))
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd == "free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data) == 0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+                    if cmd == "free" and self.classify_new:
+                        self.classify(data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
             else:
-                move_nodes_to(target, data)
-                if cmd == "free" and self.classify_new:
-                    self.classify(data)
-        elif cmd == "clear":
-            self.clear_regmarks()
-            data = None
-        else:
-            # Unknown command
-            channel(_("Invalid command, use one of add, free, clear"))
-            data = None
-        self.resume_updates("regmark")
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
         return "elements", data
 
     # ==========
@@ -5570,23 +5568,21 @@ def init_commands(kernel):
         Drag and Drop command performs a console based drag and drop operation
         E.g. "tree dnd 0.1 0.2" will drag node 0.1 into node 0.2
         """
-        self.stop_updates("tree_dnd")
         if data is None:
             data = [self._tree]
         if drop is None:
             raise CommandSyntaxError
-        try:
-            drag_node = self._tree
-            for n in drag.split("."):
-                drag_node = drag_node.children[int(n)]
-            drop_node = self._tree
-            for n in drop.split("."):
-                drop_node = drop_node.children[int(n)]
-            drop_node.drop(drag_node)
-        except (IndexError, AttributeError, ValueError):
-            self.resume_updates("tree_dnd err")
-            raise CommandSyntaxError
-        self.resume_updates("tree_dnd")
+        with self.static("tree_dnd"):
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise CommandSyntaxError
         return "tree", data
 
     @self.console_argument("node", help="Node address for menu")
@@ -5840,10 +5836,9 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        self.stop_updates("delete")
-        self.remove_nodes(todelete[entry])
-        self.validate_selected_area()
-        self.resume_updates("delete")
+        with self.static("delete"):
+            self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -5860,9 +5855,8 @@ def init_commands(kernel):
         """
         # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
-        self.stop_updates("remove")
-        self.remove_nodes(data)
-        self.resume_updates("remove")
+        with self.static("remove"):
+            self.remove_nodes(data)
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
