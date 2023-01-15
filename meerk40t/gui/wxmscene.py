@@ -115,6 +115,9 @@ class MeerK40tScenePanel(wx.Panel):
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
+
+        # Allow Scene update from now on (are suppressed by default during startup phase)
+        self.widget_scene.suppress_changes = False
         self._keybind_channel = self.context.channel("keybinds")
 
         if platform.system() == "Windows":
@@ -876,8 +879,9 @@ class MeerK40tScenePanel(wx.Panel):
         if self.context is None:
             return
         self.Layout()
-        self.scene.signal("guide")
-        self.request_refresh()
+        # Refresh not needed as scenepanel already does it...
+        # self.scene.signal("guide")
+        # self.request_refresh()
 
     @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):

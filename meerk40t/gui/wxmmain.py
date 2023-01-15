@@ -354,6 +354,19 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n" +
+                    "Inactive: Use a standard icon for the element type instead"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -3160,10 +3173,21 @@ class MeerK40t(MWindow):
 
     def clear_project(self):
         context = self.context
-        self.working_file = None
-        context.elements.clear_all()
-        self.context(".laserpath_clear\n")
-        self.validate_save()
+        try:
+            with wx.BusyInfo(
+                wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")
+            ):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
+        except AttributeError:
+            # wxPython 4.0
+            with wx.BusyInfo(_("Cleaning up...")):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
 
     def clear_and_open(self, pathname):
         self.clear_project()
@@ -3182,7 +3206,6 @@ class MeerK40t(MWindow):
             try:
                 # Reset to standard tool
                 self.context("tool none\n")
-                self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(
                     wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
@@ -3193,10 +3216,8 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
             except AttributeError:
                 # wxPython 4.0
-                self.context.signal("freeze_tree", True)
                 with wx.BusyInfo(_("Loading File...")):
                     n = self.context.elements.note
                     results = self.context.elements.load(
@@ -3204,7 +3225,6 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,

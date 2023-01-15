@@ -1042,6 +1042,8 @@ class SimulationPanel(wx.Panel, Job):
         elif default == 2:
             self.radio_time_minutes.SetValue(True)
         self.on_radio_playback_mode(None)
+        # Allow Scene update from now on (are suppressed by default during startup phase)
+        self.widget_scene.suppress_changes = False
 
         self.running = False
 
@@ -1501,6 +1503,16 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(False)
 
     def update_fields(self):
+
+        def len_str(value):
+            if abs(value) >= 1000000:
+                result = f"{value / 1000000:.2f}km"
+            elif abs(value) >= 1000:
+                result = f"{value / 1000:.2f}m"
+            else:
+                result = f"{value:.0f}mm"
+            return result
+
         step, residual = self.progress_to_idx(self.progress)
         item = self.statistics[step - 1]
         partials = {
@@ -1527,9 +1539,9 @@ class SimulationPanel(wx.Panel, Job):
         cuts_mm = (item["total_distance_cut"] + partials["total_distance_cut"]) / mm
         # travel_mm = self.cutcode.length_travel(stop_at=step) / mm
         # cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
-        self.text_distance_travel_step.SetValue(f"{travel_mm:.0f}mm")
-        self.text_distance_laser_step.SetValue(f"{cuts_mm:.0f}mm")
-        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
+        self.text_distance_travel_step.SetValue(len_str(travel_mm))
+        self.text_distance_laser_step.SetValue(len_str(cuts_mm))
+        self.text_distance_total_step.SetValue(len_str(travel_mm + cuts_mm))
         try:
             time_travel = item["total_time_travel"] + partials["total_time_travel"]
             t_hours = int(time_travel // 3600)
@@ -1578,9 +1590,9 @@ class SimulationPanel(wx.Panel, Job):
 
         travel_mm = self.statistics[-1]["total_distance_travel"] / mm
         cuts_mm = self.statistics[-1]["total_distance_cut"] / mm
-        self.text_distance_travel.SetValue(f"{travel_mm:.0f}mm")
-        self.text_distance_laser.SetValue(f"{cuts_mm:.0f}mm")
-        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
+        self.text_distance_travel.SetValue(len_str(travel_mm))
+        self.text_distance_laser.SetValue(len_str(cuts_mm))
+        self.text_distance_total.SetValue(len_str(travel_mm + cuts_mm))
 
         try:
             time_travel = self.statistics[-1]["total_time_travel"]
