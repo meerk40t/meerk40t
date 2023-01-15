@@ -719,7 +719,7 @@ class SpoolerPanel(wx.Panel):
                 self.list_job_history.GetItemCount(), f"#{idx}"
             )
             self.map_item_key[list_id] = key
-            self.list_job_history.SetItem(list_id, HC_JOBNAME, info.get("label"))
+            self.list_job_history.SetItem(list_id, HC_JOBNAME, str(info.get("label")))
             self.list_job_history.SetItem(
                 list_id,
                 HC_START,
@@ -741,8 +741,8 @@ class SpoolerPanel(wx.Panel):
                 str(info.get("loops_total")),
             )
             self.list_job_history.SetItem(list_id, HC_DEVICE, str(info.get("device")))
-            self.list_job_history.SetItem(list_id, HC_STATUS, info.get("status", ""))
-            self.list_job_history.SetItem(list_id, HC_JOBINFO, info.get("info", ""))
+            self.list_job_history.SetItem(list_id, HC_STATUS, str(info.get("status", "")))
+            self.list_job_history.SetItem(list_id, HC_JOBINFO, str(info.get("info", "")))
             self.list_job_history.SetItem(
                 list_id,
                 HC_ESTIMATE,
