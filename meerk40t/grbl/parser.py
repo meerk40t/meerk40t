@@ -558,184 +558,182 @@ class GRBLParser:
             options (disctionary, optional): A dictionary with settings. Defaults to None.
         """
         # self.debug_options("Now:")
-        elements.stop_updates("grbl_parse")
-        plotclass = GRBLPlotter()
-        for opt in self.options:
-            if hasattr(plotclass, opt["attr"]):
-                setattr(plotclass, opt["attr"], getattr(self, opt["attr"]))
-        self.plotter = plotclass.plotter
-        for d in data:
-            if isinstance(d, (bytes, bytearray)):
-                d = d.decode("utf-8")
-            # Lets split lines...
-            splitted_lines = d.splitlines()
-            for singleline in splitted_lines:
-                self.process(singleline)
-        self.plotter("end")
-        # We need to add a matrix to fix the element orientation:
-        # mirror the y component at the midpoint between 0 and bedsize
-        amended = False
-        device_width = elements.length_x("100%")
-        device_height = elements.length_y("100%")
-        scale_x = 1.0  # no change
-        scale_y = 1.0  # no change
-        px = 0
-        py = 0
-        tx = 0
-        ty = 0
-        if self.origin == 0:
-            # Top Left, no change
-            pass
-        elif self.origin == 1:
-            # Bottom Left, mirror y around center
-            amended = True
-            scale_y = -1.0
+        with elements.static("grbl_parse"):
+            plotclass = GRBLPlotter()
+            for opt in self.options:
+                if hasattr(plotclass, opt["attr"]):
+                    setattr(plotclass, opt["attr"], getattr(self, opt["attr"]))
+            self.plotter = plotclass.plotter
+            for d in data:
+                if isinstance(d, (bytes, bytearray)):
+                    d = d.decode("utf-8")
+                # Lets split lines...
+                splitted_lines = d.splitlines()
+                for singleline in splitted_lines:
+                    self.process(singleline)
+            self.plotter("end")
+            # We need to add a matrix to fix the element orientation:
+            # mirror the y component at the midpoint between 0 and bedsize
+            amended = False
+            device_width = elements.length_x("100%")
+            device_height = elements.length_y("100%")
+            scale_x = 1.0  # no change
+            scale_y = 1.0  # no change
             px = 0
-            py = 0.5 * device_height
-        elif self.origin == 2:
-            # Center
-            # No adjustment of scale but translation
-            amended = True
-            tx = 0.5 * device_width
-            ty = 0.5 * device_height
-        elif self.origin == 3:
-            # Center and mirrored
-            amended = True
-            tx = 0.5 * device_width
-            ty = 0.5 * device_height
-            scale_y = -1.0
-            px = 0
-            py = 0.5 * device_height
+            py = 0
+            tx = 0
+            ty = 0
+            if self.origin == 0:
+                # Top Left, no change
+                pass
+            elif self.origin == 1:
+                # Bottom Left, mirror y around center
+                amended = True
+                scale_y = -1.0
+                px = 0
+                py = 0.5 * device_height
+            elif self.origin == 2:
+                # Center
+                # No adjustment of scale but translation
+                amended = True
+                tx = 0.5 * device_width
+                ty = 0.5 * device_height
+            elif self.origin == 3:
+                # Center and mirrored
+                amended = True
+                tx = 0.5 * device_width
+                ty = 0.5 * device_height
+                scale_y = -1.0
+                px = 0
+                py = 0.5 * device_height
 
-        matrix_str = ""
-        if scale_x != 0 or scale_y != 0:
-            matrix_str += f" scale({scale_x},{scale_y},{px},{py})"
-        if tx != 0 or ty != 0:
-            matrix_str += f" translate({tx},{ty})"
-        matrix_str = matrix_str.strip()
-        grbl_mat = Matrix(matrix_str)
+            matrix_str = ""
+            if scale_x != 0 or scale_y != 0:
+                matrix_str += f" scale({scale_x},{scale_y},{px},{py})"
+            if tx != 0 or ty != 0:
+                matrix_str += f" translate({tx},{ty})"
+            matrix_str = matrix_str.strip()
+            grbl_mat = Matrix(matrix_str)
 
-        op_nodes = {}
-        colorindex = 0
-        color_array = []
-        color_array = (
-            "blue",
-            "lime",
-            "red",
-            "black",
-            "magenta",
-            "cyan",
-            "yellow",
-            "teal",
-            "orange",
-            "aqua",
-            "fuchsia",
-            "navy",
-            "olive",
-            "springgreen",
-        )
-        if self.no_duplicates:
-            for idx1 in range(0, len(plotclass.paths) - 1):
-                path1 = plotclass.paths[idx1]
-                for idx2 in range(idx1 + 1, len(plotclass.paths)):
-                    path2 = plotclass.paths[idx2]
-                    if path1 == path2:
-                        plotclass.paths[idx2] = None
-        minspeed = None
-        maxspeed = None
-        minpower = None
-        maxpower = None
-        if self.scale_power or self.scale_speed:
-            for op in plotclass.operations:
-                values = op.split("|")
-                if len(values) > 1:
-                    speed = float(values[0])
-                    power = float(values[1])
-                    if speed != 0:
-                        if minspeed is None:
-                            minspeed = speed
-                        else:
-                            minspeed = min(minspeed, speed)
-                        if maxspeed is None:
-                            maxspeed = speed
-                        else:
-                            maxspeed = max(maxspeed, speed)
-                    if power != 0:
-                        if minpower is None:
-                            minpower = power
-                        else:
-                            minpower = min(minpower, power)
-                        if maxpower is None:
-                            maxpower = power
-                        else:
-                            maxpower = max(maxpower, power)
-        if minpower is None or maxpower is None:
-            self.scale_power = False
-        elif minpower == maxpower:
-            maxpower = minpower + 1
-        if minspeed is None or maxspeed is None:
-            self.scale_speed = False
-        elif minspeed == maxspeed:
-            maxspeed = minspeed + 1
-
-        elements.signal("freeze_tree", True)
-        for index, path in enumerate(plotclass.paths):
-            if path is None or len(path) == 0:
-                continue
-            color = Color("blue")
-            opnode = None
-            if self.create_operations:
+            op_nodes = {}
+            colorindex = 0
+            color_array = []
+            color_array = (
+                "blue",
+                "lime",
+                "red",
+                "black",
+                "magenta",
+                "cyan",
+                "yellow",
+                "teal",
+                "orange",
+                "aqua",
+                "fuchsia",
+                "navy",
+                "olive",
+                "springgreen",
+            )
+            if self.no_duplicates:
+                for idx1 in range(0, len(plotclass.paths) - 1):
+                    path1 = plotclass.paths[idx1]
+                    for idx2 in range(idx1 + 1, len(plotclass.paths)):
+                        path2 = plotclass.paths[idx2]
+                        if path1 == path2:
+                            plotclass.paths[idx2] = None
+            minspeed = None
+            maxspeed = None
+            minpower = None
+            maxpower = None
+            if self.scale_power or self.scale_speed:
                 for op in plotclass.operations:
                     values = op.split("|")
-                    speed = float(values[0])
-                    power = float(values[1])
-                    zvalue = float(values[2])
-                    if index in plotclass.operations[op]:
-                        if op in op_nodes:
-                            opnode = op_nodes[op]
-                        else:
-                            if self.scale_power and power != 0:
-                                power = self.scale_power_lower + (power - minpower) / (
-                                    maxpower - minpower
-                                ) * (self.scale_power_higher - self.scale_power_lower)
-                            if self.scale_speed and speed != 0:
-                                speed = self.scale_speed_lower + (speed - minspeed) / (
-                                    maxspeed - minspeed
-                                ) * (self.scale_speed_higher - self.scale_speed_lower)
-                            lbl = f"Grbl - P={power}, S={speed}"
-                            if zvalue != 0:
-                                # convert into a length
-                                zlen = Length(amount=zvalue, digits=4).length_mm
-                                lbl += f", Z={zlen}"
-                            opnode = EngraveOpNode(label=lbl)
-                            opnode.speed = speed
-                            if power == 0:
-                                power = 1000
-                            opnode.power = power
-                            opnode.color = Color(color_array[colorindex])
-                            colorindex += 1
-                            if colorindex >= len(color_array):
-                                colorindex = 0
+                    if len(values) > 1:
+                        speed = float(values[0])
+                        power = float(values[1])
+                        if speed != 0:
+                            if minspeed is None:
+                                minspeed = speed
+                            else:
+                                minspeed = min(minspeed, speed)
+                            if maxspeed is None:
+                                maxspeed = speed
+                            else:
+                                maxspeed = max(maxspeed, speed)
+                        if power != 0:
+                            if minpower is None:
+                                minpower = power
+                            else:
+                                minpower = min(minpower, power)
+                            if maxpower is None:
+                                maxpower = power
+                            else:
+                                maxpower = max(maxpower, power)
+            if minpower is None or maxpower is None:
+                self.scale_power = False
+            elif minpower == maxpower:
+                maxpower = minpower + 1
+            if minspeed is None or maxspeed is None:
+                self.scale_speed = False
+            elif minspeed == maxspeed:
+                maxspeed = minspeed + 1
 
-                            elements.op_branch.add_node(opnode)
-                            op_nodes[op] = opnode
-                        break
-            if opnode is not None:
-                color = opnode.color
-            node = elements.elem_branch.add(
-                type="elem path",
-                path=abs(path),
-                stroke=color,
-                stroke_width=UNITS_PER_PIXEL,
-                linejoin=Linejoin.JOIN_BEVEL,
-                linecap=Linecap.CAP_SQUARE,
-            )
-            if amended:
-                node.matrix *= grbl_mat
-                node.modified()
-            if opnode is not None:
-                opnode.add_reference(node)
-        elements.resume_updates("grbl_parse")
+            for index, path in enumerate(plotclass.paths):
+                if path is None or len(path) == 0:
+                    continue
+                color = Color("blue")
+                opnode = None
+                if self.create_operations:
+                    for op in plotclass.operations:
+                        values = op.split("|")
+                        speed = float(values[0])
+                        power = float(values[1])
+                        zvalue = float(values[2])
+                        if index in plotclass.operations[op]:
+                            if op in op_nodes:
+                                opnode = op_nodes[op]
+                            else:
+                                if self.scale_power and power != 0:
+                                    power = self.scale_power_lower + (power - minpower) / (
+                                        maxpower - minpower
+                                    ) * (self.scale_power_higher - self.scale_power_lower)
+                                if self.scale_speed and speed != 0:
+                                    speed = self.scale_speed_lower + (speed - minspeed) / (
+                                        maxspeed - minspeed
+                                    ) * (self.scale_speed_higher - self.scale_speed_lower)
+                                lbl = f"Grbl - P={power}, S={speed}"
+                                if zvalue != 0:
+                                    # convert into a length
+                                    zlen = Length(amount=zvalue, digits=4).length_mm
+                                    lbl += f", Z={zlen}"
+                                opnode = EngraveOpNode(label=lbl)
+                                opnode.speed = speed
+                                if power == 0:
+                                    power = 1000
+                                opnode.power = power
+                                opnode.color = Color(color_array[colorindex])
+                                colorindex += 1
+                                if colorindex >= len(color_array):
+                                    colorindex = 0
+
+                                elements.op_branch.add_node(opnode)
+                                op_nodes[op] = opnode
+                            break
+                if opnode is not None:
+                    color = opnode.color
+                node = elements.elem_branch.add(
+                    type="elem path",
+                    path=abs(path),
+                    stroke=color,
+                    stroke_width=UNITS_PER_PIXEL,
+                    linejoin=Linejoin.JOIN_BEVEL,
+                    linecap=Linecap.CAP_SQUARE,
+                )
+                if amended:
+                    node.matrix *= grbl_mat
+                    node.modified()
+                if opnode is not None:
+                    opnode.add_reference(node)
 
 
     def grbl_write(self, data):

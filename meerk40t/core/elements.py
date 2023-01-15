@@ -1,6 +1,6 @@
-from time import time
+import contextlib
 import os.path
-from os.path import realpath
+from time import time
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
@@ -332,7 +332,7 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.elements
 
             try:
-                elements.load(realpath(kernel.args.input.name))
+                elements.load(os.path.realpath(kernel.args.input.name))
             except BadFileError as e:
                 kernel._console_channel(_("File is Malformed") + ": " + str(e))
     elif lifecycle == "poststart":
@@ -340,7 +340,7 @@ def plugin(kernel, lifecycle=None):
             # output the file you have at this point.
             elements = kernel.elements
 
-            elements.save(realpath(kernel.args.output.name))
+            elements.save(os.path.realpath(kernel.args.output.name))
 
 
 def reversed_enumerate(collection: list):
@@ -475,6 +475,14 @@ class Elemental(Service):
                 self.kernel._console_channel(
                     f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
                 )
+
+    @contextlib.contextmanager
+    def static(self, source):
+        try:
+            self.stop_updates(source)
+            yield self
+        finally:
+            self.resume_updates(source)
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -1135,43 +1143,41 @@ class Elemental(Service):
         self._tree.unlisten(listener)
 
     def load_default(self, performclassify=True):
-        self.stop_updates("load default")
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.resume_updates("load default")
+        with self.static("load default"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        self.stop_updates("load default 2")
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op engrave", color="blue")
-        self.op_branch.add(type="op engrave", color="green")
-        self.op_branch.add(type="op engrave", color="magenta")
-        self.op_branch.add(type="op engrave", color="cyan")
-        self.op_branch.add(type="op engrave", color="yellow")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.resume_updates("load default 2")
+        with self.static("load default 2"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op engrave", color="blue")
+            self.op_branch.add(type="op engrave", color="green")
+            self.op_branch.add(type="op engrave", color="magenta")
+            self.op_branch.add(type="op engrave", color="cyan")
+            self.op_branch.add(type="op engrave", color="yellow")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
@@ -1352,14 +1358,13 @@ class Elemental(Service):
 
     def clear_all(self):
         self.set_start_time("clear_all")
-        self.stop_updates("clear_all")
-        self.clear_elements()
-        self.clear_operations()
-        self.clear_files()
-        self.clear_note()
-        self.clear_regmarks()
-        self.validate_selected_area()
-        self.resume_updates("clear_all")
+        with self.static("clear_all"):
+            self.clear_elements()
+            self.clear_operations()
+            self.clear_files()
+            self.clear_note()
+            self.clear_regmarks()
+            self.validate_selected_area()
         self.set_end_time("clear_all", True)
 
     def clear_note(self):
@@ -2882,30 +2887,30 @@ class Elemental(Service):
                 if str(pathname).lower().endswith(extensions):
                     self.set_start_time("load")
                     self.set_start_time("full_load")
-                    self.stop_updates("load elements")
-                    try:
-                        # We could stop the attachment to shadowtree for the duration
-                        # of the load to avoid unnecessary actions, will provide
-                        # about 8% speed increase, but probably not worth the risk
-                        # with attachment: 77.2 sec
-                        # without attachm: 72.1 sec
-                        # self.unlisten_tree(self)
-                        results = loader.load(self, self, pathname, **kwargs)
-                        self.remove_empty_groups()
-                        # self.listen_tree(self)
-                        self._filename = pathname
-                        self.set_end_time("load", True)
-                        return True
-                    except FileNotFoundError:
-                        return False
-                    except BadFileError as e:
-                        kernel._console_channel(_("File is Malformed") + ": " + str(e))
-                        self.signal("warning", str(e), _("File is Malformed"))
-                    except OSError:
-                        return False
-                    finally:
-                        # This will be executed regardless of the return statements above
-                        self.resume_updates("load elements (finally)", True)
+                    with self.static("load elements"):
+                        try:
+                            # We could stop the attachment to shadowtree for the duration
+                            # of the load to avoid unnecessary actions, will provide
+                            # about 8% speed increase, but probably not worth the risk
+                            # with attachment: 77.2 sec
+                            # without attachm: 72.1 sec
+                            # self.unlisten_tree(self)
+                            results = loader.load(self, self, pathname, **kwargs)
+                            self.remove_empty_groups()
+                            # self.listen_tree(self)
+                            end_time = time()
+                            self._filename = pathname
+                            self.set_end_time("load", True)
+                            return True
+                        except FileNotFoundError:
+                            return False
+                        except BadFileError as e:
+                            kernel._console_channel(
+                                _("File is Malformed") + ": " + str(e)
+                            )
+                            self.signal("warning", str(e), _("File is Malformed"))
+                        except OSError:
+                            return False
 
         return False
 
