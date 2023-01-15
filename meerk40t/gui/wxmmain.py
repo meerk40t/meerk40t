@@ -358,9 +358,10 @@ class MeerK40t(MWindow):
                 "object": self.context.root,
                 "default": False,
                 "type": bool,
-                "label": _("Mini icon in tree:"),
+                "label": _("Mini icon in tree"),
                 "tip": _(
-                    "Display a miniature representation of the icon in the tree beside an element"
+                    "Active: Display a miniature representation of the element in the tree\n" +
+                    "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
