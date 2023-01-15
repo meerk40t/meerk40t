@@ -1042,6 +1042,8 @@ class SimulationPanel(wx.Panel, Job):
         elif default == 2:
             self.radio_time_minutes.SetValue(True)
         self.on_radio_playback_mode(None)
+        # Allow Scene update from now on (are suppressed by default during startup phase)
+        self.widget_scene.suppress_changes = False
 
         self.running = False
 
