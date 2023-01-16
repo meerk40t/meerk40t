@@ -84,7 +84,7 @@ class PolylineNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (x0, y0, x1, y1)
+            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
         if self._points_dirty:
             # A pity but we need proper data

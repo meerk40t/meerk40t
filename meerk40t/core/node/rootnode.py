@@ -154,8 +154,8 @@ class RootNode(Node):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
+            self._bounds = [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)]
 
-            self._bounds = [ x0, y0, x1, y1 ]
         for listen in self.listeners:
             if hasattr(listen, "scaled"):
                 listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy) # , **kwargs)
