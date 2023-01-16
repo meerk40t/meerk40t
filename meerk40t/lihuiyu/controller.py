@@ -277,7 +277,7 @@ class LihuiyuController:
         if self.context.serial_enable:
             self.challenge(self.context.serial)
             t = time.time()
-            while t - time.time() < 0.5:
+            while time.time() - t < 0.5:
                 if self.serial_confirmed:
                     break
             if not self.serial_confirmed:
@@ -821,7 +821,7 @@ class LihuiyuController:
 
     def _confirm_serial(self):
         t = time.time()
-        while t - time.time() < 0.5:  # We spend up to half a second to confirm.
+        while time.time() - t < 0.5:  # We spend up to half a second to confirm.
             if self.state == STATE_TERMINATE:
                 # We are not confirmed.
                 return  # Abort all the processes was requested. This state change would be after clearing.
