@@ -32,6 +32,9 @@ class WinCH341Driver:
         self.driver_name = "WinDll"
         self.driver_value = None
 
+    def is_connected(self):
+        return self.driver_value != -1 and self.driver_index is not None
+
     def open(self, usb_index):
         """
         Opens the driver for unknown criteria.
@@ -92,7 +95,7 @@ class WinCH341Driver:
         @param packet: 32 bytes of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         length = len(packet)
         obuf = (c_byte * length)()
@@ -110,7 +113,7 @@ class WinCH341Driver:
         @param packet: 1 byte of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         length = len(packet)
         obuf = (c_byte * length)()
@@ -140,7 +143,7 @@ class WinCH341Driver:
         StateBitSDA     0x00800000
         @return:
         """
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionRefusedError
         obuf = (c_byte * 6)()
         self.driver.CH341GetStatus(self.driver_index, obuf)
@@ -151,7 +154,7 @@ class WinCH341Driver:
         Gets the version of the CH341 chip being used.
         @return: version. Eg. 48.
         """
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionRefusedError
         self.chipv = self.driver.CH341GetVerIC(self.driver_index)
         return self.chipv

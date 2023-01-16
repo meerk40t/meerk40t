@@ -432,6 +432,9 @@ class LibCH341Driver:
 
         self.driver_value = None
 
+    def is_connected(self):
+        return self.driver_value != -1 and self.driver_index is not None
+
     def open(self, usb_index):
         """
         Opens the driver for unknown criteria.
@@ -480,7 +483,7 @@ class LibCH341Driver:
             self.channel(_("Device Connected.\n"))
 
     def close(self):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         _ = self.channel._
         self.driver_value = None
@@ -494,32 +497,32 @@ class LibCH341Driver:
         self.channel(_("USB Disconnection Successful.\n"))
 
     def reset(self):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         self.driver.disconnect_reset(self.driver_index)
 
     def release(self):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         self.driver.disconnect_dispose(self.driver_index)
 
     def write(self, packet):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
 
     def write_addr(self, packet):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         self.driver.CH341EppWriteAddr(self.driver_index, packet, len(packet))
 
     def get_status(self):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         return self.driver.CH341GetStatus(self.driver_index)
 
     def get_chip_version(self):
-        if self.driver_value == -1 or self.driver_index is None:
+        if not self.is_connected():
             raise ConnectionError
         self.chipv = self.driver.CH341GetVerIC(
             self.driver_index

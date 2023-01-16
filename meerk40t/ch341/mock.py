@@ -28,7 +28,10 @@ class MockCH341Driver:
     def validate(self):
         pass
 
-    def open(self):
+    def is_connected(self):
+        return self.driver_value != -1 and self.driver_index is not None
+
+    def open(self, usb_index):
         """
         Opens the driver for unknown criteria.
         """
@@ -44,6 +47,7 @@ class MockCH341Driver:
             self.chipv = 999
             self.bus = 999
             self.address = 999
+            self.driver_index = usb_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -53,6 +57,7 @@ class MockCH341Driver:
             except ConnectionError as e:
                 self.channel(str(e))
                 self.channel(_("CH341 mode change to EPP1.9: Fail."))
+                raise ConnectionRefusedError
                 # self.driver.CH341CloseDevice(self.driver_index)
             # self.driver.CH341SetExclusive(self.driver_index, 1)
             self.channel(_("Device Connected.\n"))
@@ -84,7 +89,7 @@ class MockCH341Driver:
         @param packet: 32 bytes of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1:
+        if not self.is_connected():
             raise ConnectionError
         time.sleep(0.04)
         # Mock
@@ -97,8 +102,9 @@ class MockCH341Driver:
         @param packet: 1 byte of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1:
+        if not self.is_connected():
             raise ConnectionError
+        time.sleep(0.04)
         # Mock.
 
     def get_status(self):
@@ -121,8 +127,8 @@ class MockCH341Driver:
         StateBitSDA      0x00800000
         @return:
         """
-        if self.driver_value == -1:
-            raise ConnectionRefusedError
+        if not self.is_connected():
+            raise ConnectionError
         # Mock
         from random import randint
 
@@ -140,7 +146,7 @@ class MockCH341Driver:
         Gets the version of the CH341 chip being used.
         @return: version. Eg. 48.
         """
-        if self.driver_value == -1:
-            raise ConnectionRefusedError
+        if not self.is_connected():
+            raise ConnectionError
         self.chipv = 999
         return 999  # MOCK.
