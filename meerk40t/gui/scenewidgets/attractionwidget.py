@@ -321,7 +321,7 @@ class AttractionWidget(Widget):
 
         start_time = time()
         self.display_points = []
-        if self.attraction_points is None:
+        if self.attraction_points is None and self.context.snap_points:
             self.calculate_attraction_points()
 
         matrix = self.parent.matrix
@@ -365,7 +365,7 @@ class AttractionWidget(Widget):
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed to recalculate the lines
+        Signal commands which indicate that we need to refresh / discard some data
         """
         # print ("AttractionWidget receives signal: %s" % signal)
         consumed = False
