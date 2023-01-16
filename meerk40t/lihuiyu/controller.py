@@ -17,7 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 
-from meerk40t.ch341.ch341 import get_driver
+from meerk40t.ch341 import get_driver
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
