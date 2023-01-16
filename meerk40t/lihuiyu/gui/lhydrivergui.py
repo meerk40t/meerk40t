@@ -163,10 +163,6 @@ class ConfigurationUsb(wx.Panel):
         self.checkbox_limit_buffer.SetValue(self.context.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.context.buffer_max)
 
-        # Disables of features not yet supported.
-        self.check_serial_number.Enable(False)
-        self.text_serial_number.Enable(False)
-
     def pane_show(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
         pass
