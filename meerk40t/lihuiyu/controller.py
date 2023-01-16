@@ -275,6 +275,7 @@ class LihuiyuController:
             self.connection.close()
             raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
         if self.context.serial_enable:
+            self.usb_log("Requires serial number confirmation.")
             self.challenge(self.context.serial)
             t = time.time()
             while time.time() - t < 0.5:
@@ -455,11 +456,15 @@ class LihuiyuController:
 
     def challenge(self, serial):
         from hashlib import md5
+
         challenge = bytearray.fromhex(
             md5(bytes(serial.upper(), "utf8")).hexdigest()
         )
-        code = b"A%s\n" % challenge
-        self.write(code)
+        packet = b"A%s" % challenge
+        packet += b"F" * (30 - len(packet))
+        packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+        self.connection.write(packet)
+        self._confirm_serial()
 
     def update_state(self, state):
         if state == self.state:
