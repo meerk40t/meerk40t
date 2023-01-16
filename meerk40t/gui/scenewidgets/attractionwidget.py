@@ -3,7 +3,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, HITCHAIN_DELEGATE, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0
@@ -51,7 +51,10 @@ class AttractionWidget(Widget):
         """
         Hit-Logic - by definition: yes, I want to be involved
         """
-        return HITCHAIN_HIT
+        if self.context.snap_points or self.context.snap_grid:
+            return HITCHAIN_HIT
+        else:
+            return HITCHAIN_DELEGATE
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
@@ -371,7 +374,7 @@ class AttractionWidget(Widget):
         consumed = False
         if signal == "attraction":
             consumed = True
-        elif signal in ("modified", "emphasized", "element_added"):
+        elif signal in ("modified", "emphasized", "element_added", "tool_modified"):
             consumed = True
             self.attraction_points = None
         elif signal in ("grid", "guide"):
