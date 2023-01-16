@@ -70,6 +70,7 @@ class LineNode(Node, Stroked):
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering it's properties
         """
+
         def apply_it(box):
             x0, y0, x1, y1 = box
             if sx != 1.0:
@@ -96,14 +97,16 @@ class LineNode(Node, Stroked):
             self._bounds[0] - delta,
             self._bounds[1] - delta,
             self._bounds[2] + delta,
-            self._bounds[3] + delta
+            self._bounds[3] + delta,
         )
         self._points_dirty = True
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
-        xmin, ymin, xmax, ymax = self.shape.bbox(transformed=transformed, with_stroke=False)
+        xmin, ymin, xmax, ymax = self.shape.bbox(
+            transformed=transformed, with_stroke=False
+        )
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
             return (

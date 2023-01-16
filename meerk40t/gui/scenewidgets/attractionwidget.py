@@ -3,7 +3,11 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, HITCHAIN_DELEGATE, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE,
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+)
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0

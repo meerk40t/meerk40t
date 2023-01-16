@@ -733,6 +733,7 @@ class Node:
         This is a special case of the modified call, we are scaling
         the node without fundamentally altering it's properties
         """
+
         def apply_it(box):
             x0, y0, x1, y1 = box
             if sx != 1.0:
