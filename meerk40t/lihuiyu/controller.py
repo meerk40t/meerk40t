@@ -240,8 +240,8 @@ class LihuiyuController:
                     try:
                         self._open_at_index(i)
                         return  # Opened successfully.
-                    except ConnectionRefusedError:
-                        pass
+                    except ConnectionRefusedError as e:
+                        self.usb_log(str(e))
                 raise ConnectionRefusedError("No valid connection matched any given criteria.")
         except PermissionError:
             return  # OS denied permissions, no point checking anything else.
