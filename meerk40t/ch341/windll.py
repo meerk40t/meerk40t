@@ -3,12 +3,12 @@ from ctypes import c_byte, windll
 # MIT License.
 
 
-class CH341Driver:
+class WinCH341Driver:
     """
     This is basic interface code for a CH341 to be run in EPP 1.9 mode.
     """
 
-    def __init__(self, driver, driver_index=-1, channel=None, state=None):
+    def __init__(self, channel=None, state=None):
         self.channel = channel
         self.state = state
 
@@ -16,8 +16,7 @@ class CH341Driver:
         self.chipv = None
         self.bus = None
         self.address = None
-        self.driver = driver
-        self.driver_index = driver_index
+        self.driver_index = None
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
         except FileNotFoundError as e:
@@ -33,7 +32,7 @@ class CH341Driver:
         self.driver_name = "WinDll"
         self.driver_value = None
 
-    def open(self):
+    def open(self, usb_index):
         """
         Opens the driver for unknown criteria.
         """
@@ -42,7 +41,7 @@ class CH341Driver:
             self.channel(_("Using CH341 Driver to connect."))
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
-            self.driver_value = self.driver.CH341OpenDevice(self.driver_index)
+            self.driver_value = self.driver.CH341OpenDevice(usb_index)
             if self.driver_value == -2:
                 self.state("STATE_DRIVER_NO_BACKEND")
                 raise ConnectionRefusedError
@@ -51,6 +50,7 @@ class CH341Driver:
                 self.channel(_("Connection to USB failed.\n"))
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError  # No more devices.
+            self.driver_index = usb_index
             self.index = self.driver_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
@@ -82,6 +82,7 @@ class CH341Driver:
         self.chipv = None
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
+        self.driver_index = None
 
     def write(self, packet):
         """
@@ -91,7 +92,7 @@ class CH341Driver:
         @param packet: 32 bytes of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1:
+        if self.driver_value == -1 or self.driver_index is None:
             raise ConnectionError
         length = len(packet)
         obuf = (c_byte * length)()
@@ -109,7 +110,7 @@ class CH341Driver:
         @param packet: 1 byte of data to be written to the CH341.
         @return:
         """
-        if self.driver_value == -1:
+        if self.driver_value == -1 or self.driver_index is None:
             raise ConnectionError
         length = len(packet)
         obuf = (c_byte * length)()
@@ -139,7 +140,7 @@ class CH341Driver:
         StateBitSDA     0x00800000
         @return:
         """
-        if self.driver_value == -1:
+        if self.driver_value == -1 or self.driver_index is None:
             raise ConnectionRefusedError
         obuf = (c_byte * 6)()
         self.driver.CH341GetStatus(self.driver_index, obuf)
@@ -150,7 +151,7 @@ class CH341Driver:
         Gets the version of the CH341 chip being used.
         @return: version. Eg. 48.
         """
-        if self.driver_value == -1:
+        if self.driver_value == -1 or self.driver_index is None:
             raise ConnectionRefusedError
         self.chipv = self.driver.CH341GetVerIC(self.driver_index)
         return self.chipv

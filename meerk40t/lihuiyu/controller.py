@@ -17,7 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 
-from meerk40t.ch341.ch341 import CH341
+from meerk40t.ch341.ch341 import get_driver
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -230,7 +230,7 @@ class LihuiyuController:
         try:
             self.pipe_channel("open()")
             if self.connection is None:
-                self.connection = CH341(self.context, log=self.usb_log)
+                self.connection = get_driver(self.context, self.usb_log)
                 if self.context.mock:
                     self.connection.mock = True
             if self.context.usb_index != -1:

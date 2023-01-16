@@ -413,10 +413,9 @@ class Ch341LibusbDriver:
         self.CH341EppWrite(index, buffer, length, 1)
 
 
-class CH341Driver:
+class LibCH341Driver:
     def __init__(
         self,
-        driver_index=-1,
         channel=None,
         state=None,
     ):
@@ -428,12 +427,12 @@ class CH341Driver:
         self.channel = channel if channel is not None else lambda code: None
         self.driver_name = "LibUsb"
         self.driver = Ch341LibusbDriver(self.channel)
-        self.driver_index = driver_index
+        self.driver_index = None
         self.state = state
 
         self.driver_value = None
 
-    def open(self):
+    def open(self, usb_index):
         """
         Opens the driver for unknown criteria.
         """
@@ -443,7 +442,7 @@ class CH341Driver:
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
 
-            self.driver_value = self.driver.CH341OpenDevice(self.driver_index)
+            self.driver_value = self.driver.CH341OpenDevice(usb_index)
             if self.driver_value == -2:
                 self.driver_value = None
                 self.state("STATE_DRIVER_NO_BACKEND")
@@ -453,6 +452,7 @@ class CH341Driver:
                 self.channel(_("Connection to USB failed.\n"))
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError  # No more devices.
+            self.driver_index = usb_index
             self.channel(_("USB Connected."))
             self.state("STATE_USB_CONNECTED")
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -480,27 +480,47 @@ class CH341Driver:
             self.channel(_("Device Connected.\n"))
 
     def close(self):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
         _ = self.channel._
         self.driver_value = None
         self.state("STATE_USB_SET_DISCONNECTING")
         self.channel(_("Attempting disconnection from USB."))
-        if self.driver_value == -1:
+        if self.driver_value == -1 or self.driver_index is None:
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
 
+    def reset(self):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
+        self.driver.disconnect_reset(self.driver_index)
+
+    def release(self):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
+        self.driver.disconnect_dispose(self.driver_index)
+
     def write(self, packet):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
         self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
 
     def write_addr(self, packet):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
         self.driver.CH341EppWriteAddr(self.driver_index, packet, len(packet))
 
     def get_status(self):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
         return self.driver.CH341GetStatus(self.driver_index)
 
     def get_chip_version(self):
+        if self.driver_value == -1 or self.driver_index is None:
+            raise ConnectionError
         self.chipv = self.driver.CH341GetVerIC(
             self.driver_index
         )  # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)

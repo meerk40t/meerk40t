@@ -3,18 +3,17 @@
 import time
 
 
-class CH341Driver:
+class MockCH341Driver:
     """
     This is basic interface code for a mock CH341.
     """
 
-    def __init__(self, driver, driver_index=0, channel=None, state=None):
+    def __init__(self, channel=None, state=None):
         self.index = None
         self.chipv = None
         self.bus = None
         self.address = None
-        self.driver = driver
-        self.driver_index = driver_index
+        self.driver_index = None
 
         self.channel = channel if channel is not None else lambda code: None
         self.usb_log = self.channel
