@@ -25,6 +25,10 @@ class MockCH341Driver:
         self.mock_error = 207
         self.mock_finish = 236
 
+        self._start_time_status = None
+        self._end_time_status = None
+        self._time_status = None
+
     def validate(self):
         pass
 
@@ -91,6 +95,10 @@ class MockCH341Driver:
         """
         if not self.is_connected():
             raise ConnectionError
+        if packet.startswith(b"\x00A"):
+            self._start_time_status = time.time()
+            self._end_time_status = self._start_time_status + 0.5
+            self._time_status = 204
         time.sleep(0.04)
         # Mock
 
@@ -129,6 +137,14 @@ class MockCH341Driver:
         """
         if not self.is_connected():
             raise ConnectionError
+        if self._start_time_status is not None:
+            if self._start_time_status <= time.time() <= self._end_time_status:
+                return [255, self._time_status, 0, 0, 0, 1]
+            if self._end_time_status >= time.time():
+                self._start_time_status = None
+                self._end_time_status = None
+                self._time_status = None
+
         # Mock
         from random import randint
 
