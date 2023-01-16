@@ -4632,7 +4632,9 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        elif color == "none":
+        self.set_start_time("full_load")
+        if color == "none":
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4640,8 +4642,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         else:
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4649,10 +4654,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4664,6 +4672,7 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+            self.set_end_time("classify")
             # self.signal("rebuild_tree")
             self.signal("refresh_tree", apply)
         return "elements", data
@@ -4728,6 +4737,7 @@ def init_commands(kernel):
             channel("----------")
             return "elements", data
         elif color == "none":
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4735,8 +4745,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         else:
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4744,10 +4757,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4761,6 +4777,7 @@ def init_commands(kernel):
                 self.first_emphasized = None
             self.signal("refresh_tree", apply)
         #                self.signal("rebuild_tree")
+            self.set_end_time("classify")
         return "elements", data
 
     @self.console_argument(
