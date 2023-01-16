@@ -32,6 +32,7 @@ from meerk40t.kernel import (
 )
 
 STATUS_BAD_STATE = 204
+STATUS_SERIAL_CORRECT_M3_FINISH = 204
 # 0xCC, 11001100
 STATUS_OK = 206
 # 0xCE, 11001110
@@ -156,6 +157,7 @@ class LihuiyuController:
         self.context = context
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
+        self.serial_confirmed = None
 
         self._thread = None
         self._buffer = (
@@ -262,7 +264,7 @@ class LihuiyuController:
                         "K40 devices were found but they were rejected due to usb address."
                     ))
         if self.context.usb_version != -1:
-            version = self.connection.get_chip_version
+            version = self.connection.get_chip_version()
             if version != self.context.usb_version:
                 self.connection.close()
                 raise ConnectionRefusedError(_(
@@ -273,8 +275,12 @@ class LihuiyuController:
             self.connection.close()
             raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
         if self.context.serial_enable:
-            self.challenge(self.context.serial_number)
-            if not self._is_serial_confirmed:
+            self.challenge(self.context.serial)
+            t = time.time()
+            while t - time.time() < 0.5:
+                if self.serial_confirmed:
+                    break
+            if not self.serial_confirmed:
                 self.connection.close()
                 raise ConnectionRefusedError("Serial number confirmation failed.")
 
@@ -446,6 +452,14 @@ class LihuiyuController:
             self.connection.reset()
         else:
             raise ConnectionError
+
+    def challenge(self, serial):
+        from hashlib import md5
+        challenge = bytearray.fromhex(
+            md5(bytes(serial.upper(), "utf8")).hexdigest()
+        )
+        code = b"A%s\n" % challenge
+        self.write(code)
 
     def update_state(self, state):
         if state == self.state:
@@ -632,6 +646,9 @@ class LihuiyuController:
                 self.state = STATE_TERMINATE
                 self.is_shutdown = True
                 packet = packet[:-1]
+            if packet.startswith(b"A"):
+                # This is a challenge code. A is only used for serial challenges.
+                post_send_command = self._confirm_serial
             if len(packet) != 0:
                 if packet.endswith(b"#"):
                     packet = packet[:-1]
@@ -695,6 +712,17 @@ class LihuiyuController:
                     if post_send_command == self.wait_finished:
                         post_send_command = None
                     continue  # This is not a confirmation.
+                elif status == STATUS_SERIAL_CORRECT_M3_FINISH:
+                    if post_send_command == self._confirm_serial:
+                        # We confirmed the serial number on the card.
+                        self.serial_confirmed = True
+                        post_send_command = None
+                        break
+                    elif post_send_command == self.wait_finished:
+                        # This is a STATUS_M3_FINISHED, we no longer wait.
+                        post_send_command = None
+                        continue
+
             if status == 0:  # After 300 attempts we could only get status = 0.
                 raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
             self.context.packet_count += (
@@ -790,3 +818,16 @@ class LihuiyuController:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
         self.update_state(original_state)
+
+    def _confirm_serial(self):
+        t = time.time()
+        while t - time.time() < 0.5:  # We spend up to half a second to confirm.
+            if self.state == STATE_TERMINATE:
+                # We are not confirmed.
+                return  # Abort all the processes was requested. This state change would be after clearing.
+            self.update_status()
+            status = self._status[1]
+            if status == STATUS_SERIAL_CORRECT_M3_FINISH:
+                self.serial_confirmed = True
+                return  # We're done.
+        self.serial_confirmed = False
