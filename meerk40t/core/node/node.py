@@ -702,7 +702,7 @@ class Node:
         This is a special case of the modified call, we are translating
         the node without fundamentally altering it's properties
         """
-        if self._points_dirty:
+        if self._bounds_dirty:
             # A pity but we need proper data
             self.modified()
             return
@@ -718,6 +718,14 @@ class Node:
             self._paint_bounds[2] + dx,
             self._paint_bounds[3] + dy,
         ]
+        self._points_dirty = True
+        # if self._points_dirty:
+        #     self.revalidate_points()
+        # else:
+        #     for pt in self._points:
+        #         pt[0] += dx
+        #         pt[1] += dy
+
         self.notify_translated(self, dx=dx, dy=dy)
 
     def scaled(self, sx, sy, ox, oy):
@@ -739,7 +747,7 @@ class Node:
                 y1 = oy + sy * d2
             return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
-        if self._points_dirty:
+        if self._bounds_dirty:
             # A pity but we need proper data
             self.modified()
             return
@@ -749,6 +757,7 @@ class Node:
         # implied stroke_width to add, so the inherited
         # element classes will need to overload it
         self._paint_bounds = apply_it(self._paint_bounds)
+        self._points_dirty = True
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def altered(self):

@@ -80,7 +80,7 @@ class PathNode(Node, Stroked):
                 y1 = oy + sy * d2
             return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
-        if self._points_dirty:
+        if self._bounds_dirty:
             # A pity but we need proper data
             self.modified()
             return
@@ -94,6 +94,7 @@ class PathNode(Node, Stroked):
             self._bounds[2] + delta,
             self._bounds[3] + delta
         )
+        self._points_dirty = True
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
