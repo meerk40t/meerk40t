@@ -407,6 +407,7 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.do_undo = True
         self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
@@ -483,6 +484,14 @@ class Elemental(Service):
             yield self
         finally:
             self.resume_updates(source)
+
+    @contextlib.contextmanager
+    def undofree(self):
+        try:
+            self.do_undo = False
+            yield self
+        finally:
+            self.do_undo = True
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -1104,6 +1113,10 @@ class Elemental(Service):
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
 
+    def prepare_undo(self):
+        if self.do_undo:
+            self.schedule(self._save_restore_job)
+
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
@@ -1113,13 +1126,13 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1128,13 +1141,22 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
+
+    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.prepare_undo()
 
     def node_attached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def node_detached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def listen_tree(self, listener):
         self._tree.listen(listener)

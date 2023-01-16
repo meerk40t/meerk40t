@@ -797,7 +797,8 @@ class PositionSizePanel(wx.Panel):
                 sx = sy
         if sx != 1.0 or sy != 1.0:
             self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
-            self.node.modified()
+            self.node.scaled(sx=sx, sy=sy, ox=bb[0], oy=bb[1])
+            # self.node.modified()
             bb = self.node.bounds
             w = bb[2] - bb[0]
             h = bb[3] - bb[1]
