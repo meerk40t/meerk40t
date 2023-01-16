@@ -2354,7 +2354,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(-delta, 0)
                     except AttributeError:
                         continue
             dim_pos += subbox[2] - subbox[0] + distributed_distance
@@ -2402,7 +2402,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(0, -delta)
                     except AttributeError:
                         continue
             dim_pos += subbox[3] - subbox[1] + distributed_distance
@@ -2807,7 +2807,7 @@ def init_commands(kernel):
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
                     e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.modified()
+                    e.translated(x_pos, y_pos)
                 self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
@@ -4310,7 +4310,9 @@ def init_commands(kernel):
                 e.stroke_width_zero()
             except AttributeError:
                 pass
-            e.modified()
+            # No full modified required, we are effectively only adjusting
+            # the painted_bounds
+            e.translated(0, 0)
         return "elements", data
 
     @self.console_command(
@@ -4982,7 +4984,7 @@ def init_commands(kernel):
                     if hasattr(node, "lock") and node.lock:
                         continue
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
             else:
@@ -4995,7 +4997,7 @@ def init_commands(kernel):
                     nsy = scale_y / osy
                     matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
         except ValueError:
@@ -5135,7 +5137,7 @@ def init_commands(kernel):
                         continue
 
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(tx, ty)
             else:
                 for node in data:
                     if (
@@ -5150,7 +5152,7 @@ def init_commands(kernel):
                     nty = ty - oty
                     matrix = Matrix.translate(ntx, nty)
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(ntx, nty)
         except ValueError:
             raise CommandSyntaxError
         return "elements", data

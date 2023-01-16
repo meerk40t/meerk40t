@@ -437,7 +437,8 @@ class RotationWidget(Widget):
             self.master.start_angle = None
             self.master.rotated_angle = 0
         elif event == -1:
-            pass
+            self.scene.modif_active = True
+            return
         elif event == 0:
 
             if self.rotate_cx is None:
@@ -703,10 +704,11 @@ class CornerWidget(Widget):
         if event == 1:
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+                # modified no longer relevant
+                # try:
+                #     e.modified()
+                # except AttributeError:
+                #     pass
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
@@ -714,6 +716,7 @@ class CornerWidget(Widget):
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
+            return
         elif event == 0:
             # Establish origin
             if "n" in self.method:
@@ -797,17 +800,19 @@ class CornerWidget(Widget):
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
 
-            for node in elements.elems(emphasized=True):
-                try:
-                    if node.lock:
-                        continue
-                except AttributeError:
-                    pass
-                node.matrix.post_scale(scalex, scaley, orgx, orgy)
-
+            # No undo of interim steps
+            with elements.undofree():
+                for node in elements.elems(emphasized=True):
+                    try:
+                        if node.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -941,10 +946,11 @@ class SideWidget(Widget):
         if event == 1:
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+                # No longer needed
+                # try:
+                #     e.modified()
+                # except AttributeError:
+                #     pass
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
@@ -952,6 +958,7 @@ class SideWidget(Widget):
             self.scene.modif_active = False
         elif event == -1:
             self.scene.modif_active = True
+            return
         elif event == 0:
             # Establish origin
             if "n" in self.method:
@@ -1041,17 +1048,21 @@ class SideWidget(Widget):
             # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
             # print (f"New width: {b[2] - b[0]:.4f}, New height: {b[3] - b[1]:.4f}")
             # print (f"Applied: scalex={scalex:.4f}, scaley={scaley:.4f}, orgx={orgx:.4f}, orgy={orgx:.4f}")
-            for node in elements.elems(emphasized=True):
-                try:
-                    if node.lock:
-                        continue
-                except AttributeError:
-                    pass
-                node.matrix.post_scale(scalex, scaley, orgx, orgy)
+
+            # No undo of interim steps
+            with elements.undofree():
+                for node in elements.elems(emphasized=True):
+                    try:
+                        if node.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1169,7 +1180,8 @@ class SkewWidget(Widget):
             for e in images:
                 e.update(None)
         elif event == -1:
-            pass
+            self.scene.modif_active = True
+            return
         elif event == 0:  # move
             if self.is_x:
                 dd = dx
@@ -1185,24 +1197,26 @@ class SkewWidget(Widget):
             delta_angle = current_angle - self.master.rotated_angle
             self.master.rotated_angle = current_angle
 
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-                if self.is_x:
-                    e.matrix.post_skew_x(
-                        delta_angle,
-                        (self.master.right + self.master.left) / 2,
-                        (self.master.top + self.master.bottom) / 2,
-                    )
-                else:
-                    e.matrix.post_skew_y(
-                        delta_angle,
-                        (self.master.right + self.master.left) / 2,
-                        (self.master.top + self.master.bottom) / 2,
-                    )
+            # No undo of interim steps
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    try:
+                        if e.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    if self.is_x:
+                        e.matrix.post_skew_x(
+                            delta_angle,
+                            (self.master.right + self.master.left) / 2,
+                            (self.master.top + self.master.bottom) / 2,
+                        )
+                    else:
+                        e.matrix.post_skew_y(
+                            delta_angle,
+                            (self.master.right + self.master.left) / 2,
+                            (self.master.top + self.master.bottom) / 2,
+                        )
 
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -1354,12 +1368,15 @@ class MoveWidget(Widget):
             self.total_dx += dx
             self.total_dy += dy
             if dx != 0 or dy != 0:
-                for e in elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "lock") and e.lock and not allowlockmove:
-                        continue
-                    e.matrix.post_translate(dx, dy)
-
-                self.translate(dx, dy)
+                with elements.undofree():
+                    for e in elements.flat(types=elem_nodes, emphasized=True):
+                        if hasattr(e, "lock") and e.lock and not allowlockmove:
+                            continue
+                        e.matrix.post_translate(dx, dy)
+                        # We would normally not adjust the node properties,
+                        # but the pure adjustment of the bbox is hopefully not hurting
+                        e.translated(dx, dy)
+                    self.translate(dx, dy)
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
@@ -1384,6 +1401,9 @@ class MoveWidget(Widget):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:
                     continue
                 e.matrix.post_translate(dx, dy)
+                # We would normally not adjust the node properties,
+                # but the pure adjustment of the bbox is hopefully not hurting
+                e.translated(dx, dy)
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
@@ -1432,15 +1452,16 @@ class MoveWidget(Widget):
             if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
                 # Did we actually move?
                 # Remember this, it is still okay
-                bx0, by0, bx1, by1 = elements._emphasized_bounds
-                for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                    try:
-                        # e.modified()
-                        e.translated(self.total_dx, self.total_dy)
-                    except AttributeError:
-                        pass
-                # .translated will set the scene emphasized bounds dirty, that's not needed, so...
-                elements.update_bounds([bx0, by0, bx1, by1])
+                if False:
+                    bx0, by0, bx1, by1 = elements._emphasized_bounds
+                    for e in elements.flat(types=elem_group_nodes, emphasized=True):
+                        try:
+                            # e.modified()
+                            e.translated(self.total_dx, self.total_dy)
+                        except AttributeError:
+                            pass
+                    # .translated will set the scene emphasized bounds dirty, that's not needed, so...
+                    elements.update_bounds([bx0, by0, bx1, by1])
 
             self.scene.modif_active = False
         elif event == -1:  # start
@@ -1561,14 +1582,14 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
             self.scene.modif_active = False
-            self.scene.request_refresh()
         elif event == -1:  # start
             self.scene.modif_active = True
+            return
         elif event == 0:  # move
             self.master.rotation_cx += dx
             self.master.rotation_cy += dy
             self.master.invalidate_rot_center()
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1705,7 +1726,7 @@ class ReferenceWidget(Widget):
         elements = self.scene.context.elements
         if event == -1:  # leftdown
             # Nothing to do...
-            pass
+            return
         elif event == 1:  # leftup, leftclick
             if self.is_reference_object:
                 self.scene.reference_object = None
@@ -1835,13 +1856,13 @@ class LockWidget(Widget):
         elements = self.scene.context.elements
         if event == -1:  # leftdown
             # Nothing to do...
-            pass
+            return
         elif event == 1:  # leftup, leftclick
             data = list(elements.flat(types=elem_nodes, emphasized=True))
             for e in data:
                 e.lock = False
             self.scene.context.signal("element_property_update", data)
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def event(
         self,
@@ -2224,12 +2245,14 @@ class SelectionWidget(Widget):
 
         if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
             return
-
-        for e in elements.flat(types=elem_nodes, emphasized=True):
-            if e.lock:
-                continue
-            if e is not refob:
-                e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
+        # No undo of interim steps
+        with elements.undofree():
+            for e in elements.flat(types=elem_nodes, emphasized=True):
+                if e.lock:
+                    continue
+                if e is not refob:
+                    e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
+                    e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
 
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 

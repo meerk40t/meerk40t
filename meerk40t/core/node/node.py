@@ -621,6 +621,12 @@ class Node:
                 node = self
             self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
 
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+
     def notify_altered(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
@@ -685,16 +691,16 @@ class Node:
 
     def modified(self):
         """
-        The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
-        data.
+        The matrix transformation was changed. The object is shaped
+        differently but fundamentally the same structure of data.
         """
         self.invalidated()
         self.notify_modified(self)
 
     def translated(self, dx, dy):
         """
-        This is a special case of the modfied call, we are translating the node without fundamentally altering it's properties
-
+        This is a special case of the modified call, we are translating
+        the node without fundamentally altering it's properties
         """
         if self._points_dirty:
             # A pity but we need proper data
@@ -713,6 +719,37 @@ class Node:
             self._paint_bounds[3] + dy,
         ]
         self.notify_translated(self, dx=dx, dy=dy)
+
+    def scaled(self, sx, sy, ox, oy):
+        """
+        This is a special case of the modified call, we are scaling
+        the node without fundamentally altering it's properties
+        """
+        def apply_it(box):
+            x0, y0, x1, y1 = box
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            return (x0, y0, x1, y1)
+
+        if self._points_dirty:
+            # A pity but we need proper data
+            self.modified()
+            return
+
+        self._bounds = apply_it(self._bounds)
+        # This may not really correct, we need the
+        # implied stroke_width to add, so the inherited
+        # element classes will need to overload it
+        self._paint_bounds = apply_it(self._paint_bounds)
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def altered(self):
         """
