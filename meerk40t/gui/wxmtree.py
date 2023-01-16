@@ -533,6 +533,18 @@ class ShadowTree:
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
 
+    def translated(self, node, dx=0, dy=0, *args):
+        """
+        This node was moved
+        """
+        return
+
+    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, *args):
+        """
+        This node was scaled
+        """
+        return
+
     def modified(self, node):
         """
         Notified that this node was modified.
