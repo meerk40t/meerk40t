@@ -248,7 +248,7 @@ class LihuiyuController:
     def _open_at_index(self, usb_index):
         _ = self.context.kernel.translation
         self.connection.open(usb_index=usb_index)
-        if not self.connection.is_connected:
+        if not self.connection.is_connected():
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
         if self.context.usb_bus != -1 and self.connection.bus != -1:
             if self.connection.bus != self.context.usb_bus:
