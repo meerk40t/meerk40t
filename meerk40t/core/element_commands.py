@@ -2176,33 +2176,38 @@ def init_commands(kernel):
         # all it's siblings are selected as well, if that's the case
         # then use the parent instead - unless there are no other elements
         # selected ie all selected belong to the same group...
-        d = list()
-        elem_branch = self.elem_branch
-        for node in data:
-            snode = node
-            if snode.parent and snode.parent is not elem_branch:
-                # I need all other siblings
-                singular = False
-                for n in list(node.parent.children):
-                    if n not in data:
-                        singular = True
-                        break
-                if not singular:
-                    while (
-                        snode.parent
-                        and snode.parent is not elem_branch
-                        and snode.parent.type != "file"
-                    ):
-                        snode = snode.parent
-            if snode is not None and snode not in d:
-                d.append(snode)
-        if len(d) == 1 and d[0].type == "group":
-            # This is just on single group - expand...
-            data = list(d[0].flat(emphasized=True, types=elem_nodes))
-            for n in data:
-                n._emphasized_time = d[0]._emphasized_time
+
+        # Shortcut: group? Then we don't need all of this...
+        if "group" in remainder:
+            d = data
         else:
-            data = d
+            d = list()
+            elem_branch = self.elem_branch
+            for node in data:
+                snode = node
+                if snode.parent and snode.parent is not elem_branch:
+                    # I need all other siblings
+                    singular = False
+                    for n in list(node.parent.children):
+                        if n not in data:
+                            singular = True
+                            break
+                    if not singular:
+                        while (
+                            snode.parent
+                            and snode.parent is not elem_branch
+                            and snode.parent.type != "file"
+                        ):
+                            snode = snode.parent
+                if snode is not None and snode not in d:
+                    d.append(snode)
+            if len(d) == 1 and d[0].type == "group":
+                # This is just on single group - expand...
+                data = list(d[0].flat(emphasized=True, types=elem_nodes))
+                for n in data:
+                    n._emphasized_time = d[0]._emphasized_time
+            else:
+                data = d
         return "align", (
             self._align_mode,
             self._align_group,
