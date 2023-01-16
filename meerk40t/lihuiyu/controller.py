@@ -231,14 +231,13 @@ class LihuiyuController:
             self.pipe_channel("open()")
             if self.connection is None:
                 self.connection = get_driver(self.context, self.usb_log)
-                if self.context.mock:
-                    self.connection.mock = True
             if self.context.usb_index != -1:
                 self._open_at_index(self.context.usb_index)
             else:
                 for i in range(16):
                     try:
                         self._open_at_index(i)
+                        return  # Opened successfully.
                     except ConnectionRefusedError:
                         pass
                 raise ConnectionRefusedError("No valid connection matched any given criteria.")
@@ -269,10 +268,11 @@ class LihuiyuController:
                 raise ConnectionRefusedError(_(
                     "K40 devices were found but they were rejected due to chip version."
                 ))
-        if self.connection.get_status() != STATUS_OK:
+        status = self.connection.get_status()
+        if status[1] != STATUS_OK:
             self.connection.close()
             raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
-        if self.context.serial_enabled:
+        if self.context.serial_enable:
             self.challenge(self.context.serial_number)
             if not self._is_serial_confirmed:
                 self.connection.close()
