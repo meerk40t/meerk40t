@@ -782,7 +782,7 @@ class ShadowTree:
         self.wxtree.Expand(self.elements.get(type="branch ops")._item)
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
-        self.context.elements.set_end_time("full_load", True)
+        self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
         if status is None:

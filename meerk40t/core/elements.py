@@ -463,7 +463,7 @@ class Elemental(Service):
         else:
             self._timing_stack[key] = [time(), 0, 0]
 
-    def set_end_time(self, key, display=True):
+    def set_end_time(self, key, display=True, delete=False):
         if key in self._timing_stack:
             stime = self._timing_stack[key]
             etime = time()
@@ -477,6 +477,9 @@ class Elemental(Service):
                 output(
                     f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
                 )
+            if delete:
+                del self._timing_stack[key]
+
 
     @contextlib.contextmanager
     def static(self, source):
@@ -1388,7 +1391,7 @@ class Elemental(Service):
             self.clear_note()
             self.clear_regmarks()
             self.validate_selected_area()
-        self.set_end_time("clear_all", True)
+        self.set_end_time("clear_all", display=True)
 
     def clear_note(self):
         self.note = None
@@ -2923,7 +2926,7 @@ class Elemental(Service):
                             # self.listen_tree(self)
                             end_time = time()
                             self._filename = pathname
-                            self.set_end_time("load", True)
+                            self.set_end_time("load", display=True)
                             return True
                         except FileNotFoundError:
                             return False
