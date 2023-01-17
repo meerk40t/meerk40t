@@ -1755,6 +1755,10 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            # Empty group / files may cause problems
+            if node.type in ("file", "group"):
+                if not node._children:
+                    bounds = None
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -1787,7 +1791,6 @@ class Elemental(Service):
                     e.set_dirty_bounds()
                     bounds = e.bounds
                     bounds_painted = e.paint_bounds
-
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
