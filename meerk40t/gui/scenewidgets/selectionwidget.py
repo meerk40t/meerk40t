@@ -440,6 +440,10 @@ class RotationWidget(Widget):
             self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             return
         elif event == 0:
 
@@ -501,14 +505,14 @@ class RotationWidget(Widget):
             #    rot_angle, self.rotate_cx, self.rotate_cy
             # )
             # b = self.reference_rect.bbox()
-
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-                e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    try:
+                        if e.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -719,6 +723,10 @@ class CornerWidget(Widget):
             self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             return
         elif event == 0:
             # Establish origin
@@ -962,6 +970,10 @@ class SideWidget(Widget):
             self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             return
         elif event == 0:
             # Establish origin
@@ -1186,6 +1198,10 @@ class SkewWidget(Widget):
             self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             return
         elif event == 0:  # move
             if self.is_x:
@@ -1402,13 +1418,14 @@ class MoveWidget(Widget):
                     # There is no emphasized bounds or selected area.
                     return
             allowlockmove = elements.lock_allows_move
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                if hasattr(e, "lock") and e.lock and not allowlockmove:
-                    continue
-                e.matrix.post_translate(dx, dy)
-                # We would normally not adjust the node properties,
-                # but the pure adjustment of the bbox is hopefully not hurting
-                e.translated(dx, dy)
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    if hasattr(e, "lock") and e.lock and not allowlockmove:
+                        continue
+                    e.matrix.post_translate(dx, dy)
+                    # We would normally not adjust the node properties,
+                    # but the pure adjustment of the bbox is hopefully not hurting
+                    e.translated(dx, dy)
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
@@ -1473,6 +1490,10 @@ class MoveWidget(Widget):
             if "alt" in modifiers:
                 self.create_duplicate()
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
@@ -1569,6 +1590,7 @@ class MoveRotationOriginWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
+        elements = self.scene.context.elements
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
