@@ -13,6 +13,44 @@ from .attributes import IdPanel
 
 _ = wx.GetTranslation
 
+class ElemcountPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        # Shall we display id / label?
+        self.text_elements = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_id = StaticBoxSizer(self, wx.ID_ANY, _("Elements:"), wx.VERTICAL)
+        self.sizer_id.Add(self.text_elements, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.sizer_id, 0, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.set_widgets(self.node)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        def elem_count(enode):
+            res = 0
+            for e in enode.children:
+                res += 1
+                if e.type in ("file", "group"):
+                    res += elem_count(e)
+            return res
+
+        self.node = node
+        count = elem_count(self.node)
+        self.text_elements.SetValue(_("{count} elements").format(count=count))
+
 
 class GroupPropertiesPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -22,6 +60,7 @@ class GroupPropertiesPanel(ScrolledPanel):
 
         self.node = node
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=node)
+        self.panel_ct = ElemcountPanel(self, id=wx.ID_ANY, context=self.context, node=node)
 
         self.__set_properties()
         self.__do_layout()
@@ -35,6 +74,7 @@ class GroupPropertiesPanel(ScrolledPanel):
         # begin wxGlade: GroupProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.panel_ct, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
@@ -42,6 +82,7 @@ class GroupPropertiesPanel(ScrolledPanel):
 
     def set_widgets(self, node):
         self.panel_id.set_widgets(node)
+        self.panel_ct.set_widgets(node)
         self.node = node
 
 
@@ -79,6 +120,7 @@ class FilePropertiesPanel(ScrolledPanel):
         self.text_path = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.text_datetime = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.text_size = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        self.panel_ct = ElemcountPanel(self, id=wx.ID_ANY, context=self.context, node=node)
         self.__set_properties()
         self.__do_layout()
 
@@ -102,6 +144,7 @@ class FilePropertiesPanel(ScrolledPanel):
         sizer_main.Add(sizer2, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer3, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer4, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.panel_ct, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
@@ -109,6 +152,7 @@ class FilePropertiesPanel(ScrolledPanel):
 
     def set_widgets(self, node):
         self.node = node
+        self.panel_ct.set_widgets(node)
         if self.node is None:
             text1 = ""
             text2 = ""
