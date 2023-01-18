@@ -72,6 +72,8 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_replicate_rows_50,
+    icons8_node_edit_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -940,6 +942,29 @@ class MeerK40t(MWindow):
             },
         )
 
+        def contains_a_path():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type == "elem path":
+                    result = True
+                    break
+            return result
+
+        kernel.register(
+            "button/extended_tools/Nodeeditor",
+            {
+                "label": _("Node Edit"),
+                "icon": icons8_node_edit_50,
+                "tip": _(
+                    "Edit nodes of a path-object"
+                ),
+                "action": lambda v: kernel.elements("tool edit\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "nodeedit",
+                "rule_enabled": lambda cond: contains_a_path(),
+            },
+        )
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 
