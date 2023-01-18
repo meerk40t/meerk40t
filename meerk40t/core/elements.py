@@ -463,7 +463,7 @@ class Elemental(Service):
         else:
             self._timing_stack[key] = [time(), 0, 0]
 
-    def set_end_time(self, key, display=True, delete=False):
+    def set_end_time(self, key, display=True, delete=False, message=None):
         if key in self._timing_stack:
             stime = self._timing_stack[key]
             etime = time()
@@ -472,10 +472,14 @@ class Elemental(Service):
             stime[1] += duration
             stime[2] += 1
             if display:
+                if message is None:
+                    msg = ""
+                else:
+                    msg = " (" + message + ")"
                 output = self.kernel.channel("profiler", timestamp=True)
                 # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
                 output(
-                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, avg={stime[1] / stime[2]:.2f} sec{msg}"
                 )
             if delete:
                 del self._timing_stack[key]
