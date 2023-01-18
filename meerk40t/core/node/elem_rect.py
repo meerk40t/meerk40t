@@ -142,7 +142,6 @@ class RectNode(Node, Stroked):
 
     def revalidate_points(self):
         bounds = self.bounds
-        print(f"Revalidate started for {self.id} - {self.label} - {bounds}")
         if bounds is None:
             return
         self._points = []
