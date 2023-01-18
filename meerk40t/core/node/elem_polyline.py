@@ -172,7 +172,9 @@ class PolylineNode(Node, Stroked):
             else:
                 self._points.append([pt.x, pt.y, "point"])
             if idx > 0:
-                self._points.append([0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"])
+                self._points.append(
+                    [0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"]
+                )
             lastpt = pt
 
     def update_point(self, index, point):

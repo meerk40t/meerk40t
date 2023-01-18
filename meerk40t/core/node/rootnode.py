@@ -130,7 +130,7 @@ class RootNode(Node):
             ]
         for listen in self.listeners:
             if hasattr(listen, "translated"):
-                listen.translated(node, dx=dx, dy=dy) # , **kwargs)
+                listen.translated(node, dx=dx, dy=dy)  # , **kwargs)
 
     def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
         """
@@ -158,7 +158,7 @@ class RootNode(Node):
 
         for listen in self.listeners:
             if hasattr(listen, "scaled"):
-                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy) # , **kwargs)
+                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy)  # , **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
         """

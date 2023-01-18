@@ -8,8 +8,8 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Matrix,
     Path,
-    SimpleLine,
     Point,
+    SimpleLine,
 )
 
 

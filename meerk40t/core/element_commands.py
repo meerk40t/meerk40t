@@ -4778,7 +4778,7 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
             self.signal("refresh_tree", apply)
-        #                self.signal("rebuild_tree")
+            #                self.signal("rebuild_tree")
             self.set_end_time("classify")
         else:
             self.signal("refresh_scene", "Scene")

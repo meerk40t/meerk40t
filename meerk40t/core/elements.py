@@ -484,7 +484,6 @@ class Elemental(Service):
             if delete:
                 del self._timing_stack[key]
 
-
     @contextlib.contextmanager
     def static(self, source):
         try:

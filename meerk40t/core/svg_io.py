@@ -839,7 +839,9 @@ class SVGProcessor:
                 if element.transform.is_identity():
                     points = element.points
                 else:
-                    points = list(map(element.transform.point_in_matrix_space, element.points))
+                    points = list(
+                        map(element.transform.point_in_matrix_space, element.points)
+                    )
                 xmin = min(p.x for p in points if p is not None)
                 ymin = min(p.y for p in points if p is not None)
                 xmax = max(p.x for p in points if p is not None)

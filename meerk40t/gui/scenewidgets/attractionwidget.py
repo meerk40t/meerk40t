@@ -83,13 +83,17 @@ class AttractionWidget(Widget):
             self._show_snap_points = True
         else:
             self._show_snap_points = False
-        if event_type in (
-            "leftdown",
-            "leftup",
-            "leftclick",
-            "move",
-            # "hover",
-        ) and self._show_snap_points:
+        if (
+            event_type
+            in (
+                "leftdown",
+                "leftup",
+                "leftclick",
+                "move",
+                # "hover",
+            )
+            and self._show_snap_points
+        ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
                 # if event_type.startswith("left"):

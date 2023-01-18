@@ -8,8 +8,8 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Matrix,
     Path,
-    Rect,
     Point,
+    Rect,
 )
 
 
@@ -142,7 +142,7 @@ class RectNode(Node, Stroked):
 
     def revalidate_points(self):
         bounds = self.bounds
-        print (f"Revalidate started for {self.id} - {self.label} - {bounds}")
+        print(f"Revalidate started for {self.id} - {self.label} - {bounds}")
         if bounds is None:
             return
         self._points = []

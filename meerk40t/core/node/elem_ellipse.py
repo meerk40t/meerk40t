@@ -173,7 +173,6 @@ class EllipseNode(Node, Stroked):
             self._points.append([pt.x, pt.y, "point"])
         self._points.append([p1.x, p1.y, "bounds center_center"])
 
-
     def update_point(self, index, point):
         return False
 
