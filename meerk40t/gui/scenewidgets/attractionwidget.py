@@ -17,6 +17,7 @@ TYPE_CENTER = 3
 TYPE_GRID = 4
 TYPE_MIDDLE_SMALL = 5
 
+
 class AttractionWidget(Widget):
     """
     Interface Widget - computes and displays attraction points
@@ -324,7 +325,9 @@ class AttractionWidget(Widget):
                         pt_type = TYPE_POINT
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
-        self.context.elements.set_end_time("attr_calc_points", message=f"points added={len(self.attraction_points)}")
+        self.context.elements.set_end_time(
+            "attr_calc_points", message=f"points added={len(self.attraction_points)}"
+        )
 
     def calculate_display_points(self):
         # Inform profiler
@@ -367,7 +370,9 @@ class AttractionWidget(Widget):
                 ):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
-        self.context.elements.set_end_time("attr_calc_disp", message=f"points added={len(self.display_points)}")
+        self.context.elements.set_end_time(
+            "attr_calc_disp", message=f"points added={len(self.display_points)}"
+        )
 
     def signal(self, signal, *args, **kwargs):
         """
