@@ -125,8 +125,75 @@ class PreferencesLanguagePanel(wx.Panel):
         if lang != -1 and self.context.app is not None:
             self.context.app.update_language(lang)
 
-
 # end of class PreferencesLanguagePanel
+
+class PreferencesSavingPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: PreferencesLanguagePanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
+        main_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Management"), wx.HORIZONTAL)
+        self.button_save = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save.SetToolTip(_("Immediately save the settings to disk"))
+        self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
+        self.button_export.SetToolTip(_("Export the the current settings to a different location"))
+        self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
+        self.button_import.SetToolTip(_("Import a previously saved setting file"))
+        main_sizer.Add(self.button_save, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save)
+        main_sizer.AddStretchSpacer(1)
+        main_sizer.Add(self.button_export, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        main_sizer.Add(self.button_import, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save)
+        self.Bind(wx.EVT_BUTTON, self.on_button_import, self.button_import)
+        self.Bind(wx.EVT_BUTTON, self.on_button_export, self.button_export)
+
+    def on_button_save(self, event=None):
+        self.context("flush\n")
+
+    def on_button_export(self, event=None):
+        dlg = wx.DirDialog(
+            self, _("Choose target directory:"),
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+        )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.context(f"setting_export {dlg.GetPath()}\n")
+            wx.MessageBox(_('Export completed'), _('Info'), wx.OK | wx.ICON_INFORMATION)
+
+        dlg.Destroy()
+
+    def on_button_import(self, event=None):
+        message = _("This will import a previosuly saved configuration file!") + "\n"
+        message += _("This may make MeerK40t unworkable if the file does not have the right format!") + "\n"
+        message += _("You do this at you own risk - are you realy sure?")
+        caption = _("Warning")
+        dlg = wx.MessageDialog(self, message, caption, wx.YES_NO | wx.ICON_WARNING,)
+        dlgresult = dlg.ShowModal()
+        dlg.Destroy()
+        if dlgresult != wx.ID_YES:
+            return
+        dlg = wx.FileDialog(
+            self,
+            message=_("Choose a previously saved configuration-file"),
+            wildcard="Meerk40t-Config-Files (*.cfg)|*.cfg|All files (*.*)|*.*",
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_PREVIEW,
+        )
+        dlgresult = dlg.ShowModal()
+        if dlgresult == wx.ID_YES:
+            myfile = dlg.GetPath()
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+
+        self.context(f"setting_import {myfile}\n")
+        wx.MessageBox(_('Import completed'), _('Info'), wx.OK | wx.ICON_INFORMATION)
 
 
 class PreferencesPixelsPerInchPanel(wx.Panel):
@@ -243,6 +310,9 @@ class PreferencesMain(wx.Panel):
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
+        self.panel_management = PreferencesSavingPanel(self, wx.ID_ANY, context=context)
+        sizer_main.Add(self.panel_management, 0, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
 
         self.Layout()
@@ -253,6 +323,7 @@ class PreferencesMain(wx.Panel):
         yield self.panel_language
         yield self.panel_units
         yield self.panel_pref1
+        yield self.panel_management
 
 
 # end of class PreferencesMain
