@@ -309,6 +309,7 @@ class Node:
     def set_dirty_bounds(self):
         self._paint_bounds_dirty = True
         self._bounds_dirty = True
+        self._points_dirty = True
 
     @property
     def formatter(self):
@@ -327,7 +328,7 @@ class Node:
         """
         if self._points_dirty:
             self.revalidate_points()
-        self._points_dirty = False
+            self._points_dirty = False
         return self._points
 
     def restore_tree(self, tree_data):
