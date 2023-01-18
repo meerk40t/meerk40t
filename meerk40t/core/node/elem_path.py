@@ -139,27 +139,28 @@ class PathNode(Node, Stroked):
         bounds = self.bounds
         if bounds is None:
             return
-        if len(self._points) < 9:
-            self._points.extend([None] * (9 - len(self._points)))
-        self._points[0] = [bounds[0], bounds[1], "bounds top_left"]
-        self._points[1] = [bounds[2], bounds[1], "bounds top_right"]
-        self._points[2] = [bounds[0], bounds[3], "bounds bottom_left"]
-        self._points[3] = [bounds[2], bounds[3], "bounds bottom_right"]
+        self._points = []
         cx = (bounds[0] + bounds[2]) / 2
         cy = (bounds[1] + bounds[3]) / 2
-        self._points[4] = [cx, cy, "bounds center_center"]
-        self._points[5] = [cx, bounds[1], "bounds top_center"]
-        self._points[6] = [cx, bounds[3], "bounds bottom_center"]
-        self._points[7] = [bounds[0], cy, "bounds center_left"]
-        self._points[8] = [bounds[2], cy, "bounds center_right"]
+        # self._points.append([bounds[0], bounds[1], "bounds top_left"])
+        # self._points.append([bounds[2], bounds[1], "bounds top_right"])
+        # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
+        # self._points.append([bounds[2], bounds[3], "bounds bottom_right"])
+        # self._points.append([cx, cy, "bounds center_center"])
+        # self._points.append([cx, bounds[1], "bounds top_center"])
+        # self._points.append([cx, bounds[3], "bounds bottom_center"])
+        # self._points.append([bounds[0], cy, "bounds center_left"])
+        # self._points.append([bounds[2], cy, "bounds center_right"])
         obj = self.path
-        if hasattr(obj, "point"):
-            if len(self._points) <= 11:
-                self._points.extend([None] * (11 - len(self._points)))
-            start = obj.point(0)
-            end = obj.point(1)
-            self._points[9] = [start[0], start[1], "endpoint"]
-            self._points[10] = [end[0], end[1], "endpoint"]
+        npoints = []
+        for seg in obj:
+            npoints.append(seg.end)
+        if not obj.transform.is_identity():
+            points = list(map(obj.transform.point_in_matrix_space, npoints))
+        else:
+            points = npoints
+        for pt in points:
+            self._points.append([pt.x, pt.y, "point"])
 
     def update_point(self, index, point):
         return False
