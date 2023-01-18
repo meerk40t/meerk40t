@@ -851,6 +851,8 @@ class SVGProcessor:
                     ymax,
                 ]
                 node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, (Circle, Ellipse)):
             if element.is_degenerate():
@@ -891,6 +893,8 @@ class SVGProcessor:
                     ymax,
                 ]
                 node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SimpleLine):
             if element.is_degenerate():
@@ -918,6 +922,8 @@ class SVGProcessor:
                     ymax,
                 ]
                 node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
