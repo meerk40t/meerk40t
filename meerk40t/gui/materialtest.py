@@ -63,6 +63,10 @@ class TemplatePanel(wx.Panel):
         for node in self.context.elements.elems():
             if node.type == "elem image":
                 imagenode = copy(node)
+                bb = imagenode.bounds
+                if bb is not None:
+                    # Put it back on origin
+                    imagenode.matrix.post_translate(-bb[0], -bb[1])
                 self.images.append(imagenode)
                 w, h = imagenode.active_image.size
                 label = f"{w} x {h} Pixel"
