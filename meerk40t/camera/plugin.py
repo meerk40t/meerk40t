@@ -47,7 +47,7 @@ def plugin(kernel, lifecycle=None):
         )
         @kernel.console_option("uri", "u", type=str)
         @kernel.console_command(
-            "camera\d*",
+            r"camera\d*",
             regex=True,
             help="camera commands and modifiers.",
             output_type="camera",

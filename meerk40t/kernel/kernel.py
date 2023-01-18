@@ -166,7 +166,7 @@ class Kernel(Settings):
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
 
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
                 debug_file.write(start + "\n")
@@ -3209,6 +3209,32 @@ class Kernel(Settings):
                 context.flush()
             self.write_configuration()
             channel(_("Persistent settings force saved."))
+
+        @self.console_command("setting_export", help=_("Save a copy of the current configuration"))
+        def setting_export(channel, _, remainder=None, **kwargs):
+            exportdir = remainder
+            if exportdir is None:
+                channel(_("You need to provide a target directory: setting_export <targetdir>"))
+                return
+            # Persist the settings first
+            for context_name in list(self.contexts):
+                context = self.contexts[context_name]
+                context.flush()
+            newfile = os.path.join(exportdir, f"meerk40t_{datetime.now():%Y-%m-%d_%H_%M_%S}.cfg")
+            self.write_configuration(newfile)
+            channel ( _("Persistent settings exported to {file}.").format(file=newfile) )
+
+        @self.console_command("setting_import", help=_("Restore a previously saved configuration file"))
+        def setting_import(channel, _, remainder=None, **kwargs):
+            filename = remainder
+            if filename is None:
+                channel(_("You need to provide a valid config-file to restore: setting_import <filename>"))
+                return
+            if not os.path.exists(filename):
+                channel(_("The file does not exist"))
+                return
+            self.read_configuration(filename)
+            channel ( _("Persistent settings imported from {file}.").format(file=filename) )
 
         # ==========
         # LIFECYCLE

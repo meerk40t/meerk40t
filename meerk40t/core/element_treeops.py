@@ -8,12 +8,6 @@ from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
 from .node.node import Node
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_hatch import HatchOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
 from .treeop import (
     get_tree_operation,
     tree_calc,
@@ -23,7 +17,6 @@ from .treeop import (
     tree_iterate,
     tree_prompt,
     tree_radio,
-    tree_reference,
     tree_separator_after,
     tree_separator_before,
     tree_submenu,
@@ -150,15 +143,14 @@ def init_tree(kernel):
         _("Remove all items from operation"), node_type=op_parent_nodes, help=""
     )
     def clear_all_op_entries(node, **kwargs):
-        data = list()
-        removed = False
-        for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
-            data.append(item)
-        for item in data:
-            removed = True
-            item.remove_all_children()
-        if removed:
-            self.signal("tree_changed")
+        with self.static("clear_all_op"):
+            data = list()
+            removed = False
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+            for item in data:
+                removed = True
+                item.remove_all_children()
 
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
@@ -261,11 +253,11 @@ def init_tree(kernel):
             activate(node)
             self.signal("propupdate", node)
 
-    def radio_match(node, speed=0, **kwargs):
+    def radio_match_speed(node, speed=0, **kwargs):
         return node.speed == float(speed)
 
     @tree_submenu(_("Speed for Raster-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
@@ -278,7 +270,7 @@ def init_tree(kernel):
         self.signal("element_property_reload", data)
 
     @tree_submenu(_("Speed for Engrave-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
@@ -295,7 +287,7 @@ def init_tree(kernel):
         self.signal("element_property_reload", data)
 
     @tree_submenu(_("Speed for Cut-Operation"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_speed)
     @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
     @tree_operation(
         _("{speed}mm/s"),
@@ -311,11 +303,11 @@ def init_tree(kernel):
             data.append(n)
         self.signal("element_property_reload", data)
 
-    def radio_match(node, power=0, **kwargs):
+    def radio_match_power(node, power=0, **kwargs):
         return node.power == float(power)
 
     @tree_submenu(_("Power"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_power)
     @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
     @tree_operation(
         _("{power}ppi"),
@@ -353,13 +345,13 @@ def init_tree(kernel):
         self.signal("refresh_scene", "Scene")
         self.signal("element_property_reload", data)
 
-    def radio_match(node, passvalue=1, **kwargs):
+    def radio_match_passes(node, passvalue=1, **kwargs):
         return (node.passes_custom and passvalue == node.passes) or (
             not node.passes_custom and passvalue == 1
         )
 
     @tree_submenu(_("Set operation passes"))
-    @tree_radio(radio_match)
+    @tree_radio(radio_match_passes)
     @tree_iterate("passvalue", 1, 10)
     @tree_operation(_("Passes {passvalue}"), node_type=op_parent_nodes, help="")
     def set_n_passes(node, passvalue=1, **kwargs):
@@ -477,20 +469,22 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0:
+            if len(op._children) == 0 and not op.type=="blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
-            self.remove_operations(to_delete)
-            self.signal("tree_changed")
+            with self.static("clear_unused"):
+                self.remove_operations(to_delete)
 
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
-    def clear_all_ops(node, **kwargs):
-        self("element* delete\n")
-        self.elem_branch.remove_all_children()
+    def clear_all_elems(node, **kwargs):
+        # self("element* delete\n")
+        with self.static("clear_elems"):
+            self.elem_branch.remove_all_children()
 
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
-        self.reg_branch.remove_all_children()
+        with self.static("clear_regmarks"):
+            self.reg_branch.remove_all_children()
 
     # ==========
     # REMOVE MULTI (Tree Selected)
@@ -613,6 +607,20 @@ def init_tree(kernel):
     )
     def remove_type_op(node, **kwargs):
 
+        node.remove_node()
+        self.set_emphasis(None)
+        self.signal("operation_removed")
+
+    @tree_conditional(
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types="blob")))
+        == 1
+    )
+    @tree_operation(
+        _("Delete blob '{name}' fully"),
+        node_type="blob",
+        help="",
+    )
+    def remove_type_blob(node, **kwargs):
         node.remove_node()
         self.set_emphasis(None)
         self.signal("operation_removed")
@@ -745,12 +753,22 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Elements"),
         node_type="blob",
-        help="Convert blob to elements ",
+        help=_("Convert blob to elements"),
     )
     def blob2path(node, **kwargs):
+        cancelled = False
         parser_class = kernel.lookup(f"parser/{node.data_type}")
         parser = parser_class()
-        parser.parse(node.data, self)
+        dialog_class = kernel.lookup("dialog/options")
+        if dialog_class and hasattr(parser, "options"):
+            parser_choices = getattr(parser, "options", None)
+            if parser_choices is not None:
+                dialog = dialog_class(self.kernel, choices=parser_choices)
+                res = dialog.dialog_options(title=_("GCode-Conversion"), intro=_("You can influence the way MK will process the GCode data:"))
+                if not res:
+                    cancelled = True
+        if not cancelled:
+            parser.parse(node.data, self)
         return True
 
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
@@ -788,13 +806,13 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(_("Make {copies} copies"), node_type=("reference",), help="")
     def clone_element_op(node, copies=1, **kwargs):
-        nodes = list(self.flat(selected=True, cascade=False, types="reference"))
-        for snode in nodes:
-            index = snode.parent.children.index(snode)
-            for i in range(copies):
-                snode.parent.add_reference(snode.node, pos=index)
-            snode.modified()
-        self.signal("tree_changed")
+        with self.static("clone_elem_op"):
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_operation(
@@ -1079,10 +1097,10 @@ def init_tree(kernel):
         help=_("Any existing assignment of elements to operations will be removed"),
     )
     def remove_all_assignments(node, **kwargs):
-        for node in self.elems():
-            for ref in list(node._references):
-                ref.remove_node()
-        self.signal("tree_changed")
+        with self.static("remove_all_assign"):
+            for node in self.elems():
+                for ref in list(node._references):
+                    ref.remove_node()
 
     @tree_operation(
         _("Duplicate operation(s)"),
@@ -1090,20 +1108,20 @@ def init_tree(kernel):
         help=_("duplicate operation nodes"),
     )
     def duplicate_operation(node, **kwargs):
-        operations = self._tree.get(type="branch ops").children
-        for op in self.ops(emphasized=True):
-            try:
-                pos = operations.index(op) + 1
-            except ValueError:
-                pos = None
-            copy_op = copy(op)
-            self.add_op(copy_op, pos=pos)
-            for child in op.children:
+        with self.static("duplicate_operation"):
+            operations = self._tree.get(type="branch ops").children
+            for op in self.ops(emphasized=True):
                 try:
-                    copy_op.add_reference(child.node)
-                except AttributeError:
-                    pass
-        self.signal("tree_changed")
+                    pos = operations.index(op) + 1
+                except ValueError:
+                    pos = None
+                copy_op = copy(op)
+                self.add_op(copy_op, pos=pos)
+                for child in op.children:
+                    try:
+                        copy_op.add_reference(child.node)
+                    except AttributeError:
+                        pass
 
     @tree_conditional(lambda node: node.count_children() > 1)
     @tree_submenu(_("Passes"))
@@ -1395,9 +1413,10 @@ def init_tree(kernel):
             else:
                 for ref in list(rnode._references):
                     ref.remove_node()
-        for node in list(self.elems(emphasized=True)):
-            rem_node(node)
-        self.signal("tree_changed")
+
+        with self.static("remove_assign"):
+            for node in list(self.elems(emphasized=True)):
+                rem_node(node)
 
     @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
@@ -1506,7 +1525,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help="Adjusts the reference value for a wordlist, ie {name} to {name#+1}",
+        help=_("Adjusts the reference value for a wordlist, ie {name} to {name#+1}"),
     )
     def wlist_plus(singlenode, **kwargs):
         data = list()
@@ -1532,7 +1551,7 @@ def init_tree(kernel):
             "elem text",
             "elem path",
         ),
-        help="Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}",
+        help=_("Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}"),
     )
     def wlist_minus(singlenode, **kwargs):
         data = list()
@@ -1577,7 +1596,7 @@ def init_tree(kernel):
             "elem text",
             "elem image",
         ),
-        help="Vectorize the given element",
+        help=_("Vectorize the given element"),
     )
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
@@ -1776,39 +1795,33 @@ def init_tree(kernel):
     @tree_operation(_("Move back to elements"), node_type=elem_group_nodes, help="")
     def move_back(node, **kwargs):
         # Drag and Drop
-        signal_needed = False
-        drop_node = self.elem_branch
-        data = list()
-        for item in list(self.regmarks()):
-            if item.selected:
-                data.append(item)
-        for item in data:
-            drop_node.drop(item)
-            signal_needed = True
-        if signal_needed:
-            self.signal("tree_changed")
+        with self.static("move_back"):
+            signal_needed = False
+            drop_node = self.elem_branch
+            data = list()
+            for item in list(self.regmarks()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_separator_before()
     @tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
     def move_to_regmark(node, **kwargs):
         # Drag and Drop
-        signal_needed = False
-        drop_node = self.reg_branch
-        data = list()
-        for item in list(self.elems_nodes()):
-            if item.selected:
-                data.append(item)
-        for item in data:
-            # No usecase for having a locked regmark element
-            if hasattr(item, "lock"):
-                item.lock = False
-            drop_node.drop(item)
-            signal_needed = True
-        if signal_needed:
-            self.signal("tree_changed")
-        drop_node.drop(node)
-        self.signal("tree_changed")
+        with self.static("move_to_reg"):
+            drop_node = self.reg_branch
+            data = list()
+            for item in list(self.elems_nodes()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                # No usecase for having a locked regmark element
+                if hasattr(item, "lock"):
+                    item.lock = False
+                drop_node.drop(item)
 
     @tree_conditional(lambda node: not node.lock)
     @tree_conditional_try(lambda node: not node.lock)
@@ -1909,7 +1922,7 @@ def init_tree(kernel):
             "file",
             "root",
         ),
-        help="Expand all children of this given node.",
+        help=_("Expand all children of this given node."),
     )
     def expand_all_children(node, **kwargs):
         node.notify_expand()
@@ -1931,7 +1944,7 @@ def init_tree(kernel):
             "file",
             "root",
         ),
-        help="Collapse all children of this given node.",
+        help=_("Collapse all children of this given node."),
     )
     def collapse_all_children(node, **kwargs):
         node.notify_collapse()

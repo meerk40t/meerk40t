@@ -45,6 +45,7 @@ from .icons import (
     icons8_circle_50,
     icons8_circled_left_50,
     icons8_circled_right_50,
+    icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_flip_vertical,
@@ -53,26 +54,25 @@ from .icons import (
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
     icons8_oval_50,
+    icons8_paste_50,
     icons8_pencil_drawing_50,
     icons8_place_marker_50,
     icons8_point_50,
     icons8_polygon_50,
     icons8_polyline_50,
     icons8_rectangular_50,
+    icons8_redo_50,
     icons8_rotate_left_50,
     icons8_rotate_right_50,
     icons8_save_50,
+    icons8_scissors_50,
     icons8_type_50,
+    icons8_undo_50,
     icons8_ungroup_objects_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_scissors_50,
-    icons8_copy_50,
-    icons8_paste_50,
     icons8_replicate_rows_50,
-    icons8_undo_50,
-    icons8_redo_50,
     icons8_node_edit_50,
     set_icon_appearance,
 )
@@ -92,10 +92,8 @@ from .laserrender import (
     DRAW_MODE_LINEWIDTH,
     DRAW_MODE_ORIGIN,
     DRAW_MODE_PATH,
-    DRAW_MODE_REFRESH,
     DRAW_MODE_REGMARKS,
     DRAW_MODE_RETICLE,
-    DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
     DRAW_MODE_VARIABLES,
@@ -285,6 +283,11 @@ class MeerK40t(MWindow):
         if self.widgets_created:
             self.main_statusbar.Signal("element_property_update", *args)
 
+    @signal_listener("modified")
+    def on_element_modified(self, origin, *args):
+        if self.widgets_created:
+            self.main_statusbar.Signal("modified", *args)
+
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
     @signal_listener("tree_changed")
@@ -352,6 +355,19 @@ class MeerK40t(MWindow):
         # ]
         # context.kernel.register_choices("preferences", choices)
         choices = [
+            {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n" +
+                    "Inactive: Use a standard icon for the element type instead"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
             {
                 "attr": "icon_size",
                 "object": self.context.root,
@@ -819,9 +835,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Cut"),
                 "icon": icons8_scissors_50,
-                "tip": _(
-                    "Cut selected elements"
-                ),
+                "tip": _("Cut selected elements"),
                 "action": lambda v: kernel.elements("clipboard cut\n"),
                 "size": bsize_small,
                 "identifier": "editcut",
@@ -836,9 +850,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Copy"),
                 "icon": icons8_copy_50,
-                "tip": _(
-                    "Copy selected elements to clipboard"
-                ),
+                "tip": _("Copy selected elements to clipboard"),
                 "action": lambda v: kernel.elements("clipboard copy\n"),
                 "size": bsize_small,
                 "identifier": "editcopy",
@@ -864,10 +876,10 @@ class MeerK40t(MWindow):
             {
                 "label": _("Paste"),
                 "icon": icons8_paste_50,
-                "tip": _(
-                    "Paste elements from clipboard"
+                "tip": _("Paste elements from clipboard"),
+                "action": lambda v: kernel.elements(
+                    "clipboard paste -dx 3mm -dy 3mm\n"
                 ),
-                "action": lambda v: kernel.elements("clipboard paste -dx 3mm -dy 3mm\n"),
                 "size": bsize_small,
                 "identifier": "editpaste",
                 "rule_enabled": lambda cond: clipboard_filled(),
@@ -895,9 +907,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Undo"),
                 "icon": icons8_undo_50,
-                "tip": _(
-                    "Undo last operation"
-                ),
+                "tip": _("Undo last operation"),
                 "action": lambda v: kernel.elements("undo\n"),
                 "size": bsize_small,
                 "identifier": "editundo",
@@ -909,9 +919,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Redo"),
                 "icon": icons8_redo_50,
-                "tip": _(
-                    "Redo last operation"
-                ),
+                "tip": _("Redo last operation"),
                 "action": lambda v: kernel.elements("redo\n"),
                 "size": bsize_small,
                 "identifier": "editredo",
@@ -1108,6 +1116,8 @@ class MeerK40t(MWindow):
                     if group_node is None:
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
+                    node.emphasized = True
+                group_node.emphasized = True
                 kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
@@ -2908,7 +2918,6 @@ class MeerK40t(MWindow):
             context.channel("shutdown").watch(print)
         self.context(".timer 0 1 quit\n")
 
-
     def set_needs_save_status(self, newstatus):
         self.needs_saving = newstatus
         app = self.context.app.GetTopWindow()
@@ -2929,7 +2938,7 @@ class MeerK40t(MWindow):
         self.set_needs_save_status(False)
 
     @signal_listener("warning")
-    def on_warning_signal(self, origin, message, caption, style):
+    def on_warning_signal(self, origin, message, caption, style=None):
         if style is None:
             style = wx.OK | wx.ICON_WARNING
         dlg = wx.MessageDialog(
@@ -2969,7 +2978,7 @@ class MeerK40t(MWindow):
     def on_cutplan_error(self, origin, error):
         dlg = wx.MessageDialog(
             None,
-            _("Cut planning failed because: {error}".format(error=error)),
+            _("Cut planning failed because: {error}").format(error=error),
             _("Cut Planning Failed"),
             wx.OK | wx.ICON_WARNING,
         )
@@ -3039,7 +3048,7 @@ class MeerK40t(MWindow):
         self.main_statusbar.Signal("spooler;update")
 
     @signal_listener("spooler;completed")
-    def on_spool_finished(self, origin, pos):
+    def on_spool_finished(self, origin, pos=None):
         self.main_statusbar.Signal("spooler;completed")
 
     @signal_listener("export-image")
@@ -3189,10 +3198,21 @@ class MeerK40t(MWindow):
 
     def clear_project(self):
         context = self.context
-        self.working_file = None
-        context.elements.clear_all()
-        self.context(".laserpath_clear\n")
-        self.validate_save()
+        try:
+            with wx.BusyInfo(
+                wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")
+            ):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
+        except AttributeError:
+            # wxPython 4.0
+            with wx.BusyInfo(_("Cleaning up...")):
+                self.working_file = None
+                context.elements.clear_all()
+                self.context(".laserpath_clear\n")
+                self.validate_save()
 
     def clear_and_open(self, pathname):
         self.clear_project()
@@ -3211,7 +3231,6 @@ class MeerK40t(MWindow):
             try:
                 # Reset to standard tool
                 self.context("tool none\n")
-                self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(
                     wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
@@ -3222,10 +3241,8 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
             except AttributeError:
                 # wxPython 4.0
-                self.context.signal("freeze_tree", True)
                 with wx.BusyInfo(_("Loading File...")):
                     n = self.context.elements.note
                     results = self.context.elements.load(
@@ -3233,7 +3250,6 @@ class MeerK40t(MWindow):
                         channel=self.context.channel("load"),
                         svg_ppi=self.context.elements.svg_ppi,
                     )
-                self.context.signal("freeze_tree", False)
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,

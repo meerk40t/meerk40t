@@ -7,6 +7,7 @@ from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 from ..wxutils import TextCtrl, set_ctrl_value
+from .attributes import IdPanel
 
 _ = wx.GetTranslation
 
@@ -344,6 +345,7 @@ class SpeedPpiPanel(wx.Panel):
             limited=True,
             check="float",
             style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_speed.set_error_level(0, None)
         self.text_speed.set_warn_level(speed_min, speed_max)
@@ -1685,37 +1687,51 @@ class ParameterPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        self.panels = []
 
         param_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.id_panel = IdPanel(
+            self, wx.ID_ANY, context=context, node=node, showid=False,
+        )
+        param_sizer.Add(self.id_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.id_panel)
 
         self.layer_panel = LayerSettingPanel(
             self, wx.ID_ANY, context=context, node=node
         )
         param_sizer.Add(self.layer_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.layer_panel)
 
         self.speedppi_panel = SpeedPpiPanel(self, wx.ID_ANY, context=context, node=node)
         param_sizer.Add(self.speedppi_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.speedppi_panel)
 
         self.passes_panel = PassesPanel(self, wx.ID_ANY, context=context, node=node)
         param_sizer.Add(self.passes_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.passes_panel)
 
         self.raster_panel = RasterSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
         param_sizer.Add(self.raster_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.raster_panel)
 
         self.hatch_panel = HatchSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
         param_sizer.Add(self.hatch_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.hatch_panel)
 
         self.dwell_panel = DwellSettingsPanel(
             self, wx.ID_ANY, context=context, node=node
         )
         param_sizer.Add(self.dwell_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.dwell_panel)
 
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=context, node=node)
         param_sizer.Add(self.info_panel, 0, wx.EXPAND, 0)
+        self.panels.append(self.info_panel)
 
         self.SetSizer(param_sizer)
 
@@ -1771,31 +1787,15 @@ class ParameterPanel(ScrolledPanel):
 
     def set_widgets(self, node):
         self.operation = node
-        self.layer_panel.set_widgets(node)
-        self.speedppi_panel.set_widgets(node)
-        self.passes_panel.set_widgets(node)
-        self.raster_panel.set_widgets(node)
-        self.hatch_panel.set_widgets(node)
-        self.dwell_panel.set_widgets(node)
-        self.info_panel.set_widgets(node)
+        for panel in self.panels:
+            panel.set_widgets(node)
 
     def pane_hide(self):
-        self.layer_panel.pane_hide()
-        self.speedppi_panel.pane_hide()
-        self.passes_panel.pane_hide()
-        self.raster_panel.pane_hide()
-        self.hatch_panel.pane_hide()
-        self.dwell_panel.pane_hide()
-        self.info_panel.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     def pane_show(self):
-        self.layer_panel.pane_show()
-        self.speedppi_panel.pane_show()
-        self.passes_panel.pane_show()
-        self.raster_panel.pane_show()
-        self.hatch_panel.pane_show()
-        self.dwell_panel.pane_show()
-        self.info_panel.pane_show()
-
+        for panel in self.panels:
+            panel.pane_show()
 
 # end of class ParameterPanel

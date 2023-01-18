@@ -33,7 +33,7 @@ class Point:
     @staticmethod
     def pointAboveOrOnLine(point: TPoint, left: TPoint, right: TPoint):
         return (right.x - left.x) * (point.y - left.y) - (right.y - left.y) * (
-                point.x - left.x
+            point.x - left.x
         ) >= -tolerance
 
     @staticmethod
@@ -96,10 +96,10 @@ class Point:
         return abs(self.x - __o.x) < tolerance and abs(self.y - __o.y) < tolerance
 
     def __repr__(self) -> str:
-        return "{},{}".format(self.x, self.y)
+        return f"{self.x},{self.y}"
 
     def __str__(self) -> str:
-        return "{},{}".format(self.x, self.y)
+        return f"{self.x},{self.y}"
 
 
 class Fill:
@@ -108,15 +108,15 @@ class Fill:
         self.above = above
 
     def __repr__(self) -> str:
-        return "{},{}".format(self.above, self.below)
+        return f"{self.above},{self.below}"
 
     def __str__(self) -> str:
-        return "{},{}".format(self.above, self.below)
+        return f"{self.above},{self.below}"
 
 
 class Segment:
     def __init__(
-            self, start: Point, end: Point, myfill: Fill = None, otherfill: Fill = None
+        self, start: Point, end: Point, myfill: Fill = None, otherfill: Fill = None
     ):
         self.start = start
         self.end = end
@@ -124,15 +124,15 @@ class Segment:
         self.otherfill = otherfill
 
     def __repr__(self) -> str:
-        return "S: {}, E: {}".format(self.start, self.end)
+        return f"S: {self.start}, E: {self.end}"
 
     def __str__(self) -> str:
-        return "S: {}, E: {}".format(self.start, self.end)
+        return f"S: {self.start}, E: {self.end}"
 
 
 class PolySegments:
     def __init__(
-            self, segments: typing.List[Segment] = None, isInverted: bool = False
+        self, segments: typing.List[Segment] = None, isInverted: bool = False
     ) -> None:
         self.segments = segments
         self.isInverted = isInverted
@@ -140,10 +140,10 @@ class PolySegments:
 
 class CombinedPolySegments:
     def __init__(
-            self,
-            combined: typing.List[Segment] = None,
-            isInverted1: bool = False,
-            isInverted2: bool = False,
+        self,
+        combined: typing.List[Segment] = None,
+        isInverted1: bool = False,
+        isInverted2: bool = False,
     ) -> None:
         self.combined = combined
         self.isInverted1 = isInverted1
@@ -152,10 +152,10 @@ class CombinedPolySegments:
 
 class Matcher:
     def __init__(
-            self,
-            index: int,
-            matchesHead: bool,
-            matchesPt1: bool,
+        self,
+        index: int,
+        matchesHead: bool,
+        matchesPt1: bool,
     ) -> None:
         self.index = index
         self.matchesHead = matchesHead
@@ -174,18 +174,18 @@ TNode = typing.TypeVar("TNode", bound="Node")
 
 class Node:
     def __init__(
-            self: TNode,
-            isRoot: bool = False,
-            isStart: bool = False,
-            pt: Point = None,
-            seg: Segment = None,
-            primary: bool = False,
-            next: TNode = None,
-            previous: TNode = None,
-            other: TNode = None,
-            ev: TNode = None,
-            status: TNode = None,
-            remove: typing.Callable = None,
+        self: TNode,
+        isRoot: bool = False,
+        isStart: bool = False,
+        pt: Point = None,
+        seg: Segment = None,
+        primary: bool = False,
+        next: TNode = None,
+        previous: TNode = None,
+        other: TNode = None,
+        ev: TNode = None,
+        status: TNode = None,
+        remove: typing.Callable = None,
     ):
         self.status = status
         self.other = other
@@ -202,7 +202,7 @@ class Node:
 
 class Transition:
     def __init__(
-            self, after: Node, before: Node, insert: typing.Callable[[Node], Node]
+        self, after: Node, before: Node, insert: typing.Callable[[Node], Node]
     ) -> None:
         self.after = after
         self.before = before
@@ -316,13 +316,13 @@ class Intersecter:
         )
 
     def __eventCompare(
-            self,
-            p1IsStart: bool,
-            p11: Point,
-            p12: Point,
-            p2IsStart: bool,
-            p21: Point,
-            p22: Point,
+        self,
+        p1IsStart: bool,
+        p11: Point,
+        p12: Point,
+        p2IsStart: bool,
+        p21: Point,
+        p22: Point,
     ):
         comp = Point.compare(p11, p21)
         if comp != 0:
@@ -589,11 +589,11 @@ class SegmentIntersecter(Intersecter):
         super().__init__(False)
 
     def calculate(
-            self,
-            segments1: typing.List[Segment],
-            isInverted1: bool,
-            segments2: typing.List[Segment],
-            isInverted2: bool,
+        self,
+        segments1: typing.List[Segment],
+        isInverted1: bool,
+        segments2: typing.List[Segment],
+        isInverted2: bool,
     ):
         for seg in segments1:
             self.eventAddSegment(self.segmentCopy(seg.start, seg.end, seg), True)
@@ -631,7 +631,7 @@ def list_pop(list: typing.List):
 
 
 def list_splice(list: typing.List, index: int, count: int):
-    del list[index: index + count]
+    del list[index : index + count]
 
 
 def list_unshift(list: typing.List[T], element: T):
@@ -756,10 +756,10 @@ def __select(segments: typing.List[Segment], selection: typing.List[int]):
     result: typing.List[Segment] = []
     for seg in segments:
         index = (
-                (8 if seg.myfill.above else 0)
-                + (4 if seg.myfill.below else 0)
-                + (2 if seg.otherfill is not None and seg.otherfill.above else 0)
-                + (1 if seg.otherfill is not None and seg.otherfill.below else 0)
+            (8 if seg.myfill.above else 0)
+            + (4 if seg.myfill.below else 0)
+            + (2 if seg.otherfill is not None and seg.otherfill.above else 0)
+            + (1 if seg.otherfill is not None and seg.otherfill.below else 0)
         )
 
         if selection[index] != 0:
@@ -880,9 +880,9 @@ def polygon(segments: PolySegments):
 
 
 def __operate(
-        poly1: Polygon,
-        poly2: Polygon,
-        selector: typing.Callable[[CombinedPolySegments], PolySegments],
+    poly1: Polygon,
+    poly2: Polygon,
+    selector: typing.Callable[[CombinedPolySegments], PolySegments],
 ):
     firstPolygonRegions = segments(poly1)
     secondPolygonRegions = segments(poly2)
@@ -915,7 +915,7 @@ def union(*args):
 
         return polygon(seg1)
     elif (
-            len(args) == 2 and isinstance(args[0], Polygon) and isinstance(args[1], Polygon)
+        len(args) == 2 and isinstance(args[0], Polygon) and isinstance(args[1], Polygon)
     ):
         return __operate(args[0], args[1], selectUnion)
 

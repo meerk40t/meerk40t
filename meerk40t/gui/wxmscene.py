@@ -1,6 +1,5 @@
 import platform
 import random
-from math import sqrt
 
 import wx
 from wx import aui
@@ -10,14 +9,9 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
-    icons8_bed_50,
-    icons8_cursor_50,
     icons8_menu_50,
-    icons8_r_black,
     icons8_r_white,
-    icons8_reference,
     icons8_text_50,
-    icons8_ungroup_objects_50,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -121,6 +115,9 @@ class MeerK40tScenePanel(wx.Panel):
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
+
+        # Allow Scene update from now on (are suppressed by default during startup phase)
+        self.widget_scene.suppress_changes = False
         self._keybind_channel = self.context.channel("keybinds")
 
         if platform.system() == "Windows":
@@ -882,8 +879,9 @@ class MeerK40tScenePanel(wx.Panel):
         if self.context is None:
             return
         self.Layout()
-        self.scene.signal("guide")
-        self.request_refresh()
+        # Refresh not needed as scenepanel already does it...
+        # self.scene.signal("guide")
+        # self.request_refresh()
 
     @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
@@ -964,21 +962,6 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
         self.widget_scene.context.elements.default_fill = color
-
-    @signal_listener("selstrokewidth")
-    def on_selstrokewidth(self, origin, stroke_width, *args):
-        # Stroke_width is a text
-        # print("Signal with %s" % stroke_width)
-        sw = float(Length(stroke_width))
-        for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-            try:
-                stroke_scale = sqrt(abs(e.matrix.determinant)) if e.stroke_scaled else 1.0
-                e.stroke_width = sw / stroke_scale
-                e.altered()
-            except AttributeError:
-                # Ignore and carry on...
-                continue
-        self.request_refresh()
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)

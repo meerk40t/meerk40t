@@ -221,6 +221,8 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
@@ -233,7 +235,8 @@ class MoshiDriver(Parameters):
         @param y:
         @return:
         """
-
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
@@ -246,6 +249,8 @@ class MoshiDriver(Parameters):
         @param dy:
         @return:
         """
+        if self.service.swap_xy:
+            dx, dy = dy, dx
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         x = self.native_x + dx
@@ -264,6 +269,12 @@ class MoshiDriver(Parameters):
         self.rapid_mode()
         self.native_x = 0
         self.native_y = 0
+
+    def physical_home(self):
+        """ "
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
 
     def unlock_rail(self):
         """

@@ -21,7 +21,6 @@ from ..svgelements import (
     SVG_ATTR_FONT_STRETCH,
     SVG_ATTR_FONT_STYLE,
     SVG_ATTR_FONT_VARIANT,
-    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_POINTS,
@@ -70,21 +69,18 @@ from ..svgelements import (
     Color,
     Ellipse,
     Group,
-    Line,
     Matrix,
-    Move,
     Path,
     Point,
     Polygon,
     Polyline,
     Rect,
-    Shape,
     SimpleLine,
     SVGImage,
     SVGText,
     Use,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -231,6 +227,7 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+
         def single_file_node():
             # do we have more than one element on the top level hierarchy?
             # If no then return True
@@ -468,24 +465,19 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = str(c.stroke_width)  # Natively sized
-
-                    # Note this is the reversed scaling in `implied_stroke_width`
-                    # stroke_scale = (
-                    #     math.sqrt(abs(c.matrix.determinant)) if c.stroke_scaled else 1.0
-                    # )
-                    # stroke_width = (
-                    #     Length(
-                    #         amount=c.stroke_width * stroke_scale,
-                    #         digits=6,
-                    #         preferred_units="px",
-                    #     ).preferred_length
-                    #     if c.stroke_width is not None
-                    #     else SVG_VALUE_NONE
-                    # )
+                    factor = 1.0
+                    try:
+                        if c.stroke_scaled:
+                            factor = c.stroke_factor
+                    except AttributeError:
+                        pass
+                    if c.matrix.determinant == 0:
+                        c_m_d = 1
+                    else:
+                        c_m_d = math.sqrt(abs(c.matrix.determinant))
+                    stroke_width = str(factor * c.stroke_width / c_m_d)
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-                except AttributeError as Err:
-                    # print (f"Shit happened when trying to set stroke_width: {Err}")
+                except AttributeError:
                     pass
 
             ###############
@@ -711,7 +703,6 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
-
         def is_child(candidate, parent_node):
             if candidate is None:
                 return False

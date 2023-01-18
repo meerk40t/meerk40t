@@ -19,7 +19,7 @@ from os import times
 from time import time
 from typing import Optional
 
-from ..svgelements import Group, Matrix, Polygon
+from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup

@@ -8,13 +8,11 @@ class BranchElementsNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(BranchElementsNode, self).__init__(type="branch elems", **kwargs)
+        super().__init__(type="branch elems", **kwargs)
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):
-        default_map = super(BranchElementsNode, self).default_map(
-            default_map=default_map
-        )
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Elements"
         return default_map
 

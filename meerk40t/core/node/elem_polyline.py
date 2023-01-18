@@ -1,17 +1,19 @@
 from copy import copy
 from math import sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
+    Matrix,
     Path,
     Polygon,
     Polyline,
 )
 
 
-class PolylineNode(Node):
+class PolylineNode(Node, Stroked):
     """
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
@@ -23,11 +25,12 @@ class PolylineNode(Node):
         self.stroke = None
         self.stroke_width = None
         self.stroke_scale = None
+        self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
-        super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
+        super().__init__(type="elem polyline", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(self.shape, (Polyline, Polygon))
         if self.matrix is None:
@@ -37,12 +40,20 @@ class PolylineNode(Node):
         if self.stroke is None:
             self.stroke = self.shape.stroke
         if self.stroke_width is None:
-            self.stroke_width = self.shape.stroke_width
+            self.stroke_width = self.shape.implicit_stroke_width
         if self.stroke_scale is None:
             self.stroke_scale = (
                 self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                 != SVG_VALUE_NON_SCALING_STROKE
             )
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            m = self.shape.values.get("viewport_transform")
+            if m:
+                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
+            else:
+                self.stroke_width_zero()
+
         self.set_dirty_bounds()
 
     def __copy__(self):
@@ -56,37 +67,21 @@ class PolylineNode(Node):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
 
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
-
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
-        self.stroke_scale = v
-
-    def implied_stroke_width(self, zoomscale=1.0):
-        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
-        need to countermand that scaling by dividing by the square root of the absolute
-        value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scale:
-            # Our implied stroke-width is prescaled.
-            return self.stroke_width
-        else:
-            sw = self.stroke_width / scalefactor
-            return sw
-
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
-        return self.shape.bbox(transformed=True, with_stroke=with_stroke)
+        xmin, ymin, xmax, ymax = self.shape.bbox(transformed=transformed, with_stroke=False)
+        if with_stroke:
+            delta = float(self.implied_stroke_width) / 2.0
+            return (
+                xmin - delta,
+                ymin - delta,
+                xmax + delta,
+                ymax + delta,
+            )
+        return xmin, ymin, xmax, ymax
 
     def preprocess(self, context, matrix, plan):
+        self.stroke_scaled = False
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
@@ -94,7 +89,7 @@ class PolylineNode(Node):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(PolylineNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Polyline"
         default_map.update(self.__dict__)
         return default_map

@@ -139,6 +139,11 @@ class Driver:
         @return:
         """
 
+    def physical_home(self):
+        """ "
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+
     def lock_rail(self):
         """
         For plotter-style lasers this should prevent the laser bar from moving.

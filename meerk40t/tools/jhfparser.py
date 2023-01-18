@@ -154,7 +154,7 @@ class JhfFont:
                 while self._read_hershey_glyph(f, glyphindex):
                     glyphindex += 1
                 self.valid = True
-        except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             self.valid = False
         # Establish font extension in X
         cidx = 0

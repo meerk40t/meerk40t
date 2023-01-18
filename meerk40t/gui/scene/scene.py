@@ -201,6 +201,7 @@ class Scene(Module, Job):
         self.attraction_points = []  # Clear all
         self.compute = True
         self.has_background = False
+        self.suppress_changes = True
 
         self.colors = GuiColors(self.context)
 
@@ -621,7 +622,7 @@ class Scene(Module, Job):
         """
         Scene Draw routine to be called on paint when the _Buffer bitmap needs to be redrawn.
         """
-        if self.widget_root is not None:
+        if self.widget_root is not None and not self.suppress_changes:
             self.widget_root.draw(canvas)
             if self.log:
                 self.log("Redraw Canvas")

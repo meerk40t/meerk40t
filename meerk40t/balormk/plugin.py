@@ -10,10 +10,12 @@ def plugin(kernel, lifecycle):
         from meerk40t.balormk.gui import gui
 
         return [gui.plugin]
-    if lifecycle == "invalidate":
+    elif lifecycle == "invalidate":
         try:
-            import numpy  # pylint: disable=unused-import
+            import usb.core  # pylint: disable=unused-import
+            import usb.util  # pylint: disable=unused-import
         except ImportError:
+            print("Galvo plugin could not load because pyusb is not installed.")
             return True
     if lifecycle == "register":
         from meerk40t.balormk.device import BalorDevice

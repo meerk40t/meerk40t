@@ -316,8 +316,11 @@ class EditTool(ToolWidget):
         offset = 5
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
-
+        elements = self.scene.context.elements
         if event_type == "leftdown":
+            self.pen = wx.Pen()
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+            self.pen.SetWidth(elements.default_strokewidth)
             self.scene.tool_active = True
             self._active = True
 

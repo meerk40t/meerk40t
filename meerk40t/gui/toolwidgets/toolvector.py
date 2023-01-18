@@ -1,8 +1,5 @@
-from math import sqrt
-
 import wx
 
-from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path
@@ -63,12 +60,11 @@ class VectorTool(ToolWidget):
 
         if event_type == "leftclick":
             self.scene.tool_active = True
+            elements = self.scene.context.elements
             if self.path is None:
                 self.pen = wx.Pen()
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-                )
-                self.pen.SetWidth(1000)
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+                self.pen.SetWidth(elements.default_strokewidth)
                 self.path = Path()
                 if nearest_snap is None:
                     self.path.move((space_pos[0], space_pos[1]))
@@ -134,9 +130,9 @@ class VectorTool(ToolWidget):
                 node = elements.elem_branch.add(
                     path=t,
                     type="elem path",
-                    stroke_width=1000.0,
-                    stroke=self.scene.context.elements.default_stroke,
-                    fill=self.scene.context.elements.default_fill,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
                 if elements.classify_new:
                     elements.classify([node])

@@ -80,12 +80,6 @@ class BalorConfiguration(MWindow):
         self.context.signal("lens_size", self.context.lens_size, self.context)
         self.context.signal("bedsize", False)
 
-    @signal_listener("flip_x")
-    @signal_listener("flip_y")
-    def on_viewport_update(self, origin, *args):
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
     def window_preserve(self):
         return False
 

@@ -19,6 +19,7 @@ values to the self.plotter. These commands consist of a command and some number 
 "abort": Abort the laser operations
 "jog_abort": Abort the current jog action for the laser (usually $J)
 "coolant", <boolean>: Turns the coolant on or off.
+"parameter", name, value: a parameter to affect the parsing logic (internal)
 
 These commands are called on the `plotter` function which should be passed during the init.
 
@@ -27,14 +28,12 @@ The channel callable is given any additional information about the gcode.
 """
 
 import re
+from math import isnan
 
-MM_PER_INCH = 25.4
-MIL_PER_INCH = 1000.0
-
-MM_PER_MIL = MM_PER_INCH / MIL_PER_INCH
-INCH_PER_MIL = 1.0 / MIL_PER_INCH
-MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
-
+from meerk40t.core.node.node import Linejoin, Linecap
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_PIXEL, Length
+from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
 CODE_RE = re.compile(r"([A-Za-z])")
@@ -144,9 +143,158 @@ lookup = {
 }
 
 
+class GRBLPlotter:
+    def __init__(self):
+        self.last_x = 0
+        self.last_y = 0
+        self.power = 0
+        self.speed = 0
+        self.depth = 0
+        self.paths = list()
+        self.path = Path()
+        self.operations = {}
+        self.paths.append(self.path)
+        self.split_path = True
+        self.ignore_travel = True
+        self.treat_z_as_power = True
+        self.z_only_negative = True
+
+    def check_operation_need(self):
+        has_power = bool(self.power != 0)
+        if self.treat_z_as_power:
+            if self.z_only_negative and self.depth < 0:
+                has_power = True
+            elif not self.z_only_negative and self.depth != 0:
+                has_power = True
+
+        if self.speed != 0 and has_power:
+            # Do we have this operation already?!
+            id_string = f"{self.speed}|{self.power}|{self.depth}"
+            if id_string not in self.operations:
+                self.operations[id_string] = list()
+            index = len(self.paths) - 1
+            self.operations[id_string].append(index)
+
+    def plotter(self, command, *args, **kwargs):
+        def remove_trailing_moves():
+            # Is the trailing segment a move ?
+            while len(self.path) > 0 and isinstance(self.path._segments[-1], Move):
+                self.path._segments.pop(-1)
+            if len(self.path) == 0:
+                # Degenerate...
+                index = len(self.paths) - 1
+                for op in self.operations:
+                    if index in self.operations[op]:
+                        opindex = self.operations[op].index(index)
+                        self.operations[op].pop(opindex)
+                self.paths.pop(-1)
+
+        def proper_z():
+            res = False
+            if self.treat_z_as_power:
+                if self.depth < 0 and self.z_only_negative:
+                    res = True
+                elif self.depth != 0 and not self.z_only_negative:
+                    res = True
+                # print (f"only negative: {self.z_only_negative}, depth={self.depth}, res={res}")
+            return res
+
+        def needsadding(power):
+            result = False
+            if power is None:
+                power = 0
+            if self.ignore_travel:
+                if power != 0 or proper_z():
+                    result = True
+            else:
+                result = True
+            return result
+
+        # print (f"{command} - {args}")
+        if command == "move":
+            x0, y0, x1, y1 = args
+            self.path.move((x1, y1))
+        elif command == "line":
+            x0, y0, x1, y1, power = args
+            # Do we need it added?
+            if needsadding(power):
+                if not self.path:
+                    self.path.move((x0, y0))
+                self.path.line((x1, y1))
+            else:
+                self.path.move((x1, y1))
+        elif command == "cw-arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            # Do we need it added?
+            if needsadding(power):
+                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
+                if isnan(arc.sweep):
+                    # This arc is not valid.
+                    self.path.line((x1, y1))
+                else:
+                    self.path.append(arc)
+            else:
+                self.path.move((x1, y1))
+        elif command == "ccw-arc":
+            x0, y0, cx, cy, x1, y1, power = args
+            # Do we need it added?
+            if needsadding(power):
+                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
+                if isnan(arc.sweep):
+                    # This arc is not valid.
+                    self.path.line((x1, y1))
+                else:
+                    self.path.append(arc)
+            else:
+                self.path.move((x1, y1))
+        elif command == "new":
+            # We break the path here and create a new one
+            splitter = self.split_path
+            if splitter and len(self.path):
+                remove_trailing_moves()
+                self.path = Path()
+                self.paths.append(self.path)
+                # print (f"Z at time of path start: {self.depth}")
+            if len(args) > 1:
+                feed = args[0]
+                power = args[1]
+                if feed != 0:
+                    self.speed = feed
+                if power != 0:
+                    self.power = power
+                self.check_operation_need()
+        elif command == "end":
+            # Is the trailing segment a move ?
+            remove_trailing_moves()
+        elif command == "zaxis":
+            splitter = self.split_path
+            if splitter and len(self.path):
+                remove_trailing_moves()
+                self.path = Path()
+                self.paths.append(self.path)
+                # print (f"Z at time of path start: {self.depth}")
+            depth = args[0]
+            self.depth = depth
+            self.check_operation_need()
+        elif command == "wait":
+            pass
+        elif command == "resume":
+            pass
+        elif command == "pause":
+            pass
+        elif command == "abort":
+            pass
+        elif command == "coolant":
+            # True or False coolant.
+            pass
+        elif command == "jog_abort":
+            pass
+
+
 class GRBLParser:
-    def __init__(self, plotter):
+    def __init__(self, plotter=None, kernel=None):
         self.plotter = plotter
+        self.kernel = kernel
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
             "step_idle_delay": 25,  # step idle delay
@@ -185,7 +333,185 @@ class GRBLParser:
             "speed": 0,
             "power": 0,
         }
+        if self.kernel is None:
+            _ = self._
+        else:
+            _ = self.kernel.translation
 
+        self.origin = 1  # 0 top left, 1 bottom left, 2 center
+        self.split_path = True
+        self.ignore_travel = True
+        self.treat_z_as_power = False
+        self.z_only_negative = True
+        self.no_duplicates = False
+        self.create_operations = True
+        self.scale_speed = False
+        self.scale_speed_lower = 2
+        self.scale_speed_higher = 200
+        self.scale_power = False
+        self.scale_power_lower = 200
+        self.scale_power_higher = 1000
+        self.options = [
+            {
+                "attr": "ignore_travel",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Ignore travel"),
+                "tip": _("Try to take only 'valid' movements"),
+                "section": "_10_Path",
+            },
+            {
+                "attr": "split_path",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Split paths"),
+                "tip": _("Split path into smaller chunks"),
+                "section": "_10_Path",
+            },
+            {
+                "attr": "no_duplicates",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Single occurence"),
+                "tip": _(
+                    "Prevent duplicate creation of segments (like in a multipass operation)"
+                ),
+                "section": "_10_Path",
+            },
+            {
+                "attr": "treat_z_as_power",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Treat Z-Movement as On/Off"),
+                "tip": _(
+                    "Use negative Z-Values as a Power-On indicator, positive values as travel"
+                ),
+                "conditional": (self, "ignore_travel"),
+                "section": "_10_Path",
+                "subsection": "_10_Z-Axis",
+            },
+            {
+                "attr": "z_only_negative",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Only negative"),
+                "tip": _(
+                    "Active: use positive values as travel\nInactive: use all non-zero values"
+                ),
+                "conditional": (self, "treat_z_as_power"),
+                "section": "_10_Path",
+                "subsection": "_10_Z-Axis",
+            },
+            {
+                "attr": "origin",
+                "object": self,
+                "default": 1,
+                "type": int,
+                "style": "option",
+                "choices": (0, 1, 2, 3),
+                "display": (
+                    _("Top Left"),
+                    _("Bottom Left"),
+                    _("Center"),
+                    "Center (Y mirrored)",
+                ),
+                "label": _("Bed-Origin"),
+                "tip": _("Correct starting point"),
+                "section": "_20_Correct Orientation",
+            },
+            {
+                "attr": "create_operations",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Create operations"),
+                "tip": _("Create corresponding operations for Power and Speed pairs"),
+                "section": "_30_Operation",
+            },
+            {
+                "attr": "scale_speed",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Scale Speed"),
+                "tip": _(
+                    "Set lower and higher level to scale the speed\n"
+                    + "Minimum speed used will be mapped to lower level\n"
+                    + "Maximum speed used will be mapped to upper level"
+                ),
+                "conditional": (self, "create_operations"),
+                "section": "_30_Operation",
+                "subsection": "_20_Speed",
+            },
+            {
+                "attr": "scale_speed_lower",
+                "object": self,
+                "default": 2,
+                "type": float,
+                "label": _("Lowest speed"),
+                "trailer": "mm/sec",
+                "tip": _("Minimum speed used will be mapped to lower level"),
+                "conditional": (self, "scale_speed"),
+                "section": "_30_Operation",
+                "subsection": "_20_Speed",
+            },
+            {
+                "attr": "scale_speed_higher",
+                "object": self,
+                "default": 200,
+                "type": float,
+                "label": _("Highest speed"),
+                "trailer": "mm/sec",
+                "tip": _("Maximum speed used will be mapped to upper level"),
+                "conditional": (self, "scale_speed"),
+                "section": "_30_Operation",
+                "subsection": "_20_Speed",
+            },
+            {
+                "attr": "scale_power",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Scale Power"),
+                "tip": _(
+                    "Set lower and higher level to scale the power\n"
+                    + "Minimum power used will be mapped to lower level\n"
+                    + "Maximum power used will be mapped to upper level"
+                ),
+                "section": "_30_Operation",
+                "subsection": "_20_Power",
+            },
+            {
+                "attr": "scale_power_lower",
+                "object": self,
+                "default": 200,
+                "type": float,
+                "label": _("Lowest Power"),
+                "trailer": "ppi",
+                "tip": _("Minimum power used will be mapped to lower level"),
+                "conditional": (self, "scale_power"),
+                "section": "_30_Operation",
+                "subsection": "_20_Power",
+            },
+            {
+                "attr": "scale_power_higher",
+                "object": self,
+                "default": 1000,
+                "type": float,
+                "label": _("Highest power"),
+                "trailer": "",
+                "tip": _("Maximum power used will be mapped to upper level"),
+                "conditional": (self, "scale_power"),
+                "section": "_30_Operation",
+                "subsection": "_20_Power",
+            },
+        ]
+        # self.debug_options("Before:")
         self.compensation = False
         self.feed_convert = None
         self.feed_invert = None
@@ -193,11 +519,12 @@ class GRBLParser:
         self.move_mode = 0
         self.x = 0
         self.y = 0
+        self.z = 0
         self.home = None
         self.home2 = None
 
-        # Initially assume mm mode 39.4 mils in a mm. G21 mm DEFAULT
-        self.scale = MIL_PER_MM
+        # Initially assume mm mode. G21 mm DEFAULT
+        self.scale = UNITS_PER_MM
 
         # G94 feedrate default, mm mode
         self.g94_feedrate()
@@ -212,6 +539,202 @@ class GRBLParser:
 
     def __repr__(self):
         return "GRBLParser()"
+
+    def _(self, value):
+        # Dummy translation stub
+        return value
+
+    # def debug_options(self, message):
+    #     print (message)
+    #     for opt in self.options:
+    #         print (f"{opt['attr']} = {getattr(self, opt['attr'])}")
+
+    def parse(self, data, elements):
+        """AI is creating summary for parse
+
+        Args:
+            data (bytes): the grbl code to parse
+            elements (class): context for elements
+            options (disctionary, optional): A dictionary with settings. Defaults to None.
+        """
+        # self.debug_options("Now:")
+        with elements.static("grbl_parse"):
+            plotclass = GRBLPlotter()
+            for opt in self.options:
+                if hasattr(plotclass, opt["attr"]):
+                    setattr(plotclass, opt["attr"], getattr(self, opt["attr"]))
+            self.plotter = plotclass.plotter
+            for d in data:
+                if isinstance(d, (bytes, bytearray)):
+                    d = d.decode("utf-8")
+                # Lets split lines...
+                splitted_lines = d.splitlines()
+                for singleline in splitted_lines:
+                    self.process(singleline)
+            self.plotter("end")
+            # We need to add a matrix to fix the element orientation:
+            # mirror the y component at the midpoint between 0 and bedsize
+            amended = False
+            device_width = elements.length_x("100%")
+            device_height = elements.length_y("100%")
+            scale_x = 1.0  # no change
+            scale_y = 1.0  # no change
+            px = 0
+            py = 0
+            tx = 0
+            ty = 0
+            if self.origin == 0:
+                # Top Left, no change
+                pass
+            elif self.origin == 1:
+                # Bottom Left, mirror y around center
+                amended = True
+                scale_y = -1.0
+                px = 0
+                py = 0.5 * device_height
+            elif self.origin == 2:
+                # Center
+                # No adjustment of scale but translation
+                amended = True
+                tx = 0.5 * device_width
+                ty = 0.5 * device_height
+            elif self.origin == 3:
+                # Center and mirrored
+                amended = True
+                tx = 0.5 * device_width
+                ty = 0.5 * device_height
+                scale_y = -1.0
+                px = 0
+                py = 0.5 * device_height
+
+            matrix_str = ""
+            if scale_x != 0 or scale_y != 0:
+                matrix_str += f" scale({scale_x},{scale_y},{px},{py})"
+            if tx != 0 or ty != 0:
+                matrix_str += f" translate({tx},{ty})"
+            matrix_str = matrix_str.strip()
+            grbl_mat = Matrix(matrix_str)
+
+            op_nodes = {}
+            colorindex = 0
+            color_array = []
+            color_array = (
+                "blue",
+                "lime",
+                "red",
+                "black",
+                "magenta",
+                "cyan",
+                "yellow",
+                "teal",
+                "orange",
+                "aqua",
+                "fuchsia",
+                "navy",
+                "olive",
+                "springgreen",
+            )
+            if self.no_duplicates:
+                for idx1 in range(0, len(plotclass.paths) - 1):
+                    path1 = plotclass.paths[idx1]
+                    for idx2 in range(idx1 + 1, len(plotclass.paths)):
+                        path2 = plotclass.paths[idx2]
+                        if path1 == path2:
+                            plotclass.paths[idx2] = None
+            minspeed = None
+            maxspeed = None
+            minpower = None
+            maxpower = None
+            if self.scale_power or self.scale_speed:
+                for op in plotclass.operations:
+                    values = op.split("|")
+                    if len(values) > 1:
+                        speed = float(values[0])
+                        power = float(values[1])
+                        if speed != 0:
+                            if minspeed is None:
+                                minspeed = speed
+                            else:
+                                minspeed = min(minspeed, speed)
+                            if maxspeed is None:
+                                maxspeed = speed
+                            else:
+                                maxspeed = max(maxspeed, speed)
+                        if power != 0:
+                            if minpower is None:
+                                minpower = power
+                            else:
+                                minpower = min(minpower, power)
+                            if maxpower is None:
+                                maxpower = power
+                            else:
+                                maxpower = max(maxpower, power)
+            if minpower is None or maxpower is None:
+                self.scale_power = False
+            elif minpower == maxpower:
+                maxpower = minpower + 1
+            if minspeed is None or maxspeed is None:
+                self.scale_speed = False
+            elif minspeed == maxspeed:
+                maxspeed = minspeed + 1
+
+            for index, path in enumerate(plotclass.paths):
+                if path is None or len(path) == 0:
+                    continue
+                color = Color("blue")
+                opnode = None
+                if self.create_operations:
+                    for op in plotclass.operations:
+                        values = op.split("|")
+                        speed = float(values[0])
+                        power = float(values[1])
+                        zvalue = float(values[2])
+                        if index in plotclass.operations[op]:
+                            if op in op_nodes:
+                                opnode = op_nodes[op]
+                            else:
+                                if self.scale_power and power != 0:
+                                    power = self.scale_power_lower + (power - minpower) / (
+                                        maxpower - minpower
+                                    ) * (self.scale_power_higher - self.scale_power_lower)
+                                if self.scale_speed and speed != 0:
+                                    speed = self.scale_speed_lower + (speed - minspeed) / (
+                                        maxspeed - minspeed
+                                    ) * (self.scale_speed_higher - self.scale_speed_lower)
+                                lbl = f"Grbl - P={power}, S={speed}"
+                                if zvalue != 0:
+                                    # convert into a length
+                                    zlen = Length(amount=zvalue, digits=4).length_mm
+                                    lbl += f", Z={zlen}"
+                                opnode = EngraveOpNode(label=lbl)
+                                opnode.speed = speed
+                                if power == 0:
+                                    power = 1000
+                                opnode.power = power
+                                opnode.color = Color(color_array[colorindex])
+                                colorindex += 1
+                                if colorindex >= len(color_array):
+                                    colorindex = 0
+
+                                elements.op_branch.add_node(opnode)
+                                op_nodes[op] = opnode
+                            break
+                if opnode is not None:
+                    color = opnode.color
+                node = elements.elem_branch.add(
+                    type="elem path",
+                    path=abs(path),
+                    stroke=color,
+                    stroke_width=UNITS_PER_PIXEL,
+                    linejoin=Linejoin.JOIN_BEVEL,
+                    linecap=Linecap.CAP_SQUARE,
+                )
+                if amended:
+                    node.matrix *= grbl_mat
+                    node.modified()
+                if opnode is not None:
+                    opnode.add_reference(node)
+
 
     def grbl_write(self, data):
         if self.reply:
@@ -333,6 +856,70 @@ class GRBLParser:
                     return 0
                 else:
                     return 5  # Homing cycle not enabled by settings.
+            elif data.startswith("$J="):
+                """
+                $Jx=line - Run jogging motion
+
+                New to Grbl v1.1, this command will execute a special jogging motion. There are three main
+                differences between a jogging motion and a motion commanded by a g-code line.
+
+                    Like normal g-code commands, several jog motions may be queued into the planner buffer,
+                    but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command.
+                    Grbl will immediately hold the current jog and then automatically purge the buffers
+                    of any remaining commands.
+                    Jog commands are completely independent of the g-code parser state. It will not change
+                    any modes like G91 incremental distance mode. So, you no longer have to make sure
+                    that you change it back to G90 absolute distance mode afterwards. This helps reduce
+                    the chance of starting with the wrong g-code modes enabled.
+                    If soft-limits are enabled, any jog command that exceeds a soft-limit will simply
+                    return an error. It will not throw an alarm as it would with a normal g-code command.
+                    This allows for a much more enjoyable and fluid GUI or joystick interaction.
+
+                Executing a jog requires a specific command structure, as described below:
+
+                    The first three characters must be '$J=' to indicate the jog.
+
+                    The jog command follows immediate after the '=' and works like a normal G1 command.
+
+                    Feed rate is only interpreted in G94 units per minute. A prior G93 state is
+                    ignored during jog.
+
+                    Required words:
+                        XYZ: One or more axis words with target value.
+                        F - Feed rate value. NOTE: Each jog requires this value and is not treated as modal.
+
+                    Optional words: Jog executes based on current G20/G21 and G90/G91 g-code parser state.
+                    If one of the following optional words is passed, that state is overridden for one command only.
+                        G20 or G21 - Inch and millimeter mode
+                        G90 or G91 - Absolute and incremental distances
+                        G53 - Move in machine coordinates
+
+                    All other g-codes, m-codes, and value words are not accepted in the jog command.
+
+                    Spaces and comments are allowed in the command. These are removed by the pre-parser.
+
+                    Example: G21 and G90 are active modal states prior to jogging. These are sequential commands.
+                        $J=X10.0 Y-1.5 will move to X=10.0mm and Y=-1.5mm in work coordinate frame (WPos).
+                        $J=G91 G20 X0.5 will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
+                        Note that G91 and G20 are only applied to this jog command.
+                        $J=G53 Y5.0 will move the machine to Y=5.0mm in the machine coordinate frame (MPos).
+                        If the work coordinate offset for the y-axis is 2.0mm, then Y is 3.0mm in (WPos).
+
+                Jog commands behave almost identically to normal g-code streaming. Every jog command
+                will return an 'ok' when the jogging motion has been parsed and is setup for execution.
+                If a command is not valid or exceeds a soft-limit, Grbl will return an 'error:'.
+                Multiple jogging commands may be queued in sequence.
+                """
+                commands = {}
+                for c in _tokenize_code(data):
+                    g = c[0]
+                    if g not in commands:
+                        commands[g] = []
+                    if len(c) >= 2:
+                        commands[g].append(c[1])
+                    else:
+                        commands[g].append(None)
+                return 3  # not yet supported
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
 
@@ -375,7 +962,7 @@ class GRBLParser:
                     self.plotter("coolant", True)
                 elif v == 9:
                     # Flood coolant Off
-                    self.plotter("coolant", True)
+                    self.plotter("coolant", False)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -425,16 +1012,17 @@ class GRBLParser:
                     return 2
                 elif v in (20, 70):
                     # g20 is inch mode.
-                    self.scale = MIL_PER_INCH
+                    self.scale = UNITS_PER_INCH
                 elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
-                    self.scale = MIL_PER_MM
+                    self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
                     self.plotter("home")
                     self.plotter("move", self.x, self.y, 0, 0)
                     self.x = 0
                     self.y = 0
+                    self.z = 0
                 elif v == 38.1:
                     # Touch Plate
                     pass
@@ -503,7 +1091,8 @@ class GRBLParser:
                 if self.settings.get("speed", 0) != feed_rate:
                     self.settings["speed"] = feed_rate
                     # On speed change we start a new plot.
-                    self.plotter("new")
+                    # On speed change we start a new plot.
+                    self.plotter("new", v, 0)
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -511,9 +1100,28 @@ class GRBLParser:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                if self.settings["power"] != v:
+                    self.plotter("new", 0, v)
                 self.settings["power"] = v
             del gc["s"]
-        if "x" in gc or "y" in gc:
+        if "z" in gc:
+            oz = self.z
+            v = gc["z"].pop(0)
+            if v is None:
+                z = 0
+            else:
+                z = self.scale * v
+            if len(gc["z"]) == 0:
+                del gc["z"]
+            self.z = z
+            if oz != self.z:
+                self.plotter("zaxis", self.z)
+
+        if (
+            "x" in gc
+            or "y" in gc
+            or ("i" in gc or "j" in gc and self.move_mode in (2, 3))
+        ):
             ox = self.x
             oy = self.y
             if "x" in gc:
@@ -525,7 +1133,10 @@ class GRBLParser:
                 if len(gc["x"]) == 0:
                     del gc["x"]
             else:
-                x = 0
+                if self.relative:
+                    x = 0
+                else:
+                    x = self.x
             if "y" in gc:
                 y = gc["y"].pop(0)
                 if y is None:
@@ -535,39 +1146,108 @@ class GRBLParser:
                 if len(gc["y"]) == 0:
                     del gc["y"]
             else:
-                y = 0
+                if self.relative:
+                    y = 0
+                else:
+                    y = self.y
             if self.relative:
                 self.x += x
                 self.y += y
             else:
                 self.x = x
                 self.y = y
+
             power = self.settings.get("power", 0)
             if self.move_mode == 0:
                 self.plotter("move", ox, oy, self.x, self.y)
             elif self.move_mode == 1:
                 self.plotter("line", ox, oy, self.x, self.y, power / 1000.0)
-            elif self.move_mode == 2:
-                # CW ARC
+            elif self.move_mode in (2, 3):
+                # 2 = CW ARC
+                # 3 = CCW ARC
                 cx = ox
                 cy = oy
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
-            elif self.move_mode == 3:
-                # CCW ARC
-                cx = ox
-                cy = oy
-                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
+                if "i" in gc:
+                    ix = gc["i"].pop(0)  # * self.scale
+                    cx += ix
+                if "j" in gc:
+                    jy = gc["j"].pop(0)  # * self.scale
+                    cy += jy
+
+                r0 = complex(cx - self.x, cy - self.y)
+                r1 = complex(cx - ox, cy - oy)
+                d = abs(abs(r0) - abs(r1))
+                # if d > 100:
+                #     print("there's something wrong here.")
+                if "r" in gc:
+                    self.plotter(
+                        "cw-arc-r" if self.move_mode == 2 else "ccw-arc-r",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
+                else:
+                    self.plotter(
+                        "ccw-arc" if self.move_mode == 3 else "cw-arc",
+                        ox,
+                        oy,
+                        cx,
+                        cy,
+                        self.x,
+                        self.y,
+                        power / 1000.0,
+                    )
         return 0
+
+    ### THE CODE FOR G93 / G94 NEEDS A THOROUGH REVIEW
+    # According to my understanding they have to be given in the context of the active unit
+    # (mm or inch)
 
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
+        # G93 - is Inverse Time Mode. In inverse time feed rate mode, an F word means the move
+        # should be completed in [one divided by the F number] minutes. For example, if the
+        # F number is 2.0, the move should be completed in half a minute.
+        # When the inverse time feed rate mode is active, an F word must appear on every line
+        # which has a G1, G2, or G3 motion, and an F word on a line that does not have
+        # G1, G2, or G3 is ignored. Being in inverse time feed rate mode does not
+        # affect G0 (rapid move) motions.
+        if self.scale == UNITS_PER_INCH:
+            self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_INCH) / s
+            self.feed_invert = lambda s: (60.0 * UNITS_PER_INCH / self.scale) / s
+        else:
+            self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_MM) / s
+            self.feed_invert = lambda s: (60.0 * UNITS_PER_MM / self.scale) / s
+
+        # Original code:
+        # MM_PER_INCH = 25.4
+        # MIL_PER_INCH = 1000.0
+        # MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
+        # self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
+        # self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
+        # G94 - is Units per Minute Mode. In units per minute feed mode, an F word is interpreted
+        # to mean the controlled point should move at a certain number of inches per minute,
+        # millimeters per minute, or degrees per minute, depending upon what length units
+        # are being used and which axis or axes are moving.
+        if self.scale == UNITS_PER_INCH:
+            self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
+            self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+        else:
+            self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
+            self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
+        # units to mm, seconds to minutes.
+
+        # Original code:
+        # MIL_PER_INCH = 1000.0
+        # self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
+        # self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
         # units to mm, seconds to minutes.
 
     @property

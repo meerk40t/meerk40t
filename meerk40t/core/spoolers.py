@@ -1,6 +1,6 @@
 import time
 from math import isinf
-from threading import Lock
+from threading import Condition
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
@@ -302,6 +302,19 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
         @kernel.console_command(
+            "physical_home",
+            input_type=("spooler", None),
+            output_type="spooler",
+            help=_("home the laser (goto endstops)"),
+        )
+        def physical_home(data=None, **kwgs):
+            if data is None:
+                data = kernel.device.spooler
+            spooler = data
+            spooler.command("physical_home")
+            return "spooler", spooler
+
+        @kernel.console_command(
             "unlock",
             input_type=("spooler", None),
             output_type="spooler",
@@ -384,10 +397,9 @@ class Spooler:
     def __init__(self, context, driver=None, **kwargs):
         self.context = context
         self.driver = driver
-        self.foreground_only = True
         self._current = None
 
-        self._lock = Lock()
+        self._lock = Condition()
         self._queue = []
 
         self._shutdown = False
@@ -414,26 +426,6 @@ class Spooler:
         """
         self.restart()
 
-    def service_attach(self, *args, **kwargs):
-        """
-        device service is attached to the kernel.
-
-        @param args:
-        @param kwargs:
-        @return:
-        """
-        if self.foreground_only:
-            self.restart()
-
-    def service_detach(self):
-        """
-        device service is detached from the kernel.
-
-        @return:
-        """
-        if self.foreground_only:
-            self.shutdown()
-
     def shutdown(self, *args, **kwargs):
         """
         device service is shutdown during the shutdown of the kernel or destruction of the service
@@ -443,6 +435,8 @@ class Spooler:
         @return:
         """
         self._shutdown = True
+        with self._lock:
+            self._lock.notify_all()
 
     def restart(self):
         """
@@ -456,6 +450,13 @@ class Spooler:
             def clear_thread(*a):
                 self._shutdown = True
                 self._thread = None
+                try:
+                    # If something is currently processing stop it.
+                    self._current.stop()
+                except AttributeError:
+                    pass
+                with self._lock:
+                    self._lock.notify_all()
 
             self._thread = self.context.threaded(
                 self.run,
@@ -479,16 +480,13 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
-            self._lock.acquire()
-            try:
-                program = self._queue[0]
-            except IndexError:
-                self._lock.release()
-                # There is no work to do.
-                time.sleep(0.1)
-                continue
-            self._lock.release()
-
+            with self._lock:
+                try:
+                    program = self._queue[0]
+                except IndexError:
+                    # There is no work to do.
+                    self._lock.wait()
+                    continue
             priority = program.priority
 
             # Check if the driver holds work at this priority level.
@@ -502,7 +500,11 @@ class Spooler:
                 # Driver could no longer connect to where it was told to send the data.
                 return
             except ConnectionRefusedError:
-                # Driver connection failed but we are not aborting the spooler thread
+                # Driver connection failed but, we are not aborting the spooler thread
+                if self._shutdown:
+                    return
+                with self._lock:
+                    self._lock.wait()
                 continue
             if fully_executed:
                 # all work finished
@@ -531,19 +533,23 @@ class Spooler:
             label, list(job), driver=self.driver, priority=priority, loops=loops
         )
         ljob.helper = helper
+        ljob.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def command(self, *job, priority=0, helper=True):
-        laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
-        laserjob.helper = helper
+        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        ljob.helper = helper
+        ljob.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
-            self._queue.append(laserjob)
+            self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def send(self, job):
@@ -553,10 +559,12 @@ class Spooler:
         @param job: job to send to the spooler.
         @return:
         """
+        job.uid = self.context.logging.uid("job")
         with self._lock:
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
     def _stop_lower_priority_running_jobs(self, priority):
@@ -566,38 +574,34 @@ class Spooler:
 
     def clear_queue(self):
         with self._lock:
-            for e in self._queue:
-                try:
+            for element in self._queue:
+                loop = element.loops_executed
+                total = element.loops
+                if isinf(total):
+                    status = "stopped"
+                elif loop < total:
+                    status = "stopped"
+                else:
                     status = "completed"
-                    needs_signal = e.is_running() and e.time_started is not None
-                    loop = e.loops_executed
-                    total = e.loops
-                    if isinf(total):
-                        status = "stopped"
-                        total = "∞"
-                    elif loop < total:
-                        status = "stopped"
-                    passinfo = f"{loop}/{total}"
-                    e.stop()
-                    if needs_signal:
-                        info = (
-                            e.label,
-                            e.time_started,
-                            e.runtime,
-                            self.context.label,
-                            passinfo,
-                            status,
-                            e.helper,
-                            e.estimate_time(),
-                            e.steps_done,
-                            e.steps_total,
-                            loop,
-                        )
-                        self.context.signal("spooler;completed", info)
-                except AttributeError:
-                    pass
+                self.context.logging.event({
+                    "uid": getattr(element, "uid"),
+                    "status": status,
+                    "loop": getattr(element, "loops_executed"),
+                    "total": getattr(element, "loops"),
+                    "label": getattr(element, "label"),
+                    "start_time": getattr(element, "time_started"),
+                    "duration": getattr(element, "runtime"),
+                    "device": self.context.label,
+                    "important": not getattr(element, "helper", False),
+                    "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
+                    "steps_done": getattr(element, "steps_done"),
+                    "steps_total": getattr(element, "steps_total"),
+                })
+                self.context.signal("spooler;completed")
+                element.stop()
             self._queue.clear()
-            self.context.signal("spooler;queue", len(self._queue))
+            self._lock.notify()
+        self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element):
         with self._lock:
@@ -605,33 +609,25 @@ class Spooler:
             if element.status == "running":
                 element.stop()
                 status = "stopped"
-            try:
-                loop = element.loops_executed
-                total = element.loops
-                if isinf(element.loops):
-                    status = "stopped"
-                    total = "∞"
-                elif loop < total:
-                    status = "stopped"
-                info = (
-                    element.label,
-                    element.time_started,
-                    element.runtime,
-                    self.context.label,
-                    f"{loop}/{total}",
-                    status,
-                    element.helper,
-                    element.estimate_time(),
-                    element.steps_done,
-                    element.steps_total,
-                    loop,
-                )
-                self.context.signal("spooler;completed", info)
-            except AttributeError:
-                pass
+            self.context.logging.event({
+                "uid": getattr(element, "uid"),
+                "status": status,
+                "loop": getattr(element, "loops_executed"),
+                "total": getattr(element, "loops"),
+                "label": getattr(element, "label"),
+                "start_time": getattr(element, "time_started"),
+                "duration": getattr(element, "runtime"),
+                "device": self.context.label,
+                "important": not getattr(element, "helper", False),
+                "estimate": element.estimate_time() if hasattr(element, "estimate_time") else None,
+                "steps_done": getattr(element, "steps_done"),
+                "steps_total": getattr(element, "steps_total"),
+            })
+            self.context.signal("spooler;completed")
             element.stop()
             for i in range(len(self._queue) - 1, -1, -1):
                 e = self._queue[i]
                 if e is element:
                     del self._queue[i]
+            self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))

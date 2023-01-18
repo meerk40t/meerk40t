@@ -4,7 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
-from meerk40t.gui.wxutils import TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
 
@@ -40,10 +40,20 @@ class PositionPanel(wx.Panel):
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
         )
         self.text_w = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "",
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_h = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "",
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_x.SetMinSize((70, 23))
         self.text_y.SetMinSize((70, 23))
@@ -386,8 +396,9 @@ class PositionPanel(wx.Panel):
                     bb[1] = newy
                     bb[3] = newy + oldh
                 elem.matrix.post_translate(dx, dy)
-                elem._bounds = bb
-                elem.modified()
+                elem.translated(dx, dy)
+                # elem._bounds = bb
+                # elem.modified()
         else:
             u = self.position_units
             cmd1 = ""

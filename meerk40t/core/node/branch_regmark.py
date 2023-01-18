@@ -8,13 +8,11 @@ class BranchRegmarkNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(BranchRegmarkNode, self).__init__(type="branch reg", **kwargs)
+        super().__init__(type="branch reg", **kwargs)
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):
-        default_map = super(BranchRegmarkNode, self).default_map(
-            default_map=default_map
-        )
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Regmarks"
         return default_map
 

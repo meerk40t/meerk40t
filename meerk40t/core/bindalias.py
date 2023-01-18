@@ -134,6 +134,7 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+a": ("element* select",),
     "ctrl+c": ("clipboard copy",),
+    "ctrl+shift+c": ("align bed group xy center center",),
     "ctrl+e": (
         "circle 0.5in 0.5in 0.5in stroke red classify",
         "circle 500 500 500",
@@ -144,7 +145,10 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+i": ("element* select^",),
     "ctrl+d": ("element copy",),
-    "ctrl+g": ("planz clear copy preprocess validate blob preopt optimize spool",),
+    "ctrl+g": (
+        "",
+        "planz clear copy preprocess validate blob preopt optimize spool",
+    ),
     "ctrl+o": (
         "",
         "outline",

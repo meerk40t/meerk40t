@@ -20,7 +20,7 @@ class BlobNode(Node):
         return len(self.data)
 
     def default_map(self, default_map=None):
-        default_map = super(BlobNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Blob"
         default_map["data_type"] = self.data_type
         default_map["label"] = self.label

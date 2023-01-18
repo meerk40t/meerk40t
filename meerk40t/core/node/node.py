@@ -290,6 +290,7 @@ class Node:
 
     @property
     def paint_bounds(self):
+        # Make sure that bounds is valid
         if not self._paint_bounds_dirty:
             return self._paint_bounds
 
@@ -614,6 +615,12 @@ class Node:
                 node = self
             self._root.notify_modified(node=node, **kwargs)
 
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+
     def notify_altered(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
@@ -657,7 +664,6 @@ class Node:
         """
         Invalidation of the individual node.
         """
-        self._points_dirty = True
         self.set_dirty_bounds()
         self._bounds = None
         self._paint_bounds = None
@@ -685,6 +691,29 @@ class Node:
         self.invalidated()
         self.notify_modified(self)
 
+    def translated(self, dx, dy):
+        """
+        This is a special case of the modfied call, we are translating the node without fundamentally altering it's properties
+
+        """
+        if self._points_dirty:
+            # A pity but we need proper data
+            self.modified()
+            return
+        self._bounds = [
+            self._bounds[0] + dx,
+            self._bounds[1] + dy,
+            self._bounds[2] + dx,
+            self._bounds[3] + dy,
+        ]
+        self._paint_bounds = [
+            self._paint_bounds[0] + dx,
+            self._paint_bounds[1] + dy,
+            self._paint_bounds[2] + dx,
+            self._paint_bounds[3] + dy,
+        ]
+        self.notify_translated(self, dx=dx, dy=dy)
+
     def altered(self):
         """
         The data structure was changed. Any assumptions about what this object is/was are void.
@@ -695,6 +724,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
         self._cache = None
@@ -708,6 +738,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
 
@@ -759,8 +790,10 @@ class Node:
         @param kwargs:
         @return:
         """
-        node_class = self._root.bootstrap.get(type, Node)
-        node_defaults = self._root.defaults.get(type, {})
+        from .bootstrap import bootstrap, defaults
+
+        node_class = bootstrap.get(type, Node)
+        node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)
         node = node_class(**nd)
@@ -805,8 +838,7 @@ class Node:
         @return:
         """
         yield node
-        for c in self._flatten_children(node):
-            yield c
+        yield from self._flatten_children(node)
 
     def _flatten_children(self, node):
         """
@@ -817,8 +849,7 @@ class Node:
         """
         for child in node.children:
             yield child
-            for c in self._flatten_children(child):
-                yield c
+            yield from self._flatten_children(child)
 
     def flat(
         self,

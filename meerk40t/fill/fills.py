@@ -162,9 +162,7 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         y = vm.scanline
         actives = vm.actives()
         for i in (
-            range(1, len(actives), 2)
-            if forward
-            else range(len(actives) - 1, 0, -2)
+            range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
         ):
             left_segment = actives[i - 1]
             right_segment = actives[i]

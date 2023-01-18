@@ -1,7 +1,5 @@
 from copy import copy
 
-from numpy import linspace
-
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -17,7 +15,6 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 from meerk40t.tools.pathtools import VectorMontonizer
-
 
 _FACTOR = 1000
 
@@ -61,7 +58,8 @@ class LivingHinges:
         self._extend_patterns = True
         self.set_cell_values(100, 100)
         self.set_padding_values(50, 50)
-        self.set_predefined_pattern(entry=(
+        self.set_predefined_pattern(
+            entry=(
                 set_line,
                 False,
                 "",
@@ -81,7 +79,9 @@ class LivingHinges:
         additional_parameter = entry[1]
         info1 = entry[2]
         info2 = entry[3]
-        self.pattern = list(entry[0](self.param_a, self.param_b, outershape=self.outershape))
+        self.pattern = list(
+            entry[0](self.param_a, self.param_b, outershape=self.outershape)
+        )
         self.path = None
         self.preview_path = None
         return additional_parameter, info1, info2
@@ -337,7 +337,7 @@ class LivingHinges:
             #     path += Path(Polyline(good_pts), stroke=Color("red"), stroke_width=500)
             for sub_inner in self.path.as_subpaths():
                 sub_bbox = sub_inner.bbox()
-                outx, outy  = self.outside(sub_bbox, outer_bb)
+                outx, outy = self.outside(sub_bbox, outer_bb)
                 if outx == "outside" or outy == "outside":
                     continue
 
@@ -366,7 +366,9 @@ class LivingHinges:
                 if fullyinside:
                     path += abs(sub_inner)
                 else:
-                    path += Path(Polyline(pts_sub), stroke=Color("red"), stroke_width=500)
+                    path += Path(
+                        Polyline(pts_sub), stroke=Color("red"), stroke_width=500
+                    )
             self.path = path
         else:
             # Former method....
@@ -392,6 +394,8 @@ class LivingHinges:
 
         def approximate_line(part_of_path, current_x, current_y):
             # print(f"Check: {type(part_of_path).__name__} {part_of_path.bbox()} {clipbb}")
+            from numpy import linspace
+
             added = 0
             partial = 0
             ignored = 0

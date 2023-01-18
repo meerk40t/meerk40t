@@ -1177,7 +1177,7 @@ class RuidaEmulator(Module, Parameters):
                 try:
                     with open(name, "rb") as f:
                         self.write(BytesIO(self.unswizzle(f.read())))
-                except IOError:
+                except OSError:
                     pass
                 desc = f"Start Select Document {filenumber}"
             elif array[1] == 0x04:

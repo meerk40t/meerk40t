@@ -287,6 +287,8 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
@@ -299,6 +301,8 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
@@ -311,6 +315,8 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
+        if self.service.swap_xy:
+            dx, dy = dy, dx
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self._move_relative(dx, dy)
@@ -523,6 +529,12 @@ class LihuiyuDriver(Parameters):
             "driver;position",
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
+
+    def physical_home(self):
+        """ "
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
 
     def lock_rail(self):
         """
@@ -816,7 +828,11 @@ class LihuiyuDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM or self.service.rapid_override:
+                    if (
+                        on & PLOT_RAPID
+                        or self.state != DRIVER_STATE_PROGRAM
+                        or self.service.rapid_override
+                    ):
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
                         self.rapid_mode()
@@ -1035,14 +1051,18 @@ class LihuiyuDriver(Parameters):
             # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
             self._set_speed(y_speed)
             self.program_mode()
-            dy_m = int(math.copysign(dx, dy))  # magnitude of shorter in the direction of longer.
+            dy_m = int(
+                math.copysign(dx, dy)
+            )  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx, dy_m, on=False)
             self._goto_octent(0, dy - dy_m, on=False)
         elif x_speed <= y_speed and abs(dx) >= abs(dy):
             # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
             self._set_speed(x_speed)
             self.program_mode()
-            dx_m = int(math.copysign(dy, dx))  # magnitude of shorter in the direction of longer.
+            dx_m = int(
+                math.copysign(dy, dx)
+            )  # magnitude of shorter in the direction of longer.
             self._goto_octent(dx_m, dy, on=False)
             self._goto_octent(dx - dx_m, 0, on=False)
         else:
