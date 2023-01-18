@@ -713,12 +713,16 @@ class Node:
             self._bounds[2] + dx,
             self._bounds[3] + dy,
         ]
-        self._paint_bounds = [
-            self._paint_bounds[0] + dx,
-            self._paint_bounds[1] + dy,
-            self._paint_bounds[2] + dx,
-            self._paint_bounds[3] + dy,
-        ]
+        if self._paint_bounds_dirty or self._paint_bounds is None:
+            # Nothing we can do...
+            pass
+        else:
+            self._paint_bounds = [
+                self._paint_bounds[0] + dx,
+                self._paint_bounds[1] + dy,
+                self._paint_bounds[2] + dx,
+                self._paint_bounds[3] + dy,
+            ]
         self._points_dirty = True
         # if self._points_dirty:
         #     self.revalidate_points()
