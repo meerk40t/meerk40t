@@ -86,7 +86,7 @@ class LineNode(Node, Stroked):
                 y1 = oy + sy * d2
             return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
-        if self._bounds_dirty:
+        if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
             self.modified()
             return
