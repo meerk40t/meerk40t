@@ -272,9 +272,9 @@ class AttractionWidget(Widget):
                     if pts[2] in (TYPE_POINT, TYPE_BOUND):
                         self.draw_caret(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_MIDDLE:
-                        self.draw_midpoint(gc, pts[0], pts[1], closeup, False)
+                        self.draw_midpoint(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_MIDDLE_SMALL:
-                        self.draw_midpoint(gc, pts[0], pts[1], closeup, True)
+                        self.draw_midpoint(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_CENTER:
                         self.draw_center(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_GRID:
