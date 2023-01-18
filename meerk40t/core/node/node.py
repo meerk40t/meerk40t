@@ -1014,32 +1014,33 @@ class Node:
         self.unregister()
         return node
 
-    def remove_node(self, children=True, references=True):
+    def remove_node(self, children=True, references=True, fast=False):
         """
         Remove the current node from the tree.
         This function must iterate down and first remove all children from the bottom.
         """
         if children:
-            self.remove_all_children()
+            self.remove_all_children(fast=fast)
         self._parent._children.remove(self)
-        self.notify_detached(self)
-        self.notify_destroyed(self)
+        if not fast:
+            self.notify_detached(self)
+            self.notify_destroyed(self)
         if references:
             for ref in list(self._references):
-                ref.remove_node()
+                ref.remove_node(fast=fast)
         self._item = None
         self._parent = None
         self._root = None
         self.type = None
         self.unregister()
 
-    def remove_all_children(self):
+    def remove_all_children(self, fast=False):
         """
         Removes all children of the current node.
         """
         for child in list(self.children):
-            child.remove_all_children()
-            child.remove_node()
+            child.remove_all_children(fast=fast)
+            child.remove_node(fast=fast)
 
     def get(self, type=None):
         """

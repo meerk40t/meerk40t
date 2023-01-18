@@ -1361,9 +1361,9 @@ class Elemental(Service):
             self.classify(adding_elements)
         return items
 
-    def clear_operations(self):
+    def clear_operations(self, fast=False):
         operations = self._tree.get(type="branch ops")
-        operations.remove_all_children()
+        operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -1371,30 +1371,36 @@ class Elemental(Service):
             self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
-    def clear_elements(self):
+    def clear_elements(self, fast=False):
         elements = self._tree.get(type="branch elems")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
-    def clear_regmarks(self):
+    def clear_regmarks(self, fast=False):
         elements = self._tree.get(type="branch reg")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
 
     def clear_elements_and_operations(self):
-        self.clear_elements()
-        self.clear_operations()
+        fast = True
+        self.clear_elements(fast=fast)
+        self.clear_operations(fast=fast)
+        if fast:
+            self.signal("rebuild_tree")
 
     def clear_all(self):
+        fast = True
         self.set_start_time("clear_all")
         with self.static("clear_all"):
-            self.clear_elements()
-            self.clear_operations()
+            self.clear_elements(fast=fast)
+            self.clear_operations(fast=fast)
             self.clear_files()
             self.clear_note()
-            self.clear_regmarks()
+            self.clear_regmarks(fast=fast)
             self.validate_selected_area()
+        if fast:
+            self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
 
     def clear_note(self):
