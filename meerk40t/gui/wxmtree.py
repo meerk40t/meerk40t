@@ -755,16 +755,7 @@ class ShadowTree:
 
         # if node is None:
         #     return
-        # tree = self.wxtree
-        # child, cookie = tree.GetFirstChild(node)
-        # while child.IsOk():
-        #     child_node = self.wxtree.GetItemData(child)
-        #     if child_node.type in ("group", "file"):
-        #         self.update_decorations(child_node, force=True)
-        #     ct = self.wxtree.GetChildrenCount(child, recursively=False)
-        #     if ct > 0:
-        #         self.refresh_tree(child, level + 1)
-        #     child, cookie = tree.GetNextChild(node, cookie)
+        self.update_op_labels()
 
         self.wxtree._freeze = False
         self.wxtree.Expand(self.elements.get(type="branch ops")._item)
