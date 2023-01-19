@@ -275,7 +275,7 @@ class LihuiyuController:
             self.connection.close()
             raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
         if self.context.serial_enable:
-            self.usb_log("Requires serial number confirmation.")
+            self.usb_log(_("Requires serial number confirmation."))
             self.challenge(self.context.serial)
             t = time.time()
             while time.time() - t < 0.5:
@@ -284,6 +284,8 @@ class LihuiyuController:
             if not self.serial_confirmed:
                 self.connection.close()
                 raise ConnectionRefusedError("Serial number confirmation failed.")
+            else:
+                self.usb_log(_("Serial number confirmed."))
 
     def close(self):
         self.pipe_channel("close()")
