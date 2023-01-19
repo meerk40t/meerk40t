@@ -753,7 +753,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Elements"),
         node_type="blob",
-        help=_("Convert blob to elements"),
+        help=_("Convert attached binary object to elements"),
     )
     def blob2path(node, **kwargs):
         cancelled = False
@@ -763,8 +763,18 @@ def init_tree(kernel):
         if dialog_class and hasattr(parser, "options"):
             parser_choices = getattr(parser, "options", None)
             if parser_choices is not None:
+                for entry in parser_choices:
+                    if "label" in entry:
+                        entry["label"] = _(entry["label"])
+                    if "tip" in entry:
+                        entry["tip"] = _(entry["tip"])
+                    if "display" in entry:
+                        newdisplay = []
+                        for dentry in entry["display"]:
+                            newdisplay.append(_(dentry))
+                        entry["display"] = newdisplay
                 dialog = dialog_class(self.kernel, choices=parser_choices)
-                res = dialog.dialog_options(title=_("GCode-Conversion"), intro=_("You can influence the way MK will process the GCode data:"))
+                res = dialog.dialog_options(title=_("Blob-Conversion"), intro=_("You can influence the way MK will process the attached binary data:"))
                 if not res:
                     cancelled = True
         if not cancelled:

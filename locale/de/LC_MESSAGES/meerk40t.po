@@ -2900,6 +2900,9 @@ msgstr "Lösche Arbeitsgang '{name}' vollständig"
 msgid "Delete group '{name}' and all its child-elements fully"
 msgstr "Lösche Gruppe '{name}' und all Unterelemente vollständig"
 
+msgid "Delete blob '{name}' fully"
+msgstr "Lösche Binär-Objekt '{name}' vollständig"
+
 #: meerk40t/core/elements.py:6924
 msgid "Remove loaded file '{name}' and all its child-elements fully"
 msgstr "Lösche Datei '{name}' und alle Unterelemente vollständig"
@@ -15190,3 +15193,126 @@ msgstr "Auto-Konfiguration"
 
 msgid "Connect to laser and try to establish some properties"
 msgstr "Baut Verbindung zum Laser auf und frägt Geräte-Parameter ab"
+
+msgid "Convert attached binary object to elements"
+msgstr "Wandle angefügte Binär-Daten in reguläre Elemente um"
+
+msgid "Blob-Conversion"
+msgstr "Binär-Daten Umwandlung"
+
+msgid "You can influence the way MK will process the attached binary data:"
+msgstr "Steuere die Umwandlung der angefügten Binär-Daten in reguläre Elemente:"
+
+msgid "Ignore travel"
+msgstr "Ignoriere 'Travel'-Bewegungen"
+
+msgid "Try to take only 'valid' movements"
+msgstr "Versucht nur 'relevante' Bewegungen zu verwenden"
+
+msgid "Split paths"
+msgstr "Pfade aufspalten"
+
+msgid "Split path into smaller chunks"
+msgstr "Spalte Pfade in separate zusammengehörende Segmente auf"
+
+msgid "Single occurence"
+msgstr "Nur einzelner Durchlauf"
+
+msgid "Prevent duplicate creation of segments (like in a multipass operation)"
+msgstr "Mehrfach-Durchläufe (Duplikate von Bewegungsabläufen) werden nur einmal übernommen"
+
+msgid "Treat Z-Movement as On/Off"
+msgstr "Z-Bewegung als Ein/Aus-Indikator"
+
+msgid "Use negative Z-Values as a Power-On indicator, positive values as travel"
+msgstr ""
+"Interpretiere Bewegungen in negative Z-Richtung als 'Laser An'-Indikator,\n"
+"Bewegungen in positive Richtung als 'Laser Aus'-Signal"
+
+msgid "Only negative"
+msgstr "Nur negative Werte"
+
+msgid ""
+"Active: use positive values as travel\n"
+"Inactive: use all non-zero values"
+msgstr ""
+"Aktiv: Z-Werte > 0 werden noch als Travel interpretiert\n"
+"Inaktiv: Alle Werte bei Bewegungen in negative Richtung werden als 'Laser An' gewertet"
+
+msgid "Top Left"
+msgstr "Oben links"
+
+msgid "Bottom Left"
+msgstr "Unten rechts"
+
+msgid "Center"
+msgstr "Mittelpunkt"
+
+msgid "Center (Y mirrored)"
+msgstr "Mittelpunkt (Y gespiegelt)"
+
+msgid "Bed-Origin"
+msgstr "Ursprung (0,0)"
+
+msgid "Correct starting point"
+msgstr "Korrigiere Startpunkt"
+
+msgid "Create operations"
+msgstr "Erzeuge Arbeitsabläufe"
+
+msgid "Create corresponding operations for Power and Speed pairs"
+msgstr "Erzeuge zugehörige Arbeitsabläufe für Leistung/Geschwindigkeit-Paare"
+
+msgid "Scale Speed"
+msgstr "Geschwindigkeit skalieren"
+
+msgid ""
+"Set lower and higher level to scale the speed\n"
+"Minimum speed used will be mapped to lower level\n"
+"Maximum speed used will be mapped to upper level"
+msgstr ""
+"Definiere den Ziel-Bereich für Geschwindigkeit\n"
+"Der niedrigst gefundene Wert wird auf die untere Geschwindigkeit,\n"
+"der größte gefundene Wert auf die obere Geschwindigkeit abgebildet."
+
+msgid "Lowest speed"
+msgstr "Minimale Geschwindigkeit"
+
+msgid "Minimum speed used will be mapped to lower level"
+msgstr "Der niedrigst gefundene Wert wird auf die minimale Geschwindigkeit gesetzt"
+
+msgid "Highest speed"
+msgstr "Maximale Geschwindigkeit"
+
+msgid "Maximum speed used will be mapped to upper level"
+msgstr "Der höchste gefundene Wert wird auf die maximale Geschwindigkeit gesetzt"
+
+msgid "Scale Power"
+msgstr "Skaliere Laser-Leistung"
+
+msgid ""
+"Set lower and higher level to scale the power\n"
+"Minimum power used will be mapped to lower level\n"
+"Maximum power used will be mapped to upper level"
+msgstr ""
+"Definiere den Ziel-Bereich für die Laser-Leistung\n"
+"Der niedrigst gefundene Wert wird auf die minimale Leistung,\n"
+"der größte gefundene Wert auf die maximale Leistung abgebildet."
+
+msgid "Lowest Power"
+msgstr "Minimale Leistung"
+
+msgid "Minimum power used will be mapped to lower level"
+msgstr "Der niedrigst gefundene Wert wird auf die minimale Leistung gesetzt"
+
+msgid "Highest power"
+msgstr "Maximale Leistung"
+
+msgid "Maximum power used will be mapped to upper level"
+msgstr "Der höchste gefundene Wert wird auf die maximale Leistung gesetzt"
+
+msgid "Correct Orientation"
+msgstr "Ursprung korrigieren"
+
+msgid "Z-Axis"
+msgstr "Z-Achse"
