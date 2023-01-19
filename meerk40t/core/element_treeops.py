@@ -928,7 +928,7 @@ def init_tree(kernel):
     @tree_separator_before()
     @tree_submenu(_("Save"))
     @tree_prompt("opname", _("Name to store current operations under?"))
-    @tree_operation("New", node_type="branch ops", help="")
+    @tree_operation(_("New"), node_type="branch ops", help="")
     def save_material_custom(node, opname, **kwargs):
         self(f"material save {opname.replace(' ', '_')}\n")
 

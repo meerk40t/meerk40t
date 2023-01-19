@@ -3115,6 +3115,9 @@ msgstr "Füge 'Input' hinzu"
 msgid "Append Home/Beep/Interrupt"
 msgstr "Füge 'Home + Beep + Nachricht' hinzu"
 
+msgid "Append Origin/Beep/Interrupt"
+msgstr "Füge 'Startposition + Beep + Nachricht' hinzu"
+
 #: meerk40t/core/elements.py:7307
 msgid "Append Shutdown"
 msgstr "Füge 'Quit' hinzu"
@@ -10320,7 +10323,7 @@ msgstr "Bild zuschneiden"
 msgid "How many pixels do you want to crop from the left?"
 msgstr "Wieviele Pixel sollen auf der linken Seite abgeschnitten werden?"
 
-msgid "How many pixels do you want to crop from the lefright?"
+msgid "How many pixels do you want to crop from the right?"
 msgstr "Wieviele Pixel sollen auf der rechten Seite abgeschnitten werden?"
 
 msgid "How many pixels do you want to crop from the top?"
@@ -15078,3 +15081,112 @@ msgstr "Linker/Rechter Einzug"
 
 msgid "Top/Bottom Indentation"
 msgstr "Oberer/Unterer Einzug"
+
+msgid "Save the job"
+msgstr "Speichere den Laserjob"
+
+msgid "Undo last operation"
+msgstr "Mach letzte Operation rückgängig"
+
+msgid "Redo last operation"
+msgstr "Wende letzte Operation doch wieder an"
+
+msgid "Cut selected elements"
+msgstr "Element ausschneiden und in die Zwischenablage kopieren"
+
+msgid "Copy selected elements to clipboard"
+msgstr "Kopiere selektierte Elemente in die Zwischenablage"
+
+msgid "Paste elements from clipboard"
+msgstr "Kopierte Elemente aus Zwischenablage einsetzen"
+
+msgid "Delay hull trace"
+msgstr "Verzögere 'Umriss abfahren'"
+
+msgid "Establish if and how an element hull trace should wait"
+msgstr "Legt fest wie das Abfahren des Umrisses gestartet wird"
+
+msgid "Immediate"
+msgstr "Sofort ausführen"
+
+msgid "User confirmation"
+msgstr "Warte auf Freigabe'
+
+msgid "Delay 5 seconds"
+msgstr "Warte 5 Sekunden"
+
+msgid "Mini icon in tree"
+msgstr "Zeige Miniatur-Bild"
+
+msgid ""
+"Active: Display a miniature representation of the element in the tree\n"
+"Inactive: Use a standard icon for the element type instead"
+msgstr ""
+"Aktiv: Zeigt im Arbeitsvorgangsbereich ein Miniatur-Bild des Elements an\n"
+"Inaktiv: Nutze ein Standard-Smybol für alle Elemente des selben Typs\n"
+"(weniger detailliert aber dafür deutlich weniger Ressourcen-fressend)"
+
+msgid "Copy will increase {variable} references"
+msgstr "Kopiervorgang erhöht {variable} Index"
+
+msgid ""
+"Active: if you copy a text-element containing a wordlist-reference, "
+"this will be increased (effectively referencing the next entry in the wordlist)"
+msgstr ""
+"Aktiv: wird ein Textelement mit einem Wordlist-Verweis kopiert, so wird\n"
+"automatisch der Index erhöht (also das nächste Element in der Liste verwendet)"
+
+msgid "Sending Protocol"
+msgstr "Sende-Protokoll"
+
+msgid "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+msgstr ""
+"'Buffered' sendet die Daten so schnell wie möglich an den Laser.\n"
+"'Sync' wartet auf die 'OK'-Rückmeldung des Lasers (sicherer aber langsamer)
+
+msgid "Protocol"
+msgstr "Kommunikations-Protokoll"
+
+msgid "Line Ending"
+msgstr "Zeilenende"
+
+msgid "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+msgstr "CR für carriage return ($0D), LF für line feed ($0A), CRLF für beide"
+
+msgid "What serial interface does this device connect to?"
+msgstr "An welcher Schnittstelle hängt der Laser?"
+
+msgid "Device has endstops"
+msgstr "Gerät hat Endstopps"
+
+msgid "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
+msgstr ""
+"Falls das Gerät Endstopps besitzt, so kann der Laser selbständig\n"
+"zur Home-Position zurückkehren = Physikalisches Home ($H)"
+
+msgid "Simulate reddot"
+msgstr "Simuliere Rotpunkt-Indikator"
+
+msgid ""
+"If active then you can turn on the laser at a very low power to get a visual representation "
+"of the current position to help with focusing and positioning. Use with care!"
+msgstr ""
+"Falls aktiv, kann der Laser mit sehr geringer Stärke angeschaltet werden:\n"
+"der Auftreffpunkt des Lasers wird sichtbar ohne das Material zu verändern,\n"
+"was das Fokussieren oder das Positionieren des Lasers vereinfacht.\n"
+"Bitte mit Sinn und Verstand verwenden, Laserstrahlen sind gefährlich!"
+
+msgid "Reddot Laser strength"
+msgstr "Laser-Stärke Indikator"
+
+msgid "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
+msgstr "Definiere die Laser-Stärke für den Indikator-Modus, muss unterhalb der kritischen Laser-Stärke zum Gravieren von Materialien liegen"
+
+msgid "Query properties"
+msgstr "Geräte-Parameter ermitteln"
+
+msgid "Auto-Configuration"
+msgstr "Auto-Konfiguration"
+
+msgid "Connect to laser and try to establish some properties"
+msgstr "Baut Verbindung zum Laser auf und frägt Geräte-Parameter ab"

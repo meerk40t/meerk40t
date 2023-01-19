@@ -63,7 +63,7 @@ def init_commands(kernel):
             "page": "Laser",
             "section": "General",
             "style": "option",
-            "display": ("Immediate", "User confirmation", "Delay 5 seconds"),
+            "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
             "choices": (0, 1, 2),
         },
     ]
