@@ -396,8 +396,9 @@ class PositionPanel(wx.Panel):
                     bb[1] = newy
                     bb[3] = newy + oldh
                 elem.matrix.post_translate(dx, dy)
-                elem._bounds = bb
-                elem.modified()
+                elem.translated(dx, dy)
+                # elem._bounds = bb
+                # elem.modified()
         else:
             u = self.position_units
             cmd1 = ""

@@ -204,8 +204,8 @@ class OpInfoPanel(ScrolledPanel):
 
     def on_tree_popup_empty(self, opnode=None):
         def clear(event=None):
-            opnode.remove_all_children()
-            self.context.signal("tree_changed")
+            with self.context.elements.static("on_tree_pop"):
+                opnode.remove_all_children()
 
         return clear
 

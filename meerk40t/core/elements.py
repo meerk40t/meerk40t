@@ -1,5 +1,6 @@
+import contextlib
 import os.path
-from os.path import realpath
+from time import time
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
@@ -331,7 +332,7 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.elements
 
             try:
-                elements.load(realpath(kernel.args.input.name))
+                elements.load(os.path.realpath(kernel.args.input.name))
             except BadFileError as e:
                 kernel._console_channel(_("File is Malformed") + ": " + str(e))
     elif lifecycle == "poststart":
@@ -339,7 +340,7 @@ def plugin(kernel, lifecycle=None):
             # output the file you have at this point.
             elements = kernel.elements
 
-            elements.save(realpath(kernel.args.output.name))
+            elements.save(os.path.realpath(kernel.args.output.name))
 
 
 def reversed_enumerate(collection: list):
@@ -406,6 +407,7 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -451,6 +453,48 @@ class Elemental(Service):
         self._align_boundaries = None
         self._align_group = False
         self._align_stack = []
+
+        self._timing_stack = {}
+
+    def set_start_time(self, key):
+        if key in self._timing_stack:
+            self._timing_stack[key][0] = time()
+        else:
+            self._timing_stack[key] = [time(), 0, 0]
+
+    def set_end_time(self, key, display=True):
+        if key in self._timing_stack:
+            stime = self._timing_stack[key]
+            etime = time()
+            duration = etime - stime[0]
+            stime[0] = etime
+            stime[1] += duration
+            stime[2] += 1
+            if display:
+                # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                self.kernel._console_channel(
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
+                )
+
+    @contextlib.contextmanager
+    def static(self, source):
+        try:
+            self.stop_updates(source)
+            yield self
+        finally:
+            self.resume_updates(source)
+
+    def stop_updates(self, source):
+        # print (f"Stop update called from {source}")
+        self.suppress_updates = True
+        self.signal("freeze_tree", True)
+
+    def resume_updates(self, source, force_an_update=True):
+        # print (f"Resume update called from {source}")
+        self.suppress_updates = False
+        self.signal("freeze_tree", False)
+        if force_an_update:
+            self.signal("tree_changed")
 
     @property
     def filename(self):
@@ -916,7 +960,8 @@ class Elemental(Service):
                             continue
                         try:
                             c.matrix.post_translate(dx, dy)
-                            c.modified()
+                            # c.modified()
+                            c.translated(dx, dy)
                         except AttributeError:
                             pass
                             # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
@@ -924,11 +969,12 @@ class Elemental(Service):
                     try:
                         # q.matrix *= matrix
                         q.matrix.post_translate(dx, dy)
-                        q.modified()
+                        # q.modified()
+                        q.translated(dx, dy)
                     except AttributeError:
                         pass
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
-        self.signal("tree_changed")
+        self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
         newtext = self.mywordlist.wordlist_delta(orgtext, increase)
@@ -1075,6 +1121,15 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self.schedule(self._save_restore_job)
 
+    def translated(self, node=None, dx=0, dy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.schedule(self._save_restore_job)
+
     def node_attached(self, node, **kwargs):
         self.schedule(self._save_restore_job)
 
@@ -1088,41 +1143,41 @@ class Elemental(Service):
         self._tree.unlisten(listener)
 
     def load_default(self, performclassify=True):
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        with self.static("load default"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op engrave", color="blue")
-        self.op_branch.add(type="op engrave", color="green")
-        self.op_branch.add(type="op engrave", color="magenta")
-        self.op_branch.add(type="op engrave", color="cyan")
-        self.op_branch.add(type="op engrave", color="yellow")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        with self.static("load default 2"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op engrave", color="blue")
+            self.op_branch.add(type="op engrave", color="green")
+            self.op_branch.add(type="op engrave", color="magenta")
+            self.op_branch.add(type="op engrave", color="cyan")
+            self.op_branch.add(type="op engrave", color="yellow")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
@@ -1302,12 +1357,15 @@ class Elemental(Service):
         self.clear_operations()
 
     def clear_all(self):
-        self.clear_elements()
-        self.clear_operations()
-        self.clear_files()
-        self.clear_note()
-        self.clear_regmarks()
-        self.validate_selected_area()
+        self.set_start_time("clear_all")
+        with self.static("clear_all"):
+            self.clear_elements()
+            self.clear_operations()
+            self.clear_files()
+            self.clear_note()
+            self.clear_regmarks()
+            self.validate_selected_area()
+        self.set_end_time("clear_all", True)
 
     def clear_note(self):
         self.note = None
@@ -1628,6 +1686,7 @@ class Elemental(Service):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
         # We dont know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
+        self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
@@ -1635,7 +1694,8 @@ class Elemental(Service):
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 continue
             node.matrix.post_translate(dx, dy)
-            node.modified()
+            # node.modified()
+            node.translated(dx, dy)
 
     def set_emphasized_by_position(
         self,
@@ -2825,22 +2885,33 @@ class Elemental(Service):
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
-                    try:
-                        self.signal("freeze_tree", True)
-                        results = loader.load(self, self, pathname, **kwargs)
-                        self.remove_empty_groups()
-                        self._filename = pathname
-                        self.signal("tree_changed")
-                        return True
-                    except FileNotFoundError:
-                        return False
-                    except BadFileError as e:
-                        kernel._console_channel(_("File is Malformed") + ": " + str(e))
-                        self.signal("warning", str(e), _("File is Malformed"))
-                    except OSError:
-                        return False
-                    finally:
-                        self.signal("freeze_tree", False)
+                    self.set_start_time("load")
+                    self.set_start_time("full_load")
+                    with self.static("load elements"):
+                        try:
+                            # We could stop the attachment to shadowtree for the duration
+                            # of the load to avoid unnecessary actions, will provide
+                            # about 8% speed increase, but probably not worth the risk
+                            # with attachment: 77.2 sec
+                            # without attachm: 72.1 sec
+                            # self.unlisten_tree(self)
+                            results = loader.load(self, self, pathname, **kwargs)
+                            self.remove_empty_groups()
+                            # self.listen_tree(self)
+                            end_time = time()
+                            self._filename = pathname
+                            self.set_end_time("load", True)
+                            return True
+                        except FileNotFoundError:
+                            return False
+                        except BadFileError as e:
+                            kernel._console_channel(
+                                _("File is Malformed") + ": " + str(e)
+                            )
+                            self.signal("warning", str(e), _("File is Malformed"))
+                        except OSError:
+                            return False
+
         return False
 
     def load_types(self, all=True):
