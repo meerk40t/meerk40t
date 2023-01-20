@@ -34,6 +34,11 @@ class MachineOriginWidget(Widget):
         """
         if self.scene.context.draw_mode & DRAW_MODE_ORIGIN != 0:
             return
+        gcmat = gc.GetTransform()
+        mat_param = gcmat.Get()
+        if mat_param[0] == 1 and mat_param[3] == 1:
+            # We were called without a matrix applied, that's plain wrong
+            return
         margin = 5000
         context = self.scene.context
         x, y = context.device.show_to_scene_position(0, 0)

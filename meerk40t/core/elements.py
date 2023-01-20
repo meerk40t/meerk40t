@@ -407,6 +407,7 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.do_undo = True
         self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
@@ -462,7 +463,7 @@ class Elemental(Service):
         else:
             self._timing_stack[key] = [time(), 0, 0]
 
-    def set_end_time(self, key, display=True):
+    def set_end_time(self, key, display=True, delete=False, message=None):
         if key in self._timing_stack:
             stime = self._timing_stack[key]
             etime = time()
@@ -471,10 +472,17 @@ class Elemental(Service):
             stime[1] += duration
             stime[2] += 1
             if display:
+                if message is None:
+                    msg = ""
+                else:
+                    msg = " (" + message + ")"
+                output = self.kernel.channel("profiler", timestamp=True)
                 # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
-                self.kernel._console_channel(
-                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
+                output(
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, avg={stime[1] / stime[2]:.2f} sec{msg}"
                 )
+            if delete:
+                del self._timing_stack[key]
 
     @contextlib.contextmanager
     def static(self, source):
@@ -483,6 +491,14 @@ class Elemental(Service):
             yield self
         finally:
             self.resume_updates(source)
+
+    @contextlib.contextmanager
+    def undofree(self):
+        try:
+            self.do_undo = False
+            yield self
+        finally:
+            self.do_undo = True
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -1104,6 +1120,10 @@ class Elemental(Service):
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
 
+    def prepare_undo(self):
+        if self.do_undo:
+            self.schedule(self._save_restore_job)
+
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
@@ -1113,13 +1133,13 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1128,13 +1148,22 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
+
+    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.prepare_undo()
 
     def node_attached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def node_detached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -1331,9 +1360,9 @@ class Elemental(Service):
             self.classify(adding_elements)
         return items
 
-    def clear_operations(self):
+    def clear_operations(self, fast=False):
         operations = self._tree.get(type="branch ops")
-        operations.remove_all_children()
+        operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -1341,31 +1370,37 @@ class Elemental(Service):
             self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
-    def clear_elements(self):
+    def clear_elements(self, fast=False):
         elements = self._tree.get(type="branch elems")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
-    def clear_regmarks(self):
+    def clear_regmarks(self, fast=False):
         elements = self._tree.get(type="branch reg")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
 
     def clear_elements_and_operations(self):
-        self.clear_elements()
-        self.clear_operations()
+        fast = True
+        self.clear_elements(fast=fast)
+        self.clear_operations(fast=fast)
+        if fast:
+            self.signal("rebuild_tree")
 
     def clear_all(self):
+        fast = True
         self.set_start_time("clear_all")
         with self.static("clear_all"):
-            self.clear_elements()
-            self.clear_operations()
+            self.clear_elements(fast=fast)
+            self.clear_operations(fast=fast)
             self.clear_files()
             self.clear_note()
-            self.clear_regmarks()
+            self.clear_regmarks(fast=fast)
             self.validate_selected_area()
-        self.set_end_time("clear_all", True)
+        if fast:
+            self.signal("rebuild_tree")
+        self.set_end_time("clear_all", display=True)
 
     def clear_note(self):
         self.note = None
@@ -1729,6 +1764,10 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            # Empty group / files may cause problems
+            if node.type in ("file", "group"):
+                if not node._children:
+                    bounds = None
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -1761,7 +1800,6 @@ class Elemental(Service):
                     e.set_dirty_bounds()
                     bounds = e.bounds
                     bounds_painted = e.paint_bounds
-
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
@@ -2900,7 +2938,7 @@ class Elemental(Service):
                             # self.listen_tree(self)
                             end_time = time()
                             self._filename = pathname
-                            self.set_end_time("load", True)
+                            self.set_end_time("load", display=True)
                             return True
                         except FileNotFoundError:
                             return False

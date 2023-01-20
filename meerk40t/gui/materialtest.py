@@ -736,8 +736,8 @@ class TemplatePanel(wx.Panel):
             return mycolor
 
         def clear_all():
-            self.context.elements.clear_operations()
-            self.context.elements.clear_elements()
+            self.context.elements.clear_operations(fast=True)
+            self.context.elements.clear_elements(fast=True)
 
         def create_operations():
             def shortened(value, digits):

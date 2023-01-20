@@ -109,6 +109,8 @@ class CameraPanel(wx.Panel, Job):
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.display_camera.scene
+        # Allow Scene update from now on (are suppressed by default during startup phase)
+        self.widget_scene.suppress_changes = False
 
         # end wxGlade
         sizer_main = wx.BoxSizer(wx.VERTICAL)

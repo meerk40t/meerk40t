@@ -8,6 +8,7 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Matrix,
     Path,
+    Point,
     Rect,
 )
 
@@ -65,6 +66,43 @@ class RectNode(Node, Stroked):
         nd["stroke_width"] = copy(self.stroke_width)
         return RectNode(**nd)
 
+    def scaled(self, sx, sy, ox, oy):
+        """
+        This is a special case of the modified call, we are scaling
+        the node without fundamentally altering it's properties
+        """
+
+        def apply_it(box):
+            x0, y0, x1, y1 = box
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+
+        if self._bounds_dirty or self._bounds is None:
+            # A pity but we need proper data
+            self.modified()
+            return
+
+        self._bounds = apply_it(self._bounds)
+        self._sync_svg()
+        delta = float(self.implied_stroke_width) / 2.0
+        self._paint_bounds = (
+            self._bounds[0] - delta,
+            self._bounds[1] - delta,
+            self._bounds[2] + delta,
+            self._bounds[3] + delta,
+        )
+        self._points_dirty = True
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
         xmin, ymin, xmax, ymax = self.shape.bbox(
@@ -106,27 +144,34 @@ class RectNode(Node, Stroked):
         bounds = self.bounds
         if bounds is None:
             return
-        if len(self._points) < 9:
-            self._points.extend([None] * (9 - len(self._points)))
-        self._points[0] = [bounds[0], bounds[1], "bounds top_left"]
-        self._points[1] = [bounds[2], bounds[1], "bounds top_right"]
-        self._points[2] = [bounds[0], bounds[3], "bounds bottom_left"]
-        self._points[3] = [bounds[2], bounds[3], "bounds bottom_right"]
+        self._points = []
         cx = (bounds[0] + bounds[2]) / 2
         cy = (bounds[1] + bounds[3]) / 2
-        self._points[4] = [cx, cy, "bounds center_center"]
-        self._points[5] = [cx, bounds[1], "bounds top_center"]
-        self._points[6] = [cx, bounds[3], "bounds bottom_center"]
-        self._points[7] = [bounds[0], cy, "bounds center_left"]
-        self._points[8] = [bounds[2], cy, "bounds center_right"]
+        # self._points.append([bounds[0], bounds[1], "bounds top_left"])
+        # self._points.append([bounds[2], bounds[1], "bounds top_right"])
+        # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
+        # self._points.append([bounds[2], bounds[3], "bounds bottom_right"])
+        # self._points.append([cx, cy, "bounds center_center"])
+        # self._points.append([cx, bounds[1], "bounds top_center"])
+        # self._points.append([cx, bounds[3], "bounds bottom_center"])
+        # self._points.append([bounds[0], cy, "bounds center_left"])
+        # self._points.append([bounds[2], cy, "bounds center_right"])
         obj = self.shape
-        if hasattr(obj, "point"):
-            if len(self._points) <= 11:
-                self._points.extend([None] * (11 - len(self._points)))
-            start = obj.point(0)
-            end = obj.point(1)
-            self._points[9] = [start[0], start[1], "endpoint"]
-            self._points[10] = [end[0], end[1], "endpoint"]
+        npoints = [
+            Point(obj.x, obj.y),
+            Point(obj.x + obj.width, obj.y),
+            Point(obj.x + obj.width, obj.y + obj.height),
+            Point(obj.x, obj.y + obj.height),
+        ]
+        if not obj.transform.is_identity():
+            points = list(map(obj.transform.point_in_matrix_space, npoints))
+        else:
+            points = npoints
+        if not self.matrix.is_identity():
+            points2 = list(map(self.matrix.point_in_matrix_space, npoints))
+        else:
+            points2 = npoints
+        self._points_dirty = False
 
     def update_point(self, index, point):
         return False
