@@ -9,13 +9,10 @@ class MockCH341Driver:
     """
 
     def __init__(self, channel=None, state=None):
-        self.chipv = None
         self.driver_index = None
-
-        self.channel = channel if channel is not None else lambda code: None
-        self.usb_log = self.channel
-        self.state = state
         self.driver_value = None
+        self.channel = channel
+        self.state = state
 
         self.mock_status = 206
         self.mock_error = 207
@@ -52,7 +49,6 @@ class MockCH341Driver:
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
             self.driver_value = 0  # Would connect here.
-            self.chipv = 999
             self.driver_index = usb_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
@@ -80,9 +76,6 @@ class MockCH341Driver:
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         # self.driver.CH341CloseDevice(self.driver_index)
-
-        self.chipv = None
-
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
 
@@ -171,5 +164,4 @@ class MockCH341Driver:
         """
         if not self.is_connected():
             raise ConnectionError
-        self.chipv = 999
         return 999  # MOCK.

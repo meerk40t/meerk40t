@@ -408,14 +408,12 @@ class LibCH341Driver:
         channel=None,
         state=None,
     ):
-        self.chipv = None
-
-        self.channel = channel if channel is not None else lambda code: None
-        self.driver = Ch341LibusbDriver(self.channel)
         self.driver_index = None
+        self.driver_value = None
+        self.channel = channel
         self.state = state
 
-        self.driver_value = None
+        self.driver = Ch341LibusbDriver(self.channel)
 
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
@@ -522,9 +520,11 @@ class LibCH341Driver:
         return self.driver.CH341GetStatus(self.driver_index)
 
     def get_chip_version(self):
+        """
+        Gets the version of the CH341 chip being used.
+        @return: version. Eg. 48.
+        """
         if not self.is_connected():
             raise ConnectionError
-        self.chipv = self.driver.CH341GetVerIC(
-            self.driver_index
-        )  # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
-        return self.chipv
+        # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
+        return self.driver.CH341GetVerIC(self.driver_index)
