@@ -227,7 +227,8 @@ class MajorHandleWidget(Widget):
         if self._current_x is None or self._current_y is None:
             return False
         diff = self._current_x - self._start_x
-        self._start_value += diff * 0.01
+        factor = math.sqrt(abs(self._current_y - self._start_y))
+        self._start_value += diff * 0.00001 * factor
         self.widget.r_major = self._start_value
         self.widget.update_shape()
         return True
@@ -296,7 +297,8 @@ class MinorHandleWidget(Widget):
         if self._current_x is None or self._current_y is None:
             return False
         diff = self._current_x - self._start_x
-        self._start_value += diff * 0.01
+        factor = math.sqrt(abs(self._current_y - self._start_y))
+        self._start_value += diff * 0.00001 * factor
         self.widget.r_minor = self._start_value
         self.widget.update_shape()
         return True
