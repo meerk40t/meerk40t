@@ -201,7 +201,8 @@ class GRBLDevice(Service, ViewPort):
                 "style": "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
-                "subsection": "Serial Interface",
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
                 "dynamic": update,
             },
             {
@@ -211,7 +212,22 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
-                "subsection": "Serial Interface",
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combo",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _(
+                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
             },
             {
                 "attr": "planning_buffer_size",
@@ -220,18 +236,8 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
-            },
-            {
-                "attr": "buffer_mode",
-                "object": self,
-                "default": "buffered",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["buffered", "sync"],
-                "label": _("Sending Protocol"),
-                "tip": _(
-                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
-                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
             },
             {
                 "attr": "interpolate",
@@ -250,6 +256,7 @@ class GRBLDevice(Service, ViewPort):
                 "choices": ["CR", "LF", "CRLF"],
                 "label": _("Line Ending"),
                 "tip": _("CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"),
+                "section": "_20_Protocol",
             },
             {
                 "attr": "mock",
