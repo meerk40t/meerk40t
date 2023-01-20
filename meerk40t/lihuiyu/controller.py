@@ -17,7 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 
-from meerk40t.ch341 import get_driver
+from meerk40t.ch341 import get_ch341_interface
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -230,35 +230,35 @@ class LihuiyuController:
 
     def open(self):
         _ = self.usb_log._
-        try:
-            if self.connection is None:
-                self.connection = get_driver(self.context, self.usb_log)
-            if self.connection.is_connected():
-                # Already connected.
-                return
-            self.pipe_channel("open()")
+        if self.connection is not None and self.connection.is_connected():
+            return  # Already connected.
+        self.pipe_channel("open()")
 
+        try:
+            interfaces = list(get_ch341_interface(self.context, self.usb_log))
             if self.context.usb_index != -1:
                 # Instructed to check one specific device.
                 devices = [self.context.usb_index]
             else:
                 devices = range(16)
 
-            for i in devices:
-                try:
-                    self._open_at_index(i)
-                    return  # Opened successfully.
-                except ConnectionRefusedError as e:
-                    self.usb_log(str(e))
-                    self.connection.close()
-                except IndexError:
-                    self.usb_log(_("Connection failed."))
-                    self.connection = None
-                    return
+            for interface in interfaces:
+                self.connection = interface
+                for i in devices:
+                    try:
+                        self._open_at_index(i)
+                        return  # Opened successfully.
+                    except ConnectionRefusedError as e:
+                        self.usb_log(str(e))
+                        self.connection.close()
+                    except IndexError:
+                        self.usb_log(_("Connection failed."))
+                        self.connection = None
+                        break
         except PermissionError:
             return  # OS denied permissions, no point checking anything else.
-        self.close()
 
+        self.close()
         raise ConnectionRefusedError(_("No valid connection matched any given criteria."))
 
     def _open_at_index(self, usb_index):
