@@ -575,8 +575,8 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for element in self._queue:
-                loop = element.loops_executed
-                total = element.loops
+                loop = getattr(element, "loops_executed", 0)
+                total = getattr(element, "loops", 0)
                 if isinf(total):
                     status = "stopped"
                 elif loop < total:
