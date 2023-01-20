@@ -63,7 +63,7 @@ class Ch341LibusbDriver:
 
     def find_device(self, index=0):
         _ = self.channel._
-        self.channel(_("Using LibUSB to connect."))
+        self.channel("\n")
         self.channel(_("Finding devices."))
         try:
             devices = list(
@@ -73,20 +73,7 @@ class Ch341LibusbDriver:
             )
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
-
             self.channel(str(e))
-            raise ConnectionRefusedError
-        if len(devices) == 0:
-            self.channel(_("Devices Not Found."))
-            raise ConnectionRefusedError
-        for d in devices:
-            self.channel(_("K40 device detected:"))
-            string = str(d)
-            string = string.replace("\n", "\n\t")
-            self.channel(string)
-        try:
-            device = devices[index]
-        except IndexError:
             if self.backend_error_code == LIBUSB_ERROR_ACCESS:
                 self.channel(_("Your OS does not give you permissions to access USB."))
                 raise PermissionError
@@ -96,13 +83,23 @@ class Ch341LibusbDriver:
                         "K40 devices were found. But something else was connected to them."
                     )
                 )
-            else:
-                self.channel(
-                    _(
-                        "K40 devices were found but they were rejected by device criteria in Controller."
-                    )
-                )
             raise ConnectionRefusedError
+        if len(devices) == 0:
+            self.channel(_("Devices Not Found."))
+            raise IndexError
+        else:
+            self.channel(_("{count} device(s) were found.").format(count=len(devices)))
+        if index >= len(devices):
+            self.channel(
+                _("Device index {index} exceeds devices found.").format(index=index)
+            )
+            raise IndexError
+
+        device = devices[index]
+        self.channel(_("K40 device detected:"))
+        string = str(device)
+        string = string.replace("\n", "\n\t")
+        self.channel(string)
         return device
 
     def detach_kernel(self, device, interface):
@@ -229,46 +226,38 @@ class Ch341LibusbDriver:
         return self.devices[index].address
 
     def CH341OpenDevice(self, index=0):
-        """Opens device, returns index."""
-        _ = self.channel._
-        self.channel(_("Attempting connection to USB."))
-        try:
-            device = self.find_device(index)
-            self.devices[index] = device
-            self.set_config(device)
-            interface = self.get_active_config(device)
-            self.interface[index] = interface
+        """
+        Opens device, returns index.
 
-            self.detach_kernel(device, interface)
-            try:
-                self.claim_interface(device, interface)
-            except ConnectionRefusedError:
-                # Attempting interface cycle.
-                self.unclaim_interface(device, interface)
-                self.claim_interface(device, interface)
-            self.channel(_("USB Connected."))
-            return index
-        except usb.core.NoBackendError as e:
-            self.channel(str(e))
-            self.channel(_("PyUsb detected no backend LibUSB driver."))
-            return -2
+        Can throw a variety of USBErrors, IndexErrors, Backend errors.
+        """
+        _ = self.channel._
+        device = self.find_device(index)
+        self.devices[index] = device
+        self.set_config(device)
+        interface = self.get_active_config(device)
+        self.interface[index] = interface
+
+        self.detach_kernel(device, interface)
+        try:
+            self.claim_interface(device, interface)
         except ConnectionRefusedError:
-            self.channel(_("Connection to USB failed.\n"))
-            return -1
+            # Attempting interface cycle.
+            self.unclaim_interface(device, interface)
+            self.claim_interface(device, interface)
+        return index
 
     def CH341CloseDevice(self, index=0):
         """Closes device."""
         _ = self.channel._
         device = self.devices[index]
         interface = self.interface[index]
-        self.channel(_("Attempting disconnection from USB."))
         if device is not None:
             try:
                 self.disconnect_detach(device, interface)
                 self.unclaim_interface(device, interface)
                 self.disconnect_dispose(device)
                 self.disconnect_reset(device)
-                self.channel(_("USB Disconnection Successful.\n"))
             except ConnectionError:
                 pass
 
@@ -454,17 +443,19 @@ class LibCH341Driver:
             self.channel(_("Using LibUSB to connect."))
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
-
-            self.driver_value = self.driver.CH341OpenDevice(usb_index)
-            if self.driver_value == -2:
+            try:
+                self.driver_value = self.driver.CH341OpenDevice(usb_index)
+            except usb.core.NoBackendError as e:
+                self.channel(str(e))
+                self.channel(_("PyUsb detected no backend LibUSB driver."))
                 self.driver_value = None
                 self.state("STATE_DRIVER_NO_BACKEND")
                 raise ConnectionRefusedError
-            if self.driver_value == -1:
-                self.driver_value = None
+            except ConnectionRefusedError as e:
                 self.channel(_("Connection to USB failed.\n"))
+                self.driver_value = None
                 self.state("STATE_CONNECTION_FAILED")
-                raise ConnectionRefusedError  # No more devices.
+                raise ConnectionRefusedError from e  # No more devices.
             self.driver_index = usb_index
             self.channel(_("USB Connected."))
             self.state("STATE_USB_CONNECTED")

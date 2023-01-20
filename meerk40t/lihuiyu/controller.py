@@ -229,22 +229,37 @@ class LihuiyuController:
         return len(self._buffer) + len(self._queue) + len(self._preempt)
 
     def open(self):
+        _ = self.usb_log._
         try:
-            self.pipe_channel("open()")
             if self.connection is None:
                 self.connection = get_driver(self.context, self.usb_log)
+            if self.connection.is_connected():
+                # Already connected.
+                return
+            self.pipe_channel("open()")
+
             if self.context.usb_index != -1:
-                self._open_at_index(self.context.usb_index)
+                # Instructed to check one specific device.
+                devices = [self.context.usb_index]
             else:
-                for i in range(16):
-                    try:
-                        self._open_at_index(i)
-                        return  # Opened successfully.
-                    except ConnectionRefusedError as e:
-                        self.usb_log(str(e))
-                raise ConnectionRefusedError("No valid connection matched any given criteria.")
+                devices = range(16)
+
+            for i in devices:
+                try:
+                    self._open_at_index(i)
+                    return  # Opened successfully.
+                except ConnectionRefusedError as e:
+                    self.usb_log(str(e))
+                    self.connection.close()
+                except IndexError:
+                    self.usb_log(_("Connection failed."))
+                    self.connection = None
+                    return
         except PermissionError:
             return  # OS denied permissions, no point checking anything else.
+        self.close()
+
+        raise ConnectionRefusedError(_("No valid connection matched any given criteria."))
 
     def _open_at_index(self, usb_index):
         _ = self.context.kernel.translation
@@ -253,26 +268,22 @@ class LihuiyuController:
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
         if self.context.usb_bus != -1 and self.connection.bus != -1:
             if self.connection.bus != self.context.usb_bus:
-                self.connection.close()
                 raise ConnectionRefusedError(
                     _("K40 devices were found but they were rejected due to usb bus.")
                 )
         if self.context.usb_address != -1 and self.connection.address != -1:
             if self.connection.address != self.context.usb_address:
-                self.connection.close()
                 raise ConnectionRefusedError(_(
                         "K40 devices were found but they were rejected due to usb address."
                     ))
         if self.context.usb_version != -1:
             version = self.connection.get_chip_version()
             if version != self.context.usb_version:
-                self.connection.close()
                 raise ConnectionRefusedError(_(
                     "K40 devices were found but they were rejected due to chip version."
                 ))
         status = self.connection.get_status()
         if status[1] != STATUS_OK:
-            self.connection.close()
             raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
         if self.context.serial_enable:
             self.usb_log(_("Requires serial number confirmation."))
@@ -282,7 +293,6 @@ class LihuiyuController:
                 if self.serial_confirmed:
                     break
             if not self.serial_confirmed:
-                self.connection.close()
                 raise ConnectionRefusedError("Serial number confirmation failed.")
             else:
                 self.usb_log(_("Serial number confirmed."))
