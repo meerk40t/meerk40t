@@ -90,7 +90,9 @@ class WinCH341Driver:
         self.driver_index = None
 
     def reset(self):
-        pass
+        _ = self.channel._
+        self.channel(_("USB connection reset."))
+        self.driver.CH341ResetDevice(self.driver_index)
 
     def release(self):
         pass
