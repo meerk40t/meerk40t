@@ -42,7 +42,7 @@ class ConfigurationUsb(wx.Panel):
         self.text_device_version = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         sizer_chip_version.Add(self.text_device_version, 1, wx.EXPAND, 0)
 
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
+        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=100)
         self.spin_device_version.SetMinSize((40, -1))
         self.spin_device_version.SetToolTip(
             _(
