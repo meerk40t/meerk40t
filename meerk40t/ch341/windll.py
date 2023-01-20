@@ -12,10 +12,7 @@ class WinCH341Driver:
         self.channel = channel
         self.state = state
 
-        self.index = None
         self.chipv = None
-        self.bus = None
-        self.address = None
         self.driver_index = None
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
@@ -29,11 +26,22 @@ class WinCH341Driver:
             raise ConnectionRefusedError
         self.channel = channel if channel is not None else lambda code: None
         self.state = state
-        self.driver_name = "WinDll"
         self.driver_value = None
 
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
+
+    @property
+    def driver_name(self):
+        return "WinDll"
+
+    @property
+    def address(self):
+        return None
+
+    @property
+    def bus(self):
+        return None
 
     def open(self, usb_index):
         """
@@ -54,7 +62,6 @@ class WinCH341Driver:
                 self.state("STATE_CONNECTION_FAILED")
                 raise ConnectionRefusedError  # No more devices.
             self.driver_index = usb_index
-            self.index = self.driver_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
@@ -81,11 +88,16 @@ class WinCH341Driver:
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         self.driver.CH341CloseDevice(self.driver_index)
-        self.index = None
         self.chipv = None
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
         self.driver_index = None
+
+    def reset(self):
+        pass
+
+    def release(self):
+        pass
 
     def write(self, packet):
         """

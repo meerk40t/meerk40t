@@ -9,16 +9,12 @@ class MockCH341Driver:
     """
 
     def __init__(self, channel=None, state=None):
-        self.index = None
         self.chipv = None
-        self.bus = None
-        self.address = None
         self.driver_index = None
 
         self.channel = channel if channel is not None else lambda code: None
         self.usb_log = self.channel
         self.state = state
-        self.driver_name = "Mock"
         self.driver_value = None
 
         self.mock_status = 206
@@ -29,11 +25,20 @@ class MockCH341Driver:
         self._end_time_status = None
         self._time_status = None
 
-    def validate(self):
-        pass
-
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
+
+    @property
+    def driver_name(self):
+        return "Mock"
+
+    @property
+    def address(self):
+        return None
+
+    @property
+    def bus(self):
+        return None
 
     def open(self, usb_index):
         """
@@ -47,10 +52,7 @@ class MockCH341Driver:
             self.channel(_("Attempting connection to USB."))
             self.state("STATE_USB_CONNECTING")
             self.driver_value = 0  # Would connect here.
-            self.index = 0
             self.chipv = 999
-            self.bus = 999
-            self.address = 999
             self.driver_index = usb_index
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
@@ -78,12 +80,17 @@ class MockCH341Driver:
             self.channel(_("USB connection did not exist."))
             raise ConnectionError
         # self.driver.CH341CloseDevice(self.driver_index)
-        self.index = None
+
         self.chipv = None
-        self.bus = None
-        self.address = None
+
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
+
+    def reset(self):
+        pass
+
+    def release(self):
+        pass
 
     def write(self, packet):
         """

@@ -408,11 +408,9 @@ class LibCH341Driver:
         channel=None,
         state=None,
     ):
-        self.index = None
         self.chipv = None
 
         self.channel = channel if channel is not None else lambda code: None
-        self.driver_name = "LibUsb"
         self.driver = Ch341LibusbDriver(self.channel)
         self.driver_index = None
         self.state = state
@@ -421,6 +419,10 @@ class LibCH341Driver:
 
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
+
+    @property
+    def driver_name(self):
+        return "LibUsb"
 
     @property
     def address(self):
@@ -477,7 +479,6 @@ class LibCH341Driver:
                 )
             )
             self.channel(_("Driver Detected: LibUsb"))
-            self.index = self.driver_index
             self.state("STATE_CONNECTED")
             self.channel(_("Device Connected.\n"))
 
