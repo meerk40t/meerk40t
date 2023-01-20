@@ -617,18 +617,18 @@ class Spooler:
                 {
                     "uid": getattr(element, "uid"),
                     "status": status,
-                    "loop": getattr(element, "loops_executed"),
-                    "total": getattr(element, "loops"),
-                    "label": getattr(element, "label"),
-                    "start_time": getattr(element, "time_started"),
-                    "duration": getattr(element, "runtime"),
+                    "loop": getattr(element, "loops_executed", None),
+                    "total": getattr(element, "loops", None),
+                    "label": getattr(element, "label", None),
+                    "start_time": getattr(element, "time_started", None),
+                    "duration": getattr(element, "runtime", None),
                     "device": self.context.label,
                     "important": not getattr(element, "helper", False),
                     "estimate": element.estimate_time()
                     if hasattr(element, "estimate_time")
                     else None,
-                    "steps_done": getattr(element, "steps_done"),
-                    "steps_total": getattr(element, "steps_total"),
+                    "steps_done": getattr(element, "steps_done", None),
+                    "steps_total": getattr(element, "steps_total", None),
                 }
             )
             self.context.signal("spooler;completed")
