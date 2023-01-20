@@ -533,6 +533,18 @@ class ShadowTree:
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
 
+    def translated(self, node, dx=0, dy=0, *args):
+        """
+        This node was moved
+        """
+        return
+
+    def scaled(self, node, sx=1, sy=1, ox=0, oy=0, *args):
+        """
+        This node was scaled
+        """
+        return
+
     def modified(self, node):
         """
         Notified that this node was modified.
@@ -761,7 +773,7 @@ class ShadowTree:
         self.wxtree.Expand(self.elements.get(type="branch ops")._item)
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
-        self.context.elements.set_end_time("full_load", True)
+        self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
         if status is None:

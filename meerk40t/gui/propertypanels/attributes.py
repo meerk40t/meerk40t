@@ -225,7 +225,9 @@ class ColorPanel(wx.Panel):
 
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
+    def __init__(
+        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -797,7 +799,8 @@ class PositionSizePanel(wx.Panel):
                 sx = sy
         if sx != 1.0 or sy != 1.0:
             self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
-            self.node.modified()
+            self.node.scaled(sx=sx, sy=sy, ox=bb[0], oy=bb[1])
+            # self.node.modified()
             bb = self.node.bounds
             w = bb[2] - bb[0]
             h = bb[3] - bb[1]

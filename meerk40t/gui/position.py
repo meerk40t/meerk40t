@@ -331,8 +331,8 @@ class PositionPanel(wx.Panel):
                     bb[3] = bb[1] + (bb[3] - bb[1]) * scaley
 
                 elem.matrix.post_scale(scalex, scaley, bb[0], bb[1])
-                elem._bounds = bb
-                elem.modified()
+                elem.scaled(sx=scalex, sy=scaley, ox=bb[0], oy=bb[1])
+                # elem._bounds = bb
         else:
             u = self.position_units
             cmd1 = ""

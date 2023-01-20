@@ -606,6 +606,18 @@ class SVGProcessor:
         self.pathname = None
         self.regmark = None
 
+        # Setting this is bringing as much benefit as anticipated
+        # Both the time to load the file (unexpectedly) as well as the time
+        # for the first emphasis when all the nonpopulated bounding
+        # boxes will be calculated are benefitting from this precalculation:
+        # (All values as average over three consecutive loads)
+        #                    |           Load             |       First Select
+        # File               |   Old  | Precalc | Speedup |  Old   | Precalc | Speedup
+        # Star Wars Calendar |  10,3  |   4,8   |  115%   |  3,4   |   1,0   | 243%
+        # Element Classific  |   1,7  |   1,1   |   59%   |  0,6   |   0,4   |  54%
+        # Egyptian Bark      |  72,1  |  43,9   |   64%   | 34,6   |  20,1   |  72%
+        self.precalc_bbox = True
+
     def process(self, svg, pathname):
         self.pathname = pathname
         context_node = self.elements.get(type="branch elems")
@@ -822,6 +834,27 @@ class SVGProcessor:
             )
             self.check_for_line_attributes(node, element)
             self.check_for_fill_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                if element.transform.is_identity():
+                    points = element.points
+                else:
+                    points = list(
+                        map(element.transform.point_in_matrix_space, element.points)
+                    )
+                xmin = min(p.x for p in points if p is not None)
+                ymin = min(p.y for p in points if p is not None)
+                xmax = max(p.x for p in points if p is not None)
+                ymax = max(p.y for p in points if p is not None)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, (Circle, Ellipse)):
             if element.is_degenerate():
@@ -841,6 +874,29 @@ class SVGProcessor:
                 shape=element, type="elem rect", id=ident, label=_label, lock=_lock
             )
             self.check_for_line_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                points = (
+                    Point(element.x, element.y),
+                    Point(element.x + element.width, element.y),
+                    Point(element.x + element.width, element.y + element.height),
+                    Point(element.x, element.y + element.height),
+                )
+                if not element.transform.is_identity():
+                    points = list(map(element.transform.point_in_matrix_space, points))
+                xmin = min(p.x for p in points)
+                ymin = min(p.y for p in points)
+                xmax = max(p.x for p in points)
+                ymax = max(p.y for p in points)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SimpleLine):
             if element.is_degenerate():
@@ -849,6 +905,27 @@ class SVGProcessor:
                 shape=element, type="elem line", id=ident, label=_label, lock=_lock
             )
             self.check_for_line_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                points = (
+                    Point(element.x1, element.y1),
+                    Point(element.x2, element.y2),
+                )
+                if not element.transform.is_identity():
+                    points = list(map(element.transform.point_in_matrix_space, points))
+                xmin = min(p.x for p in points)
+                ymin = min(p.y for p in points)
+                xmax = max(p.x for p in points)
+                ymax = max(p.y for p in points)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SVGImage):
             try:

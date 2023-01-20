@@ -3,7 +3,11 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE,
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+)
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0
@@ -11,6 +15,7 @@ TYPE_POINT = 1
 TYPE_MIDDLE = 2
 TYPE_CENTER = 3
 TYPE_GRID = 4
+TYPE_MIDDLE_SMALL = 5
 
 
 class AttractionWidget(Widget):
@@ -51,7 +56,10 @@ class AttractionWidget(Widget):
         """
         Hit-Logic - by definition: yes, I want to be involved
         """
-        return HITCHAIN_HIT
+        if self.context.snap_points or self.context.snap_grid:
+            return HITCHAIN_HIT
+        else:
+            return HITCHAIN_DELEGATE
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
@@ -62,24 +70,29 @@ class AttractionWidget(Widget):
         # if event_type.startswith("left"):
         #     print(f"Attract - event={event_type}, space={space_pos}")
         response = RESPONSE_CHAIN
-        if space_pos is not None:
-            self.my_x = space_pos[0]
-            self.my_y = space_pos[1]
+        if space_pos is None:
+            return response
+        self.my_x = space_pos[0]
+        self.my_y = space_pos[1]
+        if (
+            event_type in ("leftdown", "move", "hover", "hover_start")
+            and (self.scene.tool_active or self.scene.modif_active)
+            and "shift" not in modifiers
+        ):
             self.calculate_display_points()
-            if (
-                event_type in ("leftdown", "move", "hover", "hover_start")
-                and (self.scene.tool_active or self.scene.modif_active)
-                and "shift" not in modifiers
-            ):
-                self._show_snap_points = True
-            else:
-                self._show_snap_points = False
-        if event_type in (
-            "leftdown",
-            "leftup",
-            "leftclick",
-            "move",
-            # "hover",
+            self._show_snap_points = True
+        else:
+            self._show_snap_points = False
+        if (
+            event_type
+            in (
+                "leftdown",
+                "leftup",
+                "leftclick",
+                "move",
+                # "hover",
+            )
+            and self._show_snap_points
         ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
@@ -260,6 +273,8 @@ class AttractionWidget(Widget):
                         self.draw_caret(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_MIDDLE:
                         self.draw_midpoint(gc, pts[0], pts[1], closeup)
+                    elif pts[2] == TYPE_MIDDLE_SMALL:
+                        self.draw_midpoint(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_CENTER:
                         self.draw_center(gc, pts[0], pts[1], closeup)
                     elif pts[2] == TYPE_GRID:
@@ -271,6 +286,8 @@ class AttractionWidget(Widget):
                     self.draw_caret(gc, min_x, min_y, closeup)
                 elif min_type == TYPE_MIDDLE:
                     self.draw_midpoint(gc, min_x, min_y, closeup)
+                elif min_type == TYPE_MIDDLE_SMALL:
+                    self.draw_midpoint(gc, min_x, min_y, closeup)
                 elif min_type == TYPE_CENTER:
                     self.draw_center(gc, min_x, min_y, closeup)
                 elif min_type == TYPE_GRID:
@@ -281,9 +298,11 @@ class AttractionWidget(Widget):
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
         attraction points (center, corners, sides)
         """
-        from time import time
-
-        start_time = time()
+        # if self.attraction_points is None:
+        #     print (f"Array was empty")
+        # else:
+        #     print (f"Array contained {len(self.attraction_points)} points")
+        self.context.elements.set_start_time("attr_calc_points")
         self.attraction_points = []  # Clear all
         translation_table = {
             "bounds top_left": TYPE_BOUND,
@@ -297,6 +316,7 @@ class AttractionWidget(Widget):
             "bounds center_right": TYPE_MIDDLE,
             "endpoint": TYPE_POINT,
             "point": TYPE_POINT,
+            "midpoint": TYPE_MIDDLE_SMALL,
         }
 
         for e in self.scene.context.elements.flat(types=elem_nodes):
@@ -310,18 +330,16 @@ class AttractionWidget(Widget):
                         pt_type = TYPE_POINT
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
-        end_time = time()
-        # print(
-        #   "Ready, time needed: %.6f, attraction points added=%d"
-        #   % (end_time - start_time, len(self.attraction_points))
-        # )
+        self.context.elements.set_end_time(
+            "attr_calc_points", message=f"points added={len(self.attraction_points)}"
+        )
 
     def calculate_display_points(self):
-        from time import time
+        # Inform profiler
+        self.context.elements.set_start_time("attr_calc_disp")
 
-        start_time = time()
         self.display_points = []
-        if self.attraction_points is None:
+        if self.attraction_points is None and self.context.snap_points:
             self.calculate_attraction_points()
 
         matrix = self.parent.matrix
@@ -357,21 +375,19 @@ class AttractionWidget(Widget):
                 ):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
-        end_time = time()
-        # print(
-        #    "Ready, time needed: %.6f, points added=%d"
-        #    % (end_time - start_time, len(self.display_points))
-        # )
+        self.context.elements.set_end_time(
+            "attr_calc_disp", message=f"points added={len(self.display_points)}"
+        )
 
     def signal(self, signal, *args, **kwargs):
         """
-        Signal commands which draw the background and updates the grid when needed to recalculate the lines
+        Signal commands which indicate that we need to refresh / discard some data
         """
         # print ("AttractionWidget receives signal: %s" % signal)
         consumed = False
         if signal == "attraction":
             consumed = True
-        elif signal in ("modified", "emphasized", "element_added"):
+        elif signal in ("modified", "emphasized", "element_added", "tool_modified"):
             consumed = True
             self.attraction_points = None
         elif signal in ("grid", "guide"):
