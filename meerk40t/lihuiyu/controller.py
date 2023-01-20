@@ -282,9 +282,6 @@ class LihuiyuController:
                 raise ConnectionRefusedError(_(
                     "K40 devices were found but they were rejected due to chip version."
                 ))
-        status = self.connection.get_status()
-        if status[1] != STATUS_OK:
-            raise ConnectionRefusedError("CH341 status did not match Lihuiyu board")
         if self.context.serial_enable:
             self.usb_log(_("Requires serial number confirmation."))
             self.challenge(self.context.serial)
