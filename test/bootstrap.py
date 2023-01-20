@@ -12,21 +12,9 @@ def bootstrap():
 
     kernel.add_plugin(dummydevice.plugin)
 
-    from meerk40t.core import elements
+    from meerk40t.core import core
 
-    kernel.add_plugin(elements.plugin)
-
-    from meerk40t.core import bindalias
-
-    kernel.add_plugin(bindalias.plugin)
-
-    from meerk40t.core import webhelp
-
-    kernel.add_plugin(webhelp.plugin)
-
-    from meerk40t.core import planner
-
-    kernel.add_plugin(planner.plugin)
+    kernel.add_plugin(core.plugin)
 
     from meerk40t.image import imagetools
 
