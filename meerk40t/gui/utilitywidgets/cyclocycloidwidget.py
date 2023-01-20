@@ -250,8 +250,8 @@ class MajorHandleWidget(Widget):
             self.scene.animate(
                 self
             )  # Starts the animation. This will stop when tick() returns false.
-            self._start_x = self.left
-            self._start_y = self.top
+            self._start_x = space_pos[0]
+            self._start_y = space_pos[1]
             self._current_x = space_pos[0]
             self._current_y = space_pos[1]
             self._start_value = self.widget.r_major
@@ -317,8 +317,8 @@ class MinorHandleWidget(Widget):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.animate(self)
-            self._start_x = self.left
-            self._start_y = self.top
+            self._start_x = space_pos[0]
+            self._start_y = space_pos[1]
             self._current_x = space_pos[0]
             self._current_y = space_pos[1]
             self._start_value = self.widget.r_minor
