@@ -30,7 +30,7 @@ The channel callable is given any additional information about the gcode.
 import re
 from math import isnan
 
-from meerk40t.core.node.node import Linejoin, Linecap
+from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
@@ -694,13 +694,17 @@ class GRBLParser:
                                 opnode = op_nodes[op]
                             else:
                                 if self.scale_power and power != 0:
-                                    power = self.scale_power_lower + (power - minpower) / (
-                                        maxpower - minpower
-                                    ) * (self.scale_power_higher - self.scale_power_lower)
+                                    power = self.scale_power_lower + (
+                                        power - minpower
+                                    ) / (maxpower - minpower) * (
+                                        self.scale_power_higher - self.scale_power_lower
+                                    )
                                 if self.scale_speed and speed != 0:
-                                    speed = self.scale_speed_lower + (speed - minspeed) / (
-                                        maxspeed - minspeed
-                                    ) * (self.scale_speed_higher - self.scale_speed_lower)
+                                    speed = self.scale_speed_lower + (
+                                        speed - minspeed
+                                    ) / (maxspeed - minspeed) * (
+                                        self.scale_speed_higher - self.scale_speed_lower
+                                    )
                                 lbl = f"Grbl - P={power}, S={speed}"
                                 if zvalue != 0:
                                     # convert into a length
@@ -734,7 +738,6 @@ class GRBLParser:
                     node.modified()
                 if opnode is not None:
                     opnode.add_reference(node)
-
 
     def grbl_write(self, data):
         if self.reply:

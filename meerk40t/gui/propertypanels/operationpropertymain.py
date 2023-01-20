@@ -1692,7 +1692,11 @@ class ParameterPanel(ScrolledPanel):
         param_sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.id_panel = IdPanel(
-            self, wx.ID_ANY, context=context, node=node, showid=False,
+            self,
+            wx.ID_ANY,
+            context=context,
+            node=node,
+            showid=False,
         )
         param_sizer.Add(self.id_panel, 0, wx.EXPAND, 0)
         self.panels.append(self.id_panel)
@@ -1797,5 +1801,6 @@ class ParameterPanel(ScrolledPanel):
     def pane_show(self):
         for panel in self.panels:
             panel.pane_show()
+
 
 # end of class ParameterPanel

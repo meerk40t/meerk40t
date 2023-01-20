@@ -469,7 +469,7 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0 and not op.type=="blob":
+            if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
             with self.static("clear_unused"):
@@ -764,7 +764,12 @@ def init_tree(kernel):
             parser_choices = getattr(parser, "options", None)
             if parser_choices is not None:
                 dialog = dialog_class(self.kernel, choices=parser_choices)
-                res = dialog.dialog_options(title=_("GCode-Conversion"), intro=_("You can influence the way MK will process the GCode data:"))
+                res = dialog.dialog_options(
+                    title=_("GCode-Conversion"),
+                    intro=_(
+                        "You can influence the way MK will process the GCode data:"
+                    ),
+                )
                 if not res:
                     cancelled = True
         if not cancelled:

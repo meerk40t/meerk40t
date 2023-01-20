@@ -52,7 +52,9 @@ class DialogOptions:
                         (entry["object"], entry["attr"], waspresent, value)
                     )
         parentid = self.context.gui if hasattr(self.context, "gui") else None
-        parent_win = wx.Dialog(parentid, wx.ID_ANY, title=title, style=wx.CAPTION | wx.RESIZE_BORDER)
+        parent_win = wx.Dialog(
+            parentid, wx.ID_ANY, title=title, style=wx.CAPTION | wx.RESIZE_BORDER
+        )
         cpanel = ChoicePropertyPanel(
             parent_win,
             context=self.context,

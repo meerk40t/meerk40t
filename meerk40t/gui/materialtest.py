@@ -394,7 +394,7 @@ class TemplatePanel(wx.Panel):
 
     def on_combo_image(self, event):
         op = self.combo_ops.GetSelection()
-        if op != 3: # No Image?
+        if op != 3:  # No Image?
             return
         idx = self.combo_images.GetSelection() - 1
         if idx >= 0 and idx < len(self.images):

@@ -18,6 +18,7 @@ from meerk40t.svgelements import Point
 
 NEARLY_ZERO = 1.0e-6
 
+
 def process_event(
     widget,
     widget_identifier=None,

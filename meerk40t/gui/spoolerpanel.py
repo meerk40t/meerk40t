@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_route_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener, get_safe_path
+from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 

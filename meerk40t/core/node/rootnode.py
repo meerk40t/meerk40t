@@ -130,7 +130,7 @@ class RootNode(Node):
             ]
         for listen in self.listeners:
             if hasattr(listen, "translated"):
-                listen.translated(node, dx=dx, dy=dy) # , **kwargs)
+                listen.translated(node, dx=dx, dy=dy)  # , **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
         """

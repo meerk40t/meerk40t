@@ -50,7 +50,12 @@ class Settings:
                         config_section = dict()
                         self._config_dict[section] = config_section
                     config_section[option] = parser.get(section, option)
-        except (PermissionError, NoSectionError, MissingSectionHeaderError, FileNotFoundError):
+        except (
+            PermissionError,
+            NoSectionError,
+            MissingSectionHeaderError,
+            FileNotFoundError,
+        ):
             return
 
     def write_configuration(self, targetfile=None):

@@ -225,7 +225,9 @@ class ColorPanel(wx.Panel):
 
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
+    def __init__(
+        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
