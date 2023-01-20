@@ -283,6 +283,8 @@ class LihuiyuController:
                     "K40 devices were found but they were rejected due to chip version."
                 ))
         if self.context.serial_enable:
+            if self.serial_confirmed:
+                return  # already passed.
             self.usb_log(_("Requires serial number confirmation."))
             self.challenge(self.context.serial)
             t = time.time()
