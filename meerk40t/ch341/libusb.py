@@ -481,9 +481,10 @@ class LibCH341Driver:
             self.channel(_("Device Connected.\n"))
 
     def close(self):
-        if not self.is_connected():
-            raise ConnectionError
         _ = self.channel._
+        if not self.is_connected():
+            self.channel(_("USB connection did not exist."))
+            return
         self.driver_value = None
         self.state("STATE_USB_SET_DISCONNECTING")
         self.channel(_("Attempting disconnection from USB."))
