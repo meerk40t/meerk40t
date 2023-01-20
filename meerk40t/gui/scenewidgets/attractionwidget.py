@@ -45,7 +45,7 @@ class AttractionWidget(Widget):
         self.context.setting(int, "action_attract_len", 20)
         self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
-        self.context.setting(bool, "snap_points", True)
+        self.context.setting(bool, "snap_points", False)
         self._show_snap_points = False
 
     def load_colors(self):

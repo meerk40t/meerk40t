@@ -532,7 +532,7 @@ class MeerK40t(MWindow):
             {
                 "attr": "snap_points",
                 "object": context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Snap to element"),
                 "tip": _("Shall the cursor snap to the next element point?"),
