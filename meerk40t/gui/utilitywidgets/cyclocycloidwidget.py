@@ -230,6 +230,7 @@ class MajorHandleWidget(Widget):
         factor = math.sqrt(abs(self._current_y - self._start_y))
         self._start_value += diff * 0.00001 * factor
         self.widget.r_major = self._start_value
+        # self.scene.toast(f"R-Major: {self.widget.r_major}", id(self))
         self.widget.update_shape()
         return True
 
@@ -300,6 +301,7 @@ class MinorHandleWidget(Widget):
         factor = math.sqrt(abs(self._current_y - self._start_y))
         self._start_value += diff * 0.00001 * factor
         self.widget.r_minor = self._start_value
+        # self.scene.toast(f"R-Minor: {self.widget.r_minor}", id(self))
         self.widget.update_shape()
         return True
 
