@@ -469,7 +469,7 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0 and not op.type=="blob":
+            if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
             with self.static("clear_unused"):
@@ -774,7 +774,12 @@ def init_tree(kernel):
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
                 dialog = dialog_class(self.kernel, choices=parser_choices)
-                res = dialog.dialog_options(title=_("Blob-Conversion"), intro=_("You can influence the way MK will process the attached binary data:"))
+                res = dialog.dialog_options(
+                    title=_("Blob-Conversion"),
+                    intro=_(
+                        "You can influence the way MK will process the attached binary data:"
+                    ),
+                )
                 if not res:
                     cancelled = True
         if not cancelled:

@@ -255,7 +255,9 @@ class GRBLDevice(Service, ViewPort):
                 "style": "combosmall",
                 "choices": ["CR", "LF", "CRLF"],
                 "label": _("Line Ending"),
-                "tip": _("CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"),
+                "tip": _(
+                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+                ),
                 "section": "_20_Protocol",
             },
             {
