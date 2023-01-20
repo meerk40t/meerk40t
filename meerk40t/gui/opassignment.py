@@ -304,13 +304,17 @@ class OperationAssignPanel(wx.Panel):
         if len(args) > 0:
             # Need to do all?!
             element = args[0]
-            if element is None or element.type is None:
+            if element is None:
                 return
             if isinstance(element, (tuple, list)):
                 for node in element:
+                    if node is None or node.type is None:
+                        continue
                     if node.type.startswith("op "):
                         self._set_button(node)
             else:
+                if element.type is None:
+                    return
                 if element.type.startswith("op "):
                     self._set_button(element)
 
