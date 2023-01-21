@@ -1,4 +1,5 @@
 import math
+import random
 
 import wx
 from meerk40t.gui import icons
@@ -15,6 +16,17 @@ class HShape:
     def __init__(self):
         self.x = 0
         self.y = 0
+        self.display_x = True
+        self.display_y = True
+        self.use_phase = True
+        self.use_offset = True
+        self.use_rotate = True
+        self.use_scale_x = True
+        self.use_scale_y = True
+        self.use_damp = True
+        self.use_speed = True
+        self.use_xeqy = True
+
         self.damping = 0.1
         self.phase = 0.5
         self.speed = 1.0
@@ -28,31 +40,100 @@ class HShape:
         self.offset = 0
         self.theta = 0
 
+    def set_none(self):
+        self.use_phase = False
+        self.use_offset = False
+        self.use_rotate = False
+        self.use_scale_x = False
+        self.use_scale_y = False
+        self.use_damp = False
+        self.use_speed = False
+        self.use_xeqy = False
+
+    def set_oval(self):
+        self.set_none()
+        self.use_phase = True
+        self.use_offset = True
+        self.use_rotate = True
+        self.use_scale_x = True
+        self.use_scale_y = True
+        self.use_speed = True
+
+    def set_circle(self):
+        self.set_oval()
+        self.use_xeqy = True
+
+    def set_spiral(self):
+        self.set_oval()
+        self.use_damp = True
+
+    def set_x_pendulum(self):
+        self.set_none()
+        self.display_x = True
+        self.use_scale_x = True
+        self.use_phase = True
+        self.use_speed = True
+        self.use_damp = True
+
+    def set_y_pendulum(self):
+        self.set_none()
+        self.display_y = True
+        self.use_scale_y = True
+        self.use_phase = True
+        self.use_speed = True
+        self.use_damp = True
+
     def calculate_matrix(self):
         self.matrix = Matrix()
-        self.matrix.post_scale(self._get_offset() + self.scale_x, self._get_offset, self.scale_y)
+        scale_x = self.scale_x if self.use_scale_x else 1.0
+        scale_y = self.scale_y if self.use_scale_y else 1.0
+
+        self.matrix.post_scale(self._get_offset() + scale_x, self._get_offset() + scale_y)
         self.matrix.post_rotate(self.theta)
         self.matrix.post_translate(self.x, self.y)
+        return self.matrix
 
     def random(self):
-        pass
+        r = random.Random()
+        self.scale_x = r.random() * 150 + 50
+        self.scale_y = r.random() * 150 + 50
+        self.speed = r.random() * 5 + 0.1
+        self.damping = r.random() * .1 - 0.01
+        self.phase = r.random()
+        self.offset = r.random() * 10
 
     def _get_offset(self):
+        if not self.use_offset:
+            return 0
         return self.offset
 
     def _get_modified_time(self, t):
-        return t * self.speed + self.phase
+        speed = self.speed if self.use_speed else 1.0
+        phase = self.phase if self.use_phase else 0.0
+        return t * speed + phase
 
     def _get_damping(self, t):
-        return math.exp(-self.damping * self.speed * t)
+        if not self.use_damp:
+            return 1.0
+        damp = self.damping
+        speed = self.speed if self.use_speed else 1.0
+        return math.exp(-damp * speed * t)
 
     def position(self, t):
+        matrix = self.calculate_matrix()
         time = self._get_modified_time(t)
-        cosT = math.cos(time * math.tau)
-        sinT = math.sin(time * math.tau)
         damp = self._get_damping(t)
-        x = cosT * damp
-        y = sinT * damp
+        if self.display_x:
+            cos_t = math.cos(time * math.tau)
+            x = cos_t * damp
+        else:
+            x = 0
+        if self.display_y:
+            sin_t = math.sin(time * math.tau)
+            y = sin_t * damp
+        else:
+            y = 0
+        x, y = matrix.point_in_matrix_space((x,y))
         # apply matrix
         x += self.progression_x * t
         y += self.progression_y * t
@@ -66,23 +147,27 @@ class HarmonographWidget(Widget):
 
     def __init__(self, scene):
         super().__init__(scene)
-        toolPaint = wx.Pen()
-        toolPaint.SetColour(wx.RED)
-        toolPaint.SetWidth(10)
+        self.tool_pen = wx.Pen()
+        self.tool_pen.SetColour(wx.RED)
+        self.tool_pen.SetWidth(1000)
         bed_width, bed_height = scene.context.device.physical_to_scene_position(
             "100%", "100%"
         )
         self.x, self.y = bed_width / 2, bed_height / 2
         self.theta = 0
-        self.scale = 1.0
+        self.scale = 1000.0
         self.rotations = 50.0
 
         size = 10000
         self.degree_step = 0.1
         self.series = []
-        self.curves = [HShape(), HShape()]
+        x_pen = HShape()
+        x_pen.set_x_pendulum()
+        y_pen = HShape()
+        y_pen.set_y_pendulum()
+        self.curves = [x_pen, y_pen]
 
-        toolbar = ToolbarWidget(scene, self.x, self.y + 35000)
+        toolbar = ToolbarWidget(scene, self.x + 3.5 * size, self.y)
         remove_widget = ButtonWidget(
                 scene,
                 0,
@@ -93,7 +178,7 @@ class HarmonographWidget(Widget):
                 self.confirm,
             )
 
-        toolbar.add_widget(-1, remove_widget,)
+        toolbar.add_widget(-1, remove_widget)
         accept_widget = ButtonWidget(
                 scene,
                 0,
@@ -121,7 +206,7 @@ class HarmonographWidget(Widget):
             0,
             size,
             size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
+            icons.icons8_oval_50.GetBitmap(use_theme=False),
             self.add_oval,
         )
         toolbar.add_widget(-1, add_oval_widget)
@@ -131,7 +216,7 @@ class HarmonographWidget(Widget):
             0,
             size,
             size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
+            icons.icons8_circle_50.GetBitmap(use_theme=False),
             self.add_circle,
         )
         toolbar.add_widget(-1, add_circle_widget)
@@ -196,20 +281,40 @@ class HarmonographWidget(Widget):
         self.set_random_harmonograph()
         self.process_shape()
 
-    def add_oval(self):
-        pass
+    def add_oval(self, **kwargs):
+        oval = HShape()
+        oval.set_oval()
+        oval.random()
+        self.curves.append(oval)
+        self.series.clear()
 
-    def add_circle(self):
-        pass
+    def add_circle(self, **kwargs):
+        circle = HShape()
+        circle.set_circle()
+        circle.random()
+        self.curves.append(circle)
+        self.series.clear()
 
-    def add_pendulum_y(self):
-        pass
+    def add_pendulum_x(self, **kwargs):
+        x_pen = HShape()
+        x_pen.set_x_pendulum()
+        x_pen.random()
+        self.curves.append(x_pen)
+        self.series.clear()
 
-    def add_pendulum_x(self):
-        pass
+    def add_pendulum_y(self, **kwargs):
+        y_pen = HShape()
+        y_pen.set_y_pendulum()
+        y_pen.random()
+        self.curves.append(y_pen)
+        self.series.clear()
 
-    def add_spiral(self):
-        pass
+    def add_spiral(self, **kwargs):
+        spiral = HShape()
+        spiral.set_spiral()
+        spiral.random()
+        self.curves.append(spiral)
+        self.series.clear()
 
     def confirm(self, **kwargs):
         """
@@ -223,9 +328,9 @@ class HarmonographWidget(Widget):
                 stroke=elements.default_stroke,
                 stroke_width=elements.default_strokewidth,
             )
-            t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
+            t.move((self.series[0][0], self.series[0][1]))
             for m in self.series:
-                t.line((m[0] + self.x, m[1] + self.y))
+                t.line((m[0], m[1]))
             node = elements.elem_branch.add(path=t, type="elem path")
             elements.classify([node])
             self.parent.remove_widget(self)
@@ -238,11 +343,24 @@ class HarmonographWidget(Widget):
         for cw in self.curves:
             cw.minimize(-1)
 
-    def set_random_harmonograph(self):
+    def set_random_harmonograph(self, **kwargs):
         for p in self.curves:
             p.random()
+        self.series.clear()
+        self.scene.request_refresh()
+
+    def process_draw(self, gc):
+        self.process_shape()
+        gc.SetPen(self.tool_pen)
+        gc.StrokeLines(self.series)
 
     def process_shape(self):
+        if self.series:
+            return
+        shape_matrix = Matrix()
+        shape_matrix.post_rotate(self.theta)
+        shape_matrix.post_scale(self.scale, self.scale)
+        shape_matrix.post_translate(self.x, self.y)
         self.series.clear()
         step = self.degree_step / SLICES
 
@@ -257,15 +375,11 @@ class HarmonographWidget(Widget):
                 pdx, pdy = p.position(time)
                 px += pdx
                 py += pdy
+            px, py = shape_matrix.point_in_matrix_space((px,py))
             self.series.append((px,py))
             time += step
 
-        shape_matrix = Matrix()
-        shape_matrix.post_rotate(self.theta)
-        shape_matrix.post_scale(self.scale, self.scale)
-        shape_matrix.post_translate(self.x, self.y)
-        # transform shape by matrix
-
     def remove_curver(self, c):
+        self.series.clear()
         self.curves.remove(c)
         self.process_shape()
