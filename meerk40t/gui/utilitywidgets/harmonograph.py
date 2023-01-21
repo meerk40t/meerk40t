@@ -87,6 +87,8 @@ class HShape:
         self.matrix = Matrix()
         scale_x = self.scale_x if self.use_scale_x else 1.0
         scale_y = self.scale_y if self.use_scale_y else 1.0
+        if self.use_xeqy:
+            scale_y = scale_x
 
         self.matrix.post_scale(self._get_offset() + scale_x, self._get_offset() + scale_y)
         self.matrix.post_rotate(self.theta)
