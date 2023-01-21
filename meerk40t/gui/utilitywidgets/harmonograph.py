@@ -158,10 +158,10 @@ class HarmonographWidget(Widget):
         self.x, self.y = bed_width / 2, bed_height / 2
         self.theta = 0
         self.scale = 1000.0
-        self.rotations = 50.0
+        self.rotations = 25.0
 
         size = 10000
-        self.degree_step = 0.1
+        self.degree_step = 0.2
         self.series = []
         x_pen = HShape()
         x_pen.set_x_pendulum()
