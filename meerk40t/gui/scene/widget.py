@@ -163,7 +163,7 @@ class Widget(list):
         """
         self.scene.notify_moved_child(child)
 
-    def add_widget(self, index=-1, widget=None, properties=0):
+    def add_widget(self, index=-1, widget=None, properties=None):
         """
         Add a widget to the current widget.
 
@@ -171,6 +171,8 @@ class Widget(list):
 
         The properties can be used to trigger particular layouts or properties for the added widget.
         """
+        if properties is None:
+            properties = self.properties
         if len(self) == 0:
             last = self
         else:
