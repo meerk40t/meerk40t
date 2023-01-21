@@ -148,14 +148,17 @@ SLICES = 50
 class HarmonographWidget(Widget):
 
     def __init__(self, scene):
-        super().__init__(scene)
-        self.tool_pen = wx.Pen()
-        self.tool_pen.SetColour(wx.RED)
-        self.tool_pen.SetWidth(1000)
         bed_width, bed_height = scene.context.device.physical_to_scene_position(
             "100%", "100%"
         )
         self.x, self.y = bed_width / 2, bed_height / 2
+        super().__init__(scene, self.x, self.y, self.x, self.y)
+        self.tool_pen = wx.Pen()
+        self.tool_pen.SetColour(wx.RED)
+        self.tool_pen.SetWidth(1000)
+
+        self.curves = list()
+
         self.theta = 0
         self.scale = 1000.0
         self.rotations = 25.0
@@ -163,13 +166,11 @@ class HarmonographWidget(Widget):
         size = 10000
         self.degree_step = 0.2
         self.series = []
-        x_pen = HShape()
-        x_pen.set_x_pendulum()
-        y_pen = HShape()
-        y_pen.set_y_pendulum()
-        self.curves = [x_pen, y_pen]
+        self.add_pendulum_x()
+        self.add_pendulum_y()
 
-        toolbar = ToolbarWidget(scene, self.x + 3.5 * size, self.y)
+        toolbar = ToolbarWidget(scene, 3.5 * size, 0)
+        self.add_widget(-1, toolbar)
         remove_widget = ButtonWidget(
                 scene,
                 0,
@@ -253,15 +254,14 @@ class HarmonographWidget(Widget):
         )
         toolbar.add_widget(-1, add_spiral_widget)
 
-        self.add_widget(-1, toolbar)
-        self.add_widget(-1, RelocateWidget(scene, self.x, self.y))
+        self.add_widget(-1, RelocateWidget(scene, 0, 0))
 
         def delta_theta(delta):
             self.theta += delta
             self.scene.toast(f"theta: {self.theta}")
             self.series.clear()
 
-        rotation_widget = RotationWidget(scene, self.x + 0, self.y + 20000, self.x + 10000, self.y + 30000, icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_theta)
+        rotation_widget = RotationWidget(scene, 0, 20000, 10000, 30000, icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_theta)
         self.add_widget(-1, rotation_widget)
 
         def delta_step(delta):
@@ -269,7 +269,7 @@ class HarmonographWidget(Widget):
             self.scene.toast(f"degree_step: {self.degree_step}")
             self.series.clear()
 
-        step_handle = RotationWidget(scene, self.x + 0, self.y + 50000, self.x + 10000, self.y + 60000, icons.icons8_fantasy_50.GetBitmap(use_theme=False), delta_step)
+        step_handle = RotationWidget(scene, 0, 50000, 10000, 60000, icons.icons8_fantasy_50.GetBitmap(use_theme=False), delta_step)
         self.add_widget(-1, step_handle)
 
         def delta_rotations(delta):
@@ -277,10 +277,10 @@ class HarmonographWidget(Widget):
             self.scene.toast(f"rotations: {self.rotations}")
             self.series.clear()
 
-        rotate_widget = RotationWidget(scene, self.x + 0, self.y + 60000, self.x + 10000, self.y + 70000,  icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_rotations)
+        rotate_widget = RotationWidget(scene, 0, 60000, 10000, 70000,  icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_rotations)
         self.add_widget(-1, rotate_widget)
 
-        scale_widget = ScaleWidget(scene, self.x, self.y + 80000, self.x + 10000, self.y + 90000)
+        scale_widget = ScaleWidget(scene, 0, 80000, 10000, 90000)
         self.add_widget(-1, scale_widget)
 
         self.set_random_harmonograph()
