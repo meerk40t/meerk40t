@@ -259,6 +259,7 @@ class HarmonographWidget(Widget):
         def delta_theta(delta):
             self.theta += delta
             self.scene.toast(f"theta: {self.theta}")
+            self.series.clear()
 
         rotation_widget = RotationWidget(scene, self.x + 0, self.y + 20000, self.x + 10000, self.y + 30000, icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_theta)
         self.add_widget(-1, rotation_widget)
@@ -266,6 +267,7 @@ class HarmonographWidget(Widget):
         def delta_step(delta):
             self.degree_step += delta
             self.scene.toast(f"degree_step: {self.degree_step}")
+            self.series.clear()
 
         step_handle = RotationWidget(scene, self.x + 0, self.y + 50000, self.x + 10000, self.y + 60000, icons.icons8_fantasy_50.GetBitmap(use_theme=False), delta_step)
         self.add_widget(-1, step_handle)
@@ -273,6 +275,7 @@ class HarmonographWidget(Widget):
         def delta_rotations(delta):
             self.rotations += delta
             self.scene.toast(f"rotations: {self.rotations}")
+            self.series.clear()
 
         rotate_widget = RotationWidget(scene, self.x + 0, self.y + 60000, self.x + 10000, self.y + 70000,  icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_rotations)
         self.add_widget(-1, rotate_widget)
@@ -338,7 +341,7 @@ class HarmonographWidget(Widget):
             self.parent.remove_widget(self)
         except IndexError:
             pass
-        self.series = None
+        self.series.clear()
         self.scene.request_refresh()
 
     def close_all_curve_widgets(self):
