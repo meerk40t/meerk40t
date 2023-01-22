@@ -154,6 +154,7 @@ class SVGWriter:
     @staticmethod
     def save_types():
         yield "Scalable Vector Graphics", "svg", "image/svg+xml", "default"
+        yield "SVG-Plain (no extensions)", "svg", "image/svg+xml", "plain"
         yield "SVG-Compressed", "svgz", "image/svg+xml", "compressed"
 
     @staticmethod
@@ -163,10 +164,11 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
-        root.set(
-            "xmlns:" + MEERK40T_XMLS_ID,
-            MEERK40T_NAMESPACE,
-        )
+        if version != "plain":
+            root.set(
+                "xmlns:" + MEERK40T_XMLS_ID,
+                MEERK40T_NAMESPACE,
+            )
         scene_width = context.device.length_width
         scene_height = context.device.length_height
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
@@ -194,13 +196,13 @@ class SVGWriter:
                 "xmlns:inkscape",
                 "http://www.inkscape.org/namespaces/inkscape",
             )
+        if version != "plain":
+            # If there is a note set then we save the note with the project.
+            if elements.note is not None:
+                subelement = SubElement(root, "note")
+                subelement.set(SVG_TAG_TEXT, elements.note)
 
-        # If there is a note set then we save the note with the project.
-        if elements.note is not None:
-            subelement = SubElement(root, "note")
-            subelement.set(SVG_TAG_TEXT, elements.note)
-
-        SVGWriter._write_tree(root, elements._tree)
+        SVGWriter._write_tree(root, elements._tree, version)
 
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
@@ -209,10 +211,11 @@ class SVGWriter:
         tree.write(f)
 
     @staticmethod
-    def _write_tree(xml_tree, node_tree):
+    def _write_tree(xml_tree, node_tree, version):
         for node in node_tree.children:
-            if node.type == "branch ops":
-                SVGWriter._write_operations(xml_tree, node)
+            if version != "plain":
+                if node.type == "branch ops":
+                    SVGWriter._write_operations(xml_tree, node)
             elif node.type == "branch elems":
                 SVGWriter._write_elements(xml_tree, node)
             elif node.type == "branch reg":
@@ -400,10 +403,11 @@ class SVGWriter:
                     SVGWriter._write_elements(group_element, c)
                 continue
             else:
-                # This is a non-standard element. Save custom.
-                subelement = SubElement(xml_tree, "element")
-                SVGWriter._write_custom(subelement, c)
-                continue
+                if version != "plain":
+                    # This is a non-standard element. Save custom.
+                    subelement = SubElement(xml_tree, "element")
+                    SVGWriter._write_custom(subelement, c)
+                    continue
 
             ###############
             # GENERIC SAVING STANDARD ELEMENT
