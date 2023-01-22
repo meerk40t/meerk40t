@@ -456,7 +456,7 @@ def init_tree(kernel):
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
         self("window open Simulation 0\n")
 
-    @tree_operation(_("Global properties"), node_type="branch ops", help="")
+    @tree_operation(_("Global Settings"), node_type="branch ops", help="")
     def op_prop(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
         if activate is not None:
