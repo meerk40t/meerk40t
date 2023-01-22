@@ -655,6 +655,8 @@ class SpoolerPanel(wx.Panel):
     def timestr(t, oneday):
         if t is None:
             return ""
+        if isinstance(t, str):
+            return t
         if isinf(t) or isnan(t) or t < 0:
             return "∞"
 
