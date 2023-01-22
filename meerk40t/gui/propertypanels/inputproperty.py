@@ -18,6 +18,7 @@ class InputPropertyPanel(wx.Panel):
         self.choices = [
             {
                 "attr": "input_value",
+                "mask": "input_mask",
                 "object": self.operation,
                 "default": 0,
                 "type": int,
