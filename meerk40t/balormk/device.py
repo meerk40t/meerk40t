@@ -1357,7 +1357,6 @@ class BalorDevice(Service, ViewPort):
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
-
         @self.console_command(
             "input_port",
             help=_("Checks the input_port"),
