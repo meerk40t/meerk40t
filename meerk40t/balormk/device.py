@@ -1356,8 +1356,9 @@ class BalorDevice(Service, ViewPort):
         @self.console_argument(
             "input", help=_("input binary to wait for. Use 'x' for any bit."), type=from_binary, nargs="*"
         )
+        @self.console_option("debug", "d", action="store_true", type=bool, help="debug output")
         @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
-        def wait_for_input(channel, input, **kwargs):
+        def wait_for_input(channel, input, debug=False, **kwargs):
             """
             Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
             matching input is matched. Unimportant bits or bytes can be denoted with `x` for example:
@@ -1369,8 +1370,12 @@ class BalorDevice(Service, ViewPort):
             while input_unmatched:
                 reply = self.driver.connection.read_port()
                 input_unmatched = False
+                word = 0
                 for a, b in zip(reply, input):
                     a = bin(a)
+                    if debug:
+                        channel(f"input check: {a} match {b} in word #{word}")
+                    word += 1
                     for i in range(-1, -len(a), -1):
                         try:
                             ac = a[i]
@@ -1382,12 +1387,15 @@ class BalorDevice(Service, ViewPort):
                             # This is a no-care bit.
                             continue
                         if ac != bc:
+                            if debug:
+                                channel(f"Fail at {~i} because {ac} != {bc}")
                             # We care, and they weren't equal
                             time.sleep(0.1)
                             input_unmatched = True
                             break
                 if not input_unmatched:
-                    channel("Input matched.")
+                    if debug:
+                        channel("Input matched.")
                     return  # We exited
 
         @self.console_command(
