@@ -79,7 +79,7 @@ class Parameters:
 
     @property
     def pulse_width(self):
-        return self.settings.get("pulse_width", 4)
+        return self.settings.get("pulse_width", 200)
 
     @pulse_width.setter
     def pulse_width(self, value):
