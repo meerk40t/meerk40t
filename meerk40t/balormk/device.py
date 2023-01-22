@@ -6,14 +6,16 @@ Defines how the balor device interacts with the scene, and accepts data via the 
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service, signal_listener
+from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -27,6 +29,7 @@ class BalorDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
+        self.extension = "lmc"
         self.job = None
 
         _ = kernel.translation
@@ -874,6 +877,40 @@ class BalorDevice(Service, ViewPort):
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.command("abort_retry", priority=1)
 
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def galvo_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    driver = BalorDriver(self, force_mock=True)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    from meerk40t.balormk.controller import (
+                        list_command_lookup,
+                        single_command_lookup,
+                    )
+
+                    def write(index, cmd):
+                        cmds = [
+                            struct.unpack("<6H", cmd[i: i + 12])
+                            for i in range(0, len(cmd), 12)
+                        ]
+                        for v in cmds:
+                            if v[0] >= 0x8000:
+                                f.write(
+                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                                )
+                                if v[0] == 0x8002:
+                                    break
+                    driver.connection.connect_if_needed()
+                    driver.connection.connection.write = write
+                    job.execute()
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
         @self.console_option(
             "default",
             "d",
@@ -1343,6 +1380,59 @@ class BalorDevice(Service, ViewPort):
             channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        def from_binary(p: str):
+            if p.startswith("0b"):
+                p = p[2:]
+            for c in p:
+                if c not in ("0", "1", "x", "X"):
+                    raise ValueError("Not valid binary")
+            return p.lower()
+
+        @self.console_argument(
+            "input", help=_("input binary to wait for. Use 'x' for any bit."), type=from_binary, nargs="*"
+        )
+        @self.console_option("debug", "d", action="store_true", type=bool, help="debug output")
+        @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
+        def wait_for_input(channel, input, debug=False, **kwargs):
+            """
+            Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
+            matching input is matched. Unimportant bits or bytes can be denoted with `x` for example:
+            `wait_for_input x x x 1xxxx` would wait for a 1 on the 5th bit of the 4th word.
+
+            Omitted values are assumed to be unimportant.
+            """
+            input_unmatched = True
+            while input_unmatched:
+                reply = self.driver.connection.read_port()
+                input_unmatched = False
+                word = 0
+                for a, b in zip(reply, input):
+                    a = bin(a)
+                    if debug:
+                        channel(f"input check: {a} match {b} in word #{word}")
+                    word += 1
+                    for i in range(-1, -len(a), -1):
+                        try:
+                            ac = a[i]
+                            bc = b[i]
+                        except IndexError:
+                            # Assume remaining bits are no-care.
+                            break
+                        if bc in "x":
+                            # This is a no-care bit.
+                            continue
+                        if ac != bc:
+                            if debug:
+                                channel(f"Fail at {~i} because {ac} != {bc}")
+                            # We care, and they weren't equal
+                            time.sleep(0.1)
+                            input_unmatched = True
+                            break
+                if not input_unmatched:
+                    if debug:
+                        channel("Input matched.")
+                    return  # We exited
 
         @self.console_command(
             "read_port",

@@ -23,13 +23,13 @@ from meerk40t.core.plotplanner import PlotPlanner
 
 
 class BalorDriver:
-    def __init__(self, service):
+    def __init__(self, service, force_mock=False):
         self.service = service
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
 
-        self.connection = GalvoController(service)
+        self.connection = GalvoController(service, force_mock=force_mock)
 
         self.service.add_service_delegate(self.connection)
         self.paused = False

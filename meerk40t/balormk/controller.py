@@ -232,8 +232,10 @@ class GalvoController:
         goto_speed=None,
         light_speed=None,
         dark_speed=None,
+        force_mock=False,
     ):
         self.service = service
+        self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
         name = self.service.label
@@ -325,7 +327,7 @@ class GalvoController:
                 "LMC was unreachable. Explicit connect required."
             )
         if self.connection is None:
-            if self.service.setting(bool, "mock", False):
+            if self.service.setting(bool, "mock", False) or self.force_mock:
                 self.connection = MockConnection(self.usb_log)
                 name = self.service.label
                 self.connection.send = self.service.channel(f"{name}/send")
@@ -1006,7 +1008,7 @@ class GalvoController:
         @param time:
         @return:
         """
-        self._list_write(listDelayTime, time)
+        self._list_write(listDelayTime, abs(time))
 
     def list_mark(self, x, y, angle=0):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
@@ -1036,10 +1038,7 @@ class GalvoController:
         if self._delay_on == delay:
             return
         self._delay_on = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listLaserOnDelay, delay, sign)
+        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_laser_off_delay(self, delay):
         """
@@ -1050,10 +1049,7 @@ class GalvoController:
         if self._delay_off == delay:
             return
         self._delay_off = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listLaserOffDelay, delay, sign)
+        self._list_write(listLaserOffDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_mark_frequency(self, frequency):
         """
@@ -1100,10 +1096,7 @@ class GalvoController:
         if self._delay_jump == delay:
             return
         self._delay_jump = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listJumpDelay, delay, sign)
+        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_polygon_delay(self, delay):
         """
@@ -1114,10 +1107,7 @@ class GalvoController:
         if self._delay_poly == delay:
             return
         self._delay_poly = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listPolygonDelay, delay, sign)
+        self._list_write(listPolygonDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_write_port(self):
         """
@@ -1179,7 +1169,7 @@ class GalvoController:
         @param delay:
         @return:
         """
-        self._list_write(listFlyDelay, delay)
+        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_set_co2_fpk(self):
         """
@@ -1345,7 +1335,7 @@ class GalvoController:
         return self._command(SetDelayMode, mode)
 
     def set_max_poly_delay(self, delay):
-        return self._command(SetMaxPolyDelay, delay)
+        return self._command(SetMaxPolyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def set_end_of_list(self, end):
         return self._command(SetEndOfList, end)
