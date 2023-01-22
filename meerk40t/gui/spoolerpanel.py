@@ -727,21 +727,28 @@ class SpoolerPanel(wx.Panel):
                 self.list_job_history.GetItemCount(), f"#{idx}"
             )
             self.map_item_key[list_id] = key
+            start_time = info.get("start_time", 0)
+            if start_time is None:
+                start_time = 0
+            duration = info.get("duration", 0)
+            if duration is None:
+                duration = 0
             self.list_job_history.SetItem(list_id, HC_JOBNAME, str(info.get("label")))
             self.list_job_history.SetItem(
                 list_id,
                 HC_START,
-                f"{self.datestr(info.get('start_time'))} {self.timestr(info.get('start_time'), True)}",
+                f"{self.datestr(start_time)} {self.timestr(start_time, True)}",
             )
+
             self.list_job_history.SetItem(
                 list_id,
                 HC_END,
-                self.timestr(info.get("start_time", 0) + info.get("duration", 0), True),
+                self.timestr(start_time + duration, True),
             )
             self.list_job_history.SetItem(
                 list_id,
                 HC_RUNTIME,
-                self.timestr(info.get("duration"), False),
+                self.timestr(duration, False),
             )
             self.list_job_history.SetItem(
                 list_id,
