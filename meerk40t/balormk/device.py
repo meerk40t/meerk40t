@@ -1358,6 +1358,11 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
         def wait_for_input(channel, input, **kwargs):
+            """
+            Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
+            matching input is matched. Unimportant bits or bytes can be denoted with `x` for example:
+            wait_for_input x x x 1xxxx would wait for a 1 on the 5th bit of the 4th word.
+            """
             input_unmatched = True
             while input_unmatched:
                 reply = self.driver.connection.read_port()
