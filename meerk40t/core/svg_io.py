@@ -511,7 +511,11 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            SVGWriter._write_operation(xml_tree, c)
+            if c.type.startswith("util"):
+                subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
+                SVGWriter._write_custom(subelement, c)
+            else:
+                SVGWriter._write_operation(xml_tree, c)
 
     @staticmethod
     def _write_regmarks(xml_tree, reg_tree):
@@ -540,6 +544,10 @@ class SVGWriter:
             for key, value in node.settings.items():
                 if not key:
                     # If key is None, do not save.
+                    continue
+                if key.startswith("_"):
+                    continue
+                if value is None:
                     continue
                 if key in ("references", "tag", "type"):
                     # References key from previous loaded version (filter out, rebuild)
