@@ -6,6 +6,7 @@ from meerk40t.gui import icons
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.relocatewidget import RelocateWidget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
+from meerk40t.gui.utilitywidgets.openclosewidget import OpenCloseWidget
 from meerk40t.gui.utilitywidgets.rotationwidget import RotationWidget
 from meerk40t.gui.utilitywidgets.scalewidget import ScaleWidget
 from meerk40t.gui.utilitywidgets.toolbarwidget import ToolbarWidget
@@ -286,6 +287,11 @@ class HarmonographWidget(Widget):
         self.set_random_harmonograph()
         self.process_shape()
 
+        curvebar = ToolbarWidget(scene, 5 * size, 0)
+        for c in self.curves:
+            curvebar.add_widget(-1, CurveWidget(scene, icons.icons8_computer_support_50.GetBitmap(use_theme=False), c))
+        self.add_widget(-1, curvebar)
+
     def add_oval(self, **kwargs):
         oval = HShape()
         oval.set_oval()
@@ -388,3 +394,47 @@ class HarmonographWidget(Widget):
         self.series.clear()
         self.curves.remove(c)
         self.process_shape()
+
+
+class CurveWidget(OpenCloseWidget):
+    def __init__(self, scene, bitmap, curve):
+        super().__init__(scene, bitmap)
+        self.curve = curve
+        phase_control = ControlWidget(scene)
+        self.add_widget(-1, phase_control)
+        self.tool_pen = wx.Pen()
+        self.tool_pen.SetColour(wx.RED)
+        self.tool_pen.SetWidth(1000)
+        self.series = list()
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        if self.series:
+            return
+        self.series.clear()
+        step = 0.1 / SLICES
+
+        if step <= 0:
+            step = 0.001
+
+        time = 0
+        while time < self.parent.parent.rotations:
+            px = 0
+            py = 0
+            pdx, pdy = self.curve.position(time)
+            px += pdx
+            py += pdy
+            px += self.left
+            py += self.top
+            self.series.append((px, py))
+            time += step
+        gc.SetPen(self.tool_pen)
+        gc.StrokeLines(self.series)
+
+
+class ControlWidget(Widget):
+    def __init__(self, scene):
+        super().__init__(scene, 0, 0, 10000, 10000)
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        gc.SetBrush(wx.RED_BRUSH)
+        gc.DrawEllipse(self.left, self.top, self.right - self.left, self.bottom - self.top)
