@@ -893,7 +893,7 @@ class BalorDevice(Service, ViewPort):
 
                     def write(index, cmd):
                         cmds = [
-                            struct.unpack("<6H", cmd[i: i + 12])
+                            struct.unpack("<6H", cmd[i : i + 12])
                             for i in range(0, len(cmd), 12)
                         ]
                         for v in cmds:
@@ -904,6 +904,7 @@ class BalorDevice(Service, ViewPort):
                                 )
                                 if v[0] == 0x8002:
                                     break
+
                     driver.connection.connect_if_needed()
                     driver.connection.connection.write = write
                     job.execute()
@@ -1390,10 +1391,17 @@ class BalorDevice(Service, ViewPort):
             return p.lower()
 
         @self.console_argument(
-            "input", help=_("input binary to wait for. Use 'x' for any bit."), type=from_binary, nargs="*"
+            "input",
+            help=_("input binary to wait for. Use 'x' for any bit."),
+            type=from_binary,
+            nargs="*",
         )
-        @self.console_option("debug", "d", action="store_true", type=bool, help="debug output")
-        @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
+        @self.console_option(
+            "debug", "d", action="store_true", type=bool, help="debug output"
+        )
+        @self.console_command(
+            "wait_for_input", all_arguments_required=True, hidden=True
+        )
         def wait_for_input(channel, input, debug=False, **kwargs):
             """
             Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
