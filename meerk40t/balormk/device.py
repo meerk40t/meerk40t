@@ -12,9 +12,10 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service, signal_listener
+from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -28,6 +29,7 @@ class BalorDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
+        self.extension = "lmc"
         self.job = None
 
         _ = kernel.translation
@@ -874,6 +876,40 @@ class BalorDevice(Service, ViewPort):
         @self.console_command("usb_abort", help=_("Stops USB retries"))
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.command("abort_retry", priority=1)
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def galvo_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    driver = BalorDriver(self, force_mock=True)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    from meerk40t.balormk.controller import (
+                        list_command_lookup,
+                        single_command_lookup,
+                    )
+
+                    def write(index, cmd):
+                        cmds = [
+                            struct.unpack("<6H", cmd[i: i + 12])
+                            for i in range(0, len(cmd), 12)
+                        ]
+                        for v in cmds:
+                            if v[0] >= 0x8000:
+                                f.write(
+                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                                )
+                                if v[0] == 0x8002:
+                                    break
+                    driver.connection.connect_if_needed()
+                    driver.connection.connection.write = write
+                    job.execute()
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_option(
             "default",
