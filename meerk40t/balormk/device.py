@@ -354,7 +354,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "default_pulse_width",
                 "object": self,
-                "default": 4,
+                "default": 200,
                 "type": int,
                 "style": "combo",
                 "choices": [
