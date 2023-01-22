@@ -6,6 +6,7 @@ Defines how the balor device interacts with the scene, and accepts data via the 
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
@@ -1343,6 +1344,42 @@ class BalorDevice(Service, ViewPort):
             channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        def from_binary(p: str):
+            if p.startswith("0b"):
+                p = p[2:]
+            for c in p:
+                if c not in ("0", "1", "x", "X"):
+                    raise ValueError("Not valid binary")
+            return p.lower()
+
+        @self.console_argument(
+            "input", help=_("input binary to wait for. Use 'x' for any bit."), type=from_binary, nargs="*"
+        )
+        @self.console_command("wait_for_input", all_arguments_required=True, hidden=True)
+        def wait_for_input(channel, input, **kwargs):
+            input_unmatched = True
+            while input_unmatched:
+                reply = self.driver.connection.read_port()
+                input_unmatched = False
+                for a, b in zip(reply, input):
+                    a = bin(a)
+                    for i in range(-1, -len(a), -1):
+                        try:
+                            ac = a[i]
+                            bc = b[i]
+                        except IndexError:
+                            # Assume remaining bits are no-care.
+                            break
+                        if bc in "x":
+                            continue
+                        if ac != bc:
+                            time.sleep(0.1)
+                            input_unmatched = True
+                            break
+                if not input_unmatched:
+                    channel("Input matched.")
+                    return  # We exited
 
         @self.console_command(
             "read_port",
