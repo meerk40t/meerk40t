@@ -232,8 +232,10 @@ class GalvoController:
         goto_speed=None,
         light_speed=None,
         dark_speed=None,
+        force_mock=False,
     ):
         self.service = service
+        self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
         name = self.service.label
@@ -325,7 +327,7 @@ class GalvoController:
                 "LMC was unreachable. Explicit connect required."
             )
         if self.connection is None:
-            if self.service.setting(bool, "mock", False):
+            if self.service.setting(bool, "mock", False) or self.force_mock:
                 self.connection = MockConnection(self.usb_log)
                 name = self.service.label
                 self.connection.send = self.service.channel(f"{name}/send")
