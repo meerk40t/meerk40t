@@ -17,14 +17,25 @@ class InputPropertyPanel(wx.Panel):
 
         self.choices = [
             {
-                "attr": "input_value",
-                "mask": "input_mask",
+                "attr": "input_mask",
+                # "mask": "input_mask",
                 "object": self.operation,
                 "default": 0,
                 "type": int,
                 "style": "binary",
                 "bits": 16,
-                "label": _("Value Bits"),
+                "label": _("Mask Bits"),
+                "tip": _("Mask bits for given value"),
+            },
+            {
+                "attr": "input_value",
+                # "mask": "input_mask",
+                "object": self.operation,
+                "default": True,
+                "type": bool,
+                # "style": "binary",
+                # "bits": 16,
+                "label": _("High/Low"),
                 "tip": _("Input bits for given value"),
             },
         ]
