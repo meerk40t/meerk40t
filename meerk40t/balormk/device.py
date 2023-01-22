@@ -1361,7 +1361,9 @@ class BalorDevice(Service, ViewPort):
             """
             Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
             matching input is matched. Unimportant bits or bytes can be denoted with `x` for example:
-            wait_for_input x x x 1xxxx would wait for a 1 on the 5th bit of the 4th word.
+            `wait_for_input x x x 1xxxx` would wait for a 1 on the 5th bit of the 4th word.
+
+            Omitted values are assumed to be unimportant.
             """
             input_unmatched = True
             while input_unmatched:
@@ -1377,8 +1379,10 @@ class BalorDevice(Service, ViewPort):
                             # Assume remaining bits are no-care.
                             break
                         if bc in "x":
+                            # This is a no-care bit.
                             continue
                         if ac != bc:
+                            # We care, and they weren't equal
                             time.sleep(0.1)
                             input_unmatched = True
                             break
