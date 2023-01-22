@@ -677,6 +677,8 @@ class SpoolerPanel(wx.Panel):
     def datestr(t):
         if t is None:
             return ""
+        if isinstance(t, str):
+            return t
         localt = time.localtime(t)
         lyear = localt[0]
         lmonth = int(localt[1])
