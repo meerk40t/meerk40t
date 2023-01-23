@@ -664,6 +664,22 @@ class BalorDevice(Service, ViewPort):
                 "subsection": "Fly Resolution",
                 "hidden": 1,
             },
+            {
+                "attr": "input_passes_required",
+                "object": self,
+                "default": 3,
+                "type": int,
+                "label": _("Input Signal Hold"),
+                "tip": _("How long does the input operation need to hold for to count as a pass"),
+            },
+            {
+                "attr": "input_operation_hardware",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Input Operation Hardware"),
+                "tip": _("Use hardware based input operation command"),
+            },
         ]
         self.register_choices("balor-extra", choices)
 
@@ -1159,7 +1175,7 @@ class BalorDevice(Service, ViewPort):
             "goto",
             help=_("send laser a goto command"),
         )
-        def balor_goto(command, channel, _, x=None, y=None, remainder=None, **kwgs):
+        def galvo_goto(command, channel, _, x=None, y=None, remainder=None, **kwgs):
             if x is not None and y is not None:
                 rx = int(0x8000 + x) & 0xFFFF
                 ry = int(0x8000 + y) & 0xFFFF
@@ -1170,7 +1186,7 @@ class BalorDevice(Service, ViewPort):
             "red",
             help=_("Turns redlight on/off"),
         )
-        def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
+        def galvo_on(command, channel, _, off=None, remainder=None, **kwgs):
             try:
                 if off == "off":
                     reply = self.driver.connection.light_off()
@@ -1236,7 +1252,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Turns port on or off, eg. port off 8"),
             all_arguments_required=True,
         )
-        def balor_port(command, channel, _, off, bit=None, duration=None, **kwgs):
+        def galvo_port(command, channel, _, off, bit=None, duration=None, **kwgs):
             off = off == "off"
             if off:
                 self.driver.connection.port_off(bit)
@@ -1256,7 +1272,7 @@ class BalorDevice(Service, ViewPort):
             "status",
             help=_("Sends status check"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def galvo_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_version()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1269,7 +1285,7 @@ class BalorDevice(Service, ViewPort):
             "lstatus",
             help=_("Checks the list status."),
         )
-        def balor_liststatus(command, channel, _, remainder=None, **kwgs):
+        def galvo_liststatus(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_list_status()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1282,7 +1298,7 @@ class BalorDevice(Service, ViewPort):
             "mark_time",
             help=_("Checks the Mark Time."),
         )
-        def balor_mark_time(command, channel, _, remainder=None, **kwgs):
+        def galvo_mark_time(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_time()
             if reply is None:
                 channel("Not connected, cannot get mark time.")
@@ -1295,7 +1311,7 @@ class BalorDevice(Service, ViewPort):
             "mark_count",
             help=_("Checks the Mark Count."),
         )
-        def balor_mark_count(command, channel, _, remainder=None, **kwgs):
+        def galvo_mark_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_count()
             if reply is None:
                 channel("Not connected, cannot get mark count.")
@@ -1308,7 +1324,7 @@ class BalorDevice(Service, ViewPort):
             "axis_pos",
             help=_("Checks the Axis Position."),
         )
-        def balor_axis_pos(command, channel, _, remainder=None, **kwgs):
+        def galvo_axis_pos(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_axis_pos()
             if reply is None:
                 channel("Not connected, cannot get axis position.")
@@ -1321,7 +1337,7 @@ class BalorDevice(Service, ViewPort):
             "user_data",
             help=_("Checks the User Data."),
         )
-        def balor_user_data(command, channel, _, remainder=None, **kwgs):
+        def galvo_user_data(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_user_data()
             if reply is None:
                 channel("Not connected, cannot get user data.")
@@ -1334,7 +1350,7 @@ class BalorDevice(Service, ViewPort):
             "position_xy",
             help=_("Checks the Position XY"),
         )
-        def balor_position_xy(command, channel, _, remainder=None, **kwgs):
+        def galvo_position_xy(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_position_xy()
             if reply is None:
                 channel("Not connected, cannot get position xy.")
@@ -1347,7 +1363,7 @@ class BalorDevice(Service, ViewPort):
             "fly_speed",
             help=_("Checks the Fly Speed."),
         )
-        def balor_fly_speed(command, channel, _, remainder=None, **kwgs):
+        def galvo_fly_speed(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_speed()
             if reply is None:
                 channel("Not connected, cannot get fly speed.")
@@ -1360,7 +1376,7 @@ class BalorDevice(Service, ViewPort):
             "fly_wait_count",
             help=_("Checks the fiber config extend"),
         )
-        def balor_fly_wait_count(command, channel, _, remainder=None, **kwgs):
+        def galvo_fly_wait_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_wait_count()
             if reply is None:
                 channel("Not connected, cannot get fly weight count.")
@@ -1373,7 +1389,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_st_mo_ap",
             help=_("Checks the fiber st mo ap"),
         )
-        def balor_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
+        def galvo_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_st_mo_ap()
             if reply is None:
                 channel("Not connected, cannot get fiber_st_mo_ap.")
@@ -1446,7 +1462,7 @@ class BalorDevice(Service, ViewPort):
             "read_port",
             help=_("Checks the read_port"),
         )
-        def balor_read_port(command, channel, _, remainder=None, **kwgs):
+        def galvo_read_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.read_port()
             if reply is None:
                 channel("Not connected, cannot get read port.")
@@ -1459,8 +1475,47 @@ class BalorDevice(Service, ViewPort):
             "input_port",
             help=_("Checks the input_port"),
         )
-        def balor_input_port(command, channel, _, remainder=None, **kwgs):
+        def galvo_input_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "clear_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_clear_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.clear_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "enable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_enable_lock_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.enable_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "disable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_disable_lock_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.disable_lock_input_port()
             if reply is None:
                 channel("Not connected, cannot get input port.")
                 return
@@ -1472,7 +1527,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
-        def balor_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
+        def galvo_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_config_extend()
             if reply is None:
                 channel("Not connected, cannot get fiber config extend.")
@@ -1485,7 +1540,7 @@ class BalorDevice(Service, ViewPort):
             "serial_number",
             help=_("Checks the serial number."),
         )
-        def balor_serial(command, channel, _, remainder=None, **kwgs):
+        def galvo_serial(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_serial_number()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1688,7 +1743,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "viewport_update",
             hidden=True,
-            help=_("Update balor flips for movement"),
+            help=_("Update galvo flips for movement"),
         )
         def codes_update(**kwargs):
             self.realize()

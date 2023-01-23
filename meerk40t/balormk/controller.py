@@ -1195,13 +1195,13 @@ class GalvoController:
         """
         self._list_write(listFiberOpenMO, open_mo)
 
-    def list_wait_for_input(self, wait_state):
+    def list_wait_for_input(self, wait_mask, wait_level):
         """
         Unknown.
 
         @return:
         """
-        self._list_write(listWaitForInput, wait_state)
+        self._list_write(listWaitForInput, wait_mask, wait_level)
 
     def list_change_mark_count(self, count):
         """
