@@ -439,7 +439,7 @@ class Preferences(MWindow):
             (self.context.elements, "classify_black_as_raster", True, True),
             (self.context.elements, "classify_default", True, False),
             (self.context.elements, "classify_autogenerate", True, False),
-            (self.context.elements, "classify_auto_inherit", False, True),
+            # (self.context.elements, "classify_auto_inherit", False, True),
             (self.context.elements, "classify_on_color", True, False),
             (self.context.elements, "classify_autogenerate_both", True, True),
         ]

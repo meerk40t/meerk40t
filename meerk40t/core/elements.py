@@ -223,30 +223,30 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "_90_Auto-Generation",
             },
-            {
-                "attr": "classify_auto_inherit",
-                "object": elements,
-                "default": True,
-                "type": bool,
-                "label": _("Autoinherit for empty operation"),
-                "tip": _(
-                    "If you drag and drop an element into an operation to assign it there,"
-                )
-                + "\n"
-                + _(
-                    "then the op can (if this option is ticked) inherit the color from the element"
-                )
-                + "\n"
-                + _(
-                    "and adopt not only the dragged element but all elements with the same color"
-                )
-                + "\n"
-                + _(
-                    "- provided no elements are assigned to it yet (ie works only for an empty op)!"
-                ),
-                "page": "Classification",
-                "section": "_30_GUI-Behaviour",
-            },
+            # {
+            #     "attr": "classify_auto_inherit",
+            #     "object": elements,
+            #     "default": True,
+            #     "type": bool,
+            #     "label": _("Autoinherit for empty operation"),
+            #     "tip": _(
+            #         "If you drag and drop an element into an operation to assign it there,"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "then the op can (if this option is ticked) inherit the color from the element"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "and adopt not only the dragged element but all elements with the same color"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+            #     ),
+            #     "page": "Classification",
+            #     "section": "_30_GUI-Behaviour",
+            # },
             {
                 "attr": "classify_on_color",
                 "object": elements,
@@ -419,7 +419,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
-        self.setting(bool, "classify_auto_inherit", False)
+        # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
@@ -1406,94 +1406,67 @@ class Elemental(Service):
         self.note = None
         self.signal("note", self.note)
 
-    # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
-
-    #     print ("elements d+d called")
-    #     if inheritance_mode.lower() == "auto":
-    #     elif inheritance_mode.lower() =
-    #     if inherit_stroke is None:
-    #         inh_stroke = False
-    #     else:
-    #         inh_stroke = inherit_stroke
-    #     if inherit_fill is None:
-    #         inh_fill = False
-    #     else:
-    #         inh_fill = inherit_fill
-
-    #     data = dragging_nodes
-    #     success = False
-    #     special_occasion = False
-    #     if drop_node.type.startswith("op"):
-    #         if len(drop_node.children) == 0 and self.classify_auto_inherit:
-    #             # only for empty operations!
-    #             # Let's establish the colors first
-    #             first_color_stroke = None
-    #             first_color_fill = None
-    #             # Look for the first element that has stroke/fill
-    #             for n in data:
-    #                 if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     first_color_stroke = n.stroke
-    #                 if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     first_color_fill = n.fill
-    #                 canbreak = first_color_fill is not None or first_color_stroke is not None
-    #                 if canbreak:
-    #                     break
-    #             if hasattr(drop_node, "color") and (first_color_fill is not None or first_color_stroke is not None):
-    #                 # Well if you have both options, then you get that
-    #                 # color that is present, precedence for fill
-    #                 if first_color_fill is not None:
-    #                     col = first_color_fill
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("fill")
-    #                         drop_node.remove_color_attribute("stroke")
-    #                 else:
-    #                     col = first_color_stroke
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("stroke")
-    #                         drop_node.remove_color_attribute("fill")
-    #                 drop_node.color = col
-
-    #             # Now that we have the colors lets iterate through all elements
-    #             fuzzy = self.classify_fuzzy
-    #             fuzzydistance = self.classify_fuzzydistance
-    #             for n in self.flat(types=elem_nodes):
-    #                 addit = False
-    #                 if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.stroke == first_color_stroke:
-    #                             addit = True
-    #                 if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.fill == first_color_fill:
-    #                             addit = True
-    #                 # print ("Checked %s and will addit=%s" % (n.type, addit))
-    #                 if addit and n not in data:
-    #                     data.append(n)
-    #     for drag_node in data:
-    #         if drop_node is drag_node:
-    #             continue
-    #         if drop_node.drop(drag_node, modify=False):
-    #             if special_occasion:
-    #                 for ref in list(drag_node._references):
-    #                     ref.remove_node()
-    #             drop_node.drop(drag_node, modify=True)
-    #             success = True
-
-    #     # Refresh the target node so any changes like color materialize...
-    #     self.signal("element_property_reload", drop_node)
-    #     return success
-
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
         special_occasion = False
         to_classify = []
+        # if drop_node.type.startswith("op"):
+        #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
+        #         # only for empty operations!
+        #         # Let's establish the colors first
+        #         first_color_stroke = None
+        #         first_color_fill = None
+        #         inh_stroke = False
+        #         inh_fill = False
+        #         # Look for the first element that has stroke/fill
+        #         for n in data:
+        #             if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 first_color_stroke = n.stroke
+        #                 inh_stroke = True
+        #             if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 first_color_fill = n.fill
+        #                 inh_fill = True
+        #             canbreak = inh_fill or inh_stroke
+        #             if canbreak:
+        #                 break
+        #         if hasattr(drop_node, "color") and (inh_fill or inh_stroke):
+        #             # Well if you have both options, then you get that
+        #             # color that is present, precedence for fill
+        #             if inh_fill:
+        #                 col = first_color_fill
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("fill")
+        #                     drop_node.remove_color_attribute("stroke")
+        #             else:
+        #                 col = first_color_stroke
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("stroke")
+        #                     drop_node.remove_color_attribute("fill")
+        #             drop_node.color = col
+
+        #         # Now that we have the colors lets iterate through all elements
+        #         fuzzy = self.classify_fuzzy
+        #         fuzzydistance = self.classify_fuzzydistance
+        #         for n in self.flat(types=elem_nodes):
+        #             addit = False
+        #             if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.stroke == first_color_stroke:
+        #                         addit = True
+        #             if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.fill == first_color_fill:
+        #                         addit = True
+        #             # print ("Checked %s and will addit=%s" % (n.type, addit))
+        #             if addit and n not in data:
+        #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
                 continue
