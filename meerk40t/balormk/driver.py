@@ -260,10 +260,12 @@ class BalorDriver:
                 con.port_set(q.output_mask, q.output_value)
                 con.list_write_port()
             elif isinstance(q, InputCut):
-                con.rapid_mode()
-                self._wait_for_input_protocol(q.input_mask, q.input_value)
-                con.program_mode()
-                # con.list_wait_for_input(q.input_mask, q.input_value)
+                if self.service.input_operation_hardware:
+                    con.list_wait_for_input(q.input_mask, 0)
+                else:
+                    con.rapid_mode()
+                    self._wait_for_input_protocol(q.input_mask, q.input_value)
+                    con.program_mode()
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():

@@ -672,6 +672,14 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Input Signal Hold"),
                 "tip": _("How long does the input operation need to hold for to count as a pass"),
             },
+            {
+                "attr": "input_operation_hardware",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Input Operation Hardware"),
+                "tip": _("Use hardware based input operation command"),
+            },
         ]
         self.register_choices("balor-extra", choices)
 
