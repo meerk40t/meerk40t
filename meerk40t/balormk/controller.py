@@ -693,6 +693,7 @@ class GalvoController:
                     continue  # We don't care about this mask.
                 if (input_value >> i) & 1 != (b >> i) & 1:
                     all_matched = False
+                    time.sleep(0.05)
                     break
             if all_matched:
                 # Success, we matched the wait for protocol.

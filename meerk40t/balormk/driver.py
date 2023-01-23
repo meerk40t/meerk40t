@@ -238,7 +238,7 @@ class BalorDriver:
                 con.list_write_port()
             elif isinstance(q, InputCut):
                 con.rapid_mode()
-                con.wait_for_input_protocol(q.input_mask, 1 if q.input_value else 0)
+                con.wait_for_input_protocol(q.input_mask, q.input_value)
                 con.program_mode()
                 # con.list_wait_for_input(q.input_mask, q.input_value)
             else:
