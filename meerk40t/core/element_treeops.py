@@ -120,6 +120,34 @@ def init_tree(kernel):
             node.insert_sibling(n)
         node.remove_node()  # Removing group/file node.
 
+    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
+    def simplify_groups(node, **kwargs):
+
+        def straighten(snode):
+            amount = 0
+            needs_repetition = True
+            while needs_repetition:
+                needs_repetition = False
+                cl = list(snode.children)
+                if len(cl) == 1:
+                    gnode = cl[0]
+                    if gnode is not None and gnode.type == "group":
+                        for n in list(gnode.children):
+                            gnode.insert_sibling(n)
+                        gnode.remove_node()  # Removing group/file node.
+                        needs_repetition = True
+                else:
+                    for n in cl:
+                        if n is not None and n.type=="group":
+                            fnd = straighten(n)
+                            amount += fnd
+            return amount
+
+        res = straighten(node)
+        if res > 0:
+            self.signal("rebuild_tree")
+
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
     @tree_operation(
         _("Elements in scene..."), node_type=elem_nodes, help="", enable=False
