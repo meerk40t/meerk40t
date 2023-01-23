@@ -1469,6 +1469,46 @@ class BalorDevice(Service, ViewPort):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
+            "clear_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def balor_clear_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.clear_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "enable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def balor_clear_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.enable_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "disable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def balor_clear_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.disable_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+
+        @self.console_command(
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
