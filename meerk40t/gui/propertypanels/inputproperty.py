@@ -17,8 +17,8 @@ class InputPropertyPanel(wx.Panel):
 
         self.choices = [
             {
-                "attr": "input_mask",
-                # "mask": "input_mask",
+                "attr": "input_value",
+                "mask": "input_mask",
                 "object": self.operation,
                 "default": 0,
                 "type": int,
@@ -26,17 +26,6 @@ class InputPropertyPanel(wx.Panel):
                 "bits": 16,
                 "label": _("Mask Bits"),
                 "tip": _("Mask bits for given value"),
-            },
-            {
-                "attr": "input_value",
-                # "mask": "input_mask",
-                "object": self.operation,
-                "default": 0,
-                "type": int,
-                "style": "binary",
-                "bits": 16,
-                "label": _("Bits of second word"),
-                "tip": _("Input bits for given value"),
             },
         ]
         self.panel = ChoicePropertyPanel(
