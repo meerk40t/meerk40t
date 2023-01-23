@@ -116,7 +116,7 @@ class BalorDriver:
         self.queue.append(plot)
 
     def _wait_for_input_protocol(self, input_mask, input_value):
-        required_passes = 5
+        required_passes = self.service.input_passes_required
         passes = 0
         while self.connection and not self.connection.is_shutdown and not self._aborting:
             read_port = self.connection.read_port()

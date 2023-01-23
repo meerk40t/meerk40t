@@ -664,6 +664,14 @@ class BalorDevice(Service, ViewPort):
                 "subsection": "Fly Resolution",
                 "hidden": 1,
             },
+            {
+                "attr": "input_passes_required",
+                "object": self,
+                "default": 3,
+                "type": int,
+                "label": _("Input Signal Hold"),
+                "tip": _("How long does the input operation need to hold for to count as a pass"),
+            },
         ]
         self.register_choices("balor-extra", choices)
 
