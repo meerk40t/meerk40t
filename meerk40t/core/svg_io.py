@@ -159,6 +159,7 @@ class SVGWriter:
 
     @staticmethod
     def save(context, f, version="default"):
+        # print (f"Version was set to '{version}'")
         root = Element(SVG_NAME_TAG)
         root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
@@ -212,11 +213,11 @@ class SVGWriter:
 
     @staticmethod
     def _write_tree(xml_tree, node_tree, version):
+        # print (f"Write_tree with {version}")
         for node in node_tree.children:
-            if version != "plain":
-                if node.type == "branch ops":
-                    SVGWriter._write_operations(xml_tree, node, version)
-            elif node.type == "branch elems":
+            if version != "plain" and node.type == "branch ops":
+                SVGWriter._write_operations(xml_tree, node, version)
+            if node.type == "branch elems":
                 SVGWriter._write_elements(xml_tree, node, version)
             elif node.type == "branch reg":
                 SVGWriter._write_regmarks(xml_tree, node, version)
