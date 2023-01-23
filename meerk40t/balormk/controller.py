@@ -683,22 +683,6 @@ class GalvoController:
     # Command Shortcuts
     #######################
 
-    def wait_for_input_protocol(self, input_mask, input_value):
-        while not self.is_shutdown:
-            read_port = self.read_port()
-            b = read_port[1]
-            all_matched = True
-            for i in range(16):
-                if (input_mask >> i) & 1 == 0:
-                    continue  # We don't care about this mask.
-                if (input_value >> i) & 1 != (b >> i) & 1:
-                    all_matched = False
-                    time.sleep(0.05)
-                    break
-            if all_matched:
-                # Success, we matched the wait for protocol.
-                return
-
     def is_busy(self):
         status = self.status()
         return bool(status & BUSY)

@@ -115,6 +115,22 @@ class BalorDriver:
         """
         self.queue.append(plot)
 
+    def _wait_for_input_protocol(self, input_mask, input_value):
+        while self.connection and not self.connection.is_shutdown and not self._aborting:
+            read_port = self.connection.read_port()
+            b = read_port[1]
+            all_matched = True
+            for i in range(16):
+                if (input_mask >> i) & 1 == 0:
+                    continue  # We don't care about this mask.
+                if (input_value >> i) & 1 != (b >> i) & 1:
+                    all_matched = False
+                    time.sleep(0.05)
+                    break
+            if all_matched:
+                # Success, we matched the wait for protocol.
+                return
+
     def plot_start(self):
         """
         This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
@@ -238,7 +254,7 @@ class BalorDriver:
                 con.list_write_port()
             elif isinstance(q, InputCut):
                 con.rapid_mode()
-                con.wait_for_input_protocol(q.input_mask, q.input_value)
+                self._wait_for_input_protocol(q.input_mask, q.input_value)
                 con.program_mode()
                 # con.list_wait_for_input(q.input_mask, q.input_value)
             else:
