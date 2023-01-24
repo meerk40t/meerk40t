@@ -36,6 +36,10 @@ class GRBLEmulator(Module):
     def __repr__(self):
         return f"GcodeEmulator({self.name})"
 
+    def greet(self):
+        yield "Grbl 1.1f ['$' for help]\r"
+        yield "[MSG:’$H’|’$X’ to unlock]"
+
     def set_reply(self, reply):
         self.parser.reply = reply
 
