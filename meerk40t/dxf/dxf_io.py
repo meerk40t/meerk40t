@@ -123,8 +123,8 @@ class DXFProcessor:
                         node.matrix *= matrix
                         node.modified()
                 # else, is within the bed dimensions correctly, change nothing.
-
-        self.elements.classify(self.elements_list)
+        if self.elements.classify_new:
+            self.elements.classify(self.elements_list)
         return True
 
     def check_for_attributes(self, node, entity):
