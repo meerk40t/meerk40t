@@ -308,7 +308,7 @@ class GRBLParser:
             "report_in_inches": 0,  # Report in inches
             "soft_limits_enabled": 0,  # Soft limits enabled.
             "hard_limits_enabled": 0,  # hard limits enabled
-            "homing_cycle_enable": 0,  # Homing cycle enable
+            "homing_cycle_enable": 1,  # Homing cycle enable
             "homing_direction_invert": 0,  # Homing direction invert
             "homing_locate_feed_rate": 25.000,  # Homing locate feed rate, mm/min
             "homing_search_seek_rate": 500.000,  # Homing search seek rate, mm/min
