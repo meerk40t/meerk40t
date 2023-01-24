@@ -597,8 +597,7 @@ class GRBLParser:
             grbl_mat = Matrix(matrix_str)
 
             op_nodes = {}
-            colorindex = 0
-            color_array = []
+            color_index = 0
             color_array = (
                 "blue",
                 "lime",
@@ -696,10 +695,8 @@ class GRBLParser:
                                 if power == 0:
                                     power = 1000
                                 opnode.power = power
-                                opnode.color = Color(color_array[colorindex])
-                                colorindex += 1
-                                if colorindex >= len(color_array):
-                                    colorindex = 0
+                                opnode.color = Color(color_array[color_index])
+                                color_index = (color_index + 1) % len(color_array)
 
                                 elements.op_branch.add_node(opnode)
                                 op_nodes[op] = opnode
