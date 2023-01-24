@@ -290,6 +290,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.widget_root.scene_widget.add_widget(
                 0, HarmonographWidget(self.widget_scene)
             )
+            self.widget_scene.request_refresh()
             channel(_("Added harmonograph widget to scene."))
 
         @context.console_command("toast", hidden=True)
