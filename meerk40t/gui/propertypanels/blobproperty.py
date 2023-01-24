@@ -22,7 +22,9 @@ class BlobPropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.operation
         )
         optview = (_("Hexadecimal View"), _("Plain-Text"))
-        self.option_view = wx.RadioBox(self, wx.ID_ANY, label="View", choices=optview, style=wx.RA_SPECIFY_COLS)
+        self.option_view = wx.RadioBox(
+            self, wx.ID_ANY, label="View", choices=optview, style=wx.RA_SPECIFY_COLS
+        )
         self.option_view.SetSelection(0)
         self.text_blob = wx.TextCtrl(
             self, id=wx.ID_ANY, value="", style=wx.TE_MULTILINE | wx.TE_READONLY

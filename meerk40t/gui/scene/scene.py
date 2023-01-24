@@ -470,13 +470,14 @@ class Scene(Module, Job):
             self.log("Animating Scene...")
         if self._adding_widgets:
             with self._animate_lock:
-                for widget in self._adding_widgets:
-                    self._animating.append(widget)
-                    try:
-                        widget.start_threaded()
-                    except AttributeError:
-                        pass
+                animate_add = list(self._adding_widgets)
                 self._adding_widgets.clear()
+            for widget in animate_add:
+                self._animating.append(widget)
+                try:
+                    widget.start_threaded()
+                except AttributeError:
+                    pass
         if self._animating:
             for idx in range(len(self._animating) - 1, -1, -1):
                 widget = self._animating[idx]

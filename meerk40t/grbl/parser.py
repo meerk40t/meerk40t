@@ -30,7 +30,7 @@ The channel callable is given any additional information about the gcode.
 import re
 from math import isnan
 
-from meerk40t.core.node.node import Linejoin, Linecap
+from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_PIXEL, Length
 from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
@@ -292,9 +292,8 @@ class GRBLPlotter:
 
 
 class GRBLParser:
-    def __init__(self, plotter=None, kernel=None):
+    def __init__(self, plotter=None):
         self.plotter = plotter
-        self.kernel = kernel
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
             "step_idle_delay": 25,  # step idle delay
@@ -333,10 +332,6 @@ class GRBLParser:
             "speed": 0,
             "power": 0,
         }
-        if self.kernel is None:
-            _ = self._
-        else:
-            _ = self.kernel.translation
 
         self.origin = 1  # 0 top left, 1 bottom left, 2 center
         self.split_path = True
@@ -357,8 +352,8 @@ class GRBLParser:
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": _("Ignore travel"),
-                "tip": _("Try to take only 'valid' movements"),
+                "label": "Ignore travel",
+                "tip": "Try to take only 'valid' movements",
                 "section": "_10_Path",
             },
             {
@@ -366,8 +361,8 @@ class GRBLParser:
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": _("Split paths"),
-                "tip": _("Split path into smaller chunks"),
+                "label": "Split paths",
+                "tip": "Split path into smaller chunks",
                 "section": "_10_Path",
             },
             {
@@ -375,10 +370,8 @@ class GRBLParser:
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": _("Single occurence"),
-                "tip": _(
-                    "Prevent duplicate creation of segments (like in a multipass operation)"
-                ),
+                "label": "Single occurence",
+                "tip": "Prevent duplicate creation of segments (like in a multipass operation)",
                 "section": "_10_Path",
             },
             {
@@ -386,10 +379,8 @@ class GRBLParser:
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Treat Z-Movement as On/Off"),
-                "tip": _(
-                    "Use negative Z-Values as a Power-On indicator, positive values as travel"
-                ),
+                "label": "Treat Z-Movement as On/Off",
+                "tip": "Use negative Z-Values as a Power-On indicator, positive values as travel",
                 "conditional": (self, "ignore_travel"),
                 "section": "_10_Path",
                 "subsection": "_10_Z-Axis",
@@ -399,10 +390,8 @@ class GRBLParser:
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Only negative"),
-                "tip": _(
-                    "Active: use positive values as travel\nInactive: use all non-zero values"
-                ),
+                "label": "Only negative",
+                "tip": "Active: use positive values as travel\nInactive: use all non-zero values",
                 "conditional": (self, "treat_z_as_power"),
                 "section": "_10_Path",
                 "subsection": "_10_Z-Axis",
@@ -415,13 +404,13 @@ class GRBLParser:
                 "style": "option",
                 "choices": (0, 1, 2, 3),
                 "display": (
-                    _("Top Left"),
-                    _("Bottom Left"),
-                    _("Center"),
+                    "Top Left",
+                    "Bottom Left",
+                    "Center",
                     "Center (Y mirrored)",
                 ),
-                "label": _("Bed-Origin"),
-                "tip": _("Correct starting point"),
+                "label": "Bed-Origin",
+                "tip": "Correct starting point",
                 "section": "_20_Correct Orientation",
             },
             {
@@ -429,8 +418,8 @@ class GRBLParser:
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Create operations"),
-                "tip": _("Create corresponding operations for Power and Speed pairs"),
+                "label": "Create operations",
+                "tip": "Create corresponding operations for Power and Speed pairs",
                 "section": "_30_Operation",
             },
             {
@@ -438,12 +427,10 @@ class GRBLParser:
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Scale Speed"),
-                "tip": _(
-                    "Set lower and higher level to scale the speed\n"
-                    + "Minimum speed used will be mapped to lower level\n"
-                    + "Maximum speed used will be mapped to upper level"
-                ),
+                "label": "Scale Speed",
+                "tip": "Set lower and higher level to scale the speed\n"
+                + "Minimum speed used will be mapped to lower level\n"
+                + "Maximum speed used will be mapped to upper level",
                 "conditional": (self, "create_operations"),
                 "section": "_30_Operation",
                 "subsection": "_20_Speed",
@@ -453,9 +440,9 @@ class GRBLParser:
                 "object": self,
                 "default": 2,
                 "type": float,
-                "label": _("Lowest speed"),
+                "label": "Lowest speed",
                 "trailer": "mm/sec",
-                "tip": _("Minimum speed used will be mapped to lower level"),
+                "tip": "Minimum speed used will be mapped to lower level",
                 "conditional": (self, "scale_speed"),
                 "section": "_30_Operation",
                 "subsection": "_20_Speed",
@@ -465,9 +452,9 @@ class GRBLParser:
                 "object": self,
                 "default": 200,
                 "type": float,
-                "label": _("Highest speed"),
+                "label": "Highest speed",
                 "trailer": "mm/sec",
-                "tip": _("Maximum speed used will be mapped to upper level"),
+                "tip": "Maximum speed used will be mapped to upper level",
                 "conditional": (self, "scale_speed"),
                 "section": "_30_Operation",
                 "subsection": "_20_Speed",
@@ -477,12 +464,10 @@ class GRBLParser:
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Scale Power"),
-                "tip": _(
-                    "Set lower and higher level to scale the power\n"
-                    + "Minimum power used will be mapped to lower level\n"
-                    + "Maximum power used will be mapped to upper level"
-                ),
+                "label": "Scale Power",
+                "tip": "Set lower and higher level to scale the power\n"
+                + "Minimum power used will be mapped to lower level\n"
+                + "Maximum power used will be mapped to upper level",
                 "section": "_30_Operation",
                 "subsection": "_20_Power",
             },
@@ -491,9 +476,9 @@ class GRBLParser:
                 "object": self,
                 "default": 200,
                 "type": float,
-                "label": _("Lowest Power"),
+                "label": "Lowest Power",
                 "trailer": "ppi",
-                "tip": _("Minimum power used will be mapped to lower level"),
+                "tip": "Minimum power used will be mapped to lower level",
                 "conditional": (self, "scale_power"),
                 "section": "_30_Operation",
                 "subsection": "_20_Power",
@@ -503,9 +488,9 @@ class GRBLParser:
                 "object": self,
                 "default": 1000,
                 "type": float,
-                "label": _("Highest power"),
+                "label": "Highest power",
                 "trailer": "",
-                "tip": _("Maximum power used will be mapped to upper level"),
+                "tip": "Maximum power used will be mapped to upper level",
                 "conditional": (self, "scale_power"),
                 "section": "_30_Operation",
                 "subsection": "_20_Power",
@@ -539,10 +524,6 @@ class GRBLParser:
 
     def __repr__(self):
         return "GRBLParser()"
-
-    def _(self, value):
-        # Dummy translation stub
-        return value
 
     # def debug_options(self, message):
     #     print (message)
@@ -694,13 +675,17 @@ class GRBLParser:
                                 opnode = op_nodes[op]
                             else:
                                 if self.scale_power and power != 0:
-                                    power = self.scale_power_lower + (power - minpower) / (
-                                        maxpower - minpower
-                                    ) * (self.scale_power_higher - self.scale_power_lower)
+                                    power = self.scale_power_lower + (
+                                        power - minpower
+                                    ) / (maxpower - minpower) * (
+                                        self.scale_power_higher - self.scale_power_lower
+                                    )
                                 if self.scale_speed and speed != 0:
-                                    speed = self.scale_speed_lower + (speed - minspeed) / (
-                                        maxspeed - minspeed
-                                    ) * (self.scale_speed_higher - self.scale_speed_lower)
+                                    speed = self.scale_speed_lower + (
+                                        speed - minspeed
+                                    ) / (maxspeed - minspeed) * (
+                                        self.scale_speed_higher - self.scale_speed_lower
+                                    )
                                 lbl = f"Grbl - P={power}, S={speed}"
                                 if zvalue != 0:
                                     # convert into a length
@@ -734,7 +719,6 @@ class GRBLParser:
                     node.modified()
                 if opnode is not None:
                     opnode.add_reference(node)
-
 
     def grbl_write(self, data):
         if self.reply:

@@ -81,6 +81,20 @@ class TextNode(Node, Stroked):
         else:
             font = None
         super().__init__(type="elem text", **kwargs)
+
+        # We might have relevant forn-information hidden inside settings...
+        if "settings" in kwargs:
+            kwa = kwargs["settings"]
+            # for prop in kwa:
+            #     v = getattr(self, prop, None)
+            #     print (f"{prop}, kwa={kwargs['settings'][prop]}, v={v}")
+            if "font-size" in kwa:
+                self.font_size = kwa["font-size"]
+            if "font-weight" in kwa:
+                self.font_weight = kwa["font-weight"]
+            if "font-family" in kwa:
+                self.font_family = kwa["font-family"]
+            self.validate_font()
         self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
@@ -98,12 +112,12 @@ class TextNode(Node, Stroked):
         if font is not None:
             self.parse_font(font)
         else:
-            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE, None)
-            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE, None)
-            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT, None)
-            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT, None)
-            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, None)
-            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, None)
+            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE, self.font_size)
+            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE, self.font_style)
+            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT, self.font_variant)
+            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT, self.font_weight)
+            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, self.font_stretch)
+            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, self.font_family)
             self.validate_font()
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
@@ -237,7 +251,7 @@ class TextNode(Node, Stroked):
     def validate_font(self):
         if self.line_height is None:
             self.line_height = "12pt" if self.font_size is None else "100%"
-        if self.font_size:
+        if self.font_size and isinstance(self.font_size, str):
             size = self.font_size
             try:
                 self.font_size = Length(self.font_size, unitless=UNITS_PER_POINT).pt
@@ -340,3 +354,34 @@ class TextNode(Node, Stroked):
             xmax + delta,
             ymax + delta,
         )
+
+    """
+    A text node has no paint_bounds that is different to bounds,
+    so we overload the standard functions to acknowledge that and
+    always sync paint_bounds to bounds.
+    """
+    @property
+    def paint_bounds(self):
+        # Make sure that bounds is valid
+        if self._paint_bounds_dirty:
+            self._paint_bounds_dirty = False
+            self._paint_bounds = self.bounds
+        return self._paint_bounds
+
+    @property
+    def bounds(self):
+        # Make sure that bounds is valid
+        if not self._bounds_dirty:
+            if self._paint_bounds_dirty:
+                self._paint_bounds_dirty = False
+                self._paint_bounds = self._bounds
+            return self._bounds
+
+        try:
+            self._bounds = self.bbox(with_stroke=False)
+        except AttributeError:
+            self._bounds = None
+        self._paint_bounds = self._bounds
+        self._bounds_dirty = False
+        self._paint_bounds_dirty = False
+        return self._bounds

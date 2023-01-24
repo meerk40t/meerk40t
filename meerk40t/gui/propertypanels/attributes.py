@@ -81,6 +81,7 @@ class ColorPanel(wx.Panel):
         )
         self.btn_color[self.last_col_idx].SetFont(font)
         self.SetSizer(self.main_sizer)
+        self.main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
 
@@ -225,7 +226,9 @@ class ColorPanel(wx.Panel):
 
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
+    def __init__(
+        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -249,6 +252,7 @@ class IdPanel(wx.Panel):
         main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.text_id.SetActionRoutine(self.on_text_id_change)
         self.text_label.SetActionRoutine(self.on_text_label_change)
@@ -345,6 +349,7 @@ class LinePropPanel(wx.Panel):
         main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
         self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
@@ -463,6 +468,7 @@ class StrokeWidthPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
 
@@ -797,7 +803,8 @@ class PositionSizePanel(wx.Panel):
                 sx = sy
         if sx != 1.0 or sy != 1.0:
             self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
-            self.node.modified()
+            self.node.scaled(sx=sx, sy=sy, ox=bb[0], oy=bb[1])
+            # self.node.modified()
             bb = self.node.bounds
             w = bb[2] - bb[0]
             h = bb[3] - bb[1]
@@ -948,6 +955,7 @@ class RoundedRectPanel(wx.Panel):
         main_sizer.Add(sizer_x, 1, wx.EXPAND, 0)
         main_sizer.Add(sizer_y, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
         self.slider_x.Bind(wx.EVT_SLIDER, self.on_slider_x)

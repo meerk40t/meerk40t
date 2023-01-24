@@ -63,7 +63,6 @@ class RasterOpNode(Node, Parameters):
         else:
             self.label = label
 
-
     def __repr__(self):
         return "RasterOp()"
 

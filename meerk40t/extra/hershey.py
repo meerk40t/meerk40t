@@ -130,7 +130,19 @@ def update_linetext(context, node, newtext):
     horizontal = True
     mytext = context.elements.wordlist_translate(newtext)
     cfont.render(path, mytext, horizontal, float(fontsize))
+    olda = node.path.transform.a
+    oldb = node.path.transform.b
+    oldc = node.path.transform.c
+    oldd = node.path.transform.d
+    olde = node.path.transform.e
+    oldf = node.path.transform.f
     node.path = path.path
+    node.path.transform.a = olda
+    node.path.transform.b = oldb
+    node.path.transform.c = oldc
+    node.path.transform.d = oldd
+    node.path.transform.e = olde
+    node.path.transform.f = oldf
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
 
@@ -202,9 +214,9 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
 
     path_node = PathNode(
         path=path.path,
-        matrix=Matrix.translate(x, y),
         stroke=Color("black"),
     )
+    path_node.matrix.post_translate(x, y)
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mktext = text

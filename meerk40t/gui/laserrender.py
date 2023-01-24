@@ -775,6 +775,7 @@ class LaserRender:
         """
         dimension_x = 1000
         dimension_y = 500
+        scaling = 1
         bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -801,7 +802,8 @@ class LaserRender:
             if ttf == "lowercase":
                 text = text.lower()
         svgfont_to_wx(node)
-        gc.SetFont(node.wxfont, wx.WHITE)
+        use_font = node.wxfont
+        gc.SetFont(use_font, wx.WHITE)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
         needs_revision = False
         revision_factor = 3
@@ -812,13 +814,44 @@ class LaserRender:
             dimension_y = revision_factor * f_height
             needs_revision = True
         if needs_revision:
+            # We need to create an independent instance of the font
+            # as we may to need to change the font_size temporarily
+            fontdesc = node.wxfont.GetNativeFontInfoDesc()
+            use_font = wx.Font(fontdesc)
+            while True:
+                try:
+                    fsize = use_font.GetFractionalPointSize()
+                    fsize_org = node.wxfont.GetFractionalPointSize()
+                except AttributeError:
+                    fsize = use_font.GetPointSize()
+                    fsize_org = node.wxfont.GetPointSize()
+                # print (f"Revised bounds: {dimension_x} x {dimension_y}, font_size={fsize} (original={fsize_org}")
+                if fsize < 100 or dimension_x < 2000 or dimension_y < 1000:
+                    break
+                # We consume an enormous amount of time and memory to create insanely big
+                # temporary canvasses, so we intentionally reduce the resolution and accept
+                # smaller deviations...
+                scaling *= 10
+                fsize /= 10
+                dimension_x /= 10
+                dimension_y /= 10
+                try:
+                    use_font.SetFractionalPointSize(fsize)
+                except AttributeError:
+                    use_font.SetPointSize(int(fsize))
+
+
+            gc.Destroy()
+            dc.SelectObject(wx.NullBitmap)
+            dc.Destroy()
+            del dc
             bmp = wx.Bitmap(dimension_x, dimension_y, 32)
             dc = wx.MemoryDC()
             dc.SelectObject(bmp)
             dc.SetBackground(wx.BLACK_BRUSH)
             dc.Clear()
             gc = wx.GraphicsContext.Create(dc)
-            gc.SetFont(node.wxfont, wx.WHITE)
+            gc.SetFont(use_font, wx.WHITE)
 
         gc.DrawText(text, 0, 0)
         try:
@@ -828,15 +861,20 @@ class LaserRender:
                 "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
             )
             node.text_cache = image
-            node.raw_bbox = image.getbbox()
-            if node.raw_bbox is None:
-                height = 0
+            img_bb = image.getbbox()
+            if img_bb is None:
+                node.raw_bbox = None
             else:
-                height = node.raw_bbox[3] - node.raw_bbox[1] + 1
+                newbb = (
+                    scaling * img_bb[0],
+                    scaling * img_bb[1],
+                    scaling * img_bb[2],
+                    scaling * img_bb[3],
+                )
+                node.raw_bbox = newbb
         except MemoryError:
             node.text_cache = None
             node.raw_bbox = None
-            height = f_height
         node.ascent = f_height - f_descent
         if node.baseline != "hanging":
             node.matrix.pre_translate(0, -node.ascent)
@@ -848,17 +886,18 @@ class LaserRender:
         del dc
 
     def validate_text_nodes(self, nodes, translate_variables):
+        self.context.elements.set_start_time("validate_text_nodes")
         for item in nodes:
             if item.type == "elem text" and (
-                item.width is None
-                or item.height is None
-                or item._bounds_dirty
+                item._bounds_dirty
                 or item._paint_bounds_dirty
                 or item.bounds_with_variables_translated != translate_variables
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)
                 item.set_dirty_bounds()
+                dummy = item.bounds
+        self.context.elements.set_end_time("validate_text_nodes")
 
     def make_raster(
         self,

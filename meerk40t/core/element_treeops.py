@@ -120,6 +120,34 @@ def init_tree(kernel):
             node.insert_sibling(n)
         node.remove_node()  # Removing group/file node.
 
+    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
+    def simplify_groups(node, **kwargs):
+
+        def straighten(snode):
+            amount = 0
+            needs_repetition = True
+            while needs_repetition:
+                needs_repetition = False
+                cl = list(snode.children)
+                if len(cl) == 1:
+                    gnode = cl[0]
+                    if gnode is not None and gnode.type == "group":
+                        for n in list(gnode.children):
+                            gnode.insert_sibling(n)
+                        gnode.remove_node()  # Removing group/file node.
+                        needs_repetition = True
+                else:
+                    for n in cl:
+                        if n is not None and n.type=="group":
+                            fnd = straighten(n)
+                            amount += fnd
+            return amount
+
+        res = straighten(node)
+        if res > 0:
+            self.signal("rebuild_tree")
+
     @tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
     @tree_operation(
         _("Elements in scene..."), node_type=elem_nodes, help="", enable=False
@@ -456,6 +484,12 @@ def init_tree(kernel):
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
         self("window open Simulation 0\n")
 
+    @tree_operation(_("Global Settings"), node_type="branch ops", help="")
+    def op_prop(node, **kwargs):
+        activate = self.kernel.lookup("function/open_property_window_for_node")
+        if activate is not None:
+            activate(node)
+
     @tree_operation(_("Clear all"), node_type="branch ops", help="")
     def clear_all(node, **kwargs):
         self("operation* delete\n")
@@ -469,7 +503,7 @@ def init_tree(kernel):
         to_delete = []
         for op in self.ops():
             # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
-            if len(op._children) == 0 and not op.type=="blob":
+            if len(op._children) == 0 and not op.type == "blob":
                 to_delete.append(op)
         if len(to_delete) > 0:
             with self.static("clear_unused"):
@@ -753,7 +787,7 @@ def init_tree(kernel):
     @tree_operation(
         _("Convert to Elements"),
         node_type="blob",
-        help=_("Convert blob to elements"),
+        help=_("Convert attached binary object to elements"),
     )
     def blob2path(node, **kwargs):
         cancelled = False
@@ -763,8 +797,23 @@ def init_tree(kernel):
         if dialog_class and hasattr(parser, "options"):
             parser_choices = getattr(parser, "options", None)
             if parser_choices is not None:
+                for entry in parser_choices:
+                    if "label" in entry:
+                        entry["label"] = _(entry["label"])
+                    if "tip" in entry:
+                        entry["tip"] = _(entry["tip"])
+                    if "display" in entry:
+                        newdisplay = []
+                        for dentry in entry["display"]:
+                            newdisplay.append(_(dentry))
+                        entry["display"] = newdisplay
                 dialog = dialog_class(self.kernel, choices=parser_choices)
-                res = dialog.dialog_options(title=_("GCode-Conversion"), intro=_("You can influence the way MK will process the GCode data:"))
+                res = dialog.dialog_options(
+                    title=_("Blob-Conversion"),
+                    intro=_(
+                        "You can influence the way MK will process the attached binary data:"
+                    ),
+                )
                 if not res:
                     cancelled = True
         if not cancelled:
@@ -928,7 +977,7 @@ def init_tree(kernel):
     @tree_separator_before()
     @tree_submenu(_("Save"))
     @tree_prompt("opname", _("Name to store current operations under?"))
-    @tree_operation("New", node_type="branch ops", help="")
+    @tree_operation(_("New"), node_type="branch ops", help="")
     def save_material_custom(node, opname, **kwargs):
         self(f"material save {opname.replace(' ', '_')}\n")
 

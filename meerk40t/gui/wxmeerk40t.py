@@ -52,6 +52,7 @@ from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
+from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.imageproperty import (
@@ -73,7 +74,6 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
-from .propertypanels.blobproperty import BlobPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
@@ -722,6 +722,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Pause", register_panel_pause)
 
         from meerk40t.gui.dialogoptions import DialogOptions
+
         kernel.register("dialog/options", DialogOptions)
 
         context = kernel.root
