@@ -82,7 +82,7 @@ def plugin(kernel, lifecycle=None):
                     return
                 root.channel(
                     "grbl/send", pure=True
-                ).greet = "Grbl 1.1e ['$' for help]\r"
+                ).greet = "Grbl 1.1f ['$' for help]\r"
                 channel(_("GRBL Mode."))
                 if verbose:
                     console = kernel.channel("console")
