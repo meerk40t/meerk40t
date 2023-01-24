@@ -1,6 +1,7 @@
 import math
 import random
 
+import numpy as np
 import wx
 from meerk40t.gui import icons
 from meerk40t.gui.scene.widget import Widget
@@ -10,6 +11,7 @@ from meerk40t.gui.utilitywidgets.openclosewidget import OpenCloseWidget
 from meerk40t.gui.utilitywidgets.rotationwidget import RotationWidget
 from meerk40t.gui.utilitywidgets.scalewidget import ScaleWidget
 from meerk40t.gui.utilitywidgets.toolbarwidget import ToolbarWidget
+from meerk40t.gui.zmatrix import ZMatrix
 from meerk40t.svgelements import Path, Matrix
 
 
@@ -120,19 +122,19 @@ class HShape:
             return 1.0
         damp = self.damping
         speed = self.speed if self.use_speed else 1.0
-        return math.exp(-damp * speed * t)
+        return np.exp(-damp * speed * t)
 
     def position(self, t):
         matrix = self.calculate_matrix()
         time = self._get_modified_time(t)
         damp = self._get_damping(t)
         if self.display_x:
-            cos_t = math.cos(time * math.tau)
+            cos_t = np.cos(time * math.tau)
             x = cos_t * damp
         else:
             x = 0
         if self.display_y:
-            sin_t = math.sin(time * math.tau)
+            sin_t = np.sin(time * math.tau)
             y = sin_t * damp
         else:
             y = 0
@@ -140,10 +142,9 @@ class HShape:
         # apply matrix
         x += self.progression_x * t
         y += self.progression_y * t
-        return x, y
 
-
-SLICES = 50
+        series = np.stack((x,y), axis=1)
+        return series
 
 
 class HarmonographWidget(Widget):
@@ -152,20 +153,21 @@ class HarmonographWidget(Widget):
         bed_width, bed_height = scene.context.device.physical_to_scene_position(
             "100%", "100%"
         )
-        self.x, self.y = bed_width / 2, bed_height / 2
-        super().__init__(scene, self.x, self.y, self.x, self.y)
+        x, y = bed_width / 2, bed_height / 2
+        super().__init__(scene, x, y, x, y)
         self.tool_pen = wx.Pen()
         self.tool_pen.SetColour(wx.RED)
-        self.tool_pen.SetWidth(1000)
+        # self.tool_pen.SetWidth(1000)
+        self.shape_matrix = None
 
         self.curves = list()
 
         self.theta = 0
         self.scale = 1000.0
-        self.rotations = 25.0
+        self.rotations = 20.0
 
         size = 10000
-        self.degree_step = 0.2
+        self.t_step = 0.015
         self.series = []
         self.add_pendulum_x()
         self.add_pendulum_y()
@@ -203,72 +205,20 @@ class HarmonographWidget(Widget):
             self.set_random_harmonograph,
         )
         toolbar.add_widget(-1, random_widget)
-
-        add_oval_widget = ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_oval_50.GetBitmap(use_theme=False),
-            self.add_oval,
-        )
-        toolbar.add_widget(-1, add_oval_widget)
-        add_circle_widget = ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_circle_50.GetBitmap(use_theme=False),
-            self.add_circle,
-        )
-        toolbar.add_widget(-1, add_circle_widget)
-        add_y_pendulum_widget = ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
-            self.add_pendulum_y,
-        )
-        toolbar.add_widget(-1, add_y_pendulum_widget)
-        add_x_pendulum_widget = ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
-            self.add_pendulum_x,
-        )
-        toolbar.add_widget(-1, add_x_pendulum_widget)
-        add_spiral_widget = ButtonWidget(
-            scene,
-            0,
-            0,
-            size,
-            size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
-            self.add_spiral,
-        )
-        toolbar.add_widget(-1, add_spiral_widget)
-
         self.add_widget(-1, RelocateWidget(scene, 0, 0))
 
         def delta_theta(delta):
             self.theta += delta
+            self.shape_matrix = None
             self.scene.toast(f"theta: {self.theta}")
-            self.series.clear()
 
         rotation_widget = RotationWidget(scene, 0, 20000, 10000, 30000, icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_theta)
         self.add_widget(-1, rotation_widget)
 
         def delta_step(delta):
-            self.degree_step += delta
-            self.scene.toast(f"degree_step: {self.degree_step}")
-            self.series.clear()
+            self.t_step += delta / 100
+            self.scene.toast(f"t_step: {self.t_step}")
+            self.series = None
 
         step_handle = RotationWidget(scene, 0, 50000, 10000, 60000, icons.icons8_fantasy_50.GetBitmap(use_theme=False), delta_step)
         self.add_widget(-1, step_handle)
@@ -276,7 +226,7 @@ class HarmonographWidget(Widget):
         def delta_rotations(delta):
             self.rotations += delta
             self.scene.toast(f"rotations: {self.rotations}")
-            self.series.clear()
+            self.series = None
 
         rotate_widget = RotationWidget(scene, 0, 60000, 10000, 70000,  icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_rotations)
         self.add_widget(-1, rotate_widget)
@@ -292,40 +242,19 @@ class HarmonographWidget(Widget):
             curvebar.add_widget(-1, CurveWidget(scene, icons.icons8_computer_support_50.GetBitmap(use_theme=False), c))
         self.add_widget(-1, curvebar)
 
-    def add_oval(self, **kwargs):
-        oval = HShape()
-        oval.set_oval()
-        oval.random()
-        self.curves.append(oval)
-        self.series.clear()
-
-    def add_circle(self, **kwargs):
-        circle = HShape()
-        circle.set_circle()
-        circle.random()
-        self.curves.append(circle)
-        self.series.clear()
-
     def add_pendulum_x(self, **kwargs):
         x_pen = HShape()
         x_pen.set_x_pendulum()
         x_pen.random()
         self.curves.append(x_pen)
-        self.series.clear()
+        self.series = None
 
     def add_pendulum_y(self, **kwargs):
         y_pen = HShape()
         y_pen.set_y_pendulum()
         y_pen.random()
         self.curves.append(y_pen)
-        self.series.clear()
-
-    def add_spiral(self, **kwargs):
-        spiral = HShape()
-        spiral.set_spiral()
-        spiral.random()
-        self.curves.append(spiral)
-        self.series.clear()
+        self.series = None
 
     def confirm(self, **kwargs):
         """
@@ -347,7 +276,7 @@ class HarmonographWidget(Widget):
             self.parent.remove_widget(self)
         except IndexError:
             pass
-        self.series.clear()
+        self.series = None
         self.scene.request_refresh()
 
     def close_all_curve_widgets(self):
@@ -357,41 +286,47 @@ class HarmonographWidget(Widget):
     def set_random_harmonograph(self, **kwargs):
         for p in self.curves:
             p.random()
-        self.series.clear()
+        self.series = None
         self.scene.request_refresh()
 
-    def process_draw(self, gc):
-        self.process_shape()
+    def process_draw(self, gc: wx.GraphicsContext):
+        gc.PushState()
+        if self.shape_matrix is None:
+            self.process_matrix()
+        if self.series is None:
+            self.process_shape()
+        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.shape_matrix)))
         gc.SetPen(self.tool_pen)
         gc.StrokeLines(self.series)
+        gc.PopState()
+
+    def process_matrix(self):
+        self.shape_matrix = Matrix()
+        self.shape_matrix.post_rotate(self.theta)
+        self.shape_matrix.post_scale(self.scale, self.scale)
+        self.shape_matrix.post_translate(self.left, self.top)
 
     def process_shape(self):
-        if self.series:
+        if self.series is not None:
             return
-        shape_matrix = Matrix()
-        shape_matrix.post_rotate(self.theta)
-        shape_matrix.post_scale(self.scale, self.scale)
-        shape_matrix.post_translate(self.x, self.y)
-        self.series.clear()
-        step = self.degree_step / SLICES
+        self.series = None
+        step = self.t_step
 
         if step <= 0:
             step = 0.001
-
-        time = 0
-        while time < self.rotations:
-            px = 0
-            py = 0
-            for p in self.curves:
-                pdx, pdy = p.position(time)
-                px += pdx
-                py += pdy
-            px, py = shape_matrix.point_in_matrix_space((px,py))
-            self.series.append((px,py))
-            time += step
+        steps = int(self.rotations / step)
+        v = np.linspace(0, self.rotations, num=steps)
+        total = None
+        for p in self.curves:
+            pos = p.position(v)
+            if total is None:
+                total = pos
+            else:
+                total += pos
+        self.series = total
 
     def remove_curver(self, c):
-        self.series.clear()
+        self.series = None
         self.curves.remove(c)
         self.process_shape()
 
@@ -410,25 +345,25 @@ class CurveWidget(OpenCloseWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         if self.series:
             return
-        self.series.clear()
-        step = 0.1 / SLICES
-
-        if step <= 0:
-            step = 0.001
-
-        time = 0
-        while time < self.parent.parent.rotations:
-            px = 0
-            py = 0
-            pdx, pdy = self.curve.position(time)
-            px += pdx
-            py += pdy
-            px += self.left
-            py += self.top
-            self.series.append((px, py))
-            time += step
-        gc.SetPen(self.tool_pen)
-        gc.StrokeLines(self.series)
+        # self.series = None
+        # step = 0.1 / SLICES
+        #
+        # if step <= 0:
+        #     step = 0.001
+        #
+        # time = 0
+        # while time < self.parent.parent.rotations:
+        #     px = 0
+        #     py = 0
+        #     pdx, pdy = self.curve.position(time)
+        #     px += pdx
+        #     py += pdy
+        #     px += self.left
+        #     py += self.top
+        #     self.series.append((px, py))
+        #     time += step
+        # gc.SetPen(self.tool_pen)
+        # gc.StrokeLines(self.series)
 
 
 class ControlWidget(Widget):
