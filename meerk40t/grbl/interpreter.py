@@ -8,6 +8,7 @@ import re
 
 import numpy as np
 
+from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Arc
@@ -574,6 +575,7 @@ class GRBLInterpreter:
                     self.driver.rapid_mode()
                 elif v == 2:
                     # Program End
+                    self.driver.plot_start()
                     self.driver.rapid_mode()
                     return 0
                 elif v == 30:
@@ -787,9 +789,14 @@ class GRBLInterpreter:
                 self.x = x
                 self.y = y
             if self.move_mode == 0:
-                self.driver.move_abs(self.x, self.y)
+                self.driver.move_abs(self.x * self.scale, self.y * self.scale)
             elif self.move_mode == 1:
-                self.driver.plot(LineCut(ox, oy, self.x, self.y))
+                self.driver.plot(
+                    LineCut(
+                        (int(ox * self.scale), int(oy * self.scale)),
+                        (int(self.x * self.scale), int(self.y * self.scale)),
+                    )
+                )
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
                 # 3 = CCW ARC
@@ -803,19 +810,47 @@ class GRBLInterpreter:
                     cy += jy
                 if "r" in gc:
                     # Strictly speaking this uses the R parameter, but that wasn't coded.
-                    arc = Arc(start=(ox, oy), center=(cx, cy), end=(self.x, self.y), ccw=self.move_mode == 3)
+                    arc = Arc(
+                        start=(ox, oy),
+                        center=(cx, cy),
+                        end=(self.x, self.y),
+                        ccw=self.move_mode == 3,
+                    )
                     last = None
+                    cut = CutCode()
                     for c in arc.npoint(np.linspace(0, 1, 50)):
                         if last is not None:
-                            self.driver.plot(LineCut(last[0], last[1], c[0], c[1]))
-                        last = c
+                            self.driver.plot(
+                                LineCut(
+                                    (
+                                        int(last[0] * self.scale),
+                                        int(last[1] * self.scale),
+                                    ),
+                                    (int(c[0] * self.scale), int(c[1] * self.scale)),
+                                )
+                            )
+                    self.driver.plot(cut)
                 else:
-                    arc = Arc(start=(ox, oy), center=(cx, cy), end=(self.x, self.y), ccw=self.move_mode == 3)
+                    arc = Arc(
+                        start=(ox, oy),
+                        center=(cx, cy),
+                        end=(self.x, self.y),
+                        ccw=self.move_mode == 3,
+                    )
                     last = None
+                    cut = CutCode()
                     for c in arc.npoint(np.linspace(0, 1, 50)):
                         if last is not None:
-                            self.driver.plot(LineCut(last[0], last[1], c[0], c[1]))
-                        last = c
+                            self.driver.plot(
+                                LineCut(
+                                    (
+                                        int(last[0] * self.scale),
+                                        int(last[1] * self.scale),
+                                    ),
+                                    (int(c[0] * self.scale), int(c[1] * self.scale)),
+                                )
+                            )
+                    self.driver.plot(cut)
         return 0
 
     def g93_feedrate(self):
