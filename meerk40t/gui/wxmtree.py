@@ -36,6 +36,7 @@ from .icons import (
     icons8_type_50,
     icons8_vector_20,
     icons8_visit_20,
+    icons8_warning_shield_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -297,7 +298,9 @@ class TreePanel(wx.Panel):
     @signal_listener("updateop_tree")
     def on_update_op_labels_tree(self, origin, *args):
         self.shadow_tree.update_op_labels()
-
+        opitem = self.context.elements.get(type="branch ops")._item
+        tree = self.shadow_tree.wxtree
+        tree.Expand(opitem)
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
@@ -400,6 +403,10 @@ class ShadowTree:
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image_id = self.state_images.Add(bitmap=image)
         image = icons8_r_white.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
+        image_id = self.state_images.Add(bitmap=image)
+        image = icons8_warning_shield_20.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
@@ -770,9 +777,14 @@ class ShadowTree:
         self.update_op_labels()
 
         self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch ops")._item)
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        op_item = self.elements.get(type="branch ops")._item
+        self.wxtree.Expand(op_item)
+        if self.elements.have_unassigned_elements():
+            self.wxtree.SetItemState(op_item, 2)
+        else:
+            self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
@@ -908,6 +920,11 @@ class ShadowTree:
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
+        if self.elements.have_unassigned_elements():
+            self.wxtree.SetItemState(node_operations._item, 2)
+        else:
+            self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
+
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
