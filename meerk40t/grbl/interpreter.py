@@ -5,10 +5,12 @@ The GRBL Interpreter converts our parsed Grbl/Gcode data into Driver-like calls.
 """
 
 import re
-from math import isnan
 
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, UNITS_PER_PIXEL
-from meerk40t.svgelements import Arc, Color, Matrix, Move, Path
+import numpy as np
+
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
+from meerk40t.svgelements import Arc
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
 CODE_RE = re.compile(r"([A-Za-z])")
@@ -473,8 +475,8 @@ class GRBLInterpreter:
                 pass
             elif data == "$H":
                 if self.settings["homing_cycle_enable"]:
-                    self.plotter("home")
-                    self.plotter("move", self.x, self.y, 0, 0)
+                    self.driver.physical_home()
+                    self.driver.move_abs(0, 0)
                     self.x = 0
                     self.y = 0
                     return 0
@@ -569,30 +571,30 @@ class GRBLInterpreter:
             for v in gc["m"]:
                 if v in (0, 1):
                     # Stop or Unconditional Stop
-                    self.plotter("new")
+                    self.driver.rapid_mode()
                 elif v == 2:
                     # Program End
-                    self.plotter("end")
+                    self.driver.rapid_mode()
                     return 0
                 elif v == 30:
                     # Program Stop
-                    self.plotter("end")
+                    self.driver.rapid_mode()
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
-                    self.plotter("start")
+                    self.driver.program_mode()
                 elif v == 5:
                     # Spindle Off - Laser Mode
-                    self.plotter("end")
+                    self.driver.rapid_mode()
                 elif v == 7:
                     #  Mist coolant control.
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    self.plotter("coolant", True)
+                    self.driver.signal("coolant", True)
                 elif v == 9:
                     # Flood coolant Off
-                    self.plotter("coolant", False)
+                    self.driver.signal("coolant", False)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -629,8 +631,8 @@ class GRBLInterpreter:
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    self.plotter("new")
-                    self.plotter("wait", t)
+                    self.driver.rapid_mode()
+                    self.driver.wait(t)
                 elif v == 17:
                     # Set XY coords.
                     pass
@@ -648,8 +650,8 @@ class GRBLInterpreter:
                     self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
-                    self.plotter("home")
-                    self.plotter("move", self.x, self.y, 0, 0)
+                    self.driver.home()
+                    self.driver.move_abs(0, 0)
                     self.x = 0
                     self.y = 0
                     self.z = 0
@@ -720,9 +722,7 @@ class GRBLInterpreter:
                 feed_rate = self.feed_convert(v)
                 if self.settings.get("speed", 0) != feed_rate:
                     self.settings["speed"] = feed_rate
-                    # On speed change we start a new plot.
-                    # On speed change we start a new plot.
-                    self.plotter("new", v, 0)
+                    self.driver.set("speed", v)
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -731,8 +731,8 @@ class GRBLInterpreter:
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.settings["power"] != v:
-                    self.plotter("new", 0, v)
-                self.settings["power"] = v
+                    self.driver.set("power", v)
+                    self.settings["power"] = v
             del gc["s"]
         if "z" in gc:
             oz = self.z
@@ -745,7 +745,7 @@ class GRBLInterpreter:
                 del gc["z"]
             self.z = z
             if oz != self.z:
-                self.plotter("zaxis", self.z)
+                self.driver.axis("z", self.z)
 
         if (
             "x" in gc
@@ -786,12 +786,10 @@ class GRBLInterpreter:
             else:
                 self.x = x
                 self.y = y
-
-            power = self.settings.get("power", 0)
             if self.move_mode == 0:
-                self.plotter("move", ox, oy, self.x, self.y)
+                self.driver.move_abs(self.x, self.y)
             elif self.move_mode == 1:
-                self.plotter("line", ox, oy, self.x, self.y, power / 1000.0)
+                self.driver.plot(LineCut(ox, oy, self.x, self.y))
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
                 # 3 = CCW ARC
@@ -803,49 +801,36 @@ class GRBLInterpreter:
                 if "j" in gc:
                     jy = gc["j"].pop(0)  # * self.scale
                     cy += jy
-
-                r0 = complex(cx - self.x, cy - self.y)
-                r1 = complex(cx - ox, cy - oy)
-                d = abs(abs(r0) - abs(r1))
-                # if d > 100:
-                #     print("there's something wrong here.")
                 if "r" in gc:
-                    self.plotter(
-                        "cw-arc-r" if self.move_mode == 2 else "ccw-arc-r",
-                        ox,
-                        oy,
-                        cx,
-                        cy,
-                        self.x,
-                        self.y,
-                        power / 1000.0,
-                    )
+                    # Strictly speaking this uses the R parameter, but that wasn't coded.
+                    arc = Arc(start=(ox, oy), center=(cx, cy), end=(self.x, self.y), ccw=self.move_mode == 3)
+                    last = None
+                    for c in arc.npoint(np.linspace(0, 1, 50)):
+                        if last is not None:
+                            self.driver.plot(LineCut(last[0], last[1], c[0], c[1]))
+                        last = c
                 else:
-                    self.plotter(
-                        "ccw-arc" if self.move_mode == 3 else "cw-arc",
-                        ox,
-                        oy,
-                        cx,
-                        cy,
-                        self.x,
-                        self.y,
-                        power / 1000.0,
-                    )
+                    arc = Arc(start=(ox, oy), center=(cx, cy), end=(self.x, self.y), ccw=self.move_mode == 3)
+                    last = None
+                    for c in arc.npoint(np.linspace(0, 1, 50)):
+                        if last is not None:
+                            self.driver.plot(LineCut(last[0], last[1], c[0], c[1]))
+                        last = c
         return 0
 
-    ### THE CODE FOR G93 / G94 NEEDS A THOROUGH REVIEW
-    # According to my understanding they have to be given in the context of the active unit
-    # (mm or inch)
-
     def g93_feedrate(self):
-        # Feed Rate in Minutes / Unit
-        # G93 - is Inverse Time Mode. In inverse time feed rate mode, an F word means the move
-        # should be completed in [one divided by the F number] minutes. For example, if the
-        # F number is 2.0, the move should be completed in half a minute.
-        # When the inverse time feed rate mode is active, an F word must appear on every line
-        # which has a G1, G2, or G3 motion, and an F word on a line that does not have
-        # G1, G2, or G3 is ignored. Being in inverse time feed rate mode does not
-        # affect G0 (rapid move) motions.
+        """
+        Feed Rate in Minutes / Unit
+        G93 - is Inverse Time Mode. In inverse time feed rate mode, an F word means the move
+        should be completed in [one divided by the F number] minutes. For example, if the
+        F number is 2.0, the move should be completed in half a minute.
+        When the inverse time feed rate mode is active, an F word must appear on every line
+        which has a G1, G2, or G3 motion, and an F word on a line that does not have
+        G1, G2, or G3 is ignored. Being in inverse time feed rate mode does not
+        affect G0 (rapid move) motions.
+        @return:
+        """
+
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_INCH) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_INCH / self.scale) / s
@@ -853,29 +838,19 @@ class GRBLInterpreter:
             self.feed_convert = lambda s: (60.0 * self.scale / UNITS_PER_MM) / s
             self.feed_invert = lambda s: (60.0 * UNITS_PER_MM / self.scale) / s
 
-        # Original code:
-        # MM_PER_INCH = 25.4
-        # MIL_PER_INCH = 1000.0
-        # MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
-        # self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
-        # self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
-
     def g94_feedrate(self):
-        # Feed Rate in Units / Minute
-        # G94 - is Units per Minute Mode. In units per minute feed mode, an F word is interpreted
-        # to mean the controlled point should move at a certain number of inches per minute,
-        # millimeters per minute, or degrees per minute, depending upon what length units
-        # are being used and which axis or axes are moving.
+        """
+        Feed Rate in Units / Minute
+        G94 - is Units per Minute Mode. In units per minute feed mode, an F word is interpreted
+        to mean the controlled point should move at a certain number of inches per minute,
+        millimeters per minute, or degrees per minute, depending upon what length units
+        are being used and which axis or axes are moving.
+        @return:
+        """
+
         if self.scale == UNITS_PER_INCH:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
         else:
             self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_MM) * 60.0)
             self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_MM) * 60.0)
-        # units to mm, seconds to minutes.
-
-        # Original code:
-        # MIL_PER_INCH = 1000.0
-        # self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
-        # self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
-        # units to mm, seconds to minutes.
