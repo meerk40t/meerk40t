@@ -15316,3 +15316,14 @@ msgstr "Ursprung korrigieren"
 
 msgid "Z-Axis"
 msgstr "Z-Achse"
+
+msgid "You have unassigned elements, that won't be burned"
+msgstr ""
+"Achtung: Nicht alle Elemente sind Arbeitsvorgängen\n"
+"zugeordnet und werden somit nicht gelasert."
+
+msgid "Select unassigned elements"
+msgstr "Selektiere nicht zugeordnete Elemente"
+
+msgid "Select all elements that won't be burned"
+msgstr "Selektiere alle Elemente, die nicht einem Arbeitsvorgang zugeordnet sind"
