@@ -13,8 +13,11 @@ from .attributes import IdPanel
 
 _ = wx.GetTranslation
 
+
 class ElemcountPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, showid=True, showlabel=True, **kwds):
+    def __init__(
+        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -60,7 +63,9 @@ class GroupPropertiesPanel(ScrolledPanel):
 
         self.node = node
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=node)
-        self.panel_ct = ElemcountPanel(self, id=wx.ID_ANY, context=self.context, node=node)
+        self.panel_ct = ElemcountPanel(
+            self, id=wx.ID_ANY, context=self.context, node=node
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -120,7 +125,9 @@ class FilePropertiesPanel(ScrolledPanel):
         self.text_path = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.text_datetime = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         self.text_size = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
-        self.panel_ct = ElemcountPanel(self, id=wx.ID_ANY, context=self.context, node=node)
+        self.panel_ct = ElemcountPanel(
+            self, id=wx.ID_ANY, context=self.context, node=node
+        )
         self.__set_properties()
         self.__do_layout()
 

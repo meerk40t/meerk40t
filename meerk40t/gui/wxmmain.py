@@ -362,8 +362,8 @@ class MeerK40t(MWindow):
                 "type": bool,
                 "label": _("Mini icon in tree"),
                 "tip": _(
-                    "Active: Display a miniature representation of the element in the tree\n" +
-                    "Inactive: Use a standard icon for the element type instead"
+                    "Active: Display a miniature representation of the element in the tree\n"
+                    + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
@@ -534,7 +534,7 @@ class MeerK40t(MWindow):
             {
                 "attr": "snap_points",
                 "object": context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Snap to element"),
                 "tip": _("Shall the cursor snap to the next element point?"),
@@ -3199,9 +3199,7 @@ class MeerK40t(MWindow):
     def clear_project(self):
         context = self.context
         try:
-            with wx.BusyInfo(
-                wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")
-            ):
+            with wx.BusyInfo(wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")):
                 self.working_file = None
                 context.elements.clear_all()
                 self.context(".laserpath_clear\n")

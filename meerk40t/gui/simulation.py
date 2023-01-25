@@ -1503,7 +1503,6 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(False)
 
     def update_fields(self):
-
         def len_str(value):
             if abs(value) >= 1000000:
                 result = f"{value / 1000000:.2f}km"

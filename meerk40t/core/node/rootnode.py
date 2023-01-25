@@ -130,7 +130,35 @@ class RootNode(Node):
             ]
         for listen in self.listeners:
             if hasattr(listen, "translated"):
-                listen.translated(node, dx=dx, dy=dy) # , **kwargs)
+                listen.translated(node, dx=dx, dy=dy)  # , **kwargs)
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        """
+        Notifies any listeners that a value in the tree has been changed such that the matrix or other property
+        values have changed. But that the underlying data object itself remains intact.
+        @param node: node that was modified.
+        @param kwargs:
+        @return:
+        """
+        if node is None:
+            node = self
+        if self._bounds is not None:
+            x0, y0, x1, y1 = self._bounds
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            self._bounds = [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)]
+
+        for listen in self.listeners:
+            if hasattr(listen, "scaled"):
+                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy)  # , **kwargs)
 
     def notify_altered(self, node=None, **kwargs):
         """

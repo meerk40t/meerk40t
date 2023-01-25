@@ -63,7 +63,7 @@ def init_commands(kernel):
             "page": "Laser",
             "section": "General",
             "style": "option",
-            "display": ("Immediate", "User confirmation", "Delay 5 seconds"),
+            "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
             "choices": (0, 1, 2),
         },
     ]
@@ -2176,33 +2176,38 @@ def init_commands(kernel):
         # all it's siblings are selected as well, if that's the case
         # then use the parent instead - unless there are no other elements
         # selected ie all selected belong to the same group...
-        d = list()
-        elem_branch = self.elem_branch
-        for node in data:
-            snode = node
-            if snode.parent and snode.parent is not elem_branch:
-                # I need all other siblings
-                singular = False
-                for n in list(node.parent.children):
-                    if n not in data:
-                        singular = True
-                        break
-                if not singular:
-                    while (
-                        snode.parent
-                        and snode.parent is not elem_branch
-                        and snode.parent.type != "file"
-                    ):
-                        snode = snode.parent
-            if snode is not None and snode not in d:
-                d.append(snode)
-        if len(d) == 1 and d[0].type == "group":
-            # This is just on single group - expand...
-            data = list(d[0].flat(emphasized=True, types=elem_nodes))
-            for n in data:
-                n._emphasized_time = d[0]._emphasized_time
+
+        # Shortcut: group? Then we don't need all of this...
+        if "group" in remainder:
+            d = data
         else:
-            data = d
+            d = list()
+            elem_branch = self.elem_branch
+            for node in data:
+                snode = node
+                if snode.parent and snode.parent is not elem_branch:
+                    # I need all other siblings
+                    singular = False
+                    for n in list(node.parent.children):
+                        if n not in data:
+                            singular = True
+                            break
+                    if not singular:
+                        while (
+                            snode.parent
+                            and snode.parent is not elem_branch
+                            and snode.parent.type != "file"
+                        ):
+                            snode = snode.parent
+                if snode is not None and snode not in d:
+                    d.append(snode)
+            if len(d) == 1 and d[0].type == "group":
+                # This is just on single group - expand...
+                data = list(d[0].flat(emphasized=True, types=elem_nodes))
+                for n in data:
+                    n._emphasized_time = d[0]._emphasized_time
+            else:
+                data = d
         return "align", (
             self._align_mode,
             self._align_group,
@@ -2354,7 +2359,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(-delta, 0)
                     except AttributeError:
                         continue
             dim_pos += subbox[2] - subbox[0] + distributed_distance
@@ -2402,7 +2407,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(0, -delta)
                     except AttributeError:
                         continue
             dim_pos += subbox[3] - subbox[1] + distributed_distance
@@ -2807,7 +2812,7 @@ def init_commands(kernel):
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
                     e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.modified()
+                    e.translated(x_pos, y_pos)
                 self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
@@ -4310,7 +4315,9 @@ def init_commands(kernel):
                 e.stroke_width_zero()
             except AttributeError:
                 pass
-            e.modified()
+            # No full modified required, we are effectively only adjusting
+            # the painted_bounds
+            e.translated(0, 0)
         return "elements", data
 
     @self.console_command(
@@ -4625,7 +4632,9 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        elif color == "none":
+        self.set_start_time("full_load")
+        if color == "none":
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4633,8 +4642,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         else:
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4642,10 +4654,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4657,8 +4672,11 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+            self.set_end_time("classify")
             # self.signal("rebuild_tree")
             self.signal("refresh_tree", apply)
+        else:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -4721,6 +4739,7 @@ def init_commands(kernel):
             channel("----------")
             return "elements", data
         elif color == "none":
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4728,8 +4747,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         else:
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4737,10 +4759,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4753,7 +4778,10 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
             self.signal("refresh_tree", apply)
-        #                self.signal("rebuild_tree")
+            #                self.signal("rebuild_tree")
+            self.set_end_time("classify")
+        else:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument(
@@ -4982,7 +5010,7 @@ def init_commands(kernel):
                     if hasattr(node, "lock") and node.lock:
                         continue
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
             else:
@@ -4995,7 +5023,7 @@ def init_commands(kernel):
                     nsy = scale_y / osy
                     matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
         except ValueError:
@@ -5135,7 +5163,7 @@ def init_commands(kernel):
                         continue
 
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(tx, ty)
             else:
                 for node in data:
                     if (
@@ -5150,7 +5178,7 @@ def init_commands(kernel):
                     nty = ty - oty
                     matrix = Matrix.translate(ntx, nty)
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(ntx, nty)
         except ValueError:
             raise CommandSyntaxError
         return "elements", data

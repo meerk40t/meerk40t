@@ -223,30 +223,30 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "_90_Auto-Generation",
             },
-            {
-                "attr": "classify_auto_inherit",
-                "object": elements,
-                "default": True,
-                "type": bool,
-                "label": _("Autoinherit for empty operation"),
-                "tip": _(
-                    "If you drag and drop an element into an operation to assign it there,"
-                )
-                + "\n"
-                + _(
-                    "then the op can (if this option is ticked) inherit the color from the element"
-                )
-                + "\n"
-                + _(
-                    "and adopt not only the dragged element but all elements with the same color"
-                )
-                + "\n"
-                + _(
-                    "- provided no elements are assigned to it yet (ie works only for an empty op)!"
-                ),
-                "page": "Classification",
-                "section": "_30_GUI-Behaviour",
-            },
+            # {
+            #     "attr": "classify_auto_inherit",
+            #     "object": elements,
+            #     "default": True,
+            #     "type": bool,
+            #     "label": _("Autoinherit for empty operation"),
+            #     "tip": _(
+            #         "If you drag and drop an element into an operation to assign it there,"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "then the op can (if this option is ticked) inherit the color from the element"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "and adopt not only the dragged element but all elements with the same color"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+            #     ),
+            #     "page": "Classification",
+            #     "section": "_30_GUI-Behaviour",
+            # },
             {
                 "attr": "classify_on_color",
                 "object": elements,
@@ -407,6 +407,7 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.do_undo = True
         self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
@@ -418,7 +419,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
-        self.setting(bool, "classify_auto_inherit", False)
+        # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
@@ -462,7 +463,7 @@ class Elemental(Service):
         else:
             self._timing_stack[key] = [time(), 0, 0]
 
-    def set_end_time(self, key, display=True):
+    def set_end_time(self, key, display=True, delete=False, message=None):
         if key in self._timing_stack:
             stime = self._timing_stack[key]
             etime = time()
@@ -471,10 +472,17 @@ class Elemental(Service):
             stime[1] += duration
             stime[2] += 1
             if display:
+                if message is None:
+                    msg = ""
+                else:
+                    msg = " (" + message + ")"
+                output = self.kernel.channel("profiler", timestamp=True)
                 # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
-                self.kernel._console_channel(
-                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec"
+                output(
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, avg={stime[1] / stime[2]:.2f} sec{msg}"
                 )
+            if delete:
+                del self._timing_stack[key]
 
     @contextlib.contextmanager
     def static(self, source):
@@ -483,6 +491,14 @@ class Elemental(Service):
             yield self
         finally:
             self.resume_updates(source)
+
+    @contextlib.contextmanager
+    def undofree(self):
+        try:
+            self.do_undo = False
+            yield self
+        finally:
+            self.do_undo = True
 
     def stop_updates(self, source):
         # print (f"Stop update called from {source}")
@@ -1104,6 +1120,10 @@ class Elemental(Service):
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
 
+    def prepare_undo(self):
+        if self.do_undo:
+            self.schedule(self._save_restore_job)
+
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
@@ -1113,13 +1133,13 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def translated(self, node=None, dx=0, dy=0, *args):
         # It's safer to just recompute the selection area
@@ -1128,13 +1148,22 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
+
+    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.prepare_undo()
 
     def node_attached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def node_detached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -1331,9 +1360,9 @@ class Elemental(Service):
             self.classify(adding_elements)
         return items
 
-    def clear_operations(self):
+    def clear_operations(self, fast=False):
         operations = self._tree.get(type="branch ops")
-        operations.remove_all_children()
+        operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -1341,124 +1370,103 @@ class Elemental(Service):
             self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
-    def clear_elements(self):
+    def clear_elements(self, fast=False):
         elements = self._tree.get(type="branch elems")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
-    def clear_regmarks(self):
+    def clear_regmarks(self, fast=False):
         elements = self._tree.get(type="branch reg")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
 
     def clear_elements_and_operations(self):
-        self.clear_elements()
-        self.clear_operations()
+        fast = True
+        self.clear_elements(fast=fast)
+        self.clear_operations(fast=fast)
+        if fast:
+            self.signal("rebuild_tree")
 
     def clear_all(self):
+        fast = True
         self.set_start_time("clear_all")
         with self.static("clear_all"):
-            self.clear_elements()
-            self.clear_operations()
+            self.clear_elements(fast=fast)
+            self.clear_operations(fast=fast)
             self.clear_files()
             self.clear_note()
-            self.clear_regmarks()
+            self.clear_regmarks(fast=fast)
             self.validate_selected_area()
-        self.set_end_time("clear_all", True)
+        if fast:
+            self.signal("rebuild_tree")
+        self.set_end_time("clear_all", display=True)
 
     def clear_note(self):
         self.note = None
         self.signal("note", self.note)
-
-    # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
-
-    #     print ("elements d+d called")
-    #     if inheritance_mode.lower() == "auto":
-    #     elif inheritance_mode.lower() =
-    #     if inherit_stroke is None:
-    #         inh_stroke = False
-    #     else:
-    #         inh_stroke = inherit_stroke
-    #     if inherit_fill is None:
-    #         inh_fill = False
-    #     else:
-    #         inh_fill = inherit_fill
-
-    #     data = dragging_nodes
-    #     success = False
-    #     special_occasion = False
-    #     if drop_node.type.startswith("op"):
-    #         if len(drop_node.children) == 0 and self.classify_auto_inherit:
-    #             # only for empty operations!
-    #             # Let's establish the colors first
-    #             first_color_stroke = None
-    #             first_color_fill = None
-    #             # Look for the first element that has stroke/fill
-    #             for n in data:
-    #                 if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     first_color_stroke = n.stroke
-    #                 if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     first_color_fill = n.fill
-    #                 canbreak = first_color_fill is not None or first_color_stroke is not None
-    #                 if canbreak:
-    #                     break
-    #             if hasattr(drop_node, "color") and (first_color_fill is not None or first_color_stroke is not None):
-    #                 # Well if you have both options, then you get that
-    #                 # color that is present, precedence for fill
-    #                 if first_color_fill is not None:
-    #                     col = first_color_fill
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("fill")
-    #                         drop_node.remove_color_attribute("stroke")
-    #                 else:
-    #                     col = first_color_stroke
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("stroke")
-    #                         drop_node.remove_color_attribute("fill")
-    #                 drop_node.color = col
-
-    #             # Now that we have the colors lets iterate through all elements
-    #             fuzzy = self.classify_fuzzy
-    #             fuzzydistance = self.classify_fuzzydistance
-    #             for n in self.flat(types=elem_nodes):
-    #                 addit = False
-    #                 if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.stroke == first_color_stroke:
-    #                             addit = True
-    #                 if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.fill == first_color_fill:
-    #                             addit = True
-    #                 # print ("Checked %s and will addit=%s" % (n.type, addit))
-    #                 if addit and n not in data:
-    #                     data.append(n)
-    #     for drag_node in data:
-    #         if drop_node is drag_node:
-    #             continue
-    #         if drop_node.drop(drag_node, modify=False):
-    #             if special_occasion:
-    #                 for ref in list(drag_node._references):
-    #                     ref.remove_node()
-    #             drop_node.drop(drag_node, modify=True)
-    #             success = True
-
-    #     # Refresh the target node so any changes like color materialize...
-    #     self.signal("element_property_reload", drop_node)
-    #     return success
 
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
         special_occasion = False
         to_classify = []
+        # if drop_node.type.startswith("op"):
+        #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
+        #         # only for empty operations!
+        #         # Let's establish the colors first
+        #         first_color_stroke = None
+        #         first_color_fill = None
+        #         inh_stroke = False
+        #         inh_fill = False
+        #         # Look for the first element that has stroke/fill
+        #         for n in data:
+        #             if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 first_color_stroke = n.stroke
+        #                 inh_stroke = True
+        #             if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 first_color_fill = n.fill
+        #                 inh_fill = True
+        #             canbreak = inh_fill or inh_stroke
+        #             if canbreak:
+        #                 break
+        #         if hasattr(drop_node, "color") and (inh_fill or inh_stroke):
+        #             # Well if you have both options, then you get that
+        #             # color that is present, precedence for fill
+        #             if inh_fill:
+        #                 col = first_color_fill
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("fill")
+        #                     drop_node.remove_color_attribute("stroke")
+        #             else:
+        #                 col = first_color_stroke
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("stroke")
+        #                     drop_node.remove_color_attribute("fill")
+        #             drop_node.color = col
+
+        #         # Now that we have the colors lets iterate through all elements
+        #         fuzzy = self.classify_fuzzy
+        #         fuzzydistance = self.classify_fuzzydistance
+        #         for n in self.flat(types=elem_nodes):
+        #             addit = False
+        #             if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.stroke == first_color_stroke:
+        #                         addit = True
+        #             if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.fill == first_color_fill:
+        #                         addit = True
+        #             # print ("Checked %s and will addit=%s" % (n.type, addit))
+        #             if addit and n not in data:
+        #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
                 continue
@@ -1729,6 +1737,10 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            # Empty group / files may cause problems
+            if node.type in ("file", "group"):
+                if not node._children:
+                    bounds = None
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -1761,7 +1773,6 @@ class Elemental(Service):
                     e.set_dirty_bounds()
                     bounds = e.bounds
                     bounds_painted = e.paint_bounds
-
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
@@ -2900,7 +2911,7 @@ class Elemental(Service):
                             # self.listen_tree(self)
                             end_time = time()
                             self._filename = pathname
-                            self.set_end_time("load", True)
+                            self.set_end_time("load", display=True)
                             return True
                         except FileNotFoundError:
                             return False

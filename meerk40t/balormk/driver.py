@@ -23,13 +23,13 @@ from meerk40t.core.plotplanner import PlotPlanner
 
 
 class BalorDriver:
-    def __init__(self, service):
+    def __init__(self, service, force_mock=False):
         self.service = service
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
 
-        self.connection = GalvoController(service)
+        self.connection = GalvoController(service, force_mock=force_mock)
 
         self.service.add_service_delegate(self.connection)
         self.paused = False
@@ -114,6 +114,29 @@ class BalorDriver:
         @return:
         """
         self.queue.append(plot)
+
+    def _wait_for_input_protocol(self, input_mask, input_value):
+        required_passes = self.service.input_passes_required
+        passes = 0
+        while self.connection and not self.connection.is_shutdown and not self._aborting:
+            read_port = self.connection.read_port()
+            b = read_port[1]
+            all_matched = True
+            for i in range(16):
+                if (input_mask >> i) & 1 == 0:
+                    continue  # We don't care about this mask.
+                if (input_value >> i) & 1 != (b >> i) & 1:
+                    all_matched = False
+                    time.sleep(0.05)
+                    break
+
+            if all_matched:
+                passes += 1
+                if passes > required_passes:
+                    # Success, we matched the wait for protocol.
+                    return
+            else:
+                passes = 0
 
     def plot_start(self):
         """
@@ -237,8 +260,12 @@ class BalorDriver:
                 con.port_set(q.output_mask, q.output_value)
                 con.list_write_port()
             elif isinstance(q, InputCut):
-                input_value = q.input_value
-                con.list_wait_for_input(input_value)
+                if self.service.input_operation_hardware:
+                    con.list_wait_for_input(q.input_mask, 0)
+                else:
+                    con.rapid_mode()
+                    self._wait_for_input_protocol(q.input_mask, q.input_value)
+                    con.program_mode()
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():

@@ -909,6 +909,10 @@ class MeerK40tScenePanel(wx.Panel):
         # self.scene.signal('guide')
         self.request_refresh(origin)
 
+    @signal_listener("tool_modified")
+    def on_modification_by_tool(self, origin, *args):
+        self.scene.signal("tool_modified")
+
     @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, *args):
         self.scene.signal("emphasized")

@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_route_50,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener, get_safe_path
+from meerk40t.kernel import get_safe_path, signal_listener
 
 _ = wx.GetTranslation
 
@@ -655,6 +655,8 @@ class SpoolerPanel(wx.Panel):
     def timestr(t, oneday):
         if t is None:
             return ""
+        if isinstance(t, str):
+            return t
         if isinf(t) or isnan(t) or t < 0:
             return "∞"
 
@@ -675,6 +677,8 @@ class SpoolerPanel(wx.Panel):
     def datestr(t):
         if t is None:
             return ""
+        if isinstance(t, str):
+            return t
         localt = time.localtime(t)
         lyear = localt[0]
         lmonth = int(localt[1])
@@ -723,21 +727,28 @@ class SpoolerPanel(wx.Panel):
                 self.list_job_history.GetItemCount(), f"#{idx}"
             )
             self.map_item_key[list_id] = key
+            start_time = info.get("start_time", 0)
+            if start_time is None:
+                start_time = 0
+            duration = info.get("duration", 0)
+            if duration is None:
+                duration = 0
             self.list_job_history.SetItem(list_id, HC_JOBNAME, str(info.get("label")))
             self.list_job_history.SetItem(
                 list_id,
                 HC_START,
-                f"{self.datestr(info.get('start_time'))} {self.timestr(info.get('start_time'), True)}",
+                f"{self.datestr(start_time)} {self.timestr(start_time, True)}",
             )
+
             self.list_job_history.SetItem(
                 list_id,
                 HC_END,
-                self.timestr(info.get("start_time", 0) + info.get("duration", 0), True),
+                self.timestr(start_time + duration, True),
             )
             self.list_job_history.SetItem(
                 list_id,
                 HC_RUNTIME,
-                self.timestr(info.get("duration"), False),
+                self.timestr(duration, False),
             )
             self.list_job_history.SetItem(
                 list_id,

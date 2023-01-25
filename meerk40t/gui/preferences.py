@@ -125,7 +125,9 @@ class PreferencesLanguagePanel(wx.Panel):
         if lang != -1 and self.context.app is not None:
             self.context.app.update_language(lang)
 
+
 # end of class PreferencesLanguagePanel
+
 
 class PreferencesSavingPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -138,7 +140,9 @@ class PreferencesSavingPanel(wx.Panel):
         self.button_save = wx.Button(self, wx.ID_ANY, _("Save"))
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
         self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
-        self.button_export.SetToolTip(_("Export the the current settings to a different location"))
+        self.button_export.SetToolTip(
+            _("Export the the current settings to a different location")
+        )
         self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
         main_sizer.Add(self.button_save, 0, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -158,22 +162,33 @@ class PreferencesSavingPanel(wx.Panel):
 
     def on_button_export(self, event=None):
         dlg = wx.DirDialog(
-            self, _("Choose target directory:"),
-            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST
+            self,
+            _("Choose target directory:"),
+            style=wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST,
         )
 
         if dlg.ShowModal() == wx.ID_OK:
             self.context(f"setting_export {dlg.GetPath()}\n")
-            wx.MessageBox(_('Export completed'), _('Info'), wx.OK | wx.ICON_INFORMATION)
+            wx.MessageBox(_("Export completed"), _("Info"), wx.OK | wx.ICON_INFORMATION)
 
         dlg.Destroy()
 
     def on_button_import(self, event=None):
         message = _("This will import a previosuly saved configuration file!") + "\n"
-        message += _("This may make MeerK40t unworkable if the file does not have the right format!") + "\n"
+        message += (
+            _(
+                "This may make MeerK40t unworkable if the file does not have the right format!"
+            )
+            + "\n"
+        )
         message += _("You do this at you own risk - are you realy sure?")
         caption = _("Warning")
-        dlg = wx.MessageDialog(self, message, caption, wx.YES_NO | wx.ICON_WARNING,)
+        dlg = wx.MessageDialog(
+            self,
+            message,
+            caption,
+            wx.YES_NO | wx.ICON_WARNING,
+        )
         dlgresult = dlg.ShowModal()
         dlg.Destroy()
         if dlgresult != wx.ID_YES:
@@ -193,7 +208,7 @@ class PreferencesSavingPanel(wx.Panel):
             return
 
         self.context(f"setting_import {myfile}\n")
-        wx.MessageBox(_('Import completed'), _('Info'), wx.OK | wx.ICON_INFORMATION)
+        wx.MessageBox(_("Import completed"), _("Info"), wx.OK | wx.ICON_INFORMATION)
 
 
 class PreferencesPixelsPerInchPanel(wx.Panel):
@@ -424,7 +439,7 @@ class Preferences(MWindow):
             (self.context.elements, "classify_black_as_raster", True, True),
             (self.context.elements, "classify_default", True, False),
             (self.context.elements, "classify_autogenerate", True, False),
-            (self.context.elements, "classify_auto_inherit", False, True),
+            # (self.context.elements, "classify_auto_inherit", False, True),
             (self.context.elements, "classify_on_color", True, False),
             (self.context.elements, "classify_autogenerate_both", True, True),
         ]
