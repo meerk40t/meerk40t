@@ -41,6 +41,10 @@ def process_event(
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
 
+    # Not during an edit !
+    if widget.scene.active_tool.startswith("edit"):
+        return RESPONSE_CHAIN
+
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
     if event_type == "hover" and widget.hovering and not inside:
