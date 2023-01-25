@@ -729,6 +729,20 @@ class GRBLParser:
     def state(self):
         return 0
 
+    def status_update(self):
+        # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+        if self.state == 0:
+            state = "Idle"
+        else:
+            state = "Busy"
+        x, y = self.current
+        x /= self.scale
+        y /= self.scale
+        z = 0.0
+        f = self.feed_invert(self.settings.get("speed", 0))
+        s = self.settings.get("power", 0)
+        return f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n"
+
     def realtime_write(self, bytes_to_write):
         """
         Process very specific grbl realtime_write data.
@@ -736,18 +750,7 @@ class GRBLParser:
         @return:
         """
         if bytes_to_write == "?":  # Status report
-            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if self.state == 0:
-                state = "Idle"
-            else:
-                state = "Busy"
-            x, y = self.current
-            x /= self.scale
-            y /= self.scale
-            z = 0.0
-            f = self.feed_invert(self.settings.get("speed", 0))
-            s = self.settings.get("power", 0)
-            self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
+            self.grbl_write(self.status_update())
         elif bytes_to_write == "~":  # Resume.
             self.plotter("resume")
         elif bytes_to_write == "!":  # Pause.
