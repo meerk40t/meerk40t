@@ -923,11 +923,11 @@ class GRBLParser:
                     self.plotter("new")
                 elif v == 2:
                     # Program End
-                    self.plotter("new")
+                    self.plotter("end")
                     return 0
                 elif v == 30:
                     # Program Stop
-                    self.plotter("new")
+                    self.plotter("end")
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode

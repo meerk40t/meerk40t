@@ -60,6 +60,7 @@ class GRBLEmulator(Module):
         elif command == "new":
             self.new_plot_cut()
         elif command == "end":
+            self.new_plot_cut()
             self.spool_plot()
         elif command == "wait":
             # Time in seconds to wait.
