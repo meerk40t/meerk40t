@@ -769,10 +769,6 @@ class GRBLParser:
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
                 self.realtime_write("\x85")
-            if data == "\n":
-                return
-            if data == "\r\n":
-                return
             data = data.decode("utf-8")
         self._buffer += data
         while "\b" in self._buffer:
@@ -789,8 +785,6 @@ class GRBLParser:
         while "\r" in self._buffer:
             # Process normalized lineends.
             pos = self._buffer.find("\r")
-            if pos == 0:
-                continue
             command = self._buffer[0:pos].strip("\r")
             self._buffer = self._buffer[pos + 1 :]
             cmd = self.process(command)
