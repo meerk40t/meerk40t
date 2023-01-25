@@ -353,6 +353,7 @@ class GRBLInterpreter:
         self.channel = None
 
         self._buffer = ""
+        self.program_mode = False
 
     def __repr__(self):
         return "GRBLInterpreter()"
@@ -590,9 +591,13 @@ class GRBLInterpreter:
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
                     self.driver.program_mode()
+                    self.program_mode = True
                 elif v == 5:
                     # Spindle Off - Laser Mode
+                    if self.program_mode:
+                        self.driver.plot_start()
                     self.driver.rapid_mode()
+                    self.program_mode = False
                 elif v == 7:
                     #  Mist coolant control.
                     pass
@@ -852,7 +857,9 @@ class GRBLInterpreter:
                 x, y = matrix.transform_point([x, y])
                 plot.plot[i] = int(x), int(y), laser
         self.driver.plot(plot)
-        self.driver.plot_start()
+        if not self.program_mode:
+            # If we plotted this and we aren't in program mode execute all of these commands right away
+            self.driver.plot_start()
 
     def g93_feedrate(self):
         """
