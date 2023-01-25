@@ -797,7 +797,7 @@ class GRBLInterpreter:
                 self.x = x
                 self.y = y
             if self.move_mode == 0:
-                self.driver.move_abs(self.x * self.scale, self.y * self.scale)
+                self.driver.move_abs(self.x, self.y)
             elif self.move_mode == 1:
                 plotcut = PlotCut(settings=dict(self.settings))
                 power = self.settings["power"]
@@ -852,6 +852,7 @@ class GRBLInterpreter:
                 x, y = matrix.transform_point([x, y])
                 plot.plot[i] = int(x), int(y), laser
         self.driver.plot(plot)
+        self.driver.plot_start()
 
     def g93_feedrate(self):
         """
