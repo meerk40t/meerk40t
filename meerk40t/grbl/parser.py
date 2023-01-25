@@ -743,23 +743,6 @@ class GRBLParser:
         s = self.settings.get("power", 0)
         return f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n"
 
-    def realtime_write(self, bytes_to_write):
-        """
-        Process very specific grbl realtime_write data.
-        @param bytes_to_write:
-        @return:
-        """
-        if bytes_to_write == "?":  # Status report
-            self.grbl_write(self.status_update())
-        elif bytes_to_write == "~":  # Resume.
-            self.plotter("resume")
-        elif bytes_to_write == "!":  # Pause.
-            self.plotter("pause")
-        elif bytes_to_write == "\x18":  # Soft reset.
-            self.plotter("abort")
-        elif bytes_to_write == "\x85":
-            self.plotter("jog_abort")
-
     def write(self, data):
         """
         Process data written to the parser. This is any gcode data realtime commands, grbl-specific commands,
@@ -771,19 +754,19 @@ class GRBLParser:
         if isinstance(data, (bytes, bytearray)):
             if b"?" in data:
                 data = data.replace(b"?", b"")
-                self.realtime_write("?")
+                self.grbl_write(self.status_update())
             if b"~" in data:
                 data = data.replace(b"~", b"")
-                self.realtime_write("~")
+                self.plotter("resume")
             if b"!" in data:
                 data = data.replace(b"!", b"")
-                self.realtime_write("!")
+                self.plotter("pause")
             if b"\x18" in data:
                 data = data.replace(b"\x18", b"")
-                self.realtime_write("\x18")
+                self.plotter("abort")
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
-                self.realtime_write("\x85")
+                self.plotter("jog_abort")
             data = data.decode("utf-8")
         self._buffer += data
         while "\b" in self._buffer:
