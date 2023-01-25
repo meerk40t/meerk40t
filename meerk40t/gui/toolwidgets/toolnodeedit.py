@@ -9,7 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-
+from meerk40t.svgelements import Move, Close, Arc, CubicBezier, QuadraticBezier, Line
 _ = wx.GetTranslation
 
 
@@ -31,7 +31,7 @@ class EditTool(ToolWidget):
         # wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
         self.pen.SetWidth(1000)
         self.pen_ctrl = wx.Pen()
-        self.pen_ctrl.SetColour(wx.BLACK)
+        self.pen_ctrl.SetColour(wx.CYAN)
         self.pen_ctrl.SetWidth(1000)
         self.pen_highlight = wx.Pen()
         self.pen_highlight.SetColour(wx.RED)
@@ -82,11 +82,16 @@ class EditTool(ToolWidget):
             path = selected_node.path
         except AttributeError:
             return
-        for segment in path:
-            q = type(segment).__name__
-            if q in ("Line", "Close"):
+        for idx, segment in enumerate(path._segments):
+            if idx < len(path._segments) - 1:
+                next_seg = path._segments[idx + 1]
+            else:
+                next_seg = None
+
+            if isinstance(segment, (Line, Close)):
                 self.nodes.append(
                     {
+                        "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
@@ -95,9 +100,10 @@ class EditTool(ToolWidget):
                         "selected": False,
                     }
                 )
-            elif q == "Move":
+            elif isinstance(segment, Move):
                 self.nodes.append(
                     {
+                        "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
@@ -106,9 +112,10 @@ class EditTool(ToolWidget):
                         "selected": False,
                     }
                 )
-            elif q == "QuadraticBezier":
+            elif isinstance(segment, QuadraticBezier):
                 self.nodes.append(
                     {
+                        "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
@@ -128,9 +135,10 @@ class EditTool(ToolWidget):
                         "selected": False,
                     }
                 )
-            elif q == "CubicBezier":
+            elif isinstance(segment, CubicBezier):
                 self.nodes.append(
                     {
+                        "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
                         "path": path,
@@ -212,6 +220,7 @@ class EditTool(ToolWidget):
 
     def done(self):
         self.scene.tool_active = False
+        self.scene.modif_active = False
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
@@ -227,6 +236,43 @@ class EditTool(ToolWidget):
     def modify_element(self, reload=True):
         if self.element is None:
             return
+        from meerk40t.svgelements import Move, QuadraticBezier, CubicBezier, Line, Arc
+        totalstr = ""
+        laststr = ""
+        lastseg = None
+        for idx, seg in enumerate(self.element.path):
+
+            if isinstance(seg, Move):
+                segstr = "M "
+            elif isinstance(seg, Line):
+                segstr = "L "
+            elif isinstance(seg, QuadraticBezier):
+                segstr = "Q "
+            elif isinstance(seg, CubicBezier):
+                segstr = "C "
+            elif isinstance(seg, Arc):
+                segstr = "A "
+            else:
+                segstr = "? "
+            if hasattr(seg, "start"):
+                if seg.start is None:
+                    segstr += "none - "
+                else:
+                    segstr += f"{seg.start.x:.1f}, {seg.start.y:.1f} - "
+                if idx > 0 and lastseg is not None and seg.start != lastseg:
+                    print (f"Differed at #{idx}: {laststr} - {segstr}")
+
+            lastseg = None
+            if hasattr(seg, "end"):
+                lastseg = seg.end
+                if seg.end is None:
+                    segstr += "none - "
+                else:
+                    segstr += f"{seg.end.x:.1f}, {seg.end.y:.1f}"
+
+            totalstr += " " + segstr
+            laststr = segstr
+        # print (totalstr)
         self.element.altered()
         try:
             bb = self.element.bbox()
@@ -240,7 +286,7 @@ class EditTool(ToolWidget):
             self.scene.request_refresh()
 
     def delete_nodes(self):
-        # Stub for append a line
+        # Stub for deleting a segment
         modified = False
         for entry in self.nodes:
             if entry["selected"] and entry["type"] == "point":
@@ -322,6 +368,8 @@ class EditTool(ToolWidget):
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(elements.default_strokewidth)
             self.scene.tool_active = True
+            self.scene.modif_active = True
+
             self._active = True
 
             self.scene.context.signal("statusmsg", self.message)
@@ -377,6 +425,14 @@ class EditTool(ToolWidget):
                 pt.x = m[0]
                 pt.y = m[1]
                 current["point"] = pt
+                # We need to adjust the start-point of the next segment
+                # unless it's a closed path then we need to adjust the
+                # very first - need to be mindful of closed subpaths
+                if "next" in current:
+                    nextseg = current["next"]
+                    if hasattr(nextseg, "start"):
+                        nextseg.start.x = m[0]
+                        nextseg.start.y = m[1]
                 self.modify_element(False)
             return RESPONSE_CONSUME
         elif event_type == "key_down":
