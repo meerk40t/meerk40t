@@ -551,7 +551,7 @@ class GRBLParser:
                 # Lets split lines...
                 splitted_lines = d.splitlines()
                 for singleline in splitted_lines:
-                    self.process(singleline)
+                    self._process_grbl_commands(singleline)
             self.plotter("end")
             # We need to add a matrix to fix the element orientation:
             # mirror the y component at the midpoint between 0 and bedsize
@@ -730,6 +730,11 @@ class GRBLParser:
         return 0
 
     def realtime_write(self, bytes_to_write):
+        """
+        Process very specific grbl realtime_write data.
+        @param bytes_to_write:
+        @return:
+        """
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
             if self.state == 0:
@@ -753,6 +758,13 @@ class GRBLParser:
             self.plotter("jog_abort")
 
     def write(self, data):
+        """
+        Process data written to the parser. This is any gcode data realtime commands, grbl-specific commands,
+        or gcode itself.
+
+        @param data:
+        @return:
+        """
         if isinstance(data, (bytes, bytearray)):
             if b"?" in data:
                 data = data.replace(b"?", b"")
@@ -787,13 +799,19 @@ class GRBLParser:
             pos = self._buffer.find("\r")
             command = self._buffer[0:pos].strip("\r")
             self._buffer = self._buffer[pos + 1 :]
-            cmd = self.process(command)
+            cmd = self._process_grbl_commands(command)
             if cmd == 0:  # Execute GCode.
                 self.grbl_write("ok\r\n")
             else:
                 self.grbl_write("error:%d\r\n" % cmd)
 
-    def process(self, data):
+    def _process_grbl_commands(self, data):
+        """
+        Process grbl commands, this is non-realtime but grbl specific commands information.
+
+        @param data:
+        @return:
+        """
         if data.startswith("$"):
             if data == "$":
                 self.grbl_write(
@@ -913,9 +931,15 @@ class GRBLParser:
                 commands[g].append(c[1])
             else:
                 commands[g].append(None)
-        return self.process_gcode(commands)
+        return self._process_gcode(commands)
 
-    def process_gcode(self, gc):
+    def _process_gcode(self, gc):
+        """
+        Processes the gcode commands which are parsed into different dictionary objects.
+
+        @param gc:
+        @return:
+        """
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
