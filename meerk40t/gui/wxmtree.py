@@ -117,6 +117,7 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_item_right_click,
             self.wxtree,
         )
+        self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
 
     def on_key_down(self, event):
         """
@@ -779,12 +780,15 @@ class ShadowTree:
         self.wxtree._freeze = False
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
-        op_item = self.elements.get(type="branch ops")._item
+        op_node = self.elements.get(type="branch ops")
+        op_item = op_node._item
         self.wxtree.Expand(op_item)
         if self.elements.have_unassigned_elements():
             self.wxtree.SetItemState(op_item, 2)
+            op_node._tooltip = _("You have unassigned elements, that won't be burned")
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
+            op_node._tooltip = ""
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
@@ -1541,6 +1545,19 @@ class ShadowTree:
             self.refresh_tree(source="drag end")
             # self.rebuild_tree()
         self.dragging_nodes = None
+
+    def on_mouse_over(self, event):
+        # establish the item we are over...
+        ttip = ""
+        pt = event.GetPosition()
+        item, flags = self.wxtree.HitTest(pt)
+        if item:
+            node = self.wxtree.GetItemData(item)
+            if node is not None and hasattr(node, "_tooltip"):
+                if node._tooltip is not None:
+                    ttip = node._tooltip
+        if ttip != self.wxtree.GetToolTipText():
+            self.wxtree.SetToolTip(ttip)
 
     def on_item_right_click(self, event):
         """
