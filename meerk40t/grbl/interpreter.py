@@ -200,7 +200,7 @@ class GRBLInterpreter:
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": "Single occurence",
+                "label": "Single occurrence",
                 "tip": "Prevent duplicate creation of segments (like in a multipass operation)",
                 "section": "_10_Path",
             },
