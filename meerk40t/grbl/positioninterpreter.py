@@ -10,7 +10,7 @@ from meerk40t.grbl.parser import GRBLParser
 from meerk40t.kernel import Module
 
 
-class GRBLInterpreter(Module):
+class GRBLPositionInterpreter(Module):
     def __init__(self, service, path):
         Module.__init__(self, service, path)
 

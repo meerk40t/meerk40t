@@ -25,9 +25,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
 
-        from .interpreter import GRBLInterpreter
+        from .positioninterpreter import GRBLPositionInterpreter
 
-        kernel.register("interpreter/grbl", GRBLInterpreter)
+        kernel.register("interpreter/grbl", GRBLPositionInterpreter)
 
         from .emulator import GRBLEmulator
 
