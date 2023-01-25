@@ -799,9 +799,10 @@ class GRBLInterpreter:
             if self.move_mode == 0:
                 self.driver.move_abs(self.x * self.scale, self.y * self.scale)
             elif self.move_mode == 1:
-                plotcut = PlotCut()
-                plotcut.plot_append(ox , oy, self.settings["power"])
-                plotcut.plot_append(self.x, self.y, self.settings["power"])
+                plotcut = PlotCut(settings=dict(self.settings))
+                power = self.settings["power"]
+                plotcut.plot_append(ox , oy, power)
+                plotcut.plot_append(self.x, self.y, power)
                 self.plot(plotcut)
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
@@ -822,10 +823,11 @@ class GRBLInterpreter:
                         end=(self.x, self.y),
                         ccw=self.move_mode == 3,
                     )
-                    plotcut = PlotCut()
+                    power = self.settings["power"]
+                    plotcut = PlotCut(settings=dict(self.settings))
                     for p in range(51):
                         x, y = arc.point(p / 50)
-                        plotcut.plot_append(x, y, self.settings["power"])
+                        plotcut.plot_append(x, y, power)
                     self.plot(plotcut)
                 else:
                     arc = Arc(
@@ -834,10 +836,11 @@ class GRBLInterpreter:
                         end=(self.x, self.y),
                         ccw=self.move_mode == 3,
                     )
-                    plotcut = PlotCut()
+                    power = self.settings["power"]
+                    plotcut = PlotCut(settings=self.settings)
                     for p in range(51):
                         x, y = arc.point(p / 50)
-                        plotcut.plot_append(x, y, self.settings["power"])
+                        plotcut.plot_append(x, y, power)
                     self.plot(plotcut)
         return 0
 
