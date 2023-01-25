@@ -76,7 +76,7 @@ def plugin(kernel, lifecycle=None):
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
                 from meerk40t.grbl.interpreter import GRBLInterpreter
-                interpreter = GRBLInterpreter(root.device.driver)
+                interpreter = GRBLInterpreter(root.device.driver, root.device.scene_to_device_matrix())
                 if quit:
                     root.close("grbl")
                     root.close("emulator/grbl")

@@ -10,6 +10,7 @@ import numpy as np
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Arc
 
@@ -122,8 +123,9 @@ lookup = {
 
 
 class GRBLInterpreter:
-    def __init__(self, driver=None):
+    def __init__(self, driver, units_to_device_matrix):
         self.driver = driver
+        self.units_to_device_matrix = units_to_device_matrix
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
             "step_idle_delay": 25,  # step idle delay
@@ -405,7 +407,10 @@ class GRBLInterpreter:
                 self.driver.abort()
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
-                self.driver.jog_abort()
+                try:
+                    self.driver.jog_abort()
+                except AttributeError:
+                    pass
             data = data.decode("utf-8")
         self._buffer += data
         while "\b" in self._buffer:
@@ -747,7 +752,10 @@ class GRBLInterpreter:
                 del gc["z"]
             self.z = z
             if oz != self.z:
-                self.driver.axis("z", self.z)
+                try:
+                    self.driver.axis("z", self.z)
+                except AttributeError:
+                    pass
 
         if (
             "x" in gc
@@ -791,12 +799,10 @@ class GRBLInterpreter:
             if self.move_mode == 0:
                 self.driver.move_abs(self.x * self.scale, self.y * self.scale)
             elif self.move_mode == 1:
-                self.driver.plot(
-                    LineCut(
-                        (int(ox * self.scale), int(oy * self.scale)),
-                        (int(self.x * self.scale), int(self.y * self.scale)),
-                    )
-                )
+                plotcut = PlotCut()
+                plotcut.plot_append(ox , oy, self.settings["power"])
+                plotcut.plot_append(self.x, self.y, self.settings["power"])
+                self.plot(plotcut)
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
                 # 3 = CCW ARC
@@ -816,20 +822,11 @@ class GRBLInterpreter:
                         end=(self.x, self.y),
                         ccw=self.move_mode == 3,
                     )
-                    last = None
-                    cut = CutCode()
-                    for c in arc.npoint(np.linspace(0, 1, 50)):
-                        if last is not None:
-                            self.driver.plot(
-                                LineCut(
-                                    (
-                                        int(last[0] * self.scale),
-                                        int(last[1] * self.scale),
-                                    ),
-                                    (int(c[0] * self.scale), int(c[1] * self.scale)),
-                                )
-                            )
-                    self.driver.plot(cut)
+                    plotcut = PlotCut()
+                    for p in range(51):
+                        x, y = arc.point(p / 50)
+                        plotcut.plot_append(x, y, self.settings["power"])
+                    self.plot(plotcut)
                 else:
                     arc = Arc(
                         start=(ox, oy),
@@ -837,21 +834,21 @@ class GRBLInterpreter:
                         end=(self.x, self.y),
                         ccw=self.move_mode == 3,
                     )
-                    last = None
-                    cut = CutCode()
-                    for c in arc.npoint(np.linspace(0, 1, 50)):
-                        if last is not None:
-                            self.driver.plot(
-                                LineCut(
-                                    (
-                                        int(last[0] * self.scale),
-                                        int(last[1] * self.scale),
-                                    ),
-                                    (int(c[0] * self.scale), int(c[1] * self.scale)),
-                                )
-                            )
-                    self.driver.plot(cut)
+                    plotcut = PlotCut()
+                    for p in range(51):
+                        x, y = arc.point(p / 50)
+                        plotcut.plot_append(x, y, self.settings["power"])
+                    self.plot(plotcut)
         return 0
+
+    def plot(self, plot):
+        if isinstance(plot, PlotCut):
+            matrix = self.units_to_device_matrix
+            for i in range(len(plot.plot)):
+                x, y, laser = plot.plot[i]
+                x, y = matrix.transform_point([x, y])
+                plot.plot[i] = int(x), int(y), laser
+        self.driver.plot(plot)
 
     def g93_feedrate(self):
         """
