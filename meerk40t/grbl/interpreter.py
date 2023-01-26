@@ -6,10 +6,6 @@ The GRBL Interpreter converts our parsed Grbl/Gcode data into Driver-like calls.
 
 import re
 
-import numpy as np
-
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Arc
@@ -735,7 +731,7 @@ class GRBLInterpreter:
                 plot.plot[i] = int(x), int(y), laser
         self.driver.plot(plot)
         if not self.program_mode:
-            # If we plotted this and we aren't in program mode execute all of these commands right away
+            # If we plotted this, and we aren't in program mode execute all of these commands right away
             self.driver.plot_start()
 
     def g93_feedrate(self):
