@@ -828,6 +828,7 @@ class GRBLInterpreter:
 
     def plot(self, plot):
         if isinstance(plot, PlotCut):
+            # plot.check_if_rasterable()
             matrix = self.units_to_device_matrix
             for i in range(len(plot.plot)):
                 x, y, laser = plot.plot[i]
