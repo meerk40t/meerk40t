@@ -191,6 +191,7 @@ class GRBLInterpreter:
 
         self._buffer = list()
         self._grbl_specific = False
+        self._interpolate = 50
         self.program_mode = False
 
     def __repr__(self):
@@ -706,8 +707,8 @@ class GRBLInterpreter:
                     )
                     power = self.settings["power"]
                     plotcut = PlotCut(settings=dict(self.settings))
-                    for p in range(51):
-                        x, y = arc.point(p / 50)
+                    for p in range(self._interpolate + 1):
+                        x, y = arc.point(p / self._interpolate)
                         plotcut.plot_append(x, y, power)
                     self.plot(plotcut)
                 else:
@@ -719,8 +720,8 @@ class GRBLInterpreter:
                     )
                     power = self.settings["power"]
                     plotcut = PlotCut(settings=self.settings)
-                    for p in range(51):
-                        x, y = arc.point(p / 50)
+                    for p in range(self._interpolate + 1):
+                        x, y = arc.point(p / self._interpolate)
                         plotcut.plot_append(x, y, power)
                     self.plot(plotcut)
         return 0
