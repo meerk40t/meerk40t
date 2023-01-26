@@ -190,6 +190,7 @@ class GRBLInterpreter:
         self.channel = None
 
         self._buffer = list()
+        self._grbl_specific = False
         self.program_mode = False
 
     def __repr__(self):
@@ -239,7 +240,12 @@ class GRBLInterpreter:
                 self.driver.pause()
             elif c in (ord("\r"), ord("\n")):
                 # Process CRLF endlines
-                cmd = self._process_grbl_commands(''.join(self._buffer))
+                line = ''.join(self._buffer)
+                if self._grbl_specific:
+                    self._grbl_specific = False
+                    cmd = self._grbl_special(line)
+                else:
+                    cmd = self._process_gcode(line)
                 self._buffer.clear()
                 if cmd == 0:  # Execute GCode.
                     self.grbl_write("ok\r\n")
@@ -307,147 +313,143 @@ class GRBLInterpreter:
             elif c == 0xA1:
                 # Toggle Mist Coolant
                 pass
+            elif c == ord("$"):
+                if not self._buffer:
+                    # First character is "$" this is special grbl.
+                    self._grbl_specific = True
+                self._buffer.append(chr(c))
             else:
-                self._buffer += chr(c)
+                self._buffer.append(chr(c))
 
-    def _process_grbl_commands(self, data):
-        """
-        Process grbl commands, this is non-realtime, grbl/gcode specific commands information.
+    def _grbl_special(self, data):
+        if data == "$":
+            self.grbl_write(
+                "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+            )
+            return 0
+        elif data == "$$":
+            for s in lookup:
+                v = self.settings.get(lookup[s], 0)
+                if isinstance(v, int):
+                    self.grbl_write("$%d=%d\r\n" % (s, v))
+                elif isinstance(v, float):
+                    self.grbl_write("$%d=%.3f\r\n" % (s, v))
+            return 0
+        if GRBL_SET_RE.match(data):
+            settings = list(GRBL_SET_RE.findall(data))[0]
+            index = settings[0]
+            value = settings[1]
+            try:
+                name = lookup[index]
+                c = self.settings[name]
+            except KeyError:
+                return 3
+            if isinstance(c, float):
+                self.settings[name] = float(value)
+            else:
+                self.settings[name] = int(value)
+            return 0
+        elif data == "$I":
+            # View Build Info
+            pass
+        elif data == "$G":
+            # View GCode Parser state
+            pass
+        elif data == "$N":
+            # View saved start up code.
+            pass
+        elif data == "$H":
+            if self.settings["homing_cycle_enable"]:
+                self.driver.physical_home()
+                self.driver.move_abs(0, 0)
+                self.x = 0
+                self.y = 0
+                return 0
+            else:
+                return 5  # Homing cycle not enabled by settings.
+        elif data.startswith("$J="):
+            """
+            $Jx=line - Run jogging motion
 
-        @param data:
-        @return:
-        """
-        if data.startswith("$"):
-            if data == "$":
-                self.grbl_write(
-                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
-                )
-                return 0
-            elif data == "$$":
-                for s in lookup:
-                    v = self.settings.get(lookup[s], 0)
-                    if isinstance(v, int):
-                        self.grbl_write("$%d=%d\r\n" % (s, v))
-                    elif isinstance(v, float):
-                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
-                return 0
-            if GRBL_SET_RE.match(data):
-                settings = list(GRBL_SET_RE.findall(data))[0]
-                index = settings[0]
-                value = settings[1]
-                try:
-                    name = lookup[index]
-                    c = self.settings[name]
-                except KeyError:
-                    return 3
-                if isinstance(c, float):
-                    self.settings[name] = float(value)
+            New to Grbl v1.1, this command will execute a special jogging motion. There are three main
+            differences between a jogging motion and a motion commanded by a g-code line.
+
+                Like normal g-code commands, several jog motions may be queued into the planner buffer,
+                but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command.
+                Grbl will immediately hold the current jog and then automatically purge the buffers
+                of any remaining commands.
+                Jog commands are completely independent of the g-code parser state. It will not change
+                any modes like G91 incremental distance mode. So, you no longer have to make sure
+                that you change it back to G90 absolute distance mode afterwards. This helps reduce
+                the chance of starting with the wrong g-code modes enabled.
+                If soft-limits are enabled, any jog command that exceeds a soft-limit will simply
+                return an error. It will not throw an alarm as it would with a normal g-code command.
+                This allows for a much more enjoyable and fluid GUI or joystick interaction.
+
+            Executing a jog requires a specific command structure, as described below:
+
+                The first three characters must be '$J=' to indicate the jog.
+
+                The jog command follows immediate after the '=' and works like a normal G1 command.
+
+                Feed rate is only interpreted in G94 units per minute. A prior G93 state is
+                ignored during jog.
+
+                Required words:
+                    XYZ: One or more axis words with target value.
+                    F - Feed rate value. NOTE: Each jog requires this value and is not treated as modal.
+
+                Optional words: Jog executes based on current G20/G21 and G90/G91 g-code parser state.
+                If one of the following optional words is passed, that state is overridden for one command only.
+                    G20 or G21 - Inch and millimeter mode
+                    G90 or G91 - Absolute and incremental distances
+                    G53 - Move in machine coordinates
+
+                All other g-codes, m-codes, and value words are not accepted in the jog command.
+
+                Spaces and comments are allowed in the command. These are removed by the pre-parser.
+
+                Example: G21 and G90 are active modal states prior to jogging. These are sequential commands.
+                    $J=X10.0 Y-1.5 will move to X=10.0mm and Y=-1.5mm in work coordinate frame (WPos).
+                    $J=G91 G20 X0.5 will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
+                    Note that G91 and G20 are only applied to this jog command.
+                    $J=G53 Y5.0 will move the machine to Y=5.0mm in the machine coordinate frame (MPos).
+                    If the work coordinate offset for the y-axis is 2.0mm, then Y is 3.0mm in (WPos).
+
+            Jog commands behave almost identically to normal g-code streaming. Every jog command
+            will return an 'ok' when the jogging motion has been parsed and is setup for execution.
+            If a command is not valid or exceeds a soft-limit, Grbl will return an 'error:'.
+            Multiple jogging commands may be queued in sequence.
+            """
+            commands = {}
+            for c in _tokenize_code(data):
+                g = c[0]
+                if g not in commands:
+                    commands[g] = []
+                if len(c) >= 2:
+                    commands[g].append(c[1])
                 else:
-                    self.settings[name] = int(value)
-                return 0
-            elif data == "$I":
-                # View Build Info
-                pass
-            elif data == "$G":
-                # View GCode Parser state
-                pass
-            elif data == "$N":
-                # View saved start up code.
-                pass
-            elif data == "$H":
-                if self.settings["homing_cycle_enable"]:
-                    self.driver.physical_home()
-                    self.driver.move_abs(0, 0)
-                    self.x = 0
-                    self.y = 0
-                    return 0
-                else:
-                    return 5  # Homing cycle not enabled by settings.
-            elif data.startswith("$J="):
-                """
-                $Jx=line - Run jogging motion
+                    commands[g].append(None)
+            return 3  # not yet supported
+        else:
+            return 3  # GRBL '$' system command was not recognized or supported.
 
-                New to Grbl v1.1, this command will execute a special jogging motion. There are three main
-                differences between a jogging motion and a motion commanded by a g-code line.
-
-                    Like normal g-code commands, several jog motions may be queued into the planner buffer,
-                    but the jogging can be easily canceled by a jog-cancel or feed-hold real-time command.
-                    Grbl will immediately hold the current jog and then automatically purge the buffers
-                    of any remaining commands.
-                    Jog commands are completely independent of the g-code parser state. It will not change
-                    any modes like G91 incremental distance mode. So, you no longer have to make sure
-                    that you change it back to G90 absolute distance mode afterwards. This helps reduce
-                    the chance of starting with the wrong g-code modes enabled.
-                    If soft-limits are enabled, any jog command that exceeds a soft-limit will simply
-                    return an error. It will not throw an alarm as it would with a normal g-code command.
-                    This allows for a much more enjoyable and fluid GUI or joystick interaction.
-
-                Executing a jog requires a specific command structure, as described below:
-
-                    The first three characters must be '$J=' to indicate the jog.
-
-                    The jog command follows immediate after the '=' and works like a normal G1 command.
-
-                    Feed rate is only interpreted in G94 units per minute. A prior G93 state is
-                    ignored during jog.
-
-                    Required words:
-                        XYZ: One or more axis words with target value.
-                        F - Feed rate value. NOTE: Each jog requires this value and is not treated as modal.
-
-                    Optional words: Jog executes based on current G20/G21 and G90/G91 g-code parser state.
-                    If one of the following optional words is passed, that state is overridden for one command only.
-                        G20 or G21 - Inch and millimeter mode
-                        G90 or G91 - Absolute and incremental distances
-                        G53 - Move in machine coordinates
-
-                    All other g-codes, m-codes, and value words are not accepted in the jog command.
-
-                    Spaces and comments are allowed in the command. These are removed by the pre-parser.
-
-                    Example: G21 and G90 are active modal states prior to jogging. These are sequential commands.
-                        $J=X10.0 Y-1.5 will move to X=10.0mm and Y=-1.5mm in work coordinate frame (WPos).
-                        $J=G91 G20 X0.5 will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
-                        Note that G91 and G20 are only applied to this jog command.
-                        $J=G53 Y5.0 will move the machine to Y=5.0mm in the machine coordinate frame (MPos).
-                        If the work coordinate offset for the y-axis is 2.0mm, then Y is 3.0mm in (WPos).
-
-                Jog commands behave almost identically to normal g-code streaming. Every jog command
-                will return an 'ok' when the jogging motion has been parsed and is setup for execution.
-                If a command is not valid or exceeds a soft-limit, Grbl will return an 'error:'.
-                Multiple jogging commands may be queued in sequence.
-                """
-                commands = {}
-                for c in _tokenize_code(data):
-                    g = c[0]
-                    if g not in commands:
-                        commands[g] = []
-                    if len(c) >= 2:
-                        commands[g].append(c[1])
-                    else:
-                        commands[g].append(None)
-                return 3  # not yet supported
-            else:
-                return 3  # GRBL '$' system command was not recognized or supported.
-
-        commands = {}
-        for c in _tokenize_code(data):
-            g = c[0]
-            if g not in commands:
-                commands[g] = []
-            if len(c) >= 2:
-                commands[g].append(c[1])
-            else:
-                commands[g].append(None)
-        return self._process_gcode(commands)
-
-    def _process_gcode(self, gc):
+    def _process_gcode(self, data):
         """
         Processes the gcode commands which are parsed into different dictionary objects.
 
         @param gc:
         @return:
         """
+        gc = {}
+        for c in _tokenize_code(data):
+            g = c[0]
+            if g not in gc:
+                gc[g] = []
+            if len(c) >= 2:
+                gc[g].append(c[1])
+            else:
+                gc[g].append(None)
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
