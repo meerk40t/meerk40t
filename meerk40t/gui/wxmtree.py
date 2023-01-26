@@ -36,6 +36,7 @@ from .icons import (
     icons8_type_50,
     icons8_vector_20,
     icons8_visit_20,
+    icons8_warning_shield_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -116,6 +117,7 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_item_right_click,
             self.wxtree,
         )
+        self.wxtree.Bind(wx.EVT_MOTION, self.shadow_tree.on_mouse_over)
 
     def on_key_down(self, event):
         """
@@ -297,7 +299,9 @@ class TreePanel(wx.Panel):
     @signal_listener("updateop_tree")
     def on_update_op_labels_tree(self, origin, *args):
         self.shadow_tree.update_op_labels()
-
+        opitem = self.context.elements.get(type="branch ops")._item
+        tree = self.shadow_tree.wxtree
+        tree.Expand(opitem)
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
@@ -400,6 +404,10 @@ class ShadowTree:
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image_id = self.state_images.Add(bitmap=image)
         image = icons8_r_white.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
+        image_id = self.state_images.Add(bitmap=image)
+        image = icons8_warning_shield_20.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
@@ -770,9 +778,17 @@ class ShadowTree:
         self.update_op_labels()
 
         self.wxtree._freeze = False
-        self.wxtree.Expand(self.elements.get(type="branch ops")._item)
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        op_node = self.elements.get(type="branch ops")
+        op_item = op_node._item
+        self.wxtree.Expand(op_item)
+        if self.elements.have_unassigned_elements():
+            self.wxtree.SetItemState(op_item, 2)
+            op_node._tooltip = _("You have unassigned elements, that won't be burned")
+        else:
+            self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
+            op_node._tooltip = ""
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
@@ -908,6 +924,11 @@ class ShadowTree:
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
+        if self.elements.have_unassigned_elements():
+            self.wxtree.SetItemState(node_operations._item, 2)
+        else:
+            self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
+
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
@@ -1524,6 +1545,19 @@ class ShadowTree:
             self.refresh_tree(source="drag end")
             # self.rebuild_tree()
         self.dragging_nodes = None
+
+    def on_mouse_over(self, event):
+        # establish the item we are over...
+        ttip = ""
+        pt = event.GetPosition()
+        item, flags = self.wxtree.HitTest(pt)
+        if item:
+            node = self.wxtree.GetItemData(item)
+            if node is not None and hasattr(node, "_tooltip"):
+                if node._tooltip is not None:
+                    ttip = node._tooltip
+        if ttip != self.wxtree.GetToolTipText():
+            self.wxtree.SetToolTip(ttip)
 
     def on_item_right_click(self, event):
         """
