@@ -776,6 +776,22 @@ class ShadowTree:
         # if node is None:
         #     return
         self.update_op_labels()
+        if node is not None:
+            if isinstance(node, (tuple, list)):
+                for enode in node:
+                    if hasattr(enode, "node"):
+                        enode = enode.node
+                    try:
+                        self.update_decorations(enode, force=True)
+                    except RuntimeError:
+                        # A timer can update after the tree closes.
+                        return
+            else:
+                try:
+                    self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
 
         self.wxtree._freeze = False
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
@@ -1172,6 +1188,7 @@ class ShadowTree:
                             break
 
             if not found and tofind in self.default_images:
+                # print (f"Wasn't found use {tofind}")
                 found = tofind
 
             if found:
@@ -1196,6 +1213,7 @@ class ShadowTree:
 
         if c is None:
             c = defaultcolor
+        # print (f"Icon gives color: {c} and cached-id={cached_id}")
         return c, image, cached_id
 
     def set_icon(self, node, icon=None, force=False):
