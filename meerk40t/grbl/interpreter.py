@@ -239,7 +239,7 @@ class GRBLInterpreter:
                 self.driver.pause()
             if b"\x18" in data:
                 data = data.replace(b"\x18", b"")
-                self.driver.abort()
+                self.driver.reset()
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
                 try:
