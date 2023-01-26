@@ -7,6 +7,7 @@ The GRBL Interpreter converts our parsed Grbl/Gcode data into Driver-like calls.
 import re
 
 from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
 from meerk40t.svgelements import Arc
 
@@ -232,9 +233,15 @@ class GRBLInterpreter:
             if c == ord("?"):
                 self.grbl_write(self.status_update())
             elif c == ord("~"):
-                self.driver.resume()
+                try:
+                    self.driver.resume()
+                except AttributeError:
+                    pass
             elif c == ord("!"):
-                self.driver.pause()
+                try:
+                    self.driver.pause()
+                except AttributeError:
+                    pass
             elif c in (ord("\r"), ord("\n")):
                 # Process CRLF endlines
                 line = ''.join(self._buffer)
@@ -253,7 +260,10 @@ class GRBLInterpreter:
                 if self._buffer:
                     del self._buffer[-1]
             elif c == 0x18:
-                self.driver.reset()
+                try:
+                    self.driver.reset()
+                except AttributeError:
+                    pass
             elif c == 0x84:
                 # Safety Door
                 pass
@@ -264,43 +274,82 @@ class GRBLInterpreter:
                     pass
             elif c == 0x90:
                 self.speed_scale = 1.0
-                self.driver.set("speed_factor", self.speed_scale)
+                try:
+                    self.driver.set("speed_factor", self.speed_scale)
+                except AttributeError:
+                    pass
             elif c == 0x91:
                 self.speed_scale *= 1.1
-                self.driver.set("speed_factor", self.speed_scale)
+                try:
+                    self.driver.set("speed_factor", self.speed_scale)
+                except AttributeError:
+                    pass
             elif c == 0x92:
                 self.speed_scale *= 0.9
-                self.driver.set("speed_factor", self.speed_scale)
+                try:
+                    self.driver.set("speed_factor", self.speed_scale)
+                except AttributeError:
+                    pass
             elif c == 0x93:
                 self.speed_scale *= 1.01
-                self.driver.set("speed_factor", self.speed_scale)
+                try:
+                    self.driver.set("speed_factor", self.speed_scale)
+                except AttributeError:
+                    pass
             elif c == 0x94:
                 self.speed_scale *= 0.99
-                self.driver.set("speed_factor", self.speed_scale)
+                try:
+                    self.driver.set("speed_factor", self.speed_scale)
+                except AttributeError:
+                    pass
             elif c == 0x95:
                 self.rapid_scale = 1.0
-                self.driver.set("rapid_factor", self.rapid_scale)
+                try:
+                    self.driver.set("rapid_factor", self.rapid_scale)
+                except AttributeError:
+                    pass
             elif c == 0x96:
                 self.rapid_scale = 0.5
-                self.driver.set("rapid_factor", self.rapid_scale)
+                try:
+                    self.driver.set("rapid_factor", self.rapid_scale)
+                except AttributeError:
+                    pass
             elif c == 0x97:
                 self.rapid_scale = 0.25
-                self.driver.set("rapid_factor", self.rapid_scale)
+                try:
+                    self.driver.set("rapid_factor", self.rapid_scale)
+                except AttributeError:
+                    pass
             elif c == 0x99:
                 self.power_scale = 1.0
-                self.driver.set("power_factor", self.power_scale)
+                try:
+                    self.driver.set("power_factor", self.power_scale)
+                except AttributeError:
+                    pass
             elif c == 0x9A:
                 self.power_scale *= 1.1
-                self.driver.set("power_factor", self.power_scale)
+                try:
+                    self.driver.set("power_factor", self.power_scale)
+                except AttributeError:
+                    pass
             elif c == 0x9B:
                 self.power_scale *= 0.9
-                self.driver.set("power_factor", self.power_scale)
+                try:
+                    self.driver.set("power_factor", self.power_scale)
+                except AttributeError:
+                    pass
             elif c == 0x9C:
                 self.power_scale *= 1.01
-                self.driver.set("power_factor", self.power_scale)
+                try:
+                    self.driver.set("power_factor", self.power_scale)
+                except AttributeError:
+                    pass
             elif c == 0x9D:
                 self.power_scale *= 0.99
-                self.driver.set("power_factor", self.power_scale)
+                try:
+                    self.driver.set("power_factor", self.power_scale)
+                except AttributeError:
+                    pass
             elif c == 0x9E:
                 # Toggle Spindle Stop
                 pass
@@ -363,8 +412,14 @@ class GRBLInterpreter:
             pass
         elif data == "$H":
             if self.settings["homing_cycle_enable"]:
-                self.driver.physical_home()
-                self.driver.move_abs(0, 0)
+                try:
+                    self.driver.physical_home()
+                except AttributeError:
+                    pass
+                try:
+                    self.driver.move_abs(0, 0)
+                except AttributeError:
+                    pass
                 self.x = 0
                 self.y = 0
                 return 0
@@ -451,35 +506,62 @@ class GRBLInterpreter:
             for v in gc["m"]:
                 if v in (0, 1):
                     # Stop or Unconditional Stop
-                    self.driver.rapid_mode()
+                    try:
+                        self.driver.rapid_mode()
+                    except AttributeError:
+                        pass
                 elif v == 2:
                     # Program End
-                    self.driver.plot_start()
-                    self.driver.rapid_mode()
+                    try:
+                        self.driver.plot_start()
+                    except AttributeError:
+                        pass
+                    try:
+                        self.driver.rapid_mode()
+                    except AttributeError:
+                        pass
                     return 0
                 elif v == 30:
                     # Program Stop
-                    self.driver.rapid_mode()
+                    try:
+                        self.driver.rapid_mode()
+                    except AttributeError:
+                        pass
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
-                    self.driver.program_mode()
+                    try:
+                        self.driver.program_mode()
+                    except AttributeError:
+                        pass
                     self.program_mode = True
                 elif v == 5:
                     # Spindle Off - Laser Mode
                     if self.program_mode:
-                        self.driver.plot_start()
-                    self.driver.rapid_mode()
+                        try:
+                            self.driver.plot_start()
+                        except AttributeError:
+                            pass
+                    try:
+                        self.driver.rapid_mode()
+                    except AttributeError:
+                        pass
                     self.program_mode = False
                 elif v == 7:
                     #  Mist coolant control.
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    self.driver.signal("coolant", True)
+                    try:
+                        self.driver.signal("coolant", True)
+                    except AttributeError:
+                        pass
                 elif v == 9:
                     # Flood coolant Off
-                    self.driver.signal("coolant", False)
+                    try:
+                        self.driver.signal("coolant", False)
+                    except AttributeError:
+                        pass
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -516,8 +598,13 @@ class GRBLInterpreter:
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    self.driver.rapid_mode()
-                    self.driver.wait(t)
+                    if self.program_mode:
+                        self.plot(WaitCut(t))
+                    else:
+                        try:
+                            self.driver.wait(t)
+                        except AttributeError:
+                            pass
                 elif v == 17:
                     # Set XY coords.
                     pass
@@ -535,8 +622,14 @@ class GRBLInterpreter:
                     self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
-                    self.driver.home()
-                    self.driver.move_abs(0, 0)
+                    try:
+                        self.driver.home()
+                    except AttributeError:
+                        pass
+                    try:
+                        self.driver.move_abs(0, 0)
+                    except AttributeError:
+                        pass
                     self.x = 0
                     self.y = 0
                     self.z = 0
@@ -607,7 +700,10 @@ class GRBLInterpreter:
                 feed_rate = self.feed_convert(v)
                 if self.settings.get("speed", 0) != feed_rate:
                     self.settings["speed"] = feed_rate
-                    self.driver.set("speed", v)
+                    try:
+                        self.driver.set("speed", v)
+                    except AttributeError:
+                        pass
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -616,7 +712,10 @@ class GRBLInterpreter:
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.settings["power"] != v:
-                    self.driver.set("power", v)
+                    try:
+                        self.driver.set("power", v)
+                    except AttributeError:
+                        pass
                     self.settings["power"] = v
             del gc["s"]
         if "z" in gc:
@@ -675,7 +774,10 @@ class GRBLInterpreter:
                 self.x = x
                 self.y = y
             if self.move_mode == 0:
-                self.driver.move_abs(self.x, self.y)
+                try:
+                    self.driver.move_abs(self.x, self.y)
+                except AttributeError:
+                    pass
             elif self.move_mode == 1:
                 plotcut = PlotCut(settings=dict(self.settings))
                 power = self.settings["power"]
@@ -729,10 +831,16 @@ class GRBLInterpreter:
                 x, y, laser = plot.plot[i]
                 x, y = matrix.transform_point([x, y])
                 plot.plot[i] = int(x), int(y), laser
-        self.driver.plot(plot)
+        try:
+            self.driver.plot(plot)
+        except AttributeError:
+            pass
         if not self.program_mode:
             # If we plotted this, and we aren't in program mode execute all of these commands right away
-            self.driver.plot_start()
+            try:
+                self.driver.plot_start()
+            except AttributeError:
+                pass
 
     def g93_feedrate(self):
         """
