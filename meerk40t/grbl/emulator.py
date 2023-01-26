@@ -1,7 +1,7 @@
 """
-GRBL Interpreter
+GRBL Emulator
 
-The GRBL Interpreter converts our parsed Grbl/Gcode data into Driver-like calls.
+The GRBL Emulator converts our parsed Grbl/Gcode data into Driver-like calls.
 """
 
 import re
@@ -119,7 +119,7 @@ lookup = {
 }
 
 
-class GRBLInterpreter:
+class GRBLEmulator:
     def __init__(self, driver, units_to_device_matrix):
         self.driver = driver
         self.units_to_device_matrix = units_to_device_matrix
