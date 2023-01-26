@@ -187,7 +187,6 @@ class GRBLPlotter:
                     if index in self.operations[op]:
                         opindex = self.operations[op].index(index)
                         self.operations[op].pop(opindex)
-                self.paths.pop(-1)
 
         def proper_z():
             res = False
