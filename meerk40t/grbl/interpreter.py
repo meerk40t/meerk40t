@@ -229,114 +229,86 @@ class GRBLInterpreter:
         @param data:
         @return:
         """
-        if isinstance(data, (bytes, bytearray)):
+        for c in data:
             # Process and extract any realtime grbl commands.
-            if b"?" in data:
-                data = data.replace(b"?", b"")
+            if c == ord("?"):
                 self.grbl_write(self.status_update())
-            if b"~" in data:
-                data = data.replace(b"~", b"")
+            elif c == ord("~"):
                 self.driver.resume()
-            if b"!" in data:
-                data = data.replace(b"!", b"")
+            elif c == ord("!"):
                 self.driver.pause()
-            if b"\x18" in data:
-                data = data.replace(b"\x18", b"")
+            elif c in (ord("\r"), ord("\n")):
+                # Process CRLF endlines
+                cmd = self._process_grbl_commands(self._buffer)
+                self._buffer = ""
+                if cmd == 0:  # Execute GCode.
+                    self.grbl_write("ok\r\n")
+                else:
+                    self.grbl_write("error:%d\r\n" % cmd)
+            elif c == 0x08:
+                # Process Backspaces.
+                if len(self._buffer) > 0:
+                    self._buffer = self._buffer[:-1]
+            elif c == 0x18:
                 self.driver.reset()
-            if b"\x84" in data:
+            elif c == 0x84:
                 # Safety Door
-                data = data.replace(b"\x9A", b"")
-            if b"\x85" in data:
-                data = data.replace(b"\x85", b"")
+                pass
+            elif c == 0x85:
                 try:
                     self.driver.jog_abort()
                 except AttributeError:
                     pass
-            if b"\x90" in data:
-                data = data.replace(b"\x90", b"")
+            elif c == 0x90:
                 self.speed_scale = 1.0
                 self.driver.set("speed_factor", self.speed_scale)
-            if b"\x91" in data:
-                data = data.replace(b"\x91", b"")
+            elif c == 0x91:
                 self.speed_scale *= 1.1
                 self.driver.set("speed_factor", self.speed_scale)
-            if b"\x92" in data:
-                data = data.replace(b"\x92", b"")
+            elif c == 0x92:
                 self.speed_scale *= 0.9
                 self.driver.set("speed_factor", self.speed_scale)
-            if b"\x93" in data:
-                data = data.replace(b"\x93", b"")
+            elif c == 0x93:
                 self.speed_scale *= 1.01
                 self.driver.set("speed_factor", self.speed_scale)
-            if b"\x94" in data:
-                data = data.replace(b"\x94", b"")
+            elif c == 0x94:
                 self.speed_scale *= 0.99
                 self.driver.set("speed_factor", self.speed_scale)
-            if b"\x95" in data:
-                data = data.replace(b"\x95", b"")
+            elif c == 0x95:
                 self.rapid_scale = 1.0
                 self.driver.set("rapid_factor", self.rapid_scale)
-            if b"\x96" in data:
-                data = data.replace(b"\x96", b"")
+            elif c == 0x96:
                 self.rapid_scale = 0.5
                 self.driver.set("rapid_factor", self.rapid_scale)
-            if b"\x97" in data:
-                data = data.replace(b"\x97", b"")
+            elif c == 0x97:
                 self.rapid_scale = 0.25
                 self.driver.set("rapid_factor", self.rapid_scale)
-            if b"\x99" in data:
-                data = data.replace(b"\x99", b"")
+            elif c == 0x99:
                 self.power_scale = 1.0
                 self.driver.set("power_factor", self.power_scale)
-            if b"\x9A" in data:
-                data = data.replace(b"\x9A", b"")
+            elif c == 0x9A:
                 self.power_scale *= 1.1
                 self.driver.set("power_factor", self.power_scale)
-            if b"\x9B" in data:
-                data = data.replace(b"\x9B", b"")
+            elif c == 0x9B:
                 self.power_scale *= 0.9
                 self.driver.set("power_factor", self.power_scale)
-            if b"\x9C" in data:
-                data = data.replace(b"\x9C", b"")
+            elif c == 0x9C:
                 self.power_scale *= 1.01
                 self.driver.set("power_factor", self.power_scale)
-            if b"\x9D" in data:
-                data = data.replace(b"\x9D", b"")
+            elif c == 0x9D:
                 self.power_scale *= 0.99
                 self.driver.set("power_factor", self.power_scale)
-            if b"\x9E" in data:
+            elif c == 0x9E:
                 # Toggle Spindle Stop
-                data = data.replace(b"\x9E", b"")
-            if b"\xA0" in data:
+                pass
+            elif c == 0xA0:
                 # Toggle Flood Coolant
-                data = data.replace(b"\xA0", b"")
-            if b"\xA1" in data:
+                pass
+            elif c == 0xA1:
                 # Toggle Mist Coolant
-                data = data.replace(b"\xA1", b"")
-
-            data = data.decode("utf-8")
-        self._buffer += data
-        while "\b" in self._buffer:
-            # Process Backspaces.
-            self._buffer = re.sub(".\b", "", self._buffer, count=1)
-            if self._buffer.startswith("\b"):
-                self._buffer = re.sub("\b+", "", self._buffer)
-        while "\r\n" in self._buffer:
-            # Process CRLF endlines
-            self._buffer = re.sub("\r\n", "\r", self._buffer)
-        while "\n" in self._buffer:
-            # Process CR endlines
-            self._buffer = re.sub("\n", "\r", self._buffer)
-        while "\r" in self._buffer:
-            # Process normalized line-ends.
-            pos = self._buffer.find("\r")
-            command = self._buffer[0:pos].strip("\r")
-            self._buffer = self._buffer[pos + 1 :]
-            cmd = self._process_grbl_commands(command)
-            if cmd == 0:  # Execute GCode.
-                self.grbl_write("ok\r\n")
+                pass
             else:
-                self.grbl_write("error:%d\r\n" % cmd)
+                self._buffer += chr(c)
 
     def _process_grbl_commands(self, data):
         """
