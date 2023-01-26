@@ -169,6 +169,9 @@ class GRBLInterpreter:
         self.feed_convert = None
         self.feed_invert = None
 
+        self.speed_scale = 1.0
+        self.rapid_scale = 1.0
+        self.power_scale = 1.0
         self.move_mode = 0
         self.x = 0
         self.y = 0
@@ -240,12 +243,77 @@ class GRBLInterpreter:
             if b"\x18" in data:
                 data = data.replace(b"\x18", b"")
                 self.driver.reset()
+            if b"\x84" in data:
+                # Safety Door
+                data = data.replace(b"\x9A", b"")
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
                 try:
                     self.driver.jog_abort()
                 except AttributeError:
                     pass
+            if b"\x90" in data:
+                data = data.replace(b"\x90", b"")
+                self.speed_scale = 1.0
+                self.driver.set("speed_factor", self.speed_scale)
+            if b"\x91" in data:
+                data = data.replace(b"\x91", b"")
+                self.speed_scale *= 1.1
+                self.driver.set("speed_factor", self.speed_scale)
+            if b"\x92" in data:
+                data = data.replace(b"\x92", b"")
+                self.speed_scale *= 0.9
+                self.driver.set("speed_factor", self.speed_scale)
+            if b"\x93" in data:
+                data = data.replace(b"\x93", b"")
+                self.speed_scale *= 1.01
+                self.driver.set("speed_factor", self.speed_scale)
+            if b"\x94" in data:
+                data = data.replace(b"\x94", b"")
+                self.speed_scale *= 0.99
+                self.driver.set("speed_factor", self.speed_scale)
+            if b"\x95" in data:
+                data = data.replace(b"\x95", b"")
+                self.rapid_scale = 1.0
+                self.driver.set("rapid_factor", self.rapid_scale)
+            if b"\x96" in data:
+                data = data.replace(b"\x96", b"")
+                self.rapid_scale = 0.5
+                self.driver.set("rapid_factor", self.rapid_scale)
+            if b"\x97" in data:
+                data = data.replace(b"\x97", b"")
+                self.rapid_scale = 0.25
+                self.driver.set("rapid_factor", self.rapid_scale)
+            if b"\x99" in data:
+                data = data.replace(b"\x99", b"")
+                self.power_scale = 1.0
+                self.driver.set("power_factor", self.power_scale)
+            if b"\x9A" in data:
+                data = data.replace(b"\x9A", b"")
+                self.power_scale *= 1.1
+                self.driver.set("power_factor", self.power_scale)
+            if b"\x9B" in data:
+                data = data.replace(b"\x9B", b"")
+                self.power_scale *= 0.9
+                self.driver.set("power_factor", self.power_scale)
+            if b"\x9C" in data:
+                data = data.replace(b"\x9C", b"")
+                self.power_scale *= 1.01
+                self.driver.set("power_factor", self.power_scale)
+            if b"\x9D" in data:
+                data = data.replace(b"\x9D", b"")
+                self.power_scale *= 0.99
+                self.driver.set("power_factor", self.power_scale)
+            if b"\x9E" in data:
+                # Toggle Spindle Stop
+                data = data.replace(b"\x9E", b"")
+            if b"\xA0" in data:
+                # Toggle Flood Coolant
+                data = data.replace(b"\xA0", b"")
+            if b"\xA1" in data:
+                # Toggle Mist Coolant
+                data = data.replace(b"\xA1", b"")
+
             data = data.decode("utf-8")
         self._buffer += data
         while "\b" in self._buffer:
