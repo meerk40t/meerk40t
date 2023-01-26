@@ -403,13 +403,13 @@ class GRBLInterpreter:
             return 0
         elif data == "$I":
             # View Build Info
-            pass
+            return 3
         elif data == "$G":
             # View GCode Parser state
-            pass
+            return 3
         elif data == "$N":
             # View saved start up code.
-            pass
+            return 3
         elif data == "$H":
             if self.settings["homing_cycle_enable"]:
                 try:
