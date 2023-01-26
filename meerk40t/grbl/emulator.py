@@ -405,7 +405,7 @@ class GRBLEmulator:
             return 0
         elif data == "$I":
             # View Build Info
-            return 3
+            return 0
         elif data == "$G":
             # View GCode Parser state
             return 3
