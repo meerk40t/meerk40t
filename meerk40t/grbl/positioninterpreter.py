@@ -5,14 +5,14 @@ The Interpreter listens to the local GRBL code being sent to the Controller and 
 position based on the data sent, and debug the device. This listens to the current device and thus must be attached
 to a GRBL device.
 """
-from meerk40t.grbl.interpreter import GRBLInterpreter
+from meerk40t.grbl.emulator import GRBLEmulator
 from meerk40t.kernel import Module
 
 
-class GRBLPositionInterpreter(Module):
+class GRBLInterpreter(Module):
     def __init__(self, service, path):
         Module.__init__(self, service, path)
-        self.interpreter = GRBLInterpreter(self, service.device.scene_to_show_matrix())
+        self.emulator = GRBLEmulator(self, service.device.scene_to_show_matrix())
         self._attached_device = None
 
     def __repr__(self):
@@ -40,8 +40,8 @@ class GRBLPositionInterpreter(Module):
         if hasattr(self.context, "serial_port"):
             self._attached_device = self.context.serial_port.lower()
         send = self.context.channel(f"send-{self._attached_device}")
-        send.watch(self.interpreter.write)
+        send.watch(self.emulator.write)
 
     def module_close(self, *args, **kwargs):
         send = self.context.channel(f"send-{self._attached_device}")
-        send.unwatch(self.interpreter.write)
+        send.unwatch(self.emulator.write)

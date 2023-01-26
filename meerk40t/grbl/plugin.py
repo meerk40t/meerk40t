@@ -25,9 +25,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
 
-        from .positioninterpreter import GRBLPositionInterpreter
+        from .positioninterpreter import GRBLInterpreter
 
-        kernel.register("interpreter/grbl", GRBLPositionInterpreter)
+        kernel.register("interpreter/grbl", GRBLInterpreter)
 
         from .emulator import GRBLEmulator
 
@@ -75,12 +75,12 @@ def plugin(kernel, lifecycle=None):
             root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
-                from meerk40t.grbl.interpreter import GRBLInterpreter
+                from meerk40t.grbl.emulator import GRBLEmulator
                 if quit:
                     try:
-                        interpreter = server.interpreter
-                        interpreter.driver = None
-                        del interpreter
+                        emulator = server.emulator
+                        emulator.driver = None
+                        del emulator
                     except AttributeError:
                         pass
                     root.close("grbl")
@@ -100,14 +100,14 @@ def plugin(kernel, lifecycle=None):
                     root.channel("grbl").watch(console)
                     server.events_channel.watch(console)
 
-                interpreter = GRBLInterpreter(root.device.driver, root.device.scene_to_device_matrix())
-                server.interpreter = interpreter
+                emulator = GRBLEmulator(root.device.driver, root.device.scene_to_device_matrix())
+                server.emulator = emulator
 
                 # Link emulator and server.
                 tcp_recv_channel = root.channel("grbl/recv", pure=True)
-                tcp_recv_channel.watch(interpreter.write)
+                tcp_recv_channel.watch(emulator.write)
                 tcp_send_channel = root.channel("grbl/send", pure=True)
-                interpreter.reply = tcp_send_channel
+                emulator.reply = tcp_send_channel
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)
