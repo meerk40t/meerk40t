@@ -189,7 +189,7 @@ class GRBLInterpreter:
         self.reply = None
         self.channel = None
 
-        self._buffer = ""
+        self._buffer = list()
         self.program_mode = False
 
     def __repr__(self):
@@ -239,16 +239,16 @@ class GRBLInterpreter:
                 self.driver.pause()
             elif c in (ord("\r"), ord("\n")):
                 # Process CRLF endlines
-                cmd = self._process_grbl_commands(self._buffer)
-                self._buffer = ""
+                cmd = self._process_grbl_commands(''.join(self._buffer))
+                self._buffer.clear()
                 if cmd == 0:  # Execute GCode.
                     self.grbl_write("ok\r\n")
                 else:
                     self.grbl_write("error:%d\r\n" % cmd)
             elif c == 0x08:
                 # Process Backspaces.
-                if len(self._buffer) > 0:
-                    self._buffer = self._buffer[:-1]
+                if self._buffer:
+                    del self._buffer[-1]
             elif c == 0x18:
                 self.driver.reset()
             elif c == 0x84:
