@@ -323,6 +323,12 @@ class GRBLInterpreter:
                 self._buffer.append(chr(c))
 
     def _grbl_special(self, data):
+        """
+        GRBL special commands are commands beginning with $ that do purely grbl specific things.
+
+        @param data:
+        @return:
+        """
         if data == "$":
             self.grbl_write(
                 "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
@@ -422,24 +428,18 @@ class GRBLInterpreter:
             If a command is not valid or exceeds a soft-limit, Grbl will return an 'error:'.
             Multiple jogging commands may be queued in sequence.
             """
-            commands = {}
-            for c in _tokenize_code(data):
-                g = c[0]
-                if g not in commands:
-                    commands[g] = []
-                if len(c) >= 2:
-                    commands[g].append(c[1])
-                else:
-                    commands[g].append(None)
+            data = data[3:]
+            # self._process_gcode(data, jog=True)
             return 3  # not yet supported
         else:
             return 3  # GRBL '$' system command was not recognized or supported.
 
-    def _process_gcode(self, data):
+    def _process_gcode(self, data, jog=False):
         """
         Processes the gcode commands which are parsed into different dictionary objects.
 
-        @param gc:
+        @param data: gcode line to process
+        @param jog: indicate this gcode line is operated as a jog.
         @return:
         """
         gc = {}
