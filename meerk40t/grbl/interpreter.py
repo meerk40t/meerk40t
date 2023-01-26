@@ -228,6 +228,8 @@ class GRBLInterpreter:
         @param data:
         @return:
         """
+        if isinstance(data, str):
+            data = data.encode()
         for c in data:
             # Process and extract any realtime grbl commands.
             if c == ord("?"):
