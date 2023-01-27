@@ -41,6 +41,7 @@ from .icons import (
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name, is_navigation_key
+from ..core.units import Length
 
 _ = wx.GetTranslation
 
@@ -389,6 +390,7 @@ class ShadowTree:
         self.cache_requests = 0
         self._too_big = False
         self.refresh_tree_counter = 0
+        self._last_hover_item = None
 
     def service_attach(self, *args):
         self.elements.listen_tree(self)
@@ -535,7 +537,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
+        if item is None or not item.IsOk():
             raise ValueError("Bad Item")
         # self.update_decorations(node)
         self.set_enhancements(node)
@@ -802,6 +804,7 @@ class ShadowTree:
         if self.elements.have_unassigned_elements():
             self.wxtree.SetItemState(op_item, 2)
             op_node._tooltip = _("You have unassigned elements, that won't be burned")
+            op_node._tooltip_translated = True
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
             op_node._tooltip = ""
@@ -1468,18 +1471,21 @@ class ShadowTree:
             pass
 
         state_num = -1
-        # Has the node a lock attribute?
-        if hasattr(node, "lock"):
-            lockit = node.lock
+        if node is self.elements.get(type="branch ops"):
+            if self.elements.have_unassigned_elements():
+                state_num = 2
         else:
-            lockit = False
-        if lockit:
-            state_num = 0
-
-        scene = getattr(self.context.root, "mainscene", None)
-        if scene is not None:
-            if node == scene.reference_object:
-                state_num = 1
+            # Has the node a lock attribute?
+            if hasattr(node, "lock"):
+                lockit = node.lock
+            else:
+                lockit = False
+            if lockit:
+                state_num = 0
+            scene = getattr(self.context.root, "mainscene", None)
+            if scene is not None:
+                if node == scene.reference_object:
+                    state_num = 1
         if state_num >= 0:
             self.wxtree.SetItemState(node._item, state_num)
         else:
@@ -1569,11 +1575,124 @@ class ShadowTree:
         ttip = ""
         pt = event.GetPosition()
         item, flags = self.wxtree.HitTest(pt)
+        if self._last_hover_item is item:
+            return
         if item:
             node = self.wxtree.GetItemData(item)
-            if node is not None and hasattr(node, "_tooltip"):
-                if node._tooltip is not None:
+            if node is not None:
+                if hasattr(node, "_tooltip"):
+                    # That has precedence and will displayed in all cases
                     ttip = node._tooltip
+                elif not self.context.disable_tree_tool_tips:
+                    if node.type == "blob":
+                        ttip = _(
+                            "This is binary data imported or generated\n"
+                            + "that will be sent directly to the laser.\n"
+                            + "Double-click to view."
+                        )
+                    elif node.type == "op cut":
+                        ttip = _(
+                            "This will engrave/cut the elements contained,\n"
+                            + "following the vector-paths of the data.\n"
+                            + "(Usually done last)"
+                        )
+                    elif node.type == "op engrave":
+                        ttip = _(
+                            "This will engrave the elements contained,\n"
+                            + "following the vector-paths of the data."
+                        )
+                    elif node.type == "op hatch":
+                        ttip = _(
+                            "This is an operation that will engrave a vector shape\n"
+                            + "filled with a set of vector-patterns like lines"
+                        )
+                    elif node.type == "op image":
+                        ttip = _(
+                            "This engraves already created images pixel by pixel,\n"
+                            + "applying the settings to the individual pictures"
+                        )
+                    elif node.type == "op raster":
+                        ttip = _(
+                            "This will render all contained elements\n"
+                            + "into an intermediary image which then will be\n"
+                            + "engraved pixel by pixel."
+                        )
+                    elif node.type == "op dots":
+                        ttip = _(
+                            "This will engrave a single point for a given period of time"
+                        )
+                    elif node.type == "util console":
+                        ttip = _(
+                            "This allows to execute an arbitrary command during the engrave process"
+                        )
+                    elif node.type == "util goto":
+                        ttip = _(
+                            "This will send the laser back to its logical start position"
+                        )
+                    elif node.type == "util home":
+                        ttip = _(
+                            "This will send the laser back to its physical start position"
+                        )
+                    elif node.type == "util input":
+                        ttip = _(
+                            "This will wait for active IO bits on the laser (mainly fibre laser for now)"
+                        )
+                    elif node.type == "util output":
+                        ttip = _(
+                            "This will set some IO bits on the laser (mainly fibre laser for now)"
+                        )
+                    elif node.type == "util wait":
+                        ttip = _(
+                            "This will pause the engrave process for a given period"
+                        )
+                    elif node.type == "branch reg":
+                        ttip = _(
+                            "The elements under this section will not be engraved,\n"
+                            + "they can serve as a template or registration marks."
+                        )
+                    elif node.type == "elem line":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ll = Length(amount=node.shape.length(), digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                    elif node.type == "elem rect":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ll = Length(amount=node.shape.length(), digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                    elif node.type == "elem polyline":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ll = Length(amount=node.shape.length(), digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                            ttip += f"\n{len(node.shape.points)} pts"
+                    elif node.type == "elem ellipse":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}"
+                    elif node.type == "elem path":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}"
+                            ttip += f"\n{len(node.path)} segments"
+                    elif node.type == "elem text":
+                        bb = node.bounds
+                        if bb is not None:
+                            ww = Length(amount=bb[2]-bb[0], digits=1)
+                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ttip = f"{ww.length_mm} x {hh.length_mm}"
+                            # ttip += f"\n{node.font}"
+        self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)
 
