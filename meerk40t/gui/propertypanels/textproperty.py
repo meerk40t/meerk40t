@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-
+from meerk40t.gui.laserrender import LaserRender
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
@@ -171,6 +171,7 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
+        self.renderer = LaserRender(self.context)
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
@@ -554,6 +555,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
 
     def refresh(self):
+        self.renderer.measure_text(self.node)
+        bb = self.node.bounds
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
 

@@ -292,12 +292,23 @@ class TextNode(Node, Stroked):
 
     @property
     def font_list(self):
-        if self.font_family is None:
-            return []
-        return [
-            family[1:-1] if family.startswith('"') or family.startswith("'") else family
-            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
-        ]
+        result = []
+        if self.font_family is not None:
+            if "," in self.font_family:
+                result = [
+                    family[1:-1]
+                    if family.startswith('"') or family.startswith("'")
+                    else family
+                    for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
+                ]
+            else:
+                result.append(
+                    self.font_family[1:-1]
+                    if self.font_family.startswith('"')
+                    or self.font_family.startswith("'")
+                    else self.font_family
+                )
+        return result
 
     @property
     def weight(self):
