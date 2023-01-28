@@ -35,7 +35,8 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    # r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    r"\s*'[^']+'|\s*\"[^\"]+\"|[^,\s]+"
 )
 
 
@@ -294,20 +295,12 @@ class TextNode(Node, Stroked):
     def font_list(self):
         result = []
         if self.font_family is not None:
-            if "," in self.font_family:
-                result = [
-                    family[1:-1]
-                    if family.startswith('"') or family.startswith("'")
-                    else family
-                    for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
-                ]
-            else:
-                result.append(
-                    self.font_family[1:-1]
-                    if self.font_family.startswith('"')
-                    or self.font_family.startswith("'")
-                    else self.font_family
-                )
+            result.append(
+                self.font_family[1:-1]
+                if self.font_family.startswith('"')
+                or self.font_family.startswith("'")
+                else self.font_family
+            )
         return result
 
     @property
