@@ -295,12 +295,24 @@ class TextNode(Node, Stroked):
     def font_list(self):
         result = []
         if self.font_family is not None:
-            result.append(
-                self.font_family[1:-1]
-                if self.font_family.startswith('"')
-                or self.font_family.startswith("'")
-                else self.font_family
-            )
+            fonts = re.findall(REGEX_CSS_FONT_FAMILY, self.font_family)
+            if len(fonts) == 0:
+                # print (f"Regex failed, adding '{self.font_family}'")
+                result.append(
+                    self.font_family[1:-1]
+                    if self.font_family.startswith('"')
+                    or self.font_family.startswith("'")
+                    else self.font_family
+                )
+            else:
+                for font in fonts:
+                    # print (f"Adding '{font}'")
+                    result.append(
+                        font[1:-1]
+                        if font.startswith('"')
+                        or font.startswith("'")
+                        else font
+                    )
         return result
 
     @property
