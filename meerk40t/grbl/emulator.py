@@ -190,6 +190,7 @@ class GRBLEmulator:
         self._grbl_specific = False
         self._interpolate = 50
         self.program_mode = False
+        self.plotcut = None
 
     def __repr__(self):
         return "GRBLInterpreter()"
@@ -541,6 +542,7 @@ class GRBLEmulator:
                     # Spindle Off - Laser Mode
                     if self.program_mode:
                         try:
+                            self.plot_commit()
                             self.driver.plot_start()
                         except AttributeError:
                             pass
@@ -601,6 +603,7 @@ class GRBLEmulator:
                         if len(gc["s"]) == 0:
                             del gc["s"]
                     if self.program_mode:
+                        self.plot_commit()
                         self.plot(WaitCut(t))
                     else:
                         try:
@@ -706,6 +709,7 @@ class GRBLEmulator:
                         self.driver.set("speed", v)
                     except AttributeError:
                         pass
+                    self.plot_commit()  # Speed change means plot change
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -732,6 +736,7 @@ class GRBLEmulator:
             self.z = z
             if oz != self.z:
                 try:
+                    self.plot_commit()  # We plot commit on z level change
                     self.driver.axis("z", self.z)
                 except AttributeError:
                     pass
@@ -776,19 +781,17 @@ class GRBLEmulator:
                 self.x = x
                 self.y = y
             if self.move_mode == 0:
+                self.plot_commit()
                 try:
                     self.driver.move_abs(self.x, self.y)
                 except AttributeError:
                     pass
             elif self.move_mode == 1:
-                plotcut = PlotCut(settings=dict(self.settings))
-                power = self.settings["power"]
-                plotcut.plot_append(ox , oy, power)
-                plotcut.plot_append(self.x, self.y, power)
-                self.plot(plotcut)
+                self.plot_location(self.x, self.y, self.settings["power"])
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
                 # 3 = CCW ARC
+
                 cx = ox
                 cy = oy
                 if "i" in gc:
@@ -806,11 +809,9 @@ class GRBLEmulator:
                         ccw=self.move_mode == 3,
                     )
                     power = self.settings["power"]
-                    plotcut = PlotCut(settings=dict(self.settings))
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        plotcut.plot_append(x, y, power)
-                    self.plot(plotcut)
+                        self.plot_location(x, y, power)
                 else:
                     arc = Arc(
                         start=(ox, oy),
@@ -819,12 +820,38 @@ class GRBLEmulator:
                         ccw=self.move_mode == 3,
                     )
                     power = self.settings["power"]
-                    plotcut = PlotCut(settings=self.settings)
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
-                        plotcut.plot_append(x, y, power)
-                    self.plot(plotcut)
+                        self.plot_location(x, y, power)
         return 0
+
+    def plot_location(self, x, y, power):
+        """
+        Adds this particular location to the current plotcut.
+
+        Or, starts a new plotcut if one is not already started.
+
+        @param x:
+        @param y:
+        @param power:
+        @return:
+        """
+        if self.plotcut is None:
+            self.plotcut = PlotCut(settings=dict(self.settings))
+        self.plotcut.plot_append(x, y, power)
+        if not self.program_mode:
+            self.plot_commit()
+
+    def plot_commit(self):
+        """
+        Force commits the old plotcut and unsets the current plotcut.
+
+        @return:
+        """
+        if self.plotcut is None:
+            return
+        self.plot(self.plotcut)
+        self.plotcut = None
 
     def plot(self, plot):
         if isinstance(plot, PlotCut):
