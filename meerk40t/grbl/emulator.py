@@ -838,7 +838,9 @@ class GRBLEmulator:
         """
         if self.plotcut is None:
             self.plotcut = PlotCut(settings=dict(self.settings))
-        self.plotcut.plot_append(x, y, power)
+        matrix = self.units_to_device_matrix
+        x, y = matrix.transform_point([x, y])
+        self.plotcut.plot_append(int(round(x)), int(round(y)), power)
         if not self.program_mode:
             self.plot_commit()
 
@@ -855,12 +857,7 @@ class GRBLEmulator:
 
     def plot(self, plot):
         if isinstance(plot, PlotCut):
-            # plot.check_if_rasterable()
-            matrix = self.units_to_device_matrix
-            for i in range(len(plot.plot)):
-                x, y, laser = plot.plot[i]
-                x, y = matrix.transform_point([x, y])
-                plot.plot[i] = int(x), int(y), laser
+            plot.check_if_rasterable()
         try:
             self.driver.plot(plot)
         except AttributeError:
