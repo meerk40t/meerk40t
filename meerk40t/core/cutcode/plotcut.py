@@ -51,7 +51,7 @@ class PlotCut(CutObject):
         @return: whether the plot can travel
         """
         # Default to vector settings.
-        self.settings["_raster_alt"] = False
+        # self.settings["_raster_alt"] = False
         self.settings["_constant_move_x"] = False
         self.settings["_constant_move_y"] = False
         self.settings["raster_step"] = 0
@@ -73,8 +73,8 @@ class PlotCut(CutObject):
             self.h_raster = True
             self.settings["_constant_move_x"] = True
         # if self.vertical_raster or self.horizontal_raster:
-        self.settings["raster_step"] = min(self.max_dx, self.max_dy)
-        self.settings["_raster_alt"] = True
+        self.settings["raster_step_x"] = min(self.max_dx, self.max_dy)
+        # self.settings["_raster_alt"] = True
         return True
 
     def plot_extend(self, plot):
