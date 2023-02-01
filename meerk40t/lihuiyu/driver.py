@@ -1278,11 +1278,11 @@ class LihuiyuDriver(Parameters):
         self.step_total -= delta
 
         step_amount = -set_step if self._topward else set_step
-        delta = delta - step_amount
-        if delta != 0:
+        unstepped = delta - step_amount
+        if unstepped != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.finished_mode()
-            self._move_relative(0, delta)
+            self._move_relative(0, unstepped)
             self._x_engaged = True
             self._y_engaged = False
             self.raster_mode()
