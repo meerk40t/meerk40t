@@ -456,13 +456,8 @@ class LihuiyuDriver(Parameters):
         self.step_index = 0
         self.step = self.raster_step_x
         self.step_value_set = 0
-        if self.settings.get("_raster_alt", False):
-            pass
-        elif self.service.nse_raster and not self.service.nse_stepraster:
-            pass
-        else:
-            self.step_value_set = int(round(self.step))
-            instance_step = self.step_value_set
+        self.step_value_set = int(round(self.step))
+        instance_step = self.step_value_set
 
         suffix_c = None
         if (
