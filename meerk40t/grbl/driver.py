@@ -287,6 +287,8 @@ class GRBLDriver(Parameters):
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
+                        if isinstance(on, float):
+                            on = int(on)
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.
