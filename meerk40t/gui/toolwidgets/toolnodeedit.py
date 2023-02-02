@@ -9,7 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Move, Close, Arc, CubicBezier, QuadraticBezier, Line
+from meerk40t.svgelements import Move, Close, Arc, CubicBezier, QuadraticBezier, Line, Point
 
 _ = wx.GetTranslation
 
@@ -85,12 +85,19 @@ class EditTool(ToolWidget):
             path = selected_node.path
         except AttributeError:
             return
+        # print (f"Path: {str(path)}")
         prev_seg = None
+        start = 0
+        # Idx of last point
+        l_idx = 0
         for idx, segment in enumerate(path._segments):
             if idx < len(path._segments) - 1:
                 next_seg = path._segments[idx + 1]
             else:
                 next_seg = None
+            if isinstance(segment, Move):
+                if idx != start:
+                    start = idx
 
             if isinstance(segment, (Line, Close)):
                 self.nodes.append(
@@ -103,9 +110,11 @@ class EditTool(ToolWidget):
                         "type": "point",
                         "connector": -1,
                         "selected": False,
-                        "segtype": "C" if isinstance(segment, Close) else "L",
+                        "segtype": "Z" if isinstance(segment, Close) else "L",
+                        "start": start,
                     }
                 )
+                nidx = len(self.nodes) - 1
             elif isinstance(segment, Move):
                 self.nodes.append(
                     {
@@ -118,8 +127,10 @@ class EditTool(ToolWidget):
                         "connector": -1,
                         "selected": False,
                         "segtype": "M",
+                        "start": start,
                     }
                 )
+                nidx = len(self.nodes) - 1
             elif isinstance(segment, QuadraticBezier):
                 self.nodes.append(
                     {
@@ -132,9 +143,10 @@ class EditTool(ToolWidget):
                         "connector": -1,
                         "selected": False,
                         "segtype": "Q",
+                        "start": start,
                     }
                 )
-                idx = len(self.nodes) - 1
+                nidx = len(self.nodes) - 1
                 self.nodes.append(
                     {
                         "prev": None,
@@ -143,9 +155,10 @@ class EditTool(ToolWidget):
                         "segment": segment,
                         "path": path,
                         "type": "control",
-                        "connector": idx,
+                        "connector": nidx,
                         "selected": False,
                         "segtype": "",
+                        "start": start,
                     }
                 )
             elif isinstance(segment, CubicBezier):
@@ -160,9 +173,10 @@ class EditTool(ToolWidget):
                         "connector": -1,
                         "selected": False,
                         "segtype": "C",
+                        "start": start,
                     }
                 )
-                idx = len(self.nodes) - 1
+                nidx = len(self.nodes) - 1
                 self.nodes.append(
                     {
                         "prev": None,
@@ -171,12 +185,12 @@ class EditTool(ToolWidget):
                         "segment": segment,
                         "path": path,
                         "type": "control",
-                        "connector": idx,
+                        "connector": l_idx,
                         "selected": False,
                         "segtype": "",
+                        "start": start,
                     }
                 )
-                idx = len(self.nodes) - 1
                 self.nodes.append(
                     {
                         "prev": None,
@@ -185,9 +199,10 @@ class EditTool(ToolWidget):
                         "segment": segment,
                         "path": path,
                         "type": "control",
-                        "connector": idx,
+                        "connector": nidx,
                         "selected": False,
                         "segtype": "",
+                        "start": start,
                     }
                 )
             elif isinstance(segment, Arc):
@@ -202,9 +217,10 @@ class EditTool(ToolWidget):
                         "connector": -1,
                         "selected": False,
                         "segtype": "A",
+                        "start": start,
                     }
                 )
-                idx = len(self.nodes) - 1
+                nidx = len(self.nodes) - 1
                 self.nodes.append(
                     {
                         "prev": None,
@@ -213,12 +229,14 @@ class EditTool(ToolWidget):
                         "segment": segment,
                         "path": path,
                         "type": "control",
-                        "connector": idx,
+                        "connector": nidx,
                         "selected": False,
                         "segtype": "",
+                        "start": start,
                     }
                 )
             prev_seg = segment
+            l_idx = nidx
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
@@ -287,43 +305,45 @@ class EditTool(ToolWidget):
     def modify_element(self, reload=True):
         if self.element is None:
             return
-        from meerk40t.svgelements import Move, QuadraticBezier, CubicBezier, Line, Arc
-        totalstr = ""
-        laststr = ""
-        lastseg = None
-        for idx, seg in enumerate(self.element.path):
+        # Debugging....
+        # totalstr = ""
+        # laststr = ""
+        # lastseg = None
+        # for idx, seg in enumerate(self.element.path):
 
-            if isinstance(seg, Move):
-                segstr = "M "
-            elif isinstance(seg, Line):
-                segstr = "L "
-            elif isinstance(seg, QuadraticBezier):
-                segstr = "Q "
-            elif isinstance(seg, CubicBezier):
-                segstr = "C "
-            elif isinstance(seg, Arc):
-                segstr = "A "
-            else:
-                segstr = "? "
-            if hasattr(seg, "start"):
-                if seg.start is None:
-                    segstr += "none - "
-                else:
-                    segstr += f"{seg.start.x:.1f}, {seg.start.y:.1f} - "
-                if idx > 0 and lastseg is not None and seg.start != lastseg:
-                    print (f"Differed at #{idx}: {laststr} - {segstr}")
+        #     if isinstance(seg, Move):
+        #         segstr = "M "
+        #     elif isinstance(seg, Line):
+        #         segstr = "L "
+        #     elif isinstance(seg, QuadraticBezier):
+        #         segstr = "Q "
+        #     elif isinstance(seg, CubicBezier):
+        #         segstr = "C "
+        #     elif isinstance(seg, Arc):
+        #         segstr = "A "
+        #     else:
+        #         segstr = "? "
+        #     if hasattr(seg, "start"):
+        #         if seg.start is None:
+        #             segstr += "none - "
+        #         else:
+        #             segstr += f"{seg.start.x:.1f}, {seg.start.y:.1f} - "
+        #         if idx > 0 and lastseg is not None and seg.start != lastseg:
+        #             # Debug message to indicate there's something wrong
+        #             # print (f"Differed at #{idx}: {laststr} - {segstr}")
+        #             pass
 
-            lastseg = None
-            if hasattr(seg, "end"):
-                lastseg = seg.end
-                if seg.end is None:
-                    segstr += "none - "
-                else:
-                    segstr += f"{seg.end.x:.1f}, {seg.end.y:.1f}"
+        #     lastseg = None
+        #     if hasattr(seg, "end"):
+        #         lastseg = seg.end
+        #         if seg.end is None:
+        #             segstr += "none - "
+        #         else:
+        #             segstr += f"{seg.end.x:.1f}, {seg.end.y:.1f}"
 
-            totalstr += " " + segstr
-            laststr = segstr
-        # print (totalstr)
+        #     totalstr += " " + segstr
+        #     laststr = segstr
+        # # print (totalstr)
         self.element.altered()
         try:
             bb = self.element.bbox()
@@ -391,7 +411,7 @@ class EditTool(ToolWidget):
             self.modify_element(True)
 
     def append_line(self):
-        # Stub for append a line
+        # Stub for appending a line
         modified = False
         # Code to follow
         if modified:
@@ -470,25 +490,69 @@ class EditTool(ToolWidget):
                     self.scene.request_refresh()
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
-                if current != self.debug_current:
-                    self.debug_current = current
-                    print (f"current= {current}")
                 pt = current["point"]
                 node = self.element
+                # pnode = current["prev"]
+                # if pnode is not None:
+                #     if pnode.start is not None:
+                #         sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
+                #     else:
+                #         sx = "<none>"
+                #     if pnode.end is not None:
+                #         sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
+                #     else:
+                #         sy = "<none>"
+                #     print (f"Prev: {pnode.d()}, {sx} - {sy}")
+                # else:
+                #     print ("Prev: ---")
+                # pnode = current["segment"]
+                # if pnode.start is not None:
+                #     sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
+                # else:
+                #     sx = "<none>"
+                # if pnode.end is not None:
+                #     sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
+                # else:
+                #     sy = "<none>"
+                # print (f"This: {pnode.d()}, {sx} - {sy}")
+                # pnode = current["next"]
+                # if pnode is not None:
+                #     if pnode.start is not None:
+                #         sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
+                #     else:
+                #         sx = "<none>"
+                #     if pnode.end is not None:
+                #         sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
+                #     else:
+                #         sy = "<none>"
+                #     print (f"Next: {pnode.d()}, {sx} - {sy}")
+                # else:
+                #     print ("Next: ---")
+
                 m = node.matrix.point_in_inverse_space(space_pos[:2])
                 pt.x = m[0]
                 pt.y = m[1]
-                if current["segtype"] == "M" and current["prev"] is None: # First
+                if current["segtype"] == "M" and current["start"] == self.selected_index: # First
                     current["segment"].start = pt
                 current["point"] = pt
                 # We need to adjust the start-point of the next segment
                 # unless it's a closed path then we need to adjust the
                 # very first - need to be mindful of closed subpaths
-                if "next" in current:
-                    nextseg = current["next"]
-                    if hasattr(nextseg, "start"):
+                nextseg = current["next"]
+                if nextseg is not None:
+                    if nextseg.start is not None:
                         nextseg.start.x = m[0]
                         nextseg.start.y = m[1]
+                    # if isinstance(current["segment"], Close):
+                    #     # We need to change the startseg
+                    #     if "start" in current:
+                    #         startidx = current["start"]
+                    #         if startidx >= 0:
+                    #             startseg = self.nodes[startidx]["segment"]
+                    #             if startseg.start == startseg.end:
+                    #                 startseg.start = Point(m[0], m[1])
+                    #             startseg.end = Point(m[0], m[1])
+
                 self.modify_element(False)
             return RESPONSE_CONSUME
         elif event_type == "key_down":
@@ -510,7 +574,7 @@ class EditTool(ToolWidget):
                 entry = None
             if keycode in self.commands:
                 action = self.commands[keycode]
-                # print(f"Execute {action[1]}")
+                print(f"Execute {action[1]}")
                 action[0]()
 
             return RESPONSE_CONSUME
