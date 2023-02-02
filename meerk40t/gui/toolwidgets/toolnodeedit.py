@@ -10,6 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Move, Close, Arc, CubicBezier, QuadraticBezier, Line
+
 _ = wx.GetTranslation
 
 
@@ -58,6 +59,7 @@ class EditTool(ToolWidget):
             if self.message:
                 self.message += ", "
             self.message += f"{cmd}: {action[1]}"
+        self.debug_current = None
 
     def final(self, context):
         self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
@@ -72,6 +74,7 @@ class EditTool(ToolWidget):
 
     def calculate_points(self, selected_node):
         # Set points...
+        self.debug_current = None
         self.element = selected_node
         self.selected_index = None
         self.nodes = []
@@ -82,6 +85,7 @@ class EditTool(ToolWidget):
             path = selected_node.path
         except AttributeError:
             return
+        prev_seg = None
         for idx, segment in enumerate(path._segments):
             if idx < len(path._segments) - 1:
                 next_seg = path._segments[idx + 1]
@@ -91,6 +95,7 @@ class EditTool(ToolWidget):
             if isinstance(segment, (Line, Close)):
                 self.nodes.append(
                     {
+                        "prev": prev_seg,
                         "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
@@ -98,11 +103,13 @@ class EditTool(ToolWidget):
                         "type": "point",
                         "connector": -1,
                         "selected": False,
+                        "segtype": "C" if isinstance(segment, Close) else "L",
                     }
                 )
             elif isinstance(segment, Move):
                 self.nodes.append(
                     {
+                        "prev": prev_seg,
                         "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
@@ -110,11 +117,13 @@ class EditTool(ToolWidget):
                         "type": "point",
                         "connector": -1,
                         "selected": False,
+                        "segtype": "M",
                     }
                 )
             elif isinstance(segment, QuadraticBezier):
                 self.nodes.append(
                     {
+                        "prev": prev_seg,
                         "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
@@ -122,22 +131,27 @@ class EditTool(ToolWidget):
                         "type": "point",
                         "connector": -1,
                         "selected": False,
+                        "segtype": "Q",
                     }
                 )
                 idx = len(self.nodes) - 1
                 self.nodes.append(
                     {
+                        "prev": None,
+                        "next": None,
                         "point": segment.control,
                         "segment": segment,
                         "path": path,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
+                        "segtype": "",
                     }
                 )
             elif isinstance(segment, CubicBezier):
                 self.nodes.append(
                     {
+                        "prev": prev_seg,
                         "next": next_seg,
                         "point": segment.end,
                         "segment": segment,
@@ -145,29 +159,66 @@ class EditTool(ToolWidget):
                         "type": "point",
                         "connector": -1,
                         "selected": False,
+                        "segtype": "C",
                     }
                 )
                 idx = len(self.nodes) - 1
                 self.nodes.append(
                     {
+                        "prev": None,
+                        "next": None,
                         "point": segment.control1,
                         "segment": segment,
                         "path": path,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
+                        "segtype": "",
                     }
                 )
+                idx = len(self.nodes) - 1
                 self.nodes.append(
                     {
+                        "prev": None,
+                        "next": None,
                         "point": segment.control2,
                         "segment": segment,
                         "path": path,
                         "type": "control",
                         "connector": idx,
                         "selected": False,
+                        "segtype": "",
                     }
                 )
+            elif isinstance(segment, Arc):
+                self.nodes.append(
+                    {
+                        "prev": prev_seg,
+                        "next": next_seg,
+                        "point": segment.end,
+                        "segment": segment,
+                        "path": path,
+                        "type": "point",
+                        "connector": -1,
+                        "selected": False,
+                        "segtype": "A",
+                    }
+                )
+                idx = len(self.nodes) - 1
+                self.nodes.append(
+                    {
+                        "prev": None,
+                        "next": None,
+                        "point": segment.center,
+                        "segment": segment,
+                        "path": path,
+                        "type": "control",
+                        "connector": idx,
+                        "selected": False,
+                        "segtype": "",
+                    }
+                )
+            prev_seg = segment
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
@@ -415,15 +466,20 @@ class EditTool(ToolWidget):
                     self.p2 = complex(space_pos[0], space_pos[1])
                     self.scene.request_refresh()
             else:
-                if not self.selected_index:
+                if self.selected_index < 0:
                     self.scene.request_refresh()
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
+                if current != self.debug_current:
+                    self.debug_current = current
+                    print (f"current= {current}")
                 pt = current["point"]
                 node = self.element
                 m = node.matrix.point_in_inverse_space(space_pos[:2])
                 pt.x = m[0]
                 pt.y = m[1]
+                if current["segtype"] == "M" and current["prev"] is None: # First
+                    current["segment"].start = pt
                 current["point"] = pt
                 # We need to adjust the start-point of the next segment
                 # unless it's a closed path then we need to adjust the
