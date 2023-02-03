@@ -25,6 +25,7 @@ class EditTool(ToolWidget):
         self.element = None
         self.selected_index = None
         self.move_type = "node"
+        self.node_type = "path"
         self.p1 = None
         self.p2 = None
         self.pen = wx.Pen()
@@ -78,165 +79,186 @@ class EditTool(ToolWidget):
         self.element = selected_node
         self.selected_index = None
         self.nodes = []
-        offset = 5
-        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-        offset /= s
-        try:
-            path = selected_node.path
-        except AttributeError:
-            return
-        # print (f"Path: {str(path)}")
-        prev_seg = None
-        start = 0
-        # Idx of last point
-        l_idx = 0
-        for idx, segment in enumerate(path._segments):
-            if idx < len(path._segments) - 1:
-                next_seg = path._segments[idx + 1]
-            else:
-                next_seg = None
-            if isinstance(segment, Move):
-                if idx != start:
-                    start = idx
+        if selected_node.type == "elem polyline":
+            self.node_type = "polyline"
+            try:
+                shape = selected_node.shape
+            except AttributeError:
+                return
+            start = 0
+            for idx, pt in enumerate(shape.points):
+                self.nodes.append(
+                    {
+                        "prev": None,
+                        "next": None,
+                        "point": pt,
+                        "segment": None,
+                        "path": shape,
+                        "type": "point",
+                        "connector": -1,
+                        "selected": False,
+                        "segtype": "L",
+                        "start": start,
+                    }
+                )
+        else:
+            self.node_type = "path"
+            try:
+                path = selected_node.path
+            except AttributeError:
+                return
+            # print (f"Path: {str(path)}")
+            prev_seg = None
+            start = 0
+            # Idx of last point
+            l_idx = 0
+            for idx, segment in enumerate(path._segments):
+                if idx < len(path._segments) - 1:
+                    next_seg = path._segments[idx + 1]
+                else:
+                    next_seg = None
+                if isinstance(segment, Move):
+                    if idx != start:
+                        start = idx
 
-            if isinstance(segment, (Line, Close)):
-                self.nodes.append(
-                    {
-                        "prev": prev_seg,
-                        "next": next_seg,
-                        "point": segment.end,
-                        "segment": segment,
-                        "path": path,
-                        "type": "point",
-                        "connector": -1,
-                        "selected": False,
-                        "segtype": "Z" if isinstance(segment, Close) else "L",
-                        "start": start,
-                    }
-                )
-                nidx = len(self.nodes) - 1
-            elif isinstance(segment, Move):
-                self.nodes.append(
-                    {
-                        "prev": prev_seg,
-                        "next": next_seg,
-                        "point": segment.end,
-                        "segment": segment,
-                        "path": path,
-                        "type": "point",
-                        "connector": -1,
-                        "selected": False,
-                        "segtype": "M",
-                        "start": start,
-                    }
-                )
-                nidx = len(self.nodes) - 1
-            elif isinstance(segment, QuadraticBezier):
-                self.nodes.append(
-                    {
-                        "prev": prev_seg,
-                        "next": next_seg,
-                        "point": segment.end,
-                        "segment": segment,
-                        "path": path,
-                        "type": "point",
-                        "connector": -1,
-                        "selected": False,
-                        "segtype": "Q",
-                        "start": start,
-                    }
-                )
-                nidx = len(self.nodes) - 1
-                self.nodes.append(
-                    {
-                        "prev": None,
-                        "next": None,
-                        "point": segment.control,
-                        "segment": segment,
-                        "path": path,
-                        "type": "control",
-                        "connector": nidx,
-                        "selected": False,
-                        "segtype": "",
-                        "start": start,
-                    }
-                )
-            elif isinstance(segment, CubicBezier):
-                self.nodes.append(
-                    {
-                        "prev": prev_seg,
-                        "next": next_seg,
-                        "point": segment.end,
-                        "segment": segment,
-                        "path": path,
-                        "type": "point",
-                        "connector": -1,
-                        "selected": False,
-                        "segtype": "C",
-                        "start": start,
-                    }
-                )
-                nidx = len(self.nodes) - 1
-                self.nodes.append(
-                    {
-                        "prev": None,
-                        "next": None,
-                        "point": segment.control1,
-                        "segment": segment,
-                        "path": path,
-                        "type": "control",
-                        "connector": l_idx,
-                        "selected": False,
-                        "segtype": "",
-                        "start": start,
-                    }
-                )
-                self.nodes.append(
-                    {
-                        "prev": None,
-                        "next": None,
-                        "point": segment.control2,
-                        "segment": segment,
-                        "path": path,
-                        "type": "control",
-                        "connector": nidx,
-                        "selected": False,
-                        "segtype": "",
-                        "start": start,
-                    }
-                )
-            elif isinstance(segment, Arc):
-                self.nodes.append(
-                    {
-                        "prev": prev_seg,
-                        "next": next_seg,
-                        "point": segment.end,
-                        "segment": segment,
-                        "path": path,
-                        "type": "point",
-                        "connector": -1,
-                        "selected": False,
-                        "segtype": "A",
-                        "start": start,
-                    }
-                )
-                nidx = len(self.nodes) - 1
-                self.nodes.append(
-                    {
-                        "prev": None,
-                        "next": None,
-                        "point": segment.center,
-                        "segment": segment,
-                        "path": path,
-                        "type": "control",
-                        "connector": nidx,
-                        "selected": False,
-                        "segtype": "",
-                        "start": start,
-                    }
-                )
-            prev_seg = segment
-            l_idx = nidx
+                if isinstance(segment, (Line, Close)):
+                    self.nodes.append(
+                        {
+                            "prev": prev_seg,
+                            "next": next_seg,
+                            "point": segment.end,
+                            "segment": segment,
+                            "path": path,
+                            "type": "point",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "Z" if isinstance(segment, Close) else "L",
+                            "start": start,
+                        }
+                    )
+                    nidx = len(self.nodes) - 1
+                elif isinstance(segment, Move):
+                    self.nodes.append(
+                        {
+                            "prev": prev_seg,
+                            "next": next_seg,
+                            "point": segment.end,
+                            "segment": segment,
+                            "path": path,
+                            "type": "point",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "M",
+                            "start": start,
+                        }
+                    )
+                    nidx = len(self.nodes) - 1
+                elif isinstance(segment, QuadraticBezier):
+                    self.nodes.append(
+                        {
+                            "prev": prev_seg,
+                            "next": next_seg,
+                            "point": segment.end,
+                            "segment": segment,
+                            "path": path,
+                            "type": "point",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "Q",
+                            "start": start,
+                        }
+                    )
+                    nidx = len(self.nodes) - 1
+                    self.nodes.append(
+                        {
+                            "prev": None,
+                            "next": None,
+                            "point": segment.control,
+                            "segment": segment,
+                            "path": path,
+                            "type": "control",
+                            "connector": nidx,
+                            "selected": False,
+                            "segtype": "",
+                            "start": start,
+                        }
+                    )
+                elif isinstance(segment, CubicBezier):
+                    self.nodes.append(
+                        {
+                            "prev": prev_seg,
+                            "next": next_seg,
+                            "point": segment.end,
+                            "segment": segment,
+                            "path": path,
+                            "type": "point",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "C",
+                            "start": start,
+                        }
+                    )
+                    nidx = len(self.nodes) - 1
+                    self.nodes.append(
+                        {
+                            "prev": None,
+                            "next": None,
+                            "point": segment.control1,
+                            "segment": segment,
+                            "path": path,
+                            "type": "control",
+                            "connector": l_idx,
+                            "selected": False,
+                            "segtype": "",
+                            "start": start,
+                        }
+                    )
+                    self.nodes.append(
+                        {
+                            "prev": None,
+                            "next": None,
+                            "point": segment.control2,
+                            "segment": segment,
+                            "path": path,
+                            "type": "control",
+                            "connector": nidx,
+                            "selected": False,
+                            "segtype": "",
+                            "start": start,
+                        }
+                    )
+                elif isinstance(segment, Arc):
+                    self.nodes.append(
+                        {
+                            "prev": prev_seg,
+                            "next": next_seg,
+                            "point": segment.end,
+                            "segment": segment,
+                            "path": path,
+                            "type": "point",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "A",
+                            "start": start,
+                        }
+                    )
+                    nidx = len(self.nodes) - 1
+                    self.nodes.append(
+                        {
+                            "prev": None,
+                            "next": None,
+                            "point": segment.center,
+                            "segment": segment,
+                            "path": path,
+                            "type": "control",
+                            "connector": nidx,
+                            "selected": False,
+                            "segtype": "",
+                            "start": start,
+                        }
+                    )
+                prev_seg = segment
+                l_idx = nidx
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
@@ -532,26 +554,27 @@ class EditTool(ToolWidget):
                 m = node.matrix.point_in_inverse_space(space_pos[:2])
                 pt.x = m[0]
                 pt.y = m[1]
-                if current["segtype"] == "M" and current["start"] == self.selected_index: # First
-                    current["segment"].start = pt
-                current["point"] = pt
-                # We need to adjust the start-point of the next segment
-                # unless it's a closed path then we need to adjust the
-                # very first - need to be mindful of closed subpaths
-                nextseg = current["next"]
-                if nextseg is not None:
-                    if nextseg.start is not None:
-                        nextseg.start.x = m[0]
-                        nextseg.start.y = m[1]
-                    # if isinstance(current["segment"], Close):
-                    #     # We need to change the startseg
-                    #     if "start" in current:
-                    #         startidx = current["start"]
-                    #         if startidx >= 0:
-                    #             startseg = self.nodes[startidx]["segment"]
-                    #             if startseg.start == startseg.end:
-                    #                 startseg.start = Point(m[0], m[1])
-                    #             startseg.end = Point(m[0], m[1])
+                if self.node_type == "path":
+                    if current["segtype"] == "M" and current["start"] == self.selected_index: # First
+                        current["segment"].start = pt
+                    current["point"] = pt
+                    # We need to adjust the start-point of the next segment
+                    # unless it's a closed path then we need to adjust the
+                    # very first - need to be mindful of closed subpaths
+                    nextseg = current["next"]
+                    if nextseg is not None:
+                        if nextseg.start is not None:
+                            nextseg.start.x = m[0]
+                            nextseg.start.y = m[1]
+                        # if isinstance(current["segment"], Close):
+                        #     # We need to change the startseg
+                        #     if "start" in current:
+                        #         startidx = current["start"]
+                        #         if startidx >= 0:
+                        #             startseg = self.nodes[startidx]["segment"]
+                        #             if startseg.start == startseg.end:
+                        #                 startseg.start = Point(m[0], m[1])
+                        #             startseg.end = Point(m[0], m[1])
 
                 self.modify_element(False)
             return RESPONSE_CONSUME

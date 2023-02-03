@@ -945,7 +945,7 @@ class MeerK40t(MWindow):
         def contains_a_path():
             result = False
             for e in kernel.elements.elems(emphasized=True):
-                if e.type == "elem path":
+                if e.type in ("elem polyline", "elem path"):
                     result = True
                     break
             return result
@@ -956,7 +956,7 @@ class MeerK40t(MWindow):
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit_50,
                 "tip": _(
-                    "Edit nodes of a path-object"
+                    "Edit nodes of a polyline/path-object"
                 ),
                 "action": lambda v: kernel.elements("tool edit\n"),
                 "group": "tool",
