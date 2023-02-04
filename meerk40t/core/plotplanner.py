@@ -131,7 +131,7 @@ class PlotPlanner(Parameters):
             if self.pos_x != new_start_x or self.pos_y != new_start_y:
                 # This location is disjointed. We must flush and jog.
                 # Jog is executed in current settings.
-                if self.pos_x is None or self.raster_step_x != 0:
+                if self.pos_x is None or self.raster_step_x != 0 or self.raster_step_y != 0:
                     # First movement or raster_step exists we must rapid_jog.
                     # Request rapid move new location
                     flush = True
@@ -184,7 +184,7 @@ class PlotPlanner(Parameters):
                     self.settings = cut.settings
                     yield None, None, PLOT_SETTING
 
-            if jog or self.raster_step_x != 0:
+            if jog or self.raster_step_x != 0 or self.raster_step_y != 0:
                 # set the directions. Post Jog, Post Settings.
                 yield cut.major_axis(), None, PLOT_AXIS
                 yield cut.x_dir(), cut.y_dir(), PLOT_DIRECTION

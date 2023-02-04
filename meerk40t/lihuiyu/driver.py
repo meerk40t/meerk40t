@@ -428,7 +428,7 @@ class LihuiyuDriver(Parameters):
 
     def raster_mode(self, *values):
         """
-        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
+        Raster mode runs in either `G0xx` stepping mode. It  is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
