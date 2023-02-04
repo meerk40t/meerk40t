@@ -356,6 +356,10 @@ class RasterOpNode(Node, Parameters):
             return
 
         def make_image():
+            """
+            Nested function to be added to commands and to call make_raster on the given elements.
+            @return:
+            """
             step_x = self.raster_step_x
             step_y = self.raster_step_y
             bounds = self.paint_bounds
