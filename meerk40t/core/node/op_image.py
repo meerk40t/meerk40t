@@ -291,7 +291,7 @@ class ImageOpNode(Node, Parameters):
             step_y = image_node.step_y
 
             settings["raster_step_x"] = step_x
-            settings["raster_step_x"] = step_y
+            settings["raster_step_y"] = step_y
 
             # Set variables
             matrix = image_node.active_matrix
