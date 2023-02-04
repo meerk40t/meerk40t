@@ -290,8 +290,14 @@ class ImageOpNode(Node, Parameters):
             step_x = image_node.step_x
             step_y = image_node.step_y
 
-            settings["raster_step_x"] = step_x
-            settings["raster_step_y"] = step_y
+            if horizontal:
+                # Raster step is only along y for horizontal raster
+                settings["raster_step_x"] = 0
+                settings["raster_step_y"] = step_y
+            else:
+                # Raster step is only along x for vertical raster
+                settings["raster_step_x"] = step_x
+                settings["raster_step_y"] = 0
 
             # Set variables
             matrix = image_node.active_matrix

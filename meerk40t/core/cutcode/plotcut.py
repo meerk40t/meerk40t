@@ -54,7 +54,8 @@ class PlotCut(CutObject):
         # self.settings["_raster_alt"] = False
         self.settings["_constant_move_x"] = False
         self.settings["_constant_move_y"] = False
-        self.settings["raster_step"] = 0
+        self.settings["raster_step_x"] = 0
+        self.settings["raster_step_y"] = 0
         if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
             self.settings["_force_twitchless"] = True
@@ -69,12 +70,12 @@ class PlotCut(CutObject):
         if 0 < self.max_dx <= 15:
             self.v_raster = True
             self.settings["_constant_move_y"] = True
+            self.settings["raster_step_x"] = self.max_dx
         if 0 < self.max_dy <= 15:
             self.h_raster = True
             self.settings["_constant_move_x"] = True
+            self.settings["raster_step_y"] = self.max_dy
         # if self.vertical_raster or self.horizontal_raster:
-        self.settings["raster_step_x"] = min(self.max_dx, self.max_dy)
-        # self.settings["_raster_alt"] = True
         return True
 
     def plot_extend(self, plot):

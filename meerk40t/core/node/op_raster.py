@@ -341,11 +341,6 @@ class RasterOpNode(Node, Parameters):
         if len(self.children) == 0:
             return
 
-        # Calculate raster steps from DPI device context
-        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(
-            self.dpi, matrix=matrix
-        )
-
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
 
@@ -360,8 +355,10 @@ class RasterOpNode(Node, Parameters):
             Nested function to be added to commands and to call make_raster on the given elements.
             @return:
             """
-            step_x = self.raster_step_x
-            step_y = self.raster_step_y
+            # Calculate raster steps from DPI device context
+            step_x, step_y = context.device.dpi_to_steps(
+                self.dpi, matrix=matrix
+            )
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())
@@ -409,14 +406,6 @@ class RasterOpNode(Node, Parameters):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
 
-        # Set steps
-        step_x = self.raster_step_x
-        step_y = self.raster_step_y
-        assert step_x != 0
-        assert step_y != 0
-        settings["raster_step_x"] = step_x
-        settings["raster_step_x"] = step_y
-
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
@@ -442,9 +431,19 @@ class RasterOpNode(Node, Parameters):
             if image_node.type != "elem image":
                 continue
 
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+
+            if horizontal:
+                # Raster step is only along y for horizontal raster
+                settings["raster_step_x"] = 0
+                settings["raster_step_y"] = step_y
+            else:
+                # Raster step is only along x for vertical raster
+                settings["raster_step_x"] = step_x
+                settings["raster_step_y"] = 0
+
             # Perform correct actualization
-            image_node.step_x = step_x
-            image_node.step_y = step_y
             image_node.process_image()
 
             # Set variables
