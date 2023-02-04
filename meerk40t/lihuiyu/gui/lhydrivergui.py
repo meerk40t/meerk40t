@@ -725,17 +725,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_general.Add(self.check_strict, 0, wx.EXPAND, 0)
 
-        self.check_alternative_raster = wx.CheckBox(
-            self, wx.ID_ANY, _("Alt Raster Style")
-        )
-        self.check_alternative_raster.SetToolTip(
-            _(
-                "This feature uses an alternative raster method performing a raster turn around using NSE rather than G00x encoding."
-            )
-        )
-
-        sizer_general.Add(self.check_alternative_raster, 0, wx.EXPAND, 0)
-
         self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
         self.check_twitches.SetToolTip(
             _(
@@ -943,9 +932,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.check_autolock)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_pulse_shift, self.check_plot_shift)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.check_strict)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_alt_raster, self.check_alternative_raster
-        )
         self.Bind(wx.EVT_CHECKBOX, self.on_check_twitches, self.check_twitches)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
@@ -973,7 +959,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_autolock.SetValue(self.context.autolock)
         self.check_plot_shift.SetValue(self.context.plot_shift)
         self.check_strict.SetValue(self.context.strict)
-        self.check_alternative_raster.SetValue(self.context.nse_raster)
         self.check_twitches.SetValue(self.context.twitches)
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
         self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
@@ -1022,9 +1007,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
             self.context.plot_planner.force_shift = self.context.plot_shift
         except (AttributeError, TypeError):
             pass
-
-    def on_check_alt_raster(self, event):
-        self.context.nse_raster = self.check_alternative_raster.GetValue()
 
     def on_check_twitches(self, event):
         self.context.twitches = self.check_twitches.GetValue()

@@ -143,7 +143,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(str, "label", "m2nano")
 
         self.setting(bool, "twitches", False)
-        self.setting(bool, "nse_raster", False)
         self.setting(bool, "nse_stepraster", False)
 
         self.setting(bool, "scale_speed_enabled", False)

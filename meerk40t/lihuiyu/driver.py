@@ -847,28 +847,10 @@ class LihuiyuDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    # if self.service.nse_raster or self.settings.get(
-                    #     "_raster_alt", False
-                    # ):
-                    #     # Alt-Style Raster
-                    #     if (dx > 0 and self._leftward) or (
-                    #         dx < 0 and not self._leftward
-                    #     ):
-                    #         self._h_switch(dy)
-                    # else:
-                    # Default Raster
                     if dy != 0:
                         self._h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    # if self.service.nse_raster or self.settings.get(
-                    #     "_raster_alt", False
-                    # ):
-                    #     # Alt-Style Raster
-                    #     if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
-                    #         self._v_switch(dx)
-                    # else:
-                    # Default Raster
                     if dx != 0:
                         self._v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
