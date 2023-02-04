@@ -26,7 +26,6 @@ class InputCut(CutObject):
         self.input_message = input_message
         self.first = True  # Dwell cuts are standalone
         self.last = True
-        self.raster_step = 0
 
     def reversible(self):
         return False

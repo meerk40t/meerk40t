@@ -22,7 +22,6 @@ class WaitCut(CutObject):
         self.dwell_time = wait
         self.first = True  # Wait cuts are standalone
         self.last = True
-        self.raster_step = 0
 
     def reversible(self):
         return False

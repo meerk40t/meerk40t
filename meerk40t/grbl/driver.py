@@ -236,7 +236,6 @@ class GRBLDriver(Parameters):
             qspeed = q.settings.get("speed", self.speed)
             qraster_step_x = q.settings.get("raster_step_x")
             qraster_step_y = q.settings.get("raster_step_y")
-            # print (f"Cut {type(q).__name__}, power={qpower}, speed={qspeed}, rx={qraster_step_x}, ry={qraster_step_y}")
             if qpower != self.power:
                 self.set("power", qpower)
             if (
