@@ -174,16 +174,16 @@ class LihuiyuDriver(Parameters):
         self.holds.append(primary_hold)
 
         # Step amount expected of the current operation
-        self.step = 0
+        self._raster_step_float = 0
 
         # Step amount is the current correctly set step amount in the controller.
-        self.step_value_set = 0
+        self._raster_step_g_value = 0
 
         # Step index of the current step taken for unidirectional
-        self.step_index = 0
+        self._raster_step_swing_index = 0
 
         # Step total the count for fractional step amounts
-        self.step_total = 0.0
+        self._raster_step_fractional_remainder = 0.0
 
     def __repr__(self):
         return f"LihuiyuDriver({self.name})"
@@ -445,9 +445,9 @@ class LihuiyuDriver(Parameters):
         horizontal = self.raster_step_y != 0
         self._request_horizontal_major = horizontal
 
-        self.step_index = 0
-        self.step = self.raster_step_y if horizontal else self.raster_step_x
-        self.step_value_set = int(math.floor(self.step))
+        self._raster_step_swing_index = 0
+        self._raster_step_float = self.raster_step_y if horizontal else self.raster_step_x
+        self._raster_step_g_value = int(math.floor(self._raster_step_float))
 
         if self._request_leftward is not None:
             self._leftward = self._request_leftward
@@ -464,11 +464,16 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-
+        if self.raster_swing:
+            # Unidirectional (step on forward and back swing)
+            raster_step_value = self._raster_step_g_value, 0
+        else:
+            # Bidirectional (step only on forward swing)
+            raster_step_value = self._raster_step_g_value
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            self.step_value_set,
+            raster_step=raster_step_value,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
@@ -499,14 +504,14 @@ class LihuiyuDriver(Parameters):
             return
         self.finished_mode()
 
-        self.step_index = 0
-        self.step = 0
-        self.step_value_set = 0
+        self._raster_step_swing_index = 0
+        self._raster_step_float = 0
+        self._raster_step_g_value = 0
 
         suffix_c = None
         if (
             not self.service.twitches or self.settings.get("_force_twitchless", False)
-        ) and not self.step:
+        ) and not self._raster_step_float:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward
@@ -541,7 +546,7 @@ class LihuiyuDriver(Parameters):
         self(b"N")
         self(self._code_declare_directions())
         self(b"S1E")
-        if self.step:
+        if self._raster_step_float:
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
@@ -1180,19 +1185,20 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
-        set_step = self.step_value_set
+        set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
+            set_step = set_step[self._raster_step_swing_index % len(set_step)]
 
         # correct for fractional stepping
-        self.step_total += dy
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
+        self._raster_step_fractional_remainder += dy
+        delta = math.trunc(self._raster_step_fractional_remainder)
+        self._raster_step_fractional_remainder -= delta
 
         step_amount = -set_step if self._topward else set_step
         unstepped = delta - step_amount
-        if unstepped != 0:
-            # Movement exceeds the standard raster step amount. Rapid relocate.
+
+        if unstepped > 0 and self._topward or unstepped < 0 and not self._topward:
+            # Stepped value exceeds desired step
             self.finished_mode()
             self._move_relative(0, unstepped)
             self._x_engaged = True
@@ -1208,7 +1214,7 @@ class LihuiyuDriver(Parameters):
             self._leftward = True
         self.native_y += step_amount
         self.laser = False
-        self.step_index += 1
+        self._raster_step_swing_index += 1
 
     def _v_switch_g(self, dx: float):
         """
@@ -1216,19 +1222,19 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
-        set_step = self.step_value_set
+        set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
+            set_step = set_step[self._raster_step_swing_index % len(set_step)]
 
         # correct for fractional stepping
-        self.step_total += dx
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
+        self._raster_step_fractional_remainder += dx
+        delta = math.trunc(self._raster_step_fractional_remainder)
+        self._raster_step_fractional_remainder -= delta
 
         step_amount = -set_step if self._leftward else set_step
         unstepped = delta - step_amount
-        if unstepped != 0:
-            # Movement exceeds the standard raster step amount. Rapid relocate.
+        if unstepped > 0 and self._leftward or unstepped < 0 and not self._leftward:
+            # Stepped value exceeds desired step
             self.finished_mode()
             self._move_relative(unstepped, 0)
             self._y_engaged = True
@@ -1244,7 +1250,7 @@ class LihuiyuDriver(Parameters):
             self._topward = True
         self.native_x += step_amount
         self.laser = False
-        self.step_index += 1
+        self._raster_step_swing_index += 1
 
     def _reset_modes(self):
         self.laser = False
