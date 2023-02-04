@@ -1071,25 +1071,6 @@ class LihuiyuDriver(Parameters):
         if not self.service.autolock:
             self(b"IS2P\n")
 
-    def _commit_mode(self):
-        # Unknown utility ported from deleted branch
-        self(b"N")
-        speed_code = LaserSpeed(
-            self.service.board,
-            self.speed,
-            self.raster_step_x,
-            d_ratio=self.implicit_d_ratio,
-            acceleration=self.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            fix_speeds=self.service.fix_speeds,
-            raster_horizontal=True,
-        ).speedcode
-        speed_code = bytes(speed_code, "utf8")
-        self(speed_code)
-        self(b"SE")
-        self.laser = False
-
     def _goto_relative(self, dx, dy, cut):
         """
         Goto relative dx, dy. With cut set or not set.
