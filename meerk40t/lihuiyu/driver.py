@@ -426,7 +426,7 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_FINISH
         self.service.signal("driver;mode", self.state)
 
-    def raster_mode(self, *values):
+    def raster_mode(self, *values, dx=0, dy=0):
         """
         Raster mode runs in either `G0xx` stepping mode. It  is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
@@ -434,10 +434,57 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
+        if self.raster_step_y == 0 and self.raster_step_x == 0:
+            # This is not properly set raster mode.
+            self.program_mode(*values, dx=dx, dy=dy)
+            return
         if self.state == DRIVER_STATE_RASTER:
             return
         self.finished_mode()
-        self.program_mode()
+
+        horizontal = self.raster_step_y != 0
+        self._request_horizontal_major = horizontal
+
+        self.step_index = 0
+        self.step = self.raster_step_y if horizontal else self.raster_step_x
+        self.step_value_set = int(math.floor(self.step))
+
+        if self._request_leftward is not None:
+            self._leftward = self._request_leftward
+            self._request_leftward = None
+        if self._request_topward is not None:
+            self._topward = self._request_topward
+            self._request_topward = None
+        if self._request_horizontal_major is not None:
+            self._horizontal_major = self._request_horizontal_major
+            self._request_horizontal_major = None
+
+        if self.service.strict:
+            # Override requested or current values only use core initial values.
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
+
+        speed_code = LaserSpeed(
+            self.service.board,
+            self.speed,
+            self.step_value_set,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
+            fix_limit=True,
+            fix_lows=True,
+            suffix_c=False,
+            fix_speeds=self.service.fix_speeds,
+            raster_horizontal=horizontal,
+        ).speedcode
+        speed_code = bytes(speed_code, "utf8")
+        self(speed_code)
+        self._goto_xy(dx, dy)
+        self(b"N")
+        self(self._code_declare_directions())
+        self(b"S1E")
+        self.state = DRIVER_STATE_RASTER
+        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values, dx=0, dy=0):
         """
@@ -452,12 +499,9 @@ class LihuiyuDriver(Parameters):
             return
         self.finished_mode()
 
-        instance_step = 0
         self.step_index = 0
-        self.step = self.raster_step_x
+        self.step = 0
         self.step_value_set = 0
-        self.step_value_set = int(round(self.step))
-        instance_step = self.step_value_set
 
         suffix_c = None
         if (
@@ -482,7 +526,7 @@ class LihuiyuDriver(Parameters):
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            instance_step,
+            raster_step=0,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
