@@ -266,18 +266,13 @@ class USBConnection:
                     endpoint=WRITE_ENDPOINT, data=packet, timeout=self.timeout
                 )
             except usb.core.USBError as e:
-                if attempt <= 3:
-                    try:
-                        self.close(index)
-                        self.open(index)
-                    except ConnectionError:
-                        time.sleep(1)
-                    self.write(index, packet, attempt + 1)
-                    return
                 self.backend_error_code = e.backend_error_code
 
                 self.channel(str(e))
-                raise ConnectionError
+                if attempt <= 3:
+                    self.write(index, packet, attempt + 1)
+                    return
+                self.channel(f"Send could not actually send so it was aborted due to timeouts. (DUMMY)")
             except KeyError:
                 raise ConnectionError("Not Connected.")
 
