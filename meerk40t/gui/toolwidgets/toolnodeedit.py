@@ -66,6 +66,21 @@ class NodeIconPanel(wx.Panel):
             b'YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/'
             b'TrOwSVb5BTbFAAAAAElFTkSuQmCC')
 
+        node_smooth = PyEmbeddedImage(
+            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B'
+            b'AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC'
+            b'VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P'
+            b'ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF'
+            b'BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC'
+            b'VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f'
+            b'GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5'
+            b'/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO'
+            b'jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+'
+            b'/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr'
+            b'1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8'
+            b'duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu'
+            b'QmCC')
+
         self.icons = {
             # "command": (image, active_for_path, active_for_poly, "tooltiptext"),
             "i": (node_add, True, True, _("Insert point before")),
@@ -74,8 +89,9 @@ class NodeIconPanel(wx.Panel):
             "l": (node_line, True, False, _("Make segment a line")),
             "c": (node_curve, True, False, _("Make segment a curve")),
             "s": (node_symmetric, True, False, _("Make segment symmetrical")),
-            "b": (node_break, True, False, _("Break segment apart")),
             "j": (node_join, True, False, _("Join two segments")),
+            "b": (node_break, True, False, _("Break segment apart")),
+            "o": (node_smooth, True, False, _("Smoothen transit to adjacent segments")),
         }
         for command, entry in self.icons:
             button = wx.Button(self, wx.ID_ANY, "")
@@ -130,6 +146,7 @@ class EditTool(ToolWidget):
             "a": (self.append_line, _("Append")),
             "b": (self.break_path, _("Break")),
             "j": (self.join_path, _("Join")),
+            "o": (self.smoothen, _("Smoothen")),
         }
         self.message = ""
         for cmd in self.commands:
@@ -213,6 +230,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "Z" if isinstance(segment, Close) else "L",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     nidx = len(self.nodes) - 1
@@ -229,6 +247,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "M",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     nidx = len(self.nodes) - 1
@@ -245,6 +264,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "Q",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     nidx = len(self.nodes) - 1
@@ -260,6 +280,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                 elif isinstance(segment, CubicBezier):
@@ -275,6 +296,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "C",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     nidx = len(self.nodes) - 1
@@ -290,6 +312,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     self.nodes.append(
@@ -304,6 +327,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                 elif isinstance(segment, Arc):
@@ -319,6 +343,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "A",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                     nidx = len(self.nodes) - 1
@@ -334,6 +359,7 @@ class EditTool(ToolWidget):
                             "selected": False,
                             "segtype": "",
                             "start": start,
+                            "pathindex": idx,
                         }
                     )
                 prev_seg = segment
@@ -458,6 +484,91 @@ class EditTool(ToolWidget):
             for entry in self.nodes:
                 entry["selected"] = False
 
+    def smoothen(self):
+        modified = False
+        if self.node_type == "polyline":
+            # Not valid for a polyline Could make a path now but that might be more than the user expected...
+            return
+        for entry in self.nodes:
+            if entry["selected"] and entry["segtype"] == "C": # Cubic Bezier only
+                segment = entry["segment"]
+                pt_start = segment.start
+                pt_end = segment.end
+                pt_control1 = segment.control1
+                pt_control2 = segment.control2
+                other_segment = entry["prev"]
+                if other_segment is not None:
+                    if isinstance(other_segment, Line):
+                        other_pt_x = (other_segment.start.x)
+                        other_pt_y = (other_segment.start.y)
+                        dx = pt_start.x - other_pt_x
+                        dy = pt_start.y - other_pt_y
+                        segment.control1.x = pt_start.x + 0.25 * dx
+                        segment.control1.y = pt_start.y + 0.25 * dy
+                        modified = True
+                    elif isinstance(other_segment, CubicBezier):
+                        other_pt_x = other_segment.control2.x
+                        other_pt_y = other_segment.control2.y
+                        dx = pt_start.x - other_pt_x
+                        dy = pt_start.y - other_pt_y
+                        segment.control1.x = pt_start.x + dx
+                        segment.control1.y = pt_start.y + dy
+                        modified = True
+                    elif isinstance(other_segment, QuadraticBezier):
+                        other_pt_x = other_segment.control.x
+                        other_pt_y = other_segment.control.y
+                        dx = pt_start.x - other_pt_x
+                        dy = pt_start.y - other_pt_y
+                        segment.control1.x = pt_start.x + dx
+                        segment.control1.y = pt_start.y + dy
+                        modified = True
+                    elif isinstance(other_segment, Arc):
+                        # We need the tangent in the end-point,
+                        other_pt_x = other_segment.end.x
+                        other_pt_y = other_segment.end.y
+                        dx = pt_start.x - other_pt_x
+                        dy = pt_start.y - other_pt_y
+                        segment.control1.x = pt_start.x + dx
+                        segment.control1.y = pt_start.y + dy
+                        modified = True
+                other_segment = entry["next"]
+                if other_segment is not None:
+                    if isinstance(other_segment, Line):
+                        other_pt_x = other_segment.end.x
+                        other_pt_y = other_segment.end.y
+                        dx = pt_end.x - other_pt_x
+                        dy = pt_end.y - other_pt_y
+                        segment.control2.x = pt_end.x + 0.25 * dx
+                        segment.control2.y = pt_end.y + 0.25 * dy
+                        modified = True
+                    elif isinstance(other_segment, CubicBezier):
+                        other_pt_x = other_segment.control1.x
+                        other_pt_y = other_segment.control1.y
+                        dx = pt_end.x - other_pt_x
+                        dy = pt_end.y - other_pt_y
+                        segment.control2.x = pt_end.x + dx
+                        segment.control2.y = pt_end.y + dy
+                        modified = True
+                    elif isinstance(other_segment, QuadraticBezier):
+                        other_pt_x = other_segment.control.x
+                        other_pt_y = other_segment.control.y
+                        dx = pt_end.x - other_pt_x
+                        dy = pt_end.y - other_pt_y
+                        segment.control2.x = pt_end.x + dx
+                        segment.control2.y = pt_end.y + dy
+                        modified = True
+                    elif isinstance(other_segment, Arc):
+                        # We need the tangent in the end-point,
+                        other_pt_x = other_segment.start.x
+                        other_pt_y = other_segment.start.y
+                        dx = pt_end.x - other_pt_x
+                        dy = pt_end.y - other_pt_y
+                        segment.control2.x = pt_end.x + dx
+                        segment.control2.y = pt_end.y + dy
+                        modified = True
+        if modified:
+            self.modify_element(True)
+
     def quad_symmetrical(self):
         modified = False
         if self.node_type == "polyline":
@@ -470,9 +581,9 @@ class EditTool(ToolWidget):
                 pt_end = segment.end
                 pt_control1 = segment.control1
                 pt_control2 = segment.control2
-                dx = pt_start.x - pt_control2.x
-                dy = pt_start.y - pt_control2.y
-                segment.control1 = Point(pt_start.x - dx, pt_start.y - dy)
+                dx = (pt_start.x + pt_end.x) / 2 - pt_control2.x
+                dy = (pt_start.y + pt_end.y) / 2 - pt_control2.y
+                segment.control1 = Point((pt_start.x + pt_end.x) / 2 + dx, (pt_start.y + pt_end.y) / 2 + dy)
                 modified = True
         if modified:
             self.modify_element(True)
@@ -500,7 +611,18 @@ class EditTool(ToolWidget):
             return
         for entry in self.nodes:
             if entry["selected"] and entry["type"] == "point":
-                pass
+                idx = entry["pathindex"]
+                if entry["segment"] is None or entry["segment"].start is None:
+                    continue
+                startpt = Point(entry["segment"].start.x, entry["segment"].start.y)
+                endpt = Point(entry["segment"].end.x, entry["segment"].end.y)
+                if entry["segtype"] in ("C", "Q", "A"):
+                    pass
+                else:
+                    continue
+                newsegment = Line(start=startpt, end=endpt)
+                self.element.path._segments[idx] = newsegment
+                modified = True
         if modified:
             self.modify_element(True)
 
@@ -512,7 +634,26 @@ class EditTool(ToolWidget):
             return
         for entry in self.nodes:
             if entry["selected"] and entry["type"] == "point":
-                pass
+                idx = entry["pathindex"]
+                if entry["segment"] is None or entry["segment"].start is None:
+                    continue
+                startpt = Point(entry["segment"].start.x, entry["segment"].start.y)
+                endpt = Point(entry["segment"].end.x, entry["segment"].end.y)
+                if entry["segtype"] == "L":
+                    ctrl1pt = Point(startpt.x + 0.25 *(endpt.x - startpt.x), startpt.y + 0.25 * (endpt.y - startpt.y))
+                    ctrl2pt = Point(startpt.x + 0.75 *(endpt.x - startpt.x), startpt.y + 0.75 * (endpt.y - startpt.y))
+                elif entry["segtype"] == "Q":
+                    ctrl1pt = Point(entry["segment"].control.x, entry["segment"].control.y)
+                    ctrl2pt = Point(endpt.x, endpt.y)
+                elif entry["segtype"] == "A":
+                    ctrl1pt = Point(startpt.x + 0.25 *(endpt.x - startpt.x), startpt.y + 0.25 * (endpt.y - startpt.y))
+                    ctrl2pt = Point(startpt.x + 0.75 *(endpt.x - startpt.x), startpt.y + 0.75 * (endpt.y - startpt.y))
+                else:
+                    continue
+
+                newsegment = CubicBezier(start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt)
+                self.element.path._segments[idx] = newsegment
+                modified = True
         if modified:
             self.modify_element(True)
 
@@ -786,7 +927,7 @@ class EditTool(ToolWidget):
     def perform_action(self, code):
         if code in self.commands:
             action = self.commands[code]
-            # print(f"Execute {action[1]}")
+            print(f"Execute {action[1]}")
             action[0]()
 
     def signal(self, signal, *args, **kwargs):
