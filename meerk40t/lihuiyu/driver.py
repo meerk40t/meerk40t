@@ -1195,16 +1195,17 @@ class LihuiyuDriver(Parameters):
         self._raster_step_fractional_remainder -= delta
 
         step_amount = -set_step if self._topward else set_step
-        unstepped = delta - step_amount
-
-        if unstepped > 0 and self._topward or unstepped < 0 and not self._topward:
-            # Stepped value exceeds desired step
+        remaining = delta - step_amount
+        if remaining > 0 and self._topward or remaining < 0 and not self._topward:
+            # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
-            self._move_relative(0, unstepped)
-            self._x_engaged = True
-            self._y_engaged = False
+            self._move_relative(0, remaining)
             self.raster_mode()
-
+            remaining = 0
+        if remaining:
+            self._goto_octent(-abs(remaining) if self._leftward else abs(remaining), remaining, False)
+        self._x_engaged = True
+        self._y_engaged = False
         # We reverse direction and step.
         if self._leftward:
             self(self.CODE_RIGHT)
@@ -1232,15 +1233,17 @@ class LihuiyuDriver(Parameters):
         self._raster_step_fractional_remainder -= delta
 
         step_amount = -set_step if self._leftward else set_step
-        unstepped = delta - step_amount
-        if unstepped > 0 and self._leftward or unstepped < 0 and not self._leftward:
-            # Stepped value exceeds desired step
+        remaining = delta - step_amount
+        if remaining > 0 and self._leftward or remaining < 0 and not self._leftward:
+            # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
-            self._move_relative(unstepped, 0)
-            self._y_engaged = True
-            self._x_engaged = False
+            self._move_relative(remaining, 0)
             self.raster_mode()
-
+            remaining = 0
+        if remaining:
+            self._goto_octent(remaining, -abs(remaining) if self._topward else abs(remaining), False)
+        self._y_engaged = True
+        self._x_engaged = False
         # We reverse direction and step.
         if self._topward:
             self(self.CODE_BOTTOM)
