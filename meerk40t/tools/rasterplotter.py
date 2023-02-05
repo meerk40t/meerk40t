@@ -417,6 +417,9 @@ class RasterPlotter:
 
         @return:
         """
+        if not self.bidirectional:
+            yield from self._plot_vertical_unidirectional_top()
+            return
         width = self.width
 
         skip_pixel = self.skip_pixel
@@ -475,9 +478,9 @@ class RasterPlotter:
 
         @return:
         """
-        # if not self.bidirectional:
-        #     yield from self._plot_horizontal_unidirectional_left()
-        #     return
+        if not self.bidirectional:
+            yield from self._plot_horizontal_unidirectional_left()
+            return
         height = self.height
 
         skip_pixel = self.skip_pixel
@@ -562,6 +565,43 @@ class RasterPlotter:
                 # remaining image is blank, we stop right here.
                 break
             yield x, next_y, 0
+            yield next_x, next_y, 0
+            x = next_x
+            y = next_y
+
+    def _plot_vertical_unidirectional_top(self):
+        """
+        This code is horizontal rastering.
+
+        @return:
+        """
+        width = self.width
+
+        skip_pixel = self.skip_pixel
+
+        x, y = self.initial_position()
+        dx = 1 if self.start_on_left else -1
+        yield x, y, 0
+        while 0 <= x < width:
+            upper_bound = self.bottommost_not_equal(y) + self.overscan
+            while y <= upper_bound:
+                try:
+                    pixel = self.px(x, y)
+                except IndexError:
+                    pixel = 0
+                y = self.nextcolor_bottom(x, y, upper_bound)
+                y = min(y, upper_bound)
+                if pixel == skip_pixel:
+                    yield x, y, 0
+                else:
+                    yield x, y, pixel
+                if y == upper_bound:
+                    break
+            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, topmost_pixel=True)
+            if next_x is None:
+                # remaining image is blank, we stop right here.
+                break
+            yield next_x, y, 0
             yield next_x, next_y, 0
             x = next_x
             y = next_y
