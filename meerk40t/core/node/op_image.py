@@ -340,8 +340,16 @@ class ImageOpNode(Node, Parameters):
             yield cut
             if direction == 4:
                 # Create optional crosshatch cut
-                horizontal = False
-                start_on_left = False
+                horizontal = not horizontal
+                settings = dict(settings)
+                if horizontal:
+                    # Raster step is only along y for horizontal raster
+                    settings["raster_step_x"] = 0
+                    settings["raster_step_y"] = step_y
+                else:
+                    # Raster step is only along x for vertical raster
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = 0
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,
