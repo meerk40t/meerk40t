@@ -464,12 +464,12 @@ class LihuiyuDriver(Parameters):
             self._leftward = False
             self._topward = False
             self._horizontal_major = False
-        if self.raster_swing:
-            # Unidirectional (step on forward and back swing)
-            raster_step_value = self._raster_step_g_value, 0
-        else:
-            # Bidirectional (step only on forward swing)
+        if self.bidirectional:
+            # Bidirectional (step on forward/back swing - rasters both directions)
             raster_step_value = self._raster_step_g_value
+        else:
+            # Unidirectional (step on forward swing - rasters only going forward)
+            raster_step_value = self._raster_step_g_value, 0
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,

@@ -91,10 +91,10 @@ class RasterOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        if self.raster_swing:
-            raster_swing = "-"
-        else:
+        if self.bidirectional:
             raster_swing = "="
+        else:
+            raster_swing = "-"
         if self.raster_direction == 0:
             raster_dir = "T2B"
         elif self.raster_direction == 1:
@@ -298,14 +298,14 @@ class RasterOpNode(Node, Parameters):
         speed_in_per_s = self.speed / MM_PER_INCH
         if self.raster_direction in (0, 1, 4):
             scanlines = height_in_inches * dpi
-            if self.raster_swing:
+            if not self.bidirectional:
                 scanlines *= 2
             this_len = scanlines * width_in_inches + height_in_inches
             estimate += this_len / speed_in_per_s
             # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.raster_direction in (2, 3, 4):
             scanlines = width_in_inches * dpi
-            if self.raster_swing:
+            if not self.bidirectional:
                 scanlines *= 2
             this_len = scanlines * height_in_inches + width_in_inches
             estimate += this_len / speed_in_per_s
@@ -423,7 +423,7 @@ class RasterOpNode(Node, Parameters):
         elif direction == 3:
             horizontal = False
             start_on_left = True
-        bidirectional = bool(self.raster_swing)
+        bidirectional = self.bidirectional
 
         for image_node in self.children:
             # Process each child. Some core settings are the same for each child.
