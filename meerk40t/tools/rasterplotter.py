@@ -475,6 +475,9 @@ class RasterPlotter:
 
         @return:
         """
+        # if not self.bidirectional:
+        #     yield from self._plot_horizontal_unidirectional_left()
+        #     return
         height = self.height
 
         skip_pixel = self.skip_pixel
@@ -525,3 +528,40 @@ class RasterPlotter:
             y = next_y
             yield x, y, 0
             dx = -dx
+
+    def _plot_horizontal_unidirectional_left(self):
+        """
+        This code is horizontal rastering.
+
+        @return:
+        """
+        height = self.height
+
+        skip_pixel = self.skip_pixel
+
+        x, y = self.initial_position()
+        dy = 1 if self.start_on_top else -1
+        yield x, y, 0
+        while 0 <= y < height:
+            upper_bound = self.rightmost_not_equal(y) + self.overscan
+            while x <= upper_bound:
+                try:
+                    pixel = self.px(x, y)
+                except IndexError:
+                    pixel = 0
+                x = self.nextcolor_right(x, y, upper_bound)
+                x = min(x, upper_bound)
+                if pixel == skip_pixel:
+                    yield x, y, 0
+                else:
+                    yield x, y, pixel
+                if x == upper_bound:
+                    break
+            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, leftmost_pixel=True)
+            if next_y is None:
+                # remaining image is blank, we stop right here.
+                break
+            yield x, next_y, 0
+            yield next_x, next_y, 0
+            x = next_x
+            y = next_y
