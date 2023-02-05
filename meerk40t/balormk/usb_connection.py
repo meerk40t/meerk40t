@@ -3,8 +3,9 @@ Galvo USB Connection
 
 Performs the required interactions with the Galvo backend through pyusb and libusb.
 """
-
+import struct
 import time
+import random
 
 import usb.core
 import usb.util
@@ -286,16 +287,15 @@ class USBConnection:
                 endpoint=READ_ENDPOINT, size_or_buffer=8, timeout=self.timeout
             )
         except usb.core.USBError as e:
-            if attempt <= 3:
-                try:
-                    self.close(index)
-                    self.open(index)
-                except ConnectionError:
-                    time.sleep(1)
-                return self.read(index, attempt + 1)
             self.backend_error_code = e.backend_error_code
-
             self.channel(str(e))
-            raise ConnectionError
+            if attempt <= 3:
+                return self.read(index, attempt + 1)
+            else:
+                read = bytearray(8)
+                for r in range(len(read)):
+                    read[r] = random.randint(0, 255)
+                print(f"Read failed repeatedly. Dummy reply inserted as {read}")
+                return struct.pack("8B", *read)
         except KeyError:
             raise ConnectionError("Not Connected.")
