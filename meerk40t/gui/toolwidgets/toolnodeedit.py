@@ -140,7 +140,7 @@ class EditTool(ToolWidget):
         self.commands = {
             "d": (self.delete_nodes, _("Delete")),
             "l": (self.convert_to_line, _("Line")),
-            "c": (self.convert_to_quad, _("Curve")),
+            "c": (self.convert_to_curve, _("Curve")),
             "s": (self.quad_symmetrical, _("Symmetrical")),
             "i": (self.insert_midpoint, _("Insert")),
             "a": (self.append_line, _("Append")),
@@ -579,11 +579,16 @@ class EditTool(ToolWidget):
                 segment = entry["segment"]
                 pt_start = segment.start
                 pt_end = segment.end
-                pt_control1 = segment.control1
-                pt_control2 = segment.control2
-                dx = (pt_start.x + pt_end.x) / 2 - pt_control2.x
-                dy = (pt_start.y + pt_end.y) / 2 - pt_control2.y
-                segment.control1 = Point((pt_start.x + pt_end.x) / 2 + dx, (pt_start.y + pt_end.y) / 2 + dy)
+                midpoint = Point((pt_end.x + pt_start.x) / 2, (pt_end.y + pt_start.y) / 2)
+                angle_to_end = midpoint.angle_to(pt_end)
+                angle_to_start = midpoint.angle_to(pt_start)
+                angle_to_control2 = midpoint.angle_to(segment.control2)
+                distance = midpoint.distance_to(segment.control2)
+                # The new point
+                angle_to_control1 = angle_to_start + (angle_to_end - angle_to_control2)
+                newx = midpoint.x + distance * math.cos(angle_to_control1)
+                newy = midpoint.y + distance * math.sin(angle_to_control1)
+                segment.control1 = Point(newx, newy)
                 modified = True
         if modified:
             self.modify_element(True)
@@ -626,7 +631,7 @@ class EditTool(ToolWidget):
         if modified:
             self.modify_element(True)
 
-    def convert_to_quad(self):
+    def convert_to_curve(self):
         # Stub for converting segment to a quad
         modified = False
         if self.node_type == "polyline":
