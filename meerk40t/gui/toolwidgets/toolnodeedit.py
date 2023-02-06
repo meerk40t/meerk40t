@@ -712,9 +712,34 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
-        for entry in self.nodes:
+        for idx in range(len(self.nodes) - 1, -1, -1):
+            entry = self.nodes[idx]
             if entry["selected"] and entry["type"] == "point":
-                pass
+                idx = entry["pathindex"]
+                seg = entry["segment"]
+                if isinstance(seg, (Move, Close)):
+                    continue
+                # Is this the last point? Then no use to break the path
+                nextseg = None
+                if idx == 0 or idx == len(self.element.path._segments) - 1:
+                    # Dont break at the first or last point
+                    continue
+                nextseg = self.element.path._segments[idx + 1]
+                if isinstance(nextseg, (Move, Close)):
+                    # Not at end of subpath
+                    continue
+                prevseg = self.element.path._segments[idx - 1]
+                if isinstance(prevseg, (Move, Close)):
+                    # We could still be at the end point of the first segment...
+                    if entry["point"] == seg.start:
+                        # Not at start of subpath
+                        continue
+                newseg = Move(
+                    start=Point(seg.end.x, seg.end.y),
+                    end=Point(nextseg.start.x, nextseg.start.y),
+                )
+                self.element.path._segments.insert(idx + 1, newseg)
+                modified = True
         if modified:
             self.modify_element(True)
 
@@ -733,7 +758,7 @@ class EditTool(ToolWidget):
     def insert_midpoint(self):
         # Stub for inserting a point...
         modified = False
-        # Back to
+        # Move backwards as len will change
         for idx in range(len(self.nodes) - 1, -1, -1):
             entry = self.nodes[idx]
             if entry["selected"] and entry["type"] == "point":
