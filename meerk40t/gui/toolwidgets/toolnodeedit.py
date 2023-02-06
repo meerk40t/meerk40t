@@ -110,6 +110,7 @@ class NodeIconPanel(wx.Panel):
             "j": (node_join, True, False, _("Join two segments")),
             "b": (node_break, True, False, _("Break segment apart")),
             "o": (node_smooth, True, False, _("Smoothen transit to adjacent segments")),
+            "z": (node_smooth, True, False, _("Toggle closed status")),
         }
         for command, entry in self.icons:
             button = wx.Button(self, wx.ID_ANY, "")
@@ -169,6 +170,7 @@ class EditTool(ToolWidget):
             "b": (self.break_path, _("Break")),
             "j": (self.join_path, _("Join")),
             "o": (self.smoothen, _("Smoothen")),
+            "z": (self.toggle_close, _("Close path")),
         }
         self.message = ""
         for cmd in self.commands:
@@ -509,6 +511,51 @@ class EditTool(ToolWidget):
         if self.nodes is not None:
             for entry in self.nodes:
                 entry["selected"] = False
+
+    def toggle_close(self):
+        modified = False
+        if self.node_type == "polyline":
+            # Not valid for a polyline Could make a path now but that might be more than the user expected...
+            return
+        self.dealt_with = []
+        for idx in range(len(self.nodes) - 1, -1, -1):
+            entry = self.nodes[idx]
+            if entry["selected"] and entry["type"] == "point":
+                # What's the index of the last selected element
+                # Have we dealt with that before? ie not multiple toggles..
+                segstart = entry["start"]
+                if segstart in self.dealt_with:
+                    continue
+                self.dealt_with.append(segstart)
+                # Lets establish the last segment in the path
+                prev = None
+                is_closed = False
+                for sidx in range(segstart, len(self.element.path._segments), 1):
+                    seg = self.element.path._segments[sidx]
+                    if isinstance(seg, Move) and prev is None:
+                        # Not the one at the very beginning!
+                        continue
+                    elif isinstance(seg, Move):
+                        # Ready
+                        break
+                    elif isinstance(seg, Close):
+                        # Ready
+                        is_closed = True
+                        break
+                    lastidx = sidx
+                    prev = seg
+                if is_closed:
+                    # it's enough just to delete it...
+                    self.element.path._segments.pop(lastidx + 1)
+                    modified = True
+                else:
+                    # Need to insert a Close segment
+                    newseg = Close(start=Point(prev.end.x, prev.end.y), end=Point(prev.end.x, prev.end.y))
+                    self.element.path._segments.insert(lastidx + 1, newseg)
+                    modified = True
+
+        if modified:
+            self.modify_element(True)
 
     def smoothen(self):
         modified = False
