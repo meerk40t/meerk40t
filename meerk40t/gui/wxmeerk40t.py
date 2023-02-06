@@ -76,7 +76,7 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
-from .toolwidgets.toolnodeedit import NodeEditWindow
+from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 
@@ -674,7 +674,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
-        kernel.register("window/NodeEditIcons", NodeEditWindow)
+        kernel.register("window/NodeEditIcons", NodeEditToolbar)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)

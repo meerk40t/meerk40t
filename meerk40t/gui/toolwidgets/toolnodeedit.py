@@ -2,8 +2,8 @@ import math
 from copy import copy
 
 import wx
-from meerk40t.gui.icons import PyEmbeddedImage
 
+from meerk40t.gui.icons import PyEmbeddedImage
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
@@ -252,11 +252,10 @@ class EditTool(ToolWidget):
         self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
         try:
             self.scene.context("window close NodeEditToolbar\n")
-        except (AssertionError, RuntimeError):
+        except (AssertionError, RuntimeError, KeyError):
             pass
 
     def init(self, context):
-        self.scene.context("window open NodeEditIcons\n")
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
         self.scene.context.listen("nodeedit", self.on_signal_nodeedit)
         self.scene.context("window open NodeEditToolbar\n")
@@ -529,7 +528,7 @@ class EditTool(ToolWidget):
                         pattern = [(ptx, pty), (org_ptx, org_pty)]
                         gc.DrawLines(pattern)
 
-    def done(self, forgood=False):
+    def done(self):
         self.scene.tool_active = False
         self.scene.modif_active = False
         self.p1 = None
@@ -539,15 +538,10 @@ class EditTool(ToolWidget):
         self.scene.context.signal("statusmsg", "")
         self.scene.context.elements.validate_selected_area()
         self.scene.request_refresh()
-        if forgood:
-            self.scene.context("tool none\n")
-            self.scene.context("window close NodeEditIcons\n")
-            self.scene.context.signal("statusmsg", "")
 
     def modify_element(self, reload=True):
         if self.element is None:
             return
-        self.element.path.validate_connections()
         self.element.altered()
         try:
             bb = self.element.bbox()
@@ -1107,9 +1101,6 @@ class EditTool(ToolWidget):
             self.scene.modif_active = True
 
             self._active = True
-            self.scene.context("window open NodeEditIcons\n")
-            # Refocus, to allow typing...
-            self.scene.gui.scene_panel.SetFocus()
 
             self.scene.context.signal("statusmsg", self.message)
             self.move_type = "node"
@@ -1174,7 +1165,6 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
-                seg = current["segment"]
                 node = self.element
                 # pnode = current["prev"]
                 # if pnode is not None:
@@ -1256,7 +1246,7 @@ class EditTool(ToolWidget):
                 return RESPONSE_CHAIN
             # print (f"event: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'")
             if modifiers == "escape":
-                self.done(forgood=True)
+                self.done()
                 return RESPONSE_CONSUME
             # print(f"Key: '{keycode}'")
             if not self.selected_index is None:
@@ -1269,13 +1259,10 @@ class EditTool(ToolWidget):
 
         elif event_type == "lost":
             if self.scene.tool_active:
-                self.done(forgood=True)
+                self.done()
                 return RESPONSE_CONSUME
             else:
                 return RESPONSE_CHAIN
-        elif event_type == "rightdown":
-            self.done(forgood=True)
-            return RESPONSE_CONSUME
         elif event_type == "leftup":
             if (
                 self.move_type == "selection"
@@ -1320,9 +1307,7 @@ class EditTool(ToolWidget):
             action[0]()
 
     def signal(self, signal, *args, **kwargs):
-        if isinstance(args, (tuple, list)) and len(args)==1:
-            if isinstance(args[0], (tuple, list)):
-                args = args[0]
+        #  print (f"Signal: {signal}, args={args}")
         if signal == "tool_changed":
             if len(args) > 1 and args[1] == "edit":
                 selected_node = self.scene.context.elements.first_element(
@@ -1331,81 +1316,6 @@ class EditTool(ToolWidget):
                 if selected_node is not None:
                     self.calculate_points(selected_node)
                     self.scene.request_refresh()
-            else:
-                # Someone else...
-                print (f"Not for me?! {signal} - 0: {args[0]}, 1: {args[1]}, len={len(args)}")
-                self.done(forgood=True)
             return
         if self.element is None:
             return
-
-class NodeEditPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: clsLasertools.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        mainsizer = wx.BoxSizer(wx.VERTICAL)
-        buttonsizer = wx.GridSizer(cols=3, gap=wx.Size(2, 2))
-        self.commands = (
-            # icon, label, signal, condition
-            ("c", icons8_node_edit_50, _("Clear")),
-            ("d", icons8_node_edit_50, _("Delete")),
-            ("b", icons8_node_edit_50, _("Bezier")),
-            ("l", icons8_node_edit_50, _("Line")),
-            ("q", icons8_node_edit_50, _("Quad")),
-            ("x", icons8_node_edit_50, _("Break")),
-            ("i", icons8_node_edit_50, _("Insert")),
-            ("a", icons8_node_edit_50, _("Append")),
-        )
-        self.buttons = []
-        for cmd in self.commands:
-            btn = wx.BitmapButton(
-                self, wx.ID_ANY, cmd[1].GetBitmap(resize=25, use_theme=False)
-            )
-            btn.Bind(wx.EVT_BUTTON, self.send_signal(cmd[0]))
-            btn.SetToolTip(cmd[2])
-            self.buttons.append(btn)
-            buttonsizer.Add(btn, 0, 0, 0)
-        mainsizer.Add(buttonsizer, 0, 0, 0)
-        self.SetSizer(mainsizer)
-
-        self.Layout()
-
-    #
-    def send_signal(self, code):
-        def handler(event):
-            self.context.signal("nodeedit", code)
-
-        return handler
-
-
-class NodeEditWindow(MWindow):
-    def __init__(self, *args, **kwds):
-        rows = 3
-        cols = 3
-        iconsize = 25
-        super().__init__(
-            (cols + 1) * iconsize, (rows + 1) * iconsize, submenu="", *args, **kwds
-        )
-        self.panel = NodeEditPanel(self, wx.ID_ANY, context=self.context)
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_node_edit_50.GetBitmap(resize=25))
-        # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Node-Editor"))
-
-    def window_open(self):
-        pass
-
-    def window_close(self):
-        pass
-
-    def delegates(self):
-        yield self.panel
-
-    @staticmethod
-    def submenu():
-        # Suppress = True
-        return ("", "Node-Editor", True)
