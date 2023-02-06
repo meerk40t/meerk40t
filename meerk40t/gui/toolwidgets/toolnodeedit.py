@@ -147,13 +147,13 @@ class EditTool(ToolWidget):
         self.pen.SetWidth(1000)
         self.pen_ctrl = wx.Pen()
         self.pen_ctrl.SetColour(wx.CYAN)
-        self.pen_ctrl.SetWidth(1000)
+        self.pen_ctrl.SetWidth(25)
         self.pen_ctrl_semi = wx.Pen()
         self.pen_ctrl_semi.SetColour(wx.GREEN)
-        self.pen_ctrl_semi.SetWidth(1000)
+        self.pen_ctrl_semi.SetWidth(25)
         self.pen_highlight = wx.Pen()
         self.pen_highlight.SetColour(wx.RED)
-        self.pen_highlight.SetWidth(1000)
+        self.pen_highlight.SetWidth(25)
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
@@ -234,6 +234,7 @@ class EditTool(ToolWidget):
             # Idx of last point
             l_idx = 0
             for idx, segment in enumerate(path._segments):
+                # print (f"{idx}# {type(segment).__name__} - S={segment.start} - E={segment.end}")
                 if idx < len(path._segments) - 1:
                     next_seg = path._segments[idx + 1]
                 else:
@@ -242,7 +243,10 @@ class EditTool(ToolWidget):
                     if idx != start:
                         start = idx
 
-                if isinstance(segment, (Line, Close)):
+                if isinstance(segment, Close):
+                    # We don't do anything with a Close - it's drawn anyway
+                    pass
+                elif isinstance(segment, Line):
                     self.nodes.append(
                         {
                             "prev": prev_seg,
@@ -393,6 +397,7 @@ class EditTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
             return
+
         if self.p1 is not None and self.p2 is not None:
             # Selection mode!
             x0 = min(self.p1.real, self.p2.real)
@@ -495,6 +500,8 @@ class EditTool(ToolWidget):
         #     totalstr += " " + segstr
         #     laststr = segstr
         # # print (totalstr)
+        # if hasattr(self.element, "path"):
+        #     print (self.element.path.d())
         self.element.altered()
         try:
             bb = self.element.bbox()
@@ -550,7 +557,10 @@ class EditTool(ToolWidget):
                     modified = True
                 else:
                     # Need to insert a Close segment
-                    newseg = Close(start=Point(prev.end.x, prev.end.y), end=Point(prev.end.x, prev.end.y))
+                    newseg = Close(
+                        start=Point(prev.end.x, prev.end.y),
+                        end=Point(prev.end.x, prev.end.y),
+                    )
                     self.element.path._segments.insert(lastidx + 1, newseg)
                     modified = True
 
@@ -661,17 +671,20 @@ class EditTool(ToolWidget):
                 distance = midpoint.distance_to(segment.control2)
                 # The new point
                 angle_to_control1 = angle_to_start + (angle_to_end - angle_to_control2)
-                newx = midpoint.x + distance * math.cos(angle_to_control1)
-                newy = midpoint.y + distance * math.sin(angle_to_control1)
-                segment.control1 = Point(newx, newy)
+                # newx = midpoint.x + distance * math.cos(angle_to_control1)
+                # newy = midpoint.y + distance * math.sin(angle_to_control1)
+                # segment.control1 = Point(newx, newy)
+                segment.control1 = Point.polar(
+                    (midpoint.x, midpoint.y), angle_to_control1, distance
+                )
                 modified = True
         if modified:
             self.modify_element(True)
 
     def delete_nodes(self):
-        # Stub for deleting a segment
         modified = False
-        for idx, entry in enumerate(self.nodes):
+        for idx in range(len(self.nodes) - 1, -1, -1):
+            entry = self.nodes[idx]
             if entry["selected"] and entry["type"] == "point":
                 if self.node_type == "polyline":
                     if len(self.element.shape.points) > 2:
@@ -679,7 +692,55 @@ class EditTool(ToolWidget):
                         self.element.shape.points.pop(idx)
                     else:
                         break
-                pass
+                else:
+                    idx = entry["pathindex"]
+                    prev = None
+                    next = None
+                    seg = self.element.path._segments[idx]
+                    if idx > 0:
+                        prev = self.element.path._segments[idx - 1]
+                    if idx < len(self.element.path._segments) - 1:
+                        next = self.element.path._segments[idx + 1]
+                    if next is None:
+                        # Last point of the path
+                        # Can just be deleted, provided we have something
+                        # in front...
+                        if prev is None or isinstance(prev, (Move, Close)):
+                            continue
+                        self.element.path._segments.pop(idx)
+                        modified = True
+                    elif isinstance(next, (Move, Close)):
+                        # last point of the subsegment...
+                        # We need to have another full segment in the front
+                        # otherwise we would end up with a single point...
+                        if prev is None or isinstance(prev, (Move, Close)):
+                            continue
+                        next.start.x = seg.start.x
+                        next.start.y = seg.start.y
+                        if isinstance(next, Close):
+                            next.end.x = seg.start.x
+                            next.end.y = seg.start.y
+
+                        self.element.path._segments.pop(idx)
+                        modified = True
+                    else:
+                        # Could be the first point...
+                        if prev is None and (next is None or isinstance(next, (Move, Close))):
+                            continue
+                        elif prev is None: # # Move
+                            seg.end = Point(next.end.x, next.end.y)
+                            self.element.path._segments.pop(idx + 1)
+                            modified = True
+                        elif isinstance(seg, Move): # # Move
+                            seg.end = Point(next.end.x, next.end.y)
+                            self.element.path._segments.pop(idx + 1)
+                            modified = True
+                        else:
+                            next.start.x = prev.end.x
+                            next.start.y = prev.end.y
+                            self.element.path._segments.pop(idx)
+                            modified = True
+
         if modified:
             self.modify_element(True)
 
@@ -995,7 +1056,7 @@ class EditTool(ToolWidget):
         if event_type == "leftdown":
             self.pen = wx.Pen()
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
-            self.pen.SetWidth(elements.default_strokewidth)
+            self.pen.SetWidth(25)
             self.scene.tool_active = True
             self.scene.modif_active = True
 
@@ -1109,6 +1170,9 @@ class EditTool(ToolWidget):
                     # very first - need to be mindful of closed subpaths
                     nextseg = current["next"]
                     if nextseg is not None:
+                        if isinstance(nextseg, Close):
+                            nextseg.end.x = m[0]
+                            nextseg.end.y = m[1]
                         if nextseg.start is not None:
                             nextseg.start.x = m[0]
                             nextseg.start.y = m[1]
@@ -1185,7 +1249,7 @@ class EditTool(ToolWidget):
     def perform_action(self, code):
         if code in self.commands:
             action = self.commands[code]
-            print(f"Execute {action[1]}")
+            # print(f"Execute {action[1]}")
             action[0]()
 
     def signal(self, signal, *args, **kwargs):
