@@ -5,12 +5,14 @@ import wx
 
 from meerk40t.gui.icons import PyEmbeddedImage
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -25,11 +27,10 @@ _ = wx.GetTranslation
 
 
 class NodeIconPanel(wx.Panel):
-    def __init__(self, *args, context=None, edit_tool=None, **kwds):
+    def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.edit_tool = edit_tool
 
         mainsizer = wx.BoxSizer(wx.HORIZONTAL)
         node_add = PyEmbeddedImage(
@@ -100,32 +101,98 @@ class NodeIconPanel(wx.Panel):
         )
 
         self.icons = {
-            # "command": (image, active_for_path, active_for_poly, "tooltiptext"),
-            "i": (node_add, True, True, _("Insert point before")),
-            "a": (node_append, True, True, _("Append point at end")),
-            "d": (node_delete, True, True, _("Delete point")),
-            "l": (node_line, True, False, _("Make segment a line")),
-            "c": (node_curve, True, False, _("Make segment a curve")),
-            "s": (node_symmetric, True, False, _("Make segment symmetrical")),
-            "j": (node_join, True, False, _("Join two segments")),
-            "b": (node_break, True, False, _("Break segment apart")),
-            "o": (node_smooth, True, False, _("Smoothen transit to adjacent segments")),
-            "z": (node_smooth, True, False, _("Toggle closed status")),
+            # "command": [
+            #           image, requires_selection,
+            #           active_for_path, active_for_poly,
+            #           "tooltiptext", button],
+            "i": [node_add, True, True, True, _("Insert point before"), None],
+            "a": [node_append, False, True, True, _("Append point at end"), None],
+            "d": [node_delete, True, True, True, _("Delete point"), None],
+            "l": [node_line, True, True, False, _("Make segment a line"), None],
+            "c": [node_curve, True, True, False, _("Make segment a curve"), None],
+            "s": [node_symmetric, True, True, False, _("Make segment symmetrical"), None],
+            "j": [node_join, True, True, False, _("Join two segments"), None],
+            "b": [node_break, True, True, False, _("Break segment apart"), None],
+            "o": [node_smooth, True, True, False, _("Smoothen transit to adjacent segments"), None],
+            "z": [node_smooth, True, True, False, _("Toggle closed status"), None],
         }
-        for command, entry in self.icons:
-            button = wx.Button(self, wx.ID_ANY, "")
-            button.SetBitmap(entry[0].GetBitmap(resize=25))
-            button.Bind(wx.EVT_BUTTON, self.button_action(command))
-            mainsizer.Add(button, 0, 0, 0)
+        for command in self.icons:
+            entry = self.icons[command]
+            # button = wx.Button(self, wx.ID_ANY, "")
+            # button.SetBitmap(entry[0].GetBitmap(resize=25))
+            # button.SetToolTip(entry[3])
+            # button.SetSize(wx.Size(35, 35))
+            # button.Bind(wx.EVT_BUTTON, self.button_action(command))
+            button = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
+            # button.SetBitmap(entry[0].GetBitmap(resize=25))
+            button.SetBitmap(entry[0].GetBitmap())
+            button.SetToolTip(entry[4])
+            button.Enable(False)
+            entry[5] = button
+            button.Bind(wx.EVT_LEFT_DOWN, self.button_action(command))
+            mainsizer.Add(button, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(mainsizer)
         self.Layout()
 
+    @signal_listener("nodeedit")
+    def realize(self, origin=None, *args):
+        # print (f"Bar receives: {origin} - {args}")
+        if args:
+            if isinstance(args[0], (list, tuple)):
+                mode = args[0][0]
+                selection = args[0][1]
+            else:
+                mode = args[0]
+                selection = args[1]
+            if mode == "polyline":
+                for command in self.icons:
+                    entry = self.icons[command]
+                    flag = True
+                    if entry[1] and not selection:
+                        # Only if something is selected
+                        flag = False
+                    if not entry[3]:
+                        # Not for polyline mode
+                        flag = False
+                    entry[5].Enable(flag)
+            elif mode == "path":
+                for command in self.icons:
+                    entry = self.icons[command]
+                    flag = True
+                    if entry[1] and not selection:
+                        # Only if something is selected
+                        flag = False
+                    if not entry[2]:
+                        # Not for path mode
+                        flag = False
+                    entry[5].Enable(flag)
+
+
     def button_action(self, command):
         def action(event):
-            self.edit_tool.perform_action(command)
+            self.context.signal("nodeedit", ("action", command))
 
         return action
 
+class NodeEditToolbar(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(330, 70, submenu="", *args, **kwds)
+        self.panel = NodeIconPanel(self, wx.ID_ANY, context=self.context)
+        self.SetTitle(_("Node-Editor"))
+
+    def window_open(self):
+        pass
+
+    def window_close(self):
+        pass
+
+    def delegates(self):
+        yield self.panel
+
+    @staticmethod
+    def submenu():
+        # Suppress = True
+        return ("", "Font-Selector", True)
 
 class EditTool(ToolWidget):
     """
@@ -182,15 +249,28 @@ class EditTool(ToolWidget):
 
     def final(self, context):
         self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
+        self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
+        try:
+            self.scene.context("window close NodeEditToolbar\n")
+        except (AssertionError, RuntimeError):
+            pass
 
     def init(self, context):
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
+        self.scene.context.listen("nodeedit", self.on_signal_nodeedit)
+        self.scene.context("window open NodeEditToolbar\n")
 
     def on_emphasized_changed(self, origin, *args):
         selected_node = self.scene.context.elements.first_element(emphasized=True)
         if selected_node is not self.element:
             self.calculate_points(selected_node)
             self.scene.request_refresh()
+
+    def on_signal_nodeedit(self, origin, args):
+        # print (f"Signal: {origin} - {args}")
+        if args[0]=="action":
+            keycode = args[1]
+            self.perform_action(keycode)
 
     def calculate_points(self, selected_node):
         # Set points...
@@ -393,6 +473,7 @@ class EditTool(ToolWidget):
                     )
                 prev_seg = segment
                 l_idx = nidx
+        self.scene.context.signal("nodeedit", (self.node_type, False))
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
@@ -461,47 +542,6 @@ class EditTool(ToolWidget):
     def modify_element(self, reload=True):
         if self.element is None:
             return
-        # Debugging....
-        # totalstr = ""
-        # laststr = ""
-        # lastseg = None
-        # for idx, seg in enumerate(self.element.path):
-
-        #     if isinstance(seg, Move):
-        #         segstr = "M "
-        #     elif isinstance(seg, Line):
-        #         segstr = "L "
-        #     elif isinstance(seg, QuadraticBezier):
-        #         segstr = "Q "
-        #     elif isinstance(seg, CubicBezier):
-        #         segstr = "C "
-        #     elif isinstance(seg, Arc):
-        #         segstr = "A "
-        #     else:
-        #         segstr = "? "
-        #     if hasattr(seg, "start"):
-        #         if seg.start is None:
-        #             segstr += "none - "
-        #         else:
-        #             segstr += f"{seg.start.x:.1f}, {seg.start.y:.1f} - "
-        #         if idx > 0 and lastseg is not None and seg.start != lastseg:
-        #             # Debug message to indicate there's something wrong
-        #             # print (f"Differed at #{idx}: {laststr} - {segstr}")
-        #             pass
-
-        #     lastseg = None
-        #     if hasattr(seg, "end"):
-        #         lastseg = seg.end
-        #         if seg.end is None:
-        #             segstr += "none - "
-        #         else:
-        #             segstr += f"{seg.end.x:.1f}, {seg.end.y:.1f}"
-
-        #     totalstr += " " + segstr
-        #     laststr = segstr
-        # # print (totalstr)
-        # if hasattr(self.element, "path"):
-        #     print (self.element.path.d())
         self.element.altered()
         try:
             bb = self.element.bbox()
@@ -1067,6 +1107,7 @@ class EditTool(ToolWidget):
 
             xp = space_pos[0]
             yp = space_pos[1]
+            anyselected = False
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
@@ -1085,16 +1126,23 @@ class EditTool(ToolWidget):
                                 entry2["selected"] = False
                             entry["selected"] = True
                             self.nodes[j]["selected"] = True
+                            anyselected = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
                                 entry["selected"] = True
+                                anyselected = True
                             else:
                                 entry["selected"] = not entry["selected"]
+                                for chk in self.nodes:
+                                    if chk["selected"]:
+                                        anyselected = True
+                                        break
                         break
                 else:  # For-else == icky
                     self.selected_index = None
+            self.scene.context.signal("nodeedit", (self.node_type, anyselected))
             if self.selected_index is None:
                 # Fine we start a selection rectangle to select multiple nodes
                 self.move_type = "selection"
@@ -1232,6 +1280,7 @@ class EditTool(ToolWidget):
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     return RESPONSE_CONSUME
                 # We select all points (not controls) inside
+                anyselected = False
                 for entry in self.nodes:
                     pt = entry["point"]
                     if (
@@ -1240,7 +1289,12 @@ class EditTool(ToolWidget):
                         and y0 <= pt.y <= y1
                     ):
                         entry["selected"] = True
+                    if entry["selected"]:
+                        # Could as well be another one not inside the
+                        # current selection
+                        anyselected = True
                 self.scene.request_refresh()
+                self.scene.context.signal("nodeedit", (self.node_type, anyselected))
             self.p1 = None
             self.p2 = None
             return RESPONSE_CONSUME
@@ -1265,6 +1319,4 @@ class EditTool(ToolWidget):
             return
         if self.element is None:
             return
-        if signal == "nodeedit" and args[0]:
-            keycode = args[0]
-            self.perform_action(keycode)
+
