@@ -478,11 +478,8 @@ class RasterPlotter:
 
         @return:
         """
-        if not self.bidirectional:
-            yield from self._plot_horizontal_unidirectional_left()
-            return
         height = self.height
-
+        unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
@@ -496,82 +493,57 @@ class RasterPlotter:
                 yield x, y, 0
                 continue
             upper_bound = self.rightmost_not_equal(y)
+            traveling_right = self.start_on_left if unidirectional else dx >= 0
+            next_traveling_right = self.start_on_left if unidirectional else dx <= 0
 
-            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, dx <= 0)
+            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, leftmost_pixel=next_traveling_right)
             if next_x is not None:
+                # If we have a next scanline, we must end after the last pixel of that scanline too.
                 upper_bound = max(next_x, upper_bound) + self.overscan
                 lower_bound = min(next_x, lower_bound) - self.overscan
 
-            while (dx > 0 and x <= upper_bound) or (dx < 0 and lower_bound <= x):
-                if dx > 0:  # going right
-                    bound = upper_bound
+            if traveling_right:
+                while x <= upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
-                else:
-                    bound = lower_bound
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+                    if x == upper_bound:
+                        break
+            else:
+                while lower_bound <= x:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_left(x, y, lower_bound)
                     x = max(x, lower_bound)
-                if pixel == skip_pixel:
-                    yield x, y, 0
-                else:
-                    yield x, y, pixel
-                if x == bound:
-                    break
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+                    if x == lower_bound:
+                        break
+
             if next_y is None:
                 # remaining image is blank, we stop right here.
-                break
-            y = next_y
-            yield x, y, 0
-            dx = -dx
-
-    def _plot_horizontal_unidirectional_left(self):
-        """
-        This code is horizontal rastering.
-
-        @return:
-        """
-        height = self.height
-
-        skip_pixel = self.skip_pixel
-
-        x, y = self.initial_position()
-        dy = 1 if self.start_on_top else -1
-        yield x, y, 0
-        while 0 <= y < height:
-            upper_bound = self.rightmost_not_equal(y) + self.overscan
-            while x <= upper_bound:
-                try:
-                    pixel = self.px(x, y)
-                except IndexError:
-                    pixel = 0
-                x = self.nextcolor_right(x, y, upper_bound)
-                x = min(x, upper_bound)
-                if pixel == skip_pixel:
-                    yield x, y, 0
-                else:
-                    yield x, y, pixel
-                if x == upper_bound:
-                    break
-            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, leftmost_pixel=True)
-            if next_y is None:
-                # remaining image is blank, we stop right here.
-                break
+                return
             yield x, next_y, 0
-            yield next_x, next_y, 0
+            if x != next_x:
+                yield next_x, next_y, 0
             x = next_x
             y = next_y
+            dx = -dx
 
     def _plot_vertical_unidirectional_top(self):
         """
-        This code is horizontal rastering.
+        This code is vertical unidirectional rastering. With forward swings starting on the top.
 
         @return:
         """
