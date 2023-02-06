@@ -1,7 +1,9 @@
 import math
+from copy import copy
 
 import wx
 
+from meerk40t.gui.icons import PyEmbeddedImage
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
@@ -9,8 +11,15 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_DROP,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Move, Close, Arc, CubicBezier, QuadraticBezier, Line, Point
-from meerk40t.gui.icons import PyEmbeddedImage
+from meerk40t.svgelements import (
+    Arc,
+    Close,
+    CubicBezier,
+    Line,
+    Move,
+    Point,
+    QuadraticBezier,
+)
 
 _ = wx.GetTranslation
 
@@ -24,62 +33,71 @@ class NodeIconPanel(wx.Panel):
 
         mainsizer = wx.BoxSizer(wx.HORIZONTAL)
         node_add = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ'
-            b'YIAmBlcMABg0P3m4MIsZAAAAAElFTkSuQmCC')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAJ0lEQVQImWP4//h/AwM24g+DPDKBU93//yCCoR5G2KEQ"
+            b"YIAmBlcMABg0P3m4MIsZAAAAAElFTkSuQmCC"
+        )
 
         node_append = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQImWP4//h/AwM24g+DPDKBU93//zCC/wd7A8P7'
-            b'39+RiRfM3zHEwOpAOgBQXErXEDO0NAAAAABJRU5ErkJggg==')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAALklEQVQImWP4//h/AwM24g+DPDKBU93//zCC/wd7A8P7"
+            b"39+RiRfM3zHEwOpAOgBQXErXEDO0NAAAAABJRU5ErkJggg=="
+        )
 
         node_break = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4'
-            b'GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII=')
+            b"iVBORw0KGgoAAAANSUhEUgAAABcAAAAZAQMAAADg7ieTAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAOElEQVQImWP4//8fw39GIK6FYIYaBjgbLA6Sf4+EGaG4"
+            b"GYiPQ8Qa/jEx7Pv3C4zt/v2As0HiQP0AnIQ8UXzwP+sAAAAASUVORK5CYII="
+        )
 
         node_curve = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U'
-            b'/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E'
-            b'rkJggg==')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQImWP4//9/AwOUOAgi7gKJP7JA4iGIdR4kJg+U"
+            b"/VcPIkDq/oCInyDiN4j4DCK+w4nnIOI9iGgGEbtRiWYk2/43AADobVHMAT+avQAAAABJRU5E"
+            b"rkJggg=="
+        )
 
         node_delete = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB'
-            b'LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII=')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAKUlEQVQImWP4//9/AwM24g+DPDKBUx0SMakeSOyvh3FB"
+            b"LDBAE4OoA3IBbltJOc3s08cAAAAASUVORK5CYII="
+        )
 
         node_join = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/'
-            b'/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII=')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAPklEQVQImWP4//9/A8OD/80NDO/+74YSff93IHPBsv+/"
+            b"/0chGkDEQRDxGC72H04wgIg6GNFQx4DMhcgC1QEARo5M+gzPuwgAAAAASUVORK5CYII="
+        )
 
         node_line = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q'
-            b'4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C'
-            b'YII=')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAARElEQVQImWP4//9/A8P//wdAxD0sRAOIsAcS/+qBxB+Q"
+            b"4p8g4jOIeA4izoOI+SDCHkj8qwcSf0CGNoKIvViIRoiV/xsA49JQrrbQItQAAAAASUVORK5C"
+            b"YII="
+        )
 
         node_symmetric = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA'
-            b'CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi'
-            b'YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/'
-            b'TrOwSVb5BTbFAAAAAElFTkSuQmCC')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZAQMAAAD+JxcgAAAABlBMVEUAAAD///+l2Z/dAAAA"
+            b"CXBIWXMAAA7EAAAOxAGVKw4bAAAAV0lEQVQImV3NqxGAMBRE0R2qQoXS2ApICVDJowRKQEYi"
+            b"YsIAWX6DIObIeyGJeGgllDTKwKjMl147MesgJq3Eoo0IjES0QCTzROdqYnAV4S1dZbvz/B5/"
+            b"TrOwSVb5BTbFAAAAAElFTkSuQmCC"
+        )
 
         node_smooth = PyEmbeddedImage(
-            b'iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B'
-            b'AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC'
-            b'VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P'
-            b'ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF'
-            b'BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC'
-            b'VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f'
-            b'GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5'
-            b'/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO'
-            b'jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+'
-            b'/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr'
-            b'1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8'
-            b'duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu'
-            b'QmCC')
+            b"iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1B"
+            b"AACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAIgSURBVEhLY/wPBAw0BkxQmqZg+FhC"
+            b"VJx8+fyZ4fKVK1AeBEhKSDAoKCpCefgBUZZcvHCBITo6CsqDgJjYWIaKikooDz8gKrjevX8P"
+            b"ZSHAh3fvGX7//g3l4Qc4ffLz50+G9evWMSxftpTh7r17UFFUwM3NzeDm6saQlJLMoKioBBXF"
+            b"BFgtOX/+HENNdRXDw4ePwHwZGVmGJ08eg9kwICQkxPDj+3eGb0DMxMTEkJySwpCdncPAwsIC"
+            b"VYEAGJZs3bqFoaaqiuH3nz8Mjg6ODHkFBWADFy1cCFUBAdo6Ogx2dnYMq1etYpg6dQrDly9f"
+            b"GKysbRgmTpzIwMnJCVUFBSBLYODgwYP/dXV1/usB8do1a6CihMGLF8//h4YE/9fW0vyfmZn5"
+            b"/++fP1AZCIBb8ubNm/8W5mb/dbS1/m/ftg0qSjz4/Pnz/4AAf7BF8+bOhYpCANyS2tpqsIKO"
+            b"jnaoCOng/v37/40MDf4bGxmCHQ0DYEtAAoYG+mCfAMMWLEEu6O7qAjt22rSpUJH//8H55MD+"
+            b"/Qy/fv1i8A8IACdLSkBkZCSY3rVzJ5gGAWZ+Pr6G7du3MgB9wyAsJMzwB5iq1DU0oNKkg/Xr"
+            b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
+            b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
+            b"QmCC"
+        )
 
         self.icons = {
             # "command": (image, active_for_path, active_for_poly, "tooltiptext"),
@@ -107,6 +125,7 @@ class NodeIconPanel(wx.Panel):
 
         return action
 
+
 class EditTool(ToolWidget):
     """
     Edit tool allows you to view and edit the nodes within the scene.
@@ -128,6 +147,9 @@ class EditTool(ToolWidget):
         self.pen_ctrl = wx.Pen()
         self.pen_ctrl.SetColour(wx.CYAN)
         self.pen_ctrl.SetWidth(1000)
+        self.pen_ctrl_semi = wx.Pen()
+        self.pen_ctrl_semi.SetColour(wx.GREEN)
+        self.pen_ctrl_semi.SetWidth(1000)
         self.pen_highlight = wx.Pen()
         self.pen_highlight.SetColour(wx.RED)
         self.pen_highlight.SetWidth(1000)
@@ -164,8 +186,9 @@ class EditTool(ToolWidget):
 
     def on_emphasized_changed(self, origin, *args):
         selected_node = self.scene.context.elements.first_element(emphasized=True)
-        self.calculate_points(selected_node)
-        self.scene.request_refresh()
+        if selected_node is not self.element:
+            self.calculate_points(selected_node)
+            self.scene.request_refresh()
 
     def calculate_points(self, selected_node):
         # Set points...
@@ -398,6 +421,10 @@ class EditTool(ToolWidget):
                         gc.SetPen(self.pen_highlight)
                     else:
                         gc.SetPen(self.pen_ctrl)
+                        if 0 <= entry["connector"] < len(self.nodes):
+                            orgnode = self.nodes[entry["connector"]]
+                            if orgnode["selected"]:
+                                gc.SetPen(self.pen_ctrl_semi)
                     pattern = [
                         (ptx - offset, pty),
                         (ptx, pty + offset),
@@ -407,7 +434,6 @@ class EditTool(ToolWidget):
                     ]
                     gc.DrawLines(pattern)
                     if 0 <= entry["connector"] < len(self.nodes):
-                        gc.SetPen(self.pen_ctrl)
                         orgnode = self.nodes[entry["connector"]]
                         org_pt = orgnode["point"]
                         org_ptx, org_pty = node.matrix.point_in_matrix_space(org_pt)
@@ -490,7 +516,7 @@ class EditTool(ToolWidget):
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
         for entry in self.nodes:
-            if entry["selected"] and entry["segtype"] == "C": # Cubic Bezier only
+            if entry["selected"] and entry["segtype"] == "C":  # Cubic Bezier only
                 segment = entry["segment"]
                 pt_start = segment.start
                 pt_end = segment.end
@@ -499,8 +525,8 @@ class EditTool(ToolWidget):
                 other_segment = entry["prev"]
                 if other_segment is not None:
                     if isinstance(other_segment, Line):
-                        other_pt_x = (other_segment.start.x)
-                        other_pt_y = (other_segment.start.y)
+                        other_pt_x = other_segment.start.x
+                        other_pt_y = other_segment.start.y
                         dx = pt_start.x - other_pt_x
                         dy = pt_start.y - other_pt_y
                         segment.control1.x = pt_start.x + 0.25 * dx
@@ -575,11 +601,13 @@ class EditTool(ToolWidget):
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
         for entry in self.nodes:
-            if entry["selected"] and entry["segtype"] == "C": # Cubic Bezier only
+            if entry["selected"] and entry["segtype"] == "C":  # Cubic Bezier only
                 segment = entry["segment"]
                 pt_start = segment.start
                 pt_end = segment.end
-                midpoint = Point((pt_end.x + pt_start.x) / 2, (pt_end.y + pt_start.y) / 2)
+                midpoint = Point(
+                    (pt_end.x + pt_start.x) / 2, (pt_end.y + pt_start.y) / 2
+                )
                 angle_to_end = midpoint.angle_to(pt_end)
                 angle_to_start = midpoint.angle_to(pt_start)
                 angle_to_control2 = midpoint.angle_to(segment.control2)
@@ -645,18 +673,34 @@ class EditTool(ToolWidget):
                 startpt = Point(entry["segment"].start.x, entry["segment"].start.y)
                 endpt = Point(entry["segment"].end.x, entry["segment"].end.y)
                 if entry["segtype"] == "L":
-                    ctrl1pt = Point(startpt.x + 0.25 *(endpt.x - startpt.x), startpt.y + 0.25 * (endpt.y - startpt.y))
-                    ctrl2pt = Point(startpt.x + 0.75 *(endpt.x - startpt.x), startpt.y + 0.75 * (endpt.y - startpt.y))
+                    ctrl1pt = Point(
+                        startpt.x + 0.25 * (endpt.x - startpt.x),
+                        startpt.y + 0.25 * (endpt.y - startpt.y),
+                    )
+                    ctrl2pt = Point(
+                        startpt.x + 0.75 * (endpt.x - startpt.x),
+                        startpt.y + 0.75 * (endpt.y - startpt.y),
+                    )
                 elif entry["segtype"] == "Q":
-                    ctrl1pt = Point(entry["segment"].control.x, entry["segment"].control.y)
+                    ctrl1pt = Point(
+                        entry["segment"].control.x, entry["segment"].control.y
+                    )
                     ctrl2pt = Point(endpt.x, endpt.y)
                 elif entry["segtype"] == "A":
-                    ctrl1pt = Point(startpt.x + 0.25 *(endpt.x - startpt.x), startpt.y + 0.25 * (endpt.y - startpt.y))
-                    ctrl2pt = Point(startpt.x + 0.75 *(endpt.x - startpt.x), startpt.y + 0.75 * (endpt.y - startpt.y))
+                    ctrl1pt = Point(
+                        startpt.x + 0.25 * (endpt.x - startpt.x),
+                        startpt.y + 0.25 * (endpt.y - startpt.y),
+                    )
+                    ctrl2pt = Point(
+                        startpt.x + 0.75 * (endpt.x - startpt.x),
+                        startpt.y + 0.75 * (endpt.y - startpt.y),
+                    )
                 else:
                     continue
 
-                newsegment = CubicBezier(start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt)
+                newsegment = CubicBezier(
+                    start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
+                )
                 self.element.path._segments[idx] = newsegment
                 modified = True
         if modified:
@@ -697,19 +741,93 @@ class EditTool(ToolWidget):
                     pt1 = self.element.shape.points[idx]
                     if idx == 0:
                         # Very first point? Mirror first segment and take midpoint
-                        pt2 = Point(self.element.shape.points[idx + 1].x, self.element.shape.points[idx + 1].y)
+                        pt2 = Point(
+                            self.element.shape.points[idx + 1].x,
+                            self.element.shape.points[idx + 1].y,
+                        )
                         pt2.x = pt1.x - (pt2.x - pt1.x)
                         pt2.y = pt1.y - (pt2.y - pt1.y)
                         pt2.x = (pt1.x + pt2.x) / 2
                         pt2.y = (pt1.y + pt2.y) / 2
                         self.element.shape.points.insert(0, pt2)
                     else:
-                        pt2 = Point(self.element.shape.points[idx - 1].x, self.element.shape.points[idx - 1].y)
+                        pt2 = Point(
+                            self.element.shape.points[idx - 1].x,
+                            self.element.shape.points[idx - 1].y,
+                        )
                         pt2.x = (pt1.x + pt2.x) / 2
                         pt2.y = (pt1.y + pt2.y) / 2
                         # Mid point
                         self.element.shape.points.insert(idx, pt2)
                     modified = True
+                else:
+                    # Path
+                    idx = entry["pathindex"]
+                    if entry["segment"] is None or entry["segment"].start is None:
+                        continue
+                    segment = entry["segment"]
+                    if entry["segtype"] == "L":
+                        # Line
+                        mid_x = (segment.start.x + segment.end.x) / 2
+                        mid_y = (segment.start.y + segment.end.y) / 2
+                        newsegment = Line(
+                            start=Point(mid_x, mid_y),
+                            end=Point(segment.end.x, segment.end.y),
+                        )
+                        self.element.path._segments.insert(idx + 1, newsegment)
+                        segment.end.x = mid_x
+                        segment.end.y = mid_y
+                        modified = True
+                    elif entry["segtype"] == "C":
+                        midpoint = segment.point(0.5)
+                        mid_x = midpoint.x
+                        mid_y = midpoint.y
+                        newsegment = CubicBezier(
+                            start=Point(mid_x, mid_y),
+                            end=Point(segment.end.x, segment.end.y),
+                            control1=Point(mid_x, mid_y),
+                            control2=Point(segment.control2.x, segment.control2.y),
+                        )
+                        self.element.path._segments.insert(idx + 1, newsegment)
+                        segment.end.x = mid_x
+                        segment.end.y = mid_y
+                        segment.control2.x = mid_x
+                        segment.control2.y = mid_y
+                        modified = True
+                    elif entry["segtype"] == "A":
+                        midpoint = segment.point(0.5)
+                        mid_x = midpoint.x
+                        mid_y = midpoint.y
+                        # newsegment = Arc(
+                        #     start=Point(mid_x, mid_y),
+                        #     end=Point(segment.end.x, segment.end.y),
+                        #     control=Point(segment.center.x, segment.center.y),
+                        # )
+                        newsegment = copy(segment)
+                        newsegment.start.x = mid_x
+                        newsegment.start.y = mid_y
+                        self.element.path._segments.insert(idx + 1, newsegment)
+                        segment.end.x = mid_x
+                        segment.end.y = mid_y
+                        modified = True
+                    elif entry["segtype"] == "Q":
+                        midpoint = segment.point(0.5)
+                        mid_x = midpoint.x
+                        mid_y = midpoint.y
+                        newsegment = QuadraticBezier(
+                            start=Point(mid_x, mid_y),
+                            end=Point(segment.end.x, segment.end.y),
+                            control=Point(segment.control.x, segment.control.y),
+                        )
+                        self.element.path._segments.insert(idx + 1, newsegment)
+                        segment.end.x = mid_x
+                        segment.end.y = mid_y
+                        segment.control.x = mid_x
+                        segment.control.y = mid_y
+                        modified = True
+
+                    # elif entry["segtype"] == "C":
+
         if modified:
             self.modify_element(True)
 
@@ -720,13 +838,35 @@ class EditTool(ToolWidget):
             idx = len(self.element.shape.points) - 1
             pt1 = self.element.shape.points[idx - 1]
             pt2 = self.element.shape.points[idx]
-            newpt = Point(pt2.x + (pt2.x - pt1.x) / 2, pt2.y + (pt2.y - pt1.y) / 2)
+            newpt = Point(pt2.x + (pt2.x - pt1.x), pt2.y + (pt2.y - pt1.y))
             self.element.shape.points.append(newpt)
             modified = True
         else:
             # path
-            # Code to follow
-            pass
+            valididx = len(self.element.path._segments) - 1
+            while valididx >= 0 and isinstance(
+                self.element.path._segments[valididx], (Close, Move)
+            ):
+                valididx -= 1
+            if valididx >= 0:
+                seg = self.element.path._segments[valididx]
+                pt1 = seg.start
+                pt2 = seg.end
+                newpt = Point(pt2.x + (pt2.x - pt1.x), pt2.y + (pt2.y - pt1.y))
+                newsegment = Line(start=Point(seg.end.x, seg.end.y), end=newpt)
+                if valididx < len(self.element.path._segments) - 1:
+                    if (
+                        self.element.path._segments[valididx + 1].end
+                        == self.element.path._segments[valididx + 1].start
+                    ):
+                        self.element.path._segments[valididx + 1].end.x = newpt.x
+                        self.element.path._segments[valididx + 1].end.y = newpt.y
+                    self.element.path._segments[valididx + 1].start.x = newpt.x
+                    self.element.path._segments[valididx + 1].start.y = newpt.y
+
+                self.element.path._segments.insert(valididx + 1, newsegment)
+                modified = True
+
         if modified:
             self.modify_element(True)
 
@@ -777,12 +917,15 @@ class EditTool(ToolWidget):
                             j = entry["connector"]
                             for entry2 in self.nodes:
                                 entry2["selected"] = False
+                            entry["selected"] = True
                             self.nodes[j]["selected"] = True
                         else:
                             # Shift-Key Pressed?
                             if "shift" not in modifiers:
                                 self.clear_selection()
-                            entry["selected"] = not entry["selected"]
+                                entry["selected"] = True
+                            else:
+                                entry["selected"] = not entry["selected"]
                         break
                 else:  # For-else == icky
                     self.selected_index = None
@@ -790,6 +933,8 @@ class EditTool(ToolWidget):
                 # Fine we start a selection rectangle to select multiple nodes
                 self.move_type = "selection"
                 self.p1 = complex(space_pos[0], space_pos[1])
+            else:
+                self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "rightdown":
             # We stop
@@ -848,7 +993,10 @@ class EditTool(ToolWidget):
                 pt.x = m[0]
                 pt.y = m[1]
                 if self.node_type == "path":
-                    if current["segtype"] == "M" and current["start"] == self.selected_index: # First
+                    if (
+                        current["segtype"] == "M"
+                        and current["start"] == self.selected_index
+                    ):  # First
                         current["segment"].start = pt
                     current["point"] = pt
                     # We need to adjust the start-point of the next segment
