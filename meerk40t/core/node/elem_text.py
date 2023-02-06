@@ -1,6 +1,6 @@
 import re
 from copy import copy
-from math import sqrt
+from math import sqrt, tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
@@ -35,7 +35,8 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    # r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    r"\s*'[^']+'|\s*\"[^\"]+\"|[^,\s]+"
 )
 
 
@@ -83,6 +84,7 @@ class TextNode(Node, Stroked):
         super().__init__(type="elem text", **kwargs)
 
         # We might have relevant forn-information hidden inside settings...
+        rotangle = 0
         if "settings" in kwargs:
             kwa = kwargs["settings"]
             # for prop in kwa:
@@ -94,6 +96,17 @@ class TextNode(Node, Stroked):
                 self.font_weight = kwa["font-weight"]
             if "font-family" in kwa:
                 self.font_family = kwa["font-family"]
+            if "rotate" in kwa:
+                try:
+                    rotangle = float(kwa["rotate"])
+                    while rotangle >= 360:
+                        rotangle -= 360
+                    while rotangle <= -360:
+                        rotangle += 360
+                except ValueError:
+                    rotangle = 0
+                # Don't leave it, elsewise it will be reapplied when copying this node
+                del kwa["rotate"]
             self.validate_font()
         self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
@@ -107,6 +120,10 @@ class TextNode(Node, Stroked):
             del self.y
         except AttributeError:
             pass
+        if rotangle != 0:
+            rotangle = rotangle / 360 * tau
+            self.matrix.pre_rotate(rotangle)
+
         self.bounds_with_variables_translated = None
 
         if font is not None:
@@ -276,12 +293,27 @@ class TextNode(Node, Stroked):
 
     @property
     def font_list(self):
-        if self.font_family is None:
-            return []
-        return [
-            family[1:-1] if family.startswith('"') or family.startswith("'") else family
-            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
-        ]
+        result = []
+        if self.font_family is not None:
+            fonts = re.findall(REGEX_CSS_FONT_FAMILY, self.font_family)
+            if len(fonts) == 0:
+                # print (f"Regex failed, adding '{self.font_family}'")
+                result.append(
+                    self.font_family[1:-1]
+                    if self.font_family.startswith('"')
+                    or self.font_family.startswith("'")
+                    else self.font_family
+                )
+            else:
+                for font in fonts:
+                    # print (f"Adding '{font}'")
+                    result.append(
+                        font[1:-1]
+                        if font.startswith('"')
+                        or font.startswith("'")
+                        else font
+                    )
+        return result
 
     @property
     def weight(self):
@@ -360,6 +392,7 @@ class TextNode(Node, Stroked):
     so we overload the standard functions to acknowledge that and
     always sync paint_bounds to bounds.
     """
+
     @property
     def paint_bounds(self):
         # Make sure that bounds is valid
