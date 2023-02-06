@@ -4318,6 +4318,8 @@ def init_commands(kernel):
             # No full modified required, we are effectively only adjusting
             # the painted_bounds
             e.translated(0, 0)
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -4342,6 +4344,8 @@ def init_commands(kernel):
                 continue
             e.stroke_scaled = command == "enable_stroke_scale"
             e.altered()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option("filter", "f", type=str, help="Filter indexes")
