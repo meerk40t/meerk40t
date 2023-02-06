@@ -749,9 +749,42 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
-        for entry in self.nodes:
+        for idx in range(len(self.nodes) - 1, -1, -1):
+            entry = self.nodes[idx]
             if entry["selected"] and entry["type"] == "point":
-                pass
+                idx = entry["pathindex"]
+                seg = entry["segment"]
+                prevseg = None
+                nextseg = None
+                if idx > 0:
+                    prevseg = self.element.path._segments[idx - 1]
+                if idx < len(self.element.path._segments) - 1:
+                    nextseg = self.element.path._segments[idx + 1]
+                if isinstance(seg, (Move, Close)):
+                    # Beginning of path
+                    if prevseg is None:
+                        # Very beginning?! Ignore...
+                        continue
+                    if nextseg is None:
+                        continue
+                    if isinstance(nextseg, (Move, Close)):
+                        # Two consecutive moves? Ignore....
+                        continue
+                    nextseg.start.x = seg.start.x
+                    nextseg.start.y = seg.start.y
+                    self.element.path._segments.pop(idx)
+                    modified = True
+                else:
+                    # Let's look at the next segment
+                    if nextseg is None:
+                        continue
+                    if not isinstance(nextseg, Move):
+                        continue
+                    seg.end.x = nextseg.end.x
+                    seg.end.y = nextseg.end.y
+                    self.element.path._segments.pop(idx + 1)
+                    modified = True
+
         if modified:
             self.modify_element(True)
 
