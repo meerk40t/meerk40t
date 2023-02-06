@@ -208,23 +208,42 @@ class EditTool(ToolWidget):
         self.node_type = "path"
         self.p1 = None
         self.p2 = None
+        matrix = self.scene.widget_root.scene_widget.matrix
+        self.linewidth = 1.0 / matrix.value_scale_x()
+        if self.linewidth < 1:
+            self.linewidth = 1
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         # wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-        self.pen.SetWidth(1000)
+        try:
+            self.pen.SetWidth(self.linewidth)
+        except TypeError:
+            self.pen.SetWidth(int(self.linewidth))
         self.pen_ctrl = wx.Pen()
         self.pen_ctrl.SetColour(wx.CYAN)
-        self.pen_ctrl.SetWidth(25)
+        try:
+            self.pen_ctrl.SetWidth(self.linewidth)
+        except TypeError:
+            self.pen_ctrl.SetWidth(int(self.linewidth))
         self.pen_ctrl_semi = wx.Pen()
         self.pen_ctrl_semi.SetColour(wx.GREEN)
-        self.pen_ctrl_semi.SetWidth(25)
+        try:
+            self.pen_ctrl_semi.SetWidth(self.linewidth)
+        except TypeError:
+            self.pen_ctrl_semi.SetWidth(int(self.linewidth))
         self.pen_highlight = wx.Pen()
         self.pen_highlight.SetColour(wx.RED)
-        self.pen_highlight.SetWidth(25)
+        try:
+            self.pen_highlight.SetWidth(self.linewidth)
+        except TypeError:
+            self.pen_highlight.SetWidth(int(self.linewidth))
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        self.pen_selection.SetWidth(25)
+        try:
+            self.pen_selection.SetWidth(self.linewidth)
+        except TypeError:
+            self.pen_selection.SetWidth(int(self.linewidth))
         # want to have sharp edges
         self.pen_selection.SetJoin(wx.JOIN_MITER)
         self.commands = {
