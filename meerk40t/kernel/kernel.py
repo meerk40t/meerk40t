@@ -1153,7 +1153,10 @@ class Kernel(Settings):
             if context is None:
                 continue
             for opened_name in list(context.opened):
-                obj = context.opened[opened_name]
+                try:
+                    obj = context.opened[opened_name]
+                except KeyError:
+                    continue
                 if channel:
                     channel(
                         _("{context}: Finalizing Module {path}: {object}").format(
