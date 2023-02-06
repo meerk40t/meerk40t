@@ -403,6 +403,7 @@ class BurnProgressPanel(SimpleInfoWidget):
                 self._queue_pos = idx + 1
                 self._job_label = spool_obj.label
                 self._job_active = True
+                self._start_time = spool_obj.time_started
                 self._job_loops = spool_obj.loops
                 self._loops_executed = spool_obj.loops_executed
                 self._job_len = len(spool_obj.items)

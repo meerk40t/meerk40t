@@ -1,4 +1,3 @@
-# -*- coding: ISO-8859-1 -*-
 import wx
 
 from meerk40t.core.units import Length
@@ -7,7 +6,7 @@ from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -296,6 +295,7 @@ class ConfigurationLaserPanel(wx.Panel):
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
         h_sizer_wd.Add(self.text_bedwidth, 1, wx.EXPAND, 0)
@@ -313,6 +313,7 @@ class ConfigurationLaserPanel(wx.Panel):
             limited=True,
             check="length",
             style=wx.TE_PROCESS_ENTER,
+            nonzero=True,
         )
         self.text_bedheight.SetToolTip(_("Height of the laser bed."))
         h_sizer_ht.Add(self.text_bedheight, 1, wx.EXPAND, 0)
@@ -331,6 +332,7 @@ class ConfigurationLaserPanel(wx.Panel):
             "1.000",
             limited=True,
             check="float",
+            nonzero=True,
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_scale_x.SetToolTip(
@@ -347,6 +349,7 @@ class ConfigurationLaserPanel(wx.Panel):
             "1.000",
             limited=True,
             check="float",
+            nonzero=True,
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_scale_y.SetToolTip(
@@ -873,6 +876,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             "1.000",
             limited=True,
             check="float",
+            nonzero=True,
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_speed_scale_amount.SetToolTip(

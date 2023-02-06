@@ -34,6 +34,7 @@ from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
+from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .hersheymanager import (
     HersheyFontManager,
     HersheyFontSelector,
@@ -52,8 +53,9 @@ from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
+from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.groupproperties import GroupPropertiesPanel
+from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
@@ -418,6 +420,7 @@ class wxMeerK40t(wx.App, Module):
         def window_list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
+            context = kernel.root
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
                 channel(f"{i + 1}: {name}")
@@ -626,13 +629,16 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
+        kernel.register("property/FileNode/Property", FilePropertiesPanel)
         kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
         kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
@@ -674,6 +680,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
+        kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
@@ -717,6 +724,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Stop", register_panel_stop)
         kernel.register("wxpane/Home", register_panel_home)
         kernel.register("wxpane/Pause", register_panel_pause)
+
+        from meerk40t.gui.dialogoptions import DialogOptions
+
+        kernel.register("dialog/options", DialogOptions)
 
         context = kernel.root
 
@@ -770,7 +781,7 @@ def send_file_to_developers(filename):
     @return:
     """
     try:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             data = f.read()
     except:
         return  # There is no file, there is no data.
@@ -881,12 +892,12 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
 
     try:
         try:
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
         except PermissionError:
             filename = get_safe_path(APPLICATION_NAME).joinpath(filename)
-            with open(filename, "w") as file:
+            with open(filename, "w", encoding="utf8") as file:
                 file.write(error_log)
                 print(file)
     except Exception:
@@ -905,7 +916,7 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
             ref_prefix = "ref: refs/heads/"
             ref = ""
             try:
-                with open(head_file, "r") as f:
+                with open(head_file) as f:
                     ref = f.readline()
             except Exception:
                 pass

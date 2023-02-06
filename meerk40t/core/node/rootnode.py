@@ -1,36 +1,4 @@
-from meerk40t.core.node.blobnode import BlobNode
-from meerk40t.core.node.branch_elems import BranchElementsNode
-from meerk40t.core.node.branch_ops import BranchOperationsNode
-from meerk40t.core.node.branch_regmark import BranchRegmarkNode
-from meerk40t.core.node.cutnode import CutNode
-from meerk40t.core.node.elem_ellipse import EllipseNode
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.elem_line import LineNode
-from meerk40t.core.node.elem_geomstr import GeomstrNode
-from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.elem_point import PointNode
-from meerk40t.core.node.elem_polyline import PolylineNode
-from meerk40t.core.node.elem_rect import RectNode
-from meerk40t.core.node.elem_text import TextNode
-from meerk40t.core.node.filenode import FileNode
-from meerk40t.core.node.groupnode import GroupNode
-from meerk40t.core.node.lasercodenode import LaserCodeNode
-from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.node import Node
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.op_dots import DotsOpNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
-from meerk40t.core.node.op_image import ImageOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.refnode import ReferenceNode
-from meerk40t.core.node.util_console import ConsoleOperation
-from meerk40t.core.node.util_goto import GotoOperation
-from meerk40t.core.node.util_home import HomeOperation
-from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_origin import SetOriginOperation
-from meerk40t.core.node.util_output import OutputOperation
-from meerk40t.core.node.util_wait import WaitOperation
 
 
 class RootNode(Node):
@@ -42,12 +10,10 @@ class RootNode(Node):
 
     def __init__(self, context, **kwargs):
         _ = context._
-        super(RootNode, self).__init__(type="root", **kwargs)
+        super().__init__(type="root", **kwargs)
         self._root = self
         self.context = context
         self.listeners = []
-        self.bootstrap = bootstrap
-        self.defaults = defaults
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
@@ -145,6 +111,55 @@ class RootNode(Node):
             if hasattr(listen, "modified"):
                 listen.modified(node, **kwargs)
 
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        """
+        Notifies any listeners that a value in the tree has been changed such that the matrix or other property
+        values have changed. But that the underlying data object itself remains intact.
+        @param node: node that was modified.
+        @param kwargs:
+        @return:
+        """
+        if node is None:
+            node = self
+        if self._bounds is not None:
+            self._bounds = [
+                self._bounds[0] + dx,
+                self._bounds[1] + dy,
+                self._bounds[2] + dx,
+                self._bounds[3] + dy,
+            ]
+        for listen in self.listeners:
+            if hasattr(listen, "translated"):
+                listen.translated(node, dx=dx, dy=dy)  # , **kwargs)
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        """
+        Notifies any listeners that a value in the tree has been changed such that the matrix or other property
+        values have changed. But that the underlying data object itself remains intact.
+        @param node: node that was modified.
+        @param kwargs:
+        @return:
+        """
+        if node is None:
+            node = self
+        if self._bounds is not None:
+            x0, y0, x1, y1 = self._bounds
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            self._bounds = [min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)]
+
+        for listen in self.listeners:
+            if hasattr(listen, "scaled"):
+                listen.scaled(node, sx=sx, sy=sy, ox=ox, oy=oy)  # , **kwargs)
+
     def notify_altered(self, node=None, **kwargs):
         """
         Notifies any listeners that a value in the tree has had its underlying data fundamentally changed and while
@@ -195,76 +210,3 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
-
-
-defaults = {
-    "root": {},
-    "op cut": {"speed": 12.0, "color": "red", "frequency": 30.0},
-    "op engrave": {"speed": 35.0, "color": "blue", "frequency": 30.0},
-    "op raster": {"speed": 150.0, "dpi": 500, "color": "black", "frequency": 30.0},
-    "op image": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
-    "op dots": {"speed": 150.0, "color": "transparent", "frequency": 30.0},
-    "op hatch": {"speed": 35.0, "color": "lime", "frequency": 30.0},
-    "util console": {},
-    "util wait": {},
-    "util origin": {},
-    "util home": {},
-    "util goto": {},
-    "util input": {},
-    "util output": {},
-    "lasercode": {},
-    "blob": {},
-    "group": {},
-    "layer": {},
-    "elem ellipse": {},
-    "elem line": {},
-    "elem rect": {},
-    "elem path": {},
-    "elem point": {},
-    "elem polyline": {},
-    "elem image": {"dpi": 500},
-    "elem text": {},
-    "elem geomstr": {},
-    "reference": {},
-    "cutcode": {},
-    "branch ops": {},
-    "branch elems": {},
-    "branch reg": {},
-    "file": {},
-}
-
-bootstrap = {
-    "root": RootNode,
-    "op cut": CutOpNode,
-    "op engrave": EngraveOpNode,
-    "op raster": RasterOpNode,
-    "op image": ImageOpNode,
-    "op dots": DotsOpNode,
-    "op hatch": HatchOpNode,
-    "util console": ConsoleOperation,
-    "util wait": WaitOperation,
-    "util origin": SetOriginOperation,
-    "util home": HomeOperation,
-    "util goto": GotoOperation,
-    "util input": InputOperation,
-    "util output": OutputOperation,
-    "lasercode": LaserCodeNode,
-    "blob": BlobNode,
-    "group": GroupNode,
-    "layer": LayerNode,
-    "elem ellipse": EllipseNode,
-    "elem line": LineNode,
-    "elem rect": RectNode,
-    "elem path": PathNode,
-    "elem point": PointNode,
-    "elem polyline": PolylineNode,
-    "elem image": ImageNode,
-    "elem text": TextNode,
-    "elem geomstr": GeomstrNode,
-    "reference": ReferenceNode,
-    "cutcode": CutNode,
-    "branch ops": BranchOperationsNode,
-    "branch elems": BranchElementsNode,
-    "branch reg": BranchRegmarkNode,
-    "file": FileNode,
-}

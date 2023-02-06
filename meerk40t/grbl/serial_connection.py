@@ -21,10 +21,9 @@ class SerialConnection:
 
     def read(self):
         try:
-            if self.laser.in_waiting:
-                self.read_buffer += self.laser.readall()
-        except (SerialException, AttributeError, OSError):
-            return None
+            self.read_buffer += self.laser.read(self.laser.in_waiting)
+        except (SerialException, AttributeError, OSError, TypeError):
+            pass
         f = self.read_buffer.find(b"\n")
         if f == -1:
             return None
@@ -48,10 +47,20 @@ class SerialConnection:
         signal_load = "uninitialized"
         try:
             self.channel("Attempting to Connect...")
-            com_port = self.service.com_port
+            serial_port = self.service.serial_port
+            if serial_port == "UNCONFIGURED":
+                self.channel("Laser port is not set.")
+                signal_load = "error"
+                self.service.signal(
+                    "warning",
+                    "Serial Port is not set. Go to config, select the serial port for this device.",
+                    "Serial Port: UNCONFIGURED",
+                )
+                return
+
             baud_rate = self.service.baud_rate
             self.laser = serial.Serial(
-                com_port,
+                serial_port,
                 baud_rate,
                 timeout=0,
             )

@@ -224,7 +224,6 @@ class LihuiyuDriver(Parameters):
         """
         Asks that the laser be paused.
 
-        @param args:
         @return:
         """
         self(b"~PN!\n~")
@@ -250,7 +249,6 @@ class LihuiyuDriver(Parameters):
 
         Asks that the device resets, and clears all current work.
 
-        @param args:
         @return:
         """
         self.service.spooler.clear_queue()
@@ -274,7 +272,7 @@ class LihuiyuDriver(Parameters):
         bunch of .rd code, or Lihuiyu device it could be .egv code. It's a method of sending pre-chewed data to the
         device.
 
-        @param type:
+        @param blob_type:
         @param data:
         @return:
         """
@@ -289,6 +287,8 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
@@ -301,6 +301,8 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
@@ -313,6 +315,8 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
+        if self.service.swap_xy:
+            dx, dy = dy, dx
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self._move_relative(dx, dy)
@@ -336,7 +340,6 @@ class LihuiyuDriver(Parameters):
         """
         Turn laser off in place.
 
-        @param values:
         @return:
         """
         if not self.laser:
@@ -359,7 +362,6 @@ class LihuiyuDriver(Parameters):
         """
         Turn laser on in place.
 
-        @param values:
         @return:
         """
         if self.laser:
@@ -527,6 +529,12 @@ class LihuiyuDriver(Parameters):
             "driver;position",
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
+
+    def physical_home(self):
+        """ "
+        This would be the command to go to a real physical home position (ie hitting endstops)
+        """
+        self.home()
 
     def lock_rail(self):
         """
@@ -820,7 +828,11 @@ class LihuiyuDriver(Parameters):
                 elif on & (
                     PLOT_RAPID | PLOT_JOG
                 ):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
+                    if (
+                        on & PLOT_RAPID
+                        or self.state != DRIVER_STATE_PROGRAM
+                        or self.service.rapid_override
+                    ):
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
                         self.rapid_mode()
@@ -1012,32 +1024,75 @@ class LihuiyuDriver(Parameters):
         """
         self._goto_relative(x - self.native_x, y - self.native_y, cut)
 
+    def _move_override_speed(self, dx, dy, x_speed, y_speed=None):
+        """
+        Rapid movement override. Should make programmed jogs.
+
+        @param dx: change in x
+        @param dy: change in y
+        @param x_speed: max allowed speed in x direction
+        @param y_speed: max allowed speed in y direction
+        @return:
+        """
+        if y_speed is None:
+            y_speed = x_speed
+        original_accel = self.acceleration
+        original_speed = self.speed
+        original_steps = self.raster_step_x, self.raster_step_y
+
+        # Do not allow custom accel codes, or raster steps.
+        self._set_acceleration(None)
+        self._set_step(0, 0)
+        # We know we will travel dx, dy. Set the initial direction requests.
+        self._request_leftward = dx < 0
+        self._request_topward = dy < 0
+        self._request_horizontal_major = abs(dx) > abs(dy)
+        if y_speed <= x_speed and abs(dy) >= abs(dx):
+            # y_speed is slowest and dy is larger than dx. The y-shift will take longer than x-shift. Combine.
+            self._set_speed(y_speed)
+            self.program_mode()
+            dy_m = int(
+                math.copysign(dx, dy)
+            )  # magnitude of shorter in the direction of longer.
+            self._goto_octent(dx, dy_m, on=False)
+            self._goto_octent(0, dy - dy_m, on=False)
+        elif x_speed <= y_speed and abs(dx) >= abs(dy):
+            # x_speed is slowest and dx is larger than dy. The x-shift will take longer than y-shift. Combine.
+            self._set_speed(x_speed)
+            self.program_mode()
+            dx_m = int(
+                math.copysign(dy, dx)
+            )  # magnitude of shorter in the direction of longer.
+            self._goto_octent(dx_m, dy, on=False)
+            self._goto_octent(dx - dx_m, 0, on=False)
+        else:
+            # The faster speed is going longer. The slower speed is going shorter. Full zig.
+            if dx != 0:
+                self._set_speed(x_speed)
+                self.program_mode()
+                self._goto_octent(dx, 0, on=False)
+            if dy != 0:
+                self._set_speed(y_speed)
+                self.program_mode()
+                self._goto_octent(0, dy, on=False)
+        self.rapid_mode()
+
+        # We always restore the original settings.
+        self._set_acceleration(original_accel)
+        self._set_speed(original_speed)
+        self._set_step(*original_steps)
+
     def _move_in_rapid_mode(self, dx, dy, cut):
         if self.service.rapid_override and (dx != 0 or dy != 0):
-            # Rapid movement override. Should make programmed jogs.
-            self._set_acceleration(None)
-            self._set_step(0, 0)
-            if dx != 0:
-                self.rapid_mode()
-                self._set_speed(self.service.rapid_override_speed_x)
-                self.program_mode()
-                self._goto_octent(dx, 0, cut)
-            if dy != 0:
-                if (
-                    self.service.rapid_override_speed_x
-                    != self.service.rapid_override_speed_y
-                ):
-                    self.rapid_mode()
-                    self._set_speed(self.service.rapid_override_speed_y)
-                    self.program_mode()
-                self._goto_octent(0, dy, cut)
-            self.rapid_mode()
-        else:
-            self(b"I")
-            self._goto_xy(dx, dy)
-            self(b"S1P\n")
-            if not self.service.autolock:
-                self(b"IS2P\n")
+            y_speed = self.service.rapid_override_speed_y
+            x_speed = self.service.rapid_override_speed_x
+            self._move_override_speed(dx, dy, x_speed, y_speed)
+            return
+        self(b"I")
+        self._goto_xy(dx, dy)
+        self(b"S1P\n")
+        if not self.service.autolock:
+            self(b"IS2P\n")
 
     def _commit_mode(self):
         # Unknown utility ported from deleted branch

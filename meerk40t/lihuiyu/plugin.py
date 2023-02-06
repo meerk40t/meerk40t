@@ -12,7 +12,13 @@ def plugin(kernel, lifecycle=None):
         from .gui import gui as lhygui
 
         return [lhygui.plugin]
-
+    elif lifecycle == "invalidate":
+        try:
+            import usb.core  # pylint: disable=unused-import
+            import usb.util  # pylint: disable=unused-import
+        except ImportError:
+            print("Lihuiyu plugin could not load because pyusb is not installed.")
+            return True
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         try:

@@ -1,7 +1,6 @@
 from math import atan, sqrt, tau
 
 import wx
-from wx import aui
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (

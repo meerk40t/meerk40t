@@ -868,5 +868,4 @@ class Planner(Service):
             return data_type, data
 
     def plan(self, **kwargs):
-        for item in self._plan:
-            yield item
+        yield from self._plan

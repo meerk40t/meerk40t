@@ -613,8 +613,21 @@ class RibbonPanel(wx.Panel):
                                 resize=small_resize, color=Color("grey")
                             ),
                         )
+                    if "signal" in v:
+
+                        def make_multi_click(_tb, _key):
+                            def multi_click(origin, set_value):
+                                self._restore_button_aspect(_tb, _key)
+
+                            return multi_click
+
+                        signal_multi_listener = make_multi_click(b, key)
+                        self.context.listen(v["signal"], signal_multi_listener)
+                        self.toggle_signals.append((v["signal"], signal_multi_listener))
+
                     if key == initial_id:
                         self._restore_button_aspect(b, key)
+
             if "toggle" in button:
                 # Store toggle and original aspects for toggle-buttons
 
@@ -658,7 +671,7 @@ class RibbonPanel(wx.Panel):
                         ),
                     )
                     if resize_param is None:
-                        siz = v_icon.GetBitmap().GetSize()
+                        siz = toggle_icon.GetBitmap().GetSize()
                         small_resize = 0.5 * siz[0]
                     else:
                         small_resize = 0.5 * resize_param

@@ -66,7 +66,7 @@ class OutputOperation(Node):
         self.output_value = ~((~self.output_value) | (1 << bit))
 
     def default_map(self, default_map=None):
-        default_map = super(OutputOperation, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Output"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["mask"] = self.output_mask

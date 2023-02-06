@@ -290,6 +290,7 @@ class Node:
 
     @property
     def paint_bounds(self):
+        # Make sure that bounds is valid
         if not self._paint_bounds_dirty:
             return self._paint_bounds
 
@@ -308,6 +309,7 @@ class Node:
     def set_dirty_bounds(self):
         self._paint_bounds_dirty = True
         self._bounds_dirty = True
+        self._points_dirty = True
 
     @property
     def formatter(self):
@@ -326,7 +328,7 @@ class Node:
         """
         if self._points_dirty:
             self.revalidate_points()
-        self._points_dirty = False
+            self._points_dirty = False
         return self._points
 
     def restore_tree(self, tree_data):
@@ -614,6 +616,18 @@ class Node:
                 node = self
             self._root.notify_modified(node=node, **kwargs)
 
+    def notify_translated(self, node=None, dx=0, dy=0, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_translated(node=node, dx=dx, dy=dy, **kwargs)
+
+    def notify_scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, **kwargs):
+        if self._root is not None:
+            if node is None:
+                node = self
+            self._root.notify_scaled(node=node, sx=sx, sy=sy, ox=ox, oy=oy, **kwargs)
+
     def notify_altered(self, node=None, **kwargs):
         if self._root is not None:
             if node is None:
@@ -657,7 +671,6 @@ class Node:
         """
         Invalidation of the individual node.
         """
-        self._points_dirty = True
         self.set_dirty_bounds()
         self._bounds = None
         self._paint_bounds = None
@@ -679,11 +692,79 @@ class Node:
 
     def modified(self):
         """
-        The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
-        data.
+        The matrix transformation was changed. The object is shaped
+        differently but fundamentally the same structure of data.
         """
         self.invalidated()
         self.notify_modified(self)
+
+    def translated(self, dx, dy):
+        """
+        This is a special case of the modified call, we are translating
+        the node without fundamentally altering it's properties
+        """
+        if self._bounds_dirty or self._bounds is None:
+            # A pity but we need proper data
+            self.modified()
+            return
+        self._bounds = [
+            self._bounds[0] + dx,
+            self._bounds[1] + dy,
+            self._bounds[2] + dx,
+            self._bounds[3] + dy,
+        ]
+        if self._paint_bounds_dirty or self._paint_bounds is None:
+            # Nothing we can do...
+            pass
+        else:
+            self._paint_bounds = [
+                self._paint_bounds[0] + dx,
+                self._paint_bounds[1] + dy,
+                self._paint_bounds[2] + dx,
+                self._paint_bounds[3] + dy,
+            ]
+        self._points_dirty = True
+        # if self._points_dirty:
+        #     self.revalidate_points()
+        # else:
+        #     for pt in self._points:
+        #         pt[0] += dx
+        #         pt[1] += dy
+
+        self.notify_translated(self, dx=dx, dy=dy)
+
+    def scaled(self, sx, sy, ox, oy):
+        """
+        This is a special case of the modified call, we are scaling
+        the node without fundamentally altering it's properties
+        """
+
+        def apply_it(box):
+            x0, y0, x1, y1 = box
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+
+        if self._bounds_dirty or self._bounds is None:
+            # A pity but we need proper data
+            self.modified()
+            return
+        self._bounds = apply_it(self._bounds)
+        # This may not really correct, we need the
+        # implied stroke_width to add, so the inherited
+        # element classes will need to overload it
+        if self._paint_bounds is not None:
+            self._paint_bounds = apply_it(self._paint_bounds)
+        self._points_dirty = True
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def altered(self):
         """
@@ -695,6 +776,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
         self._cache = None
@@ -708,6 +790,7 @@ class Node:
             pass
         try:
             del self._cache
+            del self._cache_matrix
         except AttributeError:
             pass
 
@@ -759,8 +842,10 @@ class Node:
         @param kwargs:
         @return:
         """
-        node_class = self._root.bootstrap.get(type, Node)
-        node_defaults = self._root.defaults.get(type, {})
+        from .bootstrap import bootstrap, defaults
+
+        node_class = bootstrap.get(type, Node)
+        node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)
         node = node_class(**nd)
@@ -805,8 +890,7 @@ class Node:
         @return:
         """
         yield node
-        for c in self._flatten_children(node):
-            yield c
+        yield from self._flatten_children(node)
 
     def _flatten_children(self, node):
         """
@@ -817,8 +901,7 @@ class Node:
         """
         for child in node.children:
             yield child
-            for c in self._flatten_children(child):
-                yield c
+            yield from self._flatten_children(child)
 
     def flat(
         self,
@@ -935,32 +1018,34 @@ class Node:
         self.unregister()
         return node
 
-    def remove_node(self, children=True, references=True):
+    def remove_node(self, children=True, references=True, fast=False):
         """
         Remove the current node from the tree.
         This function must iterate down and first remove all children from the bottom.
         """
         if children:
-            self.remove_all_children()
+            self.remove_all_children(fast=fast)
         self._parent._children.remove(self)
-        self.notify_detached(self)
-        self.notify_destroyed(self)
+        self._parent.set_dirty_bounds()
+        if not fast:
+            self.notify_detached(self)
+            self.notify_destroyed(self)
         if references:
             for ref in list(self._references):
-                ref.remove_node()
+                ref.remove_node(fast=fast)
         self._item = None
         self._parent = None
         self._root = None
         self.type = None
         self.unregister()
 
-    def remove_all_children(self):
+    def remove_all_children(self, fast=False):
         """
         Removes all children of the current node.
         """
         for child in list(self.children):
-            child.remove_all_children()
-            child.remove_node()
+            child.remove_all_children(fast=fast)
+            child.remove_node(fast=fast)
 
     def get(self, type=None):
         """

@@ -13,8 +13,10 @@ from meerk40t.gui.scene.scene import (
 )
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT_AND_DELEGATE
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.wxutils import create_menu_for_node, StaticBoxSizer
+from meerk40t.gui.wxutils import StaticBoxSizer, create_menu_for_node
 from meerk40t.svgelements import Point
+
+NEARLY_ZERO = 1.0e-6
 
 
 def process_event(
@@ -38,6 +40,10 @@ def process_event(
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
+
+    # Not during an edit !
+    if widget.scene.active_tool.startswith("edit"):
+        return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
@@ -435,8 +441,14 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
+            self.scene.context.signal("tool_modified")
         elif event == -1:
-            pass
+            self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
+            return
         elif event == 0:
 
             if self.rotate_cx is None:
@@ -497,14 +509,14 @@ class RotationWidget(Widget):
             #    rot_angle, self.rotate_cx, self.rotate_cy
             # )
             # b = self.reference_rect.bbox()
-
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-                e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    try:
+                        if e.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    e.matrix.post_rotate(delta_angle, self.rotate_cx, self.rotate_cy)
             # elements.update_bounds([b[0], b[1], b[2], b[3]])
 
         self.scene.request_refresh()
@@ -702,17 +714,24 @@ class CornerWidget(Widget):
         if event == 1:
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+                # modified no longer relevant
+                # try:
+                #     e.modified()
+                # except AttributeError:
+                #     pass
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
                 e.update(None)
             self.scene.modif_active = False
+            self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
+            return
         elif event == 0:
             # Establish origin
             if "n" in self.method:
@@ -754,6 +773,8 @@ class CornerWidget(Widget):
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
+            if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+                return
 
             b = elements._emphasized_bounds
             if "n" in self.method:
@@ -794,17 +815,19 @@ class CornerWidget(Widget):
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
 
-            for node in elements.elems(emphasized=True):
-                try:
-                    if node.lock:
-                        continue
-                except AttributeError:
-                    pass
-                node.matrix.post_scale(scalex, scaley, orgx, orgy)
-
+            # No undo of interim steps
+            with elements.undofree():
+                for node in elements.elems(emphasized=True):
+                    try:
+                        if node.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -938,19 +961,25 @@ class SideWidget(Widget):
         if event == 1:
             images = []
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+                # No longer needed
+                # try:
+                #     e.modified()
+                # except AttributeError:
+                #     pass
                 if hasattr(e, "update"):
                     images.append(e)
             for e in images:
                 e.update(None)
             self.scene.modif_active = False
+            self.scene.context.signal("tool_modified")
         elif event == -1:
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
+            return
         elif event == 0:
-            # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
             # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
@@ -992,10 +1021,14 @@ class SideWidget(Widget):
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
-
+            if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+                return
             # Correct, but slow...
-            # b = elements.selected_area()
             b = elements._emphasized_bounds
+            if b is None:
+                b = elements.selected_area()
+                if b is None:
+                    return
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -1032,18 +1065,24 @@ class SideWidget(Widget):
             elif "w" in self.method:
                 b[0] -= grow * deltax
                 b[2] += (1 - grow) * deltax
+            # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
+            # print (f"New width: {b[2] - b[0]:.4f}, New height: {b[3] - b[1]:.4f}")
+            # print (f"Applied: scalex={scalex:.4f}, scaley={scaley:.4f}, orgx={orgx:.4f}, orgy={orgx:.4f}")
 
-            for node in elements.elems(emphasized=True):
-                try:
-                    if node.lock:
-                        continue
-                except AttributeError:
-                    pass
-                node.matrix.post_scale(scalex, scaley, orgx, orgy)
+            # No undo of interim steps
+            with elements.undofree():
+                for node in elements.elems(emphasized=True):
+                    try:
+                        if node.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    node.matrix.post_scale(scalex, scaley, orgx, orgy)
+                    node.scaled(sx=scalex, sy=scaley, ox=orgx, oy=orgy)
 
             elements.update_bounds([b[0], b[1], b[2], b[3]])
 
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1160,8 +1199,14 @@ class SkewWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(None)
+            self.scene.context.signal("tool_modified")
         elif event == -1:
-            pass
+            self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
+            return
         elif event == 0:  # move
             if self.is_x:
                 dd = dx
@@ -1177,24 +1222,26 @@ class SkewWidget(Widget):
             delta_angle = current_angle - self.master.rotated_angle
             self.master.rotated_angle = current_angle
 
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-                if self.is_x:
-                    e.matrix.post_skew_x(
-                        delta_angle,
-                        (self.master.right + self.master.left) / 2,
-                        (self.master.top + self.master.bottom) / 2,
-                    )
-                else:
-                    e.matrix.post_skew_y(
-                        delta_angle,
-                        (self.master.right + self.master.left) / 2,
-                        (self.master.top + self.master.bottom) / 2,
-                    )
+            # No undo of interim steps
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    try:
+                        if e.lock:
+                            continue
+                    except AttributeError:
+                        pass
+                    if self.is_x:
+                        e.matrix.post_skew_x(
+                            delta_angle,
+                            (self.master.right + self.master.left) / 2,
+                            (self.master.top + self.master.bottom) / 2,
+                        )
+                    else:
+                        e.matrix.post_skew_y(
+                            delta_angle,
+                            (self.master.right + self.master.left) / 2,
+                            (self.master.top + self.master.bottom) / 2,
+                        )
 
             # elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
         self.scene.request_refresh()
@@ -1343,13 +1390,18 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.revised_magnet_bound(b)
+            self.total_dx += dx
+            self.total_dy += dy
             if dx != 0 or dy != 0:
-                for e in elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "lock") and e.lock and not allowlockmove:
-                        continue
-                    e.matrix.post_translate(dx, dy)
-
-                self.translate(dx, dy)
+                with elements.undofree():
+                    for e in elements.flat(types=elem_nodes, emphasized=True):
+                        if hasattr(e, "lock") and e.lock and not allowlockmove:
+                            continue
+                        e.matrix.post_translate(dx, dy)
+                        # We would normally not adjust the node properties,
+                        # but the pure adjustment of the bbox is hopefully not hurting
+                        e.translated(dx, dy)
+                    self.translate(dx, dy)
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
@@ -1366,11 +1418,18 @@ class MoveWidget(Widget):
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
+                if b is None:
+                    # There is no emphasized bounds or selected area.
+                    return
             allowlockmove = elements.lock_allows_move
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                if hasattr(e, "lock") and e.lock and not allowlockmove:
-                    continue
-                e.matrix.post_translate(dx, dy)
+            with elements.undofree():
+                for e in elements.flat(types=elem_nodes, emphasized=True):
+                    if hasattr(e, "lock") and e.lock and not allowlockmove:
+                        continue
+                    e.matrix.post_translate(dx, dy)
+                    # We would normally not adjust the node properties,
+                    # but the pure adjustment of the bbox is hopefully not hurting
+                    e.translated(dx, dy)
             self.translate(dx, dy)
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
@@ -1416,18 +1475,29 @@ class MoveWidget(Widget):
             else:
                 move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
-            if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
-                # Did we actually move?
-                for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                    try:
-                        e.modified()
-                    except AttributeError:
-                        pass
+            # if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
+            #     # Did we actually move?
+            #     # Remember this, it is still okay
+            #     bx0, by0, bx1, by1 = elements._emphasized_bounds
+            #     for e in elements.flat(types=elem_group_nodes, emphasized=True):
+            #         try:
+            #             # e.modified()
+            #             e.translated(self.total_dx, self.total_dy)
+            #         except AttributeError:
+            #             pass
+            #     # .translated will set the scene emphasized bounds dirty, that's not needed, so...
+            #     elements.update_bounds([bx0, by0, bx1, by1])
+
+            self.scene.context.signal("tool_modified")
             self.scene.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
             self.scene.modif_active = True
+            # Normally this would happen automagically in the background, but as we are going
+            # to suppress undo during the execution of this tool (to allow to go back to the
+            # very starting point) we need to set the recovery point ourselves.
+            elements.prepare_undo()
             self.total_dx = 0
             self.total_dy = 0
         elif event == 0:  # move
@@ -1524,6 +1594,7 @@ class MoveRotationOriginWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
+        elements = self.scene.context.elements
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -1542,14 +1613,14 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
             self.scene.modif_active = False
-            self.scene.request_refresh()
         elif event == -1:  # start
             self.scene.modif_active = True
+            return
         elif event == 0:  # move
             self.master.rotation_cx += dx
             self.master.rotation_cy += dy
             self.master.invalidate_rot_center()
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
@@ -1686,7 +1757,7 @@ class ReferenceWidget(Widget):
         elements = self.scene.context.elements
         if event == -1:  # leftdown
             # Nothing to do...
-            pass
+            return
         elif event == 1:  # leftup, leftclick
             if self.is_reference_object:
                 self.scene.reference_object = None
@@ -1816,13 +1887,13 @@ class LockWidget(Widget):
         elements = self.scene.context.elements
         if event == -1:  # leftdown
             # Nothing to do...
-            pass
+            return
         elif event == 1:  # leftup, leftclick
             data = list(elements.flat(types=elem_nodes, emphasized=True))
             for e in data:
                 e.lock = False
             self.scene.context.signal("element_property_update", data)
-            self.scene.request_refresh()
+        self.scene.request_refresh()
 
     def event(
         self,
@@ -2053,7 +2124,7 @@ class SelectionWidget(Widget):
 
     @property
     def key_control_pressed(self):
-        return "control" in self.modifiers
+        return "ctrl" in self.modifiers
 
     @property
     def key_alt_pressed(self):
@@ -2203,11 +2274,16 @@ class SelectionWidget(Widget):
         dx = (scalex - 1) * (cc[2] - cc[0])
         dy = (scaley - 1) * (cc[3] - cc[1])
 
-        for e in elements.flat(types=elem_nodes, emphasized=True):
-            if e.lock:
-                continue
-            if e is not refob:
-                e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
+        if abs(scalex) < NEARLY_ZERO or abs(scaley) <= NEARLY_ZERO:
+            return
+        # No undo of interim steps
+        with elements.undofree():
+            for e in elements.flat(types=elem_nodes, emphasized=True):
+                if e.lock:
+                    continue
+                if e is not refob:
+                    e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
+                    e.scaled(sx=scalex, sy=scaley, ox=cc[0], oy=cc[1])
 
         elements.update_bounds([cc[0], cc[1], cc[2] + dx, cc[3] + dy])
 

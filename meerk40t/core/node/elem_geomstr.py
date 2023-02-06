@@ -1,12 +1,12 @@
 from copy import copy
-from math import sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.svgelements import Matrix
 
 
-class GeomstrNode(Node, Parameters):
+class GeomstrNode(Node, Parameters, Stroked):
     """
     GeomstrNode is the bootstrapped node type for the 'elem geomstr' type.
     """
@@ -18,6 +18,7 @@ class GeomstrNode(Node, Parameters):
         self.stroke = None
         self.stroke_width = 1000
         self.stroke_scale = False
+        self._stroke_zero = 1.0
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
@@ -37,32 +38,6 @@ class GeomstrNode(Node, Parameters):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
-
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        if not v and self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self.stroke_scale:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
-        self.stroke_scale = v
-
-    def implied_stroke_width(self, zoomscale=1.0):
-        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
-        need to countermand that scaling by dividing by the square root of the absolute
-        value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scaled:
-            # Our implied stroke-width is prescaled.
-            return self.stroke_width
-        else:
-            sw = self.stroke_width / scalefactor
-            return sw
-
     def bbox(self, transformed=True, with_stroke=False):
         return self.path.bbox(self.matrix)
 
@@ -72,7 +47,7 @@ class GeomstrNode(Node, Parameters):
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
-        default_map = super(GeomstrNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Geomstr"
         default_map.update(self.__dict__)
         return default_map

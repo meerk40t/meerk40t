@@ -24,12 +24,11 @@ class RibbonTool(ToolWidget):
         self.pos = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.scene.context.elements.default_stroke is None:
+        elements = self.scene.context.elements
+        if elements.default_stroke is None:
             self.pen.SetColour(wx.BLUE)
         else:
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-            )
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
         gc.SetPen(self.pen)
         gc.SetBrush(wx.RED_BRUSH)
         gc.DrawEllipse(self.track_object[0], self.track_object[1], 5000, 5000)
@@ -102,9 +101,9 @@ class RibbonTool(ToolWidget):
                 node = elements.elem_branch.add(
                     path=t,
                     type="elem path",
-                    stroke_width=1000.0,
-                    stroke=self.scene.context.elements.default_stroke,
-                    fill=self.scene.context.elements.default_fill,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
                 if elements.classify_new:
                     elements.classify([node])

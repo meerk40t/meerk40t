@@ -30,13 +30,9 @@ def create_preview_image(context, fontfile):
     base, ext = os.path.splitext(fontfile)
     bmpfile = base + ".png"
     pattern = "The quick brown fox..."
-    try:
-        node = create_linetext_node(
-            context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
-        )
-    except:
-        # Couldnt create the node...
-        node = None
+    node = create_linetext_node(
+        context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
+    )
     if node is None:
         return False
     if node.bounds is None:
@@ -69,7 +65,7 @@ def create_preview_image(context, fontfile):
         return False
     try:
         bitmap.SaveFile(bmpfile, wx.BITMAP_TYPE_PNG)
-    except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
         return False
     return True
 
@@ -102,7 +98,7 @@ def remove_fontfile(fontfile):
             bmpfile = base + ".png"
             if os.path.exists(bmpfile):
                 os.remove(bmpfile)
-        except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             pass
 
 
@@ -497,7 +493,6 @@ class PanelFontManager(wx.Panel):
         # Let the world know we have fonts
         self.context.signal("icons")
 
-
     def on_btn_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
         dlg = wx.DirDialog(
@@ -605,7 +600,7 @@ class PanelFontManager(wx.Panel):
                 )
                 if not keepgoing:
                     break
-            except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
         progress.Destroy()
         wx.MessageBox(

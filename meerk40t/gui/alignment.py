@@ -19,7 +19,7 @@ from meerk40t.svgelements import (
 )
 
 from ..core.units import Length
-from ..gui.wxutils import TextCtrl, StaticBoxSizer
+from ..gui.wxutils import StaticBoxSizer, TextCtrl
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange_50
 from .mwindow import MWindow
@@ -1021,12 +1021,19 @@ class DistributionPanel(wx.Panel):
                 try:
                     cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
                     cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                    change = 0
                     if dx != 0 or dy != 0:
                         node.matrix.post_translate(dx, dy)
+                        change = 1
                     # Do we have a rotation to take into account?
                     if ptangle != 0:
                         node.matrix.post_rotate(ptangle, cx, cy)
-                    node.modified()
+                        change = 2
+                    if change == 1:
+                        node.translated(dx, dy)
+                    elif change == 2:
+                        node.modified()
+
                     modified += 1
                 except AttributeError:
                     continue
@@ -1455,7 +1462,8 @@ class ArrangementPanel(wx.Panel):
                     else:
                         try:
                             node.matrix.post_translate(dx, dy)
-                            node.modified()
+                            # node.modified()
+                            node.translated(dx, dy)
                         except AttributeError:
                             pass
 

@@ -57,6 +57,12 @@ class LiveSelectionLightJob:
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.service.signal("stop_tracing", True)
+        if self.service.redlight_preferred:
+            connection.light_on()
+            connection.write_port()
+        else:
+            connection.light_off()
+            connection.write_port()
         return True
 
     def update_points(self, bounds):

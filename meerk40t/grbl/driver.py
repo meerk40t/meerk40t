@@ -21,6 +21,7 @@ from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
+from ..kernel import signal_listener
 
 
 class GRBLDriver(Parameters):
@@ -28,6 +29,8 @@ class GRBLDriver(Parameters):
         super().__init__(**kwargs)
         self.service = service
         self.name = str(service)
+        self.line_end = None
+        self._set_line_end()
         self.hold = False
         self.paused = False
         self.native_x = 0
@@ -69,6 +72,14 @@ class GRBLDriver(Parameters):
     def __repr__(self):
         return f"GRBLDriver({self.name})"
 
+    @signal_listener("line_end")
+    def _set_line_end(self, origin=None, *args):
+        line_end = self.service.setting(str, "line_end", "CR")
+        line_end = line_end.replace(" ", "")
+        line_end = line_end.replace("CR", "\r")
+        line_end = line_end.replace("LF", "\n")
+        self.line_end = line_end
+
     def hold_work(self, priority):
         """
         Required.
@@ -87,6 +98,8 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         self._g91_absolute()
         self._clean()
         old_current = self.service.current
@@ -106,6 +119,8 @@ class GRBLDriver(Parameters):
         @param y:
         @return:
         """
+        if self.service.swap_xy:
+            x, y = y, x
         self._g91_absolute()
         self._clean()
         old_current = self.service.current
@@ -125,6 +140,8 @@ class GRBLDriver(Parameters):
         @param dy:
         @return:
         """
+        if self.service.swap_xy:
+            dx, dy = dy, dx
         self._g90_relative()
         self._clean()
         old_current = self.service.current
@@ -159,16 +176,27 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r")
+        self.grbl(f"M5{self.line_end}")
 
-    def laser_on(self, *values):
+    def laser_on(self, power=None, speed=None, *values):
         """
         Turn laser on in place.
 
         @param values:
         @return:
         """
-        self.grbl("M5\r")
+        spower = ""
+        sspeed = ""
+        if power is not None:
+            spower = f" S{power:.1f}"
+            # We already established power, so no need for power_dirty
+            self.power = power
+            self.power_dirty = False
+        if speed is not None:
+            sspeed = f"G1 F{speed}{self.line_end}"
+            self.speed = speed
+            self.speed_dirty = False
+        self.grbl(f"M3{spower}{self.line_end}{sspeed}")
 
     def plot(self, plot):
         """
@@ -188,9 +216,9 @@ class GRBLDriver(Parameters):
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
-            self.grbl("M3\r")
+            self.grbl(f"M3{self.line_end}")
         else:
-            self.grbl("M4\r")
+            self.grbl(f"M4{self.line_end}")
         for q in self.queue:
             x = self.native_x
             y = self.native_y
@@ -288,8 +316,8 @@ class GRBLDriver(Parameters):
                     self._move(x, y)
         self.queue.clear()
 
-        self.grbl("G1 S0\r")
-        self.grbl("M5\r")
+        self.grbl(f"G1 S0{self.line_end}")
+        self.grbl(f"M5{self.line_end}")
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
@@ -305,21 +333,37 @@ class GRBLDriver(Parameters):
         @param data:
         @return:
         """
-        if data_type != "gcode":
+        if data_type != "grbl":
             return
         for line in data:
-            # TODO: Process line does not exist as a function.
-            self.process_line(line)
+            grbl = bytes.decode(line, "utf-8")
+            for split in grbl.split("\r"):
+                g = split.strip()
+                if g:
+                    self.grbl(f"{g}{self.line_end}")
 
-    def home(self):
+    def physical_home(self):
         """
-        Home the laser.
+        Home the laser physically (ie run into endstops).
 
         @return:
         """
         self.native_x = 0
         self.native_y = 0
-        self.grbl("G28\r")
+        if self.service.has_endstops:
+            self.grbl(f"$H{self.line_end}")
+        else:
+            self.grbl(f"G28{self.line_end}")
+
+    def home(self):
+        """
+        Home the laser (ie goto defined origin)
+
+        @return:
+        """
+        self.native_x = 0
+        self.native_y = 0
+        self.grbl(f"G28{self.line_end}")
 
     def rapid_mode(self, *values):
         """
@@ -337,7 +381,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M5\r")
+        self.grbl(f"M5{self.line_end}")
 
     def program_mode(self, *values):
         """
@@ -345,7 +389,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl("M3\r")
+        self.grbl(f"M3{self.line_end}")
 
     def raster_mode(self, *values):
         """
@@ -390,7 +434,7 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.grbl(f"G04 S{time_in_ms / 1000.0}\r")
+        self.grbl(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
 
     def wait_finish(self, *values):
         """
@@ -526,28 +570,28 @@ class GRBLDriver(Parameters):
         if self.speed_dirty:
             line.append(f"F{self.feed_convert(self.speed):.1f}")
             self.speed_dirty = False
-        self.grbl(" ".join(line) + "\r")
+        self.grbl(" ".join(line) + self.line_end)
 
     def _clean(self):
         if self.absolute_dirty:
             if self._absolute:
-                self.grbl("G90\r")
+                self.grbl(f"G90{self.line_end}")
             else:
-                self.grbl("G91\r")
+                self.grbl(f"G91{self.line_end}")
         self.absolute_dirty = False
 
         if self.feedrate_dirty:
             if self.feed_mode == 94:
-                self.grbl("G94\r")
+                self.grbl(f"G94{self.line_end}")
             else:
-                self.grbl("G93\r")
+                self.grbl(f"G93{self.line_end}")
         self.feedrate_dirty = False
 
         if self.units_dirty:
             if self.units == 20:
-                self.grbl("G20\r")
+                self.grbl(f"G20{self.line_end}")
             else:
-                self.grbl("G21\r")
+                self.grbl(f"G21{self.line_end}")
         self.units_dirty = False
 
     def _g90_relative(self):

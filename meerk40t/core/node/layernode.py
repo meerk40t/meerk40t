@@ -8,11 +8,11 @@ class LayerNode(Node):
 
     def __init__(self, **kwargs):
         self.layer_name = None
-        super(LayerNode, self).__init__(type="layer", **kwargs)
+        super().__init__(type="layer", **kwargs)
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def default_map(self, default_map=None):
-        default_map = super(LayerNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["name"] = self.layer_name
         default_map["element_type"] = "Layer"
         default_map["children"] = str(len(self.count_children()))

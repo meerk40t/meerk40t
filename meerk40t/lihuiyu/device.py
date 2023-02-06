@@ -434,7 +434,7 @@ class LihuiyuDevice(Service, ViewPort):
                     driver.out_pipe = f
                     job.execute()
 
-            except (PermissionError, IOError):
+            except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_argument("filename", type=str)
@@ -463,7 +463,7 @@ class LihuiyuDevice(Service, ViewPort):
                 skip(file, "%", 5)
 
             try:
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     skip_header(f)
                     while True:
                         data = f.read(1024)
@@ -472,7 +472,7 @@ class LihuiyuDevice(Service, ViewPort):
                         buffer = bytes(data, "utf8")
                         self.output.write(buffer)
                     self.output.write(b"\n")
-            except (PermissionError, IOError, FileNotFoundError):
+            except (PermissionError, OSError, FileNotFoundError):
                 channel(_("Could not load: {filename}").format(filename=filename))
 
         @self.console_argument("filename", type=str)
@@ -496,7 +496,7 @@ class LihuiyuDevice(Service, ViewPort):
                     buffer = bytes(self.controller._buffer)
                     buffer += bytes(self.controller._queue)
                     f.write(buffer.decode("utf-8"))
-            except (PermissionError, IOError):
+            except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(

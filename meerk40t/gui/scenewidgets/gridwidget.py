@@ -168,9 +168,6 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         d = self.scene.context.device
-        mat = self.scene.widget_root.scene_widget.matrix
-        if mat.is_identity():
-            return
         self.zero_x = d.unit_width * d.show_origin_x
         self.zero_y = d.unit_height * d.show_origin_y
         self._calc_primary_grid()
