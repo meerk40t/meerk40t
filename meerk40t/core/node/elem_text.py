@@ -297,7 +297,6 @@ class TextNode(Node, Stroked):
         if self.font_family is not None:
             fonts = re.findall(REGEX_CSS_FONT_FAMILY, self.font_family)
             if len(fonts) == 0:
-                # print (f"Regex failed, adding '{self.font_family}'")
                 result.append(
                     self.font_family[1:-1]
                     if self.font_family.startswith('"')
@@ -305,8 +304,11 @@ class TextNode(Node, Stroked):
                     else self.font_family
                 )
             else:
+                if not "'" in self.font_family and not '"' in self.font_family:
+                    # Just for the sake of checking, add the full string -
+                    # this is most of the time the correct choice...
+                    result.append(self.font_family)
                 for font in fonts:
-                    # print (f"Adding '{font}'")
                     result.append(
                         font[1:-1]
                         if font.startswith('"')
