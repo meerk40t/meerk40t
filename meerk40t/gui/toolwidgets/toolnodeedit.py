@@ -100,6 +100,23 @@ class NodeIconPanel(wx.Panel):
             b"QmCC"
         )
 
+        node_close = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+            b"AAACpklEQVR4nO2YSWsVQRRGjwlOcWM0YCDguFHzUKMrccClszEgiCKSgBiCYOJGI7qX4MYg"
+            b"auLsD3DnhD5F/AGaxAHEZKFunDfqwiQ+KbgNl6K7051+TbpNHajV++7te19VV9dX4HA4HA7H"
+            b"xDAFOA5cAGrJMTuBkoy3QB05Za1qJPfNHMtzM3OBrUCLvCOvIjSzAOgQfdhoAbbIM1KhEjgI"
+            b"PAFGrML9xh0r/k2EGD2GgcfAAaCiXE1sAgZiFvLUyvExZnxJjT5gY9Imjsi/Yyd/DzwEbslS"
+            b"0r99ApZbeVYD3UBPyDC5TM4PATPUNt4mTvkkuww0KM1ea6mZJgokpwG44rOMO+MmagL+qgTv"
+            b"gBWWZpU1W6aJesrLSmBQPWMUaIwaPAf4oYL7A3aRfSk34VFjvaPfgGoicFYFfQUWBuhmAL3A"
+            b"bWAp6bIY+K7q6horYBbwWwUcJTt0qLp+AVVh4t1K/BmYRnaYLivEq29XmLhXCa+RPW6o+i6F"
+            b"CR8o4SGyx2FV3/0w4Usl3Eb22GHtpoH0K+F2su2B+ibF0upRwutkj5uqvotRt98vsuXlcvut"
+            b"ko+NJ24nm270JzBzrIAu61yzKOUClwH3gPPA1ADNEuuIciZK4moraEAObmlQLwdO71l7fDQ1"
+            b"1mfBLK/ZUR/QKEdmL3hQju1pNmEsQcHHlwxZx3izBcei0zI1xuRcFbeXlILVxIiYNO/ib40c"
+            b"kWxjZS4oxkVbgNU1drQo9jTMvnZbjtJvJkpil02uYoC//wO0kpANwIsElwemMM2zmPHPgXWU"
+            b"iQq5mikGzFDYeG3luhshZhh4BOwv53WQnxXeDDQDp2UrDBongPlWfJ3PzcuQ5GqW3JGsbBao"
+            b"lZnSzZwkp/jNzHr+k2aayDHzgHPyjlROdDEOh8PhmJz8A+PVbUCLkfVDAAAAAElFTkSuQmCC"
+        )
+
         self.icons = {
             # "command": [
             #           image, requires_selection,
@@ -110,11 +127,25 @@ class NodeIconPanel(wx.Panel):
             "d": [node_delete, True, True, True, _("Delete point"), None],
             "l": [node_line, True, True, False, _("Make segment a line"), None],
             "c": [node_curve, True, True, False, _("Make segment a curve"), None],
-            "s": [node_symmetric, True, True, False, _("Make segment symmetrical"), None],
+            "s": [
+                node_symmetric,
+                True,
+                True,
+                False,
+                _("Make segment symmetrical"),
+                None,
+            ],
             "j": [node_join, True, True, False, _("Join two segments"), None],
             "b": [node_break, True, True, False, _("Break segment apart"), None],
-            "o": [node_smooth, True, True, False, _("Smoothen transit to adjacent segments"), None],
-            "z": [node_smooth, True, True, False, _("Toggle closed status"), None],
+            "o": [
+                node_smooth,
+                True,
+                True,
+                False,
+                _("Smoothen transit to adjacent segments"),
+                None,
+            ],
+            "z": [node_close, False, True, False, _("Toggle closed status"), None],
         }
         for command in self.icons:
             entry = self.icons[command]
@@ -125,7 +156,7 @@ class NodeIconPanel(wx.Panel):
             # button.Bind(wx.EVT_BUTTON, self.button_action(command))
             button = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
             # button.SetBitmap(entry[0].GetBitmap(resize=25))
-            button.SetBitmap(entry[0].GetBitmap())
+            button.SetBitmap(entry[0].GetBitmap(resize=25))
             button.SetToolTip(entry[4])
             button.Enable(False)
             entry[5] = button
@@ -167,12 +198,12 @@ class NodeIconPanel(wx.Panel):
                         flag = False
                     entry[5].Enable(flag)
 
-
     def button_action(self, command):
         def action(event):
             self.context.signal("nodeedit", ("action", command))
 
         return action
+
 
 class NodeEditToolbar(MWindow):
     def __init__(self, *args, **kwds):
@@ -193,6 +224,7 @@ class NodeEditToolbar(MWindow):
     def submenu():
         # Suppress = True
         return ("", "Font-Selector", True)
+
 
 class EditTool(ToolWidget):
     """
@@ -287,7 +319,7 @@ class EditTool(ToolWidget):
 
     def on_signal_nodeedit(self, origin, args):
         # print (f"Signal: {origin} - {args}")
-        if args[0]=="action":
+        if args[0] == "action":
             keycode = args[1]
             self.perform_action(keycode)
 
@@ -583,16 +615,29 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
-        self.dealt_with = []
+        dealt_with = []
+        anyselected = False
+        for entry in self.nodes:
+            if entry["selected"] and entry["type"] == "point":
+                anyselected = True
+                break
+        if not anyselected:
+            # Lets select the last point, so the last segment will be closed/opened
+            for idx in range(len(self.nodes) - 1, -1, -1):
+                entry = self.nodes[idx]
+                if entry["type"] == "point":
+                    entry["selected"] = True
+                    break
+
         for idx in range(len(self.nodes) - 1, -1, -1):
             entry = self.nodes[idx]
             if entry["selected"] and entry["type"] == "point":
                 # What's the index of the last selected element
                 # Have we dealt with that before? ie not multiple toggles..
                 segstart = entry["start"]
-                if segstart in self.dealt_with:
+                if segstart in dealt_with:
                     continue
-                self.dealt_with.append(segstart)
+                dealt_with.append(segstart)
                 # Lets establish the last segment in the path
                 prev = None
                 is_closed = False
@@ -784,13 +829,15 @@ class EditTool(ToolWidget):
                         modified = True
                     else:
                         # Could be the first point...
-                        if prev is None and (next is None or isinstance(next, (Move, Close))):
+                        if prev is None and (
+                            next is None or isinstance(next, (Move, Close))
+                        ):
                             continue
-                        elif prev is None: # # Move
+                        elif prev is None:  # # Move
                             seg.end = Point(next.end.x, next.end.y)
                             self.element.path._segments.pop(idx + 1)
                             modified = True
-                        elif isinstance(seg, Move): # # Move
+                        elif isinstance(seg, Move):  # # Move
                             seg.end = Point(next.end.x, next.end.y)
                             self.element.path._segments.pop(idx + 1)
                             modified = True
