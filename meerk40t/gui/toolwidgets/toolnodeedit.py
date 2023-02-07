@@ -147,16 +147,17 @@ class NodeIconPanel(wx.Panel):
             ],
             "z": [node_close, False, True, False, _("Toggle closed status"), None],
         }
+        icon_size = 50
         for command in self.icons:
             entry = self.icons[command]
-            # button = wx.Button(self, wx.ID_ANY, "")
-            # button.SetBitmap(entry[0].GetBitmap(resize=25))
-            # button.SetToolTip(entry[3])
-            # button.SetSize(wx.Size(35, 35))
-            # button.Bind(wx.EVT_BUTTON, self.button_action(command))
-            button = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-            # button.SetBitmap(entry[0].GetBitmap(resize=25))
-            button.SetBitmap(entry[0].GetBitmap(resize=25))
+            button = wx.Button(self, wx.ID_ANY, "", size=wx.Size(icon_size + 10, icon_size + 10))
+            button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
+            button.Bind(wx.EVT_BUTTON, self.button_action(command))
+            # button = wx.StaticBitmap(
+            #     self, wx.ID_ANY, size=wx.Size(icon_size + 10, icon_size + 10)
+            # )
+            # # button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
+            # button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
             button.SetToolTip(entry[4])
             button.Enable(False)
             entry[5] = button
@@ -207,7 +208,10 @@ class NodeIconPanel(wx.Panel):
 
 class NodeEditToolbar(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(330, 70, submenu="", *args, **kwds)
+        iconsize = 25
+        iconsize += 10
+        iconcount = 10
+        super().__init__(iconcount * iconsize -10, iconsize + 35, submenu="", *args, **kwds)
         self.panel = NodeIconPanel(self, wx.ID_ANY, context=self.context)
         self.SetTitle(_("Node-Editor"))
 
@@ -223,7 +227,7 @@ class NodeEditToolbar(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Font-Selector", True)
+        return ("", "Node-Editor", True)
 
 
 class EditTool(ToolWidget):
@@ -545,9 +549,9 @@ class EditTool(ToolWidget):
             offset /= s
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             idx = -1
+            node = self.element
             for entry in self.nodes:
                 idx += 1
-                node = self.element
                 ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
                 if entry["type"] == "point":
                     if idx == self.selected_index or entry["selected"]:
@@ -1177,9 +1181,9 @@ class EditTool(ToolWidget):
             if self.nodes:
                 w = offset * 4
                 h = offset * 4
+                node = self.element
                 for i, entry in enumerate(self.nodes):
                     pt = entry["point"]
-                    node = self.element
                     ptx, pty = node.matrix.point_in_matrix_space(pt)
                     x = ptx - 2 * offset
                     y = pty - 2 * offset
@@ -1231,45 +1235,8 @@ class EditTool(ToolWidget):
                     return RESPONSE_CONSUME
                 current = self.nodes[self.selected_index]
                 pt = current["point"]
-                node = self.element
-                # pnode = current["prev"]
-                # if pnode is not None:
-                #     if pnode.start is not None:
-                #         sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
-                #     else:
-                #         sx = "<none>"
-                #     if pnode.end is not None:
-                #         sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
-                #     else:
-                #         sy = "<none>"
-                #     print (f"Prev: {pnode.d()}, {sx} - {sy}")
-                # else:
-                #     print ("Prev: ---")
-                # pnode = current["segment"]
-                # if pnode.start is not None:
-                #     sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
-                # else:
-                #     sx = "<none>"
-                # if pnode.end is not None:
-                #     sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
-                # else:
-                #     sy = "<none>"
-                # print (f"This: {pnode.d()}, {sx} - {sy}")
-                # pnode = current["next"]
-                # if pnode is not None:
-                #     if pnode.start is not None:
-                #         sx = f"{pnode.start.x:.1f}, {pnode.start.y:.1f}"
-                #     else:
-                #         sx = "<none>"
-                #     if pnode.end is not None:
-                #         sy = f"{pnode.end.x:.1f}, {pnode.end.y:.1f}"
-                #     else:
-                #         sy = "<none>"
-                #     print (f"Next: {pnode.d()}, {sx} - {sy}")
-                # else:
-                #     print ("Next: ---")
 
-                m = node.matrix.point_in_inverse_space(space_pos[:2])
+                m = self.element.matrix.point_in_inverse_space(space_pos[:2])
                 pt.x = m[0]
                 pt.y = m[1]
                 if self.node_type == "path":
