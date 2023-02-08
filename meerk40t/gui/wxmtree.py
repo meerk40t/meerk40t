@@ -466,12 +466,18 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
             # A timer can update after the tree closes.
+            return
+
+    def check_validity(self, item):
+        if item is None or not item.IsOk():
+            # raise ValueError("Bad Item")
+            self.rebuild_tree()
+            self.elements.signal("refresh_scene", "Scene")
             return
 
     def selected(self, node):
@@ -485,8 +491,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("selected", node)
@@ -502,8 +507,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("emphasized", node)
@@ -519,8 +523,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("targeted", node)
@@ -537,8 +540,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if item is None or not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
@@ -595,8 +597,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
@@ -619,8 +620,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.wxtree.ExpandAllChildren(item)
         self.set_expanded(item, 1)
 
@@ -653,8 +653,7 @@ class ShadowTree:
         @return:
         """
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # Special treatment for branches, they only collapse fully,
         # if all their childrens were collapsed already
         if node.type.startswith("branch"):
@@ -692,8 +691,7 @@ class ShadowTree:
         if item is None:
             # Could be a faulty refresh during an undo.
             return
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.set_icon(node, force=False)
         self.on_force_element_update(node)
 
@@ -708,8 +706,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.wxtree.EnsureVisible(item)
         for s in self.wxtree.GetSelections():
             self.wxtree.SelectItem(s, False)
@@ -988,8 +985,7 @@ class ShadowTree:
         item = node._item
         if item is None:
             raise ValueError("Item was None for node " + repr(node))
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # We might need to update the decorations for all parent objects
         e = node.parent
         while e is not None:
