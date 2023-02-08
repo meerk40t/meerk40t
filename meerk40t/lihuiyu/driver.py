@@ -1309,10 +1309,6 @@ class LihuiyuDriver(Parameters):
         old_current = self.service.current
         if dx == 0 and dy == 0:
             return
-        if on:
-            self.laser_on()
-        else:
-            self.laser_off()
         if abs(dx) == abs(dy):
             self._x_engaged = True  # Set both on
             self._y_engaged = True
@@ -1335,9 +1331,13 @@ class LihuiyuDriver(Parameters):
             self.native_x += dx
             self.native_y += dy
             self(self.CODE_ANGLE)
+            if on:
+                self.laser_on()
+            else:
+                self.laser_off()
             self(lhymicro_distance(abs(dy)))
         else:
-            self._goto_xy(dx, dy)
+            self._goto_xy(dx, dy, on=on)
 
         new_current = self.service.current
         self.service.signal(
