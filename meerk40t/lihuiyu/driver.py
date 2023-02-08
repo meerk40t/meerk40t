@@ -1266,7 +1266,7 @@ class LihuiyuDriver(Parameters):
         self._y_engaged = False
         self._horizontal_major = False
 
-    def _goto_xy(self, dx, dy):
+    def _goto_xy(self, dx, dy, on=None):
         rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
             self.native_x += dx
@@ -1280,6 +1280,11 @@ class LihuiyuDriver(Parameters):
                     self._leftward = True
             self._x_engaged = True
             self._y_engaged = False
+            if on is not None:
+                if on:
+                    self.laser_on()
+                else:
+                    self.laser_off()
             self(lhymicro_distance(abs(dx)))
         if dy != 0:
             self.native_y += dy
@@ -1293,6 +1298,11 @@ class LihuiyuDriver(Parameters):
                     self._topward = True
             self._x_engaged = False
             self._y_engaged = True
+            if on is not None:
+                if on:
+                    self.laser_on()
+                else:
+                    self.laser_off()
             self(lhymicro_distance(abs(dy)))
 
     def _goto_octent(self, dx, dy, on):
