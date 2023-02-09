@@ -79,6 +79,22 @@ class PlotCut(CutObject):
         # if self.vertical_raster or self.horizontal_raster:
         return True
 
+    @property
+    def plot(self):
+        last_xx = None
+        last_yy = None
+        for i in range(0, len(self._points)):
+            x, y = self._points[i]
+            if last_xx is not None:
+                # Will not happen if i == 0
+                power = self._powers[i-1]
+                yield last_xx, last_yy, power, x, y
+            last_xx = x
+            last_yy = y
+
+    def plot_init(self, x, y):
+        self._points.append((x, y))
+
     def plot_extend(self, plot):
         for x, y, laser in plot:
             self.plot_append(x, y, laser)
