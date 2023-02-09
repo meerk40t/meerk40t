@@ -12,6 +12,7 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse
 
+_ = wx.GetTranslation
 
 class CircleTool(ToolWidget):
     """
@@ -25,8 +26,8 @@ class CircleTool(ToolWidget):
         self.start_position = None
         self.p1 = None
         self.p2 = None
-        # 0 -> old mode, 1 define center
-        self.creation_mode = 1
+        # 0 -> from corner, 1 from center
+        self.creation_mode = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -76,6 +77,7 @@ class CircleTool(ToolWidget):
                     ),
                     radius=Length(amount=radius, digits=2, preferred_units=units),
                 )
+                s += _(" (Press Alt-Key to draw from center)")
                 self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -85,9 +87,14 @@ class CircleTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         response = RESPONSE_CHAIN
+        if "alt" in modifiers:
+            self.creation_mode = 1
+        else:
+            self.creation_mode = 0
         if event_type == "leftdown":
             self.scene.tool_active = True
             if nearest_snap is None:

@@ -10,6 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Rect
 
+_ = wx.GetTranslation
 
 class RectTool(ToolWidget):
     """
@@ -23,13 +24,26 @@ class RectTool(ToolWidget):
         self.start_position = None
         self.p1 = None
         self.p2 = None
+        # 0 -> from corner, 1 from center
+        self.creation_mode = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            x0 = min(self.p1.real, self.p2.real)
-            y0 = min(self.p1.imag, self.p2.imag)
-            x1 = max(self.p1.real, self.p2.real)
-            y1 = max(self.p1.imag, self.p2.imag)
+            if self.creation_mode == 1:
+                # From center (p1 center, p2 one corner)
+                p_x = self.p1.real - (self.p2.real - self.p1.real)
+                p_y = self.p1.imag - (self.p2.imag - self.p1.imag)
+                x0 = min(p_x, self.p2.real)
+                y0 = min(p_y, self.p2.imag)
+                x1 = max(p_x, self.p2.real)
+                y1 = max(p_y, self.p2.imag)
+            else:
+                # From corner (p1 corner, p2 corner)
+                x0 = min(self.p1.real, self.p2.real)
+                y0 = min(self.p1.imag, self.p2.imag)
+                x1 = max(self.p1.real, self.p2.real)
+                y1 = max(self.p1.imag, self.p2.imag)
+
             elements = self.scene.context.elements
             if elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
@@ -53,6 +67,7 @@ class RectTool(ToolWidget):
                 a=Length(amount=x1 - x0, digits=2, preferred_units=units),
                 b=Length(amount=y1 - y0, digits=2, preferred_units=units),
             )
+            s += _(" (Press Alt-Key to draw from center)")
             self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -62,9 +77,14 @@ class RectTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         response = RESPONSE_CHAIN
+        if "alt" in modifiers:
+            self.creation_mode = 1
+        else:
+            self.creation_mode = 0
         if event_type == "leftdown":
             self.scene.tool_active = True
             if nearest_snap is None:
@@ -96,10 +116,6 @@ class RectTool(ToolWidget):
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
                     self.p2 = complex(nearest_snap[0], nearest_snap[1])
-                x0 = min(self.p1.real, self.p2.real)
-                y0 = min(self.p1.imag, self.p2.imag)
-                x1 = max(self.p1.real, self.p2.real)
-                y1 = max(self.p1.imag, self.p2.imag)
                 dx = self.p1.real - self.p2.real
                 dy = self.p1.imag - self.p2.imag
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
@@ -110,6 +126,20 @@ class RectTool(ToolWidget):
                     self.scene.context.signal("statusmsg", "")
                     response = RESPONSE_ABORT
                     return response
+                if self.creation_mode == 1:
+                    # From center (p1 center, p2 one corner)
+                    p_x = self.p1.real - (self.p2.real - self.p1.real)
+                    p_y = self.p1.imag - (self.p2.imag - self.p1.imag)
+                    x0 = min(p_x, self.p2.real)
+                    y0 = min(p_y, self.p2.imag)
+                    x1 = max(p_x, self.p2.real)
+                    y1 = max(p_y, self.p2.imag)
+                else:
+                    # From corner (p1 corner, p2 corner)
+                    x0 = min(self.p1.real, self.p2.real)
+                    y0 = min(self.p1.imag, self.p2.imag)
+                    x1 = max(self.p1.real, self.p2.real)
+                    y1 = max(self.p1.imag, self.p2.imag)
                 rect = Rect(x0, y0, x1 - x0, y1 - y0)
                 if not rect.is_degenerate():
                     elements = self.scene.context.elements
