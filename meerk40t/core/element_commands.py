@@ -5157,6 +5157,7 @@ def init_commands(kernel):
             tx = 0
         if ty is None:
             ty = 0
+        changes = False
         matrix = Matrix.translate(tx, ty)
         try:
             if not absolute:
@@ -5170,6 +5171,7 @@ def init_commands(kernel):
 
                     node.matrix *= matrix
                     node.translated(tx, ty)
+                    changes = True
             else:
                 for node in data:
                     if (
@@ -5185,8 +5187,11 @@ def init_commands(kernel):
                     matrix = Matrix.translate(ntx, nty)
                     node.matrix *= matrix
                     node.translated(ntx, nty)
+                    changes = True
         except ValueError:
             raise CommandSyntaxError
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -5208,7 +5213,7 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
-
+        changes = False
         dbounds = Node.union_bounds(data)
         for node in data:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
@@ -5220,6 +5225,9 @@ def init_commands(kernel):
                 node.matrix.post_translate(dx, dy)
                 # node.modified()
                 node.translated(dx, dy)
+                changes = True
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -5987,9 +5995,16 @@ def init_commands(kernel):
         self._clipboard[destination] = []
         for e in data:
             copy_node = copy(e)
+            # Need to add stroke and fill, as copy will take the
+            # default values for these attributes
+            for optional in ("fill", "stroke"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+            hadoptional = False
             for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
+                    hadoptional = True
             self._clipboard[destination].append(copy_node)
         # Let the world know we have filled the clipboard
         self.signal("icons")
@@ -6007,11 +6022,32 @@ def init_commands(kernel):
         command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs
     ):
         destination = self._clipboard_default
+        pasted = []
         try:
-            pasted = [copy(e) for e in self._clipboard[destination]]
+            for e in self._clipboard[destination]:
+                copy_node = copy(e)
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                for optional in ("fill", "stroke"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                hadoptional = False
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                        hadoptional = True
+                if hadoptional:
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, copy_node)
+
+                pasted.append(copy_node)
         except (TypeError, KeyError):
             channel(_("Error: Clipboard Empty"))
             return
+        if len(pasted) == 0:
+            channel(_("Error: Clipboard Empty"))
+            return
+
         if dx is not None:
             dx = float(dx)
         else:
@@ -6028,12 +6064,19 @@ def init_commands(kernel):
             group = self.elem_branch.add(type="group", label="Group", id="Copy")
         else:
             group = self.elem_branch
+        target = []
         for p in pasted:
             if hasattr(p, "label"):
                 s = "Copy" if p.label is None else f"{p.label} (copy)"
                 p.label = s
             group.add_node(p)
-        self.set_emphasis([group])
+            target.append(p)
+        # Make sure we are selecting the right thing...
+        if len(pasted) > 1:
+            self.set_emphasis([group])
+        else:
+            self.set_emphasis(target)
+
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
         post.append(classify_new(pasted))
