@@ -116,9 +116,26 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
-        for n in list(node.children):
-            node.insert_sibling(n)
-        node.remove_node()  # Removing group/file node.
+        to_treat = []
+        for gnode in self.flat(selected=True, cascade=False, types=("group", "file")):
+            enode = gnode
+            while True:
+                if enode.parent is None or enode.parent is self.elem_branch:
+                    if enode not in to_treat:
+                        to_treat.append(enode)
+                    break
+                else:
+                    if enode.parent.selected:
+                        enode = enode.parent
+                    else:
+                        if enode not in to_treat:
+                            to_treat.append(enode)
+                        break
+
+        for gnode in to_treat:
+            for n in list(gnode.children):
+                gnode.insert_sibling(n)
+            gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
