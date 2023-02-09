@@ -1713,6 +1713,12 @@ def init_tree(kernel):
                     oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
+                # There are some challenges around the treatment
+                # of arcs within svgelements, so let's circumvent
+                # them for the time being (until resolved)
+                # by replacing arc segments with cubic beziers
+                if node.type in ("elem path", "elem ellipse"):
+                    path.approximate_arcs_with_cubics()
             except AttributeError:
                 return
             newnode = node.replace_node(path=path, type="elem path")
