@@ -130,7 +130,11 @@ def init_tree(kernel):
             while needs_repetition:
                 needs_repetition = False
                 cl = list(snode.children)
-                if len(cl) == 1:
+                if len(cl) == 0:
+                    # No Children? Remove
+                    amount = 1
+                    snode.remove_node()
+                elif len(cl) == 1:
                     gnode = cl[0]
                     if gnode is not None and gnode.type == "group":
                         for n in list(gnode.children):
@@ -719,6 +723,24 @@ def init_tree(kernel):
         node.remove_node()
         self.set_emphasis(None)
 
+    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_operation(_("Remove transparent objects"), node_type=("group", "file"), help=_("Remove all elements that neither have a border nor a fill color"))
+    def remove_transparent(node, **kwargs):
+        res = 0
+        to_remove = []
+        for node in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
+            colored = False
+            if hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+                colored = True
+            if hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+                colored = True
+            if not colored:
+                res += 1
+                node.remove_node()
+
+        if res > 0:
+            self.signal("rebuild_tree")
+
     # ==========
     # Remove Operations (If No Tree Selected)
     # Note: This code would rarely match anything since the tree selected will almost always be true if we have
@@ -757,6 +779,23 @@ def init_tree(kernel):
     def remove_n_ops(node, **kwargs):
         self("operation delete\n")
 
+    @tree_operation(
+        _("Select all elements of same type"),
+        node_type=elem_nodes,
+        help=_("Select all elements in scene, that have the same type as this node"),
+    )
+    def select_similar(node, **kwargs):
+        ntype = node.type
+        changes = False
+        for e in self.elems():
+            if e.type == ntype and not e.emphasized:
+                e.emphasized = True
+                e.selected = True
+                changes = True
+        if changes:
+            self.validate_selected_area()
+            self.signal("refresh_scene", "Scene")
+
     # ==========
     # REMOVE ELEMENTS
     # ==========
@@ -770,6 +809,8 @@ def init_tree(kernel):
     )
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
+
+
 
     # ==========
     # CONVERT TREE OPERATIONS
@@ -1569,6 +1610,11 @@ def init_tree(kernel):
                 copy_node = copy(e)
                 copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                 had_optional = False
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                for optional in ("fill", "stroke"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
                 for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                     if hasattr(e, optional):
                         had_optional = True

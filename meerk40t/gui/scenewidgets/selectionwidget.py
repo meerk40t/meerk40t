@@ -1334,6 +1334,12 @@ class MoveWidget(Widget):
         for e in list(elements.elems(emphasized=True)):
             copy_node = copy(e)
             had_optional = False
+            # Need to add stroke and fill, as copy will take the
+            # default values for these attributes
+            for optional in ("fill", "stroke"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+
             for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
