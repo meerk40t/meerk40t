@@ -779,20 +779,23 @@ class GRBLEmulator:
                     y = 0
                 else:
                     y = self.y
+
             if self.relative:
-                self.x += x
-                self.y += y
+                nx = self.x + x
+                ny = self.y + y
             else:
-                self.x = x
-                self.y = y
+                nx = x
+                ny = y
             if self.move_mode == 0:
                 self.plot_commit()
                 try:
-                    self.driver.move_abs(self.x, self.y)
+                    self.driver.move_abs(nx, ny)
+                    self.x = nx
+                    self.y = ny
                 except AttributeError:
                     pass
             elif self.move_mode == 1:
-                self.plot_location(self.x, self.y, self.settings["power"])
+                self.plot_location(nx, ny, self.settings["power"])
             elif self.move_mode in (2, 3):
                 # 2 = CW ARC
                 # 3 = CCW ARC
@@ -810,7 +813,7 @@ class GRBLEmulator:
                     arc = Arc(
                         start=(ox, oy),
                         center=(cx, cy),
-                        end=(self.x, self.y),
+                        end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
                     power = self.settings["power"]
@@ -821,7 +824,7 @@ class GRBLEmulator:
                     arc = Arc(
                         start=(ox, oy),
                         center=(cx, cy),
-                        end=(self.x, self.y),
+                        end=(nx, ny),
                         ccw=self.move_mode == 3,
                     )
                     power = self.settings["power"]
@@ -836,18 +839,24 @@ class GRBLEmulator:
 
         Or, starts a new plotcut if one is not already started.
 
+        First plotcut is a 0-power move to the current position. X and Y are set to plotted location
+
         @param x:
         @param y:
         @param power:
         @return:
         """
-        if self.plotcut is None:
-            self.plotcut = PlotCut(settings=dict(self.settings))
         matrix = self.units_to_device_matrix
-        x, y = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(x)), int(round(y)), power)
+        if self.plotcut is None:
+            ox, oy = matrix.transform_point([self.x, self.y])
+            self.plotcut = PlotCut(settings=dict(self.settings))
+            self.plotcut.plot_append(int(round(ox)), int(round(oy)), 0)
+        tx, ty = matrix.transform_point([x, y])
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
         if not self.program_mode:
             self.plot_commit()
+        self.x = x
+        self.y = y
 
     def plot_commit(self):
         """
