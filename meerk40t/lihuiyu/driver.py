@@ -305,7 +305,7 @@ class LihuiyuDriver(Parameters):
             x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
-        self._move_absolute(int(x), int(y))
+        self._move_absolute(int(round(x)), int(round(y)))
 
     def move_rel(self, dx, dy):
         """
