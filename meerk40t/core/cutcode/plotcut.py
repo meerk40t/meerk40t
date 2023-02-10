@@ -115,10 +115,10 @@ class PlotCut(CutObject):
             last_x, last_y = self._points[-1]
             dx = x - last_x
             dy = y - last_y
-            if self.max_dx is None or abs(dx) > self.max_dx:
-                self.max_dx = abs(dx)
-            if self.max_dy is None or abs(dy) > self.max_dy:
-                self.max_dy = abs(dy)
+            if self.max_dx is None or abs(dx) > abs(self.max_dx):
+                self.max_dx = dx
+            if self.max_dy is None or abs(dy) > abs(self.max_dy):
+                self.max_dy = dy
             if dy > 0:
                 self.travels_bottom = True
             if dy < 0:
