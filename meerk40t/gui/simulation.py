@@ -582,7 +582,7 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, OutputCut):
                 res = f"Output: {e.output_value:b} (mask: {e.output_mask:b})"
             elif isinstance(e, PlotCut):
-                res = f"Plot: {len(e.plot)} points"
+                res = f"Plot: {len(e)} points"
             elif isinstance(e, QuadCut):
                 res = f"Quad: {e.start[0]:.0f}, {e.start[1]:.0f} - {e.end[0]:.0f}, {e.end[1]:.0f}"
                 res += f" (c={e.c()[0]:.0f}, {e.c()[1]:.0f})"

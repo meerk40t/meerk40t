@@ -201,7 +201,7 @@ class BalorDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                for x, y, on in q.plot[1:]:
+                for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()

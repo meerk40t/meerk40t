@@ -64,7 +64,8 @@ class CutCode(CutGroup):
                     else:
                         path.move((x, y))
             elif isinstance(e, PlotCut):
-                for x, y, laser in e.plot:
+                path.move(e.start)
+                for ox, oy, laser, x, y in e.plot:
                     if laser:
                         path.line((x, y))
                     else:

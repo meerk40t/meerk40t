@@ -539,7 +539,7 @@ class LaserRender:
                 pass
             elif isinstance(cut, PlotCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
-                for px, py, pon in cut.plot:
+                for ox, oy, pon, px, py in cut.plot:
                     if pon == 0:
                         p.MoveToPoint(px + x, py + y)
                     else:

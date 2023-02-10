@@ -850,7 +850,7 @@ class GRBLEmulator:
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
             self.plotcut = PlotCut(settings=dict(self.settings))
-            self.plotcut.plot_append(int(round(ox)), int(round(oy)), 0)
+            self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
         self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
         if not self.program_mode:

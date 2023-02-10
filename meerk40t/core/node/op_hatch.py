@@ -377,5 +377,7 @@ class HatchOpNode(Node, Parameters):
             plot = PlotCut(settings=settings, color=node.stroke)
             for p in node.shape:
                 x, y = p
+                if plot:
+                    plot.plot_init(int(round(x)), int(round(y)))
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
