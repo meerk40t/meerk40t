@@ -533,10 +533,6 @@ class GRBLEmulator:
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
-                    try:
-                        self.driver.program_mode()
-                    except AttributeError:
-                        pass
                     self.program_mode = True
                 elif v == 5:
                     # Spindle Off - Laser Mode
@@ -715,11 +711,6 @@ class GRBLEmulator:
             for v in gc["s"]:
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
-                # if v == 0 and self.move_mode == 1:
-                #     # This is a hidden move, so treat it as one.
-                #     # print ("Hidden move...")
-                #     self.move_mode = 0
-
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.settings["power"] != v:
