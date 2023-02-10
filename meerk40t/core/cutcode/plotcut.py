@@ -44,6 +44,9 @@ class PlotCut(CutObject):
         parts.append(f"ymax: {self.max_y}")
         return f"PlotCut({', '.join(parts)})"
 
+    def __bool__(self):
+        return bool(self._points)
+
     def check_if_rasterable(self):
         """
         Rasterable plotcuts are heuristically defined as having a max step of less than 15 and
@@ -78,6 +81,12 @@ class PlotCut(CutObject):
             self.settings["raster_step_y"] = self.max_dy
         # if self.vertical_raster or self.horizontal_raster:
         return True
+
+    def transform(self, matrix):
+        for i in range(len(self._points)):
+            x, y = self._points[i]
+            x, y = matrix.transform_point([x, y])
+            self._points[i] = int(x), int(y)
 
     @property
     def plot(self):
