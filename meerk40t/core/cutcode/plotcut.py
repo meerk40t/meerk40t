@@ -167,11 +167,13 @@ class PlotCut(CutObject):
         if len(self._points) < 2:
             return 0
         start = Point(self._points[0])
-        end = Point(self._points[1])
-        if start.x < end.x:
-            return 1
-        else:
-            return -1
+        for i in range(1, len(self._points)):
+            end = Point(self._points[i])
+            if start.x < end.x:
+                return 1
+            elif start.x > end.x:
+                return -1
+        return 0
 
     def y_dir(self):
         if self.travels_top and not self.travels_bottom:
@@ -182,11 +184,13 @@ class PlotCut(CutObject):
         if len(self._points) < 2:
             return 0
         start = Point(self._points[0])
-        end = Point(self._points[1])
-        if start.y < end.y:
-            return 1
-        else:
-            return -1
+        for i in range(1, len(self._points)):
+            end = Point(self._points[i])
+            if start.y < end.y:
+                return 1
+            elif start.y > end.y:
+                return -1
+        return 0
 
     def upper(self):
         return self.min_x
