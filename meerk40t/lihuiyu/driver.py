@@ -1234,7 +1234,7 @@ class LihuiyuDriver(Parameters):
 
         step_amount = -set_step if self._leftward else set_step
         remaining = delta - step_amount
-        if remaining > 0 and self._leftward or remaining < 0 and not self._leftward:
+        if remaining > 0 and self._leftward or remaining < 0 and not self._leftward or abs(remaining) > 15:
             # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
             self._move_relative(remaining, 0)
