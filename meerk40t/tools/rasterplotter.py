@@ -443,7 +443,7 @@ class RasterPlotter:
                 lower_bound = min(next_y, lower_bound) - self.overscan
 
             if traveling_bottom:
-                while x <= upper_bound:
+                while y <= upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -457,7 +457,7 @@ class RasterPlotter:
                     if y == upper_bound:
                         break
             else:
-                while lower_bound <= x:
+                while lower_bound <= y:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -474,7 +474,7 @@ class RasterPlotter:
             if next_y is None:
                 # remaining image is blank, we stop right here.
                 return
-            yield x, next_y, 0
+            yield next_x, y, 0
             if y != next_y:
                 yield next_x, next_y, 0
             x = next_x
