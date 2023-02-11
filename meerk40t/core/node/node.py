@@ -1025,8 +1025,9 @@ class Node:
         """
         if children:
             self.remove_all_children(fast=fast)
-        self._parent._children.remove(self)
-        self._parent.set_dirty_bounds()
+        if self._parent is not None:
+            self._parent._children.remove(self)
+            self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
             self.notify_destroyed(self)
