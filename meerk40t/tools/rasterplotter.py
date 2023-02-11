@@ -443,7 +443,7 @@ class RasterPlotter:
                 lower_bound = min(next_y, lower_bound) - self.overscan
 
             if traveling_bottom:
-                while y <= upper_bound:
+                while y < upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -454,10 +454,8 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
-                    if y == upper_bound:
-                        break
             else:
-                while lower_bound <= y:
+                while lower_bound < y:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -468,8 +466,6 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
-                    if y == lower_bound:
-                        break
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
@@ -512,7 +508,7 @@ class RasterPlotter:
                 lower_bound = min(next_x, lower_bound) - self.overscan
 
             if traveling_right:
-                while x <= upper_bound:
+                while x < upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -523,10 +519,8 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
-                    if x == upper_bound:
-                        break
             else:
-                while lower_bound <= x:
+                while lower_bound < x:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
@@ -537,8 +531,6 @@ class RasterPlotter:
                         yield x, y, 0
                     else:
                         yield x, y, pixel
-                    if x == lower_bound:
-                        break
 
             if next_y is None:
                 # remaining image is blank, we stop right here.
