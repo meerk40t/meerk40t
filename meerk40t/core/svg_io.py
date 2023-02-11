@@ -653,7 +653,7 @@ class SVGProcessor:
                         if e.id == ref:
                             op.add_reference(e)
 
-        if self.requires_classification:
+        if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
     def check_for_mk_path_attributes(self, node, element):

@@ -587,6 +587,14 @@ class Elemental(Service):
         #     pnode.targeted = True
         #     pnode = pnode.parent
 
+    def have_unassigned_elements(self):
+        emptyset = False
+        for node in self.elems():
+            if len(node._references) == 0 and node.type not in ("file", "group"):
+                emptyset = True
+                break
+        return emptyset
+
     def load_persistent_penbox(self):
         settings = self.pen_data
         pens = settings.read_persistent_string_dict("pens", suffix=True)

@@ -169,6 +169,18 @@ and a wxpython version <= 4.1.1."""
                 "page": "Gui",
                 "section": "General",
             },
+            {
+                "attr": "disable_tree_tool_tips",
+                "object": kernel.root,
+                "default": False,
+                "type": bool,
+                "label": _("Disable Element-ToolTips"),
+                "tip": _(
+                    "You can suppress the tooltips over operations and elements in the tree"
+                ),
+                "page": "Gui",
+                "section": "General",
+            },
         ]
         kernel.register_choices("preferences", choices)
 

@@ -567,12 +567,16 @@ class LaserRender:
     def cache_shape(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
+        # Ensure Sync.
+        node.shape.transform = matrix
         cache = self.make_path(gc, node.shape)
         node._cache = cache
 
     def cache_path(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
+        # Ensure Sync.
+        node.path.transform = matrix
         cache = self.make_path(gc, node.path)
         node._cache = cache
 

@@ -4676,6 +4676,7 @@ def init_commands(kernel):
             # self.signal("rebuild_tree")
             self.signal("refresh_tree", apply)
         else:
+            self.signal("element_property_update", apply)
             self.signal("refresh_scene", "Scene")
         return "elements", data
 
@@ -4781,6 +4782,7 @@ def init_commands(kernel):
             #                self.signal("rebuild_tree")
             self.set_end_time("classify")
         else:
+            self.signal("element_property_update", apply)
             self.signal("refresh_scene", "Scene")
         return "elements", data
 

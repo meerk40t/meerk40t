@@ -548,6 +548,7 @@ def init_tree(kernel):
             if node.parent is not None:  # May have already removed.
                 node.remove_node()
         self.set_emphasis(None)
+        self.signal("refresh_tree")
 
     # @tree_conditional(
     #     lambda cond: len(
@@ -885,6 +886,7 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_separator_after()
+
     @tree_conditional(lambda node: self.classify_autogenerate)
     @tree_operation(
         _("Refresh classification"),
@@ -921,6 +923,26 @@ def init_tree(kernel):
         self.classify(list(self.elems()))
         self.classify_autogenerate = previous
         self.signal("refresh_tree", list(self.flat(types="reference")))
+
+    @tree_conditional(lambda cond: self.have_unassigned_elements())
+    @tree_operation(
+        _("Select unassigned elements"),
+        node_type="branch ops",
+        help=_("Select all elements that won't be burned"),
+    )
+    def select_unassigned(node, **kwargs):
+        changes = False
+        for node in self.elems():
+            if len(node._references) == 0:
+                emphasis = True
+            else:
+                emphasis = False
+            if node.emphasized != emphasis:
+                changes = True
+                node.emphasized = emphasis
+        if changes:
+            self.validate_selected_area()
+            self.signal("refresh_scene", "Scene")
 
     materials = [
         _("Wood"),
@@ -992,49 +1014,49 @@ def init_tree(kernel):
     @tree_operation(_("Append Image"), node_type="branch ops", help="")
     def append_operation_image(node, pos=None, **kwargs):
         self.op_branch.add("op image", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Raster"), node_type="branch ops", help="")
     def append_operation_raster(node, pos=None, **kwargs):
         self.op_branch.add("op raster", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Engrave"), node_type="branch ops", help="")
     def append_operation_engrave(node, pos=None, **kwargs):
         self.op_branch.add("op engrave", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Cut"), node_type="branch ops", help="")
     def append_operation_cut(node, pos=None, **kwargs):
         self.op_branch.add("op cut", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Hatch"), node_type="branch ops", help="")
     def append_operation_hatch(node, pos=None, **kwargs):
         self.op_branch.add("op hatch", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append operation"))
     @tree_operation(_("Append Dots"), node_type="branch ops", help="")
     def append_operation_dots(node, pos=None, **kwargs):
         self.op_branch.add("op dots", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home"), node_type="branch ops", help="")
     def append_operation_home(node, pos=None, **kwargs):
-        self.op_branch.add(
-            type="util home",
-            pos=pos,
-        )
+        self.op_branch.add(type="util home", pos=pos)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
     def append_operation_goto(node, pos=None, **kwargs):
-        self.op_branch.add(
-            type="util goto",
-            pos=pos,
-            x=0,
-            y=0,
-        )
+        self.op_branch.add(type="util goto", pos=pos, x=0, y=0)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(
@@ -1049,6 +1071,7 @@ def init_tree(kernel):
             x=None,
             y=None,
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Beep"), node_type="branch ops", help="")
@@ -1058,6 +1081,7 @@ def init_tree(kernel):
             pos=pos,
             command="beep",
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
@@ -1067,6 +1091,7 @@ def init_tree(kernel):
             pos=pos,
             command='interrupt "Spooling was interrupted"',
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("wait_time", _("Wait for how long (in seconds)?"), data_type=float)
@@ -1077,6 +1102,7 @@ def init_tree(kernel):
             pos=pos,
             wait=wait_time,
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Output"), node_type="branch ops", help="")
@@ -1088,6 +1114,7 @@ def init_tree(kernel):
             output_value=0,
             output_message=None,
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Input"), node_type="branch ops", help="")
@@ -1099,6 +1126,7 @@ def init_tree(kernel):
             input_value=0,
             input_message=None,
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Home/Beep/Interrupt"), node_type="branch ops", help="")
@@ -1106,6 +1134,7 @@ def init_tree(kernel):
         append_operation_home(node, **kwargs)
         append_operation_beep(node, **kwargs)
         append_operation_interrupt(node, **kwargs)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Origin/Beep/Interrupt"), node_type="branch ops", help="")
@@ -1113,6 +1142,7 @@ def init_tree(kernel):
         append_operation_goto(node, **kwargs)
         append_operation_beep(node, **kwargs)
         append_operation_interrupt(node, **kwargs)
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
@@ -1122,6 +1152,7 @@ def init_tree(kernel):
             pos=pos,
             command="quit",
         )
+        self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))
     @tree_prompt("opname", _("Console command to append to operations?"))
@@ -1132,6 +1163,7 @@ def init_tree(kernel):
             pos=pos,
             command=opname,
         )
+        self.signal("updateop_tree")
 
     @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
     def reclassify_operations(node, **kwargs):
@@ -1150,6 +1182,7 @@ def init_tree(kernel):
             for node in self.elems():
                 for ref in list(node._references):
                     ref.remove_node()
+        self.signal("refresh_tree")
 
     @tree_operation(
         _("Duplicate operation(s)"),
@@ -1466,6 +1499,7 @@ def init_tree(kernel):
         with self.static("remove_assign"):
             for node in list(self.elems(emphasized=True)):
                 rem_node(node)
+        self.signal("refresh_tree")
 
     @tree_separator_before()
     @tree_submenu(_("Assign Operation"))
