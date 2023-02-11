@@ -29,6 +29,9 @@ class EllipseTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
+            matrix = gc.GetTransform().Get()
+            pixel = 1.0 / matrix[0]
+            # print (f"1 Px = {pixel}, sx = {matrix[0]}")
             if self.creation_mode == 1:
                 # From center (p1 center, p2 one corner)
                 p_x = self.p1.real - (self.p2.real - self.p1.real)
@@ -62,6 +65,21 @@ class EllipseTool(ToolWidget):
                     )
                 )
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+            if abs(x1 - x0) > 10 * pixel and abs(y1 - y0) > 10 * pixel:
+                ccx = (x0 + x1) / 2
+                ccy = (y0 + y1) / 2
+                gc.StrokeLine(
+                    ccx - 4 * pixel,
+                    ccy - 4 * pixel,
+                    ccx + 4 * pixel,
+                    ccy + 4 * pixel,
+                )
+                gc.StrokeLine(
+                    ccx - 4 * pixel,
+                    ccy + 4 * pixel,
+                    ccx + 4 * pixel,
+                    ccy - 4 * pixel,
+                )
             units = self.scene.context.units_name
             s = "C=({cx}, {cy}), a={a}, b={b}".format(
                 cx=Length(amount=(x1 + x0) / 2, digits=2, preferred_units=units),
@@ -83,10 +101,15 @@ class EllipseTool(ToolWidget):
         **kwargs,
     ):
         response = RESPONSE_CHAIN
-        if "alt" in modifiers:
-            self.creation_mode = 1
+        update_required = False
+        if modifiers is None or (event_type=="key_up" and "alt" in modifiers) or ("alt" not in modifiers):
+            if self.creation_mode != 0:
+                self.creation_mode = 0
+                update_required = True
         else:
-            self.creation_mode = 0
+            if self.creation_mode != 1:
+                self.creation_mode = 1
+                update_required = True
         if event_type == "leftdown":
             self.scene.tool_active = True
             if nearest_snap is None:
@@ -179,4 +202,7 @@ class EllipseTool(ToolWidget):
             self.p1 = None
             self.p2 = None
             self.scene.context.signal("statusmsg", "")
+        elif update_required:
+            self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         return response
