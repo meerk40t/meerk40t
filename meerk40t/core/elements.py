@@ -1417,7 +1417,6 @@ class Elemental(Service):
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
-        special_occasion = False
         to_classify = []
         # if drop_node.type.startswith("op"):
         #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
@@ -1482,10 +1481,11 @@ class Elemental(Service):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
                 if drag_node._parent.type == "branch reg":
-                    to_classify.append(drag_node)
-                if special_occasion:
-                    for ref in list(drag_node._references):
-                        ref.remove_node()
+                    if drag_node.type in ("file", "group"):
+                        for e in drag_node.flat(elem_nodes):
+                            to_classify.append(e)
+                    else:
+                        to_classify.append(drag_node)
                 drop_node.drop(drag_node, modify=True)
                 success = True
         if self.classify_new and len(to_classify) > 0:

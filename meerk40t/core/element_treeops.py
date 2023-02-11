@@ -1,5 +1,6 @@
 import os.path
 from copy import copy
+import math
 
 from meerk40t.kernel import CommandSyntaxError
 
@@ -116,9 +117,26 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
-        for n in list(node.children):
-            node.insert_sibling(n)
-        node.remove_node()  # Removing group/file node.
+        to_treat = []
+        for gnode in self.flat(selected=True, cascade=False, types=("group", "file")):
+            enode = gnode
+            while True:
+                if enode.parent is None or enode.parent is self.elem_branch:
+                    if enode not in to_treat:
+                        to_treat.append(enode)
+                    break
+                else:
+                    if enode.parent.selected:
+                        enode = enode.parent
+                    else:
+                        if enode not in to_treat:
+                            to_treat.append(enode)
+                        break
+
+        for gnode in to_treat:
+            for n in list(gnode.children):
+                gnode.insert_sibling(n)
+            gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
@@ -810,7 +828,83 @@ def init_tree(kernel):
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
 
+    @tree_conditional(lambda node: isinstance(node.shape, Polygon) and  len(node.shape.points)>=3)
+    @tree_operation(
+        _("Make Polygon regular"),
+        node_type="elem polyline",
+        help="",
+    )
+    def make_polygon_regular(node, **kwargs):
+        # from .units import Length
+        # from ..svgelements import Color
 
+        # def mk_debug_point(x, y, col):
+        #     circ = Ellipse(cx=x, cy=y, r=float(Length("1mm")))
+        #     circ.transform = copy(node.shape.transform)
+        #     self.elem_branch.add(
+        #         shape=circ,
+        #         type="elem ellipse",
+        #         stroke=Color(col),
+        #         fill=Color(col),
+        #         matrix=copy(node.matrix),
+        #     )
+
+        if node is None or node.type != "elem polyline":
+            return
+        number_points = len(node.shape.points)
+        # print (f"Number of points: {number_points}")
+        # for prop in dir(node):
+        #     print (f"{prop} - {getattr(node, 'prop', '')}")
+        # for idx, pt in enumerate(node.shape.points):
+        #     print (f"{idx}: {pt.x:.1f}, {pt.y:.1f}")
+        if number_points < 3 or not isinstance(node.shape, Polygon):
+            return
+        pts = node.shape.points
+        dx = pts[1].x - pts[0].x
+        dy = pts[1].y - pts[0].y
+        baseline = math.sqrt(dx * dx + dy * dy)
+        apothem = baseline / (2 * math.tan(math.tau / (2* number_points)))
+        circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
+        midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
+        #  mk_debug_point(midpoint.x, midpoint.y, "black")
+        ax = 0
+        ay = 0
+        for idx, pt in enumerate(pts):
+            ax += pt.x
+            ay += pt.y
+        ax /= number_points
+        ay /= number_points
+        # The arithmetic center (ax, ay) indicates to which
+        # 'side' of the baseline the polygon needs to be constructed
+        arithmetic_center = Point(ax, ay)
+        # mk_debug_point(ax, ay, "green")
+        angle = pts[0].angle_to(pts[1])
+        midangle = midpoint.angle_to(arithmetic_center)
+        angle += math.tau / 4
+        first_point = Point.polar(midpoint, angle, apothem)
+        second_point = Point.polar(midpoint, angle + math.tau/2, apothem)
+        # mk_debug_point(first_point.x, first_point.y, "yellow")
+        # mk_debug_point(second_point.x, second_point.y, "cyan")
+        deltaangle = math.tau / number_points
+        d1 = arithmetic_center.distance_to(first_point)
+        d2 = arithmetic_center.distance_to(second_point)
+        if d1 < d2:
+            center_point = copy(first_point)
+        else:
+            center_point = copy(second_point)
+        # mk_debug_point(center_point.x, center_point.y, "red")
+
+        if center_point.angle_to(pts[0]) > center_point.angle_to(pts[1]):
+            deltaangle *= -1
+        angle = center_point.angle_to(pts[0])
+        for idx in range(number_points):
+            # if idx > 1:
+            pt = Point.polar(center_point, angle, circumradius)
+            pts[idx].x = pt.x
+            pts[idx].y = pt.y
+            angle += deltaangle
+        node.altered()
+        self.signal("refresh_scene", "Scene")
 
     # ==========
     # CONVERT TREE OPERATIONS
@@ -1759,6 +1853,12 @@ def init_tree(kernel):
                     oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
+                # There are some challenges around the treatment
+                # of arcs within svgelements, so let's circumvent
+                # them for the time being (until resolved)
+                # by replacing arc segments with cubic beziers
+                if node.type in ("elem path", "elem ellipse"):
+                    path.approximate_arcs_with_cubics()
             except AttributeError:
                 return
             newnode = node.replace_node(path=path, type="elem path")
