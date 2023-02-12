@@ -165,6 +165,7 @@ class MoshiDriver(Parameters):
                 # Moshi has no core GPIO functionality
                 pass
             else:
+                # Rastercut, PlotCut, Rawcut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     if self.hold_work(0):

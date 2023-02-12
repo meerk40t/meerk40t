@@ -280,6 +280,7 @@ class GRBLDriver(Parameters):
                 # GRBL has no core GPIO functionality
                 pass
             else:
+                #  Rastercut, rawcut, plotcut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     while self.paused:
