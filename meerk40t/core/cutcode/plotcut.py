@@ -81,6 +81,7 @@ class PlotCut(CutObject):
             self._points[i] = int(x), int(y)
 
     def plot_init(self, x, y):
+        assert(not self._points)
         self._points.append((x, y))
 
     def plot_extend(self, plot):
@@ -106,7 +107,7 @@ class PlotCut(CutObject):
                 self.travels_right = True
             if dx < 0:
                 self.travels_left = True
-        self._points.append((x,y))
+        self._points.append((x, y))
         self._powers.append(laser)
         if self.min_x is None or x < self.min_x:
             self.min_x = x
