@@ -82,16 +82,22 @@ class PlotCut(CutObject):
 
     @property
     def plot(self):
-        last_xx = None
-        last_yy = None
+        x1 = None
+        y1 = None
         for i in range(0, len(self._points)):
-            x, y = self._points[i]
-            if last_xx is not None:
-                # Will not happen if i == 0
+            x0, y0 = self._points[i]
+            if x1 is not None:
                 power = self._powers[i-1]
-                yield last_xx, last_yy, power, x, y
-            last_xx = x
-            last_yy = y
+                if self.h_raster and y0 != y1:
+                    yield x0, y0, power, x1, y0
+                    yield x1, y0, power, x1, y1
+                elif self.v_raster and x0 != x1:
+                    yield x0, y0, power, x0, y1
+                    yield x0, y1, power, x1, y1
+                else:
+                    yield x0, y0, power, x1, y1
+            x1 = x0
+            y1 = y0
 
     def plot_init(self, x, y):
         self._points.append((x, y))
