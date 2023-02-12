@@ -54,7 +54,6 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
-        self.smooth_limit = 15
 
         self.queue = []
 
