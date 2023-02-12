@@ -6,6 +6,7 @@ def get_ch341_interface(context, log):
     if context.mock:
         log(_("Using Mock Driver."))
         from .mock import MockCH341Driver as MockDriver
+
         yield MockDriver(channel=log, state=_state_change)
         return
 

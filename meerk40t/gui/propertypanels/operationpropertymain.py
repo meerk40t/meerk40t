@@ -1215,9 +1215,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
-        self.Bind(
-            wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing
-        )
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
 
     def pane_hide(self):
         self.panel_start.pane_hide()

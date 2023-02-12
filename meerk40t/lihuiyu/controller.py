@@ -259,7 +259,9 @@ class LihuiyuController:
             return  # OS denied permissions, no point checking anything else.
 
         self.close()
-        raise ConnectionRefusedError(_("No valid connection matched any given criteria."))
+        raise ConnectionRefusedError(
+            _("No valid connection matched any given criteria.")
+        )
 
     def _open_at_index(self, usb_index):
         _ = self.context.kernel.translation
@@ -273,15 +275,19 @@ class LihuiyuController:
                 )
         if self.context.usb_address != -1 and self.connection.address != -1:
             if self.connection.address != self.context.usb_address:
-                raise ConnectionRefusedError(_(
+                raise ConnectionRefusedError(
+                    _(
                         "K40 devices were found but they were rejected due to usb address."
-                    ))
+                    )
+                )
         if self.context.usb_version != -1:
             version = self.connection.get_chip_version()
             if version != self.context.usb_version:
-                raise ConnectionRefusedError(_(
-                    "K40 devices were found but they were rejected due to chip version."
-                ))
+                raise ConnectionRefusedError(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
         if self.context.serial_enable:
             if self.serial_confirmed:
                 return  # already passed.
@@ -468,9 +474,7 @@ class LihuiyuController:
     def challenge(self, serial):
         from hashlib import md5
 
-        challenge = bytearray.fromhex(
-            md5(bytes(serial.upper(), "utf8")).hexdigest()
-        )
+        challenge = bytearray.fromhex(md5(bytes(serial.upper(), "utf8")).hexdigest())
         packet = b"A%s" % challenge
         packet += b"F" * (30 - len(packet))
         packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])

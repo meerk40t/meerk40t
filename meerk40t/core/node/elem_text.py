@@ -311,8 +311,7 @@ class TextNode(Node, Stroked):
                 for font in fonts:
                     result.append(
                         font[1:-1]
-                        if font.startswith('"')
-                        or font.startswith("'")
+                        if font.startswith('"') or font.startswith("'")
                         else font
                     )
         return result

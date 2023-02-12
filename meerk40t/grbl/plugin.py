@@ -76,6 +76,7 @@ def plugin(kernel, lifecycle=None):
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
                 from meerk40t.grbl.emulator import GRBLEmulator
+
                 if quit:
                     try:
                         emulator = server.emulator
@@ -90,9 +91,7 @@ def plugin(kernel, lifecycle=None):
                     yield "Grbl 1.1f ['$' for help]\r"
                     yield "[MSG:’$H’|’$X’ to unlock]"
 
-                root.channel(
-                    "grbl/send", pure=True
-                ).greet = greet
+                root.channel("grbl/send", pure=True).greet = greet
 
                 channel(_("GRBL Mode."))
                 if verbose:
@@ -100,7 +99,9 @@ def plugin(kernel, lifecycle=None):
                     root.channel("grbl").watch(console)
                     server.events_channel.watch(console)
 
-                emulator = GRBLEmulator(root.device.driver, root.device.scene_to_device_matrix())
+                emulator = GRBLEmulator(
+                    root.device.driver, root.device.scene_to_device_matrix()
+                )
                 server.emulator = emulator
 
                 # Link emulator and server.

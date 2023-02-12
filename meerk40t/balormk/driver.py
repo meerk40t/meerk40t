@@ -118,7 +118,9 @@ class BalorDriver:
     def _wait_for_input_protocol(self, input_mask, input_value):
         required_passes = self.service.input_passes_required
         passes = 0
-        while self.connection and not self.connection.is_shutdown and not self._aborting:
+        while (
+            self.connection and not self.connection.is_shutdown and not self._aborting
+        ):
             read_port = self.connection.read_port()
             b = read_port[1]
             all_matched = True
@@ -228,7 +230,9 @@ class BalorDriver:
                             con.set_settings(settings)
                         else:
                             # We are using traditional power-scaling
-                            max_power = float(q.settings.get("power", self.service.default_power))
+                            max_power = float(
+                                q.settings.get("power", self.service.default_power)
+                            )
                             percent_power = max_power / 10.0
                             # Max power is the percent max power, scaled by the pixel power.
                             con.power(percent_power * on)

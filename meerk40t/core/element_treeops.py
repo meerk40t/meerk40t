@@ -121,9 +121,12 @@ def init_tree(kernel):
         node.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
+    @tree_operation(
+        _("Simplify group"),
+        node_type=("group", "file"),
+        help=_("Unlevel groups if they just contain another group"),
+    )
     def simplify_groups(node, **kwargs):
-
         def straighten(snode):
             amount = 0
             needs_repetition = True
@@ -139,7 +142,7 @@ def init_tree(kernel):
                         needs_repetition = True
                 else:
                     for n in cl:
-                        if n is not None and n.type=="group":
+                        if n is not None and n.type == "group":
                             fnd = straighten(n)
                             amount += fnd
             return amount
@@ -886,7 +889,6 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_separator_after()
-
     @tree_conditional(lambda node: self.classify_autogenerate)
     @tree_operation(
         _("Refresh classification"),

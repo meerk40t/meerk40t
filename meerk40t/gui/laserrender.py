@@ -841,7 +841,6 @@ class LaserRender:
                 except AttributeError:
                     use_font.SetPointSize(int(fsize))
 
-
             gc.Destroy()
             dc.SelectObject(wx.NullBitmap)
             dc.Destroy()

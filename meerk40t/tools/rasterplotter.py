@@ -436,7 +436,9 @@ class RasterPlotter:
             traveling_bottom = self.start_on_top if unidirectional else dy >= 0
             next_traveling_bottom = self.start_on_top if unidirectional else dy <= 0
 
-            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, topmost_pixel=next_traveling_bottom)
+            next_x, next_y = self.calculate_next_vertical_pixel(
+                x + dx, dx, topmost_pixel=next_traveling_bottom
+            )
             if next_y is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
                 upper_bound = max(next_y, upper_bound) + self.overscan
@@ -501,7 +503,9 @@ class RasterPlotter:
             traveling_right = self.start_on_left if unidirectional else dx >= 0
             next_traveling_right = self.start_on_left if unidirectional else dx <= 0
 
-            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, leftmost_pixel=next_traveling_right)
+            next_x, next_y = self.calculate_next_horizontal_pixel(
+                y + dy, dy, leftmost_pixel=next_traveling_right
+            )
             if next_x is not None:
                 # If we have a next scanline, we must end after the last pixel of that scanline too.
                 upper_bound = max(next_x, upper_bound) + self.overscan

@@ -247,7 +247,7 @@ class GRBLEmulator:
                     pass
             elif c in (ord("\r"), ord("\n")):
                 # Process CRLF endlines
-                line = ''.join(self._buffer)
+                line = "".join(self._buffer)
                 if self._grbl_specific:
                     self._grbl_specific = False
                     cmd = self._grbl_special(line)

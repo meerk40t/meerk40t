@@ -447,7 +447,9 @@ class LihuiyuDriver(Parameters):
         self._request_horizontal_major = horizontal
 
         self._raster_step_swing_index = 0
-        self._raster_step_float = self.raster_step_y if horizontal else self.raster_step_x
+        self._raster_step_float = (
+            self.raster_step_y if horizontal else self.raster_step_x
+        )
         self._raster_step_g_value = int(math.floor(self._raster_step_float))
 
         if self._request_leftward is not None:
@@ -1200,14 +1202,22 @@ class LihuiyuDriver(Parameters):
 
         step_amount = -abs(set_step) if self._topward else abs(set_step)
         remaining = delta - step_amount
-        if remaining > 0 and self._topward or remaining < 0 and not self._topward or abs(remaining) > 15:
+        if (
+            remaining > 0
+            and self._topward
+            or remaining < 0
+            and not self._topward
+            or abs(remaining) > 15
+        ):
             # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
             self._move_relative(0, remaining)
             self.raster_mode()
             remaining = 0
         if remaining:
-            self._goto_octent(-abs(remaining) if self._leftward else abs(remaining), remaining, False)
+            self._goto_octent(
+                -abs(remaining) if self._leftward else abs(remaining), remaining, False
+            )
         self._x_engaged = True
         self._y_engaged = False
         # We reverse direction and step.
@@ -1238,14 +1248,22 @@ class LihuiyuDriver(Parameters):
 
         step_amount = -set_step if self._leftward else set_step
         remaining = delta - step_amount
-        if remaining > 0 and self._leftward or remaining < 0 and not self._leftward or abs(remaining) > 15:
+        if (
+            remaining > 0
+            and self._leftward
+            or remaining < 0
+            and not self._leftward
+            or abs(remaining) > 15
+        ):
             # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
             self._move_relative(remaining, 0)
             self.raster_mode()
             remaining = 0
         if remaining:
-            self._goto_octent(remaining, -abs(remaining) if self._topward else abs(remaining), False)
+            self._goto_octent(
+                remaining, -abs(remaining) if self._topward else abs(remaining), False
+            )
         self._y_engaged = True
         self._x_engaged = False
         # We reverse direction and step.

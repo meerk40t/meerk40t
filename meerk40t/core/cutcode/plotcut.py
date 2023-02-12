@@ -84,7 +84,7 @@ class PlotCut(CutObject):
             self._points[i] = int(x), int(y)
 
     def plot_init(self, x, y):
-        assert(not self._points)
+        assert not self._points
         self._points.append((x, y))
 
     def plot_extend(self, plot):
@@ -102,9 +102,13 @@ class PlotCut(CutObject):
                 self.max_dx = dx
             if self.max_dy is None or abs(dy) > abs(self.max_dy):
                 self.max_dy = dy
-            if abs(dx) > 0 and (self.minmax_dx is None or abs(dx) < abs(self.minmax_dx)):
+            if abs(dx) > 0 and (
+                self.minmax_dx is None or abs(dx) < abs(self.minmax_dx)
+            ):
                 self.minmax_dx = dx
-            if abs(dy) > 0 and (self.minmax_dy is None or abs(dy) < abs(self.minmax_dy)):
+            if abs(dy) > 0 and (
+                self.minmax_dy is None or abs(dy) < abs(self.minmax_dy)
+            ):
                 self.minmax_dy = dy
             if dy > 0:
                 self.travels_bottom = True
@@ -227,7 +231,7 @@ class PlotCut(CutObject):
         for i in range(0, len(self._points)):
             x1, y1 = self._points[i]
             if x0 is not None:
-                power = self._powers[i-1]
+                power = self._powers[i - 1]
                 if self.h_raster and y1 != y0:
                     yield x0, y0, power, x1, y0
                     yield x1, y0, power, x1, y1
@@ -243,7 +247,9 @@ class PlotCut(CutObject):
     def generator(self):
         for x0, y0, power, x1, y1 in self.plot:
             if x0 != x1 and y0 != y1:
-                for zx, zy in ZinglPlotter.plot_line(int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))):
+                for zx, zy in ZinglPlotter.plot_line(
+                    int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))
+                ):
                     yield zx, zy, power
             else:
                 yield x1, y1, power

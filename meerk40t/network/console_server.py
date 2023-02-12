@@ -55,4 +55,3 @@ def plugin(kernel, lifecycle=None):
             except (OSError, ValueError):
                 channel(_("Server failed on port: {port}").format(port=port))
             return
-
