@@ -124,11 +124,11 @@ class NodeIconPanel(wx.Panel):
             #           image, requires_selection,
             #           active_for_path, active_for_poly,
             #           "tooltiptext", button],
-            "i": [node_add, True, True, True, _("Insert point before"), None],
-            "a": [node_append, False, True, True, _("Append point at end"), None],
-            "d": [node_delete, True, True, True, _("Delete point"), None],
-            "l": [node_line, True, True, False, _("Make segment a line"), None],
-            "c": [node_curve, True, True, False, _("Make segment a curve"), None],
+            "i": [node_add, True, True, True, _("Insert point before"), None, _("Insert")],
+            "a": [node_append, False, True, True, _("Append point at end"), None, _("Append")],
+            "d": [node_delete, True, True, True, _("Delete point"), None, _("Delete"), ],
+            "l": [node_line, True, True, False, _("Make segment a line"), None, _("> Line"),],
+            "c": [node_curve, True, True, False, _("Make segment a curve"), None, _("> Curve"),],
             "s": [
                 node_symmetric,
                 True,
@@ -136,9 +136,10 @@ class NodeIconPanel(wx.Panel):
                 False,
                 _("Make segment symmetrical"),
                 None,
+                _("Symmetric"),
             ],
-            "j": [node_join, True, True, False, _("Join two segments"), None],
-            "b": [node_break, True, True, False, _("Break segment apart"), None],
+            "j": [node_join, True, True, False, _("Join two segments"), None, _("Join"),],
+            "b": [node_break, True, True, False, _("Break segment apart"), None, _("Break"),],
             "o": [
                 node_smooth,
                 True,
@@ -146,15 +147,25 @@ class NodeIconPanel(wx.Panel):
                 False,
                 _("Smoothen transit to adjacent segments"),
                 None,
+                _("Smooth"),
             ],
-            "z": [node_close, False, True, True, _("Toggle closed status"), None],
+            "z": [node_close, False, True, True, _("Toggle closed status"), None, _("Close"), ],
         }
         icon_size = 50
+        font = wx.Font(
+            7,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        # label = entry[6]
+        label = ""
         for command in self.icons:
             entry = self.icons[command]
-            button = wx.Button(self, wx.ID_ANY, "", size=wx.Size(icon_size + 10, icon_size + 10))
+            button = wx.Button(self, wx.ID_ANY, label, size=wx.Size(icon_size + 10, icon_size + 10), style=wx.BU_BOTTOM|wx.BU_LEFT)
             button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
             button.Bind(wx.EVT_BUTTON, self.button_action(command))
+            button.SetFont(font)
             # button = wx.StaticBitmap(
             #     self, wx.ID_ANY, size=wx.Size(icon_size + 10, icon_size + 10)
             # )
@@ -966,6 +977,29 @@ class EditTool(ToolWidget):
                     end=Point(nextseg.start.x, nextseg.start.y),
                 )
                 self.element.path._segments.insert(idx + 1, newseg)
+                # Now let's validate whether the 'right' path still has a
+                # close segment at it's end. That will be removed as this would
+                # create an unwanted behaviour
+                prev = None
+                is_closed = False
+                for sidx in range(idx + 1, len(self.element.path._segments), 1):
+                    seg = self.element.path._segments[sidx]
+                    if isinstance(seg, Move) and prev is None:
+                        # Not the one at the very beginning!
+                        continue
+                    elif isinstance(seg, Move):
+                        # Ready
+                        break
+                    elif isinstance(seg, Close):
+                        # Ready
+                        is_closed = True
+                        break
+                    lastidx = sidx
+                    prev = seg
+                if is_closed:
+                    # it's enough just to delete it...
+                    self.element.path._segments.pop(lastidx + 1)
+
                 modified = True
         if modified:
             self.modify_element(True)
