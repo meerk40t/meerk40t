@@ -80,25 +80,6 @@ class PlotCut(CutObject):
             x, y = matrix.transform_point([x, y])
             self._points[i] = int(x), int(y)
 
-    @property
-    def plot(self):
-        x1 = None
-        y1 = None
-        for i in range(0, len(self._points)):
-            x0, y0 = self._points[i]
-            if x1 is not None:
-                power = self._powers[i-1]
-                if self.h_raster and y0 != y1:
-                    yield x0, y0, power, x1, y0
-                    yield x1, y0, power, x1, y1
-                elif self.v_raster and x0 != x1:
-                    yield x0, y0, power, x0, y1
-                    yield x0, y1, power, x1, y1
-                else:
-                    yield x0, y0, power, x1, y1
-            x1 = x0
-            y1 = y0
-
     def plot_init(self, x, y):
         self._points.append((x, y))
 
@@ -230,6 +211,25 @@ class PlotCut(CutObject):
             return Point(self._points[-1])
         except IndexError:
             return None
+
+    @property
+    def plot(self):
+        x1 = None
+        y1 = None
+        for i in range(0, len(self._points)):
+            x0, y0 = self._points[i]
+            if x1 is not None:
+                power = self._powers[i-1]
+                if self.h_raster and y0 != y1:
+                    yield x0, y0, power, x1, y0
+                    yield x1, y0, power, x1, y1
+                elif self.v_raster and x0 != x1:
+                    yield x0, y0, power, x0, y1
+                    yield x0, y1, power, x1, y1
+                else:
+                    yield x0, y0, power, x1, y1
+            x1 = x0
+            y1 = y0
 
     def generator(self):
         last_xx = None
