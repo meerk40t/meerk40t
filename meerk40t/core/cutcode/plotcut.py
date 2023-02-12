@@ -17,6 +17,8 @@ class PlotCut(CutObject):
         self._powers = []
         self.max_dx = None
         self.max_dy = None
+        self.minmax_dx = None
+        self.minmax_dy = None
         self.min_x = None
         self.min_y = None
         self.max_x = None
@@ -68,10 +70,10 @@ class PlotCut(CutObject):
         # Above 80 we're likely dealing with a raster.
         if -15 < self.max_dx <= 15:
             self.v_raster = True
-            self.settings["raster_step_x"] = self.max_dx
+            self.settings["raster_step_x"] = self.minmax_dx
         if -15 < self.max_dy <= 15:
             self.h_raster = True
-            self.settings["raster_step_y"] = self.max_dy
+            self.settings["raster_step_y"] = self.minmax_dy
         return True
 
     def transform(self, matrix):
@@ -99,6 +101,10 @@ class PlotCut(CutObject):
                 self.max_dx = dx
             if self.max_dy is None or abs(dy) > abs(self.max_dy):
                 self.max_dy = dy
+            if abs(dx) > 0 and (self.minmax_dx is None or abs(dx) < abs(self.minmax_dx)):
+                self.minmax_dx = dx
+            if abs(dy) > 0 and (self.minmax_dy is None or abs(dy) < abs(self.minmax_dy)):
+                self.minmax_dy = dy
             if dy > 0:
                 self.travels_bottom = True
             if dy < 0:
