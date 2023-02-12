@@ -137,7 +137,7 @@ class LihuiyuDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
 
-        self.plot_planner = PlotPlanner(self.settings)
+        self.plot_planner = PlotPlanner(self.settings, smooth=False)
         self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
 
@@ -1195,7 +1195,7 @@ class LihuiyuDriver(Parameters):
         delta = math.trunc(self._raster_step_fractional_remainder)
         self._raster_step_fractional_remainder -= delta
 
-        step_amount = -set_step if self._topward else set_step
+        step_amount = -abs(set_step) if self._topward else abs(set_step)
         remaining = delta - step_amount
         if remaining > 0 and self._topward or remaining < 0 and not self._topward or abs(remaining) > 15:
             # Remaining value is in the wrong direction, abort and move.

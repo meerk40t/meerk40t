@@ -73,11 +73,11 @@ class PlotCut(CutObject):
         # Above 80 we're likely dealing with a raster.
         if -15 < self.max_dx <= 15:
             self.v_raster = True
-            self.settings["_constant_move_y"] = True
+            # self.settings["_constant_move_y"] = True
             self.settings["raster_step_x"] = self.max_dx
         if -15 < self.max_dy <= 15:
             self.h_raster = True
-            self.settings["_constant_move_x"] = True
+            # self.settings["_constant_move_x"] = True
             self.settings["raster_step_y"] = self.max_dy
         # if self.vertical_raster or self.horizontal_raster:
         return True
