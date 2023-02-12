@@ -21,6 +21,8 @@ from meerk40t.svgelements import (
     Move,
     Point,
     QuadraticBezier,
+    Polygon,
+    Polyline,
 )
 
 _ = wx.GetTranslation
@@ -145,7 +147,7 @@ class NodeIconPanel(wx.Panel):
                 _("Smoothen transit to adjacent segments"),
                 None,
             ],
-            "z": [node_close, False, True, False, _("Toggle closed status"), None],
+            "z": [node_close, False, True, True, _("Toggle closed status"), None],
         }
         icon_size = 50
         for command in self.icons:
@@ -305,6 +307,7 @@ class EditTool(ToolWidget):
     def final(self, context):
         self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
         self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
+        self.scene.request_refresh()
         try:
             self.scene.context("window close NodeEditToolbar\n")
         except (AssertionError, RuntimeError, KeyError):
@@ -615,62 +618,68 @@ class EditTool(ToolWidget):
                 entry["selected"] = False
 
     def toggle_close(self):
+
         modified = False
         if self.node_type == "polyline":
-            # Not valid for a polyline Could make a path now but that might be more than the user expected...
-            return
-        dealt_with = []
-        anyselected = False
-        for entry in self.nodes:
-            if entry["selected"] and entry["type"] == "point":
-                anyselected = True
-                break
-        if not anyselected:
-            # Lets select the last point, so the last segment will be closed/opened
+            if isinstance(self.element.shape, Polygon):
+                newshape = Polyline(self.element.shape)
+            else:
+                newshape = Polygon(self.element.shape)
+            self.element.shape = newshape
+            modified = True
+        else:
+            dealt_with = []
+            anyselected = False
+            for entry in self.nodes:
+                if entry["selected"] and entry["type"] == "point":
+                    anyselected = True
+                    break
+            if not anyselected:
+                # Lets select the last point, so the last segment will be closed/opened
+                for idx in range(len(self.nodes) - 1, -1, -1):
+                    entry = self.nodes[idx]
+                    if entry["type"] == "point":
+                        entry["selected"] = True
+                        break
+
             for idx in range(len(self.nodes) - 1, -1, -1):
                 entry = self.nodes[idx]
-                if entry["type"] == "point":
-                    entry["selected"] = True
-                    break
-
-        for idx in range(len(self.nodes) - 1, -1, -1):
-            entry = self.nodes[idx]
-            if entry["selected"] and entry["type"] == "point":
-                # What's the index of the last selected element
-                # Have we dealt with that before? ie not multiple toggles..
-                segstart = entry["start"]
-                if segstart in dealt_with:
-                    continue
-                dealt_with.append(segstart)
-                # Lets establish the last segment in the path
-                prev = None
-                is_closed = False
-                for sidx in range(segstart, len(self.element.path._segments), 1):
-                    seg = self.element.path._segments[sidx]
-                    if isinstance(seg, Move) and prev is None:
-                        # Not the one at the very beginning!
+                if entry["selected"] and entry["type"] == "point":
+                    # What's the index of the last selected element
+                    # Have we dealt with that before? ie not multiple toggles..
+                    segstart = entry["start"]
+                    if segstart in dealt_with:
                         continue
-                    elif isinstance(seg, Move):
-                        # Ready
-                        break
-                    elif isinstance(seg, Close):
-                        # Ready
-                        is_closed = True
-                        break
-                    lastidx = sidx
-                    prev = seg
-                if is_closed:
-                    # it's enough just to delete it...
-                    self.element.path._segments.pop(lastidx + 1)
-                    modified = True
-                else:
-                    # Need to insert a Close segment
-                    newseg = Close(
-                        start=Point(prev.end.x, prev.end.y),
-                        end=Point(prev.end.x, prev.end.y),
-                    )
-                    self.element.path._segments.insert(lastidx + 1, newseg)
-                    modified = True
+                    dealt_with.append(segstart)
+                    # Lets establish the last segment in the path
+                    prev = None
+                    is_closed = False
+                    for sidx in range(segstart, len(self.element.path._segments), 1):
+                        seg = self.element.path._segments[sidx]
+                        if isinstance(seg, Move) and prev is None:
+                            # Not the one at the very beginning!
+                            continue
+                        elif isinstance(seg, Move):
+                            # Ready
+                            break
+                        elif isinstance(seg, Close):
+                            # Ready
+                            is_closed = True
+                            break
+                        lastidx = sidx
+                        prev = seg
+                    if is_closed:
+                        # it's enough just to delete it...
+                        self.element.path._segments.pop(lastidx + 1)
+                        modified = True
+                    else:
+                        # Need to insert a Close segment
+                        newseg = Close(
+                            start=Point(prev.end.x, prev.end.y),
+                            end=Point(prev.end.x, prev.end.y),
+                        )
+                        self.element.path._segments.insert(lastidx + 1, newseg)
+                        modified = True
 
         if modified:
             self.modify_element(True)
