@@ -212,6 +212,7 @@ class BalorDriver:
 
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
+                        # No power change.
                         last_on = on
                         if self.value_penbox:
                             # There is an active value_penbox
@@ -227,12 +228,10 @@ class BalorDriver:
                             con.set_settings(settings)
                         else:
                             # We are using traditional power-scaling
-                            settings = self.plot_planner.settings
-                            current_power = (
-                                float(settings.get("power", self.service.default_power))
-                                / 10.0
-                            )
-                            con.power(current_power * on)
+                            max_power = float(q.settings.get("power", self.service.default_power))
+                            percent_power = max_power / 10.0
+                            # Max power is the percent max power, scaled by the pixel power.
+                            con.power(percent_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
@@ -267,6 +266,7 @@ class BalorDriver:
                     self._wait_for_input_protocol(q.input_mask, q.input_value)
                     con.program_mode()
             else:
+                # Rastercut, Rawcut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS
@@ -320,7 +320,7 @@ class BalorDriver:
                             else:
                                 # We are using traditional power-scaling
                                 settings = self.plot_planner.settings
-                                current_power = (
+                                percent_power = (
                                     float(
                                         settings.get(
                                             "power", self.service.default_power
@@ -328,7 +328,7 @@ class BalorDriver:
                                     )
                                     / 10.0
                                 )
-                                con.power(current_power * on)
+                                con.power(percent_power * on)
                         con.mark(x, y)
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
