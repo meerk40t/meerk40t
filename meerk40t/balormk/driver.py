@@ -266,7 +266,7 @@ class BalorDriver:
                     self._wait_for_input_protocol(q.input_mask, q.input_value)
                     con.program_mode()
             else:
-                # Rastercut, Rawcut
+                # Rastercut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS

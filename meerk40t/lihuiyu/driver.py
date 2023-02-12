@@ -648,7 +648,7 @@ class LihuiyuDriver(Parameters):
                 x, y = plot.start
             self.set_origin(x, y)
         else:
-            # LineCut, QuadCut, CubicCut, PlotCut, RasterCut, RawCut
+            # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
             self.plot_planner.push(plot)
 
     def plot_start(self):

@@ -5,7 +5,6 @@ from .dwellcut import DwellCut
 from .linecut import LineCut
 from .plotcut import PlotCut
 from .quadcut import QuadCut
-from .rawcut import RawCut
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -57,12 +56,6 @@ class CutCode(CutGroup):
                 path.quad(e.c(), end)
             elif isinstance(e, CubicCut):
                 path.quad(e.c1(), e.c2(), end)
-            elif isinstance(e, RawCut):
-                for x, y, laser in e.plot:
-                    if laser:
-                        path.line((x, y))
-                    else:
-                        path.move((x, y))
             elif isinstance(e, PlotCut):
                 path.move(e.start)
                 for ox, oy, laser, x, y in e.plot:

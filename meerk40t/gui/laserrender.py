@@ -27,7 +27,6 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
@@ -535,8 +534,6 @@ class LaserRender:
                         cut._cache_height,
                     )
                 gc.PopState()
-            elif isinstance(cut, RawCut):
-                pass
             elif isinstance(cut, PlotCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
                 for ox, oy, pon, px, py in cut.plot:
