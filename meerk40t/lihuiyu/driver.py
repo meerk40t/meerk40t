@@ -137,7 +137,7 @@ class LihuiyuDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
 
-        self.plot_planner = PlotPlanner(self.settings, smooth=False)
+        self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
 

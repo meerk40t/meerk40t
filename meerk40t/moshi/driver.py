@@ -53,7 +53,7 @@ class MoshiDriver(Parameters):
         self.origin_x = 0
         self.origin_y = 0
 
-        self.plot_planner = PlotPlanner(self.settings, smooth=False)
+        self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
 
         self.program = MoshiBuilder()
