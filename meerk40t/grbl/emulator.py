@@ -861,8 +861,6 @@ class GRBLEmulator:
         self.plotcut = None
 
     def plot(self, plot):
-        if isinstance(plot, PlotCut):
-            plot.check_if_rasterable()
         try:
             self.driver.plot(plot)
         except AttributeError:

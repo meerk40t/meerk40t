@@ -125,7 +125,6 @@ class RuidaEmulator(Module, Parameters):
     def new_plot_cut(self):
         if len(self.plotcut):
             self.plotcut.settings = self.cutset()
-            self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)
             self.plotcut = PlotCut()
             self.plotcut.plot_init(self.x, self.y)

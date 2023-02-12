@@ -13,6 +13,7 @@ from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
@@ -166,6 +167,8 @@ class MoshiDriver(Parameters):
                 pass
             else:
                 # Rastercut, PlotCut
+                if isinstance(q, PlotCut):
+                    q.check_if_rasterable()
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     if self.hold_work(0):

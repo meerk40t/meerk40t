@@ -17,6 +17,7 @@ from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
@@ -649,6 +650,8 @@ class LihuiyuDriver(Parameters):
             self.set_origin(x, y)
         else:
             # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
+            if isinstance(plot, PlotCut):
+                plot.check_if_rasterable()
             self.plot_planner.push(plot)
 
     def plot_start(self):
