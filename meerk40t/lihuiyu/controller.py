@@ -17,6 +17,7 @@ Deals with the sending of data via the registered connection, and processes some
 import threading
 import time
 
+from meerk40t.ch341 import get_ch341_interface
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -31,6 +32,7 @@ from meerk40t.kernel import (
 )
 
 STATUS_BAD_STATE = 204
+STATUS_SERIAL_CORRECT_M3_FINISH = 204
 # 0xCC, 11001100
 STATUS_OK = 206
 # 0xCE, 11001110
@@ -155,6 +157,7 @@ class LihuiyuController:
         self.context = context
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
+        self.serial_confirmed = None
 
         self._thread = None
         self._buffer = (
@@ -192,7 +195,6 @@ class LihuiyuController:
         self.usb_send_channel = context.channel(f"{name}/usb_send")
         self.recv_channel = context.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
-        self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
 
     @property
@@ -227,23 +229,72 @@ class LihuiyuController:
         return len(self._buffer) + len(self._queue) + len(self._preempt)
 
     def open(self):
+        _ = self.usb_log._
+        if self.connection is not None and self.connection.is_connected():
+            return  # Already connected.
         self.pipe_channel("open()")
-        if self.connection is None:
-            self.connection = self.ch341.connect(
-                driver_index=self.context.usb_index,
-                chipv=self.context.usb_version,
-                bus=self.context.usb_bus,
-                address=self.context.usb_address,
-                mock=self.context.mock,
-            )
-        else:
-            try:
-                self.connection.open()
-            except AttributeError:
-                raise ConnectionRefusedError("Mock Driver cannot connect with USB")
 
-        if self.connection is None:
+        try:
+            interfaces = list(get_ch341_interface(self.context, self.usb_log))
+            if self.context.usb_index != -1:
+                # Instructed to check one specific device.
+                devices = [self.context.usb_index]
+            else:
+                devices = range(16)
+
+            for interface in interfaces:
+                self.connection = interface
+                for i in devices:
+                    try:
+                        self._open_at_index(i)
+                        return  # Opened successfully.
+                    except ConnectionRefusedError as e:
+                        self.usb_log(str(e))
+                        self.connection.close()
+                    except IndexError:
+                        self.usb_log(_("Connection failed."))
+                        self.connection = None
+                        break
+        except PermissionError:
+            return  # OS denied permissions, no point checking anything else.
+
+        self.close()
+        raise ConnectionRefusedError(_("No valid connection matched any given criteria."))
+
+    def _open_at_index(self, usb_index):
+        _ = self.context.kernel.translation
+        self.connection.open(usb_index=usb_index)
+        if not self.connection.is_connected():
             raise ConnectionRefusedError("ch341 connect did not return a connection.")
+        if self.context.usb_bus != -1 and self.connection.bus != -1:
+            if self.connection.bus != self.context.usb_bus:
+                raise ConnectionRefusedError(
+                    _("K40 devices were found but they were rejected due to usb bus.")
+                )
+        if self.context.usb_address != -1 and self.connection.address != -1:
+            if self.connection.address != self.context.usb_address:
+                raise ConnectionRefusedError(_(
+                        "K40 devices were found but they were rejected due to usb address."
+                    ))
+        if self.context.usb_version != -1:
+            version = self.connection.get_chip_version()
+            if version != self.context.usb_version:
+                raise ConnectionRefusedError(_(
+                    "K40 devices were found but they were rejected due to chip version."
+                ))
+        if self.context.serial_enable:
+            if self.serial_confirmed:
+                return  # already passed.
+            self.usb_log(_("Requires serial number confirmation."))
+            self.challenge(self.context.serial)
+            t = time.time()
+            while time.time() - t < 0.5:
+                if self.serial_confirmed:
+                    break
+            if not self.serial_confirmed:
+                raise ConnectionRefusedError("Serial number confirmation failed.")
+            else:
+                self.usb_log(_("Serial number confirmed."))
 
     def close(self):
         self.pipe_channel("close()")
@@ -413,6 +464,18 @@ class LihuiyuController:
             self.connection.reset()
         else:
             raise ConnectionError
+
+    def challenge(self, serial):
+        from hashlib import md5
+
+        challenge = bytearray.fromhex(
+            md5(bytes(serial.upper(), "utf8")).hexdigest()
+        )
+        packet = b"A%s" % challenge
+        packet += b"F" * (30 - len(packet))
+        packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
+        self.connection.write(packet)
+        self._confirm_serial()
 
     def update_state(self, state):
         if state == self.state:
@@ -599,6 +662,9 @@ class LihuiyuController:
                 self.state = STATE_TERMINATE
                 self.is_shutdown = True
                 packet = packet[:-1]
+            if packet.startswith(b"A"):
+                # This is a challenge code. A is only used for serial challenges.
+                post_send_command = self._confirm_serial
             if len(packet) != 0:
                 if packet.endswith(b"#"):
                     packet = packet[:-1]
@@ -662,6 +728,17 @@ class LihuiyuController:
                     if post_send_command == self.wait_finished:
                         post_send_command = None
                     continue  # This is not a confirmation.
+                elif status == STATUS_SERIAL_CORRECT_M3_FINISH:
+                    if post_send_command == self._confirm_serial:
+                        # We confirmed the serial number on the card.
+                        self.serial_confirmed = True
+                        post_send_command = None
+                        break
+                    elif post_send_command == self.wait_finished:
+                        # This is a STATUS_M3_FINISHED, we no longer wait.
+                        post_send_command = None
+                        continue
+
             if status == 0:  # After 300 attempts we could only get status = 0.
                 raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
             self.context.packet_count += (
@@ -757,3 +834,16 @@ class LihuiyuController:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
         self.update_state(original_state)
+
+    def _confirm_serial(self):
+        t = time.time()
+        while time.time() - t < 0.5:  # We spend up to half a second to confirm.
+            if self.state == STATE_TERMINATE:
+                # We are not confirmed.
+                return  # Abort all the processes was requested. This state change would be after clearing.
+            self.update_status()
+            status = self._status[1]
+            if status == STATUS_SERIAL_CORRECT_M3_FINISH:
+                self.serial_confirmed = True
+                return  # We're done.
+        self.serial_confirmed = False

@@ -42,7 +42,7 @@ class ConfigurationUsb(wx.Panel):
         self.text_device_version = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         sizer_chip_version.Add(self.text_device_version, 1, wx.EXPAND, 0)
 
-        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=25)
+        self.spin_device_version = wx.SpinCtrl(self, wx.ID_ANY, "-1", min=-1, max=100)
         self.spin_device_version.SetMinSize((40, -1))
         self.spin_device_version.SetToolTip(
             _(
@@ -162,10 +162,6 @@ class ConfigurationUsb(wx.Panel):
         self.check_serial_number.SetValue(self.context.serial_enable)
         self.checkbox_limit_buffer.SetValue(self.context.buffer_limit)
         self.spin_packet_buffer_max.SetValue(self.context.buffer_max)
-
-        # Disables of features not yet supported.
-        self.check_serial_number.Enable(False)
-        self.text_serial_number.Enable(False)
 
     def pane_show(self):
         # self.context.listen("pipe;buffer", self.on_buffer_update)
