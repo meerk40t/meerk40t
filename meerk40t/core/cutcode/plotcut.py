@@ -55,17 +55,12 @@ class PlotCut(CutObject):
         @return: whether the plot can travel
         """
         # Default to vector settings.
-        # self.settings["_raster_alt"] = False
-        self.settings["_constant_move_x"] = False
-        self.settings["_constant_move_y"] = False
         self.settings["raster_step_x"] = 0
         self.settings["raster_step_y"] = 0
         if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
             self.settings["_force_twitchless"] = True
             return False
-            # if self.max_dy >= 15 and self.max_dy >= 15:
-            #     return False  # This is probably a vector.
         if self.max_dx is None:
             return False
         if self.max_dy is None:
@@ -73,13 +68,10 @@ class PlotCut(CutObject):
         # Above 80 we're likely dealing with a raster.
         if -15 < self.max_dx <= 15:
             self.v_raster = True
-            # self.settings["_constant_move_y"] = True
             self.settings["raster_step_x"] = self.max_dx
         if -15 < self.max_dy <= 15:
             self.h_raster = True
-            # self.settings["_constant_move_x"] = True
             self.settings["raster_step_y"] = self.max_dy
-        # if self.vertical_raster or self.horizontal_raster:
         return True
 
     def transform(self, matrix):
