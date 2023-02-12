@@ -215,41 +215,31 @@ class PlotCut(CutObject):
 
     @property
     def plot(self):
-        x1 = None
-        y1 = None
+        x0 = None
+        y0 = None
         for i in range(0, len(self._points)):
-            x0, y0 = self._points[i]
-            if x1 is not None:
+            x1, y1 = self._points[i]
+            if x0 is not None:
                 power = self._powers[i-1]
-                if self.h_raster and y0 != y1:
+                if self.h_raster and y1 != y0:
                     yield x0, y0, power, x1, y0
                     yield x1, y0, power, x1, y1
-                elif self.v_raster and x0 != x1:
+                elif self.v_raster and x1 != x0:
                     yield x0, y0, power, x0, y1
                     yield x0, y1, power, x1, y1
+
                 else:
                     yield x0, y0, power, x1, y1
-            x1 = x0
-            y1 = y0
+            x0 = x1
+            y0 = y1
 
     def generator(self):
-        last_xx = None
-        last_yy = None
-        ix = 0
-        iy = 0
-        for i in range(0, len(self._points)):
-            x, y = self._points[i]
-            idx = int(round(x - ix))
-            idy = int(round(y - iy))
-            ix += idx
-            iy += idy
-            if last_xx is not None:
-                # Will not happen if i == 0
-                power = self._powers[i-1]
-                for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
+        for x0, y0, power, x1, y1 in self.plot:
+            if x0 != x1 and y0 != y1:
+                for zx, zy in ZinglPlotter.plot_line(int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))):
                     yield zx, zy, power
-            last_xx = ix
-            last_yy = iy
+            else:
+                yield x1, y1, power
 
     def point(self, t):
         if len(self._points) == 0:
