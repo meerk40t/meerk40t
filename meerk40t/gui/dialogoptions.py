@@ -82,6 +82,8 @@ class DialogOptions:
         parent_win.Layout()
         if parent_win.ShowModal() == wx.ID_OK:
             cancelled = False
+        # Unlisten
+        cpanel.module_close()
         parent_win.Destroy()
 
         if cancelled:

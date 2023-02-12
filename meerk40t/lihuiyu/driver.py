@@ -17,6 +17,7 @@ from ..core.cutcode.gotocut import GotoCut
 from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
+from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
@@ -174,16 +175,16 @@ class LihuiyuDriver(Parameters):
         self.holds.append(primary_hold)
 
         # Step amount expected of the current operation
-        self.step = 0
+        self._raster_step_float = 0
 
         # Step amount is the current correctly set step amount in the controller.
-        self.step_value_set = 0
+        self._raster_step_g_value = 0
 
         # Step index of the current step taken for unidirectional
-        self.step_index = 0
+        self._raster_step_swing_index = 0
 
         # Step total the count for fractional step amounts
-        self.step_total = 0.0
+        self._raster_step_fractional_remainder = 0.0
 
     def __repr__(self):
         return f"LihuiyuDriver({self.name})"
@@ -305,7 +306,7 @@ class LihuiyuDriver(Parameters):
             x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
-        self._move_absolute(int(x), int(y))
+        self._move_absolute(int(round(x)), int(round(y)))
 
     def move_rel(self, dx, dy):
         """
@@ -426,18 +427,70 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_FINISH
         self.service.signal("driver;mode", self.state)
 
-    def raster_mode(self, *values):
+    def raster_mode(self, *values, dx=0, dy=0):
         """
-        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
+        Raster mode runs in either `G0xx` stepping mode. It  is only intended to move horizontal or
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
         @return:
         """
+        if self.raster_step_y == 0 and self.raster_step_x == 0:
+            # This is not properly set raster mode.
+            self.program_mode(*values, dx=dx, dy=dy)
+            return
         if self.state == DRIVER_STATE_RASTER:
             return
         self.finished_mode()
-        self.program_mode()
+
+        horizontal = self.raster_step_y != 0
+        self._request_horizontal_major = horizontal
+
+        self._raster_step_swing_index = 0
+        self._raster_step_float = self.raster_step_y if horizontal else self.raster_step_x
+        self._raster_step_g_value = int(math.floor(self._raster_step_float))
+
+        if self._request_leftward is not None:
+            self._leftward = self._request_leftward
+            self._request_leftward = None
+        if self._request_topward is not None:
+            self._topward = self._request_topward
+            self._request_topward = None
+        if self._request_horizontal_major is not None:
+            self._horizontal_major = self._request_horizontal_major
+            self._request_horizontal_major = None
+
+        if self.service.strict:
+            # Override requested or current values only use core initial values.
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
+        if self.bidirectional:
+            # Bidirectional (step on forward/back swing - rasters both directions)
+            raster_step_value = self._raster_step_g_value
+        else:
+            # Unidirectional (step on forward swing - rasters only going forward)
+            raster_step_value = self._raster_step_g_value, 0
+        speed_code = LaserSpeed(
+            self.service.board,
+            self.speed,
+            raster_step=raster_step_value,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
+            fix_limit=True,
+            fix_lows=True,
+            suffix_c=False,
+            fix_speeds=self.service.fix_speeds,
+            raster_horizontal=horizontal,
+        ).speedcode
+        speed_code = bytes(speed_code, "utf8")
+        self(speed_code)
+        self._goto_xy(dx, dy)
+        self(b"N")
+        self(self._code_declare_directions())
+        self(b"S1E")
+        self.state = DRIVER_STATE_RASTER
+        self.service.signal("driver;mode", self.state)
 
     def program_mode(self, *values, dx=0, dy=0):
         """
@@ -452,22 +505,14 @@ class LihuiyuDriver(Parameters):
             return
         self.finished_mode()
 
-        instance_step = 0
-        self.step_index = 0
-        self.step = self.raster_step_x
-        self.step_value_set = 0
-        if self.settings.get("_raster_alt", False):
-            pass
-        elif self.service.nse_raster and not self.service.nse_stepraster:
-            pass
-        else:
-            self.step_value_set = int(round(self.step))
-            instance_step = self.step_value_set
+        self._raster_step_swing_index = 0
+        self._raster_step_float = 0
+        self._raster_step_g_value = 0
 
         suffix_c = None
         if (
             not self.service.twitches or self.settings.get("_force_twitchless", False)
-        ) and not self.step:
+        ) and not self._raster_step_float:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward
@@ -487,7 +532,7 @@ class LihuiyuDriver(Parameters):
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
-            instance_step,
+            raster_step=0,
             d_ratio=self.implicit_d_ratio,
             acceleration=self.implicit_accel,
             fix_limit=True,
@@ -502,7 +547,7 @@ class LihuiyuDriver(Parameters):
         self(b"N")
         self(self._code_declare_directions())
         self(b"S1E")
-        if self.step:
+        if self._raster_step_float:
             self.state = DRIVER_STATE_RASTER
         else:
             self.state = DRIVER_STATE_PROGRAM
@@ -604,6 +649,9 @@ class LihuiyuDriver(Parameters):
                 x, y = plot.start
             self.set_origin(x, y)
         else:
+            # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
+            if isinstance(plot, PlotCut):
+                plot.check_if_rasterable()
             self.plot_planner.push(plot)
 
     def plot_start(self):
@@ -852,30 +900,12 @@ class LihuiyuDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    if self.service.nse_raster or self.settings.get(
-                        "_raster_alt", False
-                    ):
-                        # Alt-Style Raster
-                        if (dx > 0 and self._leftward) or (
-                            dx < 0 and not self._leftward
-                        ):
-                            self._h_switch(dy)
-                    else:
-                        # Default Raster
-                        if dy != 0:
-                            self._h_switch_g(dy)
+                    if dy != 0:
+                        self._h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    if self.service.nse_raster or self.settings.get(
-                        "_raster_alt", False
-                    ):
-                        # Alt-Style Raster
-                        if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
-                            self._v_switch(dx)
-                    else:
-                        # Default Raster
-                        if dx != 0:
-                            self._v_switch_g(dx)
+                    if dx != 0:
+                        self._v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.native_x
                 dy = y - self.native_y
@@ -1094,25 +1124,6 @@ class LihuiyuDriver(Parameters):
         if not self.service.autolock:
             self(b"IS2P\n")
 
-    def _commit_mode(self):
-        # Unknown utility ported from deleted branch
-        self(b"N")
-        speed_code = LaserSpeed(
-            self.service.board,
-            self.speed,
-            self.raster_step_x,
-            d_ratio=self.implicit_d_ratio,
-            acceleration=self.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            fix_speeds=self.service.fix_speeds,
-            raster_horizontal=True,
-        ).speedcode
-        speed_code = bytes(speed_code, "utf8")
-        self(speed_code)
-        self(b"SE")
-        self.laser = False
-
     def _goto_relative(self, dx, dy, cut):
         """
         Goto relative dx, dy. With cut set or not set.
@@ -1172,121 +1183,33 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_RAPID
         self.program_mode(dx, dy)
 
-    def _h_switch(self, dy: float):
-        """
-        NSE h_switches replace the mere reversal of direction with N<v><distance>SE
-
-        If a G-value is set we should subtract that from the step for our movement. Since triggering NSE will cause
-        that step to occur.
-
-        @param dy: The amount along the directional axis we should move during this step.
-
-        @return:
-        """
-        set_step = self.step_value_set
-        if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
-
-        # correct for fractional stepping
-        self.step_total += dy
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
-
-        step_amount = -set_step if self._topward else set_step
-        delta = delta - step_amount
-
-        # We force reenforce directional move.
-        if self._leftward:
-            self(self.CODE_LEFT)
-        else:
-            self(self.CODE_RIGHT)
-        self(b"N")
-        if delta != 0:
-            if delta < 0:
-                self(self.CODE_TOP)
-                self._topward = True
-            else:
-                self(self.CODE_BOTTOM)
-                self._topward = False
-            self(lhymicro_distance(abs(delta)))
-            self.native_y += delta
-        self(b"SE")
-        self.native_y += step_amount
-
-        self._leftward = not self._leftward
-        self._x_engaged = True
-        self._y_engaged = False
-        self.laser = False
-        self.step_index += 1
-
-    def _v_switch(self, dx: float):
-        """
-        NSE v_switches replace the mere reversal of direction with N<h><distance>SE
-
-        @param dx: The amount along the directional axis we should move during this step.
-
-        @return:
-        """
-        set_step = self.step_value_set
-        if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
-
-        # correct for fractional stepping
-        self.step_total += dx
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
-
-        step_amount = -set_step if self._leftward else set_step
-        delta = delta - step_amount
-
-        # We force reenforce directional move.
-        if self._topward:
-            self(self.CODE_TOP)
-        else:
-            self(self.CODE_BOTTOM)
-        self(b"N")
-        if delta != 0:
-            if delta < 0:
-                self(self.CODE_LEFT)
-                self._leftward = True
-            else:
-                self(self.CODE_RIGHT)
-                self._leftward = False
-            self(lhymicro_distance(abs(delta)))
-            self.native_x += delta
-        self(b"SE")
-        self.native_x += step_amount
-        self._topward = not self._topward
-        self._x_engaged = False
-        self._y_engaged = True
-        self.laser = False
-        self.step_index += 1
-
     def _h_switch_g(self, dy: float):
         """
         Horizontal switch with a Gvalue set. The board will automatically step according to the step_value_set.
 
         @return:
         """
-        set_step = self.step_value_set
+        set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
+            set_step = set_step[self._raster_step_swing_index % len(set_step)]
 
         # correct for fractional stepping
-        self.step_total += dy
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
+        self._raster_step_fractional_remainder += dy
+        delta = math.trunc(self._raster_step_fractional_remainder)
+        self._raster_step_fractional_remainder -= delta
 
-        step_amount = -set_step if self._topward else set_step
-        delta = delta - step_amount
-        if delta != 0:
-            # Movement exceeds the standard raster step amount. Rapid relocate.
+        step_amount = -abs(set_step) if self._topward else abs(set_step)
+        remaining = delta - step_amount
+        if remaining > 0 and self._topward or remaining < 0 and not self._topward or abs(remaining) > 15:
+            # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
-            self._move_relative(0, delta)
-            self._x_engaged = True
-            self._y_engaged = False
+            self._move_relative(0, remaining)
             self.raster_mode()
-
+            remaining = 0
+        if remaining:
+            self._goto_octent(-abs(remaining) if self._leftward else abs(remaining), remaining, False)
+        self._x_engaged = True
+        self._y_engaged = False
         # We reverse direction and step.
         if self._leftward:
             self(self.CODE_RIGHT)
@@ -1296,7 +1219,7 @@ class LihuiyuDriver(Parameters):
             self._leftward = True
         self.native_y += step_amount
         self.laser = False
-        self.step_index += 1
+        self._raster_step_swing_index += 1
 
     def _v_switch_g(self, dx: float):
         """
@@ -1304,25 +1227,27 @@ class LihuiyuDriver(Parameters):
 
         @return:
         """
-        set_step = self.step_value_set
+        set_step = self._raster_step_g_value
         if isinstance(set_step, tuple):
-            set_step = set_step[self.step_index % len(set_step)]
+            set_step = set_step[self._raster_step_swing_index % len(set_step)]
 
         # correct for fractional stepping
-        self.step_total += dx
-        delta = math.trunc(self.step_total)
-        self.step_total -= delta
+        self._raster_step_fractional_remainder += dx
+        delta = math.trunc(self._raster_step_fractional_remainder)
+        self._raster_step_fractional_remainder -= delta
 
         step_amount = -set_step if self._leftward else set_step
-        delta = delta - step_amount
-        if delta != 0:
-            # Movement exceeds the standard raster step amount. Rapid relocate.
+        remaining = delta - step_amount
+        if remaining > 0 and self._leftward or remaining < 0 and not self._leftward or abs(remaining) > 15:
+            # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
-            self._move_relative(delta, 0)
-            self._y_engaged = True
-            self._x_engaged = False
+            self._move_relative(remaining, 0)
             self.raster_mode()
-
+            remaining = 0
+        if remaining:
+            self._goto_octent(remaining, -abs(remaining) if self._topward else abs(remaining), False)
+        self._y_engaged = True
+        self._x_engaged = False
         # We reverse direction and step.
         if self._topward:
             self(self.CODE_BOTTOM)
@@ -1332,7 +1257,7 @@ class LihuiyuDriver(Parameters):
             self._topward = True
         self.native_x += step_amount
         self.laser = False
-        self.step_index += 1
+        self._raster_step_swing_index += 1
 
     def _reset_modes(self):
         self.laser = False
@@ -1345,7 +1270,7 @@ class LihuiyuDriver(Parameters):
         self._y_engaged = False
         self._horizontal_major = False
 
-    def _goto_xy(self, dx, dy):
+    def _goto_xy(self, dx, dy, on=None):
         rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
             self.native_x += dx
@@ -1359,6 +1284,11 @@ class LihuiyuDriver(Parameters):
                     self._leftward = True
             self._x_engaged = True
             self._y_engaged = False
+            if on is not None:
+                if on:
+                    self.laser_on()
+                else:
+                    self.laser_off()
             self(lhymicro_distance(abs(dx)))
         if dy != 0:
             self.native_y += dy
@@ -1372,16 +1302,17 @@ class LihuiyuDriver(Parameters):
                     self._topward = True
             self._x_engaged = False
             self._y_engaged = True
+            if on is not None:
+                if on:
+                    self.laser_on()
+                else:
+                    self.laser_off()
             self(lhymicro_distance(abs(dy)))
 
     def _goto_octent(self, dx, dy, on):
         old_current = self.service.current
         if dx == 0 and dy == 0:
             return
-        if on:
-            self.laser_on()
-        else:
-            self.laser_off()
         if abs(dx) == abs(dy):
             self._x_engaged = True  # Set both on
             self._y_engaged = True
@@ -1404,9 +1335,13 @@ class LihuiyuDriver(Parameters):
             self.native_x += dx
             self.native_y += dy
             self(self.CODE_ANGLE)
+            if on:
+                self.laser_on()
+            else:
+                self.laser_off()
             self(lhymicro_distance(abs(dy)))
         else:
-            self._goto_xy(dx, dy)
+            self._goto_xy(dx, dy, on=on)
 
         new_current = self.service.current
         self.service.signal(

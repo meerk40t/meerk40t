@@ -40,7 +40,7 @@ class GRBLDriver(Parameters):
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+            self.settings, single=True, ppi=False, shift=False, group=True
         )
         self.queue = []
         self.plot_data = None
@@ -236,7 +236,6 @@ class GRBLDriver(Parameters):
             qspeed = q.settings.get("speed", self.speed)
             qraster_step_x = q.settings.get("raster_step_x")
             qraster_step_y = q.settings.get("raster_step_y")
-            # print (f"Cut {type(q).__name__}, power={qpower}, speed={qspeed}, rx={qraster_step_x}, ry={qraster_step_y}")
             if qpower != self.power:
                 self.set("power", qpower)
             if (
@@ -281,12 +280,15 @@ class GRBLDriver(Parameters):
                 # GRBL has no core GPIO functionality
                 pass
             else:
+                #  Rastercut, PlotCut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     while self.paused:
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
+                        if isinstance(on, float):
+                            on = int(on)
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.

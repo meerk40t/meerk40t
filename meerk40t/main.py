@@ -93,7 +93,7 @@ def static_plugins(kernel, lifecycle):
     if lifecycle == "plugins":
         plugins = list()
 
-        from . import kernelserver
+        from .network import kernelserver
 
         plugins.append(kernelserver.plugin)
 

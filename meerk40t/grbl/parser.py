@@ -187,7 +187,8 @@ class GRBLPlotter:
                     if index in self.operations[op]:
                         opindex = self.operations[op].index(index)
                         self.operations[op].pop(opindex)
-                self.paths.pop(-1)
+                if len(self.paths) > 0:
+                    self.paths.pop(-1)
 
         def proper_z():
             res = False
@@ -308,7 +309,7 @@ class GRBLParser:
             "report_in_inches": 0,  # Report in inches
             "soft_limits_enabled": 0,  # Soft limits enabled.
             "hard_limits_enabled": 0,  # hard limits enabled
-            "homing_cycle_enable": 0,  # Homing cycle enable
+            "homing_cycle_enable": 1,  # Homing cycle enable
             "homing_direction_invert": 0,  # Homing direction invert
             "homing_locate_feed_rate": 25.000,  # Homing locate feed rate, mm/min
             "homing_search_seek_rate": 500.000,  # Homing search seek rate, mm/min
@@ -551,7 +552,7 @@ class GRBLParser:
                 # Lets split lines...
                 splitted_lines = d.splitlines()
                 for singleline in splitted_lines:
-                    self.process(singleline)
+                    self._process_grbl_commands(singleline)
             self.plotter("end")
             # We need to add a matrix to fix the element orientation:
             # mirror the y component at the midpoint between 0 and bedsize
@@ -597,8 +598,7 @@ class GRBLParser:
             grbl_mat = Matrix(matrix_str)
 
             op_nodes = {}
-            colorindex = 0
-            color_array = []
+            color_index = 0
             color_array = (
                 "blue",
                 "lime",
@@ -696,10 +696,8 @@ class GRBLParser:
                                 if power == 0:
                                     power = 1000
                                 opnode.power = power
-                                opnode.color = Color(color_array[colorindex])
-                                colorindex += 1
-                                if colorindex >= len(color_array):
-                                    colorindex = 0
+                                opnode.color = Color(color_array[color_index])
+                                color_index = (color_index + 1) % len(color_array)
 
                                 elements.op_branch.add_node(opnode)
                                 op_nodes[op] = opnode
@@ -732,46 +730,44 @@ class GRBLParser:
     def state(self):
         return 0
 
-    def realtime_write(self, bytes_to_write):
-        if bytes_to_write == "?":  # Status report
-            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if self.state == 0:
-                state = "Idle"
-            else:
-                state = "Busy"
-            x, y = self.current
-            x /= self.scale
-            y /= self.scale
-            z = 0.0
-            f = self.feed_invert(self.settings.get("speed", 0))
-            s = self.settings.get("power", 0)
-            self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
-        elif bytes_to_write == "~":  # Resume.
-            self.plotter("resume")
-        elif bytes_to_write == "!":  # Pause.
-            self.plotter("pause")
-        elif bytes_to_write == "\x18":  # Soft reset.
-            self.plotter("abort")
-        elif bytes_to_write == "\x85":
-            self.plotter("jog_abort")
+    def status_update(self):
+        # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+        if self.state == 0:
+            state = "Idle"
+        else:
+            state = "Busy"
+        x, y = self.current
+        x /= self.scale
+        y /= self.scale
+        z = 0.0
+        f = self.feed_invert(self.settings.get("speed", 0))
+        s = self.settings.get("power", 0)
+        return f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n"
 
     def write(self, data):
+        """
+        Process data written to the parser. This is any gcode data realtime commands, grbl-specific commands,
+        or gcode itself.
+
+        @param data:
+        @return:
+        """
         if isinstance(data, (bytes, bytearray)):
             if b"?" in data:
                 data = data.replace(b"?", b"")
-                self.realtime_write("?")
+                self.grbl_write(self.status_update())
             if b"~" in data:
                 data = data.replace(b"~", b"")
-                self.realtime_write("~")
+                self.plotter("resume")
             if b"!" in data:
                 data = data.replace(b"!", b"")
-                self.realtime_write("!")
+                self.plotter("pause")
             if b"\x18" in data:
                 data = data.replace(b"\x18", b"")
-                self.realtime_write("\x18")
+                self.plotter("abort")
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
-                self.realtime_write("\x85")
+                self.plotter("jog_abort")
             data = data.decode("utf-8")
         self._buffer += data
         while "\b" in self._buffer:
@@ -790,13 +786,19 @@ class GRBLParser:
             pos = self._buffer.find("\r")
             command = self._buffer[0:pos].strip("\r")
             self._buffer = self._buffer[pos + 1 :]
-            cmd = self.process(command)
+            cmd = self._process_grbl_commands(command)
             if cmd == 0:  # Execute GCode.
                 self.grbl_write("ok\r\n")
             else:
                 self.grbl_write("error:%d\r\n" % cmd)
 
-    def process(self, data):
+    def _process_grbl_commands(self, data):
+        """
+        Process grbl commands, this is non-realtime but grbl specific commands information.
+
+        @param data:
+        @return:
+        """
         if data.startswith("$"):
             if data == "$":
                 self.grbl_write(
@@ -904,7 +906,7 @@ class GRBLParser:
                     else:
                         commands[g].append(None)
                 return 3  # not yet supported
-            elif data.startswith("$"):
+            else:
                 return 3  # GRBL '$' system command was not recognized or supported.
 
         commands = {}
@@ -916,9 +918,15 @@ class GRBLParser:
                 commands[g].append(c[1])
             else:
                 commands[g].append(None)
-        return self.process_gcode(commands)
+        return self._process_gcode(commands)
 
-    def process_gcode(self, gc):
+    def _process_gcode(self, gc):
+        """
+        Processes the gcode commands which are parsed into different dictionary objects.
+
+        @param gc:
+        @return:
+        """
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
@@ -926,11 +934,11 @@ class GRBLParser:
                     self.plotter("new")
                 elif v == 2:
                     # Program End
-                    self.plotter("new")
+                    self.plotter("end")
                     return 0
                 elif v == 30:
                     # Program Stop
-                    self.plotter("new")
+                    self.plotter("end")
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode

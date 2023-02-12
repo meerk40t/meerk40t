@@ -91,10 +91,10 @@ class RasterOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        if self.raster_swing:
-            raster_swing = "-"
-        else:
+        if self.bidirectional:
             raster_swing = "="
+        else:
+            raster_swing = "-"
         if self.raster_direction == 0:
             raster_dir = "T2B"
         elif self.raster_direction == 1:
@@ -298,14 +298,14 @@ class RasterOpNode(Node, Parameters):
         speed_in_per_s = self.speed / MM_PER_INCH
         if self.raster_direction in (0, 1, 4):
             scanlines = height_in_inches * dpi
-            if self.raster_swing:
+            if not self.bidirectional:
                 scanlines *= 2
             this_len = scanlines * width_in_inches + height_in_inches
             estimate += this_len / speed_in_per_s
             # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
         if self.raster_direction in (2, 3, 4):
             scanlines = width_in_inches * dpi
-            if self.raster_swing:
+            if not self.bidirectional:
                 scanlines *= 2
             this_len = scanlines * height_in_inches + width_in_inches
             estimate += this_len / speed_in_per_s
@@ -341,11 +341,6 @@ class RasterOpNode(Node, Parameters):
         if len(self.children) == 0:
             return
 
-        # Calculate raster steps from DPI device context
-        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(
-            self.dpi, matrix=matrix
-        )
-
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
 
@@ -356,8 +351,14 @@ class RasterOpNode(Node, Parameters):
             return
 
         def make_image():
-            step_x = self.raster_step_x
-            step_y = self.raster_step_y
+            """
+            Nested function to be added to commands and to call make_raster on the given elements.
+            @return:
+            """
+            # Calculate raster steps from DPI device context
+            step_x, step_y = context.device.dpi_to_steps(
+                self.dpi, matrix=matrix
+            )
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())
@@ -405,14 +406,6 @@ class RasterOpNode(Node, Parameters):
             overscan = float(Length(overscan))
         settings["overscan"] = overscan
 
-        # Set steps
-        step_x = self.raster_step_x
-        step_y = self.raster_step_y
-        assert step_x != 0
-        assert step_y != 0
-        settings["raster_step_x"] = step_x
-        settings["raster_step_x"] = step_y
-
         # Set variables by direction
         direction = self.raster_direction
         horizontal = False
@@ -430,7 +423,7 @@ class RasterOpNode(Node, Parameters):
         elif direction == 3:
             horizontal = False
             start_on_left = True
-        bidirectional = bool(self.raster_swing)
+        bidirectional = self.bidirectional
 
         for image_node in self.children:
             # Process each child. Some core settings are the same for each child.
@@ -438,9 +431,19 @@ class RasterOpNode(Node, Parameters):
             if image_node.type != "elem image":
                 continue
 
+            step_x = image_node.step_x
+            step_y = image_node.step_y
+
+            if horizontal:
+                # Raster step is only along y for horizontal raster
+                settings["raster_step_x"] = 0
+                settings["raster_step_y"] = step_y
+            else:
+                # Raster step is only along x for vertical raster
+                settings["raster_step_x"] = step_x
+                settings["raster_step_y"] = 0
+
             # Perform correct actualization
-            image_node.step_x = step_x
-            image_node.step_y = step_y
             image_node.process_image()
 
             # Set variables
@@ -484,8 +487,16 @@ class RasterOpNode(Node, Parameters):
             yield cut
             if direction == 4:
                 # Create optional crosshatch cut
-                horizontal = False
-                start_on_left = False
+                horizontal = not horizontal
+                settings = dict(settings)
+                if horizontal:
+                    # Raster step is only along y for horizontal raster
+                    settings["raster_step_x"] = 0
+                    settings["raster_step_y"] = step_y
+                else:
+                    # Raster step is only along x for vertical raster
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = 0
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,

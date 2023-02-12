@@ -418,7 +418,7 @@ class RasterPlotter:
         @return:
         """
         width = self.width
-
+        unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
@@ -433,40 +433,48 @@ class RasterPlotter:
                 yield x, y, 0
                 continue
             upper_bound = self.bottommost_not_equal(x)
+            traveling_bottom = self.start_on_top if unidirectional else dy >= 0
+            next_traveling_bottom = self.start_on_top if unidirectional else dy <= 0
 
-            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, dy <= 0)
+            next_x, next_y = self.calculate_next_vertical_pixel(x + dx, dx, topmost_pixel=next_traveling_bottom)
             if next_y is not None:
+                # If we have a next scanline, we must end after the last pixel of that scanline too.
                 upper_bound = max(next_y, upper_bound) + self.overscan
                 lower_bound = min(next_y, lower_bound) - self.overscan
 
-            while (dy > 0 and y <= upper_bound) or (dy < 0 and lower_bound <= y):
-                if dy > 0:  # going right
-                    bound = upper_bound
+            if traveling_bottom:
+                while y < upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     y = self.nextcolor_bottom(x, y, upper_bound)
                     y = min(y, upper_bound)
-                else:
-                    bound = lower_bound
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+            else:
+                while lower_bound < y:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     y = self.nextcolor_top(x, y, lower_bound)
                     y = max(y, lower_bound)
-                if pixel == skip_pixel:
-                    yield x, y, 0
-                else:
-                    yield x, y, pixel
-                if y == bound:
-                    break
-            if next_x is None:
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+
+            if next_y is None:
                 # remaining image is blank, we stop right here.
-                break
+                return
+            yield next_x, y, 0
+            if y != next_y:
+                yield next_x, next_y, 0
             x = next_x
-            yield x, y, 0
+            y = next_y
             dy = -dy
 
     def _plot_horizontal(self):
@@ -476,7 +484,7 @@ class RasterPlotter:
         @return:
         """
         height = self.height
-
+        unidirectional = not self.bidirectional
         skip_pixel = self.skip_pixel
 
         x, y = self.initial_position()
@@ -490,38 +498,46 @@ class RasterPlotter:
                 yield x, y, 0
                 continue
             upper_bound = self.rightmost_not_equal(y)
+            traveling_right = self.start_on_left if unidirectional else dx >= 0
+            next_traveling_right = self.start_on_left if unidirectional else dx <= 0
 
-            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, dx <= 0)
+            next_x, next_y = self.calculate_next_horizontal_pixel(y + dy, dy, leftmost_pixel=next_traveling_right)
             if next_x is not None:
+                # If we have a next scanline, we must end after the last pixel of that scanline too.
                 upper_bound = max(next_x, upper_bound) + self.overscan
                 lower_bound = min(next_x, lower_bound) - self.overscan
 
-            while (dx > 0 and x <= upper_bound) or (dx < 0 and lower_bound <= x):
-                if dx > 0:  # going right
-                    bound = upper_bound
+            if traveling_right:
+                while x < upper_bound:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_right(x, y, upper_bound)
                     x = min(x, upper_bound)
-                else:
-                    bound = lower_bound
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+            else:
+                while lower_bound < x:
                     try:
                         pixel = self.px(x, y)
                     except IndexError:
                         pixel = 0
                     x = self.nextcolor_left(x, y, lower_bound)
                     x = max(x, lower_bound)
-                if pixel == skip_pixel:
-                    yield x, y, 0
-                else:
-                    yield x, y, pixel
-                if x == bound:
-                    break
+                    if pixel == skip_pixel:
+                        yield x, y, 0
+                    else:
+                        yield x, y, pixel
+
             if next_y is None:
                 # remaining image is blank, we stop right here.
-                break
+                return
+            yield x, next_y, 0
+            if x != next_x:
+                yield next_x, next_y, 0
+            x = next_x
             y = next_y
-            yield x, y, 0
             dx = -dx

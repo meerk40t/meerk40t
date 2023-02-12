@@ -59,7 +59,7 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current grblserver"),
         )
         @kernel.console_command(
-            ("grblcontrol", "grbldesign", "grblemulator"),
+            "grblcontrol",
             help=_("activate the grblserver."),
             hidden=True,
         )
@@ -75,33 +75,43 @@ def plugin(kernel, lifecycle=None):
             root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
-                emulator = root.open("emulator/grbl")
+                from meerk40t.grbl.emulator import GRBLEmulator
                 if quit:
+                    try:
+                        emulator = server.emulator
+                        emulator.driver = None
+                        del emulator
+                    except AttributeError:
+                        pass
                     root.close("grbl")
-                    root.close("emulator/grbl")
                     return
+
+                def greet():
+                    yield "Grbl 1.1f ['$' for help]\r"
+                    yield "[MSG:’$H’|’$X’ to unlock]"
+
                 root.channel(
                     "grbl/send", pure=True
-                ).greet = "Grbl 1.1e ['$' for help]\r"
+                ).greet = greet
+
                 channel(_("GRBL Mode."))
                 if verbose:
                     console = kernel.channel("console")
                     root.channel("grbl").watch(console)
                     server.events_channel.watch(console)
+
+                emulator = GRBLEmulator(root.device.driver, root.device.scene_to_device_matrix())
+                server.emulator = emulator
+
                 # Link emulator and server.
-                root.channel("grbl/recv").watch(emulator.write)
-                emulator.set_reply(root.channel("grbl/send", pure=True))
+                tcp_recv_channel = root.channel("grbl/recv", pure=True)
+                tcp_recv_channel.watch(emulator.write)
+                tcp_send_channel = root.channel("grbl/send", pure=True)
+                emulator.reply = tcp_send_channel
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)
                 )
-
-                if command == "grbldesign":
-                    emulator.design = True
-                elif command == "grblcontrol":
-                    emulator.control = True
-                elif command == "grblemulator":
-                    pass
             except OSError as e:
                 channel(_("Server failed on port: {port}").format(port=port))
                 channel(str(e.strerror))

@@ -430,15 +430,15 @@ def init_tree(kernel):
 
     def get_swing_values():
         return (
-            _("Bidirectional"),
             _("Unidirectional"),
+            _("Bidirectional"),
         )
 
     def radio_match_swing(node, raster_swing="", **kwargs):
         values = get_swing_values()
         for idx, key in enumerate(values):
             if key == raster_swing:
-                return node.raster_swing == idx
+                return node.bidirectional == idx
         return False
 
     @tree_submenu(_("Directional Raster"))
@@ -457,7 +457,7 @@ def init_tree(kernel):
                 for n in list(self.ops(emphasized=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
-                    n.raster_swing = idx
+                    n.bidirectional = bool(idx)
                     data.append(n)
                 self.signal("element_property_reload", data)
                 break

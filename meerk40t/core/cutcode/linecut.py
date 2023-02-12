@@ -15,7 +15,6 @@ class LineCut(CutObject):
             parent=parent,
             color=color,
         )
-        self.raster_step = 0
 
     def __repr__(self):
         return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.passes})'

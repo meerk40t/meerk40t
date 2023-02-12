@@ -13,9 +13,12 @@ class PlotCut(CutObject):
 
     def __init__(self, settings=None, passes=1, color=None):
         CutObject.__init__(self, settings=settings, passes=passes, color=color)
-        self.plot = []
+        self._points = []
+        self._powers = []
         self.max_dx = None
         self.max_dy = None
+        self.minmax_dx = None
+        self.minmax_dy = None
         self.min_x = None
         self.min_y = None
         self.max_x = None
@@ -32,16 +35,19 @@ class PlotCut(CutObject):
         self.last = True
 
     def __len__(self):
-        return len(self.plot)
+        return len(self._points)
 
     def __str__(self):
         parts = list()
-        parts.append(f"{len(self.plot)} points")
+        parts.append(f"{len(self._points)} points")
         parts.append(f"xmin: {self.min_x}")
         parts.append(f"ymin: {self.min_y}")
         parts.append(f"xmax: {self.max_x}")
         parts.append(f"ymax: {self.max_y}")
         return f"PlotCut({', '.join(parts)})"
+
+    def __bool__(self):
+        return bool(self._points)
 
     def check_if_rasterable(self):
         """
@@ -51,31 +57,35 @@ class PlotCut(CutObject):
         @return: whether the plot can travel
         """
         # Default to vector settings.
-        self.settings["_raster_alt"] = False
-        self.settings["_constant_move_x"] = False
-        self.settings["_constant_move_y"] = False
-        self.settings["raster_step"] = 0
+        self.settings["raster_step_x"] = 0
+        self.settings["raster_step_y"] = 0
+        self.settings["power"] = 1000.0
         if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
             self.settings["_force_twitchless"] = True
             return False
-            # if self.max_dy >= 15 and self.max_dy >= 15:
-            #     return False  # This is probably a vector.
         if self.max_dx is None:
             return False
         if self.max_dy is None:
             return False
         # Above 80 we're likely dealing with a raster.
-        if 0 < self.max_dx <= 15:
+        if -15 < self.max_dx <= 15:
             self.v_raster = True
-            self.settings["_constant_move_y"] = True
-        if 0 < self.max_dy <= 15:
+            self.settings["raster_step_x"] = self.minmax_dx
+        if -15 < self.max_dy <= 15:
             self.h_raster = True
-            self.settings["_constant_move_x"] = True
-        # if self.vertical_raster or self.horizontal_raster:
-        self.settings["raster_step"] = min(self.max_dx, self.max_dy)
-        self.settings["_raster_alt"] = True
+            self.settings["raster_step_y"] = self.minmax_dy
         return True
+
+    def transform(self, matrix):
+        for i in range(len(self._points)):
+            x, y = self._points[i]
+            x, y = matrix.transform_point([x, y])
+            self._points[i] = int(x), int(y)
+
+    def plot_init(self, x, y):
+        assert(not self._points)
+        self._points.append((x, y))
 
     def plot_extend(self, plot):
         for x, y, laser in plot:
@@ -84,14 +94,18 @@ class PlotCut(CutObject):
     def plot_append(self, x, y, laser):
         self._length = None
         self._calc_lengths = None
-        if self.plot:
-            last_x, last_y, last_laser = self.plot[-1]
+        if self._points:
+            last_x, last_y = self._points[-1]
             dx = x - last_x
             dy = y - last_y
-            if self.max_dx is None or abs(dx) > self.max_dx:
-                self.max_dx = abs(dx)
-            if self.max_dy is None or abs(dy) > self.max_dy:
-                self.max_dy = abs(dy)
+            if self.max_dx is None or abs(dx) > abs(self.max_dx):
+                self.max_dx = dx
+            if self.max_dy is None or abs(dy) > abs(self.max_dy):
+                self.max_dy = dy
+            if abs(dx) > 0 and (self.minmax_dx is None or abs(dx) < abs(self.minmax_dx)):
+                self.minmax_dx = dx
+            if abs(dy) > 0 and (self.minmax_dy is None or abs(dy) < abs(self.minmax_dy)):
+                self.minmax_dy = dy
             if dy > 0:
                 self.travels_bottom = True
             if dy < 0:
@@ -100,8 +114,8 @@ class PlotCut(CutObject):
                 self.travels_right = True
             if dx < 0:
                 self.travels_left = True
-
-        self.plot.append((x, y, laser))
+        self._points.append((x, y))
+        self._powers.append(laser)
         if self.min_x is None or x < self.min_x:
             self.min_x = x
         if self.min_y is None or y < self.min_y:
@@ -122,10 +136,10 @@ class PlotCut(CutObject):
         if self.h_raster:
             return 0
 
-        if len(self.plot) < 2:
+        if len(self._points) < 2:
             return 0
-        start = Point(self.plot[0])
-        end = Point(self.plot[1])
+        start = Point(self._points[0])
+        end = Point(self._points[1])
         if abs(start.x - end.x) > abs(start.y - end.y):
             return 0  # X-Axis
         else:
@@ -137,14 +151,16 @@ class PlotCut(CutObject):
         if self.travels_right and not self.travels_left:
             return 1  # left
 
-        if len(self.plot) < 2:
+        if len(self._points) < 2:
             return 0
-        start = Point(self.plot[0])
-        end = Point(self.plot[1])
-        if start.x < end.x:
-            return 1
-        else:
-            return -1
+        start = Point(self._points[0])
+        for i in range(1, len(self._points)):
+            end = Point(self._points[i])
+            if start.x < end.x:
+                return 1
+            elif start.x > end.x:
+                return -1
+        return 0
 
     def y_dir(self):
         if self.travels_top and not self.travels_bottom:
@@ -152,14 +168,16 @@ class PlotCut(CutObject):
         if self.travels_bottom and not self.travels_top:
             return 1  # bottom
 
-        if len(self.plot) < 2:
+        if len(self._points) < 2:
             return 0
-        start = Point(self.plot[0])
-        end = Point(self.plot[1])
-        if start.y < end.y:
-            return 1
-        else:
-            return -1
+        start = Point(self._points[0])
+        for i in range(1, len(self._points)):
+            end = Point(self._points[i])
+            if start.y < end.y:
+                return 1
+            elif start.y > end.y:
+                return -1
+        return 0
 
     def upper(self):
         return self.min_x
@@ -177,7 +195,7 @@ class PlotCut(CutObject):
         length = 0
         last_x = None
         last_y = None
-        for x, y, on in self.plot:
+        for x, y in self._points:
             if last_x is not None:
                 length += Point.distance((x, y), (last_x, last_y))
             last_x = 0
@@ -185,56 +203,65 @@ class PlotCut(CutObject):
         return length
 
     def reverse(self):
-        # Strictly speaking this is wrong. Point with power-to-value means that we need power n-1 to the number of
-        # The reverse would shift everything by 1 since all power-to are really power-from values.
-        self.plot = list(reversed(self.plot))
+        self._points = list(reversed(self._points))
+        self._powers = list(reversed(self._powers))
 
     @property
     def start(self):
         try:
-            return Point(self.plot[0][:2])
+            return Point(self._points[0])
         except IndexError:
             return None
 
     @property
     def end(self):
         try:
-            return Point(self.plot[-1][:2])
+            return Point(self._points[-1])
         except IndexError:
             return None
 
-    def generator(self):
-        last_xx = None
-        last_yy = None
-        ix = 0
-        iy = 0
-        for x, y, on in self.plot:
-            idx = int(round(x - ix))
-            idy = int(round(y - iy))
-            ix += idx
-            iy += idy
-            if last_xx is not None:
-                for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
-                    yield zx, zy, on
-            last_xx = ix
-            last_yy = iy
+    @property
+    def plot(self):
+        x0 = None
+        y0 = None
+        for i in range(0, len(self._points)):
+            x1, y1 = self._points[i]
+            if x0 is not None:
+                power = self._powers[i-1]
+                if self.h_raster and y1 != y0:
+                    yield x0, y0, power, x1, y0
+                    yield x1, y0, power, x1, y1
+                elif self.v_raster and x1 != x0:
+                    yield x0, y0, power, x0, y1
+                    yield x0, y1, power, x1, y1
 
-        return self.plot
+                else:
+                    yield x0, y0, power, x1, y1
+            x0 = x1
+            y0 = y1
+
+    def generator(self):
+        for x0, y0, power, x1, y1 in self.plot:
+            if x0 != x1 and y0 != y1:
+                for zx, zy in ZinglPlotter.plot_line(int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))):
+                    yield zx, zy, power
+            else:
+                yield x1, y1, power
 
     def point(self, t):
-        if len(self.plot) == 0:
+        if len(self._points) == 0:
             raise ValueError
         if t == 0:
-            return self.plot[0]
+            return self._points[0]
         if t == 1:
-            return self.plot[-1]
+            return self._points[-1]
         if self._calc_lengths is None:
             # Need to calculate lengths
             lengths = list()
             total_length = 0
-            for i in range(len(self.plot) - 1):
-                x0, y0, _ = self.plot[i]
-                x1, y1, _ = self.plot[i + 1]
+            for i in range(len(self._points) - 1):
+                x0, y0 = self._points[i]
+                x1, y1 = self._points[i + 1]
                 length = abs(complex(x0, y0) - complex(x1, y1))
                 lengths.append(length)
                 total_length += length
@@ -242,8 +269,8 @@ class PlotCut(CutObject):
             self._length = total_length
         if self._length == 0:
             # Degenerate fallback. (All points are coincident)
-            v = int((len(self.plot) - 1) * t)
-            return self.plot[v]
+            v = int((len(self._points) - 1) * t)
+            return self._points[v]
         v = t * self._length
         for length in self._calc_lengths:
             if v < length:

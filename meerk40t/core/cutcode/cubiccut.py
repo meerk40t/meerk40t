@@ -24,7 +24,6 @@ class CubicCut(CutObject):
             parent=parent,
             color=color,
         )
-        self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
 
