@@ -4,7 +4,7 @@ from meerk40t.kernel import Kernel
 def bootstrap():
     kernel = Kernel("MeerK40t", "0.0.0-testing", "MeerK40t_TEST", ansi=False)
 
-    from meerk40t import kernelserver
+    from meerk40t.network import kernelserver
 
     kernel.add_plugin(kernelserver.plugin)
 

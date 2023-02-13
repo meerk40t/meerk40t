@@ -16,7 +16,6 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.node.util_console import ConsoleOperation
@@ -582,7 +581,7 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, OutputCut):
                 res = f"Output: {e.output_value:b} (mask: {e.output_mask:b})"
             elif isinstance(e, PlotCut):
-                res = f"Plot: {len(e.plot)} points"
+                res = f"Plot: {len(e)} points"
             elif isinstance(e, QuadCut):
                 res = f"Quad: {e.start[0]:.0f}, {e.start[1]:.0f} - {e.end[0]:.0f}, {e.end[1]:.0f}"
                 res += f" (c={e.c()[0]:.0f}, {e.c()[1]:.0f})"
@@ -594,8 +593,6 @@ class CutcodePanel(wx.Panel):
                 else:
                     coord = f"({e._start_x:.0f}, {e._start_y:.0f})"
                 res = f"Set Origin: {coord}"
-            elif isinstance(e, RawCut):
-                res = f"Raw: {len(e.plot)} points"
             else:
                 try:
                     res = e.__name__

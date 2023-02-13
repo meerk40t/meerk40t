@@ -100,9 +100,11 @@ class PathNode(Node, Stroked):
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
-        xmin, ymin, xmax, ymax = self.path.bbox(
-            transformed=transformed, with_stroke=False
-        )
+        bounds = self.path.bbox(transformed=transformed, with_stroke=False)
+        if bounds is None:
+            # degenerate paths can have no bounds.
+            return None
+        xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
             return (

@@ -1025,7 +1025,7 @@ class Node:
         """
         if children:
             self.remove_all_children(fast=fast)
-        if self._parent is not None:
+        if self._parent:
             self._parent._children.remove(self)
             self._parent.set_dirty_bounds()
         if not fast:

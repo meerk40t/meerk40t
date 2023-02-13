@@ -139,9 +139,12 @@ def init_tree(kernel):
             gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_operation(_("Simplify group"), node_type=("group", "file"), help=_("Unlevel groups if they just contain another group"))
+    @tree_operation(
+        _("Simplify group"),
+        node_type=("group", "file"),
+        help=_("Unlevel groups if they just contain another group"),
+    )
     def simplify_groups(node, **kwargs):
-
         def straighten(snode):
             amount = 0
             needs_repetition = True
@@ -161,7 +164,7 @@ def init_tree(kernel):
                         needs_repetition = True
                 else:
                     for n in cl:
-                        if n is not None and n.type=="group":
+                        if n is not None and n.type == "group":
                             fnd = straighten(n)
                             amount += fnd
             return amount
@@ -452,15 +455,15 @@ def init_tree(kernel):
 
     def get_swing_values():
         return (
-            _("Bidirectional"),
             _("Unidirectional"),
+            _("Bidirectional"),
         )
 
     def radio_match_swing(node, raster_swing="", **kwargs):
         values = get_swing_values()
         for idx, key in enumerate(values):
             if key == raster_swing:
-                return node.raster_swing == idx
+                return node.bidirectional == idx
         return False
 
     @tree_submenu(_("Directional Raster"))
@@ -479,7 +482,7 @@ def init_tree(kernel):
                 for n in list(self.ops(emphasized=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
-                    n.raster_swing = idx
+                    n.bidirectional = bool(idx)
                     data.append(n)
                 self.signal("element_property_reload", data)
                 break
@@ -1021,7 +1024,6 @@ def init_tree(kernel):
         self.signal("refresh_tree", list(self.flat(types="reference")))
 
     @tree_separator_after()
-
     @tree_conditional(lambda node: self.classify_autogenerate)
     @tree_operation(
         _("Refresh classification"),

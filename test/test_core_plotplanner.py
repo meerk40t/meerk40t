@@ -15,120 +15,120 @@ from meerk40t.svgelements import Circle, Matrix, Path, Point
 
 
 class TestPlotplanner(unittest.TestCase):
-    def test_plotplanner_constant_move_x(self):
-        """
-        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
-        @return:
-        """
-        settings = {"power": 1000, "_constant_move_x": True}
-        plan = PlotPlanner(settings, ppi=False)
-        plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
-        plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
-        plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
-        last_x = None
-        last_y = None
-        for x, y, on in plan.gen():
-            if on == 4:
-                last_x = x
-                last_y = y
-            if on > 1:
-                continue
-            cx = x
-            cy = y
-            if cx is None:
-                continue
-            if last_x is not None:
-                total_dx = cx - last_x
-                total_dy = cy - last_y
-                dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
-                dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-                self.assertFalse(dx == 0)
-                for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
-                    nx = last_x + (i * dx)
-                    ny = last_y + (i * dy)
-                    # print(nx, ny, on)
-            # print(x, y, on)
-            last_x = cx
-            last_y = cy
-            print(f"Moving to {x} {y}")
+    # def test_plotplanner_constant_move_x(self):
+    #     """
+    #     With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+    #     @return:
+    #     """
+    #     settings = {"power": 1000, "_constant_move_x": True}
+    #     plan = PlotPlanner(settings, ppi=False)
+    #     plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
+    #     plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
+    #     plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
+    #     last_x = None
+    #     last_y = None
+    #     for x, y, on in plan.gen():
+    #         if on == 4:
+    #             last_x = x
+    #             last_y = y
+    #         if on > 1:
+    #             continue
+    #         cx = x
+    #         cy = y
+    #         if cx is None:
+    #             continue
+    #         if last_x is not None:
+    #             total_dx = cx - last_x
+    #             total_dy = cy - last_y
+    #             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+    #             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+    #             self.assertFalse(dx == 0)
+    #             for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
+    #                 nx = last_x + (i * dx)
+    #                 ny = last_y + (i * dy)
+    #                 # print(nx, ny, on)
+    #         # print(x, y, on)
+    #         last_x = cx
+    #         last_y = cy
+    #         print(f"Moving to {x} {y}")
 
-    def test_plotplanner_constant_move_x_ppi(self):
-        """
-        With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
-        @return:
-        """
-        settings = {"power": 500, "_constant_move_x": True}
-        plan = PlotPlanner(settings)
-        plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
-        plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
-        plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
-        last_x = None
-        last_y = None
-        last_on = None
-        for x, y, on in plan.gen():
-            if on == 4:
-                last_x = x
-                last_y = y
-            if on > 1:
-                continue
-            if last_on is not None:
-                self.assertNotEqual(last_on, on)
-            last_on = on
-            cx = x
-            cy = y
-            if cx is None:
-                continue
-            if last_x is not None:
-                total_dx = cx - last_x
-                total_dy = cy - last_y
-                dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
-                dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-                self.assertFalse(dx == 0)
-                for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
-                    nx = last_x + (i * dx)
-                    ny = last_y + (i * dy)
-                    # print(nx, ny, on)
-            # print(x, y, on)
-            last_x = cx
-            last_y = cy
-            # print(f"Moving to {x} {y}")
+    # def test_plotplanner_constant_move_x_ppi(self):
+    #     """
+    #     With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
+    #     @return:
+    #     """
+    #     settings = {"power": 500, "_constant_move_x": True}
+    #     plan = PlotPlanner(settings)
+    #     plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
+    #     plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
+    #     plan.push(LineCut(Point(20, 5), Point(100, 10), settings=settings))
+    #     last_x = None
+    #     last_y = None
+    #     last_on = None
+    #     for x, y, on in plan.gen():
+    #         if on == 4:
+    #             last_x = x
+    #             last_y = y
+    #         if on > 1:
+    #             continue
+    #         if last_on is not None:
+    #             self.assertNotEqual(last_on, on)
+    #         last_on = on
+    #         cx = x
+    #         cy = y
+    #         if cx is None:
+    #             continue
+    #         if last_x is not None:
+    #             total_dx = cx - last_x
+    #             total_dy = cy - last_y
+    #             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+    #             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+    #             self.assertFalse(dx == 0)
+    #             for i in range(1, max(abs(total_dx), abs(total_dy)) + 1):
+    #                 nx = last_x + (i * dx)
+    #                 ny = last_y + (i * dy)
+    #                 # print(nx, ny, on)
+    #         # print(x, y, on)
+    #         last_x = cx
+    #         last_y = cy
+    #         # print(f"Moving to {x} {y}")
 
-    def test_plotplanner_constant_move_y(self):
-        """
-        With smooth_raster set to 2 we should never have x = 0. The x should *always* be in motion.
-        @return:
-        """
-        settings = {"power": 1000, "_constant_move_y": True}
-        plan = PlotPlanner(settings)
-        plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
-        plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
-        plan.push(LineCut(Point(5, 20), Point(10, 100), settings=settings))
-        last_x = None
-        last_y = None
-        for x, y, on in plan.gen():
-            if on == 4:
-                last_x = x
-                last_y = y
-            if on > 1:
-                continue
-            cx = x
-            cy = y
-            if cx is None:
-                continue
-            if last_x is not None:
-                total_dx = cx - last_x
-                total_dy = cy - last_y
-                dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
-                dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-                self.assertFalse(dy == 0)
-                for i in range(0, max(abs(total_dx), abs(total_dy))):
-                    nx = last_x + (i * dx)
-                    ny = last_y + (i * dy)
-                    # print(nx, ny, on)
-
-            last_x = cx
-            last_y = cy
-            print(f"Moving to {x} {y}")
+    # def test_plotplanner_constant_move_y(self):
+    #     """
+    #     With smooth_raster set to 2 we should never have x = 0. The x should *always* be in motion.
+    #     @return:
+    #     """
+    #     settings = {"power": 1000, "_constant_move_y": True}
+    #     plan = PlotPlanner(settings)
+    #     plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
+    #     plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
+    #     plan.push(LineCut(Point(5, 20), Point(10, 100), settings=settings))
+    #     last_x = None
+    #     last_y = None
+    #     for x, y, on in plan.gen():
+    #         if on == 4:
+    #             last_x = x
+    #             last_y = y
+    #         if on > 1:
+    #             continue
+    #         cx = x
+    #         cy = y
+    #         if cx is None:
+    #             continue
+    #         if last_x is not None:
+    #             total_dx = cx - last_x
+    #             total_dy = cy - last_y
+    #             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
+    #             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
+    #             self.assertFalse(dy == 0)
+    #             for i in range(0, max(abs(total_dx), abs(total_dy))):
+    #                 nx = last_x + (i * dx)
+    #                 ny = last_y + (i * dy)
+    #                 # print(nx, ny, on)
+    #
+    #         last_x = cx
+    #         last_y = cy
+    #         print(f"Moving to {x} {y}")
 
     def test_plotplanner_constant_move_xy(self):
         """

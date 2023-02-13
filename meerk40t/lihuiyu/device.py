@@ -143,8 +143,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(str, "label", "m2nano")
 
         self.setting(bool, "twitches", False)
-        self.setting(bool, "nse_raster", False)
-        self.setting(bool, "nse_stepraster", False)
 
         self.setting(bool, "scale_speed_enabled", False)
         self.setting(float, "scale_speed", 1.000)
@@ -553,13 +551,15 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_command("usb_disconnect", help=_("Disconnects USB"))
         def usb_disconnect(command, channel, _, **kwargs):
-            self.controller.close()
-            channel(_("CH341 Closed."))
+            try:
+                self.controller.close()
+                channel(_("CH341 Closed."))
+            except ConnectionError:
+                channel(_("Usb Connection Error"))
 
         @self.console_command("usb_reset", help=_("Reset USB device"))
         def usb_reset(command, channel, _, **kwargs):
             try:
-
                 self.controller.usb_reset()
                 channel(_("Usb Connection Reset"))
             except ConnectionError:

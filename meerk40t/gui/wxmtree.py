@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
 from .icons import (
@@ -41,7 +42,6 @@ from .icons import (
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
 from .wxutils import create_menu, get_key_name, is_navigation_key
-from ..core.units import Length
 
 _ = wx.GetTranslation
 
@@ -303,6 +303,7 @@ class TreePanel(wx.Panel):
         opitem = self.context.elements.get(type="branch ops")._item
         tree = self.shadow_tree.wxtree
         tree.Expand(opitem)
+
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
@@ -1649,43 +1650,43 @@ class ShadowTree:
                     elif node.type == "elem line":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ll = Length(amount=node.shape.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
                     elif node.type == "elem rect":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ll = Length(amount=node.shape.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
                     elif node.type == "elem polyline":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ll = Length(amount=node.shape.length(), digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
                             ttip += f"\n{len(node.shape.points)} pts"
                     elif node.type == "elem ellipse":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}"
                     elif node.type == "elem path":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}"
                             ttip += f"\n{len(node.path)} segments"
                     elif node.type == "elem text":
                         bb = node.bounds
                         if bb is not None:
-                            ww = Length(amount=bb[2]-bb[0], digits=1)
-                            hh = Length(amount=bb[3]-bb[1], digits=1)
+                            ww = Length(amount=bb[2] - bb[0], digits=1)
+                            hh = Length(amount=bb[3] - bb[1], digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}"
                             # ttip += f"\n{node.font}"
         self._last_hover_item = item

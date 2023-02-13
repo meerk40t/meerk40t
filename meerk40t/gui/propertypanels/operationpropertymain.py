@@ -870,7 +870,7 @@ class PanelStartPreference(wx.Panel):
         d_start = list()
         d_end = list()
         factor = 3
-        unidirectional = self.operation.raster_swing
+        bidirectional = self.operation.bidirectional
         dpi = self.operation.dpi
         if dpi <= 1:
             dpi = 1
@@ -919,7 +919,7 @@ class PanelStartPreference(wx.Panel):
                 r_start.append((w * 0.9 if right else w * 0.1, pos))
                 r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
                 last = r_start[-1]
-                if not unidirectional:
+                if bidirectional:
                     right = not right
                 pos += step
         if direction == 2 or direction == 3 or direction == 4:
@@ -966,7 +966,7 @@ class PanelStartPreference(wx.Panel):
                 r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
 
                 last = r_start[-1]
-                if not unidirectional:
+                if bidirectional:
                     top = not top
                 pos += step
         self.raster_lines = r_start, r_end
@@ -1177,11 +1177,11 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.radio_directional_raster = wx.RadioBox(
+        self.radio_raster_swing = wx.RadioBox(
             self,
             wx.ID_ANY,
             _("Directional Raster:"),
-            choices=[_("Bidirectional"), _("Unidirectional")],
+            choices=[_("Unidirectional"), _("Bidirectional")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
@@ -1196,9 +1196,9 @@ class RasterSettingsPanel(wx.Panel):
                 "It seems doubtful that there will be significant quality benefits from rastering in one direction."
             )
         )
-        self.radio_directional_raster.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
-        self.radio_directional_raster.SetSelection(0)
-        raster_sizer.Add(self.radio_directional_raster, 0, wx.EXPAND, 0)
+        self.radio_raster_swing.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
+        self.radio_raster_swing.SetSelection(0)
+        raster_sizer.Add(self.radio_raster_swing, 0, wx.EXPAND, 0)
 
         self.panel_start = PanelStartPreference(
             self, wx.ID_ANY, context=context, node=node
@@ -1215,14 +1215,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
-        self.Bind(
-            wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster
-        )
-        # end wxGlade
-
-        self.context.setting(bool, "developer_mode", False)
-        if not self.context.developer_mode:
-            self.radio_directional_raster.Enable(False)
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
 
     def pane_hide(self):
         self.panel_start.pane_hide()
@@ -1247,8 +1240,8 @@ class RasterSettingsPanel(wx.Panel):
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
-        if self.operation.raster_swing is not None:
-            self.radio_directional_raster.SetSelection(self.operation.raster_swing)
+        if self.operation.bidirectional is not None:
+            self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.Show()
 
     def on_text_dpi(self):
@@ -1296,11 +1289,10 @@ class RasterSettingsPanel(wx.Panel):
         event.Skip()
 
     def on_radio_directional(self, event=None):
-        if self.operation.raster_swing != self.radio_directional_raster.GetSelection():
-            self.operation.raster_swing = self.radio_directional_raster.GetSelection()
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "radio_direct"
-            )
+        self.operation.bidirectional = bool(self.radio_raster_swing.GetSelection())
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "radio_direct"
+        )
         event.Skip()
 
 

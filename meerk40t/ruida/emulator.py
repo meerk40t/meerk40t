@@ -125,9 +125,9 @@ class RuidaEmulator(Module, Parameters):
     def new_plot_cut(self):
         if len(self.plotcut):
             self.plotcut.settings = self.cutset()
-            self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)
             self.plotcut = PlotCut()
+            self.plotcut.plot_init(self.x, self.y)
 
     def cutset(self):
         if self._use_set is None:
@@ -737,22 +737,21 @@ class RuidaEmulator(Module, Parameters):
             if array[1] == 0x29:
                 desc = "Unknown LB Command"
         elif array[0] == 0xD7:
-            # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
+                # If not saving send to spooler, if control
                 if self.control:
                     matrix = self.device.scene_to_device_matrix()
                     for plot in self.cutcode:
-                        for i in range(len(plot.plot)):
-                            x, y, laser = plot.plot[i]
-                            x, y = matrix.transform_point([x, y])
-                            plot.plot[i] = int(x), int(y), laser
+                        plot.transform(matrix)
                     label = f"Ruida ({len(self.cutcode)} items)"
                     self.spooler.laserjob([self.cutcode], label=label)
                 if self.design and self.elements is not None:
+                    # if `design` is set, send to elements at CutNode.
                     node = CutNode(cutcode=self.cutcode)
                     self.elements.op_branch.add_node(node)
             self.cutcode = CutCode()
             self.plotcut = PlotCut()
+            self.plotcut.plot_init(self.x, self.y)
             self.saving = False
             self.filename = None
             if self.filestream is not None:

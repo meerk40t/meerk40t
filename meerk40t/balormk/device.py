@@ -15,7 +15,7 @@ from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -670,7 +670,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 3,
                 "type": int,
                 "label": _("Input Signal Hold"),
-                "tip": _("How long does the input operation need to hold for to count as a pass"),
+                "tip": _(
+                    "How long does the input operation need to hold for to count as a pass"
+                ),
             },
             {
                 "attr": "input_operation_hardware",
