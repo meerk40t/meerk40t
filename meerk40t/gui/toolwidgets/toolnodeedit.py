@@ -20,9 +20,9 @@ from meerk40t.svgelements import (
     Line,
     Move,
     Point,
-    QuadraticBezier,
     Polygon,
     Polyline,
+    QuadraticBezier,
 )
 
 _ = wx.GetTranslation
@@ -124,11 +124,51 @@ class NodeIconPanel(wx.Panel):
             #           image, requires_selection,
             #           active_for_path, active_for_poly,
             #           "tooltiptext", button],
-            "i": [node_add, True, True, True, _("Insert point before"), None, _("Insert")],
-            "a": [node_append, False, True, True, _("Append point at end"), None, _("Append")],
-            "d": [node_delete, True, True, True, _("Delete point"), None, _("Delete"), ],
-            "l": [node_line, True, True, False, _("Make segment a line"), None, _("> Line"),],
-            "c": [node_curve, True, True, False, _("Make segment a curve"), None, _("> Curve"),],
+            "i": [
+                node_add,
+                True,
+                True,
+                True,
+                _("Insert point before"),
+                None,
+                _("Insert"),
+            ],
+            "a": [
+                node_append,
+                False,
+                True,
+                True,
+                _("Append point at end"),
+                None,
+                _("Append"),
+            ],
+            "d": [
+                node_delete,
+                True,
+                True,
+                True,
+                _("Delete point"),
+                None,
+                _("Delete"),
+            ],
+            "l": [
+                node_line,
+                True,
+                True,
+                False,
+                _("Make segment a line"),
+                None,
+                _("> Line"),
+            ],
+            "c": [
+                node_curve,
+                True,
+                True,
+                False,
+                _("Make segment a curve"),
+                None,
+                _("> Curve"),
+            ],
             "s": [
                 node_symmetric,
                 True,
@@ -138,8 +178,24 @@ class NodeIconPanel(wx.Panel):
                 None,
                 _("Symmetric"),
             ],
-            "j": [node_join, True, True, False, _("Join two segments"), None, _("Join"),],
-            "b": [node_break, True, True, False, _("Break segment apart"), None, _("Break"),],
+            "j": [
+                node_join,
+                True,
+                True,
+                False,
+                _("Join two segments"),
+                None,
+                _("Join"),
+            ],
+            "b": [
+                node_break,
+                True,
+                True,
+                False,
+                _("Break segment apart"),
+                None,
+                _("Break"),
+            ],
             "o": [
                 node_smooth,
                 True,
@@ -149,7 +205,15 @@ class NodeIconPanel(wx.Panel):
                 None,
                 _("Smooth"),
             ],
-            "z": [node_close, False, True, True, _("Toggle closed status"), None, _("Close"), ],
+            "z": [
+                node_close,
+                False,
+                True,
+                True,
+                _("Toggle closed status"),
+                None,
+                _("Close"),
+            ],
         }
         icon_size = 50
         font = wx.Font(
@@ -162,7 +226,13 @@ class NodeIconPanel(wx.Panel):
         label = ""
         for command in self.icons:
             entry = self.icons[command]
-            button = wx.Button(self, wx.ID_ANY, label, size=wx.Size(icon_size + 10, icon_size + 10), style=wx.BU_BOTTOM|wx.BU_LEFT)
+            button = wx.Button(
+                self,
+                wx.ID_ANY,
+                label,
+                size=wx.Size(icon_size + 10, icon_size + 10),
+                style=wx.BU_BOTTOM | wx.BU_LEFT,
+            )
             button.SetBitmap(entry[0].GetBitmap(resize=icon_size))
             button.Bind(wx.EVT_BUTTON, self.button_action(command))
             button.SetFont(font)
@@ -224,7 +294,9 @@ class NodeEditToolbar(MWindow):
         iconsize = 25
         iconsize += 10
         iconcount = 10
-        super().__init__(iconcount * iconsize -10, iconsize + 35, submenu="", *args, **kwds)
+        super().__init__(
+            iconcount * iconsize - 10, iconsize + 35, submenu="", *args, **kwds
+        )
         self.panel = NodeIconPanel(self, wx.ID_ANY, context=self.context)
         self.SetTitle(_("Node-Editor"))
 
@@ -381,7 +453,9 @@ class EditTool(ToolWidget):
                 else:
                     start_status += ", end points =="
 
-            print (f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})")
+            print(
+                f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})"
+            )
 
     def calculate_points(self, selected_node):
         # Set points...
@@ -1331,12 +1405,12 @@ class EditTool(ToolWidget):
                     # We need to adjust the start-point of the next segment
                     # unless it's a closed path then we need to adjust the
                     # very first - need to be mindful of closed subpaths
-                    if (
-                        current["segtype"] == "M"
-                    ):
+                    if current["segtype"] == "M":
                         # We changed the end, let's check whether the last segment in
                         # the subpath is a Close then we need to change this .end as well
-                        for nidx in range(self.selected_index + 1, len(self.element.path._segments), 1):
+                        for nidx in range(
+                            self.selected_index + 1, len(self.element.path._segments), 1
+                        ):
                             nextseg = self.element.path._segments[nidx]
                             if isinstance(nextseg, Move):
                                 break
