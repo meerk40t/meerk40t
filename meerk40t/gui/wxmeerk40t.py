@@ -76,7 +76,6 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
-from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 

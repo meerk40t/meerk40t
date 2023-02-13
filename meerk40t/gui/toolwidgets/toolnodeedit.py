@@ -393,23 +393,22 @@ class EditTool(ToolWidget):
                 except TypeError:
                     pen.SetWidth(int(width))
             except OverflowError:
-                print("Overflow")
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
-        self.linewidth = 1.0 / matrix.value_scale_x()
-        if self.linewidth < 1:
-            self.linewidth = 1
-        set_width_pen(self.pen, self.linewidth)
-        set_width_pen(self.pen_highlight, self.linewidth)
-        set_width_pen(self.pen_ctrl, self.linewidth)
-        set_width_pen(self.pen_ctrl_semi, self.linewidth)
-        set_width_pen(self.pen_selection, self.linewidth)
-        value = self.linewidth
+        linewidth = 1.0 / matrix.value_scale_x()
+        if linewidth < 1:
+            linewidth = 1
+        set_width_pen(self.pen, linewidth)
+        set_width_pen(self.pen_highlight, linewidth)
+        set_width_pen(self.pen_ctrl, linewidth)
+        set_width_pen(self.pen_ctrl_semi, linewidth)
+        set_width_pen(self.pen_selection, linewidth)
+        value = linewidth
         if self.element is not None and hasattr(self.element, "stroke_width"):
             if self.element.stroke_width is not None:
                 value = self.element.stroke_width
-        value += 4 * self.linewidth
+        value += 4 * linewidth
         set_width_pen(self.pen_highlight_line, value)
 
     def on_signal_nodeedit(self, origin, args):
@@ -720,7 +719,12 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             for idx, entry in enumerate(self.nodes):
                 ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
-                if idx == 0 or not entry["selected"]:
+                # print (f"Idx={idx}, selected={entry['selected']}, prev={'-' if idx == 0 else self.nodes[idx-1]['selected']}")
+                if idx == 1 and (
+                    self.nodes[0]["selected"] or self.nodes[1]["selected"]
+                ):
+                    p.AddLineToPoint(ptx, pty)
+                elif idx == 0 or not entry["selected"]:
                     p.MoveToPoint(ptx, pty)
                 else:
                     p.AddLineToPoint(ptx, pty)
@@ -882,7 +886,7 @@ class EditTool(ToolWidget):
                         if isinstance(seg, Move) and prevseg is None:
                             # Not the one at the very beginning!
                             continue
-                        elif isinstance(seg, Move):
+                        if isinstance(seg, Move):
                             # Ready
                             break
                         elif isinstance(seg, Close):
@@ -1424,8 +1428,6 @@ class EditTool(ToolWidget):
             self.pen.SetWidth(25)
             self.scene.tool_active = True
             self.scene.modif_active = True
-
-            self._active = True
 
             self.scene.context.signal("statusmsg", self.message)
             self.move_type = "node"

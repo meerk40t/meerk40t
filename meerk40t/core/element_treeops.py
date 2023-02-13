@@ -749,15 +749,15 @@ def init_tree(kernel):
     def remove_transparent(node, **kwargs):
         res = 0
         to_remove = []
-        for node in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
+        for enode in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
             colored = False
-            if hasattr(node, "fill") and node.fill is not None and node.fill.argb is not None:
+            if hasattr(enode, "fill") and enode.fill is not None and enode.fill.argb is not None:
                 colored = True
-            if hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+            if hasattr(enode, "stroke") and enode.stroke is not None and enode.stroke.argb is not None:
                 colored = True
             if not colored:
                 res += 1
-                node.remove_node()
+                enode.remove_node()
 
         if res > 0:
             self.signal("rebuild_tree")
