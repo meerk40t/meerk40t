@@ -341,12 +341,56 @@ class EditTool(ToolWidget):
             keycode = args[1]
             self.perform_action(keycode)
 
+    def debug_path(self):
+        if self.element is None or not hasattr(self.element, "path"):
+            return
+        path = self.element.path
+        starts = []
+        ends = []
+        types = []
+        for seg in path._segments:
+            types.append(type(seg).__name__)
+            starts.append(seg.start)
+            ends.append(seg.end)
+        for idx in range(len(starts)):
+            p_idx = idx - 1 if idx > 0 else len(starts) - 1
+            n_idx = idx + 1 if idx < len(starts) - 1 else 0
+            start_status = ""
+            end_status = ""
+            if starts[idx] is None:
+                if ends[p_idx] is not None:
+                    start_status = "Start: None (Prev: not None)"
+            else:
+                if ends[p_idx] is None:
+                    start_status = "Start: Not None (Prev: None)"
+                else:
+                    if starts[idx].x != ends[p_idx].x or starts[idx].y != ends[p_idx].y:
+                        start_status = "Start: != Prev end"
+            if ends[idx] is None:
+                if starts[n_idx] is not None:
+                    end_status = "End: None (Next: not None)"
+            else:
+                if starts[n_idx] is None:
+                    end_status = "End: Not None (Next: None)"
+                else:
+                    if starts[n_idx].x != ends[idx].x or starts[n_idx].y != ends[idx].y:
+                        end_status = "End: != Next start"
+            if types[idx] == "Move" and types[p_idx] == "Close":
+                if ends[idx].x != ends[p_idx].x or ends[idx].y != ends[p_idx].y:
+                    start_status += ", end points !="
+                else:
+                    start_status += ", end points =="
+
+            print (f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})")
+
     def calculate_points(self, selected_node):
         # Set points...
         self.debug_current = None
         self.element = selected_node
         self.selected_index = None
         self.nodes = []
+        # print ("After load:")
+        # self.debug_path()
         if selected_node is None:
             return
         if selected_node.type == "elem polyline":
@@ -1283,33 +1327,28 @@ class EditTool(ToolWidget):
                 pt.x = m[0]
                 pt.y = m[1]
                 if self.node_type == "path":
-                    if (
-                        current["segtype"] == "M"
-                        and current["start"] == self.selected_index
-                    ):  # First
-                        current["segment"].start = pt
                     current["point"] = pt
                     # We need to adjust the start-point of the next segment
                     # unless it's a closed path then we need to adjust the
                     # very first - need to be mindful of closed subpaths
+                    if (
+                        current["segtype"] == "M"
+                    ):
+                        # We changed the end, let's check whether the last segment in
+                        # the subpath is a Close then we need to change this .end as well
+                        for nidx in range(self.selected_index + 1, len(self.element.path._segments), 1):
+                            nextseg = self.element.path._segments[nidx]
+                            if isinstance(nextseg, Move):
+                                break
+                            elif isinstance(nextseg, Close):
+                                nextseg.end.x = m[0]
+                                nextseg.end.y = m[1]
+                                break
                     nextseg = current["next"]
-                    if nextseg is not None:
-                        if isinstance(nextseg, Close):
-                            nextseg.end.x = m[0]
-                            nextseg.end.y = m[1]
-                        if nextseg.start is not None:
-                            nextseg.start.x = m[0]
-                            nextseg.start.y = m[1]
-                        # if isinstance(current["segment"], Close):
-                        #     # We need to change the startseg
-                        #     if "start" in current:
-                        #         startidx = current["start"]
-                        #         if startidx >= 0:
-                        #             startseg = self.nodes[startidx]["segment"]
-                        #             if startseg.start == startseg.end:
-                        #                 startseg.start = Point(m[0], m[1])
-                        #             startseg.end = Point(m[0], m[1])
-
+                    if nextseg is not None and nextseg.start is not None:
+                        nextseg.start.x = m[0]
+                        nextseg.start.y = m[1]
+                    # self.debug_path()
                 self.modify_element(False)
             return RESPONSE_CONSUME
         elif event_type == "key_down":
