@@ -329,42 +329,20 @@ class EditTool(ToolWidget):
         self.node_type = "path"
         self.p1 = None
         self.p2 = None
-        matrix = self.scene.widget_root.scene_widget.matrix
-        self.linewidth = 1.0 / matrix.value_scale_x()
-        if self.linewidth < 1:
-            self.linewidth = 1
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         # wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-        try:
-            self.pen.SetWidth(self.linewidth)
-        except TypeError:
-            self.pen.SetWidth(int(self.linewidth))
         self.pen_ctrl = wx.Pen()
         self.pen_ctrl.SetColour(wx.CYAN)
-        try:
-            self.pen_ctrl.SetWidth(self.linewidth)
-        except TypeError:
-            self.pen_ctrl.SetWidth(int(self.linewidth))
         self.pen_ctrl_semi = wx.Pen()
         self.pen_ctrl_semi.SetColour(wx.GREEN)
-        try:
-            self.pen_ctrl_semi.SetWidth(self.linewidth)
-        except TypeError:
-            self.pen_ctrl_semi.SetWidth(int(self.linewidth))
         self.pen_highlight = wx.Pen()
         self.pen_highlight.SetColour(wx.RED)
-        try:
-            self.pen_highlight.SetWidth(self.linewidth)
-        except TypeError:
-            self.pen_highlight.SetWidth(int(self.linewidth))
+        self.pen_highlight_line = wx.Pen()
+        self.pen_highlight_line.SetColour(wx.Colour(255, 0, 0, 80))
         self.pen_selection = wx.Pen()
         self.pen_selection.SetColour(self.scene.colors.color_selection3)
         self.pen_selection.SetStyle(wx.PENSTYLE_SHORT_DASH)
-        try:
-            self.pen_selection.SetWidth(self.linewidth)
-        except TypeError:
-            self.pen_selection.SetWidth(int(self.linewidth))
         # want to have sharp edges
         self.pen_selection.SetJoin(wx.JOIN_MITER)
         self.commands = {
@@ -406,6 +384,34 @@ class EditTool(ToolWidget):
         if selected_node is not self.element:
             self.calculate_points(selected_node)
             self.scene.request_refresh()
+
+    def set_pen_widths(self):
+
+        def set_width_pen(pen, width):
+            try:
+                try:
+                    pen.SetWidth(width)
+                except TypeError:
+                    pen.SetWidth(int(width))
+            except OverflowError:
+                print ("Overflow")
+                pass  # Exceeds 32 bit signed integer.
+
+        matrix = self.scene.widget_root.scene_widget.matrix
+        self.linewidth = 1.0 / matrix.value_scale_x()
+        if self.linewidth < 1:
+            self.linewidth = 1
+        set_width_pen(self.pen, self.linewidth)
+        set_width_pen(self.pen_highlight, self.linewidth)
+        set_width_pen(self.pen_ctrl, self.linewidth)
+        set_width_pen(self.pen_ctrl_semi, self.linewidth)
+        set_width_pen(self.pen_selection, self.linewidth)
+        value = self.linewidth
+        if self.element is not None and hasattr(self.element, "stroke_width"):
+            if self.element.stroke_width is not None:
+                value = self.element.stroke_width
+        value += 4 * self.linewidth
+        set_width_pen(self.pen_highlight_line, value)
 
     def on_signal_nodeedit(self, origin, args):
         # print (f"Signal: {origin} - {args}")
@@ -666,6 +672,54 @@ class EditTool(ToolWidget):
         """
         Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
+
+        def deal_with_segment(seg, init):
+            if isinstance(seg, Line):
+                if not init:
+                    init = True
+                    ptx, pty = node.matrix.point_in_matrix_space(seg.start)
+                    p.MoveToPoint(ptx, pty)
+                ptx, pty = node.matrix.point_in_matrix_space(seg.end)
+                p.AddLineToPoint(ptx, pty)
+            elif isinstance(seg, Close):
+                if not init:
+                    init = True
+                    ptx, pty = node.matrix.point_in_matrix_space(seg.start)
+                    p.MoveToPoint(ptx, pty)
+                p.CloseSubpath()
+            elif isinstance(seg, QuadraticBezier):
+                if not init:
+                    init = True
+                    ptx, pty = node.matrix.point_in_matrix_space(seg.start)
+                    p.MoveToPoint(ptx, pty)
+                ptx, pty = node.matrix.point_in_matrix_space(seg.end)
+                c1x, c1y = node.matrix.point_in_matrix_space(seg.control)
+                p.AddQuadCurveToPoint(c1x, c1y, ptx, pty)
+            elif isinstance(seg, CubicBezier):
+                if not init:
+                    init = True
+                    ptx, pty = node.matrix.point_in_matrix_space(seg.start)
+                    p.MoveToPoint(ptx, pty)
+                ptx, pty = node.matrix.point_in_matrix_space(seg.end)
+                c1x, c1y = node.matrix.point_in_matrix_space(seg.control1)
+                c2x, c2y = node.matrix.point_in_matrix_space(seg.control2)
+                p.AddCurveToPoint(
+                    c1x, c1y, c2x, c2y, ptx, pty
+                )
+            elif isinstance(seg, Arc):
+                if not init:
+                    init = True
+                    ptx, pty = node.matrix.point_in_matrix_space(seg.start)
+                    p.MoveToPoint(ptx, pty)
+                for curve in seg.as_cubic_curves():
+                    ptx, pty = node.matrix.point_in_matrix_space(curve.end)
+                    c1x, c1y = node.matrix.point_in_matrix_space(curve.control1)
+                    c2x, c2y = node.matrix.point_in_matrix_space(curve.control2)
+                    p.AddCurveToPoint(
+                        c1x, c1y, c2x, c2y, ptx, pty
+                    )
+            return init
+
         node = self.element
         p = gc.CreatePath()
         if self.node_type == "polyline":
@@ -682,61 +736,29 @@ class EditTool(ToolWidget):
                 if not entry["type"] == "point":
                     continue
                 e = entry["segment"]
-                if isinstance(e, Move) or not entry["selected"]:
+                if isinstance(e, Move):
+                    if entry["selected"]:
+                        # The next segment needs to be highlighted...
+                        e = entry["next"]
+                        init = deal_with_segment(e, init)
+                    else:
+                        ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                        p.MoveToPoint(ptx, pty)
+                        init = True
+                elif not entry["selected"]:
                     ptx, pty = node.matrix.point_in_matrix_space(e.end)
                     p.MoveToPoint(ptx, pty)
                     init = True
-                elif isinstance(e, Line):
-                    if not init:
-                        init = True
-                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
-                        p.MoveToPoint(ptx, pty)
-                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
-                    p.AddLineToPoint(ptx, pty)
-                elif isinstance(e, Close):
-                    if not init:
-                        init = True
-                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
-                        p.MoveToPoint(ptx, pty)
-                    p.CloseSubpath()
-                elif isinstance(e, QuadraticBezier):
-                    if not init:
-                        init = True
-                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
-                        p.MoveToPoint(ptx, pty)
-                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
-                    c1x, c1y = node.matrix.point_in_matrix_space(e.control)
-                    p.AddQuadCurveToPoint(c1x, c1y, ptx, pty)
-                elif isinstance(e, CubicBezier):
-                    if not init:
-                        init = True
-                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
-                        p.MoveToPoint(ptx, pty)
-                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
-                    c1x, c1y = node.matrix.point_in_matrix_space(e.control1)
-                    c2x, c2y = node.matrix.point_in_matrix_space(e.control2)
-                    p.AddCurveToPoint(
-                        c1x, c1y, c2x, c2y, ptx, pty
-                    )
-                elif isinstance(e, Arc):
-                    if not init:
-                        init = True
-                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
-                        p.MoveToPoint(ptx, pty)
-                    for curve in e.as_cubic_curves():
-                        ptx, pty = node.matrix.point_in_matrix_space(curve.end)
-                        c1x, c1y = node.matrix.point_in_matrix_space(curve.control1)
-                        c2x, c2y = node.matrix.point_in_matrix_space(curve.control2)
-                        p.AddCurveToPoint(
-                            c1x, c1y, c2x, c2y, ptx, pty
-                        )
-        gc.SetPen(self.pen_highlight)
+                else:
+                    init = deal_with_segment(e, init)
+
+        gc.SetPen(self.pen_highlight_line)
         gc.DrawPath(p)
 
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
             return
-
+        self.set_pen_widths()
         if self.p1 is not None and self.p2 is not None:
             # Selection mode!
             x0 = min(self.p1.real, self.p2.real)
@@ -768,9 +790,14 @@ class EditTool(ToolWidget):
                         gc.SetPen(self.pen_highlight)
                     else:
                         gc.SetPen(self.pen_ctrl)
-                        if 0 <= entry["connector"] < len(self.nodes):
-                            orgnode = self.nodes[entry["connector"]]
-                            if orgnode["selected"]:
+                        # Do we have a second controlpoint at the same segment?
+                        if isinstance(entry["segment"], CubicBezier):
+                            orgnode = None
+                            if idx > 0 and self.nodes[idx - 1]["type"] == "point":
+                                orgnode = self.nodes[idx - 1]
+                            elif idx > 1 and self.nodes[idx - 2]["type"] == "point":
+                                orgnode = self.nodes[idx - 2]
+                            if orgnode is not None and orgnode["selected"]:
                                 gc.SetPen(self.pen_ctrl_semi)
                     pattern = [
                         (ptx - offset, pty),
@@ -1396,7 +1423,7 @@ class EditTool(ToolWidget):
         s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
         offset /= s
         elements = self.scene.context.elements
-        if event_type == "leftdown":
+        if event_type in ("leftdown", "leftclick"):
             self.pen = wx.Pen()
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(25)
