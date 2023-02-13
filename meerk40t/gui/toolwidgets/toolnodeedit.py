@@ -662,6 +662,77 @@ class EditTool(ToolWidget):
                 l_idx = nidx
         self.scene.context.signal("nodeedit", (self.node_type, False))
 
+    def calc_and_draw(self, gc):
+        """
+        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        """
+        node = self.element
+        p = gc.CreatePath()
+        if self.node_type == "polyline":
+            for idx, entry in enumerate(self.nodes):
+                ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
+                if idx==0 or not entry["selected"]:
+                    p.MoveToPoint(ptx, pty)
+                else:
+                    p.AddLineToPoint(ptx, pty)
+        else:
+            path = node.path
+            init = False
+            for idx, entry in enumerate(self.nodes):
+                if not entry["type"] == "point":
+                    continue
+                e = entry["segment"]
+                if isinstance(e, Move) or not entry["selected"]:
+                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                    p.MoveToPoint(ptx, pty)
+                    init = True
+                elif isinstance(e, Line):
+                    if not init:
+                        init = True
+                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
+                        p.MoveToPoint(ptx, pty)
+                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                    p.AddLineToPoint(ptx, pty)
+                elif isinstance(e, Close):
+                    if not init:
+                        init = True
+                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
+                        p.MoveToPoint(ptx, pty)
+                    p.CloseSubpath()
+                elif isinstance(e, QuadraticBezier):
+                    if not init:
+                        init = True
+                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
+                        p.MoveToPoint(ptx, pty)
+                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                    c1x, c1y = node.matrix.point_in_matrix_space(e.control)
+                    p.AddQuadCurveToPoint(c1x, c1y, ptx, pty)
+                elif isinstance(e, CubicBezier):
+                    if not init:
+                        init = True
+                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
+                        p.MoveToPoint(ptx, pty)
+                    ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                    c1x, c1y = node.matrix.point_in_matrix_space(e.control1)
+                    c2x, c2y = node.matrix.point_in_matrix_space(e.control2)
+                    p.AddCurveToPoint(
+                        c1x, c1y, c2x, c2y, ptx, pty
+                    )
+                elif isinstance(e, Arc):
+                    if not init:
+                        init = True
+                        ptx, pty = node.matrix.point_in_matrix_space(e.start)
+                        p.MoveToPoint(ptx, pty)
+                    for curve in e.as_cubic_curves():
+                        ptx, pty = node.matrix.point_in_matrix_space(curve.end)
+                        c1x, c1y = node.matrix.point_in_matrix_space(curve.control1)
+                        c2x, c2y = node.matrix.point_in_matrix_space(curve.control2)
+                        p.AddCurveToPoint(
+                            c1x, c1y, c2x, c2y, ptx, pty
+                        )
+        gc.SetPen(self.pen_highlight)
+        gc.DrawPath(p)
+
     def process_draw(self, gc: wx.GraphicsContext):
         if not self.nodes:
             return
@@ -682,6 +753,7 @@ class EditTool(ToolWidget):
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             idx = -1
             node = self.element
+            self.calc_and_draw(gc)
             for entry in self.nodes:
                 idx += 1
                 ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
