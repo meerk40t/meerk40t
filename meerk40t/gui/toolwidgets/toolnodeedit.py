@@ -386,7 +386,6 @@ class EditTool(ToolWidget):
             self.scene.request_refresh()
 
     def set_pen_widths(self):
-
         def set_width_pen(pen, width):
             try:
                 try:
@@ -394,7 +393,7 @@ class EditTool(ToolWidget):
                 except TypeError:
                     pen.SetWidth(int(width))
             except OverflowError:
-                print ("Overflow")
+                print("Overflow")
                 pass  # Exceeds 32 bit signed integer.
 
         matrix = self.scene.widget_root.scene_widget.matrix
@@ -703,9 +702,7 @@ class EditTool(ToolWidget):
                 ptx, pty = node.matrix.point_in_matrix_space(seg.end)
                 c1x, c1y = node.matrix.point_in_matrix_space(seg.control1)
                 c2x, c2y = node.matrix.point_in_matrix_space(seg.control2)
-                p.AddCurveToPoint(
-                    c1x, c1y, c2x, c2y, ptx, pty
-                )
+                p.AddCurveToPoint(c1x, c1y, c2x, c2y, ptx, pty)
             elif isinstance(seg, Arc):
                 if not init:
                     init = True
@@ -715,9 +712,7 @@ class EditTool(ToolWidget):
                     ptx, pty = node.matrix.point_in_matrix_space(curve.end)
                     c1x, c1y = node.matrix.point_in_matrix_space(curve.control1)
                     c2x, c2y = node.matrix.point_in_matrix_space(curve.control2)
-                    p.AddCurveToPoint(
-                        c1x, c1y, c2x, c2y, ptx, pty
-                    )
+                    p.AddCurveToPoint(c1x, c1y, c2x, c2y, ptx, pty)
             return init
 
         node = self.element
@@ -725,7 +720,7 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             for idx, entry in enumerate(self.nodes):
                 ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
-                if idx==0 or not entry["selected"]:
+                if idx == 0 or not entry["selected"]:
                     p.MoveToPoint(ptx, pty)
                 else:
                     p.AddLineToPoint(ptx, pty)
@@ -880,11 +875,11 @@ class EditTool(ToolWidget):
                         continue
                     dealt_with.append(segstart)
                     # Lets establish the last segment in the path
-                    prev = None
+                    prevseg = None
                     is_closed = False
                     for sidx in range(segstart, len(self.element.path._segments), 1):
                         seg = self.element.path._segments[sidx]
-                        if isinstance(seg, Move) and prev is None:
+                        if isinstance(seg, Move) and prevseg is None:
                             # Not the one at the very beginning!
                             continue
                         elif isinstance(seg, Move):
@@ -895,7 +890,7 @@ class EditTool(ToolWidget):
                             is_closed = True
                             break
                         lastidx = sidx
-                        prev = seg
+                        prevseg = seg
                     if is_closed:
                         # it's enough just to delete it...
                         self.element.path._segments.pop(lastidx + 1)
@@ -903,8 +898,8 @@ class EditTool(ToolWidget):
                     else:
                         # Need to insert a Close segment
                         newseg = Close(
-                            start=Point(prev.end.x, prev.end.y),
-                            end=Point(prev.end.x, prev.end.y),
+                            start=Point(prevseg.end.x, prevseg.end.y),
+                            end=Point(prevseg.end.x, prevseg.end.y),
                         )
                         self.element.path._segments.insert(lastidx + 1, newseg)
                         modified = True
@@ -1039,52 +1034,52 @@ class EditTool(ToolWidget):
                         break
                 else:
                     idx = entry["pathindex"]
-                    prev = None
-                    next = None
+                    prevseg = None
+                    nextseg = None
                     seg = self.element.path._segments[idx]
                     if idx > 0:
-                        prev = self.element.path._segments[idx - 1]
+                        prevseg = self.element.path._segments[idx - 1]
                     if idx < len(self.element.path._segments) - 1:
-                        next = self.element.path._segments[idx + 1]
-                    if next is None:
+                        nextseg = self.element.path._segments[idx + 1]
+                    if nextseg is None:
                         # Last point of the path
                         # Can just be deleted, provided we have something
                         # in front...
-                        if prev is None or isinstance(prev, (Move, Close)):
+                        if prevseg is None or isinstance(prevseg, (Move, Close)):
                             continue
                         self.element.path._segments.pop(idx)
                         modified = True
-                    elif isinstance(next, (Move, Close)):
+                    elif isinstance(nextseg, (Move, Close)):
                         # last point of the subsegment...
                         # We need to have another full segment in the front
                         # otherwise we would end up with a single point...
-                        if prev is None or isinstance(prev, (Move, Close)):
+                        if prevseg is None or isinstance(prevseg, (Move, Close)):
                             continue
-                        next.start.x = seg.start.x
-                        next.start.y = seg.start.y
-                        if isinstance(next, Close):
-                            next.end.x = seg.start.x
-                            next.end.y = seg.start.y
+                        nextseg.start.x = seg.start.x
+                        nextseg.start.y = seg.start.y
+                        if isinstance(nextseg, Close):
+                            nextseg.end.x = seg.start.x
+                            nextseg.end.y = seg.start.y
 
                         self.element.path._segments.pop(idx)
                         modified = True
                     else:
                         # Could be the first point...
-                        if prev is None and (
-                            next is None or isinstance(next, (Move, Close))
+                        if prevseg is None and (
+                            nextseg is None or isinstance(nextseg, (Move, Close))
                         ):
                             continue
-                        elif prev is None:  # # Move
-                            seg.end = Point(next.end.x, next.end.y)
+                        elif prevseg is None:  # # Move
+                            seg.end = Point(nextseg.end.x, nextseg.end.y)
                             self.element.path._segments.pop(idx + 1)
                             modified = True
                         elif isinstance(seg, Move):  # # Move
-                            seg.end = Point(next.end.x, next.end.y)
+                            seg.end = Point(nextseg.end.x, nextseg.end.y)
                             self.element.path._segments.pop(idx + 1)
                             modified = True
                         else:
-                            next.start.x = prev.end.x
-                            next.start.y = prev.end.y
+                            nextseg.start.x = prevseg.end.x
+                            nextseg.start.y = prevseg.end.y
                             self.element.path._segments.pop(idx)
                             modified = True
 
@@ -1176,7 +1171,7 @@ class EditTool(ToolWidget):
                     continue
                 # Is this the last point? Then no use to break the path
                 nextseg = None
-                if idx == 0 or idx == len(self.element.path._segments) - 1:
+                if idx in (0, len(self.element.path._segments) - 1):
                     # Dont break at the first or last point
                     continue
                 nextseg = self.element.path._segments[idx + 1]
@@ -1197,11 +1192,11 @@ class EditTool(ToolWidget):
                 # Now let's validate whether the 'right' path still has a
                 # close segment at it's end. That will be removed as this would
                 # create an unwanted behaviour
-                prev = None
+                prevseg = None
                 is_closed = False
                 for sidx in range(idx + 1, len(self.element.path._segments), 1):
                     seg = self.element.path._segments[sidx]
-                    if isinstance(seg, Move) and prev is None:
+                    if isinstance(seg, Move) and prevseg is None:
                         # Not the one at the very beginning!
                         continue
                     elif isinstance(seg, Move):
@@ -1212,7 +1207,7 @@ class EditTool(ToolWidget):
                         is_closed = True
                         break
                     lastidx = sidx
-                    prev = seg
+                    prevseg = seg
                 if is_closed:
                     # it's enough just to delete it...
                     self.element.path._segments.pop(lastidx + 1)
@@ -1450,12 +1445,17 @@ class EditTool(ToolWidget):
                     if x <= xp <= x + w and y <= yp <= y + h:
                         self.selected_index = i
                         if entry["type"] == "control":
-                            # We select the corresponding end point
-                            j = entry["connector"]
+                            # We select the corresponding segment
                             for entry2 in self.nodes:
                                 entry2["selected"] = False
+                            orgnode = None
+                            if i > 0 and self.nodes[i - 1]["type"] == "point":
+                                orgnode = self.nodes[i - 1]
+                            elif i > 1 and self.nodes[i - 2]["type"] == "point":
+                                orgnode = self.nodes[i - 2]
+                            if orgnode is not None:
+                                orgnode["selected"] = True
                             entry["selected"] = True
-                            self.nodes[j]["selected"] = True
                             anyselected = True
                         else:
                             # Shift-Key Pressed?
@@ -1513,7 +1513,7 @@ class EditTool(ToolWidget):
                             nextseg = self.element.path._segments[nidx]
                             if isinstance(nextseg, Move):
                                 break
-                            elif isinstance(nextseg, Close):
+                            if isinstance(nextseg, Close):
                                 nextseg.end.x = m[0]
                                 nextseg.end.y = m[1]
                                 break
