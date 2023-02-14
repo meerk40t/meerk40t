@@ -934,6 +934,47 @@ class EditTool(ToolWidget):
             for entry in self.nodes:
                 entry["selected"] = False
 
+    def first_segment_in_subpath(self, index):
+        """
+        Provides the first non-move/close segment in the subpath to which the segment at location index belongs to
+        """
+        result = None
+        if not self.element is None and hasattr(self.element, "path"):
+            for idx in range(index, -1, -1):
+                seg = self.element.path[idx]
+                if isinstance(seg, (Move, Close)):
+                    break
+                result = seg
+        return result
+
+    def last_segment_in_subpath(self, index):
+        """
+        Provides the last non-move/close segment in the subpath to which the segment at location index belongs to
+        """
+        result = None
+        if not self.element is None and hasattr(self.element, "path"):
+            for idx in range(index, len(self.element.path)):
+                seg = self.element.path[idx]
+                if isinstance(seg, (Move, Close)):
+                    break
+                result = seg
+        return result
+
+    def is_closed_subpath(self, index):
+        """
+        Provides the last segment in the subpath to which the segment at location index belongs to
+        """
+        result = False
+        if not self.element is None and hasattr(self.element, "path"):
+            for idx in range(index, len(self.element.path)):
+                seg = self.element.path[idx]
+                if isinstance(seg, Move):
+                    break
+                if isinstance(seg, Close):
+                    result = True
+                    break
+        return result
+
     def toggle_close(self):
 
         modified = False
@@ -1127,7 +1168,7 @@ class EditTool(ToolWidget):
                     self.element.path[idx] = newsegment
                     break
                 modified = True
-        # Pass 2 - make all control lines
+        # Pass 2 - make all control lines align
         prevseg = None
         lastidx = len(self.element.path) - 1
         for idx, segment in enumerate(self.element.path):
@@ -1137,6 +1178,13 @@ class EditTool(ToolWidget):
                 if isinstance(nextseg, (Move, Close)):
                     nextseg = None
             if isinstance(segment, CubicBezier):
+                if prevseg is None:
+                    if self.is_closed_subpath(idx):
+                        otherseg = self.last_segment_in_subpath(idx)
+                        prevseg = Line(
+                            start=Point(otherseg.end.x, otherseg.end.y),
+                            end=Point(segment.start.x, segment.start.y),
+                        )
                 if prevseg is not None:
                     angle1 = Point.angle(prevseg.end, prevseg.start)
                     angle2 = Point.angle(segment.start, segment.end)
@@ -1157,6 +1205,13 @@ class EditTool(ToolWidget):
                     else:
                         segment.control1 = candidate2
                     modified = True
+                if nextseg is None:
+                    if self.is_closed_subpath(idx):
+                        otherseg = self.first_segment_in_subpath(idx)
+                        nextseg = Line(
+                            start=Point(segment.end.x, segment.end.y),
+                            end=Point(otherseg.start.x, otherseg.start.y),
+                        )
                 if nextseg is not None:
                     angle1 = Point.angle(segment.end, segment.start)
                     angle2 = Point.angle(nextseg.start, nextseg.end)
