@@ -749,22 +749,30 @@ class EditTool(ToolWidget):
             for idx, entry in enumerate(self.nodes):
                 if not entry["type"] == "point":
                     continue
+                treatment = ""
                 e = entry["segment"]
                 if isinstance(e, Move):
                     if entry["selected"]:
                         # The next segment needs to be highlighted...
+                        ptx, pty = node.matrix.point_in_matrix_space(e.end)
+                        p.MoveToPoint(ptx, pty)
                         e = entry["next"]
                         init = deal_with_segment(e, init)
+                        treatment = "move+next"
                     else:
                         ptx, pty = node.matrix.point_in_matrix_space(e.end)
                         p.MoveToPoint(ptx, pty)
                         init = True
+                        treatment = "move"
                 elif not entry["selected"]:
                     ptx, pty = node.matrix.point_in_matrix_space(e.end)
                     p.MoveToPoint(ptx, pty)
                     init = True
+                    treatment = "nonselected"
                 else:
                     init = deal_with_segment(e, init)
+                    treatment = "selected"
+                # print (f"#{idx} {entry['type']} got treatment: {treatment}")
 
         gc.SetPen(self.pen_highlight_line)
         gc.DrawPath(p)
@@ -1313,7 +1321,7 @@ class EditTool(ToolWidget):
                 else:
                     # Path
                     idx = entry["pathindex"]
-                    if entry["segment"] is None or entry["segment"].start is None:
+                    if entry["segment"] is None:
                         continue
                     segment = entry["segment"]
                     if entry["segtype"] == "L":
@@ -1375,8 +1383,33 @@ class EditTool(ToolWidget):
                         segment.control.x = mid_x
                         segment.control.y = mid_y
                         modified = True
+                    elif entry["segtype"] == "M":
+                        # Very first point? Mirror first segment and take midpoint
+                        nextseg = entry["next"]
+                        if nextseg is None:
+                            continue
+                        p1x = nextseg.start.x
+                        p1y = nextseg.start.y
+                        p2x = nextseg.end.x
+                        p2y = nextseg.end.y
+                        p2x = p1x - (p2x - p1x)
+                        p2y = p1y - (p2y - p1y)
+                        pt1 = Point((p1x + p2x) / 2, (p1y + p2y) / 2)
+                        pt2 = copy(nextseg.start)
+                        newsegment = Line(start=pt1, end=pt2)
+                        self.element.path.insert(idx + 1, newsegment)
+                        segment.end = pt1
+                        # We need to step forward to assess whether there is a close segment
+                        for idx2 in range(idx + 1, len(self.element.path)):
+                            if isinstance(self.element.path[idx2], Move):
+                                break
+                            elif isinstance(self.element.path[idx2], Close):
+                                # Adjust the close segment to that it points again
+                                # to the first move end
+                                self.element.path[idx2].end = Point(pt1.x, pt1.y)
+                                break
 
-                    # elif entry["segtype"] == "C":
+                        modified = True
 
         if modified:
             self.modify_element(True)
