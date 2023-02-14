@@ -72,7 +72,7 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_replicate_rows_50,
+    # icons8_replicate_rows_50,
     icons8_node_edit_50,
     set_icon_appearance,
 )
@@ -951,7 +951,7 @@ class MeerK40t(MWindow):
             return result
 
         kernel.register(
-            "button/extended_tools/Nodeeditor",
+            "button/modify/Nodeeditor",
             {
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit_50,
@@ -959,7 +959,6 @@ class MeerK40t(MWindow):
                     "Edit nodes of a polyline/path-object"
                 ),
                 "action": lambda v: kernel.elements("tool edit\n"),
-                "group": "tool",
                 "size": bsize_normal,
                 "identifier": "nodeedit",
                 "rule_enabled": lambda cond: contains_a_path(),
