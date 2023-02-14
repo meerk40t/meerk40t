@@ -1100,7 +1100,7 @@ class EditTool(ToolWidget):
                             nextseg is None or isinstance(nextseg, (Move, Close))
                         ):
                             continue
-                        elif prevseg is None:  # # Move
+                        if prevseg is None:  # # Move
                             seg.end = Point(nextseg.end.x, nextseg.end.y)
                             del self.element.path[idx + 1]
                             modified = True
@@ -1407,7 +1407,7 @@ class EditTool(ToolWidget):
                         for idx2 in range(idx + 1, len(self.element.path)):
                             if isinstance(self.element.path[idx2], Move):
                                 break
-                            elif isinstance(self.element.path[idx2], Close):
+                            if isinstance(self.element.path[idx2], Close):
                                 # Adjust the close segment to that it points again
                                 # to the first move end
                                 self.element.path[idx2].end = Point(pt1.x, pt1.y)
