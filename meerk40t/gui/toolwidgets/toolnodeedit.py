@@ -3,7 +3,7 @@ from copy import copy
 
 import wx
 
-from meerk40t.gui.icons import PyEmbeddedImage
+from meerk40t.gui.icons import PyEmbeddedImage, STD_ICON_SIZE
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.sceneconst import (
@@ -32,6 +32,7 @@ class NodeIconPanel(wx.Panel):
     """
     The Node-Editor toolbar, will interact with the tool class by exchanging signals
     """
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -103,6 +104,24 @@ class NodeIconPanel(wx.Panel):
             b"1zFcOHeO4dWrVwzfvn4DZofzDIwgr0HlwcDZ2Ylh4qQpUB7pwNfHh+H+fUTmBYXMaH1CEmA8"
             b"duwYSpyAihB1dXUoj3QAqhZA5RkMMDMzEVefUApGI54EwMAAANLW9DiEznjCAAAAAElFTkSu"
             b"QmCC"
+        )
+
+        node_smooth_all = PyEmbeddedImage(
+            b"iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwY"
+            b"AAACs0lEQVR4nO2YO2hUQRSGj4r4loh2Rldws3P+/+zdK2xhSB+idop2FqJgFUEt1FJERBtt"
+            b"VKy0UvCBz0IR0UKsTBoRBEVREcEHiEh8JBrlZu+uIbmYx97sA+eDKbaY/86/c86cMyPi8Xg8"
+            b"Ho/nP6RYLM404PDIETjnpJlob22dY8TvkQPAOmkmzCxMMkJq9yaRGdLIFAqFeaa606DPkkwM"
+            b"Gx8NOBoE2VZpNACsJfR1ZbHQH0b8SjDxrbI70D5Sd4vIdGkESN1rxGApdPAmCp8gCBYRuEui"
+            b"Z/gw0w1mroPE5coc4FImk5ldVxMG7Bm2C6edcwvGPddcF6HvYjM36pY7Zq6rEj7Agclp2Mpy"
+            b"SJJ6UGpNsVicS+JFbOJMNVr5fK5A4iuh/aqal1pCanc5J7LZ7MIU9PbF4XkxnRWOEwJPSka4"
+            b"Q1LaYSM+EDoQtrUtlVpAMhsfn/1hGLakp4sTkW4e2CpTjVEvEHgQn1Sfo9+q2l6tLum2EHhY"
+            b"0tWnQ9+h7qpWN3DORVojhyS3HdxYvREcS2hnzlera+Y6ktbsjYyF35HJh9boxEkr2UsHifbF"
+            b"CX81tWSH3owNDEZ1aijZpxoC14eOYNXOtDTzwOa4eD+SWkHq9rjtOZeaJnAv1jyUlubYHyXn"
+            b"E/opqvCBc0G1ennVzrh4DwDISJ2uBr3R3X+yOrlcbolRX8Y16aTU5QWG6C0nfTabnTVRjTAM"
+            b"WyodCPRVmq3UhDCzZUa8jRdy3zm3YrxzA+cCoz6O534huUrqCYA2As//LkiPRIai4jnqCg3s"
+            b"V9WcAcfj94LolHoPYLU0Aqq62ICzw4pZdM///q9HDStdnW+RXC6NRqlC65Xyv53cvOKnUe+Q"
+            b"XCMi06SRiR43DHotwURPtHvSTBj0VIKR29Js5FXXJzyQb6v3ujwej8fj8Uid+AMS4JbuhXD/"
+            b"gAAAAABJRU5ErkJggg=="
         )
 
         node_close = PyEmbeddedImage(
@@ -208,6 +227,15 @@ class NodeIconPanel(wx.Panel):
                 None,
                 _("Smooth"),
             ],
+            "v": [
+                node_smooth_all,
+                False,
+                True,
+                False,
+                _("Convert all lines into curves and smoothen"),
+                None,
+                _("Very smooth"),
+            ],
             "z": [
                 node_close,
                 False,
@@ -218,7 +246,7 @@ class NodeIconPanel(wx.Panel):
                 _("Close"),
             ],
         }
-        icon_size = 50
+        icon_size = STD_ICON_SIZE
         font = wx.Font(
             7,
             wx.FONTFAMILY_TELETYPE,
@@ -298,10 +326,11 @@ class NodeEditToolbar(MWindow):
     Will hide itself from public view by expressing
     'return (xxx, xxx, False)' in method 'submenu'
     """
+
     def __init__(self, *args, **kwds):
-        iconsize = 25
+        iconsize = STD_ICON_SIZE
         iconsize += 10
-        iconcount = 10
+        iconcount = 11
         super().__init__(
             iconcount * iconsize - 10, iconsize + 35, submenu="", *args, **kwds
         )
@@ -332,6 +361,7 @@ class EditTool(ToolWidget):
 
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
+        self._listener_active = False
         self.nodes = None
         self.element = None
         self.selected_index = None
@@ -359,13 +389,15 @@ class EditTool(ToolWidget):
             "d": (self.delete_nodes, _("Delete")),
             "l": (self.convert_to_line, _("Line")),
             "c": (self.convert_to_curve, _("Curve")),
-            "s": (self.quad_symmetrical, _("Symmetrical")),
+            "s": (self.quad_symmetrical, _("Symmetric")),
             "i": (self.insert_midpoint, _("Insert")),
             "a": (self.append_line, _("Append")),
             "b": (self.break_path, _("Break")),
             "j": (self.join_path, _("Join")),
             "o": (self.smoothen, _("Smoothen")),
             "z": (self.toggle_close, _("Close path")),
+            "v": (self.smoothen_all, _("Smooth all")),
+            "w": (self.linear_all, _("Line all")),
         }
         self.message = ""
         for cmd in self.commands:
@@ -376,8 +408,10 @@ class EditTool(ToolWidget):
         self.debug_current = None
 
     def final(self, context):
-        self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
-        self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
+        if self._listener_active:
+            self.scene.context.unlisten("emphasized", self.on_emphasized_changed)
+            self.scene.context.unlisten("nodeedit", self.on_signal_nodeedit)
+        self._listener_active = False
         self.scene.request_refresh()
         try:
             self.scene.context("window close NodeEditToolbar\n")
@@ -387,6 +421,7 @@ class EditTool(ToolWidget):
     def init(self, context):
         self.scene.context.listen("emphasized", self.on_emphasized_changed)
         self.scene.context.listen("nodeedit", self.on_signal_nodeedit)
+        self._listener_active = True
         self.scene.context("window open NodeEditToolbar\n")
 
     def on_emphasized_changed(self, origin, *args):
@@ -645,6 +680,22 @@ class EditTool(ToolWidget):
                             "pathindex": idx,
                         }
                     )
+                    # midp = segment.point(0.5)
+                    # self.nodes.append(
+                    #     {
+                    #         "prev": None,
+                    #         "next": None,
+                    #         "point": midp,
+                    #         "segment": segment,
+                    #         "path": path,
+                    #         "type": "midpoint",
+                    #         "connector": -1,
+                    #         "selected": False,
+                    #         "segtype": "",
+                    #         "start": start,
+                    #         "pathindex": idx,
+                    #     }
+                    # )
                 elif isinstance(segment, Arc):
                     self.nodes.append(
                         {
@@ -778,7 +829,6 @@ class EditTool(ToolWidget):
         gc.DrawPath(p)
 
     def process_draw(self, gc: wx.GraphicsContext):
-
         def draw_selection_rectangle():
             x0 = min(self.p1.real, self.p2.real)
             y0 = min(self.p1.imag, self.p2.imag)
@@ -839,6 +889,19 @@ class EditTool(ToolWidget):
                     org_ptx, org_pty = node.matrix.point_in_matrix_space(org_pt)
                     pattern = [(ptx, pty), (org_ptx, org_pty)]
                     gc.DrawLines(pattern)
+            # elif entry["type"] == "midpoint":
+            #     if idx == self.selected_index or entry["selected"]:
+            #         gc.SetPen(self.pen_highlight)
+            #     else:
+            #         gc.SetPen(self.pen_ctrl)
+            #     pattern = [
+            #         (ptx - offset, pty),
+            #         (ptx, pty + offset),
+            #         (ptx + offset, pty),
+            #         (ptx, pty - offset),
+            #         (ptx - offset, pty),
+            #     ]
+            #     gc.DrawLines(pattern)
 
     def done(self):
         self.scene.tool_active = False
@@ -1023,6 +1086,104 @@ class EditTool(ToolWidget):
         if modified:
             self.modify_element(True)
 
+    def smoothen_all(self):
+        modified = False
+        if self.node_type == "polyline":
+            # Not valid for a polyline Could make a path now but that might be more than the user expected...
+            return
+        # Pass 1 - make all lines a cubic bezier
+        for idx, segment in enumerate(self.element.path):
+            if isinstance(segment, Line):
+                startpt = copy(segment.start)
+                endpt = copy(segment.end)
+                ctrl1pt = Point(
+                    startpt.x + 0.25 * (endpt.x - startpt.x),
+                    startpt.y + 0.25 * (endpt.y - startpt.y),
+                )
+                ctrl2pt = Point(
+                    startpt.x + 0.75 * (endpt.x - startpt.x),
+                    startpt.y + 0.75 * (endpt.y - startpt.y),
+                )
+                newsegment = CubicBezier(
+                    start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
+                )
+                self.element.path[idx] = newsegment
+                modified = True
+            elif isinstance(segment, QuadraticBezier):
+                startpt = copy(segment.start)
+                endpt = copy(segment.end)
+                ctrl1pt = Point(
+                    startpt.x + 0.25 * (endpt.x - startpt.x),
+                    startpt.y + 0.25 * (endpt.y - startpt.y),
+                )
+                ctrl2pt = copy(segment.control)
+                newsegment = CubicBezier(
+                    start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
+                )
+                self.element.path[idx] = newsegment
+                modified = True
+            elif isinstance(segment, Arc):
+                for newsegment in list(segment.as_cubic_curves(1)):
+                    self.element.path[idx] = newsegment
+                    break
+                modified = True
+        # Pass 2 - make all control lines
+        prevseg = None
+        lastidx = len(self.element.path) - 1
+        for idx, segment in enumerate(self.element.path):
+            nextseg = None
+            if idx < lastidx:
+                nextseg = self.element.path[idx + 1]
+                if isinstance(nextseg, (Move, Close)):
+                    nextseg = None
+            if isinstance(segment, CubicBezier):
+                if prevseg is not None:
+                    angle1 = Point.angle(prevseg.end, prevseg.start)
+                    angle2 = Point.angle(segment.start, segment.end)
+                    d_angle = math.tau / 2 - (angle1 - angle2)
+                    while d_angle >= math.tau:
+                        d_angle -= math.tau
+                    while d_angle < -math.tau:
+                        d_angle += math.tau
+
+                    # print (f"to prev: Angle 1 = {angle1/math.tau*360:.1f}°, Angle 2 = {angle2/math.tau*360:.1f}°, Delta = {d_angle/math.tau*360:.1f}°")
+                    dist = segment.start.distance_to(segment.control1)
+                    candidate1 = Point.polar(segment.start, angle2 - d_angle / 2, dist)
+                    candidate2 = Point.polar(segment.start, angle1 + d_angle / 2, dist)
+                    if segment.end.distance_to(candidate1) < segment.end.distance_to(
+                        candidate2
+                    ):
+                        segment.control1 = candidate1
+                    else:
+                        segment.control1 = candidate2
+                    modified = True
+                if nextseg is not None:
+                    angle1 = Point.angle(segment.end, segment.start)
+                    angle2 = Point.angle(nextseg.start, nextseg.end)
+                    d_angle = math.tau / 2 - (angle1 - angle2)
+                    while d_angle >= math.tau:
+                        d_angle -= math.tau
+                    while d_angle < -math.tau:
+                        d_angle += math.tau
+
+                    # print (f"to next: Angle 1 = {angle1/math.tau*360:.1f}°, Angle 2 = {angle2/math.tau*360:.1f}°, Delta = {d_angle/math.tau*360:.1f}°")
+                    dist = segment.end.distance_to(segment.control2)
+                    candidate1 = Point.polar(segment.end, angle2 - d_angle / 2, dist)
+                    candidate2 = Point.polar(segment.end, angle1 + d_angle / 2, dist)
+                    if segment.start.distance_to(
+                        candidate1
+                    ) < segment.start.distance_to(candidate2):
+                        segment.control2 = candidate1
+                    else:
+                        segment.control2 = candidate2
+                    modified = True
+            if isinstance(segment, (Move, Close)):
+                prevseg = None
+            else:
+                prevseg = segment
+        if modified:
+            self.modify_element(True)
+
     def quad_symmetrical(self):
         modified = False
         if self.node_type == "polyline":
@@ -1137,6 +1298,24 @@ class EditTool(ToolWidget):
                 newsegment = Line(start=startpt, end=endpt)
                 self.element.path[idx] = newsegment
                 modified = True
+        if modified:
+            self.modify_element(True)
+
+    def linear_all(self):
+        # Stub for converting segment to a line
+        modified = False
+        if self.node_type == "polyline":
+            # Not valid for a polyline Could make a path now but that might be more than the user expected...
+            return
+        for idx, segment in enumerate(self.element.path):
+            if isinstance(segment, (Close, Move, Line)):
+                continue
+            startpt = Point(segment.start.x, segment.start.y)
+            endpt = Point(segment.end.x, segment.end.y)
+            newsegment = Line(start=startpt, end=endpt)
+            self.element.path[idx] = newsegment
+            modified = True
+
         if modified:
             self.modify_element(True)
 
@@ -1528,7 +1707,7 @@ class EditTool(ToolWidget):
                     self.selected_index = None
             self.scene.context.signal("nodeedit", (self.node_type, anyselected))
             if self.selected_index is None:
-                if event_type=="leftclick":
+                if event_type == "leftclick":
                     # Have we clicked outside the bbox? Then we call it a day...
                     outside = False
                     bb = self.element.bbox()
