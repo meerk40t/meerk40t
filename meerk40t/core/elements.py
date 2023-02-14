@@ -441,7 +441,7 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and not self.operation_default_empty:
+        if len(ops) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
@@ -927,7 +927,7 @@ class Elemental(Service):
         for node in data:
             if node.bounds is not None:
                 boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        if len(boundary_points) == 0:
             return
         left_edge = min([e[0] for e in boundary_points])
         top_edge = min([e[1] for e in boundary_points])
@@ -1827,7 +1827,7 @@ class Elemental(Service):
         if elements is None:
             return
 
-        if not len(list(self.ops())) and not self.operation_default_empty:
+        if len(list(self.ops())) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy

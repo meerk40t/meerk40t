@@ -1518,7 +1518,7 @@ class ShadowTree:
         self.dragging_nodes = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        if not len(self.dragging_nodes):
+        if len(self.dragging_nodes) == 0:
             event.Skip()
             return
 

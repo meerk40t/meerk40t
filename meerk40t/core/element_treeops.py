@@ -1069,10 +1069,7 @@ def init_tree(kernel):
     def select_unassigned(node, **kwargs):
         changes = False
         for node in self.elems():
-            if len(node.references) == 0:
-                emphasis = True
-            else:
-                emphasis = False
+            emphasis = bool(len(node.references) == 0)
             if node.emphasized != emphasis:
                 changes = True
                 node.emphasized = emphasis
