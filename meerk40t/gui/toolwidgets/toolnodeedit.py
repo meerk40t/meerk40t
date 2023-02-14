@@ -432,49 +432,49 @@ class EditTool(ToolWidget):
         if mode == "action":
             self.perform_action(keycode)
 
-    def debug_path(self):
-        if self.element is None or not hasattr(self.element, "path"):
-            return
-        path = self.element.path
-        starts = []
-        ends = []
-        types = []
-        for seg in path:
-            types.append(type(seg).__name__)
-            starts.append(seg.start)
-            ends.append(seg.end)
-        for idx in range(len(starts)):
-            p_idx = idx - 1 if idx > 0 else len(starts) - 1
-            n_idx = idx + 1 if idx < len(starts) - 1 else 0
-            start_status = ""
-            end_status = ""
-            if starts[idx] is None:
-                if ends[p_idx] is not None:
-                    start_status = "Start: None (Prev: not None)"
-            else:
-                if ends[p_idx] is None:
-                    start_status = "Start: Not None (Prev: None)"
-                else:
-                    if starts[idx].x != ends[p_idx].x or starts[idx].y != ends[p_idx].y:
-                        start_status = "Start: != Prev end"
-            if ends[idx] is None:
-                if starts[n_idx] is not None:
-                    end_status = "End: None (Next: not None)"
-            else:
-                if starts[n_idx] is None:
-                    end_status = "End: Not None (Next: None)"
-                else:
-                    if starts[n_idx].x != ends[idx].x or starts[n_idx].y != ends[idx].y:
-                        end_status = "End: != Next start"
-            if types[idx] == "Move" and types[p_idx] == "Close":
-                if ends[idx].x != ends[p_idx].x or ends[idx].y != ends[p_idx].y:
-                    start_status += ", end points !="
-                else:
-                    start_status += ", end points =="
+    # def debug_path(self):
+    #     if self.element is None or not hasattr(self.element, "path"):
+    #         return
+    #     path = self.element.path
+    #     starts = []
+    #     ends = []
+    #     types = []
+    #     for seg in path:
+    #         types.append(type(seg).__name__)
+    #         starts.append(seg.start)
+    #         ends.append(seg.end)
+    #     for idx in range(len(starts)):
+    #         p_idx = idx - 1 if idx > 0 else len(starts) - 1
+    #         n_idx = idx + 1 if idx < len(starts) - 1 else 0
+    #         start_status = ""
+    #         end_status = ""
+    #         if starts[idx] is None:
+    #             if ends[p_idx] is not None:
+    #                 start_status = "Start: None (Prev: not None)"
+    #         else:
+    #             if ends[p_idx] is None:
+    #                 start_status = "Start: Not None (Prev: None)"
+    #             else:
+    #                 if starts[idx].x != ends[p_idx].x or starts[idx].y != ends[p_idx].y:
+    #                     start_status = "Start: != Prev end"
+    #         if ends[idx] is None:
+    #             if starts[n_idx] is not None:
+    #                 end_status = "End: None (Next: not None)"
+    #         else:
+    #             if starts[n_idx] is None:
+    #                 end_status = "End: Not None (Next: None)"
+    #             else:
+    #                 if starts[n_idx].x != ends[idx].x or starts[n_idx].y != ends[idx].y:
+    #                     end_status = "End: != Next start"
+    #         if types[idx] == "Move" and types[p_idx] == "Close":
+    #             if ends[idx].x != ends[p_idx].x or ends[idx].y != ends[p_idx].y:
+    #                 start_status += ", end points !="
+    #             else:
+    #                 start_status += ", end points =="
 
-            print(
-                f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})"
-            )
+    #         print(
+    #             f"#{idx} {types[idx]} - {start_status} - {end_status} (Prev: {types[p_idx]}, Next = {types[n_idx]})"
+    #         )
 
     def calculate_points(self, selected_node):
         # Set points...
@@ -778,11 +778,8 @@ class EditTool(ToolWidget):
         gc.DrawPath(p)
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if not self.nodes:
-            return
-        self.set_pen_widths()
-        if self.p1 is not None and self.p2 is not None:
-            # Selection mode!
+
+        def draw_selection_rectangle():
             x0 = min(self.p1.real, self.p2.real)
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
@@ -790,51 +787,58 @@ class EditTool(ToolWidget):
             gc.SetPen(self.pen_selection)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
-        else:
-            offset = 5
-            s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
-            offset /= s
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            idx = -1
-            node = self.element
-            self.calc_and_draw(gc)
-            for entry in self.nodes:
-                idx += 1
-                ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
-                if entry["type"] == "point":
-                    if idx == self.selected_index or entry["selected"]:
-                        gc.SetPen(self.pen_highlight)
-                    else:
-                        gc.SetPen(self.pen)
-                    gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
-                elif entry["type"] == "control":
-                    if idx == self.selected_index or entry["selected"]:
-                        gc.SetPen(self.pen_highlight)
-                    else:
-                        gc.SetPen(self.pen_ctrl)
-                        # Do we have a second controlpoint at the same segment?
-                        if isinstance(entry["segment"], CubicBezier):
-                            orgnode = None
-                            if idx > 0 and self.nodes[idx - 1]["type"] == "point":
-                                orgnode = self.nodes[idx - 1]
-                            elif idx > 1 and self.nodes[idx - 2]["type"] == "point":
-                                orgnode = self.nodes[idx - 2]
-                            if orgnode is not None and orgnode["selected"]:
-                                gc.SetPen(self.pen_ctrl_semi)
-                    pattern = [
-                        (ptx - offset, pty),
-                        (ptx, pty + offset),
-                        (ptx + offset, pty),
-                        (ptx, pty - offset),
-                        (ptx - offset, pty),
-                    ]
+
+        if not self.nodes:
+            return
+        self.set_pen_widths()
+        if self.p1 is not None and self.p2 is not None:
+            # Selection mode!
+            draw_selection_rectangle()
+            return
+        offset = 5
+        s = math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+        offset /= s
+        gc.SetBrush(wx.TRANSPARENT_BRUSH)
+        idx = -1
+        node = self.element
+        self.calc_and_draw(gc)
+        for entry in self.nodes:
+            idx += 1
+            ptx, pty = node.matrix.point_in_matrix_space(entry["point"])
+            if entry["type"] == "point":
+                if idx == self.selected_index or entry["selected"]:
+                    gc.SetPen(self.pen_highlight)
+                else:
+                    gc.SetPen(self.pen)
+                gc.DrawEllipse(ptx - offset, pty - offset, offset * 2, offset * 2)
+            elif entry["type"] == "control":
+                if idx == self.selected_index or entry["selected"]:
+                    gc.SetPen(self.pen_highlight)
+                else:
+                    gc.SetPen(self.pen_ctrl)
+                    # Do we have a second controlpoint at the same segment?
+                    if isinstance(entry["segment"], CubicBezier):
+                        orgnode = None
+                        if idx > 0 and self.nodes[idx - 1]["type"] == "point":
+                            orgnode = self.nodes[idx - 1]
+                        elif idx > 1 and self.nodes[idx - 2]["type"] == "point":
+                            orgnode = self.nodes[idx - 2]
+                        if orgnode is not None and orgnode["selected"]:
+                            gc.SetPen(self.pen_ctrl_semi)
+                pattern = [
+                    (ptx - offset, pty),
+                    (ptx, pty + offset),
+                    (ptx + offset, pty),
+                    (ptx, pty - offset),
+                    (ptx - offset, pty),
+                ]
+                gc.DrawLines(pattern)
+                if 0 <= entry["connector"] < len(self.nodes):
+                    orgnode = self.nodes[entry["connector"]]
+                    org_pt = orgnode["point"]
+                    org_ptx, org_pty = node.matrix.point_in_matrix_space(org_pt)
+                    pattern = [(ptx, pty), (org_ptx, org_pty)]
                     gc.DrawLines(pattern)
-                    if 0 <= entry["connector"] < len(self.nodes):
-                        orgnode = self.nodes[entry["connector"]]
-                        org_pt = orgnode["point"]
-                        org_ptx, org_pty = node.matrix.point_in_matrix_space(org_pt)
-                        pattern = [(ptx, pty), (org_ptx, org_pty)]
-                        gc.DrawLines(pattern)
 
     def done(self):
         self.scene.tool_active = False
