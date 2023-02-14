@@ -1151,13 +1151,16 @@ class EditTool(ToolWidget):
                 self.element.path[idx] = newsegment
                 modified = True
             elif isinstance(segment, QuadraticBezier):
+                # The cubic control - points lie on 2/3 of the way of the
+                # line-segments from the endpoint to the quadratic control-point
                 startpt = copy(segment.start)
                 endpt = copy(segment.end)
-                ctrl1pt = Point(
-                    startpt.x + 0.25 * (endpt.x - startpt.x),
-                    startpt.y + 0.25 * (endpt.y - startpt.y),
-                )
-                ctrl2pt = copy(segment.control)
+                dx = segment.control.x - startpt.x
+                dy = segment.control.y - startpt.y
+                ctrl1pt = Point(startpt.x + 2 / 3 * dx, startpt.y + 2 / 3 * dy)
+                dx = segment.control.x - endpt.x
+                dy = segment.control.y - endpt.y
+                ctrl2pt = Point(endpt.x + 2 / 3 * dx, endpt.y + 2 / 3 * dy)
                 newsegment = CubicBezier(
                     start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
                 )
