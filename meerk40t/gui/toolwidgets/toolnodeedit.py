@@ -312,7 +312,7 @@ class NodeEditToolbar(MWindow):
         pass
 
     def window_close(self):
-        pass
+        self.context("tool none\n")
 
     def delegates(self):
         yield self.panel
@@ -842,7 +842,7 @@ class EditTool(ToolWidget):
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
-        self.scene.context.signal("tool none")
+        self.scene.context("tool none\n")
         self.scene.context.signal("statusmsg", "")
         self.scene.context.elements.validate_selected_area()
         self.scene.request_refresh()
@@ -912,7 +912,7 @@ class EditTool(ToolWidget):
                         if isinstance(seg, Move):
                             # Ready
                             break
-                        elif isinstance(seg, Close):
+                        if isinstance(seg, Close):
                             # Ready
                             is_closed = True
                             break
@@ -1226,10 +1226,10 @@ class EditTool(ToolWidget):
                     if isinstance(seg, Move) and prevseg is None:
                         # Not the one at the very beginning!
                         continue
-                    elif isinstance(seg, Move):
+                    if isinstance(seg, Move):
                         # Ready
                         break
-                    elif isinstance(seg, Close):
+                    if isinstance(seg, Close):
                         # Ready
                         is_closed = True
                         break
@@ -1524,9 +1524,25 @@ class EditTool(ToolWidget):
                     self.selected_index = None
             self.scene.context.signal("nodeedit", (self.node_type, anyselected))
             if self.selected_index is None:
-                # Fine we start a selection rectangle to select multiple nodes
-                self.move_type = "selection"
-                self.p1 = complex(space_pos[0], space_pos[1])
+                if event_type=="leftclick":
+                    # Have we clicked outside the bbox? Then we call it a day...
+                    outside = False
+                    bb = self.element.bbox()
+                    if space_pos[0] < bb[0] or space_pos[0] > bb[2]:
+                        outside = True
+                    if space_pos[1] < bb[1] or space_pos[1] > bb[3]:
+                        outside = True
+                    if outside:
+                        self.done()
+                        return RESPONSE_CONSUME
+                    else:
+                        # Clear selection
+                        self.clear_selection()
+                        self.scene.request_refresh()
+                else:
+                    # Fine we start a selection rectangle to select multiple nodes
+                    self.move_type = "selection"
+                    self.p1 = complex(space_pos[0], space_pos[1])
             else:
                 self.scene.request_refresh()
             return RESPONSE_CONSUME
