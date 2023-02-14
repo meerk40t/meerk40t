@@ -29,6 +29,9 @@ _ = wx.GetTranslation
 
 
 class NodeIconPanel(wx.Panel):
+    """
+    The Node-Editor toolbar, will interact with the tool class by exchanging signals
+    """
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -250,7 +253,7 @@ class NodeIconPanel(wx.Panel):
         self.Layout()
 
     @signal_listener("nodeedit")
-    def realize(self, origin=None, *args):
+    def realize(self, origin, *args):
         # print (f"Bar receives: {origin} - {args}")
         if args:
             if isinstance(args[0], (list, tuple)):
@@ -290,6 +293,11 @@ class NodeIconPanel(wx.Panel):
 
 
 class NodeEditToolbar(MWindow):
+    """
+    Wrapper Window to display to Node-Editor toolbar
+    Will hide itself from public view by expressing
+    'return (xxx, xxx, False)' in method 'submenu'
+    """
     def __init__(self, *args, **kwds):
         iconsize = 25
         iconsize += 10
@@ -317,7 +325,9 @@ class NodeEditToolbar(MWindow):
 
 class EditTool(ToolWidget):
     """
-    Edit tool allows you to view and edit the nodes within the scene.
+    Edit tool allows you to view and edit the nodes within a
+    selected element in the scene. It can currently handle
+    polylines / polygons and paths.
     """
 
     def __init__(self, scene):
@@ -411,10 +421,15 @@ class EditTool(ToolWidget):
         value += 4 * linewidth
         set_width_pen(self.pen_highlight_line, value)
 
-    def on_signal_nodeedit(self, origin, args):
+    def on_signal_nodeedit(self, origin, *args):
         # print (f"Signal: {origin} - {args}")
-        if args[0] == "action":
+        if isinstance(args[0], (list, tuple)):
+            mode = args[0][0]
+            keycode = args[0][1]
+        else:
+            mode = args[0]
             keycode = args[1]
+        if mode == "action":
             self.perform_action(keycode)
 
     def debug_path(self):

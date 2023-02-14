@@ -1261,7 +1261,7 @@ class ShadowTree:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
                 # Let's have a look at all references....
-                for subnode in node._references:
+                for subnode in node.references:
                     try:
                         subitem = subnode._item
                     except AttributeError:

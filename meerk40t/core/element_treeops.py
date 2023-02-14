@@ -125,13 +125,12 @@ def init_tree(kernel):
                     if enode not in to_treat:
                         to_treat.append(enode)
                     break
+                if enode.parent.selected:
+                    enode = enode.parent
                 else:
-                    if enode.parent.selected:
-                        enode = enode.parent
-                    else:
-                        if enode not in to_treat:
-                            to_treat.append(enode)
-                        break
+                    if enode not in to_treat:
+                        to_treat.append(enode)
+                    break
 
         for gnode in to_treat:
             for n in list(gnode.children):
@@ -1070,7 +1069,7 @@ def init_tree(kernel):
     def select_unassigned(node, **kwargs):
         changes = False
         for node in self.elems():
-            if len(node._references) == 0:
+            if len(node.references) == 0:
                 emphasis = True
             else:
                 emphasis = False
@@ -1317,7 +1316,7 @@ def init_tree(kernel):
     def remove_all_assignments(node, **kwargs):
         with self.static("remove_all_assign"):
             for node in self.elems():
-                for ref in list(node._references):
+                for ref in list(node.references):
                     ref.remove_node()
         self.signal("refresh_tree")
 
@@ -1630,7 +1629,7 @@ def init_tree(kernel):
                 for cnode in list(rnode._children):
                     rem_node(cnode)
             else:
-                for ref in list(rnode._references):
+                for ref in list(rnode.references):
                     ref.remove_node()
 
         with self.static("remove_assign"):

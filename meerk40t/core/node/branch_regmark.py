@@ -18,10 +18,10 @@ class BranchRegmarkNode(Node):
 
     def remove_references(self, node):
         ct = 0
-        for ref in list(node._references):
+        for ref in list(node.references):
             ct += 1
             ref.remove_node(fast=False)
-        for ref in list(node._children):
+        for ref in list(node.children):
             self.remove_references(ref)
 
     def drop(self, drag_node, modify=True):
