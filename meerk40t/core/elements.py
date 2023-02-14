@@ -1409,6 +1409,8 @@ class Elemental(Service):
         if fast:
             self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
+        self._filename = None
+        self.signal("file;loaded")
 
     def clear_note(self):
         self.note = None
@@ -2920,6 +2922,7 @@ class Elemental(Service):
                             end_time = time()
                             self._filename = pathname
                             self.set_end_time("load", display=True)
+                            self.signal("file;loaded")
                             return True
                         except FileNotFoundError:
                             return False

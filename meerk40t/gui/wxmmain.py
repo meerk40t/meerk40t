@@ -2879,6 +2879,7 @@ class MeerK40t(MWindow):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
+    @signal_listener("file;loaded")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
@@ -3072,9 +3073,15 @@ class MeerK40t(MWindow):
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
+        label = self.context.elements.filename
+        if label is None:
+            label = ""
+        else:
+            label = " - " + label
+
         title = (
-            f"{str(self.context.kernel.name)} v{self.context.kernel.version}      "
-            f"{self.context.device.label}"
+            f"{str(self.context.kernel.name)} v{self.context.kernel.version} - "
+            f"{self.context.device.label}{label}"
         )
         self.SetTitle(title)
 
