@@ -1083,6 +1083,16 @@ class EditTool(ToolWidget):
             result = (midpoint - (1 - t)**3 * p0  - 3 * (1 - t) * t**2 * p2 - t**3 * p3) * factor
             segment.control1 = result
 
+    def adjust_midpoint(self, index):
+        # We need to update the midpoint of a cubic bezier
+        for j in range(3):
+            k = index + 1 + j
+            if (
+                k < len(self.nodes) and 
+                self.nodes[k]["type"] == "midpoint"
+            ):
+                self.nodes[k]["point"] = self.get_bezier_point(self.nodes[index]["segment"], 0.5)
+                break
 
     def smoothen(self):
         modified = False
@@ -1890,6 +1900,17 @@ class EditTool(ToolWidget):
                     if nextseg is not None and nextseg.start is not None:
                         nextseg.start.x = m[0]
                         nextseg.start.y = m[1]
+                    
+                    if isinstance(current["segment"], CubicBezier):
+                        self.adjust_midpoint(self.selected_index)
+                    elif isinstance(current["segment"], Move):
+                        if (
+                            nextseg is not None and 
+                            isinstance(nextseg, CubicBezier)
+                        ):
+                            self.adjust_midpoint(self.selected_index + 1)
+
+                        
                     # self.debug_path()
                 self.modify_element(False)
             return RESPONSE_CONSUME
