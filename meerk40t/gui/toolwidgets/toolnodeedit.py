@@ -681,21 +681,22 @@ class EditTool(ToolWidget):
                         }
                     )
                     # midp = segment.point(0.5)
-                    # self.nodes.append(
-                    #     {
-                    #         "prev": None,
-                    #         "next": None,
-                    #         "point": midp,
-                    #         "segment": segment,
-                    #         "path": path,
-                    #         "type": "midpoint",
-                    #         "connector": -1,
-                    #         "selected": False,
-                    #         "segtype": "",
-                    #         "start": start,
-                    #         "pathindex": idx,
-                    #     }
-                    # )
+                    midp = self.get_bezier_point(segment, 0.5)
+                    self.nodes.append(
+                        {
+                            "prev": None,
+                            "next": None,
+                            "point": midp,
+                            "segment": segment,
+                            "path": path,
+                            "type": "midpoint",
+                            "connector": -1,
+                            "selected": False,
+                            "segtype": "",
+                            "start": start,
+                            "pathindex": idx,
+                        }
+                    )
                 elif isinstance(segment, Arc):
                     self.nodes.append(
                         {
@@ -889,19 +890,19 @@ class EditTool(ToolWidget):
                     org_ptx, org_pty = node.matrix.point_in_matrix_space(org_pt)
                     pattern = [(ptx, pty), (org_ptx, org_pty)]
                     gc.DrawLines(pattern)
-            # elif entry["type"] == "midpoint":
-            #     if idx == self.selected_index or entry["selected"]:
-            #         gc.SetPen(self.pen_highlight)
-            #     else:
-            #         gc.SetPen(self.pen_ctrl)
-            #     pattern = [
-            #         (ptx - offset, pty),
-            #         (ptx, pty + offset),
-            #         (ptx + offset, pty),
-            #         (ptx, pty - offset),
-            #         (ptx - offset, pty),
-            #     ]
-            #     gc.DrawLines(pattern)
+            elif entry["type"] == "midpoint":
+                if idx == self.selected_index or entry["selected"]:
+                    gc.SetPen(self.pen_highlight)
+                else:
+                    gc.SetPen(self.pen_ctrl)
+                pattern = [
+                    (ptx - offset, pty),
+                    (ptx, pty + offset),
+                    (ptx + offset, pty),
+                    (ptx, pty - offset),
+                    (ptx - offset, pty),
+                ]
+                gc.DrawLines(pattern)
 
     def done(self):
         self.scene.tool_active = False
@@ -1042,6 +1043,47 @@ class EditTool(ToolWidget):
         if modified:
             self.modify_element(True)
 
+    @staticmethod
+    def get_bezier_point(segment, t):
+        """
+        Provide a point on the cubic bezier curve for t (0 <= t <= 1)
+        Args:
+            segment (PathSegment): a cubic bezier
+            t (float): (0 <= t <= 1)
+            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+        """
+        p0 = segment.start
+        p1 = segment.control1
+        p2 = segment.control2
+        p3 = segment.end
+        result = (1 - t)**3 * p0 + 3 * (1 - t)**2 * t * p1 + 3 * (1 - t) * t**2 * p2 + t**3 * p3
+        return result
+
+    @staticmethod
+    def revise_bezier_to_point(segment, midpoint, change_2nd_control=False):
+        """
+        Adjust the two control points for a cubic bezier segment,
+        so that the given point will lie on the cubic bezier curve for t=0.5
+        Args:
+            segment (PathSegment): a cubic bezier segment to be amended
+            midpoint (Point): the new point
+            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+        """
+        t = 0.5
+        p0 = segment.start
+        p1 = segment.control1
+        p2 = segment.control2
+        p3 = segment.end
+        if change_2nd_control:
+            factor = 1 / (3 * (1 - t) * t**2)
+            result = (midpoint - (1 - t)**3 * p0  - 3 * (1 - t)**2 * t * p1 - t**3 * p3) * factor
+            segment.control2 = result
+        else:
+            factor = 1 / (3 * (1 - t)**2 * t)
+            result = (midpoint - (1 - t)**3 * p0  - 3 * (1 - t) * t**2 * p2 - t**3 * p3) * factor
+            segment.control1 = result
+
+
     def smoothen(self):
         modified = False
         if self.node_type == "polyline":
@@ -1052,8 +1094,6 @@ class EditTool(ToolWidget):
                 segment = entry["segment"]
                 pt_start = segment.start
                 pt_end = segment.end
-                pt_control1 = segment.control1
-                pt_control2 = segment.control2
                 other_segment = entry["prev"]
                 if other_segment is not None:
                     if isinstance(other_segment, Line):
@@ -1740,10 +1780,11 @@ class EditTool(ToolWidget):
                             for entry2 in self.nodes:
                                 entry2["selected"] = False
                             orgnode = None
-                            if i > 0 and self.nodes[i - 1]["type"] == "point":
-                                orgnode = self.nodes[i - 1]
-                            elif i > 1 and self.nodes[i - 2]["type"] == "point":
-                                orgnode = self.nodes[i - 2]
+                            for j in range(0, 3):
+                                k = i - j - 1
+                                if k >= 0 and self.nodes[k]["type"] == "point":
+                                    orgnode = self.nodes[k]
+                                    break
                             if orgnode is not None:
                                 orgnode["selected"] = True
                             entry["selected"] = True
@@ -1804,6 +1845,27 @@ class EditTool(ToolWidget):
                 pt = current["point"]
 
                 m = self.element.matrix.point_in_inverse_space(space_pos[:2])
+                # Special treatment for the virtual midpoint:
+                if current["type"] == "midpoint" and self.node_type == "path":
+                    self.scene.context.signal("statusmsg", _("Drag to change the curve shape (ctrl to affect the other side)"))
+                    idx = self.selected_index
+                    newpt = Point(m[0], m[1])
+                    change2nd = bool("ctrl" in modifiers)
+                    self.revise_bezier_to_point(current["segment"], newpt, change_2nd_control=change2nd)
+                    self.modify_element(False)
+                    self.calculate_points(self.element)
+                    self.selected_index = idx
+                    self.nodes[idx]["selected"] = True
+                    orgnode = None
+                    for j in range(0, 3):
+                        k = idx - j - 1
+                        if k >= 0 and self.nodes[k]["type"] == "point":
+                            orgnode = self.nodes[k]
+                            break
+                    if orgnode is not None:
+                        orgnode["selected"] = True
+                    self.scene.request_refresh()
+                    return RESPONSE_CONSUME
                 pt.x = m[0]
                 pt.y = m[1]
                 if self.node_type == "path":
