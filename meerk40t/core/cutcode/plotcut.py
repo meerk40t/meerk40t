@@ -228,19 +228,34 @@ class PlotCut(CutObject):
     def plot(self):
         x0 = None
         y0 = None
+        last_dx = 0
+        last_dy = 0
         for i in range(0, len(self._points)):
             x1, y1 = self._points[i]
             if x0 is not None:
+                current_dx = x1 - x0
+                current_dy = y1 - y0
                 power = self._powers[i - 1]
-                if self.h_raster and y1 != y0:
-                    yield x0, y0, power, x1, y0
-                    yield x1, y0, power, x1, y1
-                elif self.v_raster and x1 != x0:
-                    yield x0, y0, power, x0, y1
-                    yield x0, y1, power, x1, y1
-
+                if x1 != x0 and y1 != y0:
+                    # Raster directional step.
+                    if (
+                        (last_dx > 0) == (current_dx > 0)  # dx same direction
+                        and self.h_raster
+                        or (last_dy > 0) != (current_dy > 0)  # dy different directions
+                        and self.v_raster
+                    ):
+                        # Y-Step then X-Step.
+                        yield x0, y0, power, x0, y1
+                        yield x0, y1, power, x1, y1
+                    else:
+                        # X-Step then Y-Step
+                        yield x0, y0, power, x1, y0
+                        yield x1, y0, power, x1, y1
                 else:
+                    # Single step.
                     yield x0, y0, power, x1, y1
+                last_dx = current_dx
+                last_dy = current_dy
             x0 = x1
             y0 = y1
 
