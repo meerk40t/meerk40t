@@ -239,9 +239,9 @@ class PlotCut(CutObject):
                 if x1 != x0 and y1 != y0:
                     # Raster directional step.
                     if (
-                        (last_dx > 0) == (current_dx > 0)  # dx same direction
+                        (last_dx > 0) != (current_dx > 0)  # dx same direction
                         and self.h_raster
-                        or (last_dy > 0) != (current_dy > 0)  # dy different directions
+                        or (last_dy > 0) == (current_dy > 0)  # dy different directions
                         and self.v_raster
                     ):
                         # Y-Step then X-Step.
