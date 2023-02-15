@@ -19,15 +19,11 @@ from meerk40t.kernel import (
     STATE_TERMINATE,
     STATE_UNKNOWN,
     STATE_WAIT,
-    Module,
     get_safe_path,
     signal_listener,
 )
 
-from ..core.cutcode.cutcode import CutCode
 from ..core.cutcode.plotcut import PlotCut
-from ..core.node.cutnode import CutNode
-from ..core.parameters import Parameters
 from ..core.units import UNITS_PER_MM, UNITS_PER_uM
 from ..svgelements import Color
 
@@ -38,25 +34,21 @@ class RuidaCommandError(Exception):
     """
 
 
-class RuidaEmulator(Module, Parameters):
-    def __init__(self, context, path):
-        Module.__init__(self, context, path)
-        Parameters.__init__(self)
-        self.design = False
-        self.control = False
+class RuidaEmulator:
+    def __init__(self, driver, units_to_device_matrix):
+        self.driver = driver
+        self.units_to_device_matrix = units_to_device_matrix
+        self.settings = {"power": 0.0, "speed": 0.0}
+
         self.saving = False
 
         self.filename = None
         self.filestream = None
 
-        self.cutcode = CutCode()
         self.plotcut = PlotCut()
 
         self._use_set = None
-        self.spooler = None
-        self.device = None
 
-        self.elements = None
         self.color = None
 
         self.x = 0.0
@@ -70,6 +62,7 @@ class RuidaEmulator(Module, Parameters):
         self.d = 0.0
         self.magic = 0x88  # 0x11 for the 634XG
         # Should automatically shift encoding if wrong.
+
         # self.magic = 0x38
         self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
 
@@ -78,11 +71,12 @@ class RuidaEmulator(Module, Parameters):
         self.power2_min = 0
         self.power2_max = 0
 
-        self.ruida_channel = self.context.channel("ruida")
-        self.ruida_describe = self.context.channel("ruida_desc")
+        self.channel = None
+        self.describe = None
 
-        self.ruida_reply = self.context.channel("ruida_reply")
-        self.ruida_reply_realtime = self.context.channel("ruida_reply_realtime")
+        self.program_mode = False
+        self.reply = None
+        self.realtime = None
 
         self.process_commands = True
         self.parse_lasercode = True
@@ -90,14 +84,14 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return f"Ruida({self.name}, {len(self.cutcode)} cuts @{hex(id(self))})"
+        return f"RuidaEmulator(@{hex(id(self))})"
+
+    @property
+    def current(self):
+        return self.x, self.y
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
-        if self.device is not None and self.device.path != origin:
-            return  # This pipe thread change is from the wrong device.
-        if not self.control:
-            return  # We are not using ruidacontrol mode. Do not update the state.
         if state == STATE_INITIALIZE:
             self.state = 22
         elif state == STATE_TERMINATE:
@@ -117,21 +111,57 @@ class RuidaEmulator(Module, Parameters):
         elif state == STATE_UNKNOWN:
             self.state = 22
 
-    def generate(self):
-        for cutobject in self.cutcode:
-            yield "plot", cutobject
-        yield "plot_start"
+    def plot_location(self, x, y, power):
+        """
+        Adds this particular location to the current plotcut.
 
-    def new_plot_cut(self):
-        if len(self.plotcut):
-            self.plotcut.settings = self.cutset()
-            self.cutcode.append(self.plotcut)
-            self.plotcut = PlotCut()
-            self.plotcut.plot_init(self.x, self.y)
+        Or, starts a new plotcut if one is not already started.
+
+        First plotcut is a 0-power move to the current position. X and Y are set to plotted location
+
+        @param x:
+        @param y:
+        @param power:
+        @return:
+        """
+        matrix = self.units_to_device_matrix
+        if self.plotcut is None:
+            ox, oy = matrix.transform_point([self.x, self.y])
+            self.plotcut = PlotCut(settings=dict(self.settings))
+            self.plotcut.plot_init(int(round(ox)), int(round(oy)))
+        tx, ty = matrix.transform_point([x, y])
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
+        if not self.program_mode:
+            self.plot_commit()
+        self.x = x
+        self.y = y
+
+    def plot_commit(self):
+        """
+        Force commits the old plotcut and unsets the current plotcut.
+
+        @return:
+        """
+        if self.plotcut is None:
+            return
+        self.plot(self.plotcut)
+        self.plotcut = None
+
+    def plot(self, plot):
+        try:
+            self.driver.plot(plot)
+        except AttributeError:
+            pass
+        if not self.program_mode:
+            # If we plotted this, and we aren't in program mode execute all of these commands right away
+            try:
+                self.driver.plot_start()
+            except AttributeError:
+                pass
 
     def cutset(self):
         if self._use_set is None:
-            self._use_set = self.derive()
+            self._use_set = dict(self.settings)
         return self._use_set
 
     @staticmethod
@@ -248,12 +278,15 @@ class RuidaEmulator(Module, Parameters):
         if len(array) > 0:
             yield array
 
-    def reply(self, response, desc="ACK"):
+    def msg_reply(self, response, desc="ACK"):
         if self.swizzle_mode:
-            self.ruida_reply(self.swizzle(response))
+            if self.reply:
+                self.reply(self.swizzle(response))
         else:
-            self.ruida_reply_realtime(response)
-        self.ruida_channel(f"<-- {response.hex()}\t({desc})")
+            if self.realtime:
+                self.realtime(response)
+        if self.channel:
+            self.channel(f"<-- {response.hex()}\t({desc})")
 
     def checksum_write(self, sent_data):
         """
@@ -274,13 +307,15 @@ class RuidaEmulator(Module, Parameters):
                 self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
                     self.magic
                 )
-                self.ruida_channel("Setting magic to 0x88")
+                if self.channel:
+                    self.channel("Setting magic to 0x88")
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self.magic = 0x11
                 self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
                     self.magic
                 )
-                self.ruida_channel("Setting magic to 0x11")
+                if self.channel:
+                    self.channel("Setting magic to 0x11")
 
         if checksum_check == checksum_sum:
             response = b"\xCC"
@@ -290,7 +325,8 @@ class RuidaEmulator(Module, Parameters):
             self.reply(
                 response, desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
             )
-            self.ruida_channel("--> " + str(data.hex()))
+            if self.channel:
+                self.channel("--> " + str(data.hex()))
             return
         self.write(BytesIO(self.unswizzle(data)))
 
@@ -318,11 +354,26 @@ class RuidaEmulator(Module, Parameters):
             try:
                 self.process(array)
             except RuidaCommandError:
-                self.ruida_channel(f"Process Failure: {str(bytes(array).hex())}")
+                if self.channel:
+                    self.channel(f"Process Failure: {str(bytes(array).hex())}")
             except Exception as e:
-                self.ruida_channel(f"Crashed processing: {str(bytes(array).hex())}")
-                self.ruida_channel(str(e))
+                if self.channel:
+                    self.channel(f"Crashed processing: {str(bytes(array).hex())}")
+                    self.channel(str(e))
                 raise e
+
+    def set_speed(self, speed):
+        self.settings["speed"] = speed
+        current_speed = self.settings.get("speed", 0)
+        if speed != current_speed:
+            try:
+                self.driver.set("speed", speed)
+            except AttributeError:
+                pass
+            self.settings["speed"] = speed
+
+    def set_color(self, color):
+        self.settings["color"] = color
 
     def process(self, array):
         """
@@ -335,12 +386,11 @@ class RuidaEmulator(Module, Parameters):
         desc = ""
         respond = None
         respond_desc = None
-        start_x = self.x
-        start_y = self.y
         if self.filestream:
             self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
-            self.ruida_channel(f"NOT A COMMAND: {array[0]}")
+            if self.channel:
+                self.channel(f"NOT A COMMAND: {array[0]}")
             raise RuidaCommandError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
@@ -351,24 +401,19 @@ class RuidaEmulator(Module, Parameters):
                 desc = f"Axis Z Move {value}"
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
-            if self.speed < 40:
-                self.new_plot_cut()
-
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
             desc = f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
-                if self.speed < 40:
-                    self.new_plot_cut()
                 dx = self.relcoord(array[1:3])
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
-                self.plotcut.plot_append(
+                self.plot_location(
                     int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
                 )
                 desc = f"Move Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
@@ -377,14 +422,14 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
             desc = f"Move Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
             desc = f"Move Vertical Relative ({dy * UNITS_PER_uM} units)"
@@ -412,57 +457,126 @@ class RuidaEmulator(Module, Parameters):
             else:
                 if array[2] == 0x02:
                     desc = f"Interface +X {key}"
-                    if self.control:
-                        if key == "Down":
-                            self.context("+right\n")
-                        else:
-                            self.context("-right\n")
+                    if key == "Down":
+                        try:
+                            self.driver.move_right(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_right(False)
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x01:
                     desc = f"Interface -X {key}"
-                    if self.control:
-                        if key == "Down":
-                            self.context("+left\n")
-                        else:
-                            self.context("-left\n")
+                    if key == "Down":
+                        try:
+                            self.driver.move_left(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_left(False)
+                        except AttributeError:
+                            pass
                 if array[2] == 0x03:
                     desc = f"Interface +Y {key}"
-                    if self.control:
-                        if key == "Down":
-                            self.context("+up\n")
-                        else:
-                            self.context("-up\n")
+                    if key == "Down":
+                        try:
+                            self.driver.move_top(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_top(False)
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x04:
                     desc = f"Interface -Y {key}"
-                    if self.control:
-                        if key == "Down":
-                            self.context("+down\n")
-                        else:
-                            self.context("-down\n")
+                    if key == "Down":
+                        try:
+                            self.driver.move_bottom(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_bottom(False)
+                        except AttributeError:
+                            pass
                 if array[2] == 0x0A:
                     desc = f"Interface +Z {key}"
+                    if key == "Down":
+                        try:
+                            self.driver.move_plus_z(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_plus_z(False)
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x0B:
                     desc = f"Interface -Z {key}"
+                    if key == "Down":
+                        try:
+                            self.driver.move_minus_z(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_minus_z(False)
+                        except AttributeError:
+                            pass
                 if array[2] == 0x0C:
                     desc = f"Interface +U {key}"
+                    if key == "Down":
+                        try:
+                            self.driver.move_plus_u(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_plus_u(False)
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x0D:
                     desc = f"Interface -U {key}"
+                    if key == "Down":
+                        try:
+                            self.driver.move_minus_u(True)
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.move_minus_u(False)
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x05:
                     desc = f"Interface Pulse {key}"
-                    if self.control:
-                        if key == "Down":
-                            self.context("+laser\n")
-                        else:
-                            self.context("-laser\n")
+                    if key == "Down":
+                        try:
+                            self.driver.laser_on()
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.laser_off()
+                        except AttributeError:
+                            pass
                 elif array[2] == 0x11:
                     desc = "Interface Speed"
                 elif array[2] == 0x06:
                     desc = "Interface Start/Pause"
-                    if self.control:
-                        self.context("pause\n")
+                    try:
+                        self.driver.pause()
+                    except AttributeError:
+                        pass
                 elif array[2] == 0x09:
                     desc = "Interface Stop"
-                    if self.control:
-                        self.context("estop\n")
+                    try:
+                        self.driver.reset()
+                    except AttributeError:
+                        pass
                 elif array[2] == 0x5A:
                     desc = "Interface Reset"
                 elif array[2] == 0x0F:
@@ -473,10 +587,14 @@ class RuidaEmulator(Module, Parameters):
                     desc = "Interface Laser Gate"
                 elif array[2] == 0x08:
                     desc = "Interface Origin"
+                    try:
+                        self.driver.move_ori(0,0)
+                    except AttributeError:
+                        pass
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
             desc = f"Cut Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
@@ -485,7 +603,7 @@ class RuidaEmulator(Module, Parameters):
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
             desc = (
@@ -494,14 +612,14 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
             desc = f"Cut Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(
+            self.plot_location(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
             desc = f"Cut Vertical Relative ({dy * UNITS_PER_uM} units)"
@@ -531,19 +649,29 @@ class RuidaEmulator(Module, Parameters):
             desc = f"End Power 4 ({v0})"
         elif array[0] == 0xC6:
             if array[1] == 0x01:
-                self.new_plot_cut()
                 power = self.parse_power(array[2:4])
+                self.settings["power1_min"] = power
+                power = self.power1_max * 10.0  # 1000 / 100
                 desc = f"Power 1 min={power}"
-                self.power1_min = power
-                self.power = self.power1_max * 10.0  # 1000 / 100
-                self._use_set = None
+                current_power = self.settings.get("power", 0)
+                if power != current_power:
+                    try:
+                        self.driver.set("power", power)
+                    except AttributeError:
+                        pass
+                    self.settings["power"] = power
             elif array[1] == 0x02:
-                self.new_plot_cut()
                 power = self.parse_power(array[2:4])
+                self.settings["power1_max"] = power
+                power = self.power1_max * 10.0  # 1000 / 100
                 desc = f"Power 1 max={power}"
-                self.power1_max = power
-                self.power = self.power1_max * 10.0  # 1000 / 100
-                self._use_set = None
+                current_power = self.settings.get("power", 0)
+                if power != current_power:
+                    try:
+                        self.driver.set("power", power)
+                    except AttributeError:
+                        pass
+                    self.settings["power"] = power
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
                 desc = f"Power 3 min={power}"
@@ -631,22 +759,28 @@ class RuidaEmulator(Module, Parameters):
                 part = array[3]
                 frequency = self.parse_frequency(array[4:9])
                 desc = f"part, Laser {laser}, Frequency ({frequency})"
+                self.settings["frequency"] = frequency
+                current_frequency = self.settings.get("frequency", 0)
+                if frequency != current_frequency:
+                    try:
+                        self.driver.set("frequency", frequency)
+                    except AttributeError:
+                        pass
+                    self.settings["frequency"] = frequency
         elif array[0] == 0xC9:
             if array[1] == 0x02:
-                self.new_plot_cut()
+                self.plot_commit()
                 speed = self.parse_speed(array[2:7])
+                self.set_speed(speed)
                 desc = f"Speed Laser 1 {speed}mm/s"
-                self.speed = speed
-                self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
                 desc = f"Axis Speed {speed}mm/s"
             elif array[1] == 0x04:
-                self.new_plot_cut()
+                self.plot_commit()
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
-                self.speed = speed
-                self._use_set = None
+                self.set_speed(speed)
                 desc = f"{part}, Speed {speed}mm/s"
             elif array[1] == 0x05:
                 speed = self.parse_speed(array[2:7]) / 1000.0
@@ -693,14 +827,13 @@ class RuidaEmulator(Module, Parameters):
                 value = array[2]
                 desc = f"X Sign Map {value}"
             elif array[1] == 0x05:
-                self.new_plot_cut()
+                self.plot_commit()
                 c = RuidaEmulator.decodeu35(array[2:7])
                 r = c & 0xFF
                 g = (c >> 8) & 0xFF
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
-                self.color = c.hex
-                self._use_set = None
+                self.set_color(c.hex)
                 desc = f"Layer Color {str(self.color)}"
             elif array[1] == 0x06:
                 part = array[2]
@@ -709,7 +842,7 @@ class RuidaEmulator(Module, Parameters):
                 g = (c >> 8) & 0xFF
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
-                self.color = c.hex
+                self.set_color(c.hex)
                 desc = f"{part}, Color {self.color}"
             elif array[1] == 0x10:
                 value = array[2]
@@ -737,21 +870,9 @@ class RuidaEmulator(Module, Parameters):
             if array[1] == 0x29:
                 desc = "Unknown LB Command"
         elif array[0] == 0xD7:
-            if not self.saving and len(self.cutcode):
+            if not self.saving:
                 # If not saving send to spooler, if control
-                if self.control:
-                    matrix = self.device.scene_to_device_matrix()
-                    for plot in self.cutcode:
-                        plot.transform(matrix)
-                    label = f"Ruida ({len(self.cutcode)} items)"
-                    self.spooler.laserjob([self.cutcode], label=label)
-                if self.design and self.elements is not None:
-                    # if `design` is set, send to elements at CutNode.
-                    node = CutNode(cutcode=self.cutcode)
-                    self.elements.op_branch.add_node(node)
-            self.cutcode = CutCode()
-            self.plotcut = PlotCut()
-            self.plotcut.plot_init(self.x, self.y)
+                self.plot_commit()
             self.saving = False
             self.filename = None
             if self.filestream is not None:
@@ -763,16 +884,23 @@ class RuidaEmulator(Module, Parameters):
                 desc = "Start Process"
             if array[1] == 0x01:
                 desc = "Stop Process"
-                if self.control:
-                    self.context("estop\ntimer 1 1 home\n")
+                try:
+                    self.driver.reset()
+                    self.driver.home()
+                except AttributeError:
+                    pass
             if array[1] == 0x02:
                 desc = "Pause Process"
-                if self.control:
-                    self.context("pause\n")
+                try:
+                    self.driver.pause()
+                except AttributeError:
+                    pass
             if array[1] == 0x03:
                 desc = "Restore Process"
-                if self.control:
-                    self.context("resume\n")
+                try:
+                    self.driver.resume()
+                except AttributeError:
+                    pass
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
@@ -789,60 +917,110 @@ class RuidaEmulator(Module, Parameters):
                 self.x = 0.0
                 self.y = 0.0
                 desc = "Home XY"
-                if self.control:
-                    self.context("home\n")
+                try:
+                    self.driver.home()
+                except AttributeError:
+                    pass
             if array[1] == 0x2E:
                 desc = "FocusZ"
             if array[1] == 0x20:
                 desc = "KeyDown -X +Left"
-                if self.control:
-                    self.context("+left\n")
+                try:
+                    self.driver.move_left(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x21:
                 desc = "KeyDown +X +Right"
-                if self.control:
-                    self.context("+right\n")
+                try:
+                    self.driver.move_right(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x22:
                 desc = "KeyDown +Y +Top"
-                if self.control:
-                    self.context("+up\n")
+                try:
+                    self.driver.move_top(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x23:
                 desc = "KeyDown -Y +Bottom"
-                if self.control:
-                    self.context("+down\n")
+                try:
+                    self.driver.move_down(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x24:
                 desc = "KeyDown +Z"
+                try:
+                    self.driver.move_plus_z(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x25:
                 desc = "KeyDown -Z"
+                try:
+                    self.driver.move_minus_z(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x26:
                 desc = "KeyDown +U"
+                try:
+                    self.driver.move_plus_u(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x27:
                 desc = "KeyDown -U"
+                try:
+                    self.driver.move_minus_u(True)
+                except AttributeError:
+                    pass
             if array[1] == 0x28:
                 desc = "KeyDown 0x21"
             if array[1] == 0x30:
                 desc = "KeyUp -X +Left"
-                if self.control:
-                    self.context("-left\n")
+                try:
+                    self.driver.move_left(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x31:
                 desc = "KeyUp +X +Right"
-                if self.control:
-                    self.context("-right\n")
+                try:
+                    self.driver.move_right(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x32:
                 desc = "KeyUp +Y +Top"
-                if self.control:
-                    self.context("-up\n")
+                try:
+                    self.driver.move_top(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x33:
                 desc = "KeyUp -Y +Bottom"
-                if self.control:
-                    self.context("-down\n")
+                try:
+                    self.driver.move_down(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x34:
                 desc = "KeyUp +Z"
+                try:
+                    self.driver.move_plus_z(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x35:
+                try:
+                    self.driver.move_minus_z(False)
+                except AttributeError:
+                    pass
                 desc = "KeyUp -Z"
             if array[1] == 0x36:
                 desc = "KeyUp +U"
+                try:
+                    self.driver.move_plus_u(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x37:
                 desc = "KeyUp -U"
+                try:
+                    self.driver.move_minus_u(False)
+                except AttributeError:
+                    pass
             if array[1] == 0x38:
                 desc = "KeyUp 0x20"
             if array[1] == 0x39:
@@ -904,46 +1082,60 @@ class RuidaEmulator(Module, Parameters):
                     coord = self.abscoord(array[3:8])
                     self.x += coord
                     desc = f"Move {param} X: {coord} ({self.x},{self.y})"
-                    if self.control:
-                        self.context(
-                            f"move -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
-                        )
+                    self.plot_location(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM, 0)
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
                     self.y += coord
                     desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
-                    if self.control:
-                        self.context(
-                            f"move -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
-                        )
+                    self.plot_location(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM, 0)
                 elif array[1] == 0x02 or array[1] == 0x52:
+                    oz = self.z
                     coord = self.abscoord(array[3:8])
                     self.z += coord
                     desc = f"Move {param} Z: {coord} ({self.x},{self.y})"
+                    if oz != self.z:
+                        try:
+                            self.plot_commit()  # We plot commit on z level change
+                            self.driver.axis("z", self.z)
+                        except AttributeError:
+                            pass
                 elif array[1] == 0x03 or array[1] == 0x53:
+                    ou = self.u
                     coord = self.abscoord(array[3:8])
                     self.u += coord
                     desc = f"Move {param} U: {coord} ({self.x},{self.y})"
+                    if ou != self.u:
+                        try:
+                            self.plot_commit()  # We plot commit on u level change
+                            self.driver.axis("u", self.u)
+                        except AttributeError:
+                            pass
                 elif array[1] == 0x0F:
                     desc = "Feed Axis Move"
                 elif array[1] == 0x10 or array[1] == 0x60:
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
                     desc = f"Move {param} XY ({self.x * UNITS_PER_uM}, {self.y * UNITS_PER_uM})"
-                    # self.x = 0
-                    # self.y = 0
-                    if self.control:
-                        if "Origin" in param:
-                            self.context(
-                                f"move_origin -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
-                            )
-                        else:
-                            self.context("home\n")
+                    if "Origin" in param:
+                        try:
+                            self.driver.move_ori(f"{self.x * UNITS_PER_uM / UNITS_PER_MM}mm", f"{self.y * UNITS_PER_uM / UNITS_PER_MM}mm")
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.driver.home()
+                        except AttributeError:
+                            pass
                 elif array[1] == 0x30 or array[1] == 0x70:
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
                     self.u = self.abscoord(array[13 : 13 + 5])
                     desc = f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                    try:
+                        self.driver.move_abs(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM)
+                        self.driver.axis("u", self.u * UNITS_PER_uM)
+                    except AttributeError:
+                        pass
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
@@ -1010,7 +1202,7 @@ class RuidaEmulator(Module, Parameters):
                 # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
             if array[1] == 0x00:
-                self.new_plot_cut()
+                self.plot_commit()
                 desc = "Block End"
             elif array[1] == 0x01:
                 self.filename = ""
@@ -1244,11 +1436,13 @@ class RuidaEmulator(Module, Parameters):
                 desc = f"Element Array Mirror ({index})"
         else:
             desc = "Unknown Command!"
-
-        self.ruida_describe(f"{str(bytes(array).hex())}\t{desc}")
-        self.ruida_channel(f"--> {str(bytes(array).hex())}\t({desc})")
+        if self.describe:
+            self.describe(f"{str(bytes(array).hex())}\t{desc}")
+        if self.channel:
+            self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
         if respond is not None:
-            self.reply(respond, desc=respond_desc)
+            if self.reply:
+                self.reply(respond, desc=respond_desc)
 
     def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:
         if mem == 0x0002:
@@ -1839,47 +2033,33 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            if self.device is not None:
-                dev_x, dev_y = self.device.current
-                self.x = int(dev_x / UNITS_PER_uM)
-            x = int(self.x)
-            return "Axis Preferred Position 1, Pos X", x
+            return "Axis Preferred Position 1, Pos X", self.x
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            if self.device is not None:
-                dev_x, dev_y = self.device.current
-                self.y = int(dev_y / UNITS_PER_uM)
-            y = int(self.y)
-            return "Axis Preferred Position 2, Pos Y", y
+            return "Axis Preferred Position 2, Pos Y", self.y
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            z = int(self.z)
-            return "Axis Preferred Position 3, Pos Z", z
+            return "Axis Preferred Position 3, Pos Z", self.z
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
-            u = int(self.u)
-            return "Axis Preferred Position 4, Pos U", u
+            return "Axis Preferred Position 4, Pos U", self.u
         if mem == 0x0253:
             return "U Total Travel (m)", 0
         if mem == 0x025A:
-            a = int(self.a)
-            return "Axis Preferred Position 5, Pos A", a
+            return "Axis Preferred Position 5, Pos A", self.a
         if mem == 0x025B:
-            b = int(self.b)
-            return "Axis Preferred Position 6, Pos B", b
+            return "Axis Preferred Position 6, Pos B", self.b
         if mem == 0x025C:
-            c = int(self.c)
-            return "Axis Preferred Position 7, Pos C", c
+            return "Axis Preferred Position 7, Pos C", self.c
         if mem == 0x025D:
-            d = int(self.d)
-            return "Axis Preferred Position 8, Pos D", d
+            return "Axis Preferred Position 8, Pos D", self.d
         if mem == 0x0260:
             return "DocumentWorkNum", 0
         if 0x0261 <= mem < 0x02C4:
