@@ -858,6 +858,10 @@ class RuidaEmulator:
                 self.filestream = None
             self.program_mode = False
             self.plot_commit()
+            try:
+                self.driver.plot_start()
+            except AttributeError:
+                pass
             desc = "End Of File"
         elif array[0] == 0xD8:
             if array[1] == 0x00:
