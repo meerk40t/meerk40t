@@ -126,10 +126,10 @@ class RuidaEmulator:
         """
         matrix = self.units_to_device_matrix
         if self.plotcut is None:
-            ox, oy = matrix.transform_point([self.x, self.y])
+            ox, oy = matrix.transform_point([self.x * UNITS_PER_uM, self.y * UNITS_PER_uM])
             self.plotcut = PlotCut(settings=dict(self.settings))
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
-        tx, ty = matrix.transform_point([x, y])
+        tx, ty = matrix.transform_point([x * UNITS_PER_uM, y * UNITS_PER_uM])
         self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
         if not self.program_mode:
             self.plot_commit()
@@ -403,9 +403,7 @@ class RuidaEmulator:
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
-            )
+            self.plot_location(self.x, self.y, 0)
             desc = f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
@@ -413,25 +411,19 @@ class RuidaEmulator:
                 dy = self.relcoord(array[3:5])
                 self.x += dx
                 self.y += dy
-                self.plot_location(
-                    int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
-                )
+                self.plot_location(self.x, self.y, 0)
                 desc = f"Move Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
-            )
+            self.plot_location(self.x, self.y, 0)
             desc = f"Move Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
-            )
+            self.plot_location(self.x, self.y, 0)
             desc = f"Move Vertical Relative ({dy * UNITS_PER_uM} units)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
@@ -594,34 +586,26 @@ class RuidaEmulator:
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
-            )
+            self.plot_location(self.x, self.y, 1)
             desc = f"Cut Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
-            )
+            self.plot_location(self.x, self.y, 1)
             desc = (
                 f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
             )
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
-            )
+            self.plot_location(self.x, self.y, 1)
             desc = f"Cut Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plot_location(
-                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
-            )
+            self.plot_location(self.x, self.y, 0)
             desc = f"Cut Vertical Relative ({dy * UNITS_PER_uM} units)"
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
@@ -1082,12 +1066,12 @@ class RuidaEmulator:
                     coord = self.abscoord(array[3:8])
                     self.x += coord
                     desc = f"Move {param} X: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM, 0)
+                    self.plot_location(self.x, self.y, 0)
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
                     self.y += coord
                     desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM, 0)
+                    self.plot_location(self.x, self.y, 0)
                 elif array[1] == 0x02 or array[1] == 0x52:
                     oz = self.z
                     coord = self.abscoord(array[3:8])
