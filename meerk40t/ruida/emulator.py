@@ -126,6 +126,9 @@ class RuidaEmulator:
         """
         matrix = self.units_to_device_matrix
         if self.plotcut is None:
+            if self.program_mode:
+                self.x = x
+                self.y = y
             ox, oy = matrix.transform_point([self.x * UNITS_PER_uM, self.y * UNITS_PER_uM])
             self.plotcut = PlotCut(settings=dict(self.settings))
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
