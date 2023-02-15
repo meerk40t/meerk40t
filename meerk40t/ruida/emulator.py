@@ -319,10 +319,10 @@ class RuidaEmulator:
 
         if checksum_check == checksum_sum:
             response = b"\xCC"
-            self.reply(response, desc="Checksum match")
+            self.msg_reply(response, desc="Checksum match")
         else:
             response = b"\xCF"
-            self.reply(
+            self.msg_reply(
                 response, desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
             )
             if self.channel:
@@ -338,7 +338,7 @@ class RuidaEmulator:
         @return: bytes to write.
         """
         self.swizzle_mode = False
-        self.reply(b"\xCC")  # Clear ACK.
+        self.msg_reply(b"\xCC")  # Clear ACK.
         self.write(BytesIO(bytes_to_write))
 
     def write(self, data):
@@ -360,7 +360,7 @@ class RuidaEmulator:
                 if self.channel:
                     self.channel(f"Crashed processing: {str(bytes(array).hex())}")
                     self.channel(str(e))
-                raise e
+                # raise RuidaCommandError from e
 
     def set_speed(self, speed):
         self.settings["speed"] = speed
@@ -1441,8 +1441,7 @@ class RuidaEmulator:
         if self.channel:
             self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
         if respond is not None:
-            if self.reply:
-                self.reply(respond, desc=respond_desc)
+            self.msg_reply(respond, desc=respond_desc)
 
     def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:
         if mem == 0x0002:
@@ -2033,33 +2032,33 @@ class RuidaEmulator:
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            return "Axis Preferred Position 1, Pos X", self.x
+            return "Axis Preferred Position 1, Pos X", int(self.x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            return "Axis Preferred Position 2, Pos Y", self.y
+            return "Axis Preferred Position 2, Pos Y", int(self.y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            return "Axis Preferred Position 3, Pos Z", self.z
+            return "Axis Preferred Position 3, Pos Z", int(self.z)
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
-            return "Axis Preferred Position 4, Pos U", self.u
+            return "Axis Preferred Position 4, Pos U", int(self.u)
         if mem == 0x0253:
             return "U Total Travel (m)", 0
         if mem == 0x025A:
-            return "Axis Preferred Position 5, Pos A", self.a
+            return "Axis Preferred Position 5, Pos A", int(self.a)
         if mem == 0x025B:
-            return "Axis Preferred Position 6, Pos B", self.b
+            return "Axis Preferred Position 6, Pos B", int(self.b)
         if mem == 0x025C:
-            return "Axis Preferred Position 7, Pos C", self.c
+            return "Axis Preferred Position 7, Pos C", int(self.c)
         if mem == 0x025D:
-            return "Axis Preferred Position 8, Pos D", self.d
+            return "Axis Preferred Position 8, Pos D", int(self.d)
         if mem == 0x0260:
             return "DocumentWorkNum", 0
         if 0x0261 <= mem < 0x02C4:
