@@ -10,6 +10,7 @@ from meerk40t.newly.usb_connection import USBConnection
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_PROGRAM = 2
 
+
 class NewlyController:
     """
     Newly Controller
@@ -45,7 +46,7 @@ class NewlyController:
 
         self.mode = DRIVER_STATE_RAPID
         self.paused = False
-        
+        self.command_buffer = []
 
     def set_disable_connect(self, status):
         self._disable_connect = status
@@ -137,7 +138,12 @@ class NewlyController:
     #######################
 
     def rapid_mode(self):
-        pass
+        if self.command_buffer:
+            self.command_buffer.append("ZED")
+            cmd = ";".join(self.command_buffer)
+            self.connect_if_needed()
+            self.connection.write(index=self._machine_index, packet=cmd)
+            self.command_buffer.clear()
 
     def raster_mode(self):
         self.program_mode()
@@ -146,9 +152,15 @@ class NewlyController:
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
-        
-        self._speed = None
-        self._power = None
+        self.command_buffer.append("ZZZFile0")
+        self.command_buffer.append("VP100")
+        self.command_buffer.append("VK100")
+        self.command_buffer.append("SP2")
+        self.command_buffer.append("SP2")
+        self.command_buffer.append(f"VQ{int(round(self._acceleration))}")
+        self.command_buffer.append(f"VJ{int(round(self._speed))}")
+        self.command_buffer.append("VS10")
+        self.command_buffer.append("PR")
 
     #######################
     # SETS FOR PLOTLIKES
@@ -170,10 +182,12 @@ class NewlyController:
     #######################
 
     def mark(self, x, y):
-        print(f"mark({x},{y})")
+        self.command_buffer.append(f"PD{int(round(x))},{int(round(y))}")
+        self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
-        print(f"goto({x},{y})")
+        self.command_buffer.append(f"PU{int(round(x))},{int(round(y))}")
+        self._last_x, self._last_y = x, y
 
     def set_xy(self, x, y):
         self.connect_if_needed()
