@@ -203,8 +203,6 @@ class NewlyDevice(Service, ViewPort):
             native_scale_y=UNITS_PER_MM / 10,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
