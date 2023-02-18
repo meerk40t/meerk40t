@@ -139,7 +139,7 @@ class NewlyController:
 
     def rapid_mode(self):
         if self.command_buffer:
-            self.command_buffer.append("ZED")
+            self.command_buffer.append("ZED;")
             cmd = ";".join(self.command_buffer)
             self.connect_if_needed()
             self.connection.write(index=self._machine_index, packet=cmd)
