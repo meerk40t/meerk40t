@@ -1509,22 +1509,20 @@ class ShadowTree:
                 result = typename
             return result
         
-        print ("Drag started...")
         self.dragging_nodes = None
 
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
 
         if drag_item is None or drag_item.ID is None or not drag_item.IsOk():
-            errmsg = ""
-            if drag_item is None:
-                errmsg = "item was none"
-            elif drag_item.ID is None:
-                errmsg = "id was none"
-            elif not drag_item.IsOk():
-                errmsg = "IsOk was false"
-                
-            print (f"Drag item was wrong: {errmsg}")
+            # errmsg = ""
+            # if drag_item is None:
+            #     errmsg = "item was none"
+            # elif drag_item.ID is None:
+            #     errmsg = "id was none"
+            # elif not drag_item.IsOk():
+            #     errmsg = "IsOk was false"
+            # print (f"Drag item was wrong: {errmsg}")
             event.Skip()
             return
 
@@ -1532,7 +1530,7 @@ class ShadowTree:
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
         if len(self.dragging_nodes) == 0:
-            print ("Dragging_nodes was empty")
+            # print ("Dragging_nodes was empty")
             event.Skip()
             return
 
@@ -1541,11 +1539,11 @@ class ShadowTree:
             tt = typefamily(n.type)
             if t != tt:
                 # Different typefamilies
-                print ("Different typefamilies")
+                # print ("Different typefamilies")
                 event.Skip()
                 return
             if not n.is_draggable():
-                print ("Element was not draggable")
+                # print ("Element was not draggable")
                 event.Skip()
                 return
         event.Allow()
@@ -1585,6 +1583,7 @@ class ShadowTree:
 
     def on_mouse_over(self, event):
         # establish the item we are over...
+        event.Skip()
         ttip = ""
         pt = event.GetPosition()
         item, flags = self.wxtree.HitTest(pt)
