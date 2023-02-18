@@ -1573,6 +1573,7 @@ class ShadowTree:
 
     def on_mouse_over(self, event):
         # establish the item we are over...
+        event.Skip()
         ttip = ""
         pt = event.GetPosition()
         item, flags = self.wxtree.HitTest(pt)
