@@ -1478,6 +1478,7 @@ class Elemental(Service):
         #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
+                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
@@ -1490,6 +1491,8 @@ class Elemental(Service):
                         to_classify.append(drag_node)
                 drop_node.drop(drag_node, modify=True)
                 success = True
+            else:
+                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
         if self.classify_new and len(to_classify) > 0:
             self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...

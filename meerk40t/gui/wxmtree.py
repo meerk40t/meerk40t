@@ -99,8 +99,11 @@ class TreePanel(wx.Panel):
             self.context.elements, self.GetParent(), self.wxtree, self.context
         )
 
-        self.Bind(
-            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
+        # self.Bind(
+        #     wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
+        # )
+        self.shadow_tree.wxtree.Bind(
+            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler
         )
         self.Bind(
             wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
@@ -1505,13 +1508,23 @@ class ShadowTree:
             else:
                 result = typename
             return result
-
+        
+        print ("Drag started...")
         self.dragging_nodes = None
 
         pt = event.GetPoint()
         drag_item, _ = self.wxtree.HitTest(pt)
 
         if drag_item is None or drag_item.ID is None or not drag_item.IsOk():
+            errmsg = ""
+            if drag_item is None:
+                errmsg = "item was none"
+            elif drag_item.ID is None:
+                errmsg = "id was none"
+            elif not drag_item.IsOk():
+                errmsg = "IsOk was false"
+                
+            print (f"Drag item was wrong: {errmsg}")
             event.Skip()
             return
 
@@ -1519,6 +1532,7 @@ class ShadowTree:
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
         if len(self.dragging_nodes) == 0:
+            print ("Dragging_nodes was empty")
             event.Skip()
             return
 
@@ -1527,9 +1541,11 @@ class ShadowTree:
             tt = typefamily(n.type)
             if t != tt:
                 # Different typefamilies
+                print ("Different typefamilies")
                 event.Skip()
                 return
             if not n.is_draggable():
+                print ("Element was not draggable")
                 event.Skip()
                 return
         event.Allow()
