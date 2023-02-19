@@ -22,7 +22,7 @@ class NewlyOperationPanel(ScrolledPanel):
 
         choices = [
             {
-                "attr": "Acceleration",
+                "attr": "acceleration",
                 "object": params,
                 "default": 15,
                 "type": int,
