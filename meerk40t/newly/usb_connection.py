@@ -13,10 +13,10 @@ from usb.backend.libusb1 import LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_NOT_FOUND
 USB_LOCK_VENDOR = 0x0471
 USB_LOCK_PRODUCT = 0x0999
 
-WRITE_INTERRUPT = 0x01
-READ_INTERRUPT = 0x81
+WRITE_INTERRUPT = 0x01  # Is sent the size of the bulk data
+READ_INTERRUPT = 0x81  # Reads 0x01 for OK
 
-WRITE_BULK = 0x02
+WRITE_BULK = 0x02  # Is sent entire big packet.
 READ_BULK = 0x82
 
 
