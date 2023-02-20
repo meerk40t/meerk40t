@@ -149,7 +149,6 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/polyline", PolylineTool)
         context.register("tool/polygon", PolygonTool)
         context.register("tool/point", PointTool)
-        context.register("tool/edit", EditTool)
         context.register("tool/circle", CircleTool)
         context.register("tool/ellipse", EllipseTool)
         context.register("tool/relocate", RelocateTool)
@@ -158,6 +157,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
         context.register("tool/linetext", LineTextTool)
+        context.register("tool/edit", EditTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
         from meerk40t.extra.hershey import have_hershey_fonts
@@ -934,6 +934,13 @@ class MeerK40tScenePanel(wx.Panel):
             self.scene.signal("linetext", args[0])
         elif len(args) > 1:
             self.scene.signal("linetext", args[0], args[1])
+
+    @signal_listener("nodeedit")
+    def on_signal_nodeedit(self, origin, *args):
+        if len(args) == 1:
+            self.scene.signal("nodeedit", args[0])
+        elif len(args) > 1:
+            self.scene.signal("nodeedit", args[0], args[1])
 
     @signal_listener("element_added")
     @signal_listener("tree_changed")

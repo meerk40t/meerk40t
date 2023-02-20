@@ -1,5 +1,6 @@
 import os.path
 from copy import copy
+import math
 
 from meerk40t.kernel import CommandSyntaxError
 
@@ -116,9 +117,25 @@ def init_tree(kernel):
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(_("Ungroup elements"), node_type=("group", "file"), help="")
     def ungroup_elements(node, **kwargs):
-        for n in list(node.children):
-            node.insert_sibling(n)
-        node.remove_node()  # Removing group/file node.
+        to_treat = []
+        for gnode in self.flat(selected=True, cascade=False, types=("group", "file")):
+            enode = gnode
+            while True:
+                if enode.parent is None or enode.parent is self.elem_branch:
+                    if enode not in to_treat:
+                        to_treat.append(enode)
+                    break
+                if enode.parent.selected:
+                    enode = enode.parent
+                else:
+                    if enode not in to_treat:
+                        to_treat.append(enode)
+                    break
+
+        for gnode in to_treat:
+            for n in list(gnode.children):
+                gnode.insert_sibling(n)
+            gnode.remove_node()  # Removing group/file node.
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
@@ -133,7 +150,11 @@ def init_tree(kernel):
             while needs_repetition:
                 needs_repetition = False
                 cl = list(snode.children)
-                if len(cl) == 1:
+                if len(cl) == 0:
+                    # No Children? Remove
+                    amount = 1
+                    snode.remove_node()
+                elif len(cl) == 1:
                     gnode = cl[0]
                     if gnode is not None and gnode.type == "group":
                         for n in list(gnode.children):
@@ -722,6 +743,24 @@ def init_tree(kernel):
         node.remove_node()
         self.set_emphasis(None)
 
+    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_operation(_("Remove transparent objects"), node_type=("group", "file"), help=_("Remove all elements that neither have a border nor a fill color"))
+    def remove_transparent(node, **kwargs):
+        res = 0
+        to_remove = []
+        for enode in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
+            colored = False
+            if hasattr(enode, "fill") and enode.fill is not None and enode.fill.argb is not None:
+                colored = True
+            if hasattr(enode, "stroke") and enode.stroke is not None and enode.stroke.argb is not None:
+                colored = True
+            if not colored:
+                res += 1
+                enode.remove_node()
+
+        if res > 0:
+            self.signal("rebuild_tree")
+
     # ==========
     # Remove Operations (If No Tree Selected)
     # Note: This code would rarely match anything since the tree selected will almost always be true if we have
@@ -760,6 +799,23 @@ def init_tree(kernel):
     def remove_n_ops(node, **kwargs):
         self("operation delete\n")
 
+    @tree_operation(
+        _("Select all elements of same type"),
+        node_type=elem_nodes,
+        help=_("Select all elements in scene, that have the same type as this node"),
+    )
+    def select_similar(node, **kwargs):
+        ntype = node.type
+        changes = False
+        for e in self.elems():
+            if e.type == ntype and not e.emphasized:
+                e.emphasized = True
+                e.selected = True
+                changes = True
+        if changes:
+            self.validate_selected_area()
+            self.signal("refresh_scene", "Scene")
+
     # ==========
     # REMOVE ELEMENTS
     # ==========
@@ -773,6 +829,84 @@ def init_tree(kernel):
     )
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
+
+    @tree_conditional(lambda node: isinstance(node.shape, Polygon) and  len(node.shape.points)>=3)
+    @tree_operation(
+        _("Make Polygon regular"),
+        node_type="elem polyline",
+        help="",
+    )
+    def make_polygon_regular(node, **kwargs):
+        # from .units import Length
+        # from ..svgelements import Color
+
+        # def mk_debug_point(x, y, col):
+        #     circ = Ellipse(cx=x, cy=y, r=float(Length("1mm")))
+        #     circ.transform = copy(node.shape.transform)
+        #     self.elem_branch.add(
+        #         shape=circ,
+        #         type="elem ellipse",
+        #         stroke=Color(col),
+        #         fill=Color(col),
+        #         matrix=copy(node.matrix),
+        #     )
+
+        if node is None or node.type != "elem polyline":
+            return
+        number_points = len(node.shape.points)
+        # print (f"Number of points: {number_points}")
+        # for prop in dir(node):
+        #     print (f"{prop} - {getattr(node, 'prop', '')}")
+        # for idx, pt in enumerate(node.shape.points):
+        #     print (f"{idx}: {pt.x:.1f}, {pt.y:.1f}")
+        if number_points < 3 or not isinstance(node.shape, Polygon):
+            return
+        pts = node.shape.points
+        dx = pts[1].x - pts[0].x
+        dy = pts[1].y - pts[0].y
+        baseline = math.sqrt(dx * dx + dy * dy)
+        apothem = baseline / (2 * math.tan(math.tau / (2* number_points)))
+        circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
+        midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
+        #  mk_debug_point(midpoint.x, midpoint.y, "black")
+        ax = 0
+        ay = 0
+        for idx, pt in enumerate(pts):
+            ax += pt.x
+            ay += pt.y
+        ax /= number_points
+        ay /= number_points
+        # The arithmetic center (ax, ay) indicates to which
+        # 'side' of the baseline the polygon needs to be constructed
+        arithmetic_center = Point(ax, ay)
+        # mk_debug_point(ax, ay, "green")
+        angle = pts[0].angle_to(pts[1])
+        midangle = midpoint.angle_to(arithmetic_center)
+        angle += math.tau / 4
+        first_point = Point.polar(midpoint, angle, apothem)
+        second_point = Point.polar(midpoint, angle + math.tau/2, apothem)
+        # mk_debug_point(first_point.x, first_point.y, "yellow")
+        # mk_debug_point(second_point.x, second_point.y, "cyan")
+        deltaangle = math.tau / number_points
+        d1 = arithmetic_center.distance_to(first_point)
+        d2 = arithmetic_center.distance_to(second_point)
+        if d1 < d2:
+            center_point = copy(first_point)
+        else:
+            center_point = copy(second_point)
+        # mk_debug_point(center_point.x, center_point.y, "red")
+
+        if center_point.angle_to(pts[0]) > center_point.angle_to(pts[1]):
+            deltaangle *= -1
+        angle = center_point.angle_to(pts[0])
+        for idx in range(number_points):
+            # if idx > 1:
+            pt = Point.polar(center_point, angle, circumradius)
+            pts[idx].x = pt.x
+            pts[idx].y = pt.y
+            angle += deltaangle
+        node.altered()
+        self.signal("refresh_scene", "Scene")
 
     # ==========
     # CONVERT TREE OPERATIONS
@@ -935,10 +1069,7 @@ def init_tree(kernel):
     def select_unassigned(node, **kwargs):
         changes = False
         for node in self.elems():
-            if len(node._references) == 0:
-                emphasis = True
-            else:
-                emphasis = False
+            emphasis = bool(len(node.references) == 0)
             if node.emphasized != emphasis:
                 changes = True
                 node.emphasized = emphasis
@@ -1182,7 +1313,7 @@ def init_tree(kernel):
     def remove_all_assignments(node, **kwargs):
         with self.static("remove_all_assign"):
             for node in self.elems():
-                for ref in list(node._references):
+                for ref in list(node.references):
                     ref.remove_node()
         self.signal("refresh_tree")
 
@@ -1495,7 +1626,7 @@ def init_tree(kernel):
                 for cnode in list(rnode._children):
                     rem_node(cnode)
             else:
-                for ref in list(rnode._references):
+                for ref in list(rnode.references):
                     ref.remove_node()
 
         with self.static("remove_assign"):
@@ -1571,6 +1702,11 @@ def init_tree(kernel):
                 copy_node = copy(e)
                 copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                 had_optional = False
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                for optional in ("fill", "stroke"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
                 for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                     if hasattr(e, optional):
                         had_optional = True
@@ -1715,6 +1851,12 @@ def init_tree(kernel):
                     oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
+                # There are some challenges around the treatment
+                # of arcs within svgelements, so let's circumvent
+                # them for the time being (until resolved)
+                # by replacing arc segments with cubic beziers
+                if node.type in ("elem path", "elem ellipse"):
+                    path.approximate_arcs_with_cubics()
             except AttributeError:
                 return
             newnode = node.replace_node(path=path, type="elem path")

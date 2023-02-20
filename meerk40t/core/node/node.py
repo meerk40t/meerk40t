@@ -157,6 +157,10 @@ class Node:
         return self._children
 
     @property
+    def references(self):
+        return self._references
+
+    @property
     def targeted(self):
         return self._target
 

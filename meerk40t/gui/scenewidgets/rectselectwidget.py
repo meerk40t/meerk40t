@@ -241,13 +241,20 @@ class RectSelectWidget(Widget):
             font_size = 10.0 / matrix.value_scale_x()
             if font_size < 1.0:
                 font_size = 1.0
-            font = wx.Font(
-                font_size,
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
             gc.SetFont(font, tcolor)
             (t_width, t_height) = gc.GetTextExtent(symbol)
             gc.DrawText(
