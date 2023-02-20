@@ -61,7 +61,7 @@ def init_tree(kernel):
         return result
 
     @tree_separator_after()
-    @tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
+    @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
     @tree_operation(_("Operation properties"), node_type=op_nodes, help="")
     def operation_property(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
@@ -207,18 +207,46 @@ def init_tree(kernel):
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
     def toggle_n_operations(node, **kwargs):
-        for n in self.ops(emphasized=True):
+        changes = []
+        for n in self.ops(selected=True):
             if hasattr(n, "output"):
                 try:
                     n.output = not n.output
                     n.updated()
+                    changes.append(n)
                 except AttributeError:
                     pass
+        if len(changes) > 0:
+            self.validate_selected_area()
+            self.signal("element_property_update", changes)
+            self.signal("refresh_scene", "Scene")
+
+    @tree_conditional(lambda node:
+        hasattr(node, "output") and
+        hasattr(node, "is_visible") and
+        not getattr(node, "output", True)
+    )
+    @tree_operation(_("Show/Hide contained elements"), node_type=op_nodes, help="")
+    def toggle_op_elem_visibility(node, **kwargs):
+        changes = []
+        for n in self.ops(selected=True):
+            if hasattr(n, "output") and hasattr(n, "is_visible"):
+                newflag = True
+                if n.output is not None:
+                    if not n.output:
+                        newflag = bool(not n.is_visible)
+                n.is_visible = newflag
+                n.updated()
+                changes.append(n)
+        if len(changes) > 0:
+            self.validate_selected_area()
+            self.signal("element_property_update", changes)
+            self.signal("refresh_scene", "Scene")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op image"
             n.replace_node(keep_children=True, **new_settings)
@@ -227,7 +255,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
     def convert_operation_raster(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op raster"
             n.replace_node(keep_children=True, **new_settings)
@@ -236,7 +264,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Engrave"), node_type=op_parent_nodes, help="")
     def convert_operation_engrave(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op engrave"
             n.replace_node(keep_children=True, **new_settings)
@@ -245,7 +273,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
     def convert_operation_cut(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op cut"
             n.replace_node(keep_children=True, **new_settings)
@@ -254,7 +282,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
     def convert_operation_hatch(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op hatch"
             n.replace_node(keep_children=True, **new_settings)
@@ -263,7 +291,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
     def convert_operation_dots(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op dots"
             n.replace_node(keep_children=True, **new_settings)
@@ -314,7 +342,7 @@ def init_tree(kernel):
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type not in ("op raster", "op image"):
                 continue
             n.speed = float(speed)
@@ -331,7 +359,7 @@ def init_tree(kernel):
     )
     def set_speed_vector(node, speed=35, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type not in ("op engrave", "op hatch"):
                 continue
             n.speed = float(speed)
@@ -348,7 +376,7 @@ def init_tree(kernel):
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type != "op cut":
                 continue
             n.speed = float(speed)
@@ -368,7 +396,7 @@ def init_tree(kernel):
     )
     def set_power(node, power=1000, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.power = float(power)
             data.append(n)
         self.signal("element_property_reload", data)
@@ -386,7 +414,7 @@ def init_tree(kernel):
     )
     def set_step_n(node, dpi=1, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.dpi = dpi
             data.append(n)
         for n in list(self.elems(emphasized=True)):
@@ -408,7 +436,7 @@ def init_tree(kernel):
     @tree_operation(_("Passes {passvalue}"), node_type=op_parent_nodes, help="")
     def set_n_passes(node, passvalue=1, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.passes = passvalue
             n.passes_custom = passvalue != 1
             data.append(n)
@@ -444,7 +472,7 @@ def init_tree(kernel):
         for idx, key in enumerate(values):
             if key == raster_direction:
                 data = list()
-                for n in list(self.ops(emphasized=True)):
+                for n in list(self.ops(selected=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
                     n.raster_direction = idx
@@ -478,7 +506,7 @@ def init_tree(kernel):
         for idx, key in enumerate(values):
             if key == raster_swing:
                 data = list()
-                for n in list(self.ops(emphasized=True)):
+                for n in list(self.ops(selected=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
                     n.bidirectional = bool(idx)
@@ -772,8 +800,8 @@ def init_tree(kernel):
         )
         == 0
     )
-    @tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
-    @tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
+    @tree_conditional(lambda node: len(list(self.ops(selected=True))) > 1)
+    @tree_calc("ecount", lambda i: len(list(self.ops(selected=True))))
     @tree_operation(
         _("Delete {ecount} operations"),
         node_type=(
@@ -1325,7 +1353,7 @@ def init_tree(kernel):
     def duplicate_operation(node, **kwargs):
         with self.static("duplicate_operation"):
             operations = self._tree.get(type="branch ops").children
-            for op in self.ops(emphasized=True):
+            for op in self.ops(selected=True):
                 try:
                     pos = operations.index(op) + 1
                 except ValueError:
@@ -1446,7 +1474,7 @@ def init_tree(kernel):
     def add_after_index(node=None):
         try:
             if node is None:
-                node = list(self.ops(emphasized=True))[-1]
+                node = list(self.ops(selected=True))[-1]
             operations = self._tree.get(type="branch ops").children
             return operations.index(node) + 1
         except (ValueError, IndexError):
