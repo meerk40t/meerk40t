@@ -221,10 +221,10 @@ def init_tree(kernel):
             self.signal("element_property_update", changes)
             self.signal("refresh_scene", "Scene")
 
-    @tree_conditional(lambda node:
-        hasattr(node, "output") and
-        hasattr(node, "is_visible") and
-        not getattr(node, "output", True)
+    @tree_conditional(
+        lambda node: hasattr(node, "output")
+        and hasattr(node, "is_visible")
+        and not getattr(node, "output", True)
     )
     @tree_operation(_("Show/Hide contained elements"), node_type=op_nodes, help="")
     def toggle_op_elem_visibility(node, **kwargs):
@@ -772,15 +772,37 @@ def init_tree(kernel):
         self.set_emphasis(None)
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_operation(_("Remove transparent objects"), node_type=("group", "file"), help=_("Remove all elements that neither have a border nor a fill color"))
+    @tree_operation(
+        _("Remove transparent objects"),
+        node_type=("group", "file"),
+        help=_("Remove all elements that neither have a border nor a fill color"),
+    )
     def remove_transparent(node, **kwargs):
         res = 0
         to_remove = []
-        for enode in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
+        for enode in self.flat(
+            selected=True,
+            cascade=True,
+            types=(
+                "elem rect",
+                "elem ellipse",
+                "elem path",
+                "elem line",
+                "elem polyline",
+            ),
+        ):
             colored = False
-            if hasattr(enode, "fill") and enode.fill is not None and enode.fill.argb is not None:
+            if (
+                hasattr(enode, "fill")
+                and enode.fill is not None
+                and enode.fill.argb is not None
+            ):
                 colored = True
-            if hasattr(enode, "stroke") and enode.stroke is not None and enode.stroke.argb is not None:
+            if (
+                hasattr(enode, "stroke")
+                and enode.stroke is not None
+                and enode.stroke.argb is not None
+            ):
                 colored = True
             if not colored:
                 res += 1
@@ -858,7 +880,9 @@ def init_tree(kernel):
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
 
-    @tree_conditional(lambda node: isinstance(node.shape, Polygon) and  len(node.shape.points)>=3)
+    @tree_conditional(
+        lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
+    )
     @tree_operation(
         _("Make Polygon regular"),
         node_type="elem polyline",
@@ -893,7 +917,7 @@ def init_tree(kernel):
         dx = pts[1].x - pts[0].x
         dy = pts[1].y - pts[0].y
         baseline = math.sqrt(dx * dx + dy * dy)
-        apothem = baseline / (2 * math.tan(math.tau / (2* number_points)))
+        apothem = baseline / (2 * math.tan(math.tau / (2 * number_points)))
         circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
         midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
         #  mk_debug_point(midpoint.x, midpoint.y, "black")
@@ -912,7 +936,7 @@ def init_tree(kernel):
         midangle = midpoint.angle_to(arithmetic_center)
         angle += math.tau / 4
         first_point = Point.polar(midpoint, angle, apothem)
-        second_point = Point.polar(midpoint, angle + math.tau/2, apothem)
+        second_point = Point.polar(midpoint, angle + math.tau / 2, apothem)
         # mk_debug_point(first_point.x, first_point.y, "yellow")
         # mk_debug_point(second_point.x, second_point.y, "cyan")
         deltaangle = math.tau / number_points

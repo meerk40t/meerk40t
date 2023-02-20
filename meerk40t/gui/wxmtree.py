@@ -1,8 +1,8 @@
 import wx
 from wx import aui
 
-from ..core.units import Length
 from ..core.element_types import op_nodes
+from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
 from .icons import (
@@ -14,6 +14,7 @@ from .icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_file_20,
+    icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
     icons8_image_20,
@@ -39,7 +40,6 @@ from .icons import (
     icons8_vector_20,
     icons8_visit_20,
     icons8_warning_shield_20,
-    icons8_ghost_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -1500,7 +1500,11 @@ class ShadowTree:
                     state_num = self.iconstates["refobject"]
         if state_num < 0:
             state_num = wx.TREE_ITEMSTATE_NONE
-            if node.type in op_nodes and hasattr(node, "is_visible") and not node.is_visible:
+            if (
+                node.type in op_nodes
+                and hasattr(node, "is_visible")
+                and not node.is_visible
+            ):
                 state_num = self.iconstates["ghost"]
         self.wxtree.SetItemState(node._item, state_num)
 
