@@ -154,14 +154,23 @@ class NewlyController:
             return
         self.mode = DRIVER_STATE_PROGRAM
         self.command_buffer.append("ZZZFile0")
+        self.command_buffer.append("DW")
+        self.command_buffer.append("PL2")
         self.command_buffer.append("VP100")
         self.command_buffer.append("VK100")
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
         self.command_buffer.append(f"VQ{int(round(self._acceleration))}")
         self.command_buffer.append(f"VJ{int(round(self._speed))}")
-        self.command_buffer.append("VS10")
-        self.command_buffer.append("PA")
+        self.command_buffer.append("DA0")
+        self.command_buffer.append("SP0")
+        self.command_buffer.append("VS20")
+        if self.service.use_relative:
+            self._relative = True
+            self.command_buffer.append("PR")
+        else:
+            self._relative = True
+            self.command_buffer.append("PA")
 
     #######################
     # SETS FOR PLOTLIKES
