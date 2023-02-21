@@ -41,9 +41,9 @@ from meerk40t.gui.icons import (
     icons8_up_right_50,
     icons8up,
 )
-from meerk40t.kernel.kernel import signal_listener
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -1063,6 +1063,7 @@ class MovePanel(wx.Panel):
         ypos = Length(amount=pos[3], preferred_units=units)
         self.text_position_x.SetValue(f"{round(xpos.preferred, 6):.2f}{units}")
         self.text_position_y.SetValue(f"{round(ypos.preferred, 6):.2f}{units}")
+
 
 class PulsePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
