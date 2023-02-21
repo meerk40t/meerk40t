@@ -41,6 +41,7 @@ from meerk40t.gui.icons import (
     icons8_up_right_50,
     icons8up,
 )
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Angle
@@ -1042,6 +1043,26 @@ class MovePanel(wx.Panel):
         except ValueError:
             return
 
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
+    def update_position_info(self, origin, pos):
+        # origin, pos
+
+        if pos is None:
+            return
+        service = self.context.device
+        # print (f"origin={origin}, pos={pos}, driver={service.path}")
+        # Might not come from the right device...
+        if origin not in (service.path, "lhystudios"):
+            # wrong device...
+            return
+        # New position...
+        p = self.context
+        units = p.units_name
+        xpos = Length(amount=pos[2], preferred_units=units)
+        ypos = Length(amount=pos[3], preferred_units=units)
+        self.text_position_x.SetValue(f"{round(xpos.preferred, 6):.2f}{units}")
+        self.text_position_y.SetValue(f"{round(ypos.preferred, 6):.2f}{units}")
 
 class PulsePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
