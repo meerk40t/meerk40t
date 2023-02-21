@@ -188,6 +188,7 @@ class NewlyController:
         self._power = settings.get("power", self.service.default_power)
         self._speed = settings.get("speed", self.service.default_speed)
         self._acceleration = settings.get("acceleration", self.service.default_acceleration)
+        self._scan_speed = settings.get("raster_speed", self.service.default_raster_speed / 10.0)
 
     #######################
     # PLOTLIKE SHORTCUTS

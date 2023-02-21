@@ -192,6 +192,15 @@ class NewlyDevice(Service, ViewPort):
                 "tip": _("How fast do we cut?"),
             },
             {
+                "attr": "default_raster_speed",
+                "object": self,
+                "default": 200.0,
+                "type": float,
+                "trailer": "mm/s",
+                "label": _("Raster Speed"),
+                "tip": _("How fast do we raster?"),
+            },
+            {
                 "attr": "default_acceleration",
                 "object": self,
                 "default": 24.0,
