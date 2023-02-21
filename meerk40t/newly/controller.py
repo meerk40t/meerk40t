@@ -41,7 +41,7 @@ class NewlyController:
         self._last_y = y
 
         self._speed = 24
-        self._power = 100
+        self._power = 38
         self._acceleration = 15
         self._relative = False
 
@@ -162,7 +162,7 @@ class NewlyController:
         self.command_buffer.append("SP2")
         self.command_buffer.append(f"VQ{int(round(self._acceleration))}")
         self.command_buffer.append(f"VJ{int(round(self._speed))}")
-        self.command_buffer.append("DA0")
+        self.command_buffer.append(f"DA{int(round(self._power))}")
         self.command_buffer.append("SP0")
         self.command_buffer.append("VS20")
         if self.service.use_relative:
