@@ -43,7 +43,7 @@ class NewlyController:
         self._speed = 15
         self._power = 1000
         self._acceleration = 24
-        self._scan_speed = 20  # 200 mm/s
+        self._scan_speed = 200  # 200 mm/s
         self._file_index = 0
         self._relative = False
         self._pwm_frequency = None
@@ -171,7 +171,7 @@ class NewlyController:
         power = int(round((self._power / 1000.0) * self.service.max_power * 255.0/100.0))
         self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
-        self.command_buffer.append(f"VS{int(round(self._scan_speed))}")
+        self.command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
         if self.service.use_relative:
             self._relative = True
             self.command_buffer.append("PR")
@@ -194,8 +194,8 @@ class NewlyController:
         self._pwm_frequency = self.service.pwm_frequency if self.service.pwm_enabled else None
         self._power = settings.get("power", self.service.default_power)
         self._speed = settings.get("speed", self.service.default_speed)
+        self._scan_speed = settings.get("raster_speed", self.service.default_raster_speed)
         self._acceleration = settings.get("acceleration", self.service.default_acceleration)
-        self._scan_speed = settings.get("raster_speed", self.service.default_raster_speed / 10.0)
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -237,7 +237,7 @@ class NewlyController:
         command_buffer.append("SP2")
         command_buffer.append(f"VQ{int(round(self._speed))}")
         command_buffer.append(f"VJ{int(round(self._acceleration))}")
-        command_buffer.append(f"VS{int(round(self._scan_speed))}")
+        command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
         if self.service.use_relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
