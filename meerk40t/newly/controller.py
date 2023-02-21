@@ -193,32 +193,56 @@ class NewlyController:
 
     def mark(self, x, y):
         if self._relative:
-            dx = x - self._last_x
-            dy = y - self._last_y
-            self.command_buffer.append(f"PD{int(round(dy))},{int(round(dx))}")
+            dx = int(round(x - self._last_x))
+            dy = int(round(y - self._last_y))
+            self.command_buffer.append(f"PD{dy},{dx}")
+            self._last_x += dx
+            self._last_y += dy
         else:
-            self.command_buffer.append(f"PD{int(round(y))},{int(round(x))}")
-        self._last_x, self._last_y = x, y
+            x = int(round(x))
+            y = int(round(y))
+            self.command_buffer.append(f"PD{y},{x}")
+            self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         if self._relative:
-            dx = x - self._last_x
-            dy = y - self._last_y
-            self.command_buffer.append(f"PU{int(round(dy))},{int(round(dx))}")
+            dx = int(round(x - self._last_x))
+            dy = int(round(y - self._last_y))
+            self.command_buffer.append(f"PU{dy},{dx}")
+            self._last_x += dx
+            self._last_y += dy
         else:
-            self.command_buffer.append(f"PU{int(round(y))},{int(round(x))}")
-        self._last_x, self._last_y = x, y
+            x = int(round(x))
+            y = int(round(y))
+            self.command_buffer.append(f"PU{y},{x}")
+            self._last_x, self._last_y = x, y
 
     def set_xy(self, x, y):
         self.connect_if_needed()
+        command_buffer = list()
+        command_buffer.append("ZZZFile0")
+        command_buffer.append("VP100")
+        command_buffer.append("VK100")
+        command_buffer.append("SP2")
+        command_buffer.append("SP2")
+        command_buffer.append(f"VQ{int(round(self._acceleration))}")
+        command_buffer.append(f"VJ{int(round(self._speed))}")
+        command_buffer.append("VS10")
         if self.service.use_relative:
-            dx = x - self._last_x
-            dy = y - self._last_y
-            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dy))},{int(round(dx))};ZED;"
+            dx = int(round(x - self._last_x))
+            dy = int(round(y - self._last_y))
+            command_buffer.append("PR")
+            command_buffer.append(f"PU{dy},{dx}")
+            self._last_x += dx
+            self._last_y += dy
         else:
-            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PA;PU{int(round(y))},{int(round(x))};ZED;"
-        self.connection.write(index=self._machine_index, data=cmd)
-        self._last_x, self._last_y = x, y
+            x = int(round(x))
+            y = int(round(y))
+            command_buffer.append("PA")
+            command_buffer.append(f"PU{y},{x}")
+            self._last_x, self._last_y = x, y
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def get_last_xy(self):
         return self._last_x, self._last_y
