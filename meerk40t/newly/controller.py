@@ -46,6 +46,9 @@ class NewlyController:
         self._scan_speed = 20  # 200 mm/s
         self._file_index = 0
         self._relative = False
+        self._unknown_pl = 2
+        self._unknown_vp = 100
+        self._unknown_vk = 100
 
         self.mode = DRIVER_STATE_RAPID
         self.paused = False
@@ -157,9 +160,9 @@ class NewlyController:
         self.mode = DRIVER_STATE_PROGRAM
         self.command_buffer.append(f"ZZZFile{self._file_index}")
         self.command_buffer.append("DW")
-        self.command_buffer.append("PL2")
-        self.command_buffer.append("VP100")
-        self.command_buffer.append("VK100")
+        self.command_buffer.append(f"PL{self._unknown_pl}")
+        self.command_buffer.append(f"VP{self._unknown_vp}")
+        self.command_buffer.append(f"VK{self._unknown_vk}")
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
         self.command_buffer.append(f"VQ{int(round(self._speed))}")
@@ -224,8 +227,8 @@ class NewlyController:
         self.connect_if_needed()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
-        command_buffer.append("VP100")
-        command_buffer.append("VK100")
+        command_buffer.append(f"VP{self._unknown_vp}")
+        command_buffer.append(f"VK{self._unknown_vk}")
         command_buffer.append("SP2")
         command_buffer.append("SP2")
         command_buffer.append(f"VQ{int(round(self._speed))}")
