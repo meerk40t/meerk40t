@@ -195,18 +195,18 @@ class NewlyController:
         if self._relative:
             dx = x - self._last_x
             dy = y - self._last_y
-            self.command_buffer.append(f"PD{int(round(dx))},{int(round(dy))}")
+            self.command_buffer.append(f"PD{int(round(dy))},{int(round(dx))}")
         else:
-            self.command_buffer.append(f"PD{int(round(x))},{int(round(y))}")
+            self.command_buffer.append(f"PD{int(round(y))},{int(round(x))}")
         self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         if self._relative:
             dx = x - self._last_x
             dy = y - self._last_y
-            self.command_buffer.append(f"PU{int(round(dx))},{int(round(dy))}")
+            self.command_buffer.append(f"PU{int(round(dy))},{int(round(dx))}")
         else:
-            self.command_buffer.append(f"PU{int(round(x))},{int(round(y))}")
+            self.command_buffer.append(f"PU{int(round(y))},{int(round(x))}")
         self._last_x, self._last_y = x, y
 
     def set_xy(self, x, y):
@@ -214,9 +214,9 @@ class NewlyController:
         if self.service.use_relative:
             dx = x - self._last_x
             dy = y - self._last_y
-            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dx))},{int(round(dy))};ZED;"
+            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dy))},{int(round(dx))};ZED;"
         else:
-            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PA;PU{int(round(x))},{int(round(y))};ZED;"
+            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PA;PU{int(round(y))},{int(round(x))};ZED;"
         self.connection.write(index=self._machine_index, data=cmd)
         self._last_x, self._last_y = x, y
 
