@@ -40,9 +40,11 @@ class NewlyController:
         self._last_x = x
         self._last_y = y
 
-        self._speed = 24
+        self._speed = 15
         self._power = 38
-        self._acceleration = 15
+        self._acceleration = 24
+        self._scan_speed = 20  # 200 mm/s
+        self._file_index = 0
         self._relative = False
 
         self.mode = DRIVER_STATE_RAPID
@@ -153,18 +155,18 @@ class NewlyController:
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
-        self.command_buffer.append("ZZZFile0")
+        self.command_buffer.append(f"ZZZFile{self._file_index}")
         self.command_buffer.append("DW")
         self.command_buffer.append("PL2")
         self.command_buffer.append("VP100")
         self.command_buffer.append("VK100")
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
-        self.command_buffer.append(f"VQ{int(round(self._acceleration))}")
-        self.command_buffer.append(f"VJ{int(round(self._speed))}")
+        self.command_buffer.append(f"VQ{int(round(self._speed))}")
+        self.command_buffer.append(f"VJ{int(round(self._acceleration))}")
         self.command_buffer.append(f"DA{int(round(self._power))}")
         self.command_buffer.append("SP0")
-        self.command_buffer.append("VS20")
+        self.command_buffer.append(f"VS{int(round(self._scan_speed))}")
         if self.service.use_relative:
             self._relative = True
             self.command_buffer.append("PR")
@@ -220,14 +222,14 @@ class NewlyController:
     def set_xy(self, x, y):
         self.connect_if_needed()
         command_buffer = list()
-        command_buffer.append("ZZZFile0")
+        command_buffer.append(f"ZZZFile{self._file_index}")
         command_buffer.append("VP100")
         command_buffer.append("VK100")
         command_buffer.append("SP2")
         command_buffer.append("SP2")
-        command_buffer.append(f"VQ{int(round(self._acceleration))}")
-        command_buffer.append(f"VJ{int(round(self._speed))}")
-        command_buffer.append("VS10")
+        command_buffer.append(f"VQ{int(round(self._speed))}")
+        command_buffer.append(f"VJ{int(round(self._acceleration))}")
+        command_buffer.append(f"VS{int(round(self._scan_speed))}")
         if self.service.use_relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
@@ -252,8 +254,11 @@ class NewlyController:
     #######################
 
     def abort(self):
-        cmd = f"ZZZFile0;ZQ;ZED"
-        self.connection.write(index=self._machine_index, data=cmd)
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append("ZQ")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def pause(self):
         self.paused = True
