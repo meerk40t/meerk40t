@@ -196,6 +196,17 @@ class NewlyDevice(Service, ViewPort):
                 "subsection": "_30_Backlash",
             },
             {
+                "attr": "max_power",
+                "object": self,
+                "default": 20.0,
+                "type": float,
+                "label": _("Max Power"),
+                "trailer": "%",
+                "tip": _("Maximum laser power, all other power will be a scale of this amount"),
+                "section": "_10_Parameters",
+                "subsection": "_40_Power",
+            },
+            {
                 "attr": "pwm_enabled",
                 "object": self,
                 "default": False,
