@@ -43,6 +43,7 @@ class NewlyController:
         self._speed = 24
         self._power = 100
         self._acceleration = 15
+        self._relative = False
 
         self.mode = DRIVER_STATE_RAPID
         self.paused = False
@@ -182,18 +183,31 @@ class NewlyController:
     #######################
 
     def mark(self, x, y):
-        self.command_buffer.append(f"PD{int(round(x))},{int(round(y))}")
+        if self._relative:
+            dx = x - self._last_x
+            dy = y - self._last_y
+            self.command_buffer.append(f"PD{int(round(dx))},{int(round(dy))}")
+        else:
+            self.command_buffer.append(f"PD{int(round(x))},{int(round(y))}")
         self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
-        self.command_buffer.append(f"PU{int(round(x))},{int(round(y))}")
+        if self._relative:
+            dx = x - self._last_x
+            dy = y - self._last_y
+            self.command_buffer.append(f"PU{int(round(dx))},{int(round(dy))}")
+        else:
+            self.command_buffer.append(f"PU{int(round(x))},{int(round(y))}")
         self._last_x, self._last_y = x, y
 
     def set_xy(self, x, y):
         self.connect_if_needed()
-        dx = x - self._last_x
-        dy = y - self._last_y
-        cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dx))},{int(round(dy))};ZED;"
+        if self.service.use_relative:
+            dx = x - self._last_x
+            dy = y - self._last_y
+            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dx))},{int(round(dy))};ZED;"
+        else:
+            cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PA;PU{int(round(x))},{int(round(y))};ZED;"
         self.connection.write(index=self._machine_index, data=cmd)
         self._last_x, self._last_y = x, y
 
