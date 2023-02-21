@@ -45,5 +45,39 @@ class MockConnection:
             self.channel(_("Mock Disconnection Successful.\n"))
             del self.devices[index]
 
-    def write(self, index=0, packet=None):
+    def write(self, index=0, data=None):
+        if data is None:
+            return
+        data_remaining = len(data)
+        while data_remaining > 0:
+            packet_length = min(0x1000, data_remaining)
+            packet = data[:packet_length]
+
+            data = data[packet_length:]
+            data_remaining -= packet_length
+
+            #####################################
+            # Step 1: Write the size of the packet.
+            #####################################
+            self._write_packet_size(index=index, packet=packet)
+
+            #####################################
+            # Step 2: read the confirmation value.
+            #####################################
+            self._read_confirmation(index=index)
+
+            #####################################
+            # Step #3, write the bulk data of the packet.
+            #####################################
+            self._write_bulk(index=index, packet=packet)
+
+    def _write_packet_size(self, index=0, packet=None, attempt=0):
+        packet_length = len(packet)
+        length_data = struct.pack(">h", packet_length)
+        self.channel(f"{length_data}")
+
+    def _read_confirmation(self, index=0, attempt=0):
+        self.channel("1")
+
+    def _write_bulk(self, index=0, packet=None):
         self.channel(packet)

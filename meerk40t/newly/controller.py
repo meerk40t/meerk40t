@@ -142,7 +142,7 @@ class NewlyController:
             self.command_buffer.append("ZED;")
             cmd = ";".join(self.command_buffer)
             self.connect_if_needed()
-            self.connection.write(index=self._machine_index, packet=cmd)
+            self.connection.write(index=self._machine_index, data=cmd)
             self.command_buffer.clear()
 
     def raster_mode(self):
@@ -194,7 +194,7 @@ class NewlyController:
         dx = x - self._last_x
         dy = y - self._last_y
         cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dx))},{int(round(dy))};ZED;"
-        self.connection.write(index=self._machine_index, packet=cmd)
+        self.connection.write(index=self._machine_index, data=cmd)
         self._last_x, self._last_y = x, y
 
     def get_last_xy(self):
@@ -206,7 +206,7 @@ class NewlyController:
 
     def abort(self):
         cmd = f"ZZZFile0;ZQ;ZED"
-        self.connection.write(index=self._machine_index, packet=cmd)
+        self.connection.write(index=self._machine_index, data=cmd)
 
     def pause(self):
         self.paused = True

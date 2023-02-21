@@ -316,10 +316,17 @@ class USBConnection:
     def abort(self):
         pass
 
-    def write(self, index=0, packet=None, attempt=0):
-        packet_length = len(packet)
-        assert packet_length <= 0xFFFF
-        if packet is not None:
+    def write(self, index=0, data=None, attempt=0):
+        if data is None:
+            return
+        data_remaining = len(data)
+        while data_remaining > 0:
+            packet_length = min(0x1000, data_remaining)
+            packet = data[:packet_length]
+
+            data = data[packet_length:]
+            data_remaining -= packet_length
+
             #####################################
             # Step 1: Write the size of the packet.
             #####################################
