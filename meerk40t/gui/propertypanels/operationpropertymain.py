@@ -120,6 +120,14 @@ class LayerSettingPanel(wx.Panel):
         self.checkbox_output.SetValue(1)
         h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
+        self.checkbox_visible = wx.CheckBox(self, wx.ID_ANY, _("Visible"))
+        self.checkbox_visible.SetToolTip(
+            _("Hide all contained elements on scene if not set.")
+        )
+        self.checkbox_visible.SetValue(1)
+        self.checkbox_visible.Enable(False)
+        h_property_sizer.Add(self.checkbox_visible, 1, 0, 0)
+
         self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
         OPERATION_DEFAULT_TOOLTIP = (
             _(
@@ -142,6 +150,7 @@ class LayerSettingPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_visible, self.checkbox_visible)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_default, self.checkbox_default)
         # end wxGlade
 
@@ -188,6 +197,14 @@ class LayerSettingPanel(wx.Panel):
         )
         if self.operation.output is not None:
             self.checkbox_output.SetValue(self.operation.output)
+        flag_set = True
+        flag_enabled = False
+        if self.operation.output is not None:
+            if not self.operation.output:
+                flag_enabled = True
+                flag_set = self.operation.is_visible
+        self.checkbox_visible.SetValue(flag_set)
+        self.checkbox_visible.Enable(flag_enabled)
         if self.operation.default is not None:
             self.checkbox_default.SetValue(self.operation.default)
         try:
@@ -258,6 +275,14 @@ class LayerSettingPanel(wx.Panel):
             self.context.elements.signal(
                 "element_property_reload", self.operation, "check_output"
             )
+        self.checkbox_visible.Enable(not bool(self.checkbox_output.GetValue()))
+
+    def on_check_visible(self, event=None):
+        if self.operation.is_visible != bool(self.checkbox_visible.GetValue()):
+            self.operation.is_visible = bool(self.checkbox_visible.GetValue())
+            self.context.elements.validate_selected_area()
+            self.context.elements.signal("element_property_update", self.operation)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def on_check_default(self, event=None):
         if self.operation.default != bool(self.checkbox_default.GetValue()):

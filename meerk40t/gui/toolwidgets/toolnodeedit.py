@@ -845,7 +845,7 @@ class EditTool(ToolWidget):
             for idx, entry in enumerate(self.nodes):
                 if not entry["type"] == "point":
                     continue
-                treatment = ""
+                # treatment = ""
                 e = entry["segment"]
                 if isinstance(e, Move):
                     if entry["selected"]:
@@ -854,20 +854,20 @@ class EditTool(ToolWidget):
                         p.MoveToPoint(ptx, pty)
                         e = entry["next"]
                         init = deal_with_segment(e, init)
-                        treatment = "move+next"
+                        # treatment = "move+next"
                     else:
                         ptx, pty = node.matrix.point_in_matrix_space(e.end)
                         p.MoveToPoint(ptx, pty)
                         init = True
-                        treatment = "move"
+                        # treatment = "move"
                 elif not entry["selected"]:
                     ptx, pty = node.matrix.point_in_matrix_space(e.end)
                     p.MoveToPoint(ptx, pty)
                     init = True
-                    treatment = "nonselected"
+                    # treatment = "nonselected"
                 else:
                     init = deal_with_segment(e, init)
-                    treatment = "selected"
+                    # treatment = "selected"
                 # print (f"#{idx} {entry['type']} got treatment: {treatment}")
 
         gc.SetPen(self.pen_highlight_line)
@@ -977,7 +977,7 @@ class EditTool(ToolWidget):
             return
         self.element.altered()
         try:
-            bb = self.element.bbox()
+            __ = self.element.bbox()
         except AttributeError:
             pass
         self.scene.context.elements.validate_selected_area()
