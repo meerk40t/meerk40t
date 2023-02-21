@@ -30,8 +30,9 @@ class NewlyConfiguration(MWindow):
         )
 
         options = (
-            ("newly", "Newly"),
-            ("newly-global", "Global"),
+            ("newly", _("Newly")),
+            ("newly-specific", _("Device")),
+            ("newly-global", _("Global")),
         )
         self.panels = []
         for item in options:
