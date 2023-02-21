@@ -160,7 +160,7 @@ class NewlyController:
         self.command_buffer.append(f"VQ{int(round(self._acceleration))}")
         self.command_buffer.append(f"VJ{int(round(self._speed))}")
         self.command_buffer.append("VS10")
-        self.command_buffer.append("PR")
+        self.command_buffer.append("PA")
 
     #######################
     # SETS FOR PLOTLIKES
