@@ -191,7 +191,9 @@ class NewlyController:
 
     def set_xy(self, x, y):
         self.connect_if_needed()
-        cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(x))},{int(round(y))};ZED;"
+        dx = x - self._last_x
+        dy = y - self._last_y
+        cmd = f"ZZZFile0;VP100;VK100;SP2;SP2;VQ{int(round(self._acceleration))};VJ{int(round(self._speed))};VS10;PR;PU{int(round(dx))},{int(round(dy))};ZED;"
         self.connection.write(index=self._machine_index, packet=cmd)
         self._last_x, self._last_y = x, y
 
