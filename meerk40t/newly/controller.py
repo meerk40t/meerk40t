@@ -46,7 +46,7 @@ class NewlyController:
         self._scan_speed = 20  # 200 mm/s
         self._file_index = 0
         self._relative = False
-        self._unknown_pl = 2
+        self._pwm_frequency = None
         self._unknown_vp = 100
         self._unknown_vk = 100
 
@@ -160,7 +160,8 @@ class NewlyController:
         self.mode = DRIVER_STATE_PROGRAM
         self.command_buffer.append(f"ZZZFile{self._file_index}")
         self.command_buffer.append("DW")
-        self.command_buffer.append(f"PL{self._unknown_pl}")
+        if self._pwm_frequency is not None:
+            self.command_buffer.append(f"PL{self._pwm_frequency}")
         self.command_buffer.append(f"VP{self._unknown_vp}")
         self.command_buffer.append(f"VK{self._unknown_vk}")
         self.command_buffer.append("SP2")
@@ -188,6 +189,8 @@ class NewlyController:
         @param settings: The current settings dictionary
         @return:
         """
+
+        self._pwm_frequency = self.service.pwm_frequency if self.service.pwm_enabled else None
         self._power = settings.get("power", self.service.default_power)
         self._speed = settings.get("speed", self.service.default_speed)
         self._acceleration = settings.get("acceleration", self.service.default_acceleration)
