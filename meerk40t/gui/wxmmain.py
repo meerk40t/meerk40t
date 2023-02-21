@@ -72,6 +72,8 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    # icons8_replicate_rows_50,
+    icons8_node_edit_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -940,6 +942,28 @@ class MeerK40t(MWindow):
             },
         )
 
+        def contains_a_path():
+            result = False
+            for e in kernel.elements.elems(emphasized=True):
+                if e.type in ("elem polyline", "elem path"):
+                    result = True
+                    break
+            return result
+
+        kernel.register(
+            "button/modify/Nodeeditor",
+            {
+                "label": _("Node Edit"),
+                "icon": icons8_node_edit_50,
+                "tip": _(
+                    "Edit nodes of a polyline/path-object"
+                ),
+                "action": lambda v: kernel.elements("tool edit\n"),
+                "size": bsize_normal,
+                "identifier": "nodeedit",
+                "rule_enabled": lambda cond: contains_a_path(),
+            },
+        )
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 
@@ -2855,6 +2879,7 @@ class MeerK40t(MWindow):
                 i += 1
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
+    @signal_listener("file;loaded")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
@@ -3048,9 +3073,15 @@ class MeerK40t(MWindow):
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
+        label = self.context.elements.filename
+        if label is None:
+            label = ""
+        else:
+            label = " - " + label
+
         title = (
-            f"{str(self.context.kernel.name)} v{self.context.kernel.version}      "
-            f"{self.context.device.label}"
+            f"{str(self.context.kernel.name)} v{self.context.kernel.version} - "
+            f"{self.context.device.label}{label}"
         )
         self.SetTitle(title)
 

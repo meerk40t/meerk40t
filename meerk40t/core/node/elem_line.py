@@ -47,11 +47,7 @@ class LineNode(Node, Stroked):
             )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = self.shape.values.get("viewport_transform")
-            if m:
-                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
-            else:
-                self.stroke_width_zero()
+            self.stroke_width_zero()
 
         self.set_dirty_bounds()
 

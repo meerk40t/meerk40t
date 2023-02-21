@@ -75,7 +75,8 @@ class AttractionWidget(Widget):
         self.my_x = space_pos[0]
         self.my_y = space_pos[1]
         if (
-            event_type in ("leftdown", "move", "hover", "hover_start")
+            event_type
+            in ("leftdown", "leftup", "leftclick", "move", "hover", "hover_start")
             and (self.scene.tool_active or self.scene.modif_active)
             and "shift" not in modifiers
         ):
@@ -94,6 +95,10 @@ class AttractionWidget(Widget):
             )
             and self._show_snap_points
         ):
+            if event_type in ("leftup", "leftclick"):
+                # Na, we don't need points to be displayed
+                # (but we needed the calculation)
+                self._show_snap_points = False
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
                 # if event_type.startswith("left"):

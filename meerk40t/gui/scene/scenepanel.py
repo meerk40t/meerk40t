@@ -49,6 +49,7 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
 
         self.last_key = None
+        self.last_event = None
         self.last_char = None
 
         try:
@@ -98,8 +99,9 @@ class ScenePanel(wx.Panel):
     def on_key_down(self, evt):
         self.last_char = None
         literal = get_key_name(evt, True)
-        if literal != self.last_key:
+        if (literal != self.last_key) or (self.last_event != "key_down"):
             self.last_key = literal
+            self.last_event = "key_down"
             self.scene.event(
                 window_pos=self.scene.last_position,
                 event_type="key_down",
@@ -122,6 +124,7 @@ class ScenePanel(wx.Panel):
         )
         # After consumption all is done
         self.last_char = None
+        self.last_event = "key_up"
         evt.Skip()
 
     def on_size(self, event=None):

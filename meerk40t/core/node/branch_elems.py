@@ -21,6 +21,10 @@ class BranchElementsNode(Node):
             if modify:
                 self.append_child(drag_node)
             return True
+        elif drag_node.type == "group":
+            if modify:
+                self.append_child(drag_node)
+            return True
         return False
 
     def is_draggable(self):

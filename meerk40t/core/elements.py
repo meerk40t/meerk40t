@@ -441,7 +441,7 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and not self.operation_default_empty:
+        if len(ops) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
@@ -927,7 +927,7 @@ class Elemental(Service):
         for node in data:
             if node.bounds is not None:
                 boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        if len(boundary_points) == 0:
             return
         left_edge = min([e[0] for e in boundary_points])
         top_edge = min([e[1] for e in boundary_points])
@@ -1409,6 +1409,8 @@ class Elemental(Service):
         if fast:
             self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
+        self._filename = None
+        self.signal("file;loaded")
 
     def clear_note(self):
         self.note = None
@@ -1417,7 +1419,6 @@ class Elemental(Service):
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
-        special_occasion = False
         to_classify = []
         # if drop_node.type.startswith("op"):
         #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
@@ -1477,17 +1478,21 @@ class Elemental(Service):
         #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
+                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
                 if drag_node._parent.type == "branch reg":
-                    to_classify.append(drag_node)
-                if special_occasion:
-                    for ref in list(drag_node._references):
-                        ref.remove_node()
+                    if drag_node.type in ("file", "group"):
+                        for e in drag_node.flat(elem_nodes):
+                            to_classify.append(e)
+                    else:
+                        to_classify.append(drag_node)
                 drop_node.drop(drag_node, modify=True)
                 success = True
+            else:
+                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
         if self.classify_new and len(to_classify) > 0:
             self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
@@ -1825,7 +1830,7 @@ class Elemental(Service):
         if elements is None:
             return
 
-        if not len(list(self.ops())) and not self.operation_default_empty:
+        if len(list(self.ops())) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
@@ -2920,6 +2925,7 @@ class Elemental(Service):
                             end_time = time()
                             self._filename = pathname
                             self.set_end_time("load", display=True)
+                            self.signal("file;loaded")
                             return True
                         except FileNotFoundError:
                             return False

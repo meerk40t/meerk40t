@@ -46,7 +46,7 @@ class PolylineTool(ToolWidget):
             points = list(self.point_series)
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
-            gc.DrawLines(points)
+            gc.StrokeLines(points)
             x0 = points[-2][0]
             y0 = points[-2][1]
             x1 = points[-1][0]

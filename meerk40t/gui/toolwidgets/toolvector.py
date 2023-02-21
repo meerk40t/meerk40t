@@ -64,7 +64,10 @@ class VectorTool(ToolWidget):
             if self.path is None:
                 self.pen = wx.Pen()
                 self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
-                self.pen.SetWidth(elements.default_strokewidth)
+                try:
+                    self.pen.SetWidth(elements.default_strokewidth)
+                except TypeError:
+                    self.pen.SetWidth(int(elements.default_strokewidth))
                 self.path = Path()
                 if nearest_snap is None:
                     self.path.move((space_pos[0], space_pos[1]))
