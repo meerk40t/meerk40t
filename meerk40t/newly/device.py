@@ -239,10 +239,10 @@ class NewlyDevice(Service, ViewPort):
             {
                 "attr": "default_power",
                 "object": self,
-                "default": 15.0,
+                "default": 1000.0,
                 "type": float,
                 "label": _("Laser Power"),
-                "trailer": "%",
+                "trailer": "/1000",
                 "tip": _("How what power level do we cut at?"),
             },
             {

@@ -41,7 +41,7 @@ class NewlyController:
         self._last_y = y
 
         self._speed = 15
-        self._power = 38
+        self._power = 1000
         self._acceleration = 24
         self._scan_speed = 20  # 200 mm/s
         self._file_index = 0
@@ -168,7 +168,8 @@ class NewlyController:
         self.command_buffer.append("SP2")
         self.command_buffer.append(f"VQ{int(round(self._speed))}")
         self.command_buffer.append(f"VJ{int(round(self._acceleration))}")
-        self.command_buffer.append(f"DA{int(round(self._power))}")
+        power = int(round((self._power / 1000.0) * self.service.max_power * 255.0/100.0))
+        self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
         self.command_buffer.append(f"VS{int(round(self._scan_speed))}")
         if self.service.use_relative:
