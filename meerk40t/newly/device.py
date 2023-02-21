@@ -176,7 +176,7 @@ class NewlyDevice(Service, ViewPort):
             {
                 "attr": "default_power",
                 "object": self,
-                "default": 50.0,
+                "default": 15.0,
                 "type": float,
                 "label": _("Laser Power"),
                 "trailer": "%",
@@ -185,7 +185,7 @@ class NewlyDevice(Service, ViewPort):
             {
                 "attr": "default_speed",
                 "object": self,
-                "default": 100.0,
+                "default": 15.0,
                 "type": float,
                 "trailer": "mm/s",
                 "label": _("Cut Speed"),
@@ -194,7 +194,7 @@ class NewlyDevice(Service, ViewPort):
             {
                 "attr": "default_acceleration",
                 "object": self,
-                "default": 15.0,
+                "default": 24.0,
                 "type": float,
                 "trailer": "acc",
                 "label": _("Acceleration"),
