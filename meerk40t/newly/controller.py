@@ -191,12 +191,30 @@ class NewlyController:
         @param settings: The current settings dictionary
         @return:
         """
-
+        old = self._pwm_frequency
         self._pwm_frequency = self.service.pwm_frequency if self.service.pwm_enabled else None
+        if old != self._pwm_frequency:
+            self.rapid_mode()
+
+        old = self._power
         self._power = settings.get("power", self.service.default_power)
+        if old != self._power:
+            self.rapid_mode()
+
+        old = self._speed
         self._speed = settings.get("speed", self.service.default_speed)
+        if old != self._speed:
+            self.rapid_mode()
+
+        old = self._scan_speed
         self._scan_speed = settings.get("raster_speed", self.service.default_raster_speed)
+        if old != self._scan_speed:
+            self.rapid_mode()
+
+        old = self._acceleration
         self._acceleration = settings.get("acceleration", self.service.default_acceleration)
+        if old != self._acceleration:
+            self.rapid_mode()
 
     #######################
     # PLOTLIKE SHORTCUTS
