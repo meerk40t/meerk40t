@@ -224,8 +224,22 @@ class PlotCut(CutObject):
         except IndexError:
             return None
 
+    def normal_plot(self):
+        x0 = None
+        y0 = None
+        for i in range(0, len(self._points)):
+            x1, y1 = self._points[i]
+            if x0 is not None:
+                power = self._powers[i - 1]
+                yield x0, y0, power, x1, y1
+            x0 = x1
+            y0 = y1
+
     @property
     def plot(self):
+        if not self.h_raster and not self.v_raster:
+            yield from self.normal_plot()
+            return
         x0 = None
         y0 = None
         last_dx = 0
