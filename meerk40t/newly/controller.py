@@ -150,6 +150,7 @@ class NewlyController:
             self.connect_if_needed()
             self.connection.write(index=self._machine_index, data=cmd)
             self.command_buffer.clear()
+        self.mode = DRIVER_STATE_RAPID
 
     def raster_mode(self):
         self.program_mode()
