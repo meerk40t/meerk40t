@@ -267,101 +267,102 @@ class GRBLEmulator:
                     self.driver.reset()
                 except AttributeError:
                     pass
-            elif c == 0x84:
-                # Safety Door
-                pass
-            elif c == 0x85:
-                try:
-                    self.driver.jog_abort()
-                except AttributeError:
+            elif c > 0x80:
+                if c == 0x84:
+                    # Safety Door
                     pass
-            elif c == 0x90:
-                self.speed_scale = 1.0
-                try:
-                    self.driver.set("speed_factor", self.speed_scale)
-                except AttributeError:
+                elif c == 0x85:
+                    try:
+                        self.driver.jog_abort()
+                    except AttributeError:
+                        pass
+                elif c == 0x90:
+                    self.speed_scale = 1.0
+                    try:
+                        self.driver.set("speed_factor", self.speed_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x91:
+                    self.speed_scale *= 1.1
+                    try:
+                        self.driver.set("speed_factor", self.speed_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x92:
+                    self.speed_scale *= 0.9
+                    try:
+                        self.driver.set("speed_factor", self.speed_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x93:
+                    self.speed_scale *= 1.01
+                    try:
+                        self.driver.set("speed_factor", self.speed_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x94:
+                    self.speed_scale *= 0.99
+                    try:
+                        self.driver.set("speed_factor", self.speed_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x95:
+                    self.rapid_scale = 1.0
+                    try:
+                        self.driver.set("rapid_factor", self.rapid_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x96:
+                    self.rapid_scale = 0.5
+                    try:
+                        self.driver.set("rapid_factor", self.rapid_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x97:
+                    self.rapid_scale = 0.25
+                    try:
+                        self.driver.set("rapid_factor", self.rapid_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x99:
+                    self.power_scale = 1.0
+                    try:
+                        self.driver.set("power_factor", self.power_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x9A:
+                    self.power_scale *= 1.1
+                    try:
+                        self.driver.set("power_factor", self.power_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x9B:
+                    self.power_scale *= 0.9
+                    try:
+                        self.driver.set("power_factor", self.power_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x9C:
+                    self.power_scale *= 1.01
+                    try:
+                        self.driver.set("power_factor", self.power_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x9D:
+                    self.power_scale *= 0.99
+                    try:
+                        self.driver.set("power_factor", self.power_scale)
+                    except AttributeError:
+                        pass
+                elif c == 0x9E:
+                    # Toggle Spindle Stop
                     pass
-            elif c == 0x91:
-                self.speed_scale *= 1.1
-                try:
-                    self.driver.set("speed_factor", self.speed_scale)
-                except AttributeError:
+                elif c == 0xA0:
+                    # Toggle Flood Coolant
                     pass
-            elif c == 0x92:
-                self.speed_scale *= 0.9
-                try:
-                    self.driver.set("speed_factor", self.speed_scale)
-                except AttributeError:
+                elif c == 0xA1:
+                    # Toggle Mist Coolant
                     pass
-            elif c == 0x93:
-                self.speed_scale *= 1.01
-                try:
-                    self.driver.set("speed_factor", self.speed_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x94:
-                self.speed_scale *= 0.99
-                try:
-                    self.driver.set("speed_factor", self.speed_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x95:
-                self.rapid_scale = 1.0
-                try:
-                    self.driver.set("rapid_factor", self.rapid_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x96:
-                self.rapid_scale = 0.5
-                try:
-                    self.driver.set("rapid_factor", self.rapid_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x97:
-                self.rapid_scale = 0.25
-                try:
-                    self.driver.set("rapid_factor", self.rapid_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x99:
-                self.power_scale = 1.0
-                try:
-                    self.driver.set("power_factor", self.power_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x9A:
-                self.power_scale *= 1.1
-                try:
-                    self.driver.set("power_factor", self.power_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x9B:
-                self.power_scale *= 0.9
-                try:
-                    self.driver.set("power_factor", self.power_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x9C:
-                self.power_scale *= 1.01
-                try:
-                    self.driver.set("power_factor", self.power_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x9D:
-                self.power_scale *= 0.99
-                try:
-                    self.driver.set("power_factor", self.power_scale)
-                except AttributeError:
-                    pass
-            elif c == 0x9E:
-                # Toggle Spindle Stop
-                pass
-            elif c == 0xA0:
-                # Toggle Flood Coolant
-                pass
-            elif c == 0xA1:
-                # Toggle Mist Coolant
-                pass
             elif c == ord("$"):
                 if not self._buffer:
                     # First character is "$" this is special grbl.
