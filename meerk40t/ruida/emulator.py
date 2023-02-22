@@ -287,6 +287,14 @@ class RuidaEmulator:
         if self.channel:
             self.channel(f"<-- {response.hex()}\t({desc})")
 
+    def _set_magic(self, magic):
+        self.magic = magic
+        self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
+            self.magic
+        )
+        if self.channel:
+            self.channel(f"Setting magic to 0x{self.magic:02x}")
+
     def checksum_write(self, sent_data):
         """
         This is `write` with a checksum and swizzling. This is how the 50200 packets arrive and need to be processed.
@@ -300,22 +308,7 @@ class RuidaEmulator:
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
-        if len(sent_data) > 3:
-            if self.magic != 0x88 and sent_data[2] == 0xD4:
-                self.magic = 0x88
-                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
-                    self.magic
-                )
-                if self.channel:
-                    self.channel("Setting magic to 0x88")
-            if self.magic != 0x11 and sent_data[2] == 0x4B:
-                self.magic = 0x11
-                self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
-                    self.magic
-                )
-                if self.channel:
-                    self.channel("Setting magic to 0x11")
-
+        self.write(data)
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
@@ -327,7 +320,6 @@ class RuidaEmulator:
             if self.channel:
                 self.channel("--> " + str(data.hex()))
             return
-        self.write(self.unswizzle(data))
 
     def realtime_write(self, bytes_to_write):
         """
@@ -338,9 +330,9 @@ class RuidaEmulator:
         """
         self.swizzle_mode = False
         self.msg_reply(b"\xCC")  # Clear ACK.
-        self.write(bytes_to_write)
+        self.write(bytes_to_write, unswizzle=False)
 
-    def write(self, data):
+    def write(self, data, unswizzle=True):
         """
         Procedural commands sent in large data chunks. This can be through USB or UDP or a loaded file. These are
         expected to be unswizzled with the swizzle_mode set for the reply. Write will parse out the individual commands
@@ -349,6 +341,9 @@ class RuidaEmulator:
         @param data:
         @return:
         """
+        if unswizzle:
+            data = self.unswizzle(data)
+
         for array in self.parse_commands(data):
             try:
                 self.process(array)
@@ -1349,7 +1344,7 @@ class RuidaEmulator:
                 name = files[filenumber - 1]
                 try:
                     with open(name, "rb") as f:
-                        self.write(self.unswizzle(f.read()))
+                        self.write(f.read())
                 except OSError:
                     pass
                 desc = f"Start Select Document {filenumber}"
@@ -2078,10 +2073,21 @@ class RuidaEmulator:
             pass
         return "Unknown", 0
 
-    def unswizzle(self, data):
-        array = list()
-        for b in data:
-            array.append(self.lut_unswizzle[b])
+    def unswizzle(self, data, tries=0):
+        if not data or tries > 3:
+            return []
+        array = [self.lut_unswizzle[b] for b in data]
+
+        if array[0] < 0x80 and self.magic != 0x11:
+            # The swizzle is incorrect.
+            self._set_magic(0x11)
+            return self.unswizzle(data, tries=tries + 1)
+
+        if array[0] < 0x80 and self.magic != 0x88:
+            # The swizzle is incorrect.
+            self._set_magic(0x88)
+            return self.unswizzle(data, tries=tries + 1)
+
         return bytes(array)
 
     def swizzle(self, data):
