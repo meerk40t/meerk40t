@@ -119,12 +119,12 @@ class NewlyDriver:
         """
         last_on = None
         con = self.connection
-        con.program_mode()
         queue = self.queue
         self.queue = list()
         for q in queue:
             settings = q.settings
             con.set_settings(settings)
+            con.program_mode()
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
