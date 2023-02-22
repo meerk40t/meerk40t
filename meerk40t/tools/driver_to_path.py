@@ -139,7 +139,7 @@ class PlotterDriver:
             pass
         elif isinstance(q, PlotCut):
             started = False
-            for x0, y0, power, x1, y1 in q.generator():
+            for x0, y0, power, x1, y1 in q.plot:
                 if not started:
                     self.path.move(x0,y0)
                     started = True
@@ -274,7 +274,7 @@ class PlotterDriver:
 
 
 class DriverToPath:
-    def __init__(self, plotter=None):
+    def __init__(self):
         self.settings = {
             "speed": 0,
             "power": 0,
@@ -318,7 +318,7 @@ class DriverToPath:
                 "object": self,
                 "default": True,
                 "type": bool,
-                "label": "Single occurence",
+                "label": "Single occurrence",
                 "tip": "Prevent duplicate creation of segments (like in a multipass operation)",
                 "section": "_10_Path",
             },
