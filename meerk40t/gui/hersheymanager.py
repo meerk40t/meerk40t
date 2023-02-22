@@ -1,6 +1,5 @@
 import os
 import platform
-
 from glob import glob
 from math import isinf
 
@@ -17,7 +16,6 @@ from meerk40t.gui.icons import STD_ICON_SIZE, icons8_choose_font_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import get_safe_path
-
 
 _ = wx.GetTranslation
 
@@ -105,6 +103,10 @@ def remove_fontfile(fontfile):
 
 
 class LineTextPropertyPanel(wx.Panel):
+    """
+    Panel for post-creation text property editing
+    """
+
     def __init__(
         self,
         *args,
@@ -255,6 +257,10 @@ class LineTextPropertyPanel(wx.Panel):
 
 
 class PanelFontSelect(wx.Panel):
+    """
+    Panel to select font during line text creation
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -275,7 +281,9 @@ class PanelFontSelect(wx.Panel):
             checker = wx.CheckBox(self, wx.ID_ANY, info[0])
             checker.SetValue(True)
             checker.Bind(wx.EVT_CHECKBOX, self.on_checker(extension))
-            checker.SetToolTip(_("Show/Hide all fonts of type {info[0]}").format(info=info))
+            checker.SetToolTip(
+                _("Show/Hide all fonts of type {info[0]}").format(info=info)
+            )
             self.font_checks[extension] = [checker, True]
             sizer_checker.Add(checker, 0, 0, wx.ALIGN_CENTER_VERTICAL)
 
@@ -391,6 +399,10 @@ class PanelFontSelect(wx.Panel):
 
 
 class HersheyFontSelector(MWindow):
+    """
+    Wrapper Window Class for font selection panel
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
@@ -416,6 +428,9 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
+    """
+    Vector Font Manager
+    """
 
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
@@ -490,7 +505,7 @@ class PanelFontManager(wx.Panel):
         system = platform.system()
         if system == "Windows":
             choices.append(_("Windows-Font-Directory"))
-            self.webresources.append(os.path.join(os.environ['WINDIR'],'fonts'))
+            self.webresources.append(os.path.join(os.environ["WINDIR"], "fonts"))
         self.combo_webget = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -589,12 +604,15 @@ class PanelFontManager(wx.Panel):
             idx += 1
         # 2nd add all individual wildcard-patterns
         for idx, extension in enumerate(fontinfo):
-            if defaultextension is not None and defaultextension.lower() == extension.lower():
+            if (
+                defaultextension is not None
+                and defaultextension.lower() == extension.lower()
+            ):
                 filterindex = idx + 1
             ext = "*." + extension
             info = fontinfo[extension]
             wildcard += f"|{info[0]}-Fonts|{ext.lower()};{ext.upper()}"
-        wildcard += f"|All files|*.*"
+        wildcard += "|All files|*.*"
         if defaultdirectory is None:
             defdir = ""
         else:
@@ -608,12 +626,15 @@ class PanelFontManager(wx.Panel):
             defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE | wx.FD_PREVIEW | wx.FD_SHOW_HIDDEN,
+            style=wx.FD_OPEN
+            | wx.FD_FILE_MUST_EXIST
+            | wx.FD_MULTIPLE
+            | wx.FD_PREVIEW
+            | wx.FD_SHOW_HIDDEN,
         )
         try:
             # Might not be present in early wxpython versions
             dlg.SetFilterIndex(filterindex)
-            dlg.Set
         except AttributeError:
             pass
         font_files = None
@@ -777,10 +798,15 @@ class PanelFontManager(wx.Panel):
         # Reload....
         self.on_text_directory(None)
 
+
 # end of class FontManager
 
 
 class HersheyFontManager(MWindow):
+    """
+    Wrapper Window Class for Vector Font Manager
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
