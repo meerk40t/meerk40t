@@ -311,7 +311,11 @@ class NewlyController:
         if self._pwm_frequency is not None:
             self.command_buffer.append(f"PL{self._pwm_frequency}")
         self.command_buffer.append(f"DA{self._power}")
-        command_buffer.append(f"TO{int(round(time_in_ms))}")
+        while time_in_ms > 255:
+            time_in_ms -= 255
+            command_buffer.append("TO255")
+        if time_in_ms > 0:
+            command_buffer.append(f"TO{int(round(time_in_ms))}")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
