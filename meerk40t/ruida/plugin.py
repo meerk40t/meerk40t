@@ -8,7 +8,6 @@ Registers the needed classes for ruida device (or would if the ruida device coul
 from meerk40t.ruida.device import RuidaDevice
 from meerk40t.ruida.emulator import RuidaEmulator
 from meerk40t.ruida.loader import RDLoader
-from meerk40t.ruida.parser import RuidaParser
 
 
 def plugin(kernel, lifecycle=None):
@@ -22,7 +21,6 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
-        kernel.register("parser/ruida", RuidaParser)
 
         @kernel.console_option(
             "verbose",
