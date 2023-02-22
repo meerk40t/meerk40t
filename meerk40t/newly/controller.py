@@ -320,9 +320,19 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def pause(self):
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append("ZT")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
         self.paused = True
 
     def resume(self):
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append("ZG")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
         self.paused = False
 
     def init_laser(self):
