@@ -280,6 +280,22 @@ class NewlyController:
     # Command Shortcuts
     #######################
 
+    def home(self):
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append("ZG")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
+    def origin(self):
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append("ZG1")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
     def abort(self):
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")

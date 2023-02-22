@@ -311,7 +311,7 @@ class NewlyDriver:
         """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
-        self.home()
+        self.connection.home()
 
     def rapid_mode(self):
         """
