@@ -139,7 +139,7 @@ class PlotterDriver:
             pass
         elif isinstance(q, PlotCut):
             started = False
-            for x0, y0, power, x1, y1 in q.normal_plot():
+            for x0, y0, power, x1, y1 in q.plot:
                 if not started:
                     self.path.move((x0, y0))
                     started = True
