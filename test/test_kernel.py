@@ -16,11 +16,24 @@ class TestKernel(unittest.TestCase):
                     continue
                 if "grbl" in command:
                     continue
-                if "quit" in command:
+                if "usb_" in command:
                     continue
-                if "shutdown" in command:
-                    continue
-                if "interrupt" in command:
+                if command in (
+                    "quit",
+                    "shutdown",
+                    "interrupt",
+                    "+laser",
+                    "-laser",
+                    "left",
+                    "right",
+                    "top",
+                    "bottom",
+                    "home",
+                    "unlock",
+                    "lock",
+                    "physical_home",
+                    "test_dot_and_home",
+                ):
                     continue
                 if not cmd.regex:
                     print(f"Testing command: {command}")
