@@ -342,9 +342,18 @@ class RuidaEmulator:
         @return:
         """
         if unswizzle:
-            data = self.unswizzle(data)
+            packet = self.unswizzle(data)
+            if data[0] < 0x80:
+                if self.magic == 0x88:
+                    self._set_magic(0x11)
+                else:
+                    self._set_magic(0x88)
+                packet = self.unswizzle(data)
+        else:
+            packet = data
 
-        for array in self.parse_commands(data):
+        # print(packet)
+        for array in self.parse_commands(packet):
             try:
                 self.process(array)
             except RuidaCommandError:
@@ -2073,24 +2082,11 @@ class RuidaEmulator:
             pass
         return "Unknown", 0
 
-    def unswizzle(self, data, tries=0):
-        if not data or tries > 3:
-            return []
-        array = [self.lut_unswizzle[b] for b in data]
-        if array[0] < 0x80:
-            if self.magic == 0x88:
-                self._set_magic(0x11)
-            else:
-                self._set_magic(0x88)
-            return self.unswizzle(data, tries=tries + 1)
-
-        return bytes(array)
+    def unswizzle(self, data):
+        return bytes([self.lut_unswizzle[b] for b in data])
 
     def swizzle(self, data):
-        array = list()
-        for b in data:
-            array.append(self.lut_swizzle[b])
-        return bytes(array)
+        return bytes([self.lut_swizzle[b] for b in data])
 
     @staticmethod
     def swizzle_byte(b, magic):
