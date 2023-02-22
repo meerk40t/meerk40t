@@ -139,14 +139,14 @@ class PlotterDriver:
             pass
         elif isinstance(q, PlotCut):
             started = False
-            for x0, y0, power, x1, y1 in q.plot:
+            for x0, y0, power, x1, y1 in q.normal_plot():
                 if not started:
-                    self.path.move(x0,y0)
+                    self.path.move((x1, y1))
                     started = True
-                if self.power == 0:
-                    self.path.move(x1, y1)
+                if power == 0:
+                    self.path.move((x1, y1))
                 else:
-                    self.path.line(x1, y1)
+                    self.path.line((x1, y1))
 
     def _new(self, *args):
         """
@@ -275,10 +275,6 @@ class PlotterDriver:
 
 class DriverToPath:
     def __init__(self):
-        self.settings = {
-            "speed": 0,
-            "power": 0,
-        }
         self.origin = 1  # 0 top left, 1 bottom left, 2 center
         self.split_path = True
         self.ignore_travel = True
