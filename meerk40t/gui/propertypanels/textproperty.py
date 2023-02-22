@@ -386,7 +386,7 @@ class TextPropertyPanel(ScrolledPanel):
             wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
         )
         self.rb_align.SetToolTip(
-            _("Define where to place the origin (i.e. current mouse position")
+            _("Define where to place the origin (i.e. current mouse position)")
         )
 
         # end wxGlade
