@@ -972,7 +972,7 @@ def init_tree(kernel):
         node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
     @tree_conditional_try(
-        lambda node: kernel.lookup(f"parser/{node.data_type}") is not None
+        lambda node: kernel.lookup(f"emulator/{node.data_type}") is not None
     )
     @tree_operation(
         _("Convert to Elements"),
@@ -981,13 +981,14 @@ def init_tree(kernel):
     )
     def blob2path(node, **kwargs):
         cancelled = False
-        parser_class = kernel.lookup(f"parser/{node.data_type}")
-        parser = parser_class()
+        from meerk40t.tools.driver_to_path import DriverToPath
+
+        d2p = DriverToPath()
         dialog_class = kernel.lookup("dialog/options")
-        if dialog_class and hasattr(parser, "options"):
-            parser_choices = getattr(parser, "options", None)
-            if parser_choices is not None:
-                for entry in parser_choices:
+        if dialog_class and hasattr(d2p, "options"):
+            choices = getattr(d2p, "options", None)
+            if choices is not None:
+                for entry in choices:
                     if "label" in entry:
                         entry["label"] = _(entry["label"])
                     if "tip" in entry:
@@ -997,7 +998,7 @@ def init_tree(kernel):
                         for dentry in entry["display"]:
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
-                dialog = dialog_class(self.kernel, choices=parser_choices)
+                dialog = dialog_class(self.kernel, choices=choices)
                 res = dialog.dialog_options(
                     title=_("Blob-Conversion"),
                     intro=_(
@@ -1007,7 +1008,7 @@ def init_tree(kernel):
                 if not res:
                     cancelled = True
         if not cancelled:
-            parser.parse(node.data, self)
+            d2p.parse(node.data_type, node.data, self)
         return True
 
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))

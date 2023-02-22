@@ -33,12 +33,6 @@ def plugin(kernel, lifecycle=None):
             kernel.register("interpreter/lihuiyu", LihuiyuInterpreter)
         except ImportError:
             pass
-        try:
-            from .parser import LihuiyuParser
-
-            kernel.register("parser/egv", LihuiyuParser)
-        except ImportError:
-            pass
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
