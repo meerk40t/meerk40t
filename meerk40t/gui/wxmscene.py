@@ -160,7 +160,14 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/edit", EditTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
-        from meerk40t.extra.hershey import have_hershey_fonts
+
+        def proxy_linetext():
+            from meerk40t.extra.hershey import have_hershey_fonts
+
+            if have_hershey_fonts(context):
+                context.kernel.elements("tool linetext\n")
+            else:
+                context.kernel.elements("window open HersheyFontManager\n")
 
         context.kernel.register(
             "button/tools/Linetext",
@@ -168,10 +175,9 @@ class MeerK40tScenePanel(wx.Panel):
                 "label": _("Vector Text"),
                 "icon": icons8_text_50,
                 "tip": _("Add a vector text element"),
-                "action": lambda v: context.kernel.elements("tool linetext\n"),
+                "action": lambda v: proxy_linetext(),
                 "group": "tool",
                 "size": 50,
-                "rule_enabled": lambda cond: have_hershey_fonts(context),
                 "identifier": "linetext",
             },
         )
