@@ -14972,7 +14972,7 @@ msgstr "Bestätigen"
 
 msgid ""
 "You will be led now to a source in the web, where you can download free fonts.\n"
-"Please be respect individual property rights!\nDestination: {url}\n"
+"Please respect individual property rights!\nDestination: {url}\n"
 msgstr ""
 "Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
 "Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
