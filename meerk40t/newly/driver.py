@@ -440,5 +440,5 @@ class NewlyDriver:
         @param time_in_ms:
         @return:
         """
-        pass
+        self.connection.dwell(time_in_ms)
 

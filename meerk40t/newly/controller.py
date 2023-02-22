@@ -287,6 +287,17 @@ class NewlyController:
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
+    def dwell(self, time_in_ms):
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        if self._pwm_frequency is not None:
+            self.command_buffer.append(f"PL{self._pwm_frequency}")
+        self.command_buffer.append(f"DA{self._power}")
+        command_buffer.append(f"TO{int(round(time_in_ms))}")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
     def pause(self):
         self.paused = True
 
