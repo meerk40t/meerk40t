@@ -5,6 +5,17 @@ was converted to a driverlike emulator, this functionality was spun off.
 
 from math import isnan
 
+from meerk40t.core.cutcode.cubiccut import CubicCut
+from meerk40t.core.cutcode.dwellcut import DwellCut
+from meerk40t.core.cutcode.gotocut import GotoCut
+from meerk40t.core.cutcode.homecut import HomeCut
+from meerk40t.core.cutcode.inputcut import InputCut
+from meerk40t.core.cutcode.linecut import LineCut
+from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode.plotcut import PlotCut
+from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.cutcode.setorigincut import SetOriginCut
+from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -30,7 +41,12 @@ class PlotterDriver:
         self.treat_z_as_power = True
         self.z_only_negative = True
 
-    def check_operation_need(self):
+    def _check_operation_need(self):
+        """
+        Do we need a new operation for this path?
+
+        @return:
+        """
         has_power = bool(self.power != 0)
         if self.treat_z_as_power:
             if self.z_only_negative and self.depth < 0:
@@ -46,121 +62,215 @@ class PlotterDriver:
             index = len(self.paths) - 1
             self.operations[id_string].append(index)
 
-    def plotter(self, command, *args, **kwargs):
-        def remove_trailing_moves():
-            # Is the trailing segment a move ?
-            while len(self.path) > 0 and isinstance(self.path[-1], Move):
-                del self.path[-1]
-            if len(self.path) == 0:
-                # Degenerate...
-                index = len(self.paths) - 1
-                for op in self.operations:
-                    if index in self.operations[op]:
-                        opindex = self.operations[op].index(index)
-                        self.operations[op].pop(opindex)
-                if len(self.paths) > 0:
-                    self.paths.pop(-1)
+    def _remove_trailing_moves(self):
+        """
+        Removes a trailing move from the current active path.
 
-        def proper_z():
-            res = False
-            if self.treat_z_as_power:
-                if self.depth < 0 and self.z_only_negative:
-                    res = True
-                elif self.depth != 0 and not self.z_only_negative:
-                    res = True
-                # print (f"only negative: {self.z_only_negative}, depth={self.depth}, res={res}")
-            return res
+        @return:
+        """
+        # Is the trailing segment a move ?
+        while len(self.path) > 0 and isinstance(self.path[-1], Move):
+            del self.path[-1]
+        if len(self.path) == 0:
+            # Degenerate...
+            index = len(self.paths) - 1
+            for op in self.operations:
+                if index in self.operations[op]:
+                    opindex = self.operations[op].index(index)
+                    self.operations[op].pop(opindex)
+            if len(self.paths) > 0:
+                self.paths.pop(-1)
 
-        def needsadding(power):
-            result = False
-            if power is None:
-                power = 0
-            if self.ignore_travel:
-                if power != 0 or proper_z():
-                    result = True
-            else:
+    def _proper_z(self):
+        """
+        Is the z treated as power and positive.
+        @return:
+        """
+        res = False
+        if self.treat_z_as_power:
+            if self.depth < 0 and self.z_only_negative:
+                res = True
+            elif self.depth != 0 and not self.z_only_negative:
+                res = True
+            # print (f"only negative: {self.z_only_negative}, depth={self.depth}, res={res}")
+        return res
+
+    def _needs_adding(self, power):
+        """
+        Does this power equal zero while we ignore travels or do we require adding to the path.
+        @param power:
+        @return:
+        """
+        result = False
+        if power is None:
+            power = 0
+        if self.ignore_travel:
+            if power != 0 or self._proper_z():
                 result = True
-            return result
+        else:
+            result = True
+        return result
 
-        # print (f"{command} - {args}")
-        if command == "move":
-            x0, y0, x1, y1 = args
+    def plot(self, q):
+        """
+        Driver like command, plot sends cutcode to the driver.
+        @param q:
+        @return:
+        """
+        if self._needs_adding(q.settings.get("power", 0)):
+            self._new()
+        if isinstance(q, LineCut):
+            self.path.move((q.start, q.end))
+        elif isinstance(q, QuadCut):
+            self.path.quad((q.start, q.c, q.end))
+        elif isinstance(q, CubicCut):
+            self.path.cubic(q.start, q.c1(), q.c2(), q.end)
+        elif isinstance(q, WaitCut):
+            pass
+        elif isinstance(q, HomeCut):
+            self.path.move((0,0))
+        elif isinstance(q, GotoCut):
+            pass
+        elif isinstance(q, SetOriginCut):
+            pass
+        elif isinstance(q, DwellCut):
+            pass
+        elif isinstance(q, (InputCut, OutputCut)):
+            pass
+        elif isinstance(q, PlotCut):
+            started = False
+            for x0, y0, power, x1, y1 in q.generator():
+                if not started:
+                    self.path.move(x0,y0)
+                    started = True
+                if self.power == 0:
+                    self.path.move(x1, y1)
+                else:
+                    self.path.line(x1, y1)
+
+    def _new(self, *args):
+        """
+        Original code for plotter.new
+        @param args:
+        @return:
+        """
+        splitter = self.split_path
+        if splitter and len(self.path):
+            self._remove_trailing_moves()
+            self.path = Path()
+            self.paths.append(self.path)
+            # print (f"Z at time of path start: {self.depth}")
+        if len(args) > 1:
+            feed = args[0]
+            power = args[1]
+            if feed != 0:
+                self.speed = feed
+            if power != 0:
+                self.power = power
+            self._check_operation_need()
+
+    def _move(self, x, y):
+        """
+        original code for plotter.move
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.path.move((x, y))
+
+    def _line(self, x0, y0, x1, y1, power):
+        """
+        Original code for plotter.line
+
+        @param x0:
+        @param y0:
+        @param x1:
+        @param y1:
+        @param power:
+        @return:
+        """
+        # Do we need it added?
+        if self._needs_adding(power):
+            if not self.path:
+                self.path.move((x0, y0))
+            self.path.line((x1, y1))
+        else:
             self.path.move((x1, y1))
-        elif command == "line":
-            x0, y0, x1, y1, power = args
-            # Do we need it added?
-            if needsadding(power):
-                if not self.path:
-                    self.path.move((x0, y0))
+
+    def _cw_arc(self, x0, y0, cx, cy, x1, y1, power):
+        """
+        Original code for plotter clockwise arc. (Will never be used).
+        @param x0:
+        @param y0:
+        @param cx:
+        @param cy:
+        @param x1:
+        @param y1:
+        @param power:
+        @return:
+        """
+        # Do we need it added?
+        if self._needs_adding(power):
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
+            if isnan(arc.sweep):
+                # This arc is not valid.
                 self.path.line((x1, y1))
             else:
-                self.path.move((x1, y1))
-        elif command == "cw-arc":
-            x0, y0, cx, cy, x1, y1, power = args
-            # Do we need it added?
-            if needsadding(power):
-                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=False)
-                if isnan(arc.sweep):
-                    # This arc is not valid.
-                    self.path.line((x1, y1))
-                else:
-                    self.path.append(arc)
+                self.path.append(arc)
+        else:
+            self.path.move((x1, y1))
+
+    def _ccw_arc(self, x0, y0, cx, cy, x1, y1, power):
+        """
+        Original code for counter-clockwise arc.
+
+        This will never be used.
+
+        @param x0:
+        @param y0:
+        @param cx:
+        @param cy:
+        @param x1:
+        @param y1:
+        @param power:
+        @return:
+        """
+        # Do we need it added?
+        if self._needs_adding(power):
+            arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
+            if isnan(arc.sweep):
+                # This arc is not valid.
+                self.path.line((x1, y1))
             else:
-                self.path.move((x1, y1))
-        elif command == "ccw-arc":
-            x0, y0, cx, cy, x1, y1, power = args
-            # Do we need it added?
-            if needsadding(power):
-                arc = Arc(start=(x0, y0), center=(cx, cy), end=(x1, y1), ccw=True)
-                if isnan(arc.sweep):
-                    # This arc is not valid.
-                    self.path.line((x1, y1))
-                else:
-                    self.path.append(arc)
-            else:
-                self.path.move((x1, y1))
-        elif command == "new":
-            # We break the path here and create a new one
-            splitter = self.split_path
-            if splitter and len(self.path):
-                remove_trailing_moves()
-                self.path = Path()
-                self.paths.append(self.path)
-                # print (f"Z at time of path start: {self.depth}")
-            if len(args) > 1:
-                feed = args[0]
-                power = args[1]
-                if feed != 0:
-                    self.speed = feed
-                if power != 0:
-                    self.power = power
-                self.check_operation_need()
-        elif command == "end":
-            # Is the trailing segment a move ?
-            remove_trailing_moves()
-        elif command == "zaxis":
-            splitter = self.split_path
-            if splitter and len(self.path):
-                remove_trailing_moves()
-                self.path = Path()
-                self.paths.append(self.path)
-                # print (f"Z at time of path start: {self.depth}")
-            depth = args[0]
-            self.depth = depth
-            self.check_operation_need()
-        elif command == "wait":
-            pass
-        elif command == "resume":
-            pass
-        elif command == "pause":
-            pass
-        elif command == "abort":
-            pass
-        elif command == "coolant":
-            # True or False coolant.
-            pass
-        elif command == "jog_abort":
-            pass
+                self.path.append(arc)
+        else:
+            self.path.move((x1, y1))
+
+    def _end(self):
+        """
+        Original code for plotter.end.
+
+        @return:
+        """
+        # Is the trailing segment a move ?
+        self._remove_trailing_moves()
+
+    def _zaxis(self, depth):
+        """
+        Original code for plotter.zaxis
+
+        @param depth:
+        @return:
+        """
+        splitter = self.split_path
+        if splitter and len(self.path):
+            self._remove_trailing_moves()
+            self.path = Path()
+            self.paths.append(self.path)
+            # print (f"Z at time of path start: {self.depth}")
+        self.depth = depth
+        self._check_operation_need()
 
 
 class DriverToPath:
