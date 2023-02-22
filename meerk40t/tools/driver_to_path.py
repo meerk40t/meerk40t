@@ -141,7 +141,7 @@ class PlotterDriver:
             started = False
             for x0, y0, power, x1, y1 in q.normal_plot():
                 if not started:
-                    self.path.move((x1, y1))
+                    self.path.move((x0, y0))
                     started = True
                 if power == 0:
                     self.path.move((x1, y1))
