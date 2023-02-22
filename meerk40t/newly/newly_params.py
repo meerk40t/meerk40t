@@ -51,7 +51,7 @@ class Parameters:
 
     @property
     def acceleration(self):
-        return self.settings.get("acceleration", 14)
+        return self.settings.get("acceleration", 24)
 
     @acceleration.setter
     def acceleration(self, value):
