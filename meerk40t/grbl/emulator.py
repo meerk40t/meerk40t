@@ -780,12 +780,15 @@ class GRBLEmulator:
                 ny = y
             if self.move_mode == 0:
                 self.plot_commit()
-                try:
-                    self.driver.move_abs(nx, ny)
-                    self.x = nx
-                    self.y = ny
-                except AttributeError:
-                    pass
+                if self.program_mode:
+                    self.plot_location(nx, ny, 0)
+                else:
+                    try:
+                        self.driver.move_abs(nx, ny)
+                        self.x = nx
+                        self.y = ny
+                    except AttributeError:
+                        pass
             elif self.move_mode == 1:
                 self.plot_location(nx, ny, self.settings["power"])
             elif self.move_mode in (2, 3):
