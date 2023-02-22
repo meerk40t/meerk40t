@@ -342,10 +342,11 @@ class SpoolerPanel(wx.Panel):
         listid = self.list_job_history.GetFirstSelected()
         if listid >= 0:
             idx = self.list_job_history.GetItemData(listid)
+            key = self.map_item_key[listid]
         else:
             # Bad selection.
-            return
-        key = self.map_item_key[listid]
+            idx = -1
+            key = None
 
         def on_menu_index(idx_to_delete):
             def check(event_c):
@@ -369,6 +370,7 @@ class SpoolerPanel(wx.Panel):
             self.context.spool_ignore_helper_jobs = (
                 not self.context.spool_ignore_helper_jobs
             )
+            self.refresh_history()
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
@@ -716,11 +718,20 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.DeleteAllItems()
         self.map_item_key.clear()
         if self.filter_device:
-            events = self.context.logging.matching_events(
-                "job", device=self.filter_device
-            )
+            if self.context.spool_ignore_helper_jobs:
+                events = self.context.logging.matching_events(
+                    "job", device=self.filter_device, important=True
+                )
+            else:
+                events = self.context.logging.matching_events(
+                    "job", device=self.filter_device
+                )
+
         else:
-            events = self.context.logging.matching_events("job")
+            if self.context.spool_ignore_helper_jobs:
+                events = self.context.logging.matching_events("job", important=True)
+            else:
+                events = self.context.logging.matching_events("job")
         for idx, event_and_key in enumerate(reversed(list(events))):
             key, info = event_and_key
             list_id = self.list_job_history.InsertItem(

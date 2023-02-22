@@ -178,8 +178,8 @@ class GRBLPlotter:
     def plotter(self, command, *args, **kwargs):
         def remove_trailing_moves():
             # Is the trailing segment a move ?
-            while len(self.path) > 0 and isinstance(self.path._segments[-1], Move):
-                self.path._segments.pop(-1)
+            while len(self.path) > 0 and isinstance(self.path[-1], Move):
+                del self.path[-1]
             if len(self.path) == 0:
                 # Degenerate...
                 index = len(self.paths) - 1

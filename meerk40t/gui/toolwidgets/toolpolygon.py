@@ -47,7 +47,7 @@ class PolygonTool(ToolWidget):
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
             points.append(points[0])
-            gc.DrawLines(points)
+            gc.StrokeLines(points)
             total_len = 0
             for idx in range(1, len(points)):
                 x0 = points[idx][0]

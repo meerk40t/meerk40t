@@ -264,6 +264,7 @@ class PositionPanel(wx.Panel):
                 self.execute_wh_changes(False)
             if do_xy:
                 self.execute_xy_changes(False)
+            self.context.signal("refresh_scene", "Scene")
         else:
             if do_wh and do_xy:
                 # One is enough as both routines will call resize with all parameters
@@ -273,6 +274,7 @@ class PositionPanel(wx.Panel):
 
             elif do_xy:
                 self.execute_xy_changes(False)
+            self.context.signal("refresh_scene", "Scene")
 
         self.update_position(True)
 
@@ -460,6 +462,7 @@ class PositionPanel(wx.Panel):
 
         if force:
             self.execute_wh_changes()
+            self.context.signal("refresh_scene", "Scene")
 
     def on_text_h_action(self, force):
         original = self.position_h
@@ -495,6 +498,7 @@ class PositionPanel(wx.Panel):
 
         if force:
             self.execute_wh_changes()
+            self.context.signal("refresh_scene", "Scene")
 
     def on_text_x_action(self, force):
         try:
@@ -512,6 +516,7 @@ class PositionPanel(wx.Panel):
 
         if force:
             self.execute_xy_changes()
+            self.context.signal("refresh_scene", "Scene")
 
     def on_text_y_action(self, force):
         try:
@@ -529,6 +534,7 @@ class PositionPanel(wx.Panel):
 
         if force:
             self.execute_xy_changes()
+            self.context.signal("refresh_scene", "Scene")
 
     def on_combo_box_units(self, event):
         self.position_units = self.choices[self.combo_box_units.GetSelection()]

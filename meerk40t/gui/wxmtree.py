@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from ..core.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
@@ -13,6 +14,7 @@ from .icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_file_20,
+    icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
     icons8_image_20,
@@ -99,8 +101,11 @@ class TreePanel(wx.Panel):
             self.context.elements, self.GetParent(), self.wxtree, self.context
         )
 
-        self.Bind(
-            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
+        # self.Bind(
+        #     wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler, self.wxtree
+        # )
+        self.shadow_tree.wxtree.Bind(
+            wx.EVT_TREE_BEGIN_DRAG, self.shadow_tree.on_drag_begin_handler
         )
         self.Bind(
             wx.EVT_TREE_END_DRAG, self.shadow_tree.on_drag_end_handler, self.wxtree
@@ -348,6 +353,7 @@ class ShadowTree:
         self.name = "Project"
         self._freeze = False
         self.iconsize = 20
+        self.iconstates = {}
         fact = get_default_scale_factor()
         if fact > 1.0:
             self.iconsize = int(self.iconsize * fact)
@@ -401,19 +407,28 @@ class ShadowTree:
 
     def setup_state_images(self):
         self.state_images = wx.ImageList()
+        self.iconstates = {}
+        self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image = icons8_lock_50.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
-        self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["lock"] = image_id
         image = icons8_r_white.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["refobject"] = image_id
         image = icons8_warning_shield_20.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["warning"] = image_id
+        image = icons8_ghost_20.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
+        image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["ghost"] = image_id
         self.wxtree.SetStateImageList(self.state_images)
 
     def node_created(self, node, **kwargs):
@@ -467,12 +482,18 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
             # A timer can update after the tree closes.
+            return
+
+    def check_validity(self, item):
+        if item is None or not item.IsOk():
+            # raise ValueError("Bad Item")
+            self.rebuild_tree()
+            self.elements.signal("refresh_scene", "Scene")
             return
 
     def selected(self, node):
@@ -486,8 +507,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("selected", node)
@@ -503,8 +523,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("emphasized", node)
@@ -520,8 +539,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("targeted", node)
@@ -538,8 +556,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if item is None or not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # self.update_decorations(node)
         self.set_enhancements(node)
         self.elements.signal("highlighted", node)
@@ -596,8 +613,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         try:
             self.update_decorations(node, force=True)
         except RuntimeError:
@@ -620,8 +636,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.wxtree.ExpandAllChildren(item)
         self.set_expanded(item, 1)
 
@@ -654,8 +669,7 @@ class ShadowTree:
         @return:
         """
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # Special treatment for branches, they only collapse fully,
         # if all their childrens were collapsed already
         if node.type.startswith("branch"):
@@ -693,8 +707,7 @@ class ShadowTree:
         if item is None:
             # Could be a faulty refresh during an undo.
             return
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.set_icon(node, force=False)
         self.on_force_element_update(node)
 
@@ -709,8 +722,7 @@ class ShadowTree:
         if self._freeze or self.context.elements.suppress_updates:
             return
         item = node._item
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         self.wxtree.EnsureVisible(item)
         for s in self.wxtree.GetSelections():
             self.wxtree.SelectItem(s, False)
@@ -803,7 +815,7 @@ class ShadowTree:
         op_item = op_node._item
         self.wxtree.Expand(op_item)
         if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(op_item, 2)
+            self.wxtree.SetItemState(op_item, self.iconstates["warning"])
             op_node._tooltip = _("You have unassigned elements, that won't be burned")
             op_node._tooltip_translated = True
         else:
@@ -945,7 +957,7 @@ class ShadowTree:
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
         if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(node_operations._item, 2)
+            self.wxtree.SetItemState(node_operations._item, self.iconstates["warning"])
         else:
             self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
 
@@ -989,8 +1001,7 @@ class ShadowTree:
         item = node._item
         if item is None:
             raise ValueError("Item was None for node " + repr(node))
-        if not item.IsOk():
-            raise ValueError("Bad Item")
+        self.check_validity(item)
         # We might need to update the decorations for all parent objects
         e = node.parent
         while e is not None:
@@ -1265,7 +1276,7 @@ class ShadowTree:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
                 # Let's have a look at all references....
-                for subnode in node._references:
+                for subnode in node.references:
                     try:
                         subitem = subnode._item
                     except AttributeError:
@@ -1474,7 +1485,7 @@ class ShadowTree:
         state_num = -1
         if node is self.elements.get(type="branch ops"):
             if self.elements.have_unassigned_elements():
-                state_num = 2
+                state_num = self.iconstates["warning"]
         else:
             # Has the node a lock attribute?
             if hasattr(node, "lock"):
@@ -1482,15 +1493,20 @@ class ShadowTree:
             else:
                 lockit = False
             if lockit:
-                state_num = 0
+                state_num = self.iconstates["lock"]
             scene = getattr(self.context.root, "mainscene", None)
             if scene is not None:
                 if node == scene.reference_object:
-                    state_num = 1
-        if state_num >= 0:
-            self.wxtree.SetItemState(node._item, state_num)
-        else:
-            self.wxtree.SetItemState(node._item, wx.TREE_ITEMSTATE_NONE)
+                    state_num = self.iconstates["refobject"]
+        if state_num < 0:
+            state_num = wx.TREE_ITEMSTATE_NONE
+            if (
+                node.type in op_nodes
+                and hasattr(node, "is_visible")
+                and not node.is_visible
+            ):
+                state_num = self.iconstates["ghost"]
+        self.wxtree.SetItemState(node._item, state_num)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1516,13 +1532,22 @@ class ShadowTree:
         drag_item, _ = self.wxtree.HitTest(pt)
 
         if drag_item is None or drag_item.ID is None or not drag_item.IsOk():
+            # errmsg = ""
+            # if drag_item is None:
+            #     errmsg = "item was none"
+            # elif drag_item.ID is None:
+            #     errmsg = "id was none"
+            # elif not drag_item.IsOk():
+            #     errmsg = "IsOk was false"
+            # print (f"Drag item was wrong: {errmsg}")
             event.Skip()
             return
 
         self.dragging_nodes = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        if not len(self.dragging_nodes):
+        if len(self.dragging_nodes) == 0:
+            # print ("Dragging_nodes was empty")
             event.Skip()
             return
 
@@ -1531,9 +1556,11 @@ class ShadowTree:
             tt = typefamily(n.type)
             if t != tt:
                 # Different typefamilies
+                # print ("Different typefamilies")
                 event.Skip()
                 return
             if not n.is_draggable():
+                # print ("Element was not draggable")
                 event.Skip()
                 return
         event.Allow()
@@ -1573,6 +1600,7 @@ class ShadowTree:
 
     def on_mouse_over(self, event):
         # establish the item we are over...
+        event.Skip()
         ttip = ""
         pt = event.GetPosition()
         item, flags = self.wxtree.HitTest(pt)

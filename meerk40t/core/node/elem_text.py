@@ -138,15 +138,7 @@ class TextNode(Node, Stroked):
             self.validate_font()
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = Matrix(kwargs.get("viewport_transform", ""))
-            self._stroke_zero = sqrt(abs(m.determinant))
-        if self._stroke_zero is None:
-            # This defines the stroke-width zero point scale
-            m = Matrix(kwargs.get("viewport_transform"))
-            if m:
-                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
-            else:
-                self.stroke_width_zero()
+            self.stroke_width_zero()
 
     def __copy__(self):
         nd = self.node_dict

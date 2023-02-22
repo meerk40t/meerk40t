@@ -34,6 +34,7 @@ from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
+from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .hersheymanager import (
     HersheyFontManager,
     HersheyFontSelector,
@@ -672,11 +673,13 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
+        kernel.register("window/NodeEditIcons", NodeEditToolbar)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
+        kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
