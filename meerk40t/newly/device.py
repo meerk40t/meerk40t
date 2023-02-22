@@ -1,11 +1,9 @@
 """
 Newly Device
 """
-import struct
-
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort, UNITS_PER_MM, UNITS_PER_MIL
+from meerk40t.core.units import ViewPort, UNITS_PER_INCH
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
@@ -281,8 +279,8 @@ class NewlyDevice(Service, ViewPort):
             self,
             self.bedwidth,
             self.bedheight,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
+            native_scale_x=UNITS_PER_INCH / self.h_dpi,
+            native_scale_y=UNITS_PER_INCH / self.v_dpi,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
             flip_x=self.flip_x,
@@ -379,9 +377,13 @@ class NewlyDevice(Service, ViewPort):
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
+    @signal_listener("v_dpi")
+    @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
         self.width = self.bedwidth
         self.height = self.bedheight
+        self.native_scale_x = UNITS_PER_INCH / self.h_dpi
+        self.native_scale_y = UNITS_PER_INCH / self.v_dpi
         super().realize()
 
     @property
