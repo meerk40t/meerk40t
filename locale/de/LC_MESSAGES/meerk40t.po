@@ -11125,8 +11125,8 @@ msgid "Toggle strikethrough"
 msgstr "Schalte Durchstreichen-Attribut um"
 
 #: meerk40t/gui/propertypanels/textproperty.py:380
-msgid "Define where to place the origin (i.e. current mouse position"
-msgstr ""
+msgid "Define where to place the origin (i.e. current mouse position)"
+msgstr "Lege die Textorientierung relativ zum Ursprung fest"
 
 #: meerk40t/gui/propertypanels/textproperty.py:474
 msgid "Text-Variables"
@@ -15327,3 +15327,214 @@ msgstr "Selektiere nicht zugeordnete Elemente"
 
 msgid "Select all elements that won't be burned"
 msgstr "Selektiere alle Elemente, die nicht einem Arbeitsvorgang zugeordnet sind"
+
+msgid "Stroke-Width"
+msgstr "Linienbreite"
+
+msgid "Left click to go to saved position\nRight click to save coordinates"
+msgstr ""
+"Linksklick: bewege Laser zur gespeicherten Position"
+"\nRechtsklick: speichere angegebene Koordinaten"
+
+msgid "Select all elements of same type"
+msgstr "Selektiere alle gleichartigen Elemente"
+
+msgid "Speed for Raster-Operation"
+msgstr "Geschwindigkeit für Raster-Operation"
+
+msgid "Simplify group"
+msgstr "Vereinfache Gruppen-Struktur"
+
+msgid "Remove transparent objects"
+msgstr "Lösche alle transparenten Objekte"
+
+msgid ""
+"This is binary data imported or generated\n"
+"that will be sent directly to the laser.\n"
+"Double-click to view."
+msgstr ""
+"Dies sind importierte oder generierte Binär-Daten,\"
+"die unverändert zum Laser gesendet werden.\n"
+"Doppel-Klick um diese anzuzeigen."
+
+msgid ""
+"This will engrave/cut the elements contained,\n"
+"following the vector-paths of the data.\n"
+"(Usually done last)"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Schneiden).\n"
+"(Normalerweise am Ende aller Arbeitsabläufe)"
+
+msgid ""
+"This will engrave the elements contained,\n"
+"following the vector-paths of the data."
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Gravieren)."
+
+msgid ""
+"This is an operation that will engrave a vector shape\n"
+"filled with a set of vector-patterns like lines"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt, die mit Vektor-Schraffuren gefüllt werden."
+
+msgid ""
+"This engraves already created images pixel by pixel,\n"
+"applying the settings to the individual pictures"
+msgstr ""
+"Alle enthaltenen Elemente (zuvor generierte Pixel-Grafiken)\n"
+"werden Bildpunkt pro Bildpunkt graviert, nachdem die\n"
+"Arbeitsablauf-Einstellungen auf die Bilder angewandt wurden."
+
+msgid ""
+"This will render all contained elements\n"
+"into an intermediary image which then will be\n"
+"engraved pixel by pixel."
+msgstr ""
+"Alle enthaltenen Elemente werden in ein temporäres\n"
+"Bild gerendert, welches dann pixelgetreu graviert wird."
+
+msgid ""
+"This will engrave a single point for a given period of time"
+msgstr ""
+"Ein einzelner Punkt wird für eine angegebene Zeitdauer gebrannt"
+
+msgid ""
+"This allows to execute an arbitrary command during the engrave process"
+msgstr ""
+"Die erlaubt die Ausführung eines Meerk40t-eigenen\n"
+"Befehles während des Brennvorgangs"
+
+msgid ""
+"This will send the laser back to its logical start position"
+msgstr ""
+"Dies sendet den Laser an seine relative Startposition zurück"
+
+msgid ""
+"This will send the laser back to its physical start position"
+msgstr ""
+"Dies sendet den Laser an seine physische Startposition zurück"
+
+msgid ""
+"This will wait for active IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies wartet darauf, dass IO-Bits am Laser aktiv werden,\n"
+"z.B. das Fußpedal eines Faserlasers"
+
+msgid ""
+"This will set some IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies setzt einzelne IO-Bits am (Faser-)Laser"
+
+msgid ""
+"This will pause the engrave process for a given period"
+msgstr ""
+"Dies hält den Brennvorgang für einen definierten Zeitraum an"
+
+msgid ""
+"The elements under this section will not be engraved,\n"
+"they can serve as a template or registration marks."
+msgstr ""
+"Die Elemente innerhalb dieses Bereiches werden nicht gebrannt\n"
+"sie können als Vorlage oder Positionierungsmarken genutzt werden."
+
+msgid "Node Edit"
+msgstr "Node Editor"
+
+msgid "Node-Editor"
+msgstr "Node-Editor"
+
+msgid "Edit nodes of a polyline/path-object"
+msgstr "Editiert die Knoten eines Polyline/Path-Objektes"
+
+msgid "Insert point before"
+msgstr "Punkt davor einfügen"
+
+msgid "Insert"
+msgstr "Einfügen"
+
+msgid "Append point at end"
+msgstr "Punkt am Ende anhängen"
+
+msgid "Append"
+msgstr "Anhängen"
+
+msgid "Delete point"
+msgstr "Punkt löschen"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Make segment a line"
+msgstr "Wandle Segment in Gerade um"
+
+msgid "> Line"
+msgstr "> Gerade"
+
+msgid "Make segment a curve"
+msgstr "Wandle Segment in Kurve um"
+
+msgid "> Curve"
+msgstr "> Kurve"
+
+msgid "Make segment symmetrical"
+msgstr "Mache Kurvensegment symmetrisch"
+
+msgid "Symmetrical"
+msgstr "Symmetrisch"
+
+msgid "Join two segments"
+msgstr "Verbinde zwei Segmente"
+
+msgid "Join"
+msgstr "Verbinden"
+
+msgid "Break segment apart"
+msgstr "Breche Segment auf"
+
+msgid "Break"
+msgstr "Aufbrechen"
+
+msgid "Smoothen transit to adjacent segments"
+msgstr "Glätte Übergänge zu angrenzenden Segmenten"
+
+msgid "Smooth"
+msgstr "Glätten"
+
+msgid "Convert all lines into curves and smoothen"
+msgstr "Wandle alle Geraden in Kurven um und glätte diese"
+
+msgid "Very smooth"
+msgstr "Glätten²"
+
+msgid "Toggle closed status"
+msgstr "Wechsel von geschlossener zu offener Kurve und umgekehrt"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Convert polyline to a path element"
+msgstr "Wandle Polyline in Pfad um"
+
+msgid "To path"
+msgstr "Umwandeln"
+
+msgid "Smoothen"
+msgstr "Glätten"
+
+msgid "Smooth all"
+msgstr "Alle glätten"
+
+msgid "Line all"
+msgstr "Zu Geraden"
+
+msgid "Close path"
+msgstr "Path schließen"
+
+msgid "Line"
+msgstr "Gerade"
+
+msgid "Curve"
+msgstr "Kurve"
