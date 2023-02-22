@@ -2077,15 +2077,11 @@ class RuidaEmulator:
         if not data or tries > 3:
             return []
         array = [self.lut_unswizzle[b] for b in data]
-
-        if array[0] < 0x80 and self.magic != 0x11:
-            # The swizzle is incorrect.
-            self._set_magic(0x11)
-            return self.unswizzle(data, tries=tries + 1)
-
-        if array[0] < 0x80 and self.magic != 0x88:
-            # The swizzle is incorrect.
-            self._set_magic(0x88)
+        if array[0] < 0x80:
+            if self.magic == 0x88:
+                self._set_magic(0x11)
+            else:
+                self._set_magic(0x88)
             return self.unswizzle(data, tries=tries + 1)
 
         return bytes(array)
