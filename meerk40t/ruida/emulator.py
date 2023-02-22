@@ -267,13 +267,9 @@ class RuidaEmulator:
         return RuidaEmulator.decodeu35(data) / 1000.0
 
     @staticmethod
-    def parse_commands(f):
+    def parse_commands(data):
         array = list()
-        while True:
-            byte = f.read(1)
-            if len(byte) == 0:
-                break
-            b = ord(byte)
+        for b in data:
             if b >= 0x80 and len(array) > 0:
                 yield array
                 array.clear()
@@ -331,7 +327,7 @@ class RuidaEmulator:
             if self.channel:
                 self.channel("--> " + str(data.hex()))
             return
-        self.write(BytesIO(self.unswizzle(data)))
+        self.write(self.unswizzle(data))
 
     def realtime_write(self, bytes_to_write):
         """
@@ -342,7 +338,7 @@ class RuidaEmulator:
         """
         self.swizzle_mode = False
         self.msg_reply(b"\xCC")  # Clear ACK.
-        self.write(BytesIO(bytes_to_write))
+        self.write(bytes_to_write)
 
     def write(self, data):
         """
@@ -1353,7 +1349,7 @@ class RuidaEmulator:
                 name = files[filenumber - 1]
                 try:
                     with open(name, "rb") as f:
-                        self.write(BytesIO(self.unswizzle(f.read())))
+                        self.write(self.unswizzle(f.read()))
                 except OSError:
                     pass
                 desc = f"Start Select Document {filenumber}"
