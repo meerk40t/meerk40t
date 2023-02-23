@@ -313,7 +313,6 @@ class RuidaEmulator:
                 self._set_magic(0x88)
             if self.magic != 0x11 and sent_data[2] == 0x4B:
                 self._set_magic(0x11)
-        self.write(data)
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
@@ -325,6 +324,7 @@ class RuidaEmulator:
             if self.channel:
                 self.channel("--> " + str(data.hex()))
             return
+        self.write(data)
 
     def realtime_write(self, bytes_to_write):
         """
