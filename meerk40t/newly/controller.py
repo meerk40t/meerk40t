@@ -335,6 +335,10 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
         self.paused = False
 
+    def wait_finished(self):
+        # No known method to force the laser to single state.
+        pass
+
     def init_laser(self):
         self.usb_log("Ready")
 
