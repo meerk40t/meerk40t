@@ -357,6 +357,23 @@ class NewlyDevice(Service, ViewPort):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(
+            "raw",
+            help=_("sends raw data exactly as composed"),
+        )
+        def newly_raw(
+            channel,
+            _,
+            remainder=None,
+            **kwgs,
+        ):
+            """
+            Raw for newly performs raw actions and sends these commands directly to the laser.
+            """
+            if remainder is not None:
+                self.driver.connection.raw(remainder)
+                channel(f"Raw: {remainder}")
+
+        @self.console_command(
             "viewport_update",
             hidden=True,
             help=_("Update newly flips for movement"),

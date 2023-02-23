@@ -222,6 +222,10 @@ class NewlyController:
     # PLOTLIKE SHORTCUTS
     #######################
 
+    def raw(self, data):
+        self.connect_if_needed()
+        self.connection.write(index=self._machine_index, data=data)
+
     def mark(self, x, y):
         if self._relative:
             dx = int(round(x - self._last_x))
