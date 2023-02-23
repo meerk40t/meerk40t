@@ -40,9 +40,11 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
+    EmptyIcon,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -965,7 +967,30 @@ class MovePanel(wx.Panel):
             check="length",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.small_buttons = []
+        for idx in range(9):
+            btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
+            icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
+            btn.SetBitmap(icon.GetBitmap(resize=20))
+            btn.SetToolTip(_("Left click to go to saved position\nRight click to save coordinates"))
+            self.small_buttons.append(btn)
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
+            btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
+            if idx in (2, 5, 8):
+                x = Length(self.context.elements.length_x("100%"))
+            elif idx in (1, 4, 7):
+                x = Length(self.context.elements.length_x("50%"))
+            else:
+                x = Length(self.context.elements.length_x("0%"))
+            if idx in (6, 7, 8):
+                y = Length(self.context.elements.length_y("100%"))
+            elif idx in (3, 4, 5):
+                y = Length(self.context.elements.length_y("50%"))
+            else:
+                y = Length(self.context.elements.length_y("0%"))
+            self.context.root.setting(str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}")
 
+        self.label_pos = wx.StaticText(self, wx.ID_ANY, "")
         self.__set_properties()
         self.__do_layout()
 
@@ -993,7 +1018,14 @@ class MovePanel(wx.Panel):
         v_main_sizer = wx.BoxSizer(wx.VERTICAL)
         h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(self.button_navigate_move_to, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        button_info_sizer = wx.BoxSizer(wx.VERTICAL)
+        smallfont = wx.Font(
+            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.label_pos.SetFont(smallfont)
+        button_info_sizer.Add(self.button_navigate_move_to, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
         self.text_position_x.SetMinSize((45, 23))
         self.text_position_y.SetMinSize((45, 23))
@@ -1005,10 +1037,42 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        btn_sizer = wx.GridSizer(3, 3, 2, 2)
+        for idx in range(9):
+            btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        main_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_left(self, index):
+        def handler(event):
+            gotostr = getattr(self.context.root, f"MovePos{index}", "")
+            if gotostr:
+                substr = gotostr.split("|")
+                if len(substr) < 2:
+                    return
+                try:
+                    x = Length(substr[0])
+                    y = Length(substr[1])
+                except ValueError:
+                    return
+                self.text_position_x.SetValue(substr[0])
+                self.text_position_y.SetValue(substr[1])
+                self.on_button_navigate_move_to(None)
+        return handler
+
+    def on_right(self, index):
+        def handler(event):
+            try:
+                xlen = Length(self.text_position_x.GetValue())
+                ylen = Length(self.text_position_y.GetValue())
+                setattr(self.context.root, f"MovePos{index}", f"{xlen.length_mm}|{ylen.length_mm}")
+            except ValueError:
+                pass
+
+        return handler
 
     def on_button_navigate_move_to(
         self, event=None
@@ -1042,6 +1106,26 @@ class MovePanel(wx.Panel):
         except ValueError:
             return
 
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
+    def update_position_info(self, origin, pos):
+        # origin, pos
+
+        if pos is None:
+            return
+        service = self.context.device
+        # print (f"origin={origin}, pos={pos}, driver={service.path}")
+        # Might not come from the right device...
+        if origin not in (service.path, "lhystudios"):
+            # wrong device...
+            return
+        # New position...
+        p = self.context
+        units = p.units_name
+        xpos = Length(amount=pos[2], preferred_units=units)
+        ypos = Length(amount=pos[3], preferred_units=units)
+        self.label_pos.SetLabel(f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}")
+        self.Layout()
 
 class PulsePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

@@ -806,7 +806,8 @@ def init_commands(kernel):
                     elif value == "len":
                         operand.append(len(e.children))
                     else:
-                        operand.append(e.settings.get(value))
+                        if hasattr(e, "settings"):
+                            operand.append(e.settings.get(value))
 
                 elif kind == "NUM":
                     operand.append(float(value))
