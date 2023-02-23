@@ -308,6 +308,11 @@ class RuidaEmulator:
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
+        if len(sent_data) > 3:
+            if self.magic != 0x88 and sent_data[2] == 0xD4:
+                self._set_magic(0x88)
+            if self.magic != 0x11 and sent_data[2] == 0x4B:
+                self._set_magic(0x11)
         self.write(data)
         if checksum_check == checksum_sum:
             response = b"\xCC"
@@ -341,18 +346,8 @@ class RuidaEmulator:
         @param data:
         @return:
         """
-        if unswizzle:
-            packet = self.unswizzle(data)
-            if data[0] < 0x80:
-                if self.magic == 0x88:
-                    self._set_magic(0x11)
-                else:
-                    self._set_magic(0x88)
-                packet = self.unswizzle(data)
-        else:
-            packet = data
+        packet = self.unswizzle(data) if unswizzle else data
 
-        # print(packet)
         for array in self.parse_commands(packet):
             try:
                 self.process(array)
