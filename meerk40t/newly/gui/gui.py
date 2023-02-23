@@ -1,6 +1,4 @@
 
-
-
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/newly"
@@ -11,15 +9,12 @@ def plugin(service, lifecycle):
         import wx  # pylint: disable=unused-import
 
         from meerk40t.gui.icons import (
-            icons8_center_of_gravity_50,
             icons8_computer_support_50,
             icons8_connected_50,
-            icons8_flash_off_50,
-            icons8_light_off_50,
-            icons8_light_on_50,
-            icons8_quick_mode_on_50,
+            icons8_move_50,
+            icons8_rectangular_50,
+            icons8_play_50
         )
-
         from .newlycontroller import NewlyController
         from .newlyconfig import NewlyConfiguration
         from .operationproperties import NewlyOperationPanel
@@ -55,9 +50,36 @@ def plugin(service, lifecycle):
         service.register("property/CutOpNode/Newly", NewlyOperationPanel)
         service.register("property/EngraveOpNode/Newly", NewlyOperationPanel)
         service.register("property/ImageOpNode/Newly", NewlyOperationPanel)
-        # service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
+        service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
         service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
 
+        service.register(
+            "button/control/DrawFrame",
+            {
+                "label": _("Draw Frame"),
+                "icon": icons8_rectangular_50,
+                "tip": _("Draw a bounding rectangle of the object saved in the machine"),
+                "action": lambda v: service("draw_frame 1\n"),
+            },
+        )
+        service.register(
+            "button/control/MoveFrame",
+            {
+                "label": _("Move Frame"),
+                "icon": icons8_move_50,
+                "tip": _("Move the bounding rectangle of the object saved in the machine"),
+                "action": lambda v: service("move_frame 1\n"),
+            },
+        )
+        service.register(
+            "button/control/Replay",
+            {
+                "label": _("Replay"),
+                "icon": icons8_play_50,
+                "tip": _("Replay the file saved in the machine"),
+                "action": lambda v: service("replay 1\n"),
+            },
+        )
         service.add_service_delegate(NewlyGui(service))
 
 

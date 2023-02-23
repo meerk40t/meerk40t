@@ -373,6 +373,33 @@ class NewlyDevice(Service, ViewPort):
                 self.driver.connection.raw(remainder)
                 channel(f"Raw: {remainder}")
 
+        @self.console_argument("file_index", type=int)
+        @self.console_command(
+            "move_frame",
+            help=_("sends the newly move_frame command"),
+            all_arguments_required=True,
+        )
+        def move_rect(file_index, **kwargs):
+            self.driver.connection.move_frame(file_index)
+
+        @self.console_argument("file_index", type=int)
+        @self.console_command(
+            "draw_frame",
+            help=_("sends the newly draw_frame command"),
+            all_arguments_required=True,
+        )
+        def draw_rect(file_index, **kwargs):
+            self.driver.connection.draw_frame(file_index)
+
+        @self.console_argument("file_index", type=int)
+        @self.console_command(
+            "replay",
+            help=_("sends the file replay command"),
+            all_arguments_required=True,
+        )
+        def replay(file_index, **kwargs):
+            self.driver.connection.replay(file_index)
+
         @self.console_command(
             "viewport_update",
             hidden=True,

@@ -286,6 +286,33 @@ class NewlyController:
     # Command Shortcuts
     #######################
 
+    def move_frame(self, file_index):
+        self.connect_if_needed()
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZK{file_index}")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
+    def draw_frame(self, file_index):
+        self.connect_if_needed()
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZH{file_index}")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
+    def replay(self, file_index):
+        self.connect_if_needed()
+        self.rapid_mode()
+        command_buffer = list()
+        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZG{file_index}")
+        command_buffer.append("ZED;")
+        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+
     def home(self):
         self.connect_if_needed()
         self.rapid_mode()
