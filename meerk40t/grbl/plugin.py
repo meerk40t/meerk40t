@@ -33,10 +33,6 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("emulator/grbl", GRBLEmulator)
 
-        from .parser import GRBLParser
-
-        kernel.register("parser/grbl", GRBLParser)
-
         from .loader import GCodeLoader
 
         kernel.register("load/GCodeLoader", GCodeLoader)

@@ -4,7 +4,7 @@ import math
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import Matrix
+from ..svgelements import Matrix, Point
 from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -61,7 +61,7 @@ def init_tree(kernel):
         return result
 
     @tree_separator_after()
-    @tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
+    @tree_conditional(lambda node: len(list(self.ops(selected=True))) == 1)
     @tree_operation(_("Operation properties"), node_type=op_nodes, help="")
     def operation_property(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
@@ -207,18 +207,46 @@ def init_tree(kernel):
     @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
     def toggle_n_operations(node, **kwargs):
-        for n in self.ops(emphasized=True):
+        changes = []
+        for n in self.ops(selected=True):
             if hasattr(n, "output"):
                 try:
                     n.output = not n.output
                     n.updated()
+                    changes.append(n)
                 except AttributeError:
                     pass
+        if len(changes) > 0:
+            self.validate_selected_area()
+            self.signal("element_property_update", changes)
+            self.signal("refresh_scene", "Scene")
+
+    @tree_conditional(
+        lambda node: hasattr(node, "output")
+        and hasattr(node, "is_visible")
+        and not getattr(node, "output", True)
+    )
+    @tree_operation(_("Show/Hide contained elements"), node_type=op_nodes, help="")
+    def toggle_op_elem_visibility(node, **kwargs):
+        changes = []
+        for n in self.ops(selected=True):
+            if hasattr(n, "output") and hasattr(n, "is_visible"):
+                newflag = True
+                if n.output is not None:
+                    if not n.output:
+                        newflag = bool(not n.is_visible)
+                n.is_visible = newflag
+                n.updated()
+                changes.append(n)
+        if len(changes) > 0:
+            self.validate_selected_area()
+            self.signal("element_property_update", changes)
+            self.signal("refresh_scene", "Scene")
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op image"
             n.replace_node(keep_children=True, **new_settings)
@@ -227,7 +255,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
     def convert_operation_raster(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op raster"
             n.replace_node(keep_children=True, **new_settings)
@@ -236,7 +264,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Engrave"), node_type=op_parent_nodes, help="")
     def convert_operation_engrave(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op engrave"
             n.replace_node(keep_children=True, **new_settings)
@@ -245,7 +273,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
     def convert_operation_cut(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op cut"
             n.replace_node(keep_children=True, **new_settings)
@@ -254,7 +282,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
     def convert_operation_hatch(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op hatch"
             n.replace_node(keep_children=True, **new_settings)
@@ -263,7 +291,7 @@ def init_tree(kernel):
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
     def convert_operation_dots(node, **kwargs):
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             new_settings = dict(n.settings)
             new_settings["type"] = "op dots"
             n.replace_node(keep_children=True, **new_settings)
@@ -314,7 +342,7 @@ def init_tree(kernel):
     @tree_operation(_("{speed}mm/s"), node_type=("op raster", "op image"), help="")
     def set_speed_raster(node, speed=150, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type not in ("op raster", "op image"):
                 continue
             n.speed = float(speed)
@@ -331,7 +359,7 @@ def init_tree(kernel):
     )
     def set_speed_vector(node, speed=35, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type not in ("op engrave", "op hatch"):
                 continue
             n.speed = float(speed)
@@ -348,7 +376,7 @@ def init_tree(kernel):
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             if n.type != "op cut":
                 continue
             n.speed = float(speed)
@@ -368,7 +396,7 @@ def init_tree(kernel):
     )
     def set_power(node, power=1000, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.power = float(power)
             data.append(n)
         self.signal("element_property_reload", data)
@@ -386,7 +414,7 @@ def init_tree(kernel):
     )
     def set_step_n(node, dpi=1, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.dpi = dpi
             data.append(n)
         for n in list(self.elems(emphasized=True)):
@@ -408,7 +436,7 @@ def init_tree(kernel):
     @tree_operation(_("Passes {passvalue}"), node_type=op_parent_nodes, help="")
     def set_n_passes(node, passvalue=1, **kwargs):
         data = list()
-        for n in list(self.ops(emphasized=True)):
+        for n in list(self.ops(selected=True)):
             n.passes = passvalue
             n.passes_custom = passvalue != 1
             data.append(n)
@@ -444,7 +472,7 @@ def init_tree(kernel):
         for idx, key in enumerate(values):
             if key == raster_direction:
                 data = list()
-                for n in list(self.ops(emphasized=True)):
+                for n in list(self.ops(selected=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
                     n.raster_direction = idx
@@ -478,7 +506,7 @@ def init_tree(kernel):
         for idx, key in enumerate(values):
             if key == raster_swing:
                 data = list()
-                for n in list(self.ops(emphasized=True)):
+                for n in list(self.ops(selected=True)):
                     if n.type not in ("op raster", "op image"):
                         continue
                     n.bidirectional = bool(idx)
@@ -744,15 +772,37 @@ def init_tree(kernel):
         self.set_emphasis(None)
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_operation(_("Remove transparent objects"), node_type=("group", "file"), help=_("Remove all elements that neither have a border nor a fill color"))
+    @tree_operation(
+        _("Remove transparent objects"),
+        node_type=("group", "file"),
+        help=_("Remove all elements that neither have a border nor a fill color"),
+    )
     def remove_transparent(node, **kwargs):
         res = 0
         to_remove = []
-        for enode in self.flat(selected=True, cascade=True, types=("elem rect", "elem ellipse", "elem path", "elem line", "elem polyline")):
+        for enode in self.flat(
+            selected=True,
+            cascade=True,
+            types=(
+                "elem rect",
+                "elem ellipse",
+                "elem path",
+                "elem line",
+                "elem polyline",
+            ),
+        ):
             colored = False
-            if hasattr(enode, "fill") and enode.fill is not None and enode.fill.argb is not None:
+            if (
+                hasattr(enode, "fill")
+                and enode.fill is not None
+                and enode.fill.argb is not None
+            ):
                 colored = True
-            if hasattr(enode, "stroke") and enode.stroke is not None and enode.stroke.argb is not None:
+            if (
+                hasattr(enode, "stroke")
+                and enode.stroke is not None
+                and enode.stroke.argb is not None
+            ):
                 colored = True
             if not colored:
                 res += 1
@@ -772,8 +822,8 @@ def init_tree(kernel):
         )
         == 0
     )
-    @tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
-    @tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
+    @tree_conditional(lambda node: len(list(self.ops(selected=True))) > 1)
+    @tree_calc("ecount", lambda i: len(list(self.ops(selected=True))))
     @tree_operation(
         _("Delete {ecount} operations"),
         node_type=(
@@ -830,7 +880,9 @@ def init_tree(kernel):
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
 
-    @tree_conditional(lambda node: isinstance(node.shape, Polygon) and  len(node.shape.points)>=3)
+    @tree_conditional(
+        lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
+    )
     @tree_operation(
         _("Make Polygon regular"),
         node_type="elem polyline",
@@ -865,7 +917,7 @@ def init_tree(kernel):
         dx = pts[1].x - pts[0].x
         dy = pts[1].y - pts[0].y
         baseline = math.sqrt(dx * dx + dy * dy)
-        apothem = baseline / (2 * math.tan(math.tau / (2* number_points)))
+        apothem = baseline / (2 * math.tan(math.tau / (2 * number_points)))
         circumradius = baseline / (2 * math.sin(math.tau / (2 * number_points)))
         midpoint = Point(pts[0].x + 0.5 * dx, pts[0].y + 0.5 * dy)
         #  mk_debug_point(midpoint.x, midpoint.y, "black")
@@ -884,7 +936,7 @@ def init_tree(kernel):
         midangle = midpoint.angle_to(arithmetic_center)
         angle += math.tau / 4
         first_point = Point.polar(midpoint, angle, apothem)
-        second_point = Point.polar(midpoint, angle + math.tau/2, apothem)
+        second_point = Point.polar(midpoint, angle + math.tau / 2, apothem)
         # mk_debug_point(first_point.x, first_point.y, "yellow")
         # mk_debug_point(second_point.x, second_point.y, "cyan")
         deltaangle = math.tau / number_points
@@ -920,7 +972,7 @@ def init_tree(kernel):
         node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
     @tree_conditional_try(
-        lambda node: kernel.lookup(f"parser/{node.data_type}") is not None
+        lambda node: kernel.lookup(f"emulator/{node.data_type}") is not None
     )
     @tree_operation(
         _("Convert to Elements"),
@@ -929,13 +981,14 @@ def init_tree(kernel):
     )
     def blob2path(node, **kwargs):
         cancelled = False
-        parser_class = kernel.lookup(f"parser/{node.data_type}")
-        parser = parser_class()
+        from meerk40t.tools.driver_to_path import DriverToPath
+
+        d2p = DriverToPath()
         dialog_class = kernel.lookup("dialog/options")
-        if dialog_class and hasattr(parser, "options"):
-            parser_choices = getattr(parser, "options", None)
-            if parser_choices is not None:
-                for entry in parser_choices:
+        if dialog_class and hasattr(d2p, "options"):
+            choices = getattr(d2p, "options", None)
+            if choices is not None:
+                for entry in choices:
                     if "label" in entry:
                         entry["label"] = _(entry["label"])
                     if "tip" in entry:
@@ -945,7 +998,7 @@ def init_tree(kernel):
                         for dentry in entry["display"]:
                             newdisplay.append(_(dentry))
                         entry["display"] = newdisplay
-                dialog = dialog_class(self.kernel, choices=parser_choices)
+                dialog = dialog_class(self.kernel, choices=choices)
                 res = dialog.dialog_options(
                     title=_("Blob-Conversion"),
                     intro=_(
@@ -955,7 +1008,7 @@ def init_tree(kernel):
                 if not res:
                     cancelled = True
         if not cancelled:
-            parser.parse(node.data, self)
+            d2p.parse(node.data_type, node.data, self)
         return True
 
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
@@ -1325,7 +1378,7 @@ def init_tree(kernel):
     def duplicate_operation(node, **kwargs):
         with self.static("duplicate_operation"):
             operations = self._tree.get(type="branch ops").children
-            for op in self.ops(emphasized=True):
+            for op in self.ops(selected=True):
                 try:
                     pos = operations.index(op) + 1
                 except ValueError:
@@ -1446,7 +1499,7 @@ def init_tree(kernel):
     def add_after_index(node=None):
         try:
             if node is None:
-                node = list(self.ops(emphasized=True))[-1]
+                node = list(self.ops(selected=True))[-1]
             operations = self._tree.get(type="branch ops").children
             return operations.index(node) + 1
         except (ValueError, IndexError):

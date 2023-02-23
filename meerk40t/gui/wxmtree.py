@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from ..core.element_types import op_nodes
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
@@ -13,6 +14,7 @@ from .icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_file_20,
+    icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
     icons8_image_20,
@@ -351,6 +353,7 @@ class ShadowTree:
         self.name = "Project"
         self._freeze = False
         self.iconsize = 20
+        self.iconstates = {}
         fact = get_default_scale_factor()
         if fact > 1.0:
             self.iconsize = int(self.iconsize * fact)
@@ -404,19 +407,28 @@ class ShadowTree:
 
     def setup_state_images(self):
         self.state_images = wx.ImageList()
+        self.iconstates = {}
+        self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image = icons8_lock_50.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
-        self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["lock"] = image_id
         image = icons8_r_white.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["refobject"] = image_id
         image = icons8_warning_shield_20.GetBitmap(
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["warning"] = image_id
+        image = icons8_ghost_20.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
+        image_id = self.state_images.Add(bitmap=image)
+        self.iconstates["ghost"] = image_id
         self.wxtree.SetStateImageList(self.state_images)
 
     def node_created(self, node, **kwargs):
@@ -803,7 +815,7 @@ class ShadowTree:
         op_item = op_node._item
         self.wxtree.Expand(op_item)
         if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(op_item, 2)
+            self.wxtree.SetItemState(op_item, self.iconstates["warning"])
             op_node._tooltip = _("You have unassigned elements, that won't be burned")
             op_node._tooltip_translated = True
         else:
@@ -945,7 +957,7 @@ class ShadowTree:
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
         if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(node_operations._item, 2)
+            self.wxtree.SetItemState(node_operations._item, self.iconstates["warning"])
         else:
             self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
 
@@ -1473,7 +1485,7 @@ class ShadowTree:
         state_num = -1
         if node is self.elements.get(type="branch ops"):
             if self.elements.have_unassigned_elements():
-                state_num = 2
+                state_num = self.iconstates["warning"]
         else:
             # Has the node a lock attribute?
             if hasattr(node, "lock"):
@@ -1481,15 +1493,20 @@ class ShadowTree:
             else:
                 lockit = False
             if lockit:
-                state_num = 0
+                state_num = self.iconstates["lock"]
             scene = getattr(self.context.root, "mainscene", None)
             if scene is not None:
                 if node == scene.reference_object:
-                    state_num = 1
-        if state_num >= 0:
-            self.wxtree.SetItemState(node._item, state_num)
-        else:
-            self.wxtree.SetItemState(node._item, wx.TREE_ITEMSTATE_NONE)
+                    state_num = self.iconstates["refobject"]
+        if state_num < 0:
+            state_num = wx.TREE_ITEMSTATE_NONE
+            if (
+                node.type in op_nodes
+                and hasattr(node, "is_visible")
+                and not node.is_visible
+            ):
+                state_num = self.iconstates["ghost"]
+        self.wxtree.SetItemState(node._item, state_num)
 
     def on_drag_begin_handler(self, event):
         """
@@ -1508,7 +1525,7 @@ class ShadowTree:
             else:
                 result = typename
             return result
-        
+
         self.dragging_nodes = None
 
         pt = event.GetPoint()
