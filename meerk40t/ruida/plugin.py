@@ -3,8 +3,7 @@ Moshi Device Plugin
 
 Registers the needed classes for ruida device (or would if the ruida device could be controlled).
 """
-
-
+from meerk40t.ruida.control import RuidaControl
 from meerk40t.ruida.device import RuidaDevice
 from meerk40t.ruida.emulator import RuidaEmulator
 from meerk40t.ruida.loader import RDLoader
@@ -60,52 +59,15 @@ def plugin(kernel, lifecycle=None):
             ruidabounce sends data to the ruidaemulator but sends data to the set bounce server.
             """
             root = kernel.root
-            try:
-                r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
-                r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
-
+            ruidacontrol = root.device.lookup("ruidacontrol")
+            if ruidacontrol is None:
                 if quit:
-                    root.close("rd2mk")
-                    root.close("rd2mk-jog")
-                    root.close("mk2lz")
-                    root.close("mk2lz-jog")
-                    emulator = r2m.emulator
-                    emulator.driver = None
-                    del emulator
-                    channel(_("RuidaServer shutdown."))
                     return
-
-                emulator = RuidaEmulator(root.device.driver, root.device.scene_to_device_matrix())
-                r2m.emulator = emulator
-                if r2m:
-                    channel(
-                        _("Ruida Data Server opened on port {port}.").format(port=50200)
-                    )
-                if r2mj:
-                    channel(
-                        _("Ruida Jog Server opened on port {port}.").format(port=50207)
-                    )
-
-                emulator.reply = root.channel("ruida_reply")
-                emulator.realtime = root.channel("ruida_reply_realtime")
-                emulator.channel = root.channel("ruida")
-                if verbose:
-                    console = kernel.channel("console")
-                    emulator.channel.watch(console)
-                    if r2m:
-                        r2m.events_channel.watch(console)
-                    if r2mj:
-                        r2mj.events_channel.watch(console)
-                root.channel("rd2mk/recv").watch(emulator.checksum_write)
-                root.channel("rd2mk-jog/recv").watch(emulator.realtime_write)
-                emulator.reply.watch(root.channel("rd2mk/send"))
-                emulator.realtime.watch(
-                    root.channel("rd2mk-jog/send")
-                )
-            except OSError as e:
-                channel(_("Server failed."))
-                channel(str(e.strerror))
-            return
+                ruidacontrol = RuidaControl(root, channel, _, verbose)
+                root.device.register("ruidacontrol", ruidacontrol)
+            if quit:
+                ruidacontrol.quit()
+                root.device.unregister("ruidacontrol")
 
     if lifecycle == "preboot":
         suffix = "ruida"
