@@ -261,7 +261,11 @@ class NewlyDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-        self.connection.set_xy(self.native_x, self.native_y)
+        try:
+            self.connection.set_xy(self.native_x, self.native_y)
+        except ConnectionError:
+            # If this triggered the laser movement it might have been force aborted, and crash here in error.
+            pass
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -292,7 +296,12 @@ class NewlyDriver:
             self.native_y = 0xFFFF
         if self.native_y < 0:
             self.native_y = 0
-        self.connection.set_xy(self.native_x, self.native_y)
+        try:
+            self.connection.set_xy(self.native_x, self.native_y)
+        except ConnectionError:
+            # If this triggered the laser movement it might have been force aborted, and crash here in error.
+            pass
+
         new_current = self.service.current
         self.service.signal(
             "driver;position",
