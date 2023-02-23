@@ -283,6 +283,7 @@ class NewlyController:
     #######################
 
     def home(self):
+        self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
@@ -300,6 +301,7 @@ class NewlyController:
         # self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def abort(self):
+        self.connect_if_needed()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
         command_buffer.append("ZQ")
@@ -307,6 +309,7 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def dwell(self, time_in_ms):
+        self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
@@ -322,6 +325,7 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def pause(self):
+        self.connect_if_needed()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
         command_buffer.append("ZT")
@@ -330,6 +334,7 @@ class NewlyController:
         self.paused = True
 
     def resume(self):
+        self.connect_if_needed()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
         command_buffer.append("ZG")

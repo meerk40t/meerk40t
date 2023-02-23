@@ -314,6 +314,9 @@ class NewlyDriver:
 
         @return:
         """
+        self.connection.home()
+
+    def origin(self):
         self.move_abs("0", "0")
 
     def physical_home(self):
