@@ -4,7 +4,7 @@ import math
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import Matrix
+from ..svgelements import Matrix, Point
 from .cutcode.cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode

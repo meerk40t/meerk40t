@@ -124,12 +124,15 @@ class LineTextTool(ToolWidget):
                 if self.node is not None:
                     self.node.stroke = self.color
                     self.node.stroke_width = elements.default_strokewidth
-                    self.scene.context.elements.elem_branch.add_node(self.node)
+                    elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
                     self.scene.context.signal(
                         "statusmsg",
                         _("Complete text-entry by pressing either Enter or Escape"),
                     )
+                    if elements.classify_new:
+                        elements.classify([self.node])
+                    self.notify_created(self.node)
                     self.node.emphasized = False
 
                 self.scene.context("window open HersheyFontSelector\n")
