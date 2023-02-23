@@ -29,7 +29,7 @@ from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
-from .icons import (
+from .icons import (  # icons8_replicate_rows_50,
     STD_ICON_SIZE,
     icon_cag_common_50,
     icon_cag_subtract_50,
@@ -52,6 +52,7 @@ from .icons import (
     icons8_group_objects_50,
     icons8_measure_50,
     icons8_mirror_horizontal,
+    icons8_node_edit_50,
     icons8_opened_folder_50,
     icons8_oval_50,
     icons8_paste_50,
@@ -72,8 +73,6 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    # icons8_replicate_rows_50,
-    icons8_node_edit_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -955,9 +954,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Node Edit"),
                 "icon": icons8_node_edit_50,
-                "tip": _(
-                    "Edit nodes of a polyline/path-object"
-                ),
+                "tip": _("Edit nodes of a polyline/path-object"),
                 "action": lambda v: kernel.elements("tool edit\n"),
                 "size": bsize_normal,
                 "identifier": "nodeedit",
@@ -2188,12 +2185,152 @@ class MeerK40t(MWindow):
 
     def __set_menubars(self):
         self.__set_file_menu()
+        self.__set_edit_menu()
         self.__set_view_menu()
         self.__set_pane_menu()
         self.__set_tool_menu()
         self.__set_window_menu()
         self.__set_help_menu()
         self.add_language_menu()
+
+    def _create_menu_from_choices(self, startmenu, choices):
+        current_menu = startmenu
+        prev_menu = startmenu
+        current_segment = ""
+        current_subsegment = ""
+        current_level = 1
+        for choice in choices:
+            try:
+                c_level = choice["level"]
+                if c_level < 1:
+                    c_level = 1
+            except KeyError:
+                c_level = 1
+
+            try:
+                c_segment = choice["segment"]
+            except KeyError:
+                c_segment = ""
+
+            try:
+                c_subsegment = choice["subsegment"]
+            except KeyError:
+                c_subsegment = ""
+
+            try:
+                c_label = choice["label"]
+            except KeyError:
+                c_label = ""
+
+            try:
+                c_help = choice["help"]
+            except KeyError:
+                c_help = ""
+
+            try:
+                c_action = choice["action"]
+            except KeyError:
+                c_action = None
+
+            try:
+                c_criteria = choice["criteria"]
+            except KeyError:
+                c_criteria = None
+
+            try:
+                c_enabled = choice["enabled"]
+            except KeyError:
+                c_enabled = None
+
+            try:
+                c_segment = choice["segment"]
+            except KeyError:
+                c_segment = ""
+
+            try:
+                c_param = choice["parameter"]
+            except KeyError:
+                c_param = None
+
+            try:
+                c_id = choice["id"]
+            except KeyError:
+                c_id = wx.ID_ANY
+            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
+            if c_segment != current_segment:
+                current_segment = c_segment
+                current_subsegment = ""
+                # Go back to start
+                if c_level != current_level and current_level > 1:
+                    current_level = 1
+                    current_menu = startmenu
+                    prev_menu = startmenu
+
+                if c_level > current_level:
+                    prev_menu = current_menu
+                    current_menu = wx.Menu()
+                    prev_menu.AppendSubMenu(current_menu, _(c_segment))
+                else:
+                    current_menu.AppendSeparator()
+
+            if c_subsegment != current_subsegment:
+                current_subsegment = c_subsegment
+                if current_level != c_level:
+                    # New submenu
+                    if c_subsegment == "":
+                        current_menu.AppendSeparator()
+                        c_level = current_level
+                    else:
+                        prev_menu = current_menu
+                        current_menu = wx.Menu()
+                        prev_menu.AppendSubMenu(current_menu, _(c_subsegment))
+                else:
+                    if c_subsegment == "":
+                        current_menu.AppendSeparator()
+
+            current_level = c_level
+            if c_label == "":
+                current_menu.AppendSeparator()
+            else:
+                if c_criteria is None:
+                    menu_item = current_menu.Append(
+                        c_id,
+                        c_label,
+                        c_help,
+                        wx.ITEM_NORMAL,
+                    )
+                else:
+                    menu_item = current_menu.Append(
+                        c_id,
+                        c_label,
+                        c_help,
+                        wx.ITEM_CHECK,
+                    )
+                    menu_item.Check(c_criteria)
+                flag = True
+                if c_enabled is not None:
+                    try:
+                        flag = bool(c_enabled())
+                    except (AttributeError, TypeError):
+                        pass
+                menu_item.Enable(flag)
+
+                def deal_with(routine, parameter=None):
+                    def done(event):
+                        if parameter is None:
+                            routine()
+                        else:
+                            routine(parameter)
+                        return
+
+                    return done
+
+                if c_action is None:
+                    menu_item.Enable(False)
+                else:
+                    self.Bind(
+                        wx.EVT_MENU, deal_with(c_action, c_param), id=menu_item.GetId()
+                    )
 
     def __set_file_menu(self):
 
@@ -2246,6 +2383,260 @@ class MeerK40t(MWindow):
         menu_item = self.file_menu.Append(wx.ID_EXIT, _("E&xit"), _("Close Meerk40t"))
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
+
+    def __set_edit_menu(self):
+        """
+        Edit MENU
+        """
+
+        def on_click_undo():
+            self.context("undo\n")
+
+        def on_click_redo():
+            self.context("redo\n")
+
+        def on_click_cut():
+            self.context("clipboard cut\n")
+
+        def on_click_copy():
+            self.context("clipboard copy\n")
+
+        def on_click_paste():
+            self.context("clipboard paste\n")
+
+        def on_click_sel_all():
+            self.context("element* select\n")
+
+        def on_click_sel_none():
+            self.context("element* select-\n")
+
+        def on_click_sel_invert():
+            self.context("element* select^\n")
+
+        def on_click_sel_unassigned():
+            elements = self.context.elements
+            for node in elements.elems():
+                flag = False
+                if hasattr(node, "references"):
+                    flag = True
+                    if len(node.references) > 0:
+                        flag = False
+                node.emphasized = flag
+            elements.validate_selected_area()
+            self.context.signal("refresh_scene", "Scene")
+
+        def on_click_properties():
+            self.context("window open Properties\n")
+
+        def on_click_device_manager():
+            self.context("window open DeviceManager\n")
+
+        def on_click_device_settings():
+            self.context("window open Configuration\n")
+
+        def on_click_pref_wordlist():
+            self.context("window open Wordlist\n")
+
+        def on_click_pref_fonts():
+            self.context("window open HersheyFontManager\n")
+
+        def on_click_pref_keys():
+            self.context("window open Keymap\n")
+
+        def on_click_preferences():
+            self.context("window open Preferences\n")
+
+        def clipboard_filled():
+            res = False
+            try:
+                destination = self.context.elements._clipboard_default
+                if len(self.context.elements._clipboard[destination]) > 0:
+                    res = True
+            except (TypeError, KeyError):
+                pass
+            return res
+
+        choices = [
+            {
+                "label": _("&Undo\tCtrl-Z"),
+                "help": _("Undo last action"),
+                "action": on_click_undo,
+                "id": wx.ID_UNDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Redo"),
+                "help": _("Revert last undo"),
+                "action": on_click_redo,
+                "id": wx.ID_REDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("C&ut"),
+                "help": _("Cut selected elements"),
+                "action": on_click_cut,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_CUT,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Copy\tCtrl-C"),
+                "help": _("Copy selected elements to clipboard"),
+                "action": on_click_copy,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_COPY,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Paste\tCtrl-V"),
+                "help": _("Paste elements from clipboard"),
+                "action": on_click_paste,
+                "enabled": clipboard_filled,
+                "id": wx.ID_PASTE,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select all\tCtrl-A"),
+                "help": _("Select all elements on scene"),
+                "action": on_click_sel_all,
+                "id": wx.ID_SELECTALL,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select None"),
+                "help": _("Deselect all elements on scene"),
+                "action": on_click_sel_none,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Invert selection\tCtrl-I"),
+                "help": _("Invert the selection status of all elements"),
+                "action": on_click_sel_invert,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Select all non-assigned"),
+                "help": _("Select all elements that are not assigned to an operation"),
+                "action": on_click_sel_unassigned,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Properties"),
+                "help": _("Edit the elements properties"),
+                "action": on_click_properties,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Manager"),
+                "help": _("Manage the Laser devices"),
+                "action": on_click_device_manager,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Settings"),
+                "help": _("Manage the Laser devices"),
+                "action": on_click_device_settings,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Wordlist-Editor"),
+                "help": _("Manages Wordlist-Entries"),
+                "action": on_click_pref_wordlist,
+                "level": 2,
+                "segment": "Preferences",
+            },
+            {
+                "label": _("Font-Manager"),
+                "help": _("Open the vector-font management window."),
+                "action": on_click_pref_fonts,
+                "level": 2,
+                "segment": "Preferences",
+            },
+            {
+                "label": _("Key-Bindings"),
+                "help": _("Opens Keymap Window"),
+                "action": on_click_pref_keys,
+                "level": 2,
+                "segment": "Preferences",
+            },
+            {
+                "label": "",
+                "level": 2,
+                "segment": "Preferences",
+            },
+            {
+                "label": _("Preferences"),
+                "help": _("Edit the general preferennces"),
+                "action": on_click_preferences,
+                "level": 2,
+                "id": wx.ID_PREFERENCES,
+                "segment": "Preferences",
+            },
+        ]
+        self.edit_menu = wx.Menu()
+        self._create_menu_from_choices(self.edit_menu, choices)
+        label = _("Edit")
+        index = self.main_menubar.FindMenu(label)
+        if index != -1:
+            self.main_menubar.Replace(index, self.edit_menu, label)
+        else:
+            self.main_menubar.Append(self.edit_menu, label)
+
+        def update_status(choices):
+            def handler(event):
+                for entry in choices:
+                    if "label" in entry and "enabled" in entry:
+                        flag = True
+                        label = entry["label"]
+                        try:
+                            flag = bool(entry["enabled"]())
+                        except AttributeError:
+                            flag = True
+                        if label:
+                            menu_id = self.edit_menu.FindItem(label)
+                            if menu_id != wx.NOT_FOUND:
+                                menu_item = self.edit_menu.FindItemById(menu_id)
+                                menu_item.Enable(flag)
+                        # print (entry["label"], entry["enabled"](), flag)
+                event.Skip()
+
+            return handler
+
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_status(choices))
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
@@ -2550,133 +2941,7 @@ class MeerK40t(MWindow):
         ]
 
         self.view_menu = wx.Menu()
-
-        current_menu = self.view_menu
-        prev_menu = self.view_menu
-        current_segment = ""
-        current_subsegment = ""
-        current_level = 1
-        for choice in choices:
-            try:
-                c_level = choice["level"]
-                if c_level < 1:
-                    c_level = 1
-            except KeyError:
-                c_level = 1
-
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_subsegment = choice["subsegment"]
-            except KeyError:
-                c_subsegment = ""
-
-            try:
-                c_label = choice["label"]
-            except KeyError:
-                c_label = ""
-
-            try:
-                c_help = choice["help"]
-            except KeyError:
-                c_help = ""
-
-            try:
-                c_action = choice["action"]
-            except KeyError:
-                c_action = None
-
-            try:
-                c_criteria = choice["criteria"]
-            except KeyError:
-                c_criteria = None
-
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_param = choice["parameter"]
-            except KeyError:
-                c_param = None
-
-            try:
-                c_id = choice["id"]
-            except KeyError:
-                c_id = wx.ID_ANY
-            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
-            if c_segment != current_segment:
-                current_segment = c_segment
-                current_subsegment = ""
-                # Go back to start
-                if c_level != current_level and current_level > 1:
-                    current_level = 1
-                    current_menu = self.view_menu
-                    prev_menu = self.view_menu
-
-                if c_level > current_level:
-                    prev_menu = current_menu
-                    current_menu = wx.Menu()
-                    prev_menu.AppendSubMenu(current_menu, _(c_segment))
-                else:
-                    current_menu.AppendSeparator()
-
-            if c_subsegment != current_subsegment:
-                current_subsegment = c_subsegment
-                if current_level != c_level:
-                    # New submenu
-                    if c_subsegment == "":
-                        current_menu.AppendSeparator()
-                        c_level = current_level
-                    else:
-                        prev_menu = current_menu
-                        current_menu = wx.Menu()
-                        prev_menu.AppendSubMenu(current_menu, _(c_subsegment))
-                else:
-                    if c_subsegment == "":
-                        current_menu.AppendSeparator()
-
-            current_level = c_level
-            if c_label == "":
-                current_menu.AppendSeparator()
-            else:
-                if c_criteria is None:
-                    menu_item = current_menu.Append(
-                        c_id,
-                        c_label,
-                        c_help,
-                        wx.ITEM_NORMAL,
-                    )
-                else:
-                    menu_item = current_menu.Append(
-                        c_id,
-                        c_label,
-                        c_help,
-                        wx.ITEM_CHECK,
-                    )
-                    menu_item.Check(c_criteria)
-
-                def deal_with(routine, parameter=None):
-                    def done(event):
-                        if parameter is None:
-                            routine()
-                        else:
-                            routine(parameter)
-                        return
-
-                    return done
-
-                if c_action is None:
-                    menu_item.Enable(False)
-                else:
-                    self.Bind(
-                        wx.EVT_MENU, deal_with(c_action, c_param), id=menu_item.GetId()
-                    )
-
+        self._create_menu_from_choices(self.view_menu, choices)
         self.main_menubar.Append(self.view_menu, _("View"))
 
     def __set_pane_menu(self):
