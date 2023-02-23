@@ -203,7 +203,7 @@ class EmptyIcon:
             (t_w, t_h) = dc.GetTextExtent(msg)
             x = (self._size - t_w) / 2
             y = (self._size - t_h) / 2
-            pt = wx.Point(x, y)
+            pt = wx.Point(int(x), int(y))
             dc.DrawText(msg, pt)
         # Now release dc
         dc.SelectObject(wx.NullBitmap)
