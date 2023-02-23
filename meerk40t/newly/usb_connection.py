@@ -319,7 +319,7 @@ class USBConnection:
     def write(self, index=0, data=None, attempt=0):
         if data is None:
             return
-        print(f"USB SEND: {data}")
+        self.channel(f"USB SEND: {data}")
         data_remaining = len(data)
         while data_remaining > 0:
             packet_length = min(0x1000, data_remaining)
