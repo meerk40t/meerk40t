@@ -129,10 +129,10 @@ class NewlyController:
                     # We have failed too many times.
                     self._is_opening = False
                     self.set_disable_connect(True)
-                    self.usb_log("Could not connect to the LMC controller.")
+                    self.usb_log("Could not connect to the controller.")
                     self.usb_log("Automatic connections disabled.")
                     raise ConnectionRefusedError(
-                        "Could not connect to the LMC controller."
+                        "Could not connect to the controller."
                     )
                 time.sleep(0.3)
                 continue
@@ -155,7 +155,7 @@ class NewlyController:
     def raster_mode(self):
         self.program_mode()
 
-    def program_mode(self):
+    def program_mode(self, relative=True):
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
@@ -175,11 +175,11 @@ class NewlyController:
         self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
         self.command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
-        if self.service.use_relative:
+        if relative:
             self._relative = True
             self.command_buffer.append("PR")
         else:
-            self._relative = True
+            self._relative = False
             self.command_buffer.append("PA")
 
     #######################
@@ -248,7 +248,7 @@ class NewlyController:
             self.command_buffer.append(f"PU{y},{x}")
             self._last_x, self._last_y = x, y
 
-    def set_xy(self, x, y):
+    def set_xy(self, x, y, relative=False):
         self.connect_if_needed()
         command_buffer = list()
         command_buffer.append(f"ZZZFile{self._file_index}")
@@ -259,7 +259,7 @@ class NewlyController:
         command_buffer.append(f"VQ{int(round(self._speed))}")
         command_buffer.append(f"VJ{int(round(self._acceleration))}")
         command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
-        if self.service.use_relative:
+        if relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
             command_buffer.append("PR")

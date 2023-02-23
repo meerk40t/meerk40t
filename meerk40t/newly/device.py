@@ -137,16 +137,6 @@ class NewlyDevice(Service, ViewPort):
                 ),
                 "section": "_00_General",
             },
-            {
-                "attr": "use_relative",
-                "object": self,
-                "default": True,
-                "type": bool,
-                "label": _("Use Relative Coordinates"),
-                "tip": _(
-                    "Should we use relative or absolute coordinates for the device."
-                ),
-            },
         ]
         self.register_choices("newly", choices)
 
