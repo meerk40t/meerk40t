@@ -2,6 +2,8 @@
 Ruida control code. This governs the interplay between the active device and the emulator. Taking on some aspects that
 are not directly able to be emulated like giving the current state of the device or the location of that device.
 """
+import threading
+
 from meerk40t.ruida.emulator import RuidaEmulator
 
 
@@ -9,9 +11,32 @@ class RuidaControl:
     def __init__(self, root):
         self.root = root
         self.emulator = None
+        self._thread = None
+        self._lock = threading.Condition()
+        self._shutdown = False
+        self._queue = []
+
+    def thread_execute(self):
+        while not self._shutdown:
+            while self._queue:
+                q = self._queue.pop(0)
+                self.emulator.checksum_write(q)
+            with self._lock:
+                self._lock.wait()
+
+    def add_queue(self, data):
+        self._queue.append(data)
+        with self._lock:
+            self._lock.notify()
 
     def start(self, verbose=False):
         root = self.root
+        self._thread = root.threaded(
+            self.thread_execute,
+            thread_name=f"ruidacontrol-sender",
+            daemon=True,
+        )
+
         channel = root.channel("console")
         _ = channel._
         try:
@@ -38,7 +63,7 @@ class RuidaControl:
                     r2m.events_channel.watch(console)
                 if r2mj:
                     r2mj.events_channel.watch(console)
-            root.channel("rd2mk/recv").watch(emulator.checksum_write)
+            root.channel("rd2mk/recv").watch(self.add_queue)
             root.channel("rd2mk-jog/recv").watch(emulator.realtime_write)
             emulator.reply.watch(root.channel("rd2mk/send"))
             emulator.realtime.watch(root.channel("rd2mk-jog/send"))
@@ -51,6 +76,9 @@ class RuidaControl:
         self.root.close("rd2mk-jog")
         self.root.close("mk2lz")
         self.root.close("mk2lz-jog")
+        self._shutdown = True
+        with self._lock:
+            self._lock.notify()
         del self.emulator
         console = self.root.channel("console")
         _ = console._
