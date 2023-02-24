@@ -49,6 +49,19 @@ class Driver:
         """
         return self.hold or self.paused
 
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
+
     def move_ori(self, x, y):
         """
         Requests laser move to origin offset position x,y in physical units
@@ -194,17 +207,6 @@ class Driver:
         @param values:
         @return:
         """
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        self.settings[key] = value
 
     def set_origin(self, x, y):
         """
