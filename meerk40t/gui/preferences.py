@@ -612,3 +612,8 @@ class Preferences(MWindow):
     @staticmethod
     def menu_id():
         return wx.ID_PREFERENCES
+
+    @staticmethod
+    def submenu():
+        # suppress in tool-menu
+        return ("", "Preferences", True)
