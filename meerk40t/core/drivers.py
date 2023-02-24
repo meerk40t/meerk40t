@@ -72,6 +72,27 @@ class Driver:
         """
         self._settings[key] = value
 
+    def status(self):
+        """
+        Required.
+
+        The first value in the status must be either idle, hold, busy.
+        The secondary values are subclasses of this state. A hold can be a "door", "alarm", "paused", "hardware-paused",
+        etc. depending on the laser. A busy can be the result of a "raster", "raw", "program", "light", or some
+        other laser dependant information.
+
+        The expectation is that the driver may query for this information from the laser if the laser provides this,
+        otherwise you may receive the driver expected state.
+
+        @return: position (2 or more axis), major-state, minor-state
+        """
+        state0 = "idle"
+        state1 = "idle"
+        if self.hold:
+            state0 = "hold"
+            state1 = "paused" if self.paused else "hold"
+        return (self.native_x, self.native_y), state0, state1
+
     def move_ori(self, x, y):
         """
         Requests laser move to origin offset position x,y in physical units
