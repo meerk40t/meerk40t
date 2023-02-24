@@ -339,17 +339,3 @@ class Driver:
         @param args:
         @return:
         """
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.get('speed', 0.0)}")
-        parts.append(f"power={self.get('power', 0)}")
-        status = ";".join(parts)
-        self.context.signal("driver;status", status)
