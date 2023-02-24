@@ -87,6 +87,15 @@ class BalorDriver:
         """
         return priority <= 0 and self.paused
 
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        x, y = self.connection.get_last_xy()
+        state_major, state_minor = self.connection.state
+        return (x, y), state_major, state_minor
+
     def laser_off(self, *values):
         """
         This command expects to stop pulsing the laser in place.
@@ -528,13 +537,6 @@ class BalorDriver:
         @return:
         """
         self.connection.abort()
-
-    def status(self):
-        """
-        Wants a status report of what the driver is doing.
-        @return:
-        """
-        pass
 
     def dwell(self, time_in_ms):
         """
