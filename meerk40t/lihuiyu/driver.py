@@ -772,20 +772,6 @@ class LihuiyuDriver(Parameters):
 
         self.temp_holds.append(temp_hold)
 
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.speed}")
-        parts.append(f"power={self.power}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
-
     def function(self, function):
         """
         This command asks that this function be executed at the appropriate time within the spooled cycle.
