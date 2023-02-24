@@ -117,6 +117,15 @@ class GRBLDriver(Parameters):
             self.speed_dirty = True
         self.settings[key] = value
 
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        # TODO: To calculate status correctly we need to actually have access to the response
+        self.grbl_realtime("?")
+        return (self.native_x, self.native_y), "idle", "unknown"
+
     def move_ori(self, x, y):
         """
         Requests laser move to origin offset position x,y in physical units
@@ -541,22 +550,6 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.grbl_realtime("$X\n")
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        self.grbl_realtime("?")
-
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.settings.get('speed', 0.0)}")
-        parts.append(f"power={self.settings.get('power', 0)}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
 
     ####################
     # PROTECTED DRIVER CODE
