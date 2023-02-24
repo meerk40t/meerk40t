@@ -81,7 +81,6 @@ class RuidaEmulator:
         self.process_commands = True
         self.parse_lasercode = True
         self.swizzle_mode = True
-        self.state = 22
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
@@ -89,27 +88,6 @@ class RuidaEmulator:
     @property
     def current(self):
         return self.x, self.y
-
-    @signal_listener("pipe;thread")
-    def on_pipe_state(self, origin, state):
-        if state == STATE_INITIALIZE:
-            self.state = 22
-        elif state == STATE_TERMINATE:
-            self.state = 22
-        elif state == STATE_END:
-            self.state = 22
-        elif state == STATE_PAUSE:
-            self.state = 23
-        elif state == STATE_BUSY:
-            self.state = 23
-        elif state == STATE_WAIT:
-            self.state = 21
-        elif state == STATE_ACTIVE:
-            self.state = 21
-        elif state == STATE_IDLE:
-            self.state = 22
-        elif state == STATE_UNKNOWN:
-            self.state = 22
 
     def plot_location(self, x, y, power):
         """
