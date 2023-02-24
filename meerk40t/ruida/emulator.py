@@ -1965,7 +1965,15 @@ class RuidaEmulator:
         if mem == 0x01B2:
             return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
-            return "Machine Status", self.state  # 22 ok, 23 paused. 21 running.
+            # 22 ok, 23 paused. 21 running.
+            pos, state, minor = self.driver.status()
+            if state == "idle":
+                return "Machine Status", 22
+            if state == "hold":
+                return "Machine Status", 23
+            if state == "busy":
+                return "Machine Status", 21
+            return "Machine Status", 22
         if mem == 0x0201:
             return "Total Open Time (s)", 0
         if mem == 0x0202:
@@ -2013,19 +2021,28 @@ class RuidaEmulator:
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            return "Axis Preferred Position 1, Pos X", int(self.x)
+            pos, state, minor = self.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            return "Axis Preferred Position 2, Pos Y", int(self.y)
+            pos, state, minor = self.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            return "Axis Preferred Position 3, Pos Z", int(self.z)
+            pos, state, minor = self.driver.status()
+            if len(pos) >= 3:
+                z = pos[2]
+            else:
+                z = self.z
+            return "Axis Preferred Position 3, Pos Z", int(z)
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
