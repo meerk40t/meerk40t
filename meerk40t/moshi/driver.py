@@ -84,6 +84,42 @@ class MoshiDriver(Parameters):
         """
         return priority <= 0 and (self.paused or self.hold)
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
+            self._set_power(value)
+        elif key == "ppi":
+            self._set_power(value)
+        elif key == "pwm":
+            self._set_power(value)
+        elif key == "overscan":
+            self._set_overscan(value)
+        elif key == "speed":
+            self._set_speed(value)
+        elif key == "step":
+            self._set_step(value)
+        else:
+            self.settings[key] = value
+
     def laser_off(self, *values):
         """
         Turn laser off in place.
@@ -395,28 +431,6 @@ class MoshiDriver(Parameters):
         except (ValueError, IndexError):
             move_y = 0
         self._start_raster_mode(offset_x, offset_y, move_x, move_y)
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self._set_power(value)
-        if key == "ppi":
-            self._set_power(value)
-        if key == "pwm":
-            self._set_power(value)
-        if key == "overscan":
-            self._set_overscan(value)
-        if key == "speed":
-            self._set_speed(value)
-        if key == "step":
-            self._set_step(value)
 
     def set_origin(self, x, y):
         """
