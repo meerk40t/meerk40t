@@ -3,6 +3,11 @@ GRBL Device Plugin
 
 Registers the required files to run the GRBL device.
 """
+from meerk40t.grbl.control import GRBLControl
+from meerk40t.grbl.device import GRBLDevice, GRBLDriver
+from meerk40t.grbl.interpreter import GRBLInterpreter
+from meerk40t.grbl.emulator import GRBLEmulator
+from meerk40t.grbl.loader import GCodeLoader
 
 
 def plugin(kernel, lifecycle=None):
@@ -20,21 +25,10 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
         _ = kernel.translation
 
-        from .device import GRBLDevice, GRBLDriver
-
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
-
-        from .interpreter import GRBLInterpreter
-
         kernel.register("interpreter/grbl", GRBLInterpreter)
-
-        from .emulator import GRBLEmulator
-
         kernel.register("emulator/grbl", GRBLEmulator)
-
-        from .loader import GCodeLoader
-
         kernel.register("load/GCodeLoader", GCodeLoader)
 
         @kernel.console_option(
@@ -60,59 +54,27 @@ def plugin(kernel, lifecycle=None):
             hidden=True,
         )
         def grblserver(
-            command,
-            channel,
-            _,
             port=23,
             verbose=False,
             quit=False,
             **kwargs,
         ):
+            """
+            The grblserver emulation methods provide a simulation of a grbl device.
+            this emulates a grbl devices in order to be compatible with software that
+            controls that type of device.
+            """
             root = kernel.root
-            try:
-                server = root.open_as("module/TCPServer", "grbl", port=port)
-                from meerk40t.grbl.emulator import GRBLEmulator
-
+            grblcontrol = root.device.lookup("grblcontrol")
+            if grblcontrol is None:
                 if quit:
-                    try:
-                        emulator = server.emulator
-                        emulator.driver = None
-                        del emulator
-                    except AttributeError:
-                        pass
-                    root.close("grbl")
                     return
-
-                def greet():
-                    yield "Grbl 1.1f ['$' for help]\r"
-                    yield "[MSG:’$H’|’$X’ to unlock]"
-
-                root.channel("grbl/send", pure=True).greet = greet
-
-                channel(_("GRBL Mode."))
-                if verbose:
-                    console = kernel.channel("console")
-                    root.channel("grbl").watch(console)
-                    server.events_channel.watch(console)
-
-                emulator = GRBLEmulator(
-                    root.device.driver, root.device.scene_to_device_matrix()
-                )
-                server.emulator = emulator
-
-                # Link emulator and server.
-                tcp_recv_channel = root.channel("grbl/recv", pure=True)
-                tcp_recv_channel.watch(emulator.write)
-                tcp_send_channel = root.channel("grbl/send", pure=True)
-                emulator.reply = tcp_send_channel
-
-                channel(
-                    _("TCP Server for GRBL Emulator on port: {port}").format(port=port)
-                )
-            except OSError as e:
-                channel(_("Server failed on port: {port}").format(port=port))
-                channel(str(e.strerror))
-            return
+                grblcontrol = GRBLControl(root)
+                root.device.register("grblcontrol", grblcontrol)
+                grblcontrol.start(port, verbose)
+            if quit:
+                grblcontrol.quit()
+                root.device.unregister("grblcontrol")
 
     elif lifecycle == "preboot":
         suffix = "grbl"
