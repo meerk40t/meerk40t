@@ -1,6 +1,7 @@
 """
 Grbl control. This code governs the interplay between the driver and the emulator.
 """
+import threading
 
 
 def greet():
@@ -12,9 +13,32 @@ class GRBLControl:
     def __init__(self, root):
         self.root = root
         self.emulator = None
+        self._thread = None
+        self._lock = threading.Condition()
+        self._shutdown = False
+        self._queue = []
+
+    def thread_execute(self):
+        while not self._shutdown:
+            while self._queue:
+                q = self._queue.pop(0)
+                self.emulator.write(q)
+            with self._lock:
+                self._lock.wait()
+
+    def add_queue(self, data):
+        self._queue.append(data)
+        with self._lock:
+            self._lock.notify()
 
     def start(self, port=23, verbose=False):
         root = self.root
+        self._thread = root.threaded(
+            self.thread_execute,
+            thread_name=f"grblcontrol-sender",
+            daemon=True,
+        )
+
         channel = root.channel("console")
         _ = channel._
         try:
@@ -32,11 +56,11 @@ class GRBLControl:
             emulator = GRBLEmulator(
                 root.device.driver, root.device.scene_to_device_matrix()
             )
-            server.emulator = emulator
+            self.emulator = emulator
 
             # Link emulator and server.
             tcp_recv_channel = root.channel("grbl/recv", pure=True)
-            tcp_recv_channel.watch(emulator.write)
+            tcp_recv_channel.watch(self.add_queue)
             tcp_send_channel = root.channel("grbl/send", pure=True)
             emulator.reply = tcp_send_channel
 
@@ -47,11 +71,11 @@ class GRBLControl:
         return
 
     def quit(self):
-        try:
-            self.emulator.driver = None
-            del self.emulator
-        except AttributeError:
-            pass
+        self._shutdown = True
+        with self._lock:
+            self._lock.notify()
+
+        del self.emulator
         self.root.close("grbl")
 
         console = self.root.channel("console")
