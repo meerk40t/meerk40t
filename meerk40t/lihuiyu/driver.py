@@ -221,6 +221,46 @@ class LihuiyuDriver(Parameters):
                 return True
         return False
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
+            self._set_power(value)
+        elif key == "ppi":
+            self._set_power(value)
+        elif key == "pwm":
+            self._set_power(value)
+        elif key == "overscan":
+            self._set_overscan(value)
+        elif key == "acceleration":
+            self._set_acceleration(value)
+        elif key == "relative":
+            self.is_relative = value
+        elif key == "d_ratio":
+            self._set_d_ratio(value)
+        elif key == "step":
+            self._set_step(*value)
+        else:
+            self.settings[key] = value
+
     def pause(self, *values):
         """
         Asks that the laser be paused.
@@ -666,32 +706,6 @@ class LihuiyuDriver(Parameters):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self._set_power(value)
-        if key == "ppi":
-            self._set_power(value)
-        if key == "pwm":
-            self._set_power(value)
-        if key == "overscan":
-            self._set_overscan(value)
-        if key == "acceleration":
-            self._set_acceleration(value)
-        if key == "relative":
-            self.is_relative = value
-        if key == "d_ratio":
-            self._set_d_ratio(value)
-        if key == "step":
-            self._set_step(*value)
 
     def set_origin(self, x, y):
         """
