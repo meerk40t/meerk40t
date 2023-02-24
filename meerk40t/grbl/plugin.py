@@ -39,7 +39,7 @@ def plugin(kernel, lifecycle=None):
             "v",
             type=bool,
             action="store_true",
-            help=_("do not watch server channels"),
+            help=_("watch server channels"),
         )
         @kernel.console_option(
             "quit",
