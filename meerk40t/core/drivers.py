@@ -32,7 +32,7 @@ class Driver:
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.settings = dict()
+        self._settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -49,6 +49,16 @@ class Driver:
         """
         return self.hold or self.paused
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self._settings.get(key, default=default)
+
     def set(self, key, value):
         """
         Required.
@@ -60,7 +70,7 @@ class Driver:
         @param value:
         @return:
         """
-        self.settings[key] = value
+        self._settings[key] = value
 
     def move_ori(self, x, y):
         """
@@ -318,7 +328,7 @@ class Driver:
         parts = list()
         parts.append(f"x={self.native_x}")
         parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.settings.get('speed', 0.0)}")
-        parts.append(f"power={self.settings.get('power', 0)}")
+        parts.append(f"speed={self.get('speed', 0.0)}")
+        parts.append(f"power={self.get('power', 0)}")
         status = ";".join(parts)
         self.context.signal("driver;status", status)
