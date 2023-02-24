@@ -203,15 +203,18 @@ class GRBLEmulator:
         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
         pos, state, minor = self.driver.status()
         x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+        x /= self.scale
+        y /= self.scale
+        z = 0.0
+        self.x = x
+        self.y = y
+
         if state == "busy":
             state = "Run"
         elif state == "hold":
             state = "Hold"
         else:
             state = "Idle"
-        x /= self.scale
-        y /= self.scale
-        z = 0.0
         f = self.feed_invert(self.settings.get("speed", 0))
         s = self.settings.get("power", 0)
         return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
