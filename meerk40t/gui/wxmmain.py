@@ -2446,6 +2446,9 @@ class MeerK40t(MWindow):
         def on_click_preferences():
             self.context("window open Preferences\n")
 
+        def on_click_delete():
+            self.context("element delete\n")
+
         def clipboard_filled():
             res = False
             try:
@@ -2466,7 +2469,7 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("&Redo"),
+                "label": _("&Redo\tCtrl-Shift-Z"),
                 "help": _("Revert last undo"),
                 "action": on_click_redo,
                 "id": wx.ID_REDO,
@@ -2479,7 +2482,7 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("C&ut"),
+                "label": _("C&ut\tCtrl-X"),
                 "help": _("Cut selected elements"),
                 "action": on_click_cut,
                 "enabled": self.context.elements.has_emphasis,
@@ -2546,6 +2549,19 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
+                "label": _("Delete\tDel"),
+                "help": _("Delete the selected elements"),
+                "action": on_click_delete,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
                 "label": _("Properties"),
                 "help": _("Edit the elements properties"),
                 "action": on_click_properties,
@@ -2569,6 +2585,11 @@ class MeerK40t(MWindow):
                 "label": _("Device-Settings"),
                 "help": _("Manage the Laser devices"),
                 "action": on_click_device_settings,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
                 "level": 1,
                 "segment": "",
             },
@@ -2599,8 +2620,8 @@ class MeerK40t(MWindow):
                 "segment": "Preferences",
             },
             {
-                "label": _("Preferences"),
-                "help": _("Edit the general preferennces"),
+                "label": _("Preferences\tCtrl-,"),
+                "help": _("Edit the general preferences"),
                 "action": on_click_preferences,
                 "level": 2,
                 "id": wx.ID_PREFERENCES,
