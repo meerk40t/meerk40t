@@ -90,6 +90,29 @@ class GRBLDriver(Parameters):
         """
         return priority <= 0 and (self.paused or self.hold)
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        self.settings[key] = value
+
     def move_ori(self, x, y):
         """
         Requests laser move to origin offset position x,y in physical units
