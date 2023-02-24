@@ -658,7 +658,10 @@ class GRBLEmulator:
                 elif v == 49:
                     # Cancel tool offset.
                     pass  # Dynamic tool length offsets
-                elif 53 <= v <= 59:
+                elif v == 53:
+                    # Absolute movement non-modal command.
+                    pass
+                elif 54 <= v <= 59:
                     # Coord System Select
                     pass  # Work Coordinate Systems
                 elif v == 61:
