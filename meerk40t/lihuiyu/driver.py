@@ -261,6 +261,30 @@ class LihuiyuDriver(Parameters):
         else:
             self.settings[key] = value
 
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        state_major = "idle"
+        state_minor = "idle"
+        if self.state == DRIVER_STATE_RAPID:
+            state_major = "idle"
+            state_minor = "idle"
+        elif self.state == DRIVER_STATE_FINISH:
+            state_major = "idle"
+            state_minor = "finished"
+        elif self.state == DRIVER_STATE_PROGRAM:
+            state_major = "busy"
+            state_minor = "program"
+        elif self.state == DRIVER_STATE_RASTER:
+            state_major = "busy"
+            state_minor = "raster"
+        elif self.state == DRIVER_STATE_MODECHANGE:
+            state_major = "busy"
+            state_minor = "changing"
+        return (self.native_x, self.native_y), state_major, state_minor
+
     def pause(self, *values):
         """
         Asks that the laser be paused.
