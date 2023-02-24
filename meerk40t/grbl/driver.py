@@ -111,6 +111,10 @@ class GRBLDriver(Parameters):
         @param value:
         @return:
         """
+        if key == "power":
+            self.power_dirty = True
+        if key == "speed":
+            self.speed_dirty = True
         self.settings[key] = value
 
     def move_ori(self, x, y):
@@ -423,20 +427,6 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self.power_dirty = True
-        if key == "speed":
-            self.speed_dirty = True
-        self.settings[key] = value
 
     def set_origin(self, x, y):
         """
