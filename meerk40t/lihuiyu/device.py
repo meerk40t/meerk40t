@@ -584,12 +584,12 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
         )
-        @self.console_option(
-            "silent",
-            "s",
+        @kernel.console_option(
+            "verbose",
+            "v",
             type=bool,
             action="store_true",
-            help=_("do not watch server channels"),
+            help=_("watch server channels"),
         )
         @self.console_option(
             "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
@@ -603,8 +603,13 @@ class LihuiyuDevice(Service, ViewPort):
         )
         @self.console_command("lhyserver", help=_("activate the lhyserver."))
         def lhyserver(
-            channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
+            channel, _, port=23, verbose=False, watch=False, quit=False, **kwargs
         ):
+            """
+            The lhyserver provides for an open TCP on a specific port. Any data sent to this port will be sent directly
+            to the lihuiyu laser. This is how the tcp-connection sends data to the laser if that option is used. This
+            requires an additional computer such a raspberry pi doing the interfacing.
+            """
             try:
                 server_name = f"lhyserver{self.path}"
                 output = self.controller
@@ -613,7 +618,7 @@ class LihuiyuDevice(Service, ViewPort):
                     self.close(server_name)
                     return
                 channel(_("TCP Server for lihuiyu on port: {port}").format(port=port))
-                if not silent:
+                if verbose:
                     console = kernel.channel("console")
                     server.events_channel.watch(console)
                     if watch:
