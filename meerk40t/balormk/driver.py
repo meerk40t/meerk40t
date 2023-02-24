@@ -87,6 +87,28 @@ class BalorDriver:
         """
         return priority <= 0 and self.paused
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return default
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+
     def status(self):
         """
         Wants a status report of what the driver is doing.
