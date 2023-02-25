@@ -1,4 +1,3 @@
-
 """
 This plugin registers the other major plugins found in core.
 """

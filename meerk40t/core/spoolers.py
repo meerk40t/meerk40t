@@ -391,6 +391,7 @@ class Spooler:
     called until whatever work it is doing is finished. This also means the driver itself is checked for holds
     (usually pausing or busy) each cycle.
     """
+
     def __init__(self, context, driver=None, **kwargs):
         self.context = context
         self.driver = driver

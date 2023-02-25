@@ -1,3 +1,7 @@
+"""
+This is a giant list of console commands that deal with and often implement the elements system in the program.
+"""
+
 import os.path
 import re
 from copy import copy

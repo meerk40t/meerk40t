@@ -1,3 +1,10 @@
+"""
+The elements module governs all the interactions with the various nodes, as well as dealing with tree information.
+This serves effectively as the datastructure that stores all information about any active project. This includes
+several smaller functional pieces like Penbox and Wordlists.
+"""
+
+
 import contextlib
 import os.path
 from time import time
@@ -382,15 +389,6 @@ OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op
 
 
 class Elemental(Service):
-    """
-    The elemental service is governs all the interactions with the various elements,
-    operations, and filenodes. Handling structure change and selection, emphasis, and
-    highlighting changes. The goal of this module is to make sure that the life cycle
-    of the elements is strictly enforced. For example, every element that is removed
-    must have had the .cache deleted. And anything selecting an element must propagate
-    that information out to inform other interested modules.
-    """
-
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
@@ -1478,7 +1476,9 @@ class Elemental(Service):
         #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
-                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
+                print(
+                    f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node"
+                )
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
