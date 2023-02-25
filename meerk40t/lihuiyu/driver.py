@@ -221,6 +221,70 @@ class LihuiyuDriver(Parameters):
                 return True
         return False
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
+            self._set_power(value)
+        elif key == "ppi":
+            self._set_power(value)
+        elif key == "pwm":
+            self._set_power(value)
+        elif key == "overscan":
+            self._set_overscan(value)
+        elif key == "acceleration":
+            self._set_acceleration(value)
+        elif key == "relative":
+            self.is_relative = value
+        elif key == "d_ratio":
+            self._set_d_ratio(value)
+        elif key == "step":
+            self._set_step(*value)
+        else:
+            self.settings[key] = value
+
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        state_major = "idle"
+        state_minor = "idle"
+        if self.state == DRIVER_STATE_RAPID:
+            state_major = "idle"
+            state_minor = "idle"
+        elif self.state == DRIVER_STATE_FINISH:
+            state_major = "idle"
+            state_minor = "finished"
+        elif self.state == DRIVER_STATE_PROGRAM:
+            state_major = "busy"
+            state_minor = "program"
+        elif self.state == DRIVER_STATE_RASTER:
+            state_major = "busy"
+            state_minor = "raster"
+        elif self.state == DRIVER_STATE_MODECHANGE:
+            state_major = "busy"
+            state_minor = "changing"
+        return (self.native_x, self.native_y), state_major, state_minor
+
     def pause(self, *values):
         """
         Asks that the laser be paused.
@@ -667,32 +731,6 @@ class LihuiyuDriver(Parameters):
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
 
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self._set_power(value)
-        if key == "ppi":
-            self._set_power(value)
-        if key == "pwm":
-            self._set_power(value)
-        if key == "overscan":
-            self._set_overscan(value)
-        if key == "acceleration":
-            self._set_acceleration(value)
-        if key == "relative":
-            self.is_relative = value
-        if key == "d_ratio":
-            self._set_d_ratio(value)
-        if key == "step":
-            self._set_step(*value)
-
     def set_origin(self, x, y):
         """
         This should set the origin position.
@@ -733,20 +771,6 @@ class LihuiyuDriver(Parameters):
                 return False
 
         self.temp_holds.append(temp_hold)
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.speed}")
-        parts.append(f"power={self.power}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
 
     def function(self, function):
         """

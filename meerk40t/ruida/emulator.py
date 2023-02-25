@@ -81,7 +81,6 @@ class RuidaEmulator:
         self.process_commands = True
         self.parse_lasercode = True
         self.swizzle_mode = True
-        self.state = 22
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
@@ -89,27 +88,6 @@ class RuidaEmulator:
     @property
     def current(self):
         return self.x, self.y
-
-    @signal_listener("pipe;thread")
-    def on_pipe_state(self, origin, state):
-        if state == STATE_INITIALIZE:
-            self.state = 22
-        elif state == STATE_TERMINATE:
-            self.state = 22
-        elif state == STATE_END:
-            self.state = 22
-        elif state == STATE_PAUSE:
-            self.state = 23
-        elif state == STATE_BUSY:
-            self.state = 23
-        elif state == STATE_WAIT:
-            self.state = 21
-        elif state == STATE_ACTIVE:
-            self.state = 21
-        elif state == STATE_IDLE:
-            self.state = 22
-        elif state == STATE_UNKNOWN:
-            self.state = 22
 
     def plot_location(self, x, y, power):
         """
@@ -308,7 +286,11 @@ class RuidaEmulator:
         data = sent_data[2:1472]
         checksum_check = (sent_data[0] & 0xFF) << 8 | sent_data[1] & 0xFF
         checksum_sum = sum(data) & 0xFFFF
-        self.write(data)
+        if len(sent_data) > 3:
+            if self.magic != 0x88 and sent_data[2] == 0xD4:
+                self._set_magic(0x88)
+            if self.magic != 0x11 and sent_data[2] == 0x4B:
+                self._set_magic(0x11)
         if checksum_check == checksum_sum:
             response = b"\xCC"
             self.msg_reply(response, desc="Checksum match")
@@ -320,6 +302,7 @@ class RuidaEmulator:
             if self.channel:
                 self.channel("--> " + str(data.hex()))
             return
+        self.write(data)
 
     def realtime_write(self, bytes_to_write):
         """
@@ -341,10 +324,9 @@ class RuidaEmulator:
         @param data:
         @return:
         """
-        if unswizzle:
-            data = self.unswizzle(data)
+        packet = self.unswizzle(data) if unswizzle else data
 
-        for array in self.parse_commands(data):
+        for array in self.parse_commands(packet):
             try:
                 self.process(array)
             except RuidaCommandError:
@@ -1961,7 +1943,15 @@ class RuidaEmulator:
         if mem == 0x01B2:
             return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
-            return "Machine Status", self.state  # 22 ok, 23 paused. 21 running.
+            # 22 ok, 23 paused. 21 running.
+            pos, state, minor = self.driver.status()
+            if state == "idle":
+                return "Machine Status", 22
+            if state == "hold":
+                return "Machine Status", 23
+            if state == "busy":
+                return "Machine Status", 21
+            return "Machine Status", 22
         if mem == 0x0201:
             return "Total Open Time (s)", 0
         if mem == 0x0202:
@@ -2009,19 +1999,28 @@ class RuidaEmulator:
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            return "Axis Preferred Position 1, Pos X", int(self.x)
+            pos, state, minor = self.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            return "Axis Preferred Position 2, Pos Y", int(self.y)
+            pos, state, minor = self.driver.status()
+            x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            return "Axis Preferred Position 3, Pos Z", int(self.z)
+            pos, state, minor = self.driver.status()
+            if len(pos) >= 3:
+                z = pos[2]
+            else:
+                z = self.z
+            return "Axis Preferred Position 3, Pos Z", int(z)
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
@@ -2073,28 +2072,11 @@ class RuidaEmulator:
             pass
         return "Unknown", 0
 
-    def unswizzle(self, data, tries=0):
-        if not data or tries > 3:
-            return []
-        array = [self.lut_unswizzle[b] for b in data]
-
-        if array[0] < 0x80 and self.magic != 0x11:
-            # The swizzle is incorrect.
-            self._set_magic(0x11)
-            return self.unswizzle(data, tries=tries + 1)
-
-        if array[0] < 0x80 and self.magic != 0x88:
-            # The swizzle is incorrect.
-            self._set_magic(0x88)
-            return self.unswizzle(data, tries=tries + 1)
-
-        return bytes(array)
+    def unswizzle(self, data):
+        return bytes([self.lut_unswizzle[b] for b in data])
 
     def swizzle(self, data):
-        array = list()
-        for b in data:
-            array.append(self.lut_swizzle[b])
-        return bytes(array)
+        return bytes([self.lut_swizzle[b] for b in data])
 
     @staticmethod
     def swizzle_byte(b, magic):

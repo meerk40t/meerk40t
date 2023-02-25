@@ -281,6 +281,19 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
+    @property
+    def state(self):
+        if self.mode == DRIVER_STATE_RAPID:
+            return "idle", "idle"
+        if self.paused:
+            return "hold", "paused"
+        if self.mode == DRIVER_STATE_RAW:
+            return "busy", "raw"
+        if self.mode == DRIVER_STATE_LIGHT:
+            return "busy", "light"
+        if self.mode == DRIVER_STATE_PROGRAM:
+            return "busy", "program"
+
     def set_disable_connect(self, status):
         self._disable_connect = status
 
@@ -398,7 +411,7 @@ class GalvoController:
         self.list_end_of_list()  # Ensure at least one list_end_of_list
         self._list_end()
         if not self._list_executing and self._number_of_list_packets:
-            # If we never ran the list and we sent some lists.
+            # If we never ran the list, and we sent some lists.
             self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0

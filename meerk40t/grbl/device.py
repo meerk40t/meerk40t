@@ -567,20 +567,6 @@ class GRBLDevice(Service, ViewPort):
         """
         return self.driver.native_x, self.driver.native_y
 
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
-
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight

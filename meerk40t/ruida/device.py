@@ -118,17 +118,3 @@ class RuidaDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return 0, 0
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]

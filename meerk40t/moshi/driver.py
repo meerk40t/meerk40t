@@ -84,6 +84,66 @@ class MoshiDriver(Parameters):
         """
         return priority <= 0 and (self.paused or self.hold)
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
+            self._set_power(value)
+        elif key == "ppi":
+            self._set_power(value)
+        elif key == "pwm":
+            self._set_power(value)
+        elif key == "overscan":
+            self._set_overscan(value)
+        elif key == "speed":
+            self._set_speed(value)
+        elif key == "step":
+            self._set_step(value)
+        else:
+            self.settings[key] = value
+
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        state_major = "idle"
+        state_minor = "idle"
+        if self.state == DRIVER_STATE_RAPID:
+            state_major = "idle"
+            state_minor = "idle"
+        elif self.state == DRIVER_STATE_FINISH:
+            state_major = "idle"
+            state_minor = "finished"
+        elif self.state == DRIVER_STATE_PROGRAM:
+            state_major = "busy"
+            state_minor = "program"
+        elif self.state == DRIVER_STATE_RASTER:
+            state_major = "busy"
+            state_minor = "raster"
+        elif self.state == DRIVER_STATE_MODECHANGE:
+            state_major = "busy"
+            state_minor = "changing"
+        return (self.native_x, self.native_y), state_major, state_minor
+
     def laser_off(self, *values):
         """
         Turn laser off in place.
@@ -396,28 +456,6 @@ class MoshiDriver(Parameters):
             move_y = 0
         self._start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self._set_power(value)
-        if key == "ppi":
-            self._set_power(value)
-        if key == "pwm":
-            self._set_power(value)
-        if key == "overscan":
-            self._set_overscan(value)
-        if key == "speed":
-            self._set_speed(value)
-        if key == "step":
-            self._set_step(value)
-
     def set_origin(self, x, y):
         """
         This should set the origin position.
@@ -523,20 +561,6 @@ class MoshiDriver(Parameters):
             self.service.controller.estop()
         except AttributeError:
             pass
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.speed}")
-        parts.append(f"power={self.power}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
 
     ####################
     # Protected Driver Functions
