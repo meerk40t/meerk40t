@@ -938,7 +938,6 @@ class Elemental(Service):
                     except AttributeError:
                         pass
 
-
         align_data = [e for e in data]
         data_to_align = []
         # We need to iterate through all the elements
