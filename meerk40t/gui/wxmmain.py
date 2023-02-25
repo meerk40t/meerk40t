@@ -2903,6 +2903,7 @@ class MeerK40t(MWindow):
             )
             if answer == wx.YES:
                 self.context("dialog_save\n")
+                return True
             if answer == wx.CANCEL:
                 return True  # VETO
         return False
