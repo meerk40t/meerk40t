@@ -337,3 +337,8 @@ class Keymap(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        # suppress in tool-menu
+        return ("", "Keymap", True)

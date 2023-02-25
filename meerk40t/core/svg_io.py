@@ -1164,13 +1164,16 @@ class SVGLoader:
             else:
                 width = None
                 height = None
+            # The color attribute of SVG.parse decides which default color
+            # a stroke / fill will get if the attribute "currentColor" is
+            # set - we opt for "black"
             svg = SVG.parse(
                 source=source,
                 reify=False,
                 width=width,
                 height=height,
                 ppi=ppi,
-                color="none",
+                color="black",
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:
