@@ -2590,8 +2590,8 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("Device-Settings"),
-                "help": _("Manage the Laser devices"),
+                "label": _("Device-Configuration"),
+                "help": _("Manage the device settings"),
                 "action": on_click_device_settings,
                 "level": 1,
                 "segment": "",
@@ -2606,26 +2606,26 @@ class MeerK40t(MWindow):
                 "help": _("Manages Wordlist-Entries"),
                 "action": on_click_pref_wordlist,
                 "level": 2,
-                "segment": "Preferences",
+                "segment": "Settings",
             },
             {
                 "label": _("Font-Manager"),
                 "help": _("Open the vector-font management window."),
                 "action": on_click_pref_fonts,
                 "level": 2,
-                "segment": "Preferences",
+                "segment": "Settings",
             },
             {
                 "label": _("Key-Bindings"),
                 "help": _("Opens Keymap Window"),
                 "action": on_click_pref_keys,
                 "level": 2,
-                "segment": "Preferences",
+                "segment": "Settings",
             },
             {
                 "label": "",
                 "level": 2,
-                "segment": "Preferences",
+                "segment": "Settings",
             },
             {
                 "label": _("Preferences\tCtrl-,"),
@@ -2633,7 +2633,7 @@ class MeerK40t(MWindow):
                 "action": on_click_preferences,
                 "level": 2,
                 "id": wx.ID_PREFERENCES,
-                "segment": "Preferences",
+                "segment": "Settings",
             },
         ]
         self.edit_menu = wx.Menu()
