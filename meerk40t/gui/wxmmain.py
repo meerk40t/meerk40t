@@ -1529,8 +1529,9 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 gui.load(pathname)
 
+        @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save_as", hidden=True)
-        def save_dialog(**kwargs):
+        def save_dialog(quit=False, **kwargs):
             filetypes = []
             types = []
             for saver, save_name, sname in context.find("save"):
@@ -1569,11 +1570,18 @@ class MeerK40t(MWindow):
                     )
                     dlg.ShowModal()
                     dlg.Destroy()
+                else:
+                    if quit:
+                        context("quit\n")
 
+        @context.console_option("quit", "q", action="store_true", type=bool)
         @context.console_command("dialog_save", hidden=True)
-        def save_or_save_as(**kwargs):
+        def save_or_save_as(quit=False, **kwargs):
             if gui.working_file is None:
-                context(".dialog_save_as\n")
+                if quit:
+                    context(".dialog_save_as -q\n")
+                else:
+                    context(".dialog_save_as\n")
             else:
                 try:
                     gui.set_file_as_recently_used(gui.working_file)
