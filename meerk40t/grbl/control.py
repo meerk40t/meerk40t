@@ -40,6 +40,10 @@ class GRBLControl:
         )
 
         channel = root.channel("console")
+        channel(
+            "[red]WARNING: [blue]This is currently in beta. Some parts do not work.[normal]",
+            ansi=True,
+        )
         _ = channel._
         try:
             server = root.open_as("module/TCPServer", "grbl", port=port)

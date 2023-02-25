@@ -38,6 +38,10 @@ class RuidaControl:
         )
 
         channel = root.channel("console")
+        channel(
+            "[red]WARNING: [blue]This is currently being rewritten and is back in beta. Some parts do not work. Use MeerK40t 0.7.x if you want consistency.[normal]",
+            ansi=True,
+        )
         _ = channel._
         try:
             r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
