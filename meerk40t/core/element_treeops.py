@@ -561,6 +561,64 @@ def init_tree(kernel):
             with self.static("clear_unused"):
                 self.remove_operations(to_delete)
 
+    def radio_match_speed_all(node, speed=0, **kwargs):
+        maxspeed = 0
+        for n in list(self.ops()):
+            if n.speed is not None:
+                maxspeed = max(maxspeed, n.speed)
+        return bool(abs(maxspeed - float(speed)) < 0.5)
+
+    @tree_submenu(_("Scale speed settings"))
+    @tree_radio(radio_match_speed_all)
+    @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
+    @tree_operation(_("Max speed = {speed}mm/s"), node_type="branch ops", help="",)
+    def set_speed_levels(node, speed=150, **kwargs):
+        data = list()
+        maxspeed = 0
+        for n in list(self.ops()):
+            if n.speed is not None:
+                maxspeed = max(maxspeed, n.speed)
+        if maxspeed == 0:
+            return
+        for n in list(self.ops()):
+            if n.speed is not None:
+                oldspeed = float(n.speed)
+                newspeed = oldspeed / maxspeed * speed
+                n.speed = float(newspeed)
+                data.append(n)
+        self.signal("element_property_reload", data)
+
+    def radio_match_power_all(node, power=0, **kwargs):
+        maxpower = 0
+        for n in list(self.ops()):
+            if n.power is not None:
+                maxpower = max(maxpower, n.power)
+        return bool(abs(maxpower - float(power)) < 0.5)
+
+    @tree_submenu(_("Scale power settings"))
+    @tree_radio(radio_match_power_all)
+    @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_operation(
+        _("Max power = {power}ppi"),
+        node_type="branch ops",
+        help="",
+    )
+    def set_power_levels(node, power=1000, **kwargs):
+        data = list()
+        maxpower = 0
+        for n in list(self.ops()):
+            if n.power is not None:
+                maxpower = max(maxpower, n.power)
+        if maxpower == 0:
+            return
+        for n in list(self.ops()):
+            if n.power is not None:
+                oldpower = float(n.power)
+                newpower = oldpower / maxpower * power
+                n.power = float(newpower)
+                data.append(n)
+        self.signal("element_property_reload", data)
+
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
