@@ -2,7 +2,6 @@
 Driver to Path is code adapted from jpirnay's modifications of GRBL parser to read parsed data. When the GRBLParser
 was converted to a driverlike emulator, this functionality was spun off.
 """
-
 from math import isnan
 
 from meerk40t.core.cutcode.cubiccut import CubicCut
@@ -441,11 +440,11 @@ class DriverToPath:
             },
         ]
 
-    def parse(self, emulator, data, elements, options=None):
+    def parse(self, blob_type, data, elements, options=None):
         """Parse the data with the given emulator and create and add the relevant paths.
 
         Args:
-            emulator: the emulator to use to parse the data, suffix entry value.
+            blob_type: the emulator to use to parse the data, suffix entry value.
             data (bytes): the grbl code to parse
             elements (class): context for elements
             options (disctionary, optional): A dictionary with settings. Defaults to None.
@@ -456,9 +455,12 @@ class DriverToPath:
                 if hasattr(plotter, opt["attr"]):
                     setattr(plotter, opt["attr"], getattr(self, opt["attr"]))
 
-            emulator_class = elements.lookup(f"emulator/{emulator}")
-            emulator_object = emulator_class(plotter, elements.device.scene_to_show_matrix())
-            emulator_object.write(data)
+            spooler_job = elements.lookup(f"spoolerjob/{blob_type}")
+            job_object = spooler_job(plotter, elements.device.scene_to_show_matrix())
+            job_object.write_blob(data)
+            while not job_object.execute():
+                # Still more to execute.
+                pass
 
             op_nodes = {}
             color_index = 0

@@ -5,6 +5,7 @@ Registers the required files to run the GRBL device.
 """
 from meerk40t.grbl.control import GRBLControl
 from meerk40t.grbl.device import GRBLDevice, GRBLDriver
+from meerk40t.grbl.gcodejob import GcodeJob
 from meerk40t.grbl.interpreter import GRBLInterpreter
 from meerk40t.grbl.emulator import GRBLEmulator
 from meerk40t.grbl.loader import GCodeLoader
@@ -27,6 +28,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
+        kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)
         kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)

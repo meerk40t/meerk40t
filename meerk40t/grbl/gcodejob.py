@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import re
+import re
 
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.waitcut import WaitCut
@@ -42,9 +42,8 @@ def _tokenize_code(code_line):
 
 
 class GcodeJob:
-    def __init__(self, label, driver=None, priority=0, channel=None, units_to_device_matrix=None):
+    def __init__(self, driver=None, units_to_device_matrix=None, priority=0, channel=None):
         self.units_to_device_matrix = units_to_device_matrix
-        self.label = label
         self._driver = driver
         self.channel = channel
         self.reply = None
@@ -59,14 +58,8 @@ class GcodeJob:
         self._stopped = True
         self._estimate = 0
 
-        # G94 feedrate default, mm mode
-        self.g94_feedrate()
-
         # Initially assume mm mode. G21 mm DEFAULT
         self.scale = UNITS_PER_MM
-
-        # G90 default.
-        self.relative = False
 
         self.compensation = False
         self.feed_convert = None
@@ -83,10 +76,16 @@ class GcodeJob:
         self.y = 0
         self.z = 0
 
-        self.lock = threading.Lock
+        self.lock = threading.Lock()
+
+        # G90 default.
+        self.relative = False
+
+        # G94 feedrate default, mm mode
+        self.g94_feedrate()
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.label}"
+        return f"{self.__class__.__name__}({len(self.buffer)} lines)"
 
     @property
     def status(self):
@@ -112,6 +111,9 @@ class GcodeJob:
     def write_all(self, lines):
         with self.lock:
             self.buffer.extend(lines)
+
+    def write_blob(self, data):
+        self.write_all([r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()])
 
     def execute(self, driver=None):
         """

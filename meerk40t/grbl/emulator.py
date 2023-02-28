@@ -134,7 +134,6 @@ class GRBLEmulator:
 
         self._buffer = list()
         self.job = GcodeJob(
-            "grbl-emulator",
             driver=driver,
             priority=0,
             channel=self.channel,
