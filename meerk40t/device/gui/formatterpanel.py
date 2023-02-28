@@ -96,7 +96,7 @@ class FormatterPanel(wx.Panel):
             lbl = node.replace(" ", "_")
             default = self.context.elements.lookup(f"format/{node}")
             if default is None:
-                default == ""
+                default = ""
             self.context.setting(bool, f"formatter_{lbl}_active", False)
             self.context.setting(str, f"formatter_{lbl}", default)
             # We have a pair of a checkbox and a textinput
