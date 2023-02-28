@@ -1922,7 +1922,6 @@ def init_commands(kernel):
         align_bounds = None
         align_x = align_x.lower()
         align_y = align_y.lower()
-
         if align_x not in ("min", "max", "center", "none"):
             channel(_("Invalid alignment parameter for x"))
             return
@@ -1942,9 +1941,12 @@ def init_commands(kernel):
             elements.sort(key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of first element, delta was: {delta:.2f}")
+                # print (f"Time 1: {elements[0].type} - {elements[0]._emphasized_time}, Time 2: {elements[-1].type} - {elements[-1]._emphasized_time}")
+                # elements.pop(0)
         elif mode == "last":
             if len(elements) < 2:
                 channel(_("No sense in aligning an element to itself"))
@@ -1952,9 +1954,12 @@ def init_commands(kernel):
             elements.sort(reverse=True, key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            # print(f"Mode: {mode}, type={elements[0].type}")
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of last element, delta was: {delta:.2f}")
+                # elements.pop(0)
         elif mode == "bed":
             align_bounds = bounds
         elif mode == "ref":
@@ -2172,43 +2177,6 @@ def init_commands(kernel):
             return
         if data is None:
             data = list(self.elems(emphasized=True))
-        # Element conversion.
-        # We need to establish, if for a given node within a group
-        # all it's siblings are selected as well, if that's the case
-        # then use the parent instead - unless there are no other elements
-        # selected ie all selected belong to the same group...
-
-        # Shortcut: group? Then we don't need all of this...
-        if "group" in remainder:
-            d = data
-        else:
-            d = list()
-            elem_branch = self.elem_branch
-            for node in data:
-                snode = node
-                if snode.parent and snode.parent is not elem_branch:
-                    # I need all other siblings
-                    singular = False
-                    for n in list(node.parent.children):
-                        if n not in data:
-                            singular = True
-                            break
-                    if not singular:
-                        while (
-                            snode.parent
-                            and snode.parent is not elem_branch
-                            and snode.parent.type != "file"
-                        ):
-                            snode = snode.parent
-                if snode is not None and snode not in d:
-                    d.append(snode)
-            if len(d) == 1 and d[0].type == "group":
-                # This is just on single group - expand...
-                data = list(d[0].flat(emphasized=True, types=elem_nodes))
-                for n in data:
-                    n._emphasized_time = d[0]._emphasized_time
-            else:
-                data = d
         return "align", (
             self._align_mode,
             self._align_group,
