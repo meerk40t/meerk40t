@@ -83,8 +83,8 @@ lookup = {
 
 
 class GRBLEmulator:
-    def __init__(self, driver=None, units_to_device_matrix=None):
-        self.driver = driver
+    def __init__(self, device=None, units_to_device_matrix=None):
+        self.device = device
         self.units_to_device_matrix = units_to_device_matrix
         self.settings = {
             "step_pulse_microseconds": 10,  # step pulse microseconds
@@ -134,7 +134,7 @@ class GRBLEmulator:
 
         self._buffer = list()
         self.job = GcodeJob(
-            driver=driver,
+            driver=device.driver,
             priority=0,
             channel=self.channel,
             units_to_device_matrix=units_to_device_matrix,
@@ -154,22 +154,19 @@ class GRBLEmulator:
     def status_update(self):
         # TODO: This should reference only the driver.status.
         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-        pos, state, minor = self.driver.status()
+        pos, state, minor = self.device.driver.status()
         x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
         x /= self.job.scale
         y /= self.job.scale
         z = 0.0
-        self.x = x
-        self.y = y
-
         if state == "busy":
             state = "Run"
         elif state == "hold":
             state = "Hold"
         else:
             state = "Idle"
-        f = self.job.feed_invert(self.job.speed)
-        s = self.job.power
+        f = self.device.driver.speed
+        s = self.device.driver.power
         return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
 
     def write(self, data):
@@ -189,12 +186,12 @@ class GRBLEmulator:
                     self.reply(self.status_update())
             elif c == ord("~"):
                 try:
-                    self.driver.resume()
+                    self.device.driver.resume()
                 except AttributeError:
                     pass
             elif c == ord("!"):
                 try:
-                    self.driver.pause()
+                    self.device.driver.pause()
                 except AttributeError:
                     pass
             elif c in (ord("\r"), ord("\n")):
@@ -204,7 +201,7 @@ class GRBLEmulator:
                     self._grbl_specific = False
                     self.reply_code(self._grbl_special(line))
                 else:
-                    self.driver.spooler.job(self.job)
+                    self.device.spooler.send(self.job, prevent_duplicate=True)
                     self.job.reply = self.reply
                     self.job.write(line)
                 self._buffer.clear()
@@ -214,7 +211,7 @@ class GRBLEmulator:
                     del self._buffer[-1]
             elif c == 0x18:
                 try:
-                    self.driver.reset()
+                    self.device.driver.reset()
                 except AttributeError:
                     pass
             elif c > 0x80:
@@ -223,85 +220,85 @@ class GRBLEmulator:
                     pass
                 elif c == 0x85:
                     try:
-                        self.driver.jog_abort()
+                        self.device.driver.jog_abort()
                     except AttributeError:
                         pass
                 elif c == 0x90:
                     self.speed_scale = 1.0
                     try:
-                        self.driver.set("speed_factor", self.speed_scale)
+                        self.device.driver.set("speed_factor", self.speed_scale)
                     except AttributeError:
                         pass
                 elif c == 0x91:
                     self.speed_scale *= 1.1
                     try:
-                        self.driver.set("speed_factor", self.speed_scale)
+                        self.device.driver.set("speed_factor", self.speed_scale)
                     except AttributeError:
                         pass
                 elif c == 0x92:
                     self.speed_scale *= 0.9
                     try:
-                        self.driver.set("speed_factor", self.speed_scale)
+                        self.device.driver.set("speed_factor", self.speed_scale)
                     except AttributeError:
                         pass
                 elif c == 0x93:
                     self.speed_scale *= 1.01
                     try:
-                        self.driver.set("speed_factor", self.speed_scale)
+                        self.device.driver.set("speed_factor", self.speed_scale)
                     except AttributeError:
                         pass
                 elif c == 0x94:
                     self.speed_scale *= 0.99
                     try:
-                        self.driver.set("speed_factor", self.speed_scale)
+                        self.device.driver.set("speed_factor", self.speed_scale)
                     except AttributeError:
                         pass
                 elif c == 0x95:
                     self.rapid_scale = 1.0
                     try:
-                        self.driver.set("rapid_factor", self.rapid_scale)
+                        self.device.driver.set("rapid_factor", self.rapid_scale)
                     except AttributeError:
                         pass
                 elif c == 0x96:
                     self.rapid_scale = 0.5
                     try:
-                        self.driver.set("rapid_factor", self.rapid_scale)
+                        self.device.driver.set("rapid_factor", self.rapid_scale)
                     except AttributeError:
                         pass
                 elif c == 0x97:
                     self.rapid_scale = 0.25
                     try:
-                        self.driver.set("rapid_factor", self.rapid_scale)
+                        self.device.driver.set("rapid_factor", self.rapid_scale)
                     except AttributeError:
                         pass
                 elif c == 0x99:
                     self.power_scale = 1.0
                     try:
-                        self.driver.set("power_factor", self.power_scale)
+                        self.device.driver.set("power_factor", self.power_scale)
                     except AttributeError:
                         pass
                 elif c == 0x9A:
                     self.power_scale *= 1.1
                     try:
-                        self.driver.set("power_factor", self.power_scale)
+                        self.device.driver.set("power_factor", self.power_scale)
                     except AttributeError:
                         pass
                 elif c == 0x9B:
                     self.power_scale *= 0.9
                     try:
-                        self.driver.set("power_factor", self.power_scale)
+                        self.device.driver.set("power_factor", self.power_scale)
                     except AttributeError:
                         pass
                 elif c == 0x9C:
                     self.power_scale *= 1.01
                     try:
-                        self.driver.set("power_factor", self.power_scale)
+                        self.device.driver.set("power_factor", self.power_scale)
                     except AttributeError:
                         pass
                 elif c == 0x9D:
                     self.power_scale *= 0.99
                     try:
-                        self.driver.set("power_factor", self.power_scale)
+                        self.device.driver.set("power_factor", self.power_scale)
                     except AttributeError:
                         pass
                 elif c == 0x9E:
@@ -370,11 +367,11 @@ class GRBLEmulator:
         elif data == "$H":
             if self.settings["homing_cycle_enable"]:
                 try:
-                    self.driver.physical_home()
+                    self.device.driver.physical_home()
                 except AttributeError:
                     pass
                 try:
-                    self.driver.move_abs(0, 0)
+                    self.device.driver.move_abs(0, 0)
                 except AttributeError:
                     pass
                 self.x = 0
