@@ -6,7 +6,7 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
+from meerk40t.newly.gui.rasterspeedchart import RasterSpeedChart
 
 _ = wx.GetTranslation
 
@@ -45,6 +45,10 @@ class NewlyConfiguration(MWindow):
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
+        newpanel = RasterSpeedChart(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Raster Chart"))
+
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Warning"))

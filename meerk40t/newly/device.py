@@ -190,7 +190,9 @@ class NewlyDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Max Power"),
                 "trailer": "%",
-                "tip": _("Maximum laser power, all other power will be a scale of this amount"),
+                "tip": _(
+                    "Maximum laser power, all other power will be a scale of this amount"
+                ),
                 "section": "_10_Parameters",
                 "subsection": "_40_Power",
             },
@@ -210,13 +212,13 @@ class NewlyDevice(Service, ViewPort):
                 "default": 2,
                 "type": int,
                 "style": "combo",
-                "choices": [
-                    2,
-                ],
+                "choices": [2, 4],
                 "conditional": (self, "pwm_enabled"),
                 "label": _("PWM Frequency"),
                 "trailer": "khz",
-                "tip": _("Set the frequency of the PWM, how often the pulse width cycles"),
+                "tip": _(
+                    "Set the frequency of the PWM, how often the pulse width cycles"
+                ),
                 "section": "_10_Parameters",
                 "subsection": "_40_Power",
             },
