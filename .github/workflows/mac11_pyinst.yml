@@ -103,7 +103,7 @@ jobs:
         echo "mkversion=$(echo $MKVERSION)" >> $GITHUB_OUTPUT
         ## python3.8 setup_mac.py py2app --dylib-excludes /usr/local/lib/libssl.1.1.dylib,/usr/local/lib/libcrypto.1.1.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/libfreetype.6.dylib,/Users/runner/hostedtoolcache/Python/3.9.7/x64/lib/python3.9/site-packages/PIL/.dylibs/liblzma.5.dylib --frameworks libusb-1.0.dylib
         mv meerk40t.py mk40t.py
-        python3.8 -m PyInstaller --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
+        python3.8 -m PyInstaller --hidden-import wx._adv --hidden-import wx._xml --hidden-import meerk40t --windowed --noconfirm -i meerk40t.icns --add-data 'locale/:locale/' --name MeerK40t mk40t.py
         mv mk40t.py meerk40t.py
         rm -rf dist/MeerK40t
         sed -i "" "s|$MKVERSION|0.0.0|g" setup_mac.py
