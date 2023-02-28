@@ -1011,6 +1011,20 @@ def init_tree(kernel):
             d2p.parse(node.data_type, node.data, self)
         return True
 
+    @tree_conditional_try(
+        lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
+    )
+    @tree_operation(
+        _("Execute Blob"),
+        node_type="blob",
+        help=_("Run the given blob on the current device"),
+    )
+    def blob_execute(node, **kwargs):
+        spooler_job = self.lookup(f"spoolerjob/{node.data_type}")
+        job_object = spooler_job(self.device.driver, self.device.scene_to_show_matrix())
+        job_object.write_blob(node.data)
+        self.device.spooler.send(job_object)
+
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
     @tree_operation(
         _("Convert to Cutcode"),
