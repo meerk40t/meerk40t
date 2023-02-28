@@ -617,15 +617,20 @@ class Spooler:
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def send(self, job):
+    def send(self, job, prevent_duplicate=False):
         """
         Send a job to the spooler queue
 
         @param job: job to send to the spooler.
+        @param prevent_duplicate: prevents the same job from being added again.
         @return:
         """
         job.uid = self.context.logging.uid("job")
         with self._lock:
+            if prevent_duplicate:
+                for q in self._queue:
+                    if q is job:
+                        return
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
