@@ -131,9 +131,9 @@ jobs:
         plutil -replace CFBundleSupportedPlatforms -xml "<array><string>MacOSX</string></array>" dist/MeerK40t.app/Contents/Info.plist
         
         ## Fix the numpy 32 bit issue inside the app bundle - or install numpy from source.
-        lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
-        rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
-        mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        ## lipo dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib -remove i386 -output dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib
+        ## rm dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
+        ## mv dist/MeerK40t.app/Contents/MacOS/libgcc_s_new.1.dylib dist/MeerK40t.app/Contents/MacOS/libgcc_s.1.dylib
         
         echo "Codesign for GITHUB"
         codesign -s $SIG --force --verbose=4 --timestamp --entitlements entitlements.plist -i org.tatarize.MeerK40t -o runtime --arch x86_64 dist/MeerK40t.app/Contents/MacOS/*.zip
