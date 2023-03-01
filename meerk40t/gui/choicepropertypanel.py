@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, StaticBoxSizer, TextCtrl
+from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, StaticBoxSizer, TextCtrl, EditableListCtrl
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
@@ -835,7 +835,61 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(wx.Size(ctrl_width, -1))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == list and data_style == "chart":
+                chart = EditableListCtrl(
+                    self,
+                    wx.ID_ANY,
+                    style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+                )
+                columns = c.get("columns", [])
+                for column in columns:
+                    chart.AppendColumn(
+                        column.get("label", ""),
+                        format=wx.LIST_FORMAT_LEFT,
+                        width=column.get("width", 150),
+                    )
+                for dataline in data:
+                    row_id = chart.InsertItem(
+                        chart.GetItemCount(), dataline.get("speed", 0)
+                    )
+                    for column_id, column in enumerate(columns):
+                        c_attr = column.get("attr")
+                        chart.SetItem(row_id, column_id, str(dataline.get(c_attr, "")))
 
+                def on_chart_start(columns, param, ctrl, obj):
+                    def chart_start(event=None):
+                        for column in columns:
+                            if column.get("editable", False):
+                                event.Allow()
+                            else:
+                                event.Veto()
+
+                    return chart_start
+
+                chart.Bind(
+                    wx.EVT_LIST_BEGIN_LABEL_EDIT,
+                    on_chart_start(columns, attr, chart, obj),
+                )
+
+                def on_chart_stop(columns, param, ctrl, obj):
+                    def chart_stop(event=None):
+                        row_id = event.GetIndex()  # Get the current row
+                        col_id = event.GetColumn()  # Get the current column
+                        new_data = event.GetLabel()  # Get the changed data
+                        ctrl.SetItem(row_id, col_id, new_data)
+                        column = columns[col_id]
+                        c_attr = column.get("attr")
+                        c_type = column.get("type")
+                        values = getattr(obj, attr)
+                        values[row_id][c_attr] = c_type(new_data)
+                        self.context.signal(param, values, row_id, attr)
+
+                    return chart_stop
+
+                chart.Bind(
+                    wx.EVT_LIST_END_LABEL_EDIT, on_chart_stop(columns, attr, chart, obj)
+                )
+                sizer_main.Add(chart, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 if label != "":
