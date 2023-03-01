@@ -60,6 +60,35 @@ def plugin(service, lifecycle):
                 "icon": icons8_rectangular_50,
                 "tip": _("Draw a bounding rectangle of the object saved in the machine"),
                 "action": lambda v: service("draw_frame 1\n"),
+                "identifier": "draw_frame_id",
+                "priority": 3,
+                "multi": [
+                    {
+                        "identifier": "drawframe1",
+                        "label": _("Draw Frame {index}").format(index=1),
+                        "action": lambda v: service("draw_frame 1\n"),
+                    },
+                    {
+                        "identifier": "drawframe2",
+                        "label": _("Draw Frame {index}").format(index=2),
+                        "action": lambda v: service("draw_frame 2\n"),
+                    },
+                    {
+                        "identifier": "drawframe3",
+                        "label": _("Draw Frame {index}").format(index=3),
+                        "action": lambda v: service("draw_frame 3\n"),
+                    },
+                    {
+                        "identifier": "drawframe4",
+                        "label": _("Draw Frame {index}").format(index=4),
+                        "action": lambda v: service("draw_frame 4\n"),
+                    },
+                    {
+                        "identifier": "drawframe5",
+                        "label": _("Draw Frame {index}").format(index=5),
+                        "action": lambda v: service("draw_frame 5\n"),
+                    },
+                ],
             },
         )
         service.register(
@@ -69,6 +98,34 @@ def plugin(service, lifecycle):
                 "icon": icons8_move_50,
                 "tip": _("Move the bounding rectangle of the object saved in the machine"),
                 "action": lambda v: service("move_frame 1\n"),
+                "identifier": "move_frame_id",
+                "multi": [
+                    {
+                        "identifier": "moveframe1",
+                        "label": _("Move Frame {index}").format(index=1),
+                        "action": lambda v: service("move_frame 1\n"),
+                    },
+                    {
+                        "identifier": "moveframe2",
+                        "label": _("Move Frame {index}").format(index=2),
+                        "action": lambda v: service("move_frame 2\n"),
+                    },
+                    {
+                        "identifier": "drawframe3",
+                        "label": _("Move Frame {index}").format(index=3),
+                        "action": lambda v: service("move_frame 3\n"),
+                    },
+                    {
+                        "identifier": "moveframe4",
+                        "label": _("Move Frame {index}").format(index=4),
+                        "action": lambda v: service("move_frame 4\n"),
+                    },
+                    {
+                        "identifier": "moveframe5",
+                        "label": _("Move Frame {index}").format(index=5),
+                        "action": lambda v: service("move_frame 5\n"),
+                    },
+                ],
             },
         )
         service.register(
@@ -78,6 +135,34 @@ def plugin(service, lifecycle):
                 "icon": icons8_play_50,
                 "tip": _("Replay the file saved in the machine"),
                 "action": lambda v: service("replay 1\n"),
+                "identifier": "replay_id",
+                "multi": [
+                    {
+                        "identifier": "replay1",
+                        "label": _("Replay {index}").format(index=1),
+                        "action": lambda v: service("replay 1\n"),
+                    },
+                    {
+                        "identifier": "replay2",
+                        "label": _("Replay {index}").format(index=2),
+                        "action": lambda v: service("replay 2\n"),
+                    },
+                    {
+                        "identifier": "replay3",
+                        "label": _("Replay {index}").format(index=3),
+                        "action": lambda v: service("replay 3\n"),
+                    },
+                    {
+                        "identifier": "replay4",
+                        "label": _("Replay {index}").format(index=4),
+                        "action": lambda v: service("replay 4\n"),
+                    },
+                    {
+                        "identifier": "replay5",
+                        "label": _("Replay {index}").format(index=5),
+                        "action": lambda v: service("replay 5\n"),
+                    },
+                ],
             },
         )
         service.add_service_delegate(NewlyGui(service))
