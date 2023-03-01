@@ -22,6 +22,82 @@ class NewlyDevice(Service, ViewPort):
         _ = kernel.translation
         choices = [
             {
+                "attr": "speedchart",
+                "object": self,
+                "default": [
+                    {
+                        "speed": 100,
+                        "acceleration_length": 8,
+                        "backlash": 0,
+                        "corner_speed": 20,
+                    },
+                    {
+                        "speed": 200,
+                        "acceleration_length": 10,
+                        "backlash": 0,
+                        "corner_speed": 20,
+                    },
+                    {
+                        "speed": 300,
+                        "acceleration_length": 14,
+                        "backlash": 0,
+                        "corner_speed": 20,
+                    },
+                    {
+                        "speed": 400,
+                        "acceleration_length": 16,
+                        "backlash": 0,
+                        "corner_speed": 20,
+                    },
+                    {
+                        "speed": 500,
+                        "acceleration_length": 18,
+                        "backlash": 0,
+                        "corner_speed": 20,
+                    },
+                ],
+                "type": list,
+                "columns": [
+                    {
+                        "attr": "speed",
+                        "type": int,
+                        "label": _("Speed <="),
+                        "width": 133,
+                        "editable": True,
+                    },
+                    {
+                        "attr": "acceleration_length",
+                        "type": int,
+                        "label": _("Acceleration Length"),
+                        "width": 244,
+                        "editable": True,
+                    },
+                    {
+                        "attr": "backlash",
+                        "type": int,
+                        "label": _("Backlash"),
+                        "width": 142,
+                        "editable": True,
+                    },
+                    {
+                        "attr": "corner_speed",
+                        "type": 120,
+                        "label": _("Corner Speed"),
+                        "width": 133,
+                        "editable": True,
+                    },
+                ],
+                "style": "chart",
+                "primary": "speed",
+                "label": _("Speed Chart"),
+                "tip": _("Raster speed to chart."),
+                "section": "_00_General",
+                "priority": "10",
+            },
+        ]
+        self.register_choices("newly-speedchart", choices)
+        choices = [
+            {
                 "attr": "label",
                 "object": self,
                 "default": "newly-device",
