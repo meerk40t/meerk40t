@@ -69,7 +69,7 @@ class NewlyDevice(Service, ViewPort):
                         "attr": "acceleration_length",
                         "type": int,
                         "label": _("Acceleration Length"),
-                        "width": 244,
+                        "width": 144,
                         "editable": True,
                     },
                     {
@@ -91,8 +91,6 @@ class NewlyDevice(Service, ViewPort):
                 "primary": "speed",
                 "label": _("Speed Chart"),
                 "tip": _("Raster speed to chart."),
-                "section": "_00_General",
-                "priority": "10",
             },
         ]
         self.register_choices("newly-speedchart", choices)
