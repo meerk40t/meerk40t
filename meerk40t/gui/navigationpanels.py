@@ -972,7 +972,6 @@ class MovePanel(wx.Panel):
             btn = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(25, 25))
             icon = EmptyIcon(size=20, msg=str(idx + 1), ptsize=12, color=wx.LIGHT_GREY)
             btn.SetBitmap(icon.GetBitmap(resize=20))
-            btn.SetToolTip(_("Left click to go to saved position\nRight click to save coordinates"))
             self.small_buttons.append(btn)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
@@ -989,6 +988,9 @@ class MovePanel(wx.Panel):
             else:
                 y = Length(self.context.elements.length_y("0%"))
             self.context.root.setting(str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}")
+            label = _("Left click to go to saved position\nRight click to save coordinates")
+            label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
+            btn.SetToolTip(label)
 
         self.label_pos = wx.StaticText(self, wx.ID_ANY, "")
         self.__set_properties()
@@ -1003,10 +1005,15 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
+        self.button_navigate_move_to.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_button_navigate_move_to_right
+        )
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
-        self.button_navigate_move_to.SetToolTip(_("Move to the set position"))
+        label = _("Move to the set position")
+        label += "\n" + _("Right click to activate mouse-click mode to set position")
+        self.button_navigate_move_to.SetToolTip(label)
         self.button_navigate_move_to.SetSize(self.button_navigate_move_to.GetBestSize())
         self.text_position_x.SetToolTip(_("Set X value for the Move To"))
         self.text_position_y.SetToolTip(_("Set Y value for the Move To"))
@@ -1065,14 +1072,23 @@ class MovePanel(wx.Panel):
 
     def on_right(self, index):
         def handler(event):
+            btn = event.GetEventObject()
             try:
                 xlen = Length(self.text_position_x.GetValue())
                 ylen = Length(self.text_position_y.GetValue())
                 setattr(self.context.root, f"MovePos{index}", f"{xlen.length_mm}|{ylen.length_mm}")
+                label = _("Left click to go to saved position\nRight click to save coordinates")
+                label += "\n" + _("Current: ") + f"{xlen.length_mm}, {ylen.length_mm}"
+                btn.SetToolTip(label)
             except ValueError:
                 pass
 
         return handler
+
+    def on_button_navigate_move_to_right(
+        self, event=None
+    ):
+        self.context("tool relocate\n")
 
     def on_button_navigate_move_to(
         self, event=None

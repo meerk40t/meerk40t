@@ -199,27 +199,25 @@ class GRBLEmulator:
         if self.reply:
             self.reply(data)
 
-    @property
-    def current(self):
-        return self.x, self.y
-
-    @property
-    def state(self):
-        return 0
-
     def status_update(self):
         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-        if self.state == 0:
-            state = "Idle"
-        else:
-            state = "Busy"
-        x, y = self.current
+        pos, state, minor = self.driver.status()
+        x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
         x /= self.scale
         y /= self.scale
         z = 0.0
+        self.x = x
+        self.y = y
+
+        if state == "busy":
+            state = "Run"
+        elif state == "hold":
+            state = "Hold"
+        else:
+            state = "Idle"
         f = self.feed_invert(self.settings.get("speed", 0))
         s = self.settings.get("power", 0)
-        return f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n"
+        return f"<{state}|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
 
     def write(self, data):
         """
@@ -658,7 +656,10 @@ class GRBLEmulator:
                 elif v == 49:
                     # Cancel tool offset.
                     pass  # Dynamic tool length offsets
-                elif 53 <= v <= 59:
+                elif v == 53:
+                    # Absolute movement non-modal command.
+                    pass
+                elif 54 <= v <= 59:
                     # Coord System Select
                     pass  # Work Coordinate Systems
                 elif v == 61:

@@ -2102,12 +2102,12 @@ def init_tree(kernel):
                 if hasattr(item, "lock"):
                     item.lock = False
                 drop_node.drop(item)
-
-    @tree_conditional(lambda node: not node.lock)
-    @tree_conditional_try(lambda node: not node.lock)
-    @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
-    def image_actualize_pixels(node, **kwargs):
-        self("image resample\n")
+    #
+    # @tree_conditional(lambda node: not node.lock)
+    # @tree_conditional_try(lambda node: not node.lock)
+    # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
+    # def image_actualize_pixels(node, **kwargs):
+    #     self("image resample\n")
 
     @tree_conditional(lambda node: not node.lock)
     @tree_submenu(_("Z-depth divide"))

@@ -1797,6 +1797,9 @@ class ShadowTree:
         emphasized = list(selected)
         for i in range(len(emphasized)):
             node = emphasized[i]
+            if node is None or node.type is None:
+                # Rare issue seen building the tree during materials test and the node type didn't exist.
+                return
             if node.type == "reference":
                 emphasized[i] = node.node
             elif node.type.startswith("op"):

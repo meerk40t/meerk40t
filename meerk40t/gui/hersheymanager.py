@@ -827,7 +827,8 @@ class HersheyFontManager(MWindow):
 
     @staticmethod
     def submenu():
-        return ("", "Font-Manager")
+        # suppress in tool-menu
+        return ("", "Font-Manager", True)
 
 
 def register_hershey_stuff(kernel):
