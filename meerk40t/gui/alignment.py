@@ -1256,8 +1256,8 @@ class ArrangementPanel(wx.Panel):
 
         self.Layout()
         self.btn_arrange.SetToolTip(_("Rearrange all selected elements"))
-        self.rbox_align_x.SetToolTip(_(""))
-        self.rbox_align_y.SetToolTip(_(""))
+        # self.rbox_align_x.SetToolTip(_(""))
+        # self.rbox_align_y.SetToolTip(_(""))
         self.check_same_x.SetToolTip(
             _(
                 "Set if all columns need to have the same size (ie maximum width over all columns)"
@@ -1268,10 +1268,10 @@ class ArrangementPanel(wx.Panel):
                 "Set if all rows need to have the same size (ie maximum height over all row)"
             )
         )
-        self.rbox_relation.SetToolTip(_(""))
-        self.rbox_selection.SetToolTip(_(""))
-        self.arrange_x.SetToolTip(_(""))
-        self.arrange_y.SetToolTip(_(""))
+        # self.rbox_relation.SetToolTip(_(""))
+        # self.rbox_selection.SetToolTip(_(""))
+        # self.arrange_x.SetToolTip(_(""))
+        # self.arrange_y.SetToolTip(_(""))
         self.txt_gap_x.SetToolTip(_("Set the distance between columns"))
         self.txt_gap_y.SetToolTip(_("Set the distance between rows"))
 
