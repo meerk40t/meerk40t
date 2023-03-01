@@ -164,22 +164,25 @@ class NewlyController:
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
 
-        speed = self._speed
+        speed_at_raster_change = self._speed
+        if speed_at_raster_change is None:
+            speed_at_raster_change = self.service.default_raster_speed
         chart = self.service.speedchart
-        closest_value = float("inf")
-        closest_item = None
+        smallest_difference = float("inf")
+        closest_index = None
         for i, c in enumerate(chart):
-            current_item = c.get("speed", 0)
-            if current_item > speed and closest_value > (current_item - self._speed):
-                closest_value = current_item - self._speed
-                closest_item = i
-        if closest_item is not None:
-            settings = chart[closest_item]
+            chart_speed = c.get("speed", 0)
+            delta_speed = chart_speed - speed_at_raster_change
+            if chart_speed > speed_at_raster_change and smallest_difference > delta_speed:
+                smallest_difference = delta_speed
+                closest_index = i
+        if closest_index is not None:
+            settings = chart[closest_index]
         else:
             settings = chart[-1]
         self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
         self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
-        self.command_buffer.append(f"VS{int(round(speed / 10))}")
+        self.command_buffer.append(f"VS{int(round(speed_at_raster_change / 10))}")
         self.command_buffer.append(f"PR;PR;PR;PR")
 
         # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
