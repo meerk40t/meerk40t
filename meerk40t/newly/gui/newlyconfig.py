@@ -3,11 +3,9 @@ import wx
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
-from meerk40t.gui.choicechart import ChoiceChart
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.newly.gui.rasterspeedchart import RasterSpeedChart
 
 _ = wx.GetTranslation
 
@@ -46,7 +44,7 @@ class NewlyConfiguration(MWindow):
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
-        newpanel = ChoiceChart(self, id=wx.ID_ANY, context=self.context, choices="newly-speedchart")
+        newpanel = ChoicePropertyPanel(self, id=wx.ID_ANY, context=self.context, choices="newly-speedchart")
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
 
