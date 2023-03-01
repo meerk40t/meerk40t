@@ -44,7 +44,9 @@ class NewlyConfiguration(MWindow):
                 )
                 self.panels.append(newpanel)
                 self.notebook_main.AddPage(newpanel, pagetitle)
-        newpanel = ChoicePropertyPanel(self, id=wx.ID_ANY, context=self.context, choices="newly-speedchart")
+        newpanel = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context, choices="newly-speedchart"
+        )
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Raster Chart"))
 

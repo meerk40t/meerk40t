@@ -229,11 +229,7 @@ class NewlyDriver:
                             # We are using traditional power-scaling
                             settings = self.plot_planner.settings
                             percent_power = (
-                                float(
-                                    settings.get(
-                                        "power", self.service.default_power
-                                    )
-                                )
+                                float(settings.get("power", self.service.default_power))
                                 / 10.0
                             )
                             con.power(percent_power * on)
@@ -453,4 +449,3 @@ class NewlyDriver:
         @return:
         """
         self.connection.dwell(time_in_ms)
-

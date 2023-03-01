@@ -315,9 +315,7 @@ class NewlyDevice(Service, ViewPort):
                 "default": 100,
                 "type": int,
                 "label": _("Cut DC"),
-                "tip": _(
-                    "Set the current for the cut movements."
-                ),
+                "tip": _("Set the current for the cut movements."),
                 "section": "_10_Parameters",
                 "subsection": "_40_Current",
             },
@@ -327,9 +325,7 @@ class NewlyDevice(Service, ViewPort):
                 "default": 100,
                 "type": int,
                 "label": _("Move DC"),
-                "tip": _(
-                    "Set the current for the regular movements."
-                ),
+                "tip": _("Set the current for the regular movements."),
                 "section": "_10_Parameters",
                 "subsection": "_40_Current",
             },

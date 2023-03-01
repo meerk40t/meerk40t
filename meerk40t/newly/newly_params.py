@@ -5,9 +5,7 @@ from the core parameters in the parameters it uses.
 
 from typing import Dict
 
-FLOAT_PARAMETERS = (
-    "acceleration",
-)
+FLOAT_PARAMETERS = ("acceleration",)
 INT_PARAMETERS = tuple()
 
 BOOL_PARAMETERS = tuple()

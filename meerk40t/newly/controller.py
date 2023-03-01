@@ -132,9 +132,7 @@ class NewlyController:
                     self.set_disable_connect(True)
                     self.usb_log("Could not connect to the controller.")
                     self.usb_log("Automatic connections disabled.")
-                    raise ConnectionRefusedError(
-                        "Could not connect to the controller."
-                    )
+                    raise ConnectionRefusedError("Could not connect to the controller.")
                 time.sleep(0.3)
                 continue
         self._is_opening = False
@@ -214,7 +212,9 @@ class NewlyController:
         self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
         self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
 
-        power = int(round((self._power / 1000.0) * self.service.max_power * 255.0/100.0))
+        power = int(
+            round((self._power / 1000.0) * self.service.max_power * 255.0 / 100.0)
+        )
         self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
         self.command_buffer.append(f"VS{int(round(speed))}")
@@ -245,7 +245,6 @@ class NewlyController:
         self._speed = settings.get("speed")
         if old != self._speed:
             self.rapid_mode()
-
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -290,7 +289,9 @@ class NewlyController:
         command_buffer.append("SP2")
         command_buffer.append("SP2")
         command_buffer.append(f"VQ{int(round(self.service.default_corner_speed))}")
-        command_buffer.append(f"VJ{int(round(self.service.default_acceleration_distance))}")
+        command_buffer.append(
+            f"VJ{int(round(self.service.default_acceleration_distance))}"
+        )
         command_buffer.append(f"VS{int(round(self.service.moving_speed / 10.0))}")
         if relative:
             dx = int(round(x - self._last_x))

@@ -1,4 +1,3 @@
-
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/newly"
@@ -13,7 +12,7 @@ def plugin(service, lifecycle):
             icons8_connected_50,
             icons8_move_50,
             icons8_rectangular_50,
-            icons8_play_50
+            icons8_play_50,
         )
         from .newlycontroller import NewlyController
         from .newlyconfig import NewlyConfiguration
@@ -58,7 +57,9 @@ def plugin(service, lifecycle):
             {
                 "label": _("Draw Frame"),
                 "icon": icons8_rectangular_50,
-                "tip": _("Draw a bounding rectangle of the object saved in the machine"),
+                "tip": _(
+                    "Draw a bounding rectangle of the object saved in the machine"
+                ),
                 "action": lambda v: service("draw_frame 1\n"),
                 "identifier": "draw_frame_id",
                 "priority": 3,
@@ -96,7 +97,9 @@ def plugin(service, lifecycle):
             {
                 "label": _("Move Frame"),
                 "icon": icons8_move_50,
-                "tip": _("Move the bounding rectangle of the object saved in the machine"),
+                "tip": _(
+                    "Move the bounding rectangle of the object saved in the machine"
+                ),
                 "action": lambda v: service("move_frame 1\n"),
                 "identifier": "move_frame_id",
                 "multi": [
