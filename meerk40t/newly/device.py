@@ -298,6 +298,30 @@ class NewlyDevice(Service, ViewPort):
                 "section": "_10_Parameters",
                 "subsection": "_40_Power",
             },
+            {
+                "attr": "cut_dc",
+                "object": self,
+                "default": 100,
+                "type": int,
+                "label": _("Cut DC"),
+                "tip": _(
+                    "Set the current for the cut movements."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_40_Current",
+            },
+            {
+                "attr": "move_dc",
+                "object": self,
+                "default": 100,
+                "type": int,
+                "label": _("Move DC"),
+                "tip": _(
+                    "Set the current for the regular movements."
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_40_Current",
+            },
         ]
         self.register_choices("newly-specific", choices)
 
