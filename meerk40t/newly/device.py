@@ -353,15 +353,6 @@ class NewlyDevice(Service, ViewPort):
                 "label": _("Raster Speed"),
                 "tip": _("How fast do we raster?"),
             },
-            {
-                "attr": "default_acceleration",
-                "object": self,
-                "default": 24.0,
-                "type": float,
-                "trailer": "acc",
-                "label": _("Acceleration"),
-                "tip": _("Acceleration value"),
-            },
         ]
         self.register_choices("newly-global", choices)
 
