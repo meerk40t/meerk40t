@@ -196,17 +196,20 @@ class NewlyController:
         self.command_buffer.append(f"VK{self.service.move_dc}")
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
-        speed = self._speed
+        speed_at_program_change = self._speed
+        if speed_at_program_change is None:
+            speed_at_program_change = self.service.default_cut_speed
         chart = self.service.speedchart
-        closest_value = float("inf")
-        closest_item = None
+        smallest_difference = float("inf")
+        closest_index = None
         for i, c in enumerate(chart):
-            current_item = c.get("speed", 0)
-            if current_item > speed and closest_value > (current_item - self._speed):
-                closest_value = current_item - self._speed
-                closest_item = i
-        if closest_item is not None:
-            settings = chart[closest_item]
+            chart_speed = c.get("speed", 0)
+            delta_speed = chart_speed - speed_at_program_change
+            if chart_speed > speed_at_program_change and smallest_difference > delta_speed:
+                smallest_difference = delta_speed
+                closest_index = i
+        if closest_index is not None:
+            settings = chart[closest_index]
         else:
             settings = chart[-1]
         self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
@@ -217,7 +220,7 @@ class NewlyController:
         )
         self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
-        self.command_buffer.append(f"VS{int(round(speed))}")
+        self.command_buffer.append(f"VS{int(round(speed_at_program_change))}")
         if relative:
             self._relative = True
             self.command_buffer.append("PR")
