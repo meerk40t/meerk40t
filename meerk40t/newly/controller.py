@@ -8,6 +8,7 @@ from meerk40t.newly.mock_connection import MockConnection
 from meerk40t.newly.usb_connection import USBConnection
 
 DRIVER_STATE_RAPID = 0
+DRIVER_STATE_RASTER = 1
 DRIVER_STATE_PROGRAM = 2
 
 
@@ -153,28 +154,70 @@ class NewlyController:
         self.mode = DRIVER_STATE_RAPID
 
     def raster_mode(self):
-        self.program_mode()
+        if self.mode == DRIVER_STATE_RASTER:
+            return
+        self.mode = DRIVER_STATE_RASTER
+        self.command_buffer.append(f"ZZZFile{self._file_index}")
+        self.command_buffer.append("DW")
+        if self._pwm_frequency is not None:
+            self.command_buffer.append(f"PL{self._pwm_frequency}")
+        self.command_buffer.append(f"VP{self.service.cut_dc}")
+        self.command_buffer.append(f"VK{self.service.move_dc}")
+        self.command_buffer.append("SP2")
+        self.command_buffer.append("SP2")
+
+        speed = self._speed
+        chart = self.service.speedchart
+        closest_value = float("inf")
+        closest_item = None
+        for i, c in enumerate(chart):
+            current_item = c.get("speed", 0)
+            if current_item > speed and closest_value > (current_item - self._speed):
+                closest_value = current_item - self._speed
+                closest_item = i
+        if closest_item is not None:
+            settings = chart[closest_item]
+        else:
+            settings = chart[-1]
+        self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
+        self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
+        self.command_buffer.append(f"VS{int(round(speed / 10))}")
+        self.command_buffer.append(f"PR;PR;PR;PR")
+
+        # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
 
     def program_mode(self, relative=True):
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
-        self.command_buffer.append(f"ZZZFile{self._file_index}")
+        self.command_buffer.append(f"ZZZFile{self.service.file_index}")
         self.command_buffer.append("DW")
         if self._pwm_frequency is not None:
             self.command_buffer.append(f"PL{self._pwm_frequency}")
-        self.command_buffer.append(f"VP{self._unknown_vp}")
-        self.command_buffer.append(f"VK{self._unknown_vk}")
+        self.command_buffer.append(f"VP{self.service.cut_dc}")
+        self.command_buffer.append(f"VK{self.service.move_dc}")
         self.command_buffer.append("SP2")
         self.command_buffer.append("SP2")
-        self.command_buffer.append(f"VQ{int(round(self._speed))}")
-        # self.command_buffer.append(f"VJ{int(round(self._acceleration))}")
-        self.command_buffer.append(f"VJ{24}")
-        self.command_buffer.append(f"VQ{int(round(self._speed))}")
+        speed = self._speed
+        chart = self.service.speedchart
+        closest_value = float("inf")
+        closest_item = None
+        for i, c in enumerate(chart):
+            current_item = c.get("speed", 0)
+            if current_item > speed and closest_value > (current_item - self._speed):
+                closest_value = current_item - self._speed
+                closest_item = i
+        if closest_item is not None:
+            settings = chart[closest_item]
+        else:
+            settings = chart[-1]
+        self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
+        self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
+
         power = int(round((self._power / 1000.0) * self.service.max_power * 255.0/100.0))
         self.command_buffer.append(f"DA{power}")
         self.command_buffer.append("SP0")
-        self.command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
+        self.command_buffer.append(f"VS{int(round(speed))}")
         if relative:
             self._relative = True
             self.command_buffer.append("PR")
@@ -193,30 +236,16 @@ class NewlyController:
         @param settings: The current settings dictionary
         @return:
         """
-        old = self._pwm_frequency
-        self._pwm_frequency = self.service.pwm_frequency if self.service.pwm_enabled else None
-        if old != self._pwm_frequency:
-            self.rapid_mode()
-
         old = self._power
-        self._power = settings.get("power", self.service.default_power)
+        self._power = settings.get("power")
         if old != self._power:
             self.rapid_mode()
 
         old = self._speed
-        self._speed = settings.get("speed", self.service.default_speed)
+        self._speed = settings.get("speed")
         if old != self._speed:
             self.rapid_mode()
 
-        old = self._scan_speed
-        self._scan_speed = settings.get("raster_speed", self.service.default_raster_speed)
-        if old != self._scan_speed:
-            self.rapid_mode()
-
-        old = self._acceleration
-        self._acceleration = settings.get("acceleration", self.service.default_acceleration)
-        if old != self._acceleration:
-            self.rapid_mode()
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -255,14 +284,14 @@ class NewlyController:
     def set_xy(self, x, y, relative=False):
         self.connect_if_needed()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
-        command_buffer.append(f"VP{self._unknown_vp}")
-        command_buffer.append(f"VK{self._unknown_vk}")
+        command_buffer.append(f"ZZZFile0")
+        command_buffer.append(f"VP{self.service.cut_dc}")
+        command_buffer.append(f"VK{self.service.move_dc}")
         command_buffer.append("SP2")
         command_buffer.append("SP2")
-        command_buffer.append(f"VQ{int(round(self._speed))}")
-        command_buffer.append(f"VJ{int(round(self._acceleration))}")
-        command_buffer.append(f"VS{int(round(self._scan_speed / 10.0))}")
+        command_buffer.append(f"VQ{int(round(self.service.default_corner_speed))}")
+        command_buffer.append(f"VJ{int(round(self.service.default_acceleration_distance))}")
+        command_buffer.append(f"VS{int(round(self.service.moving_speed / 10.0))}")
         if relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
@@ -290,7 +319,7 @@ class NewlyController:
         self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append(f"ZK{file_index}")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -299,7 +328,7 @@ class NewlyController:
         self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append(f"ZH{file_index}")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -308,7 +337,7 @@ class NewlyController:
         self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append(f"ZG{file_index}")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -317,7 +346,7 @@ class NewlyController:
         self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append("RS")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -334,7 +363,7 @@ class NewlyController:
     def abort(self):
         self.connect_if_needed()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append("ZQ")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -343,7 +372,7 @@ class NewlyController:
         self.connect_if_needed()
         self.rapid_mode()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         if self._pwm_frequency is not None:
             self.command_buffer.append(f"PL{self._pwm_frequency}")
         self.command_buffer.append(f"DA{self._power}")
@@ -358,7 +387,7 @@ class NewlyController:
     def pause(self):
         self.connect_if_needed()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append("ZT")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
@@ -367,7 +396,7 @@ class NewlyController:
     def resume(self):
         self.connect_if_needed()
         command_buffer = list()
-        command_buffer.append(f"ZZZFile{self._file_index}")
+        command_buffer.append(f"ZZZFile0")
         command_buffer.append("ZG")
         command_buffer.append("ZED;")
         self.connection.write(index=self._machine_index, data=";".join(command_buffer))
