@@ -217,11 +217,11 @@ class NewlyController:
             settings = chart[-1]
         self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
         self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
-
-        power = int(
-            round((self._power / 1000.0) * self.service.max_power * 255.0 / 100.0)
+        power = self.service.default_cut_power if self._power is None else self._power
+        da_power = int(
+            round((power / 1000.0) * self.service.max_power * 255.0 / 100.0)
         )
-        self.command_buffer.append(f"DA{power}")
+        self.command_buffer.append(f"DA{da_power}")
         self.command_buffer.append("SP0")
         self.command_buffer.append(f"VS{int(round(speed_at_program_change))}")
         if relative:
