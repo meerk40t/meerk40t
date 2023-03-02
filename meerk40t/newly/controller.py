@@ -261,9 +261,11 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=data)
 
     def mark(self, x, y):
+        dx = int(round(x - self._last_x))
+        dy = int(round(y - self._last_y))
+        if dx == 0 and dy == 0:
+            return
         if self._relative:
-            dx = int(round(x - self._last_x))
-            dy = int(round(y - self._last_y))
             self.command_buffer.append(f"PD{dy},{dx}")
             self._last_x += dx
             self._last_y += dy
@@ -274,9 +276,11 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
+        dx = int(round(x - self._last_x))
+        dy = int(round(y - self._last_y))
+        if dx == 0 and dy == 0:
+            return
         if self._relative:
-            dx = int(round(x - self._last_x))
-            dy = int(round(y - self._last_y))
             self.command_buffer.append(f"PU{dy},{dx}")
             self._last_x += dx
             self._last_y += dy
