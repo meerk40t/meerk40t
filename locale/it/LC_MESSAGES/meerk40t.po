@@ -23,12 +23,12 @@ msgstr ""
 #: meerk40t/gui/propertypanels/attributes.py:247 meerk40t/moshi/device.py:51
 #: meerk40t/newly/device.py:103
 msgid "Label"
-msgstr ""
+msgstr "Etichetta"
 
 #: meerk40t/balormk/device.py:88 meerk40t/grbl/device.py:193
 #: meerk40t/moshi/device.py:52 meerk40t/newly/device.py:104
 msgid "What is this device called."
-msgstr ""
+msgstr "Come si chiama questo dispositivo."
 
 #: meerk40t/balormk/device.py:97 meerk40t/balormk/device.py:350
 #: meerk40t/gui/propertypanels/imageproperty.py:48
@@ -120,40 +120,40 @@ msgstr ""
 #: meerk40t/balormk/device.py:196 meerk40t/grbl/device.py:107
 #: meerk40t/moshi/device.py:134 meerk40t/newly/device.py:177
 msgid "Swap XY"
-msgstr ""
+msgstr "Scambia XY"
 
 #: meerk40t/balormk/device.py:197 meerk40t/newly/device.py:178
 msgid "Swap the X and Y axis for the device"
-msgstr ""
+msgstr "Scambia l'asse X e Y per il dispositivo"
 
 #: meerk40t/balormk/device.py:206 meerk40t/grbl/device.py:247
 #: meerk40t/moshi/device.py:169 meerk40t/newly/device.py:187
 msgid "Curve Interpolation"
-msgstr ""
+msgstr "Interpolazione di curve"
 
 #: meerk40t/balormk/device.py:208 meerk40t/newly/device.py:189
 msgid "Number of curve interpolation points"
-msgstr ""
+msgstr "Numero di punti di interpolazione della curva"
 
 #: meerk40t/balormk/device.py:215 meerk40t/grbl/device.py:268
 #: meerk40t/moshi/device.py:178 meerk40t/newly/device.py:196
 msgid "Run mock-usb backend"
-msgstr ""
+msgstr "Esegui back-end USB fittizio"
 
 #: meerk40t/balormk/device.py:216 meerk40t/grbl/device.py:269
 #: meerk40t/moshi/device.py:179 meerk40t/newly/device.py:197
 msgid ""
 "This starts connects to fake software laser rather than real one for "
 "debugging."
-msgstr ""
+msgstr "Questo inizia a connettersi a un laser software falso piuttosto che a uno vero debug."
 
 #: meerk40t/balormk/device.py:227 meerk40t/newly/device.py:208
 msgid "Machine index to select"
-msgstr ""
+msgstr "Indice macchina da selezionare"
 
 #: meerk40t/balormk/device.py:228 meerk40t/newly/device.py:209
 msgid "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
-msgstr ""
+msgstr "A quale macchina dobbiamo connetterci? -- Lascia a 0 se hai 1 macchina."
 
 #: meerk40t/balormk/device.py:238
 msgid "Footpedal"
@@ -218,16 +218,16 @@ msgid "Laser Power"
 msgstr ""
 
 #: meerk40t/balormk/device.py:316 meerk40t/newly/device.py:353
-msgid "How what power level do we cut at?"
-msgstr ""
+msgid "What power level do we cut at?"
+msgstr "A quale livello di potenza tagliamo?"
 
 #: meerk40t/balormk/device.py:324 meerk40t/newly/device.py:342
 msgid "Cut Speed"
-msgstr ""
+msgstr "Velocità di taglio"
 
 #: meerk40t/balormk/device.py:325 meerk40t/newly/device.py:343
 msgid "How fast do we cut?"
-msgstr ""
+msgstr "Quanto velocemente tagliamo?"
 
 #: meerk40t/balormk/device.py:333
 msgid "Q Switch Frequency"
@@ -442,15 +442,15 @@ msgstr ""
 
 #: meerk40t/balormk/device.py:816 meerk40t/newly/device.py:473
 msgid "stops the current job, deletes the spooler"
-msgstr ""
+msgstr "interrompe il lavoro corrente, elimina lo spooler"
 
 #: meerk40t/balormk/device.py:828 meerk40t/newly/device.py:485
 msgid "Pauses the currently running job"
-msgstr ""
+msgstr "Sospende il processo attualmente in esecuzione"
 
 #: meerk40t/balormk/device.py:840 meerk40t/newly/device.py:497
 msgid "Resume the currently running job"
-msgstr ""
+msgstr "Riprende il lavoro attualmente in esecuzione"
 
 #: meerk40t/balormk/device.py:851 meerk40t/grbl/device.py:485
 #: meerk40t/lihuiyu/device.py:172
@@ -489,23 +489,23 @@ msgstr ""
 #: meerk40t/balormk/device.py:882 meerk40t/balormk/device.py:889
 #: meerk40t/newly/device.py:506 meerk40t/newly/device.py:513
 msgid "connect usb"
-msgstr ""
+msgstr "collegare usb"
 
 #: meerk40t/balormk/device.py:894 meerk40t/lihuiyu/device.py:576
 #: meerk40t/newly/device.py:518
 msgid "Stops USB retries"
-msgstr ""
+msgstr "Arresta i tentativi USB"
 
 #: meerk40t/balormk/device.py:899 meerk40t/grbl/device.py:525
 #: meerk40t/lihuiyu/device.py:413 meerk40t/newly/device.py:523
 msgid "save job export"
-msgstr ""
+msgstr "salvare l'esportazione del lavoro"
 
 #: meerk40t/balormk/device.py:931 meerk40t/grbl/device.py:538
 #: meerk40t/lihuiyu/device.py:436 meerk40t/lihuiyu/device.py:498
 #: meerk40t/newly/device.py:540
 msgid "Could not save: {filename}"
-msgstr ""
+msgstr "Impossibile salvare: {filename}"
 
 #: meerk40t/balormk/device.py:936
 msgid "Allow default list commands to persist within the raw command"
@@ -672,19 +672,19 @@ msgstr ""
 
 #: meerk40t/balormk/mock_connection.py:34 meerk40t/newly/mock_connection.py:34
 msgid "Attempting connection to Mock."
-msgstr ""
+msgstr "Tentativo di connessione a Mock."
 
 #: meerk40t/balormk/mock_connection.py:36 meerk40t/newly/mock_connection.py:36
 msgid "Mock Connected."
-msgstr ""
+msgstr "Finto Connesso."
 
 #: meerk40t/balormk/mock_connection.py:43 meerk40t/newly/mock_connection.py:43
 msgid "Attempting disconnection from Mock."
-msgstr ""
+msgstr "Tentativo di disconnessione da Mock."
 
 #: meerk40t/balormk/mock_connection.py:45 meerk40t/newly/mock_connection.py:45
 msgid "Mock Disconnection Successful.\n"
-msgstr ""
+msgstr "Simulazione disconnessione riuscita.\n"
 
 #: meerk40t/balormk/usb_connection.py:36 meerk40t/ch341/libusb.py:443
 #: meerk40t/device/ch341/ch341libusbdriver.py:66
@@ -712,7 +712,7 @@ msgstr ""
 #: meerk40t/device/ch341/ch341libusbdriver.py:91
 #: meerk40t/newly/usb_connection.py:58
 msgid "Your OS does not give you permissions to access USB."
-msgstr ""
+msgstr "Il tuo sistema operativo non ti dà le autorizzazioni per accedere all'USB."
 
 #: meerk40t/balormk/usb_connection.py:65
 msgid "Galvo devices were found. But something else was connected to them."
@@ -752,7 +752,7 @@ msgstr "Scollegamento del kernel: non implementato."
 #: meerk40t/device/ch341/ch341libusbdriver.py:131
 #: meerk40t/newly/usb_connection.py:91
 msgid "Getting Active Config"
-msgstr ""
+msgstr "Ottenere la configurazione attiva"
 
 #: meerk40t/balormk/usb_connection.py:104 meerk40t/ch341/libusb.py:131
 #: meerk40t/device/ch341/ch341libusbdriver.py:134
@@ -785,6 +785,8 @@ msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
 msgstr ""
+"Gruppo di configurazione: errore\n"
+"(Suggerimento: potrebbe riprendersi se si cambia la posizione in cui è collegata l'USB.)"
 
 #: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:160
 #: meerk40t/device/ch341/ch341libusbdriver.py:163
@@ -891,7 +893,7 @@ msgstr "Tentativo di connessione a USB."
 
 #: meerk40t/balormk/usb_connection.py:229 meerk40t/newly/usb_connection.py:219
 msgid "Device failed during detach and claim"
-msgstr ""
+msgstr "Dispositivo non riuscito durante il distacco e il reclamo"
 
 #: meerk40t/balormk/usb_connection.py:230 meerk40t/ch341/libusb.py:460
 #: meerk40t/ch341/mock.py:54 meerk40t/ch341/windll.py:63
@@ -4519,7 +4521,7 @@ msgstr "Scambia gli assi X e Y. Questo accade prima di FlipX e FlipY."
 #: meerk40t/grbl/device.py:119 meerk40t/lihuiyu/gui/lhydrivergui.py:502
 #: meerk40t/moshi/device.py:147 meerk40t/newly/device.py:135
 msgid "Home Bottom"
-msgstr ""
+msgstr "Casa in basso"
 
 #: meerk40t/grbl/device.py:120 meerk40t/lihuiyu/gui/lhydrivergui.py:504
 #: meerk40t/moshi/device.py:148 meerk40t/newly/device.py:136
@@ -4529,12 +4531,12 @@ msgstr "Indica che il dispositivo Home si trova in basso"
 #: meerk40t/grbl/device.py:129 meerk40t/lihuiyu/gui/lhydrivergui.py:484
 #: meerk40t/moshi/device.py:158 meerk40t/newly/device.py:145
 msgid "Home Right"
-msgstr ""
+msgstr "Casa destra"
 
 #: meerk40t/grbl/device.py:130 meerk40t/moshi/device.py:159
 #: meerk40t/newly/device.py:146
 msgid "Indicates the device Home is at the right side"
-msgstr ""
+msgstr "Indica che la casa del dispositivo si trova sul lato destro"
 
 #: meerk40t/grbl/device.py:203
 msgid "What serial interface does this device connect to?"
@@ -5132,7 +5134,7 @@ msgstr ""
 #: meerk40t/gui/spoolerpanel.py:177 meerk40t/gui/spoolerpanel.py:212
 #: meerk40t/gui/wxmribbon.py:952 meerk40t/newly/gui/newlyconfig.py:33
 msgid "Device"
-msgstr ""
+msgstr "Dispositivo"
 
 #: meerk40t/gui/devicepanel.py:51 meerk40t/gui/operation_info.py:36
 #: meerk40t/gui/spoolerpanel.py:191 meerk40t/gui/wordlisteditor.py:450
@@ -5141,7 +5143,7 @@ msgstr "Genere"
 
 #: meerk40t/gui/devicepanel.py:61
 msgid "Create New Device"
-msgstr ""
+msgstr "Crea nuovo dispositivo"
 
 #: meerk40t/gui/devicepanel.py:64 meerk40t/gui/devicepanel.py:256
 #: meerk40t/gui/spoolerpanel.py:463
@@ -6843,7 +6845,7 @@ msgstr ""
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:1113
 #: meerk40t/moshi/gui/moshidrivergui.py:83 meerk40t/newly/gui/newlyconfig.py:55
 msgid "Warning"
-msgstr ""
+msgstr "Avvertimento"
 
 #: meerk40t/gui/preferences.py:198
 msgid "Choose a previously saved configuration-file"
@@ -10567,217 +10569,218 @@ msgstr ""
 
 #: meerk40t/newly/device.py:64
 msgid "Speed <="
-msgstr ""
+msgstr "Velocità <="
 
 #: meerk40t/newly/device.py:71
 msgid "Acceleration Length"
-msgstr ""
+msgstr "Lunghezza dell'accelerazione"
 
 #: meerk40t/newly/device.py:78
 msgid "Backlash"
-msgstr ""
+msgstr "Contraccolpo"
 
 #: meerk40t/newly/device.py:85 meerk40t/newly/device.py:412
 msgid "Corner Speed"
-msgstr ""
+msgstr "Velocità d'angolo"
 
 #: meerk40t/newly/device.py:92
 msgid "Speed Chart"
-msgstr ""
+msgstr "Grafico di velocità"
 
 #: meerk40t/newly/device.py:93
 msgid "Raster speed to chart."
-msgstr ""
+msgstr "Velocità raster al grafico."
 
 #: meerk40t/newly/device.py:156
 msgid "Flip the X axis for the device"
-msgstr ""
+msgstr "Capovolgere l'asse X per il dispositivo"
 
 #: meerk40t/newly/device.py:167
 msgid "Flip the Y axis for the device"
-msgstr ""
+msgstr "Capovolgere l'asse Y per il dispositivo"
 
 #: meerk40t/newly/device.py:221
 msgid "Output File"
-msgstr ""
+msgstr "File di uscita"
 
 #: meerk40t/newly/device.py:222
 msgid ""
 "File0 is default and instantly executes. The remaining files need to be "
 "sent and told to start"
 msgstr ""
+"File0 è l'impostazione predefinita e viene eseguito immediatamente. I file rimanenti devono essere inviati e devono essere avviati"
 
 #: meerk40t/newly/device.py:236
 msgid "Horizontal DPI"
-msgstr ""
+msgstr "DPI orizzontale"
 
 #: meerk40t/newly/device.py:237
 msgid "The Dots-Per-Inch across the X-axis"
-msgstr ""
+msgstr "I punti per pollice lungo l'asse X"
 
 #: meerk40t/newly/device.py:246
 msgid "Vertical DPI"
-msgstr ""
+msgstr "DPI verticale"
 
 #: meerk40t/newly/device.py:247
 msgid "The Dots-Per-Inch across the Y-axis"
-msgstr ""
+msgstr "I punti per pollice lungo l'asse Y"
 
 #: meerk40t/newly/device.py:256
 msgid "Horizontal Backlash"
-msgstr ""
+msgstr "Gioco orizzontale"
 
 #: meerk40t/newly/device.py:257 meerk40t/newly/device.py:268
 msgid "Backlash amount for the laser."
-msgstr ""
+msgstr "Quantità di gioco per il laser."
 
 #: meerk40t/newly/device.py:267
 msgid "Vertical Backlash"
-msgstr ""
+msgstr "Gioco verticale"
 
 #: meerk40t/newly/device.py:278
 msgid "Max Power"
-msgstr ""
+msgstr "Massima potenza"
 
 #: meerk40t/newly/device.py:280
 msgid "Maximum laser power, all other power will be a scale of this amount"
-msgstr ""
+msgstr "Potenza massima del laser, tutta l'altra potenza sarà una scala di questa quantità"
 
 #: meerk40t/newly/device.py:291
 msgid "PWM Power"
-msgstr ""
+msgstr "Potenza PWM"
 
 #: meerk40t/newly/device.py:292
 msgid "Power Width Modulation enabled for device."
-msgstr ""
+msgstr "Modulazione di ampiezza di potenza abilitata per il dispositivo."
 
 #: meerk40t/newly/device.py:304
 msgid "PWM Frequency"
-msgstr ""
+msgstr "Frequenza PWM"
 
 #: meerk40t/newly/device.py:306
 msgid "Set the frequency of the PWM, how often the pulse width cycles"
-msgstr ""
+msgstr "Imposta la frequenza del PWM, la frequenza dei cicli dell'ampiezza dell'impulso"
 
 #: meerk40t/newly/device.py:317
 msgid "Cut DC"
-msgstr ""
+msgstr "Taglia CC"
 
 #: meerk40t/newly/device.py:318
 msgid "Set the current for the cut movements."
-msgstr ""
+msgstr "Imposta la corrente per i movimenti di taglio."
 
 #: meerk40t/newly/device.py:327
 msgid "Move DC"
-msgstr ""
+msgstr "Sposta CC"
 
 #: meerk40t/newly/device.py:328
 msgid "Set the current for the regular movements."
-msgstr ""
+msgstr "Impostare la corrente per i movimenti regolari."
 
 #: meerk40t/newly/device.py:351
 msgid "Cut Power"
-msgstr ""
+msgstr "Tagliare l'alimentazione"
 
 #: meerk40t/newly/device.py:362
 msgid "On Delay"
-msgstr ""
+msgstr "In ritardo"
 
 #: meerk40t/newly/device.py:363
 msgid "Delay for laser on?"
-msgstr ""
+msgstr "Ritardo per il laser acceso?"
 
 #: meerk40t/newly/device.py:372
 msgid "Off Delay"
-msgstr ""
+msgstr "Ritardo di spegnimento"
 
 #: meerk40t/newly/device.py:373
 msgid "Delay for laser off?"
-msgstr ""
+msgstr "Ritardo per lo spegnimento del laser?"
 
 #: meerk40t/newly/device.py:382
 msgid "Raster Speed"
-msgstr ""
+msgstr "Velocità raster"
 
 #: meerk40t/newly/device.py:383
 msgid "How fast do we raster?"
-msgstr ""
+msgstr "Quanto velocemente rasterizziamo?"
 
 #: meerk40t/newly/device.py:391
 msgid "Raster Power"
-msgstr ""
+msgstr "Potere raster"
 
 #: meerk40t/newly/device.py:393
 msgid "How what power level do we raster at?"
-msgstr ""
+msgstr "Come rasterizziamo a quale livello di potenza?"
 
 #: meerk40t/newly/device.py:402
 msgid "Moving Speed"
-msgstr ""
+msgstr "Velocità di movimento"
 
 #: meerk40t/newly/device.py:403
 msgid "Moving speed while not cutting?"
-msgstr ""
+msgstr "Velocità di movimento senza tagliare?"
 
 #: meerk40t/newly/device.py:413
 msgid "Speed to move from acceleration corner to corner?"
-msgstr ""
+msgstr "Velocità per passare da una curva all'altra in accelerazione?"
 
 #: meerk40t/newly/device.py:422
 msgid "Acceleration Distance"
-msgstr ""
+msgstr "Distanza di accelerazione"
 
 #: meerk40t/newly/device.py:423
 msgid "Distance to use to ramp up to speed for movement?"
-msgstr ""
+msgstr "Distanza da utilizzare per aumentare la velocità per il movimento?"
 
 #: meerk40t/newly/device.py:432
 msgid "Rect Speed"
-msgstr ""
+msgstr "Velocità Retta"
 
 #: meerk40t/newly/device.py:433
 msgid "Speed to perform frame trace?"
-msgstr ""
+msgstr "Velocità per eseguire la traccia del frame?"
 
 #: meerk40t/newly/device.py:442
 msgid "Rect Power"
-msgstr ""
+msgstr "Potere Retto"
 
 #: meerk40t/newly/device.py:443
 msgid "Power usage for draw frame operation?"
-msgstr ""
+msgstr "Consumo energetico per il funzionamento dello stiratoio?"
 
 #: meerk40t/newly/device.py:544
 msgid "sends raw data exactly as composed"
-msgstr ""
+msgstr "inviare dati grezzi esattamente come composti"
 
 #: meerk40t/newly/device.py:562
 msgid "sends the newly move_frame command"
-msgstr ""
+msgstr "invia il comando move_frame"
 
 #: meerk40t/newly/device.py:571
 msgid "sends the newly draw_frame command"
-msgstr ""
+msgstr "invia il comando draw_frame"
 
 #: meerk40t/newly/device.py:580
 msgid "sends the file replay command"
-msgstr ""
+msgstr "invia il comando di riproduzione del file"
 
 #: meerk40t/newly/device.py:589
 msgid "Update newly flips for movement"
-msgstr ""
+msgstr "Aggiorna i salti mortali per il movimento"
 
 #: meerk40t/newly/usb_connection.py:50
 msgid "Newly device detected:"
-msgstr ""
+msgstr "Newly dispositivo rilevato:"
 
 #: meerk40t/newly/usb_connection.py:62
 msgid "Newly devices were found. But something else was connected to them."
-msgstr ""
+msgstr "I dispositivi sono stati trovati. Ma qualcos'altro era collegato a loro."
 
 #: meerk40t/rotary/rotary.py:22
 msgid "Rotary Enabled"
-msgstr ""
+msgstr "Rotativo abilitato"
 
 #: meerk40t/rotary/rotary.py:23
 msgid "Turn on rotary"
@@ -10957,14 +10960,14 @@ msgstr ""
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:1114
 #: meerk40t/moshi/gui/moshidrivergui.py:84 meerk40t/newly/gui/newlyconfig.py:59
 msgid "Default Actions"
-msgstr ""
+msgstr "Azioni predefinite"
 
 #: meerk40t/balormk/gui/balorconfig.py:60
 #: meerk40t/grbl/gui/grblconfiguration.py:81
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:1115
 #: meerk40t/moshi/gui/moshidrivergui.py:85 meerk40t/newly/gui/newlyconfig.py:63
 msgid "Display Options"
-msgstr ""
+msgstr "Opzioni di visualizzazione"
 
 #: meerk40t/balormk/gui/balorcontroller.py:24
 #: meerk40t/grbl/gui/grblconfiguration.py:76
@@ -11068,18 +11071,18 @@ msgstr "Controllore"
 #: meerk40t/balormk/gui/gui.py:37 meerk40t/lihuiyu/gui/gui.py:55
 #: meerk40t/moshi/gui/gui.py:32 meerk40t/newly/gui/gui.py:34
 msgid "Opens Controller Window"
-msgstr ""
+msgstr "Apre la finestra del controller"
 
 #: meerk40t/balormk/gui/gui.py:44 meerk40t/grbl/gui/gui.py:43
 #: meerk40t/lihuiyu/gui/gui.py:72 meerk40t/moshi/gui/gui.py:39
 #: meerk40t/newly/gui/gui.py:41
 msgid "Config"
-msgstr ""
+msgstr "Configurazione"
 
 #: meerk40t/balormk/gui/gui.py:46 meerk40t/lihuiyu/gui/gui.py:74
 #: meerk40t/newly/gui/gui.py:43
 msgid "Opens device-specific configuration window"
-msgstr ""
+msgstr "Apre la finestra di configurazione specifica del dispositivo"
 
 #: meerk40t/balormk/gui/gui.py:60
 msgid "Galvo Light"
@@ -13849,49 +13852,49 @@ msgstr ""
 
 #: meerk40t/newly/gui/gui.py:58
 msgid "Draw Frame"
-msgstr ""
+msgstr "Disegna cornice"
 
 #: meerk40t/newly/gui/gui.py:60
 msgid "Draw a bounding rectangle of the object saved in the machine"
-msgstr ""
+msgstr "Disegna un rettangolo di delimitazione dell'oggetto salvato nella macchina"
 
 #: meerk40t/newly/gui/gui.py:69 meerk40t/newly/gui/gui.py:74
 #: meerk40t/newly/gui/gui.py:79 meerk40t/newly/gui/gui.py:84
 #: meerk40t/newly/gui/gui.py:89
 msgid "Draw Frame {index}"
-msgstr ""
+msgstr "Disegna cornice {index}"
 
 #: meerk40t/newly/gui/gui.py:98
 msgid "Move Frame"
-msgstr ""
+msgstr "Sposta cornice"
 
 #: meerk40t/newly/gui/gui.py:100
 msgid "Move the bounding rectangle of the object saved in the machine"
-msgstr ""
+msgstr "Sposta il rettangolo di delimitazione dell'oggetto salvato nella macchina"
 
 #: meerk40t/newly/gui/gui.py:108 meerk40t/newly/gui/gui.py:113
 #: meerk40t/newly/gui/gui.py:118 meerk40t/newly/gui/gui.py:123
 #: meerk40t/newly/gui/gui.py:128
 msgid "Move Frame {index}"
-msgstr ""
+msgstr "Sposta frame {index}"
 
 #: meerk40t/newly/gui/gui.py:137
 msgid "Replay"
-msgstr ""
+msgstr "Rigiocare"
 
 #: meerk40t/newly/gui/gui.py:139
 msgid "Replay the file saved in the machine"
-msgstr ""
+msgstr "Riproduci il file salvato nella macchina"
 
 #: meerk40t/newly/gui/gui.py:145 meerk40t/newly/gui/gui.py:150
 #: meerk40t/newly/gui/gui.py:155 meerk40t/newly/gui/gui.py:160
 #: meerk40t/newly/gui/gui.py:165
 msgid "Replay {index}"
-msgstr ""
+msgstr "Riproduci {index}"
 
 #: meerk40t/newly/gui/newlyconfig.py:20
 msgid "Newly-Configuration"
-msgstr ""
+msgstr "Newly-configurazione"
 
 #: meerk40t/newly/gui/newlyconfig.py:32
 msgid "Newly"
@@ -13899,23 +13902,15 @@ msgstr ""
 
 #: meerk40t/newly/gui/newlyconfig.py:34
 msgid "Global"
-msgstr ""
+msgstr "Globale"
 
 #: meerk40t/newly/gui/newlyconfig.py:51
 msgid "Raster Chart"
-msgstr ""
+msgstr "Grafico raster"
 
 #: meerk40t/newly/gui/newlycontroller.py:161
 msgid "Newly-Controller"
-msgstr ""
-
-#: meerk40t/newly/gui/operationproperties.py:29
-msgid "Advanced Acceleration"
-msgstr ""
-
-#: meerk40t/newly/gui/operationproperties.py:30
-msgid "Set acceleration value for this operation"
-msgstr ""
+msgstr "Newly-Controllore"
 
 #: meerk40t/rotary/gui/gui.py:23
 msgid "Rotary"
