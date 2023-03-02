@@ -16,7 +16,7 @@ def plugin(service, lifecycle):
         )
         from .newlycontroller import NewlyController
         from .newlyconfig import NewlyConfiguration
-        from .operationproperties import NewlyOperationPanel
+        # from .operationproperties import NewlyOperationPanel
 
         service.register("window/Controller", NewlyController)
         service.register("window/Configuration", NewlyConfiguration)
@@ -45,12 +45,12 @@ def plugin(service, lifecycle):
             },
         )
 
-        service.register("property/RasterOpNode/Newly", NewlyOperationPanel)
-        service.register("property/CutOpNode/Newly", NewlyOperationPanel)
-        service.register("property/EngraveOpNode/Newly", NewlyOperationPanel)
-        service.register("property/ImageOpNode/Newly", NewlyOperationPanel)
-        service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
-        service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/RasterOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/CutOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/EngraveOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/ImageOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
+        # service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
 
         service.register(
             "button/control/DrawFrame",
