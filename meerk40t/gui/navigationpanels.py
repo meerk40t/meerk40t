@@ -668,48 +668,50 @@ class Drag(wx.Panel):
 
 
 class Jog(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, icon_size=None, **kwds):
         # begin wxGlade: Jog.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        if icon_size is None:
+            icon_size = get_default_icon_size()
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_50.GetBitmap()
+            self, wx.ID_ANY, icons8_up_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_up_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_right_50.GetBitmap()
+            self, wx.ID_ANY, icons8_up_right_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_left_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_home = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_home_filled_50.GetBitmap()
+            self, wx.ID_ANY, icons8_home_filled_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right_50.GetBitmap()
+            self, wx.ID_ANY, icons8_right_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_down_left_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_50.GetBitmap()
+            self, wx.ID_ANY, icons8_down_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_down_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down_right_50.GetBitmap()
+            self, wx.ID_ANY, icons8_down_right_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_unlock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_padlock_50.GetBitmap()
+            self, wx.ID_ANY, icons8_padlock_50.GetBitmap(resize=icon_size)
         )
         self.button_navigate_lock = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock_50.GetBitmap()
+            self, wx.ID_ANY, icons8_lock_50.GetBitmap(resize=icon_size)
         )
         self.button_confine = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_constraint_50.GetBitmap()
+            self, wx.ID_ANY, icons8_constraint_50.GetBitmap(resize=icon_size)
         )
         self.__set_properties()
         self.__do_layout()
