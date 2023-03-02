@@ -664,11 +664,10 @@ class GRBLDriver(Parameters):
         self.grbl_realtime("\x99")
         if ifactor < 10:
             for idx in range(10 - ifactor):
-                self.grbl_realtime("\x9A    ")
+                self.grbl_realtime("\x9A")
         elif ifactor > 10:
             for idx in range(ifactor - 10):
                 self.grbl_realtime("\x9B")
-
 
     def set_speed_scale(self, factor):
         if 0 < factor < 100:
