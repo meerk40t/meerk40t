@@ -529,8 +529,8 @@ class NewlyDevice(Service, ViewPort):
                     driver = NewlyDriver(self, force_mock=True)
                     job = LaserJob(filename, list(data.plan), driver=driver)
 
-                    def write(index, cmd):
-                        f.write(cmd)
+                    def write(index, data):
+                        f.write(data)
 
                     driver.connection.connect_if_needed()
                     driver.connection.connection.write = write
