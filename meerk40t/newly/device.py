@@ -350,7 +350,7 @@ class NewlyDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Cut Power"),
                 "trailer": "/1000",
-                "tip": _("How what power level do we cut at?"),
+                "tip": _("What power level do we cut at?"),
                 "subsection": "_10_Cut",
             },
             {

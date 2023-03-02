@@ -313,7 +313,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we cut at?"),
+                "tip": _("What power level do we cut at?"),
             },
             {
                 "attr": "default_speed",
