@@ -57,11 +57,11 @@ def decode32(data):
 
 def decodeu35(data):
     return (
-            (data[0] & 0x7F) << 28
-            | (data[1] & 0x7F) << 21
-            | (data[2] & 0x7F) << 14
-            | (data[3] & 0x7F) << 7
-            | (data[4] & 0x7F)
+        (data[0] & 0x7F) << 28
+        | (data[1] & 0x7F) << 21
+        | (data[2] & 0x7F) << 14
+        | (data[3] & 0x7F) << 7
+        | (data[4] & 0x7F)
     )
 
 
@@ -159,7 +159,9 @@ def encode_bytes(data, magic=0x88):
 
 
 class RDJob:
-    def __init__(self, driver=None, units_to_device_matrix=None, priority=0, channel=None):
+    def __init__(
+        self, driver=None, units_to_device_matrix=None, priority=0, channel=None
+    ):
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
@@ -221,6 +223,19 @@ class RDJob:
         @param data:
         @return:
         """
+        if magic is None:
+            d12 = 0
+            d89 = 0
+            for d in data:
+                if d == 0x12:
+                    d12 += 1
+                elif d == 0x89:
+                    d89 += 1
+            if d89 + d12 > 10:
+                if d89 > d12:
+                    magic = 0x88
+                else:
+                    magic = 0x11
         if magic is not None and magic != self.magic:
             self.magic = magic
             self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
@@ -304,7 +319,13 @@ class RDJob:
                 self.x = x
                 self.y = y
             ox, oy = matrix.transform_point([self.x, self.y])
-            self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power, "frequency": self.frequency})
+            self.plotcut = PlotCut(
+                settings={
+                    "speed": self.speed,
+                    "power": self.power,
+                    "frequency": self.frequency,
+                }
+            )
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
         self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
@@ -376,26 +397,26 @@ class RDJob:
                 desc = f"Axis Z Move {value}"
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
-            x = abscoord(array[1:6])
-            y = abscoord(array[6:11])
+            x = abscoord(array[1:6]) * self.scale
+            y = abscoord(array[6:11]) * self.scale
             self.plot_location(x, y, 0)
-            desc = f"Move Absolute ({x * UNITS_PER_uM} units, {y * UNITS_PER_uM} units)"
+            desc = f"Move Absolute ({x} units, {y} units)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
-                dx = relcoord(array[1:3])
-                dy = relcoord(array[3:5])
+                dx = relcoord(array[1:3]) * self.scale
+                dy = relcoord(array[3:5]) * self.scale
                 self.plot_location(self.x + dx, self.y + dy, 0)
-                desc = f"Move Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
+                desc = f"Move Relative ({dx} units, {dy} units)"
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
-            dx = relcoord(array[1:3])
+            dx = relcoord(array[1:3]) * self.scale
             self.plot_location(self.x + dx, self.y, 0)
-            desc = f"Move Horizontal Relative ({dx * UNITS_PER_uM} units)"
+            desc = f"Move Horizontal Relative ({dx} units)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
-            dy = relcoord(array[1:3])
+            dy = relcoord(array[1:3]) * self.scale
             self.plot_location(self.x, self.y + dy, 0)
-            desc = f"Move Vertical Relative ({dy * UNITS_PER_uM} units)"
+            desc = f"Move Vertical Relative ({dy} units)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
         elif array[0] == 0x9B:
@@ -551,31 +572,27 @@ class RDJob:
                 elif array[2] == 0x08:
                     desc = "Interface Origin"
                     try:
-                        self._driver.move_ori(0,0)
+                        self._driver.move_ori(0, 0)
                     except AttributeError:
                         pass
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
-            x = abscoord(array[1:6])
-            y = abscoord(array[6:11])
+            x = abscoord(array[1:6]) * self.scale
+            y = abscoord(array[6:11]) * self.scale
             self.plot_location(x, y, 1)
-            desc = f"Cut Absolute ({x * UNITS_PER_uM} units, {y * UNITS_PER_uM} units)"
+            desc = f"Cut Absolute ({x} units, {y} units)"
         elif array[0] == 0xA9:  # 0b10101001 5 characters
-            dx = relcoord(array[1:3])
-            dy = relcoord(array[3:5])
-            self.x += dx
-            self.y += dy
-            self.plot_location(self.x, self.y, 1)
-            desc = (
-                f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
-            )
+            dx = relcoord(array[1:3]) * self.scale
+            dy = relcoord(array[3:5]) * self.scale
+            self.plot_location(self.x + dx, self.y + dy, 1)
+            desc = f"Cut Relative ({dx} units, {dy} units)"
         elif array[0] == 0xAA:  # 0b10101010 3 characters
-            dx = relcoord(array[1:3])
+            dx = relcoord(array[1:3]) * self.scale
             self.plot_location(self.x + dx, self.y, 1)
-            desc = f"Cut Horizontal Relative ({dx * UNITS_PER_uM} units)"
+            desc = f"Cut Horizontal Relative ({dx} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
-            dy = relcoord(array[1:3])
+            dy = relcoord(array[1:3]) * self.scale
             self.plot_location(self.x, self.y + dy, 0)
-            desc = f"Cut Vertical Relative ({dy * UNITS_PER_uM} units)"
+            desc = f"Cut Vertical Relative ({dy} units)"
         elif array[0] == 0xC7:
             v0 = parse_power(array[1:3])  # TODO: Check command fewer values.
             desc = f"Imd Power 1 ({v0})"
@@ -821,7 +838,7 @@ class RDJob:
         elif array[0] == 0xD7:
             # if not self.saving:
             #     pass
-                # If not saving send to spooler, if control
+            # If not saving send to spooler, if control
             # self.saving = False
             # self.filename = None
             # if self.filestream is not None:
@@ -893,11 +910,11 @@ class RDJob:
                 else:  # options == 0x00:
                     param = "Origin"
                 if array[1] == 0x00 or array[1] == 0x50:
-                    coord = abscoord(array[3:8])
+                    coord = abscoord(array[3:8]) * self.scale
                     desc = f"Move {param} X: {coord} ({self.x},{self.y})"
                     self.plot_location(self.x + coord, self.y, 0)
                 elif array[1] == 0x01 or array[1] == 0x51:
-                    coord = abscoord(array[3:8])
+                    coord = abscoord(array[3:8]) * self.scale
                     desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
                     self.plot_location(self.x, self.y + coord, 0)
                 elif array[1] == 0x02 or array[1] == 0x52:
@@ -925,12 +942,15 @@ class RDJob:
                 elif array[1] == 0x0F:
                     desc = "Feed Axis Move"
                 elif array[1] == 0x10 or array[1] == 0x60:
-                    self.x = abscoord(array[3:8])
-                    self.y = abscoord(array[8:13])
-                    desc = f"Move {param} XY ({self.x * UNITS_PER_uM}, {self.y * UNITS_PER_uM})"
+                    self.x = abscoord(array[3:8]) * self.scale
+                    self.y = abscoord(array[8:13]) * self.scale
+                    desc = f"Move {param} XY ({self.x}, {self.y})"
                     if "Origin" in param:
                         try:
-                            self._driver.move_ori(f"{self.x * UNITS_PER_uM / UNITS_PER_MM}mm", f"{self.y * UNITS_PER_uM / UNITS_PER_MM}mm")
+                            self._driver.move_ori(
+                                f"{self.x / UNITS_PER_MM}mm",
+                                f"{self.y / UNITS_PER_MM}mm",
+                            )
                         except AttributeError:
                             pass
                     else:
@@ -944,7 +964,9 @@ class RDJob:
                     self.u = abscoord(array[13 : 13 + 5])
                     desc = f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
                     try:
-                        self._driver.move_abs(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM)
+                        self._driver.move_abs(
+                            self.x * UNITS_PER_uM, self.y * UNITS_PER_uM
+                        )
                         self._driver.axis("u", self.u * UNITS_PER_uM)
                     except AttributeError:
                         pass
