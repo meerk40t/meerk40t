@@ -58,7 +58,7 @@ class GRBLControl:
                 server.events_channel.watch(console)
 
             emulator = GRBLEmulator(
-                root.device.driver, root.device.scene_to_device_matrix()
+                root.device, root.device.scene_to_device_matrix()
             )
             self.emulator = emulator
 

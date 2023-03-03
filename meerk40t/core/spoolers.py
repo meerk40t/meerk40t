@@ -379,6 +379,71 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
 
+class SpoolerJob:
+    """
+    Example of Spooler Job.
+
+    The primary methodology of a spoolerjob is that it has an `execute` function that takes the driver as an argument
+    it should then perform driver-like commands on the given driver to perform whatever actions the job should
+    execute.
+
+    The `priority` attribute is required.
+
+    The job should be permitted to `stop()` and respond to `is_running()`, and other checks as to elapsed_time(),
+    estimate_time(), and status.
+    """
+    def __init__(
+        self,
+        service,
+    ):
+        self.stopped = False
+        self.service = service
+        self.runtime = 0
+        self.priority = 0
+
+    @property
+    def status(self):
+        """
+        Status is simply a status as to the job. This will be relayed by things that check the job status of jobs
+        in the spooler.
+
+        @return:
+        """
+        if self.is_running:
+            return "Running"
+        else:
+            return "Queued"
+
+    def execute(self, driver):
+        """
+        This is the primary method of the SpoolerJob. In this example we call the "home()" function.
+        @param driver:
+        @return:
+        """
+        try:
+            driver.home()
+        except AttributeError:
+            pass
+
+        return True
+
+    def stop(self):
+        self.stopped = True
+
+    def is_running(self):
+        return not self.stopped
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        return result
+
+    def estimate_time(self):
+        return 0
+
+
 class Spooler:
     """
     Spoolers are threaded job processors. A series of jobs is added to the spooler and these jobs are
@@ -550,15 +615,20 @@ class Spooler:
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def send(self, job):
+    def send(self, job, prevent_duplicate=False):
         """
         Send a job to the spooler queue
 
         @param job: job to send to the spooler.
+        @param prevent_duplicate: prevents the same job from being added again.
         @return:
         """
         job.uid = self.context.logging.uid("job")
         with self._lock:
+            if prevent_duplicate:
+                for q in self._queue:
+                    if q is job:
+                        return
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
