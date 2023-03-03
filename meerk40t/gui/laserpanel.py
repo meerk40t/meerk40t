@@ -333,14 +333,11 @@ class LaserPanel(wx.Panel):
         self.available_devices = self.context.kernel.services("device")
         self.selected_device = self.context.device
         index = -1
-        for i, s in enumerate(self.available_devices):
-            if s is self.selected_device:
-                index = i
-                break
         self.combo_devices.Clear()
-        spools = [s.label for s in self.available_devices]
-        for i in range(len(spools)):
-            self.combo_devices.Append(spools[i])
+        for i, spool in enumerate(self.available_devices):
+            if index < 0 and spool is self.selected_device:
+                index = i
+            self.combo_devices.Append(spool.label)
         self.combo_devices.SetSelection(index)
         self.set_pause_color()
         self.update_override_controls()
