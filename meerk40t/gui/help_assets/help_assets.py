@@ -26,7 +26,7 @@ But suppose for efficiency you now want to burn two seat reservation tags at the
 
 With the above usage, you can use these values as many times as you wish in your design. To advance the index you need to click on the Prev / Next buttons in the toolbar.
 
-As an alternative to manually entering the wordlist values using this WordList Editor, you can use a standard comma-separated CSV file. The placeholder names are defined in standard CSV header line (the first line in the CSV file), and the contents are then taken from all the following lines. The easiest way to create a CSV file is using a spreadsheet e.g. Excel, however e.g. for ecommerce sites your website might automaticallycreate the CSV file from the orders placed online by customers.
+As an alternative to manually entering the wordlist values using this WordList Editor, you can use a standard comma-separated CSV file. The placeholder names are defined in standard CSV header line (the first line in the CSV file), and the contents are then taken from all the following lines. The easiest way to create a CSV file is using a spreadsheet e.g. Excel, however e.g. for ecommerce sites your website might automatically create the CSV file from the orders placed online by customers.
 
 Entries loaded from a CSV file are shown as Type CSV, and you can set the Index values for all CSV entries at the same time.
 

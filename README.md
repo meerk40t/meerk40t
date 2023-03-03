@@ -56,12 +56,13 @@ If you need additional support, please research/ask on:
 
 *   [Facebook](https://www.facebook.com/groups/716000085655097/)
 *   [Maker Forums](https://forum.makerforums.info/t/about-the-meerk40t-category/79660)
-*   [Youtube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
+*   [YouTube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
+*   [YouTube - Some instruction videos](https://www.youtube.com/channel/UCMN9gGvpacxZINPZCSOecaQ)
 *   [Discord](https://discord.gg/vkDD3HdQq6)
 
 ## Assisting the Project
 
-Open source projects live and die with their support. There are a lots of ways to help the project. There are also a lot of ways the project should help you. 
+Open source projects live and die with their support. There are a lots of ways to help the project. There are also a lot of ways the project should help you.
 *   Code
 *   Provide Translations in other languages.
 *   Design ( Good design instincts, smooth out the rough edges)
