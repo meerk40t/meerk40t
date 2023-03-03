@@ -243,46 +243,46 @@ def get_movement(device, dx, dy):
 
 
 class Drag(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, icon_size=None, **kwds):
         # begin wxGlade: Drag.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_align_corner_top_left = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner1.GetBitmap()
+            self, wx.ID_ANY, icon_corner1.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_up = wx.BitmapButton(
-            self, wx.ID_ANY, icons8up.GetBitmap()
+            self, wx.ID_ANY, icons8up.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_top_right = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner2.GetBitmap()
+            self, wx.ID_ANY, icon_corner2.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_left = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_left.GetBitmap()
+            self, wx.ID_ANY, icons8_left.GetBitmap(resize=icon_size)
         )
         self.button_align_center = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_square_border_50.GetBitmap()
+            self, wx.ID_ANY, icons8_square_border_50.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_right = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_right.GetBitmap()
+            self, wx.ID_ANY, icons8_right.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_bottom_left = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner4.GetBitmap()
+            self, wx.ID_ANY, icon_corner4.GetBitmap(resize=icon_size)
         )
         self.button_align_drag_down = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_down.GetBitmap()
+            self, wx.ID_ANY, icons8_down.GetBitmap(resize=icon_size)
         )
         self.button_align_corner_bottom_right = wx.BitmapButton(
-            self, wx.ID_ANY, icon_corner3.GetBitmap()
+            self, wx.ID_ANY, icon_corner3.GetBitmap(resize=icon_size)
         )
         self.button_align_first_position = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_level_1_50.GetBitmap()
+            self, wx.ID_ANY, icons8_level_1_50.GetBitmap(resize=icon_size)
         )
         self.button_align_trace_hull = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_50.GetBitmap()
+            self, wx.ID_ANY, icons8_pentagon_50.GetBitmap(resize=icon_size)
         )
         self.button_align_trace_quick = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap()
+            self, wx.ID_ANY, icons8_pentagon_square_50.GetBitmap(resize=icon_size)
         )
         self.bg_color = self.button_align_corner_top_left.BackgroundColour
         self.__set_properties()
@@ -674,8 +674,6 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        if icon_size is None:
-            icon_size = get_default_icon_size()
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
