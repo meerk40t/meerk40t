@@ -12,8 +12,8 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
     icons8_save_50,
 )
-from meerk40t.gui.navigationpanels import Jog, Drag, MovePanel
-from meerk40t.gui.wxutils import StaticBoxSizer, disable_window, TextCtrl
+from meerk40t.gui.navigationpanels import Drag, Jog, MovePanel
+from meerk40t.gui.wxutils import StaticBoxSizer, disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
