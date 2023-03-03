@@ -12,8 +12,8 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
     icons8_save_50,
 )
-from meerk40t.gui.navigationpanels import Jog, Drag
-from meerk40t.gui.wxutils import StaticBoxSizer, disable_window
+from meerk40t.gui.navigationpanels import Jog, Drag, MovePanel
+from meerk40t.gui.wxutils import StaticBoxSizer, disable_window, TextCtrl
 from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
@@ -43,6 +43,7 @@ def register_panel_laser(window, context):
     main_sizer.AddStretchSpacer()
     jog_drag.SetSizer(main_sizer)
     jog_drag.Layout()
+    move_panel = MovePanel(window, wx.ID_ANY, context=context)
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
@@ -69,6 +70,7 @@ def register_panel_laser(window, context):
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
     notebook.AddPage(jog_drag, _("Jog"))
+    notebook.AddPage(move_panel, _("Move"))
 
     window.on_pane_create(pane)
     window.context.register("pane/laser", pane)
