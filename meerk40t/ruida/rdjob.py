@@ -948,6 +948,14 @@ class RDJob:
                         self._driver.axis("u", self.u * UNITS_PER_uM)
                     except AttributeError:
                         pass
+        elif array[0] == 0xDA:
+            mem = parse_mem(array[2:4])
+            if array[1] == 0x01:
+                value0 = array[4:9]
+                value1 = array[9:14]
+                v0 = decodeu35(value0)
+                v1 = decodeu35(value1)
+                desc = f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x})= {v0} (0x{v0:08x}) {v1} (0x{v1:08x})"
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
                 desc = "Lightburn Swizzle Modulation E5"
