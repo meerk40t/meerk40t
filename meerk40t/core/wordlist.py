@@ -1,3 +1,8 @@
+"""
+Base wordlist class that holds some wordlist logic. Most of the interactions with wordlists are done in the
+elements service.
+"""
+
 import csv
 import json
 import os

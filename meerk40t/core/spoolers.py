@@ -6,6 +6,14 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 
+"""
+This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home, 
+unlock rail commands. And it provides the the spooler class which should be provided by each driver.
+
+Spoolers process different jobs in order. A spooler job can be anything, but usually is a LaserJob which is a simple
+list of commands.
+"""
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -373,25 +381,15 @@ def plugin(kernel, lifecycle):
 
 class Spooler:
     """
-    Spoolers store spoolable events in a two synchronous queue, and a single idle job that
-    will be executed in a loop, if the synchronous queues are empty. The two queues are the
-    realtime and the regular queue.
+    Spoolers are threaded job processors. A series of jobs is added to the spooler and these jobs are
+    processed in order. The driver is checked for any holds it may have preventing new commands from being
+    executed. If that isn't the case, the highest priority job is executed by calling the job's required
+    `execute()` function passing the relevant driver as the one variable. The job itself is agnostic, and will
+    execute whatever it wants calling the driver-like functions that may or may not exist on the driver.
 
-    Spooler should be registered as a service_delegate of the device service running the driver
-    to process data.
-
-    Spoolers have threads that process and run each set of commands. Ultimately all commands are
-    executed against the given driver. So if the command within the spooled element is "unicorn"
-    then driver.unicorn() is called with the given arguments. This permits arbitrary execution of
-    specifically spooled elements in the correct sequence.
-
-    The two queues are the realtime and the regular queue. The realtime queue tries to execute
-    particular events as soon as possible. And will execute even if there is a hold on the current
-    work.
-
-    When the queues are empty the idle job is repeatedly executed in a loop. If there is no idle job
-    then the spooler is inactive.
-
+    If execute() returns true then it is fully executed and will be removed. Otherwise it will be repeatedly
+    called until whatever work it is doing is finished. This also means the driver itself is checked for holds
+    (usually pausing or busy) each cycle.
     """
 
     def __init__(self, context, driver=None, **kwargs):

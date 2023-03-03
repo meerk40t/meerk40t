@@ -1,3 +1,10 @@
+"""
+This is a large number of flagged tree operations. The details of how these are registered is availible in the treeop.py
+file. These define the right-click node menu operations. That menu is dynamically created based on various context
+cues.
+"""
+
+
 import os.path
 from copy import copy
 import math
@@ -2102,7 +2109,7 @@ def init_tree(kernel):
                 if hasattr(item, "lock"):
                     item.lock = False
                 drop_node.drop(item)
-    #
+
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)
     # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
