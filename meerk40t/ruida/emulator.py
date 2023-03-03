@@ -6,32 +6,14 @@ the received data into laser commands to be executed by the local driver.
 """
 
 import os
-from io import BytesIO
 from typing import Tuple, Union
 
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    get_safe_path,
-    signal_listener,
-)
+from .exceptions import RuidaCommandError
+from meerk40t.kernel import get_safe_path
 
 from ..core.cutcode.plotcut import PlotCut
 from ..core.units import UNITS_PER_MM, UNITS_PER_uM
 from ..svgelements import Color
-
-
-class RuidaCommandError(Exception):
-    """
-    Exception raised when an invalid Ruida command is received.
-    """
 
 
 class RuidaEmulator:
