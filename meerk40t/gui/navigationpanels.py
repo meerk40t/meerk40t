@@ -1005,6 +1005,7 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
+        self.label_pos.Bind(wx.EVT_LEFT_DCLICK, self.on_label_dclick)
         self.button_navigate_move_to.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_move_to_right
         )
@@ -1017,6 +1018,7 @@ class MovePanel(wx.Panel):
         self.button_navigate_move_to.SetSize(self.button_navigate_move_to.GetBestSize())
         self.text_position_x.SetToolTip(_("Set X value for the Move To"))
         self.text_position_y.SetToolTip(_("Set Y value for the Move To"))
+        self.label_pos.SetToolTip(_("Current laserhead position. Double-click to use."))
         # end wxGlade
 
     def __do_layout(self):
@@ -1052,6 +1054,15 @@ class MovePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_label_dclick(self, event):
+        p = self.context
+        pos = p.device.current
+        units = p.units_name
+        xpos = Length(amount=pos[0], preferred_units=units)
+        ypos = Length(amount=pos[1], preferred_units=units)
+        self.text_position_x.SetValue(f"{round(xpos.preferred, 6):.1f}{units}")
+        self.text_position_y.SetValue(f"{round(ypos.preferred, 6):.1f}{units}")
 
     def on_left(self, index):
         def handler(event):
