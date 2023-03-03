@@ -12,7 +12,7 @@ from meerk40t.gui.icons import (
     icons8_pentagon_50,
     icons8_save_50,
 )
-from meerk40t.gui.navigationpanels import Jog
+from meerk40t.gui.navigationpanels import Jog, Drag
 from meerk40t.gui.wxutils import StaticBoxSizer, disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
 
@@ -32,7 +32,17 @@ def register_panel_laser(window, context):
     optimize_panel = ChoicePropertyPanel(
         window, wx.ID_ANY, context=context, choices=choices
     )
-    jog_panel = Jog(window, wx.ID_ANY, context=context, icon_size=25)
+    jog_drag = wx.Panel(window, wx.ID_ANY)
+    jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=25)
+    drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=25)
+    main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    main_sizer.AddStretchSpacer()
+    main_sizer.Add(jog_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.AddSpacer(25)
+    main_sizer.Add(drag_panel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+    main_sizer.AddStretchSpacer()
+    jog_drag.SetSizer(main_sizer)
+    jog_drag.Layout()
     notebook = wx.aui.AuiNotebook(
         window,
         -1,
@@ -45,8 +55,8 @@ def register_panel_laser(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(245, 210)
-        .FloatingSize(255, 270)
+        .MinSize(200, 180)
+        .FloatingSize(230, 300)
         .MaxSize(500, 300)
         .Caption(_("Laser-Control"))
         .CaptionVisible(not context.pane_lock)
@@ -58,7 +68,7 @@ def register_panel_laser(window, context):
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
-    notebook.AddPage(jog_panel, _("Jog"))
+    notebook.AddPage(jog_drag, _("Jog"))
 
     window.on_pane_create(pane)
     window.context.register("pane/laser", pane)
