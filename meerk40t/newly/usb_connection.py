@@ -278,9 +278,10 @@ class USBConnection:
                 read = dev.read(
                     endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
                 )
-                if read != 1:
-                    time.sleep(2)
-                    continue
+                self.channel(f"Confirmation: {read}")
+                # if read != 1:
+                #     time.sleep(2)
+                #     continue
 
 
                 #####################################
