@@ -245,74 +245,6 @@ class USBConnection:
             except ConnectionError:
                 pass
 
-    def _read_confirmation(self, index=0, attempt=0):
-        try:
-            # endpoint, data, timeout
-            read = self.devices[index].read(
-                endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
-            )
-
-        except usb.core.USBError as e:
-            if attempt <= 3:
-                try:
-                    self.close(index)
-                    self.open(index)
-                except ConnectionError:
-                    time.sleep(1)
-                self._read_confirmation(index=index, attempt=attempt + 1)
-                return
-            self.backend_error_code = e.backend_error_code
-            self.channel(str(e))
-            raise ConnectionError
-        except KeyError:
-            raise ConnectionError("Not Connected.")
-
-    def _write_packet_size(self, index=0, packet=None, attempt=0):
-        packet_length = len(packet)
-        try:
-            # endpoint, data, timeout
-            length_data = struct.pack(">h", packet_length)  # Big-endian size write out.
-            self.devices[index].write(
-                endpoint=WRITE_INTERRUPT, data=length_data, timeout=self.timeout
-            )
-        except usb.core.USBError as e:
-            if attempt <= 3:
-                try:
-                    self.close(index)
-                    self.open(index)
-                except ConnectionError:
-                    time.sleep(1)
-                self._write_packet_size(index, packet, attempt + 1)
-                return
-            self.backend_error_code = e.backend_error_code
-
-            self.channel(str(e))
-            raise ConnectionError
-        except KeyError:
-            raise ConnectionError("Not Connected.")
-
-    def _write_bulk(self, index=0, packet=None, attempt=0):
-        try:
-            # endpoint, data, timeout
-            self.devices[index].write(
-                endpoint=WRITE_BULK, data=packet, timeout=self.timeout
-            )
-        except usb.core.USBError as e:
-            if attempt <= 3:
-                try:
-                    self.close(index)
-                    self.open(index)
-                except ConnectionError:
-                    time.sleep(1)
-                self._write_bulk(index, packet, attempt + 1)
-                return
-            self.backend_error_code = e.backend_error_code
-
-            self.channel(str(e))
-            raise ConnectionError
-        except KeyError:
-            raise ConnectionError("Not Connected.")
-
     def abort(self):
         pass
 
@@ -327,18 +259,60 @@ class USBConnection:
 
             data = data[packet_length:]
             data_remaining -= packet_length
+            try:
+                dev = self.devices[index]
 
-            #####################################
-            # Step 1: Write the size of the packet.
-            #####################################
-            self._write_packet_size(index=index, packet=packet)
+                #####################################
+                # Step 1: Write the size of the packet.
+                #####################################
+                # endpoint, data, timeout
+                length_data = struct.pack(">h", packet_length)  # Big-endian size write out.
+                dev.write(
+                    endpoint=WRITE_INTERRUPT, data=length_data, timeout=self.timeout
+                )
 
-            #####################################
-            # Step 2: read the confirmation value.
-            #####################################
-            self._read_confirmation(index=index)
+                #####################################
+                # Step 2: read the confirmation value.
+                #####################################
+                # endpoint, data, timeout
+                read = dev.read(
+                    endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
+                )
+                if read != 1:
+                    time.sleep(2)
+                    continue
 
-            #####################################
-            # Step #3, write the bulk data of the packet.
-            #####################################
-            self._write_bulk(index=index, packet=packet)
+
+                #####################################
+                # Step #3, write the bulk data of the packet.
+                #####################################
+                # endpoint, data, timeout
+                dev.write(
+                    endpoint=WRITE_BULK, data=packet, timeout=self.timeout
+                )
+            except usb.core.USBError as e:
+                """
+                The sending data protocol hit a core usb error. This will print the error and close and reopen the
+                channel.
+                """
+                self.backend_error_code = e.backend_error_code
+                self.channel(str(e))
+                try:
+                    self.close(index)
+                    self.open(index)
+                except ConnectionError:
+                    continue
+            except KeyError:
+                """
+                Keyerrors occur because the device wasn't open to begin with and self.devices[index] failed.
+                """
+                self.channel("Not connected.")
+                try:
+                    self.close(index)
+                except ConnectionError:
+                    continue
+                try:
+                    self.open(index)
+                except ConnectionError:
+                    continue
+
