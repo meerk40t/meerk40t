@@ -16,7 +16,7 @@ class NewlyDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "newly"
-        self.extension = "nly"
+        self.extension = "hpgl"
         self.job = None
 
         _ = kernel.translation
