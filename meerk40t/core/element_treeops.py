@@ -250,6 +250,38 @@ def init_tree(kernel):
             self.signal("element_property_update", changes)
             self.signal("refresh_scene", "Scene")
 
+    @tree_conditional(
+        lambda node: hasattr(node, "output")
+    )
+    @tree_operation(
+        _("Enable similar"),
+        node_type=op_nodes,
+        help=_("Enable all operations of this type"),
+    )
+    def ops_enable_similar(node, **kwargs):
+        oplist = []
+        for n in self.ops():
+            if n.type == node.type:
+                oplist.append(n)
+        set_op_output(oplist, True)
+
+    @tree_conditional(
+        lambda node: hasattr(node, "output")
+    )
+    @tree_separator_after()
+    @tree_operation(
+        _("Disable similar"),
+        node_type=op_nodes,
+        help=_("Disable all operations of this type"),
+    )
+    def ops_disable_similar(node, **kwargs):
+        oplist = []
+        for n in self.ops():
+            if n.type == node.type:
+                oplist.append(n)
+        set_op_output(oplist, False)
+
+
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
     def convert_operation_image(node, **kwargs):
@@ -543,6 +575,10 @@ def init_tree(kernel):
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
         self("window open Simulation 0\n")
 
+    # ==========
+    # General menu-entries for operation branch
+    # ==========
+
     @tree_operation(_("Global Settings"), node_type="branch ops", help="")
     def op_prop(node, **kwargs):
         activate = self.kernel.lookup("function/open_property_window_for_node")
@@ -626,11 +662,66 @@ def init_tree(kernel):
                 data.append(n)
         self.signal("element_property_reload", data)
 
+    def set_op_output(ops, value):
+        newvalue = value
+        for n in ops:
+            if value is None:
+                newvalue = not n.output
+            try:
+                n.output = newvalue
+                n.updated()
+            except AttributeError:
+                pass
+        self.signal("element_property_update", ops)
+
+    @tree_separator_before()
+
+    @tree_operation(
+        _("Enable all operations"),
+        node_type="branch ops",
+        help=_("Enable all operations"),
+    )
+    def ops_enable_all(node, **kwargs):
+        set_op_output(list(self.ops()), True)
+
+    @tree_operation(
+        _("Disable all operations"),
+        node_type="branch ops",
+        help=_("Disable all operations"),
+    )
+    def ops_disable_all(node, **kwargs):
+        set_op_output(list(self.ops()), False)
+
+    @tree_separator_after()
+    @tree_operation(
+        _("Toggle all operations"),
+        node_type="branch ops",
+        help=_("Toggle enabled-status of all operations"),
+    )
+    def ops_toggle_all(node, **kwargs):
+        set_op_output(list(self.ops()), None)
+
+
+    def radio_match_speed_all(node, speed=0, **kwargs):
+        maxspeed = 0
+        for n in list(self.ops()):
+            if n.speed is not None:
+                maxspeed = max(maxspeed, n.speed)
+        return bool(abs(maxspeed - float(speed)) < 0.5)
+
+    # ==========
+    # General menu-entries for elem branch
+    # ==========
+
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
         # self("element* delete\n")
         with self.static("clear_elems"):
             self.elem_branch.remove_all_children()
+
+    # ==========
+    # General menu-entries for regmark branch
+    # ==========
 
     @tree_operation(_("Clear all"), node_type="branch reg", help="")
     def clear_all_regmarks(node, **kwargs):
