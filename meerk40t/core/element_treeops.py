@@ -428,8 +428,9 @@ def init_tree(kernel):
     @tree_submenu(_("Power"))
     @tree_radio(radio_match_power)
     @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
-        _("{power}ppi"),
+        _("{power}ppi ({power_10}%)"),
         node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
         help="",
     )
@@ -641,8 +642,9 @@ def init_tree(kernel):
     @tree_submenu(_("Scale power settings"))
     @tree_radio(radio_match_power_all)
     @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_calc("power_10", lambda i: round(i / 10, 1))
     @tree_operation(
-        _("Max power = {power}ppi"),
+        _("Max power = {power}ppi ({power_10}%)"),
         node_type="branch ops",
         help="",
     )
@@ -700,14 +702,6 @@ def init_tree(kernel):
     )
     def ops_toggle_all(node, **kwargs):
         set_op_output(list(self.ops()), None)
-
-
-    def radio_match_speed_all(node, speed=0, **kwargs):
-        maxspeed = 0
-        for n in list(self.ops()):
-            if n.speed is not None:
-                maxspeed = max(maxspeed, n.speed)
-        return bool(abs(maxspeed - float(speed)) < 0.5)
 
     # ==========
     # General menu-entries for elem branch
