@@ -187,7 +187,7 @@ class LineTextPropertyPanel(wx.Panel):
             return
         fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
-        self.text_text.SetValue(node.mktext)
+        self.text_text.SetValue(str(node.mktext))
         self.Show()
 
     def load_directory(self, fontdir):
