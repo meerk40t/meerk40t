@@ -187,6 +187,25 @@ class NewlyController:
 
         # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
 
+    def _map_speed(self, speed):
+        speed = int(round(speed))
+        if speed > 10:
+            return 162 + speed
+        if speed > 5:
+            return 152 + speed
+        else:
+            return int(speed / 10)
+
+    def _map_power(self, power):
+        power /= 1000.0  # Scale to 0-1
+        power *= self.service.max_power  # Scale by max power %
+        power *= 255.0 / 100.0  # range between 000 and 255
+        if power > 255:
+            return 255
+        if power <= 0:
+            return 0
+        return int(round(power))
+
     def program_mode(self, relative=True):
         if self.mode == DRIVER_STATE_PROGRAM:
             return
@@ -217,13 +236,10 @@ class NewlyController:
             settings = chart[-1]
         self.command_buffer.append(f"VQ{int(round(settings['corner_speed']))}")
         self.command_buffer.append(f"VJ{int(round(settings['acceleration_length']))}")
+        self.command_buffer.append("SP1")
         power = self.service.default_cut_power if self._power is None else self._power
-        da_power = int(
-            round((power / 1000.0) * self.service.max_power * 255.0 / 100.0)
-        )
-        self.command_buffer.append(f"DA{da_power}")
-        self.command_buffer.append("SP0")
-        self.command_buffer.append(f"VS{int(round(speed_at_program_change))}")
+        self.command_buffer.append(f"DA{self._map_power(power)}")
+        self.command_buffer.append(f"VS{self._map_speed(speed_at_program_change)}")
         if relative:
             self._relative = True
             self.command_buffer.append("PR")
