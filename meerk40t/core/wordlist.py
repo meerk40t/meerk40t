@@ -418,12 +418,12 @@ class Wordlist:
         return ct, colcount, headers
 
     def wordlist_delta(self, orgtext, increase):
-        newtext = orgtext
+        newtext = str(orgtext)
         toreplace = []
         # list of tuples, (index found, old, new )
         # Lets gather the {} first...
         brackets = re.compile(r"\{[^}]+\}")
-        for bracketed_key in brackets.findall(orgtext):
+        for bracketed_key in brackets.findall(str(orgtext)):
             #            print(f"Key found: {bracketed_key}")
             newpattern = ""
             key = bracketed_key[1:-1].lower().strip()

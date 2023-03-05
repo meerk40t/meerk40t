@@ -1784,9 +1784,9 @@ def init_tree(kernel):
         result = False
         txt = ""
         if hasattr(node, "text") and node.text is not None:
-            txt = node.text
+            txt = str(node.text)
         if hasattr(node, "mktext") and node.mktext is not None:
-            txt = node.mktext
+            txt = str(node.mktext)
         # Very stupid, but good enough
         if "{" in txt and "}" in txt:
             result = True
