@@ -188,13 +188,16 @@ class NewlyController:
         # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
 
     def _map_speed(self, speed):
-        speed = int(round(speed))
-        if speed > 10:
-            return 162 + speed
-        if speed > 5:
-            return 152 + speed
+        if speed > 100:
+            return int(round(speed / 10))
+        if speed >= 15:
+            return 162 + int(round(speed))
+        if speed >= 5:
+            return 147 + int(round(speed * 2))
+        if speed >= 1:
+            return 132 + int(round(speed * 5))
         else:
-            return int(speed / 10)
+            return 127 + int(round(speed * 10))
 
     def _map_power(self, power):
         power /= 1000.0  # Scale to 0-1
