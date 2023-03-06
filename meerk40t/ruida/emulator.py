@@ -647,6 +647,7 @@ class RuidaEmulator:
                         break
                     self.filename += chr(a)
                 self._describe(array, f"Filename: {self.filename}")
+                # self._respond(b"\xe8\x02", desc="File Packet Ack")  # RESPONSE UNKNOWN
                 if self.saving:
                     self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
                 return True
