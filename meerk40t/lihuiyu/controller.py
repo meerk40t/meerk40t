@@ -479,7 +479,11 @@ class LihuiyuController:
         packet += b"F" * (30 - len(packet))
         packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
         self.connection.write(packet)
-        self._confirm_serial()
+        try:
+            self._confirm_serial()
+        except ConnectionError:
+            # If we could not access the status, then we did not confirm the serial number.
+            pass
 
     def update_state(self, state):
         if state == self.state:
