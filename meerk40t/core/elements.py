@@ -1,3 +1,10 @@
+"""
+The elements module governs all the interactions with the various nodes, as well as dealing with tree information.
+This serves effectively as the datastructure that stores all information about any active project. This includes
+several smaller functional pieces like Penbox and Wordlists.
+"""
+
+
 import contextlib
 import os.path
 from time import time
@@ -382,15 +389,6 @@ OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op
 
 
 class Elemental(Service):
-    """
-    The elemental service is governs all the interactions with the various elements,
-    operations, and filenodes. Handling structure change and selection, emphasis, and
-    highlighting changes. The goal of this module is to make sure that the life cycle
-    of the elements is strictly enforced. For example, every element that is removed
-    must have had the .cache deleted. And anything selecting an element must propagate
-    that information out to inform other interested modules.
-    """
-
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
@@ -914,17 +912,99 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        if as_group != 0:
-            individually = 2  # all elements as a total
-        else:
-            individually = 0
-            for n in data:
-                if n.type == "group":
-                    individually = 1
-                    break
+        def remove_children_from_list(list_to_deal, parent_node):
+            for idx, node in enumerate(list_to_deal):
+                if node is None:
+                    continue
+                if node.parent is parent_node:
+                    list_to_deal[idx] = None
+                    if len(node.children) > 0:
+                        remove_children_from_list(list_to_deal, node)
+
+        def translate_node(node, dx, dy):
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                return
+            else:
+                if node.type in ("group", "file"):
+                    for c in node.children:
+                        translate_node(c, dx, dy)
+                    node.translated(dx, dy)
+                else:
+                    try:
+                        node.matrix.post_translate(dx, dy)
+                        node.translated(dx, dy)
+                    except AttributeError:
+                        pass
+
+        align_data = [e for e in data]
+        data_to_align = []
+        # We need to iterate through all the elements
+        # to establish if they belong to a group,
+        # if all the elements in this group are in
+        # the dataset too, then we just take the group
+        # as a representative.
+        data_len = len(align_data)
+        for idx1, node_1 in enumerate(align_data):
+            if node_1 is None:
+                # Has been dealt with already
+                # print (f"Eliminated node")
+                continue
+            # Is this a group? Then we just take this node
+            # and remove all children nodes
+            if node_1.type in ("file", "group"):
+                # print (f"Group node, eliminate children")
+                remove_children_from_list(align_data, node_1)
+                # No continue, as we still need to
+                # assess the parent case
+
+            parent = node_1.parent
+            if parent is None:
+                data_to_align.append(node_1)
+                align_data[idx1] = None
+                # print (f"Adding {node_1.type}, no parent")
+                continue
+            if parent.type not in ("file", "group"):
+                # That should not happen per se,
+                # only for root objects which parent
+                # is elem_branch
+                # print (f"Adding {node_1.type}, parent was: {parent.type}")
+                data_to_align.append(node_1)
+                align_data[idx1] = None
+                continue
+            # How many children are contained?
+            candidates = len(parent.children)
+            identified = 0
+            if candidates > 0:
+                # We only need to look to elements not yet dealt with,
+                # but we start with the current index to include
+                # node_1 in the count
+                for idx2 in range(idx1, data_len, 1):
+                    node_2 = align_data[idx2]
+                    if node_2 is not None:
+                        if node_2.parent is parent:
+                            identified += 1
+            if identified == candidates:
+                # All children of the parent object are contained
+                # So we add the parent instead...
+                data_to_align.append(parent)
+                remove_children_from_list(align_data, parent)
+                # print (f"Adding parent for {node_1.type}, all children inside")
+
+            else:
+                data_to_align.append(node_1)
+                align_data[idx1] = None
+                # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
+
+        # One special case though: if we have selected all
+        # elements within a single group then we still deal
+        # with all children
+        if len(data_to_align) == 1:
+            node = data_to_align[0]
+            if node is not None and node.type in ("file", "group"):
+                data_to_align = [e for e in node.children]
         # Selection boundaries
         boundary_points = []
-        for node in data:
+        for node in data_to_align:
             if node.bounds is not None:
                 boundary_points.append(node.bounds)
         if len(boundary_points) == 0:
@@ -934,70 +1014,29 @@ class Elemental(Service):
         right_edge = max([e[2] for e in boundary_points])
         bottom_edge = max([e[3] for e in boundary_points])
         if alignbounds is None:
+            # print ("Alignbounds were not set...")
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually in (0, 1):
-            groupmatrix = ""
+        if as_group == 0:
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
             # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
-            groupmatrix = f"translate({groupdx}, {groupdy})"
 
-        # Looping through all nodes with node.flat can provide
-        # multiple times a single node, as you may loop through
-        # files and groups nested into each other.
-        # To avoid this we create a temporary set which by definition
-        # can only contain unique members
-        if individually == 0:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(n.flat(emphasized=True, types=elem_nodes))
-        else:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(list([n]))
-        for q in s:
+        for q in data_to_align:
             # print(f"Node to be treated: {q.type}")
-            if individually in (0, 1):
+            if as_group == 0:
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
-                matrix = f"translate({dx}, {dy})"
-                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
-                matrix = groupmatrix
-            if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
-                continue
-            else:
-                if q.type in ("group", "file"):
-                    for c in q.flat(emphasized=True, types=elem_nodes):
-                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
-                            continue
-                        try:
-                            c.matrix.post_translate(dx, dy)
-                            # c.modified()
-                            c.translated(dx, dy)
-                        except AttributeError:
-                            pass
-                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
-                else:
-                    try:
-                        # q.matrix *= matrix
-                        q.matrix.post_translate(dx, dy)
-                        # q.modified()
-                        q.translated(dx, dy)
-                    except AttributeError:
-                        pass
-                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
+            translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
@@ -1478,7 +1517,7 @@ class Elemental(Service):
         #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
-                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
@@ -1492,7 +1531,8 @@ class Elemental(Service):
                 drop_node.drop(drag_node, modify=True)
                 success = True
             else:
-                print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                pass
         if self.classify_new and len(to_classify) > 0:
             self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
