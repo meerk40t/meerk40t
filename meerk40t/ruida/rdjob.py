@@ -249,6 +249,10 @@ class RDJob:
         with self.lock:
             self.buffer.extend(parse_commands(packet))
 
+    def write_command(self, command):
+        with self.lock:
+            self.buffer.append(command)
+
     def execute(self, driver=None):
         """
         Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
