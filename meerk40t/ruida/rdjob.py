@@ -184,6 +184,12 @@ class RDJob:
         self.speed = None
         self.power = None
         self.frequency = None
+        self.power1_max = None
+        self.power1_min = None
+        self.power2_max = None
+        self.power2_min = None
+
+        self.program_mode = False
 
         self.color = None
         self.magic = 0x11  # 0x11 for the 634XG
@@ -621,7 +627,7 @@ class RDJob:
             if array[1] == 0x01:
                 power = parse_power(array[2:4])
                 self.power1_min = power
-                power = self.power1_max * 10.0  # 1000 / 100
+                power = self.power1_min * 10.0  # 1000 / 100
                 desc = f"Power 1 min={power}"
                 if power != self.power:
                     try:
