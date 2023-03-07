@@ -20,6 +20,7 @@ from .rdjob import (
     parse_commands,
     swizzles_lut,
 )
+from ..core.units import UNITS_PER_uM
 
 
 class RuidaEmulator:
@@ -1314,6 +1315,7 @@ class RuidaEmulator:
         if mem == 0x0221:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            x /= UNITS_PER_uM
             return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
@@ -1322,6 +1324,7 @@ class RuidaEmulator:
         if mem == 0x0231:
             pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            y /= UNITS_PER_uM
             return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
