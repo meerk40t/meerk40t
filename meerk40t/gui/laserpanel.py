@@ -378,10 +378,12 @@ class LaserPanel(wx.Panel):
                     self.context(
                         "planz clear copy preprocess validate blob preopt optimize\n"
                     )
+                    param = "1"
                 else:
                     self.context("planz clear copy preprocess validate blob\n")
+                    param = "0"
 
-            self.context("window toggle Simulation z 0\n")
+            self.context(f"window open Simulation z 0 {param}\n")
 
     def on_check_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()
