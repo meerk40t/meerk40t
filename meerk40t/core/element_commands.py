@@ -806,7 +806,7 @@ def init_commands(kernel):
                     elif value == "color":
                         operand.append(e.color)
                     elif value == "op":
-                        operand.append(e.type.remove("op").strip())
+                        operand.append(e.type.replace("op", "").strip())
                     elif value == "len":
                         operand.append(len(e.children))
                     else:
