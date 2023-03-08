@@ -837,7 +837,7 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, **kwds):
+    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, optimise_at_start=True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
@@ -914,7 +914,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(1)
+        if optimise_at_start:
+            self.checkbox_optimize.SetValue(1)
+        else:
+            self.checkbox_optimize.SetValue(0)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -1002,6 +1005,7 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
         # end wxGlade
+        self.on_checkbox_optimize(None)
 
         ##############
         # BUILD SCENE
@@ -2111,6 +2115,10 @@ class Simulation(MWindow):
             auto_clear = bool(int(args[4]))
         else:
             auto_clear = True
+        if len(args) > 5:
+            optimise = bool(int(args[5]))
+        else:
+            optimise = True
 
         self.panel = SimulationPanel(
             self,
@@ -2118,6 +2126,7 @@ class Simulation(MWindow):
             context=self.context,
             plan_name=plan_name,
             auto_clear=auto_clear,
+            optimise_at_start=optimise,
         )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
