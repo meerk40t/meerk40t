@@ -1,3 +1,18 @@
+"""
+Device Specific Unit Conversion Objects
+
+This defines a Viewport which all .device services are expected to implement. This provides the core functionality for
+establishing the scene and mapping points from scene locations to device locations. This also provides functionality
+for converting different length or angle units into other length or angle units.
+
+The fundamental unit used for all the elements objects is that 1 inch is equal to 65535 native units called a Tat for
+Tiger and Tatarize. This is basically a solid middle ground for providing significant rendering detail while not
+overflowing the buffer in linux which starts react poorly for values greater than 16,777,216 (2^24). This should provide
+enough detail for even the smallest lensed galvo laser while also allowing us to define objects as large as a football
+stadium.
+"""
+
+
 import re
 from copy import copy
 from math import tau
@@ -50,14 +65,6 @@ UNITS_CM = 2
 UNITS_MILS = 3
 UNITS_INCH = 4
 UNITS_PERCENT = 100
-
-"""
-Device Specific Unit Conversion Objects
-
-This should exist on any device located at .length accepting coordinate and axis. This is callable with any str length
-and should convert the given length relative to the viewport provided by the native values of the device into
-nanometers.
-"""
 
 
 class ViewPort:

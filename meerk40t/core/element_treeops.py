@@ -1,3 +1,10 @@
+"""
+This is a large number of flagged tree operations. The details of how these are registered is availible in the treeop.py
+file. These define the right-click node menu operations. That menu is dynamically created based on various context
+cues.
+"""
+
+
 import os.path
 from copy import copy
 import math
@@ -534,7 +541,7 @@ def init_tree(kernel):
     def compile_and_simulate(node, **kwargs):
         self.set_node_emphasis(node, True)
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
-        self("window open Simulation 0\n")
+        self("window open Simulation 0 1 1\n")   # Plan Name, Auto-Clear, Optimise
 
     @tree_operation(_("Global Settings"), node_type="branch ops", help="")
     def op_prop(node, **kwargs):
@@ -560,6 +567,64 @@ def init_tree(kernel):
         if len(to_delete) > 0:
             with self.static("clear_unused"):
                 self.remove_operations(to_delete)
+
+    def radio_match_speed_all(node, speed=0, **kwargs):
+        maxspeed = 0
+        for n in list(self.ops()):
+            if n.speed is not None:
+                maxspeed = max(maxspeed, n.speed)
+        return bool(abs(maxspeed - float(speed)) < 0.5)
+
+    @tree_submenu(_("Scale speed settings"))
+    @tree_radio(radio_match_speed_all)
+    @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
+    @tree_operation(_("Max speed = {speed}mm/s"), node_type="branch ops", help="",)
+    def set_speed_levels(node, speed=150, **kwargs):
+        data = list()
+        maxspeed = 0
+        for n in list(self.ops()):
+            if n.speed is not None:
+                maxspeed = max(maxspeed, n.speed)
+        if maxspeed == 0:
+            return
+        for n in list(self.ops()):
+            if n.speed is not None:
+                oldspeed = float(n.speed)
+                newspeed = oldspeed / maxspeed * speed
+                n.speed = float(newspeed)
+                data.append(n)
+        self.signal("element_property_reload", data)
+
+    def radio_match_power_all(node, power=0, **kwargs):
+        maxpower = 0
+        for n in list(self.ops()):
+            if n.power is not None:
+                maxpower = max(maxpower, n.power)
+        return bool(abs(maxpower - float(power)) < 0.5)
+
+    @tree_submenu(_("Scale power settings"))
+    @tree_radio(radio_match_power_all)
+    @tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_operation(
+        _("Max power = {power}ppi"),
+        node_type="branch ops",
+        help="",
+    )
+    def set_power_levels(node, power=1000, **kwargs):
+        data = list()
+        maxpower = 0
+        for n in list(self.ops()):
+            if n.power is not None:
+                maxpower = max(maxpower, n.power)
+        if maxpower == 0:
+            return
+        for n in list(self.ops()):
+            if n.power is not None:
+                oldpower = float(n.power)
+                newpower = oldpower / maxpower * power
+                n.power = float(newpower)
+                data.append(n)
+        self.signal("element_property_reload", data)
 
     @tree_operation(_("Clear all"), node_type="branch elems", help="")
     def clear_all_elems(node, **kwargs):
@@ -972,7 +1037,7 @@ def init_tree(kernel):
         node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
 
     @tree_conditional_try(
-        lambda node: kernel.lookup(f"emulator/{node.data_type}") is not None
+        lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
     )
     @tree_operation(
         _("Convert to Elements"),
@@ -1010,6 +1075,21 @@ def init_tree(kernel):
         if not cancelled:
             d2p.parse(node.data_type, node.data, self)
         return True
+
+    @tree_conditional_try(
+        lambda node: kernel.lookup(f"spoolerjob/{node.data_type}") is not None
+    )
+    @tree_operation(
+        _("Execute Blob"),
+        node_type="blob",
+        help=_("Run the given blob on the current device"),
+    )
+    def blob_execute(node, **kwargs):
+        spooler_job = self.lookup(f"spoolerjob/{node.data_type}")
+        matrix = self.device.scene_to_device_matrix()
+        job_object = spooler_job(self.device.driver, matrix)
+        job_object.write_blob(node.data)
+        self.device.spooler.send(job_object)
 
     @tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
     @tree_operation(
@@ -2102,7 +2182,7 @@ def init_tree(kernel):
                 if hasattr(item, "lock"):
                     item.lock = False
                 drop_node.drop(item)
-    #
+
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)
     # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")

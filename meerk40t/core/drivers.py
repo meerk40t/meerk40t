@@ -1,5 +1,14 @@
 import time
 
+"""
+A driver is a class which implements a set of various functions that are expected to be called to control a particular
+laser. 
+
+There is no guarantees with regard to what commands should exist other than `hold_work` which is required by the
+spooler. Anything that accesses a driver is expected to call any would-be function as if it may generate an
+AttributeError (because it might).
+"""
+
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
 DRIVER_STATE_PROGRAM = 2
@@ -16,17 +25,16 @@ PLOT_DIRECTION = 32
 
 class Driver:
     """
-    A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
-    system. The spooled command consist of a method and some data. These are sent to the driver associated with that
-    spooler in linear within a single spooler thread. If a method does not exist, it will not be called;
-    it will be as if the command didn't exist. Some devices may have other functions which can equally be called through
-    spooling particular lasercode.
+    This driver is mostly an example. Nothing uses this and drivers are not required to implement this set of functions
+    or any functions, except for hold_work(). get(), set(), and status(). If a particular laser implements something
+    no other laser implements. A function should be implemented to access that functionality. If no code calls
+    that function, then it will not execute. But, often these will get called with buttons or device specific
+    implementations.
 
-    Most code however is processed as part of cutcode which is a series of native-coord commands which should be
-    processed in order. These can include curves to cut and places to dwell the laser to be executed as part of a
-    precompiled set of instructions. Cutcode can't do things like pause the laser or leave the rail unlocked, but should
-    be permitted to execute various steps in order, and have that execution manipulated by the most of these remaining
-    commands.
+    However, most of the time the functions in this file will exist regardless of device, so calling these will be
+    effective most of the time. However, sometimes things like unlock rail for a galvo laser (which has no rail) will
+    not be implemented for obvious reasons. The driver will lack that function and any calling code will remain
+    functional.
     """
 
     def __init__(self, context, name=None):

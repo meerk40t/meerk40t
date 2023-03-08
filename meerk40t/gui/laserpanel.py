@@ -441,10 +441,11 @@ class LaserPanel(wx.Panel):
                     self.context(
                         "planz clear copy preprocess validate blob preopt optimize\n"
                     )
+                    param = "1"
                 else:
                     self.context("planz clear copy preprocess validate blob\n")
-
-            self.context("window show Simulation z 0\n")
+                    param = "0"
+            self.context(f"window open Simulation z 0 {param}\n")
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
