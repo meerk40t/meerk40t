@@ -6,70 +6,40 @@ the received data into laser commands to be executed by the local driver.
 """
 
 import os
-from io import BytesIO
 from typing import Tuple, Union
 
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-    get_safe_path,
-    signal_listener,
+from .exceptions import RuidaCommandError
+from meerk40t.kernel import get_safe_path
+from .rdjob import (
+    RDJob,
+    parse_mem,
+    encode32,
+    decodeu35,
+    parse_filenumber,
+    decode14,
+    parse_commands,
+    swizzles_lut,
 )
-
-from ..core.cutcode.plotcut import PlotCut
-from ..core.units import UNITS_PER_MM, UNITS_PER_uM
-from ..svgelements import Color
-
-
-class RuidaCommandError(Exception):
-    """
-    Exception raised when an invalid Ruida command is received.
-    """
+from ..core.units import UNITS_PER_uM
 
 
 class RuidaEmulator:
-    def __init__(self, driver, units_to_device_matrix):
-        self.driver = driver
+    def __init__(self, device, units_to_device_matrix):
+        self.device = device
         self.units_to_device_matrix = units_to_device_matrix
-        self.settings = {"power": 0.0, "speed": 0.0}
 
         self.saving = False
 
         self.filename = None
         self.filestream = None
 
-        self.plotcut = None
-
-        self._use_set = None
-
         self.color = None
 
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
-        self.u = 0.0
-
-        self.a = 0.0
-        self.b = 0.0
-        self.c = 0.0
-        self.d = 0.0
         self.magic = 0x88  # 0x11 for the 634XG
         # Should automatically shift encoding if wrong.
 
         # self.magic = 0x38
-        self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(self.magic)
-
-        self.power1_min = 0
-        self.power1_max = 0
-        self.power2_min = 0
-        self.power2_max = 0
+        self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
         self.channel = None
         self.describe = None
@@ -82,178 +52,15 @@ class RuidaEmulator:
         self.parse_lasercode = True
         self.swizzle_mode = True
 
-    def __repr__(self):
-        return f"RuidaEmulator(@{hex(id(self))})"
-
-    @property
-    def current(self):
-        return self.x, self.y
-
-    def plot_location(self, x, y, power):
-        """
-        Adds this particular location to the current plotcut.
-
-        Or, starts a new plotcut if one is not already started.
-
-        First plotcut is a 0-power move to the current position. X and Y are set to plotted location
-
-        @param x:
-        @param y:
-        @param power:
-        @return:
-        """
-        matrix = self.units_to_device_matrix
-        if self.plotcut is None:
-            if self.program_mode:
-                self.x = x
-                self.y = y
-            ox, oy = matrix.transform_point([self.x * UNITS_PER_uM, self.y * UNITS_PER_uM])
-            self.plotcut = PlotCut(settings=dict(self.settings))
-            self.plotcut.plot_init(int(round(ox)), int(round(oy)))
-        tx, ty = matrix.transform_point([x * UNITS_PER_uM, y * UNITS_PER_uM])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
-        if not self.program_mode:
-            self.plot_commit()
-        self.x = x
-        self.y = y
-
-    def plot_commit(self):
-        """
-        Force commits the old plotcut and unsets the current plotcut.
-
-        @return:
-        """
-        if self.plotcut is None:
-            return
-        self.plot(self.plotcut)
-        self.plotcut = None
-
-    def plot(self, plot):
-        try:
-            self.driver.plot(plot)
-        except AttributeError:
-            pass
-        if not self.program_mode:
-            # If we plotted this, and we aren't in program mode execute all of these commands right away
-            try:
-                self.driver.plot_start()
-            except AttributeError:
-                pass
-
-    def cutset(self):
-        if self._use_set is None:
-            self._use_set = dict(self.settings)
-        return self._use_set
-
-    @staticmethod
-    def signed35(v):
-        v &= 0x7FFFFFFFF
-        if v > 0x3FFFFFFFF:
-            return -0x800000000 + v
-        else:
-            return v
-
-    @staticmethod
-    def signed32(v):
-        v &= 0xFFFFFFFF
-        if v > 0x7FFFFFFF:
-            return -0x100000000 + v
-        else:
-            return v
-
-    @staticmethod
-    def signed14(v):
-        v &= 0x7FFF
-        if v > 0x1FFF:
-            return -0x4000 + v
-        else:
-            return v
-
-    @staticmethod
-    def decode14(data):
-        return RuidaEmulator.signed14(RuidaEmulator.decodeu14(data))
-
-    @staticmethod
-    def decodeu14(data):
-        return (data[0] & 0x7F) << 7 | (data[1] & 0x7F)
-
-    @staticmethod
-    def encode14(v):
-        return [
-            (v >> 7) & 0x7F,
-            v & 0x7F,
-        ]
-
-    @staticmethod
-    def decode35(data):
-        return RuidaEmulator.signed35(RuidaEmulator.decodeu35(data))
-
-    @staticmethod
-    def decode32(data):
-        return RuidaEmulator.signed32(RuidaEmulator.decodeu35(data))
-
-    @staticmethod
-    def decodeu35(data):
-        return (
-            (data[0] & 0x7F) << 28
-            | (data[1] & 0x7F) << 21
-            | (data[2] & 0x7F) << 14
-            | (data[3] & 0x7F) << 7
-            | (data[4] & 0x7F)
+        self.job = RDJob(
+            driver=device.driver,
+            priority=0,
+            channel=self.channel,
+            units_to_device_matrix=units_to_device_matrix,
         )
 
-    @staticmethod
-    def encode32(v):
-        return [
-            (v >> 28) & 0x7F,
-            (v >> 21) & 0x7F,
-            (v >> 14) & 0x7F,
-            (v >> 7) & 0x7F,
-            v & 0x7F,
-        ]
-
-    @staticmethod
-    def abscoord(data):
-        return RuidaEmulator.decode32(data)
-
-    @staticmethod
-    def relcoord(data):
-        return RuidaEmulator.decode14(data)
-
-    @staticmethod
-    def parse_mem(data):
-        return RuidaEmulator.decode14(data)
-
-    @staticmethod
-    def parse_filenumber(data):
-        return RuidaEmulator.decode14(data)
-
-    @staticmethod
-    def parse_speed(data):
-        return RuidaEmulator.decode35(data) / 1000.0
-
-    @staticmethod
-    def parse_frequency(data):
-        return RuidaEmulator.decodeu35(data)
-
-    @staticmethod
-    def parse_power(data):
-        return RuidaEmulator.decodeu14(data) / 163.84  # 16384 / 100%
-
-    @staticmethod
-    def parse_time(data):
-        return RuidaEmulator.decodeu35(data) / 1000.0
-
-    @staticmethod
-    def parse_commands(data):
-        array = list()
-        for b in data:
-            if b >= 0x80 and len(array) > 0:
-                yield array
-                array.clear()
-            array.append(b)
-        if len(array) > 0:
-            yield array
+    def __repr__(self):
+        return f"RuidaEmulator(@{hex(id(self))})"
 
     def msg_reply(self, response, desc="ACK"):
         if self.swizzle_mode:
@@ -267,9 +74,7 @@ class RuidaEmulator:
 
     def _set_magic(self, magic):
         self.magic = magic
-        self.lut_swizzle, self.lut_unswizzle = RuidaEmulator.swizzles_lut(
-            self.magic
-        )
+        self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
         if self.channel:
             self.channel(f"Setting magic to 0x{self.magic:02x}")
 
@@ -322,94 +127,43 @@ class RuidaEmulator:
         and send those to the command routine.
 
         @param data:
+        @param unswizzle: Whether the given data should be unswizzled
         @return:
         """
         packet = self.unswizzle(data) if unswizzle else data
-
-        for array in self.parse_commands(packet):
+        for array in parse_commands(packet):
             try:
-                self.process(array)
+                if not self._process_realtime(array):
+                    self.job.write_command(array)
+                    self.device.spooler.send(self.job, prevent_duplicate=True)
             except RuidaCommandError:
                 if self.channel:
                     self.channel(f"Process Failure: {str(bytes(array).hex())}")
-            except Exception as e:
-                if self.channel:
-                    self.channel(f"Crashed processing: {str(bytes(array).hex())}")
-                    self.channel(str(e))
-                # raise RuidaCommandError from e
 
-    def set_speed(self, speed):
-        self.settings["speed"] = speed
-        current_speed = self.settings.get("speed", 0)
-        if speed != current_speed:
-            try:
-                self.driver.set("speed", speed)
-            except AttributeError:
-                pass
-            self.settings["speed"] = speed
+    def _describe(self, array, desc):
+        if self.describe:
+            self.describe(f"{str(bytes(array).hex())}\t{desc}")
+        if self.channel:
+            self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
 
-    def set_color(self, color):
-        self.settings["color"] = color
+    def _respond(self, respond, desc=None):
+        if respond is not None:
+            self.msg_reply(respond, desc=desc)
 
-    def process(self, array):
+    def _process_realtime(self, array):
         """
-        Parses an individual unswizzled ruida command, updating the emulator state.
+        Test whether the given command is realtime or interfacing code. Should return True if the job does not deal
+        with the given command type.
 
-        These commands can change the position, settings, speed, color, power, create elements, creates lasercode.
         @param array:
-        @return:
+        @return: If realtime or machine interfacing code.
         """
-        desc = ""
-        respond = None
-        respond_desc = None
-        if self.filestream:
-            self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
             if self.channel:
                 self.channel(f"NOT A COMMAND: {array[0]}")
             raise RuidaCommandError
-        elif array[0] == 0x80:
-            value = self.abscoord(array[2:7])
-            if array[1] == 0x00:
-                desc = f"Axis X Move {value}"
-                self.x += value
-            elif array[1] == 0x08:
-                desc = f"Axis Z Move {value}"
-                self.z += value
-        elif array[0] == 0x88:  # 0b10001000 11 characters.
-            x = self.abscoord(array[1:6])
-            y = self.abscoord(array[6:11])
-            self.plot_location(x, y, 0)
-            desc = f"Move Absolute ({x * UNITS_PER_uM} units, {y * UNITS_PER_uM} units)"
-        elif array[0] == 0x89:  # 0b10001001 5 characters
-            if len(array) > 1:
-                dx = self.relcoord(array[1:3])
-                dy = self.relcoord(array[3:5])
-                self.plot_location(self.x + dx, self.y + dy, 0)
-                desc = f"Move Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
-            else:
-                desc = "Move Relative (no coords)"
-        elif array[0] == 0x8A:  # 0b10101010 3 characters
-            dx = self.relcoord(array[1:3])
-            self.plot_location(self.x + dx, self.y, 0)
-            desc = f"Move Horizontal Relative ({dx * UNITS_PER_uM} units)"
-        elif array[0] == 0x8B:  # 0b10101011 3 characters
-            dy = self.relcoord(array[1:3])
-            self.plot_location(self.x, self.y + dy, 0)
-            desc = f"Move Vertical Relative ({dy * UNITS_PER_uM} units)"
-        elif array[0] == 0x97:
-            desc = "Lightburn Swizzle Modulation 97"
-        elif array[0] == 0x9B:
-            desc = "Lightburn Swizzle Modulation 9b"
-        elif array[0] == 0x9E:
-            desc = "Lightburn Swizzle Modulation 9e"
-        elif array[0] == 0xA0:
-            value = self.abscoord(array[2:7])
-            if array[1] == 0x00:
-                desc = f"Axis Y Move {value}"
-            elif array[1] == 0x08:
-                desc = f"Axis U Move {value}"
         elif array[0] == 0xA5:
+            # Interface key values. These are de facto realtime. Only seen in android app. UDP: 50207
             key = None
             if array[1] == 0x50:
                 key = "Down"
@@ -417,870 +171,494 @@ class RuidaEmulator:
                 key = "Up"
             if array[1] == 0x53:
                 if array[2] == 0x00:
-                    desc = "Interface Frame"
+                    self._describe(array, "Interface Frame")
             else:
                 if array[2] == 0x02:
-                    desc = f"Interface +X {key}"
+                    self._describe(array, f"Interface +X {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_right(True)
+                            self.device.driver.move_right(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_right(False)
+                            self.device.driver.move_right(False)
                         except AttributeError:
                             pass
                 elif array[2] == 0x01:
-                    desc = f"Interface -X {key}"
+                    self._describe(array, f"Interface -X {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_left(True)
+                            self.device.driver.move_left(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_left(False)
+                            self.device.driver.move_left(False)
                         except AttributeError:
                             pass
                 if array[2] == 0x03:
-                    desc = f"Interface +Y {key}"
+                    self._describe(array, f"Interface +Y {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_top(True)
+                            self.device.driver.move_top(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_top(False)
+                            self.device.driver.move_top(False)
                         except AttributeError:
                             pass
                 elif array[2] == 0x04:
-                    desc = f"Interface -Y {key}"
+                    self._describe(array, f"Interface -Y {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_bottom(True)
+                            self.device.driver.move_bottom(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_bottom(False)
+                            self.device.driver.move_bottom(False)
                         except AttributeError:
                             pass
                 if array[2] == 0x0A:
-                    desc = f"Interface +Z {key}"
+                    self._describe(array, f"Interface +Z {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_plus_z(True)
+                            self.device.driver.move_plus_z(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_plus_z(False)
+                            self.device.driver.move_plus_z(False)
                         except AttributeError:
                             pass
                 elif array[2] == 0x0B:
-                    desc = f"Interface -Z {key}"
+                    self._describe(array, f"Interface -Z {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_minus_z(True)
+                            self.device.driver.move_minus_z(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_minus_z(False)
+                            self.device.driver.move_minus_z(False)
                         except AttributeError:
                             pass
                 if array[2] == 0x0C:
-                    desc = f"Interface +U {key}"
+                    self._describe(array, f"Interface +U {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_plus_u(True)
+                            self.device.driver.move_plus_u(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_plus_u(False)
+                            self.device.driver.move_plus_u(False)
                         except AttributeError:
                             pass
                 elif array[2] == 0x0D:
-                    desc = f"Interface -U {key}"
+                    self._describe(array, f"Interface -U {key}")
                     if key == "Down":
                         try:
-                            self.driver.move_minus_u(True)
+                            self.device.driver.move_minus_u(True)
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.move_minus_u(False)
+                            self.device.driver.move_minus_u(False)
                         except AttributeError:
                             pass
                 elif array[2] == 0x05:
-                    desc = f"Interface Pulse {key}"
+                    self._describe(array, f"Interface Pulse {key}")
                     if key == "Down":
                         try:
-                            self.driver.laser_on()
+                            self.device.driver.laser_on()
                         except AttributeError:
                             pass
                     else:
                         try:
-                            self.driver.laser_off()
+                            self.device.driver.laser_off()
                         except AttributeError:
                             pass
                 elif array[2] == 0x11:
-                    desc = "Interface Speed"
+                    self._describe(array, "Interface Speed")
                 elif array[2] == 0x06:
-                    desc = "Interface Start/Pause"
+                    self._describe(array, "Interface Start/Pause")
                     try:
-                        self.driver.pause()
+                        self.device.driver.pause()
                     except AttributeError:
                         pass
                 elif array[2] == 0x09:
-                    desc = "Interface Stop"
+                    self._describe(array, "Interface Stop")
                     try:
-                        self.driver.reset()
+                        self.device.driver.reset()
                     except AttributeError:
                         pass
                 elif array[2] == 0x5A:
-                    desc = "Interface Reset"
+                    self._describe(array, "Interface Reset")
                 elif array[2] == 0x0F:
-                    desc = "Interface Trace On/Off"
+                    self._describe(array, "Interface Trace On/Off")
                 elif array[2] == 0x07:
-                    desc = "Interface ESC"
+                    self._describe(array, "Interface ESC")
                 elif array[2] == 0x12:
-                    desc = "Interface Laser Gate"
+                    self._describe(array, "Interface Laser Gate")
                 elif array[2] == 0x08:
-                    desc = "Interface Origin"
+                    self._describe(array, "Interface Origin")
                     try:
-                        self.driver.move_ori(0,0)
+                        self.device.driver.move_ori(0, 0)
                     except AttributeError:
                         pass
-        elif array[0] == 0xA8:  # 0b10101000 11 characters.
-            x = self.abscoord(array[1:6])
-            y = self.abscoord(array[6:11])
-            self.plot_location(x, y, 1)
-            desc = f"Cut Absolute ({x * UNITS_PER_uM} units, {y * UNITS_PER_uM} units)"
-        elif array[0] == 0xA9:  # 0b10101001 5 characters
-            dx = self.relcoord(array[1:3])
-            dy = self.relcoord(array[3:5])
-            self.x += dx
-            self.y += dy
-            self.plot_location(self.x, self.y, 1)
-            desc = (
-                f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
-            )
-        elif array[0] == 0xAA:  # 0b10101010 3 characters
-            dx = self.relcoord(array[1:3])
-            self.plot_location(self.x + dx, self.y, 1)
-            desc = f"Cut Horizontal Relative ({dx * UNITS_PER_uM} units)"
-        elif array[0] == 0xAB:  # 0b10101011 3 characters
-            dy = self.relcoord(array[1:3])
-            self.plot_location(self.x, self.y + dy, 0)
-            desc = f"Cut Vertical Relative ({dy * UNITS_PER_uM} units)"
-        elif array[0] == 0xC7:
-            v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
-            desc = f"Imd Power 1 ({v0})"
-        elif array[0] == 0xC2:
-            v0 = self.parse_power(array[1:3])
-            desc = f"Imd Power 3 ({v0})"
-        elif array[0] == 0xC0:
-            v0 = self.parse_power(array[1:3])
-            desc = f"Imd Power 2 ({v0})"
-        elif array[0] == 0xC3:
-            v0 = self.parse_power(array[1:3])
-            desc = f"Imd Power 4 ({v0})"
-        elif array[0] == 0xC8:
-            v0 = self.parse_power(array[1:3])
-            desc = f"End Power 1 ({v0})"
-        elif array[0] == 0xC4:
-            v0 = self.parse_power(array[1:3])
-            desc = f"End Power 3 ({v0})"
-        elif array[0] == 0xC1:
-            v0 = self.parse_power(array[1:3])
-            desc = f"End Power 2 ({v0})"
-        elif array[0] == 0xC5:
-            v0 = self.parse_power(array[1:3])
-            desc = f"End Power 4 ({v0})"
-        elif array[0] == 0xC6:
-            if array[1] == 0x01:
-                power = self.parse_power(array[2:4])
-                self.settings["power1_min"] = power
-                power = self.power1_max * 10.0  # 1000 / 100
-                desc = f"Power 1 min={power}"
-                current_power = self.settings.get("power", 0)
-                if power != current_power:
-                    try:
-                        self.driver.set("power", power)
-                    except AttributeError:
-                        pass
-                    self.settings["power"] = power
-            elif array[1] == 0x02:
-                power = self.parse_power(array[2:4])
-                self.settings["power1_max"] = power
-                power = self.power1_max * 10.0  # 1000 / 100
-                desc = f"Power 1 max={power}"
-                current_power = self.settings.get("power", 0)
-                if power != current_power:
-                    try:
-                        self.driver.set("power", power)
-                    except AttributeError:
-                        pass
-                    self.settings["power"] = power
-            elif array[1] == 0x05:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 3 min={power}"
-            elif array[1] == 0x06:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 3 max={power}"
-            elif array[1] == 0x07:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 4 min={power}"
-            elif array[1] == 0x08:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 4 max={power}"
-            elif array[1] == 0x10:
-                interval = self.parse_time(array[2:7])
-                desc = f"Laser Interval {interval}ms"
-            elif array[1] == 0x11:
-                interval = self.parse_time(array[2:7])
-                desc = f"Add Delay {interval}ms"
-            elif array[1] == 0x12:
-                interval = self.parse_time(array[2:7])
-                desc = f"Laser On Delay {interval}ms"
-            elif array[1] == 0x13:
-                interval = self.parse_time(array[2:7])
-                desc = f"Laser Off Delay {interval}ms"
-            elif array[1] == 0x15:
-                interval = self.parse_time(array[2:7])
-                desc = f"Laser On2 {interval}ms"
-            elif array[1] == 0x16:
-                interval = self.parse_time(array[2:7])
-                desc = f"Laser Off2 {interval}ms"
-            elif array[1] == 0x21:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 2 min={power}"
-                self.power2_min = power
-            elif array[1] == 0x22:
-                power = self.parse_power(array[2:4])
-                desc = f"Power 2 max={power}"
-                self.power2_max = power
-            elif array[1] == 0x31:
-                part = array[2]
-                self.power1_min = self.parse_power(array[3:5])
-                desc = f"{part}, Power 1 Min=({self.power1_min})"
-            elif array[1] == 0x32:
-                part = array[2]
-                self.power1_max = self.parse_power(array[3:5])
-                desc = f"{part}, Power 1 Max=({self.power1_max})"
-            elif array[1] == 0x35:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 3 Min ({power})"
-            elif array[1] == 0x36:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 3 Max ({power})"
-            elif array[1] == 0x37:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 4 Min ({power})"
-            elif array[1] == 0x38:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 4 Max ({power})"
-            elif array[1] == 0x41:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 2 Min ({power})"
-            elif array[1] == 0x42:
-                part = array[2]
-                power = self.parse_power(array[3:5])
-                desc = f"{part}, Power 2 Max ({power})"
-            elif array[1] == 0x50:
-                power = self.parse_power(array[2:4])
-                desc = f"Through Power 1 ({power})"
-            elif array[1] == 0x51:
-                power = self.parse_power(array[2:4])
-                desc = f"Through Power 2 ({power})"
-            elif array[1] == 0x55:
-                power = self.parse_power(array[2:4])
-                desc = f"Through Power 3 ({power})"
-            elif array[1] == 0x56:
-                power = self.parse_power(array[2:4])
-                desc = f"Through Power 4 ({power})"
-            elif array[1] == 0x60:
-                laser = array[2]
-                part = array[3]
-                frequency = self.parse_frequency(array[4:9])
-                desc = f"part, Laser {laser}, Frequency ({frequency})"
-                self.settings["frequency"] = frequency
-                current_frequency = self.settings.get("frequency", 0)
-                if frequency != current_frequency:
-                    try:
-                        self.driver.set("frequency", frequency)
-                    except AttributeError:
-                        pass
-                    self.settings["frequency"] = frequency
-        elif array[0] == 0xC9:
-            if array[1] == 0x02:
-                self.plot_commit()
-                speed = self.parse_speed(array[2:7])
-                self.set_speed(speed)
-                desc = f"Speed Laser 1 {speed}mm/s"
-            elif array[1] == 0x03:
-                speed = self.parse_speed(array[2:7])
-                desc = f"Axis Speed {speed}mm/s"
-            elif array[1] == 0x04:
-                self.plot_commit()
-                part = array[2]
-                speed = self.parse_speed(array[3:8])
-                self.set_speed(speed)
-                desc = f"{part}, Speed {speed}mm/s"
-            elif array[1] == 0x05:
-                speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = f"Force Eng Speed {speed}mm/s"
-            elif array[1] == 0x06:
-                speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = f"Axis Move Speed {speed}mm/s"
-        elif array[0] == 0xCA:
-            if array[1] == 0x01:
-                if array[2] == 0x00:
-                    desc = "End Layer"
-                elif array[2] == 0x01:
-                    desc = "Work Mode 1"
-                elif array[2] == 0x02:
-                    desc = "Work Mode 2"
-                elif array[2] == 0x03:
-                    desc = "Work Mode 3"
-                elif array[2] == 0x04:
-                    desc = "Work Mode 4"
-                elif array[2] == 0x55:
-                    desc = "Work Mode 5"
-                elif array[2] == 0x05:
-                    desc = "Work Mode 6"
-                elif array[2] == 0x10:
-                    desc = "Layer Device 0"
-                elif array[2] == 0x11:
-                    desc = "Layer Device 1"
-                elif array[2] == 0x12:
-                    desc = "Air Assist Off"
-                elif array[2] == 0x13:
-                    desc = "Air Assist On"
-                elif array[2] == 0x14:
-                    desc = "DbHead"
-                elif array[2] == 0x30:
-                    desc = "EnLaser2Offset 0"
-                elif array[2] == 0x31:
-                    desc = "EnLaser2Offset 1"
-            elif array[1] == 0x02:
-                part = array[2]
-                desc = f"{part}, Layer Number"
-            elif array[1] == 0x03:
-                desc = "EnLaserTube Start"
-            elif array[1] == 0x04:
-                value = array[2]
-                desc = f"X Sign Map {value}"
-            elif array[1] == 0x05:
-                self.plot_commit()
-                c = RuidaEmulator.decodeu35(array[2:7])
-                r = c & 0xFF
-                g = (c >> 8) & 0xFF
-                b = (c >> 16) & 0xFF
-                c = Color(red=r, blue=b, green=g)
-                self.set_color(c.hex)
-                desc = f"Layer Color {str(self.color)}"
-            elif array[1] == 0x06:
-                part = array[2]
-                c = RuidaEmulator.decodeu35(array[3:8])
-                r = c & 0xFF
-                g = (c >> 8) & 0xFF
-                b = (c >> 16) & 0xFF
-                c = Color(red=r, blue=b, green=g)
-                self.set_color(c.hex)
-                desc = f"{part}, Color {self.color}"
-            elif array[1] == 0x10:
-                value = array[2]
-                desc = f"EnExIO Start {value}"
-            elif array[1] == 0x22:
-                part = array[2]
-                desc = f"{part}, Max Layer"
-            elif array[1] == 0x30:
-                filenumber = self.parse_filenumber(array[2:4])
-                desc = f"U File ID {filenumber}"
-            elif array[1] == 0x40:
-                value = array[2]
-                desc = f"ZU Map {value}"
-            elif array[1] == 0x41:
-                part = array[2]
-                mode = array[3]
-                desc = f"{part}, Work Mode {mode}"
+            return True
         elif array[0] == 0xCC:
-            desc = "ACK from machine"
+            self._describe(array, "ACK from machine")
+            return True
         elif array[0] == 0xCD:
-            desc = "ERR from machine"
+            self._describe(array, "ERR from machine")
+            return True
         elif array[0] == 0xCE:
-            desc = "Keep Alive"
-        elif array[0] == 0xD0:
-            if array[1] == 0x29:
-                desc = "Unknown LB Command"
+            self._describe(array, "Keep Alive")
+            return True
         elif array[0] == 0xD7:
-            if not self.saving:
-                pass
-                # If not saving send to spooler, if control
-            self.saving = False
+            # END OF FILE.
             self.filename = None
-            if self.filestream is not None:
-                self.filestream.close()
-                self.filestream = None
             self.program_mode = False
-            self.plot_commit()
-            try:
-                self.driver.plot_start()
-            except AttributeError:
-                pass
-            desc = "End Of File"
+            self._describe(array, "End Of File")
+            return False
         elif array[0] == 0xD8:
             if array[1] == 0x00:
-                desc = "Start Process"
+                self._describe(array, "Start Process")
                 self.program_mode = True
-            if array[1] == 0x01:
-                desc = "Stop Process"
+                return False
+            elif array[1] == 0x01:
+                self._describe(array, "Stop Process")
                 try:
-                    self.driver.reset()
-                    self.driver.home()
+                    self.device.driver.reset()
+                    self.device.driver.home()
                 except AttributeError:
                     pass
-            if array[1] == 0x02:
-                desc = "Pause Process"
+                return True
+            elif array[1] == 0x02:
+                self._describe(array, "Pause Process")
                 try:
-                    self.driver.pause()
+                    self.device.driver.pause()
                 except AttributeError:
                     pass
-            if array[1] == 0x03:
-                desc = "Restore Process"
+                return True
+            elif array[1] == 0x03:
+                self._describe(array, "Restore Process")
                 try:
-                    self.driver.resume()
+                    self.device.driver.resume()
                 except AttributeError:
                     pass
-            if array[1] == 0x10:
-                desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
-            if array[1] == 0x11:
-                desc = "Ref Point Mode 1, Anchor Point"
-            if array[1] == 0x12:
-                desc = "Ref Point Mode 0, Current Position"
-            if array[1] == 0x2C:
-                self.z = 0.0
-                desc = "Home Z"
-            if array[1] == 0x2D:
-                self.u = 0.0
-                desc = "Home U"
-            if array[1] == 0x2A:
-                self.x = 0.0
-                self.y = 0.0
-                desc = "Home XY"
+                return True
+            elif array[1] == 0x10:
+                # START FILE
+                self._describe(
+                    array, "Ref Point Mode 2, Machine Zero/Absolute Position"
+                )
+                return False
+            elif array[1] == 0x11:
+                # START FILE
+                self._describe(array, "Ref Point Mode 1, Anchor Point")
+                return False
+            elif array[1] == 0x12:
+                # START FILE
+                self._describe(array, "Ref Point Mode 0, Current Position")
+                return False
+            elif array[1] == 0x2C:
+                self._describe(array, "Home Z")
+                return False
+            elif array[1] == 0x2D:
+                self._describe(array, "Home U")
+                return False
+            elif array[1] == 0x2A:
+                self._describe(array, "Home XY")
+                return False
+            elif array[1] == 0x2E:
+                self._describe(array, "FocusZ")
+                return False
+            elif array[1] == 0x20:
+                self._describe(array, "KeyDown -X +Left")
                 try:
-                    self.driver.home()
+                    self.device.driver.move_left(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x2E:
-                desc = "FocusZ"
-            if array[1] == 0x20:
-                desc = "KeyDown -X +Left"
+                return True
+            elif array[1] == 0x21:
+                self._describe(array, "KeyDown +X +Right")
                 try:
-                    self.driver.move_left(True)
+                    self.device.driver.move_right(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x21:
-                desc = "KeyDown +X +Right"
+                return True
+            elif array[1] == 0x22:
+                self._describe(array, "KeyDown +Y +Top")
                 try:
-                    self.driver.move_right(True)
+                    self.device.driver.move_top(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x22:
-                desc = "KeyDown +Y +Top"
+                return True
+            elif array[1] == 0x23:
+                self._describe(array, "KeyDown -Y +Bottom")
                 try:
-                    self.driver.move_top(True)
+                    self.device.driver.move_down(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x23:
-                desc = "KeyDown -Y +Bottom"
+                return True
+            elif array[1] == 0x24:
+                self._describe(array, "KeyDown +Z")
                 try:
-                    self.driver.move_down(True)
+                    self.device.driver.move_plus_z(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x24:
-                desc = "KeyDown +Z"
+                return True
+            elif array[1] == 0x25:
+                self._describe(array, "KeyDown -Z")
                 try:
-                    self.driver.move_plus_z(True)
+                    self.device.driver.move_minus_z(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x25:
-                desc = "KeyDown -Z"
+                return True
+            elif array[1] == 0x26:
+                self._describe(array, "KeyDown +U")
                 try:
-                    self.driver.move_minus_z(True)
+                    self.device.driver.move_plus_u(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x26:
-                desc = "KeyDown +U"
+                return True
+            elif array[1] == 0x27:
+                self._describe(array, "KeyDown -U")
                 try:
-                    self.driver.move_plus_u(True)
+                    self.device.driver.move_minus_u(True)
                 except AttributeError:
                     pass
-            if array[1] == 0x27:
-                desc = "KeyDown -U"
+                return True
+            elif array[1] == 0x28:
+                self._describe(array, "KeyDown 0x21")
+                return True
+            elif array[1] == 0x30:
+                self._describe(array, "KeyUp -X +Left")
                 try:
-                    self.driver.move_minus_u(True)
+                    self.device.driver.move_left(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x28:
-                desc = "KeyDown 0x21"
-            if array[1] == 0x30:
-                desc = "KeyUp -X +Left"
+                return True
+            elif array[1] == 0x31:
+                self._describe(array, "KeyUp +X +Right")
                 try:
-                    self.driver.move_left(False)
+                    self.device.driver.move_right(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x31:
-                desc = "KeyUp +X +Right"
+                return True
+            elif array[1] == 0x32:
+                self._describe(array, "KeyUp +Y +Top")
                 try:
-                    self.driver.move_right(False)
+                    self.device.driver.move_top(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x32:
-                desc = "KeyUp +Y +Top"
+                return True
+            elif array[1] == 0x33:
+                self._describe(array, "KeyUp -Y +Bottom")
                 try:
-                    self.driver.move_top(False)
+                    self.device.driver.move_down(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x33:
-                desc = "KeyUp -Y +Bottom"
+                return True
+            elif array[1] == 0x34:
+                self._describe(array, "KeyUp +Z")
                 try:
-                    self.driver.move_down(False)
+                    self.device.driver.move_plus_z(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x34:
-                desc = "KeyUp +Z"
+                return True
+            elif array[1] == 0x35:
                 try:
-                    self.driver.move_plus_z(False)
+                    self.device.driver.move_minus_z(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x35:
+                self._describe(array, "KeyUp -Z")
+                return True
+            elif array[1] == 0x36:
+                self._describe(array, "KeyUp +U")
                 try:
-                    self.driver.move_minus_z(False)
+                    self.device.driver.move_plus_u(False)
                 except AttributeError:
                     pass
-                desc = "KeyUp -Z"
-            if array[1] == 0x36:
-                desc = "KeyUp +U"
+                return True
+            elif array[1] == 0x37:
+                self._describe(array, "KeyUp -U")
                 try:
-                    self.driver.move_plus_u(False)
+                    self.device.driver.move_minus_u(False)
                 except AttributeError:
                     pass
-            if array[1] == 0x37:
-                desc = "KeyUp -U"
-                try:
-                    self.driver.move_minus_u(False)
-                except AttributeError:
-                    pass
-            if array[1] == 0x38:
-                desc = "KeyUp 0x20"
-            if array[1] == 0x39:
-                desc = "Home A"
-            if array[1] == 0x3A:
-                desc = "Home B"
-            if array[1] == 0x3B:
-                desc = "Home C"
-            if array[1] == 0x3C:
-                desc = "Home D"
-            if array[1] == 0x40:
-                desc = "KeyDown 0x18"
-            if array[1] == 0x41:
-                desc = "KeyDown 0x19"
-            if array[1] == 0x42:
-                desc = "KeyDown 0x1A"
-            if array[1] == 0x43:
-                desc = "KeyDown 0x1B"
-            if array[1] == 0x44:
-                desc = "KeyDown 0x1C"
-            if array[1] == 0x45:
-                desc = "KeyDown 0x1D"
-            if array[1] == 0x46:
-                desc = "KeyDown 0x1E"
-            if array[1] == 0x47:
-                desc = "KeyDown 0x1F"
-            if array[1] == 0x48:
-                desc = "KeyUp 0x08"
-            if array[1] == 0x49:
-                desc = "KeyUp 0x09"
-            if array[1] == 0x4A:
-                desc = "KeyUp 0x0A"
-            if array[1] == 0x4B:
-                desc = "KeyUp 0x0B"
-            if array[1] == 0x4C:
-                desc = "KeyUp 0x0C"
-            if array[1] == 0x4D:
-                desc = "KeyUp 0x0D"
-            if array[1] == 0x4E:
-                desc = "KeyUp 0x0E"
-            if array[1] == 0x4F:
-                desc = "KeyUp 0x0F"
-            if array[1] == 0x51:
-                desc = "Inhale On/Off"
-        elif array[0] == 0xD9:
-            if len(array) == 1:
-                desc = "Unknown Directional Setting"
-            else:
-                options = array[2]
-                if options == 0x03:
-                    param = "Light"
-                elif options == 0x02:
-                    param = ""
-                elif options == 0x01:
-                    param = "Light/Origin"
-                else:  # options == 0x00:
-                    param = "Origin"
-                if array[1] == 0x00 or array[1] == 0x50:
-                    coord = self.abscoord(array[3:8])
-                    desc = f"Move {param} X: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x + coord, self.y, 0)
-                elif array[1] == 0x01 or array[1] == 0x51:
-                    coord = self.abscoord(array[3:8])
-                    desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
-                    self.plot_location(self.x, self.y + coord, 0)
-                elif array[1] == 0x02 or array[1] == 0x52:
-                    oz = self.z
-                    coord = self.abscoord(array[3:8])
-                    self.z += coord
-                    desc = f"Move {param} Z: {coord} ({self.x},{self.y})"
-                    if oz != self.z:
-                        try:
-                            self.plot_commit()  # We plot commit on z level change
-                            self.driver.axis("z", self.z)
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x03 or array[1] == 0x53:
-                    ou = self.u
-                    coord = self.abscoord(array[3:8])
-                    self.u += coord
-                    desc = f"Move {param} U: {coord} ({self.x},{self.y})"
-                    if ou != self.u:
-                        try:
-                            self.plot_commit()  # We plot commit on u level change
-                            self.driver.axis("u", self.u)
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x0F:
-                    desc = "Feed Axis Move"
-                elif array[1] == 0x10 or array[1] == 0x60:
-                    self.x = self.abscoord(array[3:8])
-                    self.y = self.abscoord(array[8:13])
-                    desc = f"Move {param} XY ({self.x * UNITS_PER_uM}, {self.y * UNITS_PER_uM})"
-                    if "Origin" in param:
-                        try:
-                            self.driver.move_ori(f"{self.x * UNITS_PER_uM / UNITS_PER_MM}mm", f"{self.y * UNITS_PER_uM / UNITS_PER_MM}mm")
-                        except AttributeError:
-                            pass
-                    else:
-                        try:
-                            self.driver.home()
-                        except AttributeError:
-                            pass
-                elif array[1] == 0x30 or array[1] == 0x70:
-                    self.x = self.abscoord(array[3:8])
-                    self.y = self.abscoord(array[8:13])
-                    self.u = self.abscoord(array[13 : 13 + 5])
-                    desc = f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
-                    try:
-                        self.driver.move_abs(self.x * UNITS_PER_uM, self.y * UNITS_PER_uM)
-                        self.driver.axis("u", self.u * UNITS_PER_uM)
-                    except AttributeError:
-                        pass
+                return True
+            elif array[1] == 0x38:
+                self._describe(array, "KeyUp 0x20")
+                return True
+            elif array[1] == 0x39:
+                self._describe(array, "Home A")
+                return False
+            elif array[1] == 0x3A:
+                self._describe(array, "Home B")
+                return False
+            elif array[1] == 0x3B:
+                self._describe(array, "Home C")
+                return False
+            elif array[1] == 0x3C:
+                self._describe(array, "Home D")
+                return False
+            elif array[1] == 0x40:
+                self._describe(array, "KeyDown 0x18")
+                return True
+            elif array[1] == 0x41:
+                self._describe(array, "KeyDown 0x19")
+                return True
+            elif array[1] == 0x42:
+                self._describe(array, "KeyDown 0x1A")
+                return True
+            elif array[1] == 0x43:
+                self._describe(array, "KeyDown 0x1B")
+                return True
+            elif array[1] == 0x44:
+                self._describe(array, "KeyDown 0x1C")
+                return True
+            elif array[1] == 0x45:
+                self._describe(array, "KeyDown 0x1D")
+                return True
+            elif array[1] == 0x46:
+                self._describe(array, "KeyDown 0x1E")
+                return True
+            elif array[1] == 0x47:
+                self._describe(array, "KeyDown 0x1F")
+                return True
+            elif array[1] == 0x48:
+                self._describe(array, "KeyUp 0x08")
+                return True
+            elif array[1] == 0x49:
+                self._describe(array, "KeyUp 0x09")
+                return True
+            elif array[1] == 0x4A:
+                self._describe(array, "KeyUp 0x0A")
+                return True
+            elif array[1] == 0x4B:
+                self._describe(array, "KeyUp 0x0B")
+                return True
+            elif array[1] == 0x4C:
+                self._describe(array, "KeyUp 0x0C")
+                return True
+            elif array[1] == 0x4D:
+                self._describe(array, "KeyUp 0x0D")
+                return True
+            elif array[1] == 0x4E:
+                self._describe(array, "KeyUp 0x0E")
+                return True
+            elif array[1] == 0x4F:
+                self._describe(array, "KeyUp 0x0F")
+                return True
+            elif array[1] == 0x51:
+                self._describe(array, "Inhale On/Off")
+                return True
         elif array[0] == 0xDA:
-            mem = self.parse_mem(array[2:4])
+            # DA commands are usually memory or system processing commands.
+
+            mem = parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
-                desc = f"Get {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name})"
+                self._describe(
+                    array,
+                    f"Get {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name})",
+                )
                 if isinstance(v, int):
                     v = int(v)
-                    vencode = RuidaEmulator.encode32(v)
-                    respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v} (0x{v:08x})"
+                    vencode = encode32(v)
+                    self._respond(
+                        b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode),
+                        desc=f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v} (0x{v:08x})",
+                    )
                 else:
                     vencode = v
-                    respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}"
+                    self._respond(
+                        b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode),
+                        desc=f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}",
+                    )
             elif array[1] == 0x01:
+                # MEM SET. This is sometimes inside files to set things like declared filesize
                 value0 = array[4:9]
                 value1 = array[9:14]
-                v0 = self.decodeu35(value0)
-                v1 = self.decodeu35(value1)
-                desc = f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v0} (0x{v0:08x}) {v1} (0x{v1:08x})"
+                v0 = decodeu35(value0)
+                v1 = decodeu35(value1)
+                self._describe(
+                    array,
+                    f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v0} (0x{v0:08x}) {v1} (0x{v1:08x})",
+                )
+                return False
             elif array[1] == 0x04:
-                desc = "OEM On/Off, CardIO On/OFF"
+                self._describe(array, "OEM On/Off, CardIO On/OFF")
             elif array[1] == 0x05 or array[1] == 0x54:
-                desc = "Read Run Info"
-                respond = b"\xda\x05" + b"\x00" * 20
-                respond_desc = "Read Run Response"
+                self._describe(array, "Read Run Info")
+                self._respond(b"\xda\x05" + b"\x00" * 20, desc="Read Run Response")
             elif array[1] == 0x06 or array[1] == 0x52:
-                desc = "Unknown/System Time."
+                self._describe(array, "Unknown/System Time.")
             elif array[1] == 0x10 or array[1] == 0x53:
-                desc = "Unknown Function--3"
+                self._describe(array, "Unknown Function--3")
             elif array[1] == 0x30:
                 # Property requested with select document, upload button "fresh property"
-                filenumber = self.parse_filenumber(array[2:4])
-                desc = f"Upload Info 0x30 Document {filenumber}"
-                respond = b"\xda\x30" + b"\x00" * 20
-                # TODO: Requires Response.
+                filenumber = parse_filenumber(array[2:4])
+                self._describe(array, f"Upload Info 0x30 Document {filenumber}")
+                # Response Unverified
+                self._respond(
+                    b"\xda\x30" + b"\x00" * 20, desc="Upload Info Response 0x30"
+                )
             elif array[1] == 0x31:
                 # Property requested with select document, upload button "fresh property"
-                filenumber = self.parse_filenumber(array[2:4])
-                desc = f"Upload Info 0x31 Document {filenumber}"
-                # TODO: Requires Response.
-                respond = b"\xda\x31" + b"\x00" * 20
+                filenumber = parse_filenumber(array[2:4])
+                self._describe(array, f"Upload Info 0x31 Document {filenumber}")
+                # Response Unverified
+                self._respond(
+                    b"\xda\x31" + b"\x00" * 20, desc="Upload Info Response 0x31"
+                )
             elif array[1] == 0x60:
                 # len: 14
-                v = self.decode14(array[2:4])
-                desc = f"RD-FUNCTION-UNK1 {v}"
+                v = decode14(array[2:4])
+                self._describe(array, f"RD-FUNCTION-UNK1 {v}")
+            return True
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
-                desc = "Lightburn Swizzle Modulation E5"
-            else:
-                if array[1] == 0x00:
-                    # RDWorks File Upload
-                    filenumber = array[2]
-                    desc = f"Document Page Number {filenumber}"
-                    # TODO: Requires Response.
-                if array[1] == 0x02:
-                    # len 3
-                    desc = "Document Data End"
-        elif array[0] == 0xE6:
-            if array[1] == 0x01:
-                desc = "Set Absolute"
-                # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
-        elif array[0] == 0xE7:
+                self._describe(array, "Lightburn Swizzle Modulation E5")
+                return False
             if array[1] == 0x00:
-                self.plot_commit()
-                desc = "Block End"
-            elif array[1] == 0x01:
+                # RDWorks File Upload
+                filenumber = array[2]
+                self._describe(array, f"Document Page Number {filenumber}")
+                # Response Unverified
+                self._respond(b"\xe5\x00" + b"\x00" * 20, desc="Document Page Response")
+            if array[1] == 0x02:
+                # len 3
+                self._describe(array, "Document Data End")
+            return True
+        elif array[0] == 0xE7:
+            # File Layout commands
+            if array[1] == 0x01:
                 self.filename = ""
                 for a in array[2:]:
                     if a == 0x00:
                         break
                     self.filename += chr(a)
-                desc = f"Filename: {self.filename}"
+                self._describe(array, f"Filename: {self.filename}")
+                # self._respond(b"\xe8\x02", desc="File Packet Ack")  # RESPONSE UNKNOWN
                 if self.saving:
                     self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
-            elif array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Process TopLeft ({c_x}, {c_y})"
-            elif array[1] == 0x04:
-                v0 = self.decode14(array[2:4])
-                v1 = self.decode14(array[4:6])
-                v2 = self.decode14(array[6:8])
-                v3 = self.decode14(array[8:10])
-                v4 = self.decode14(array[10:12])
-                v5 = self.decode14(array[12:14])
-                v6 = self.decode14(array[14:16])
-                desc = f"Process Repeat ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
-            elif array[1] == 0x05:
-                direction = array[2]
-                desc = f"Array Direction ({direction})"
-            elif array[1] == 0x06:
-                v1 = self.decodeu35(array[2:7])
-                v2 = self.decodeu35(array[7:12])
-                desc = f"Feed Repeat ({v1}, {v2})"
-            elif array[1] == 0x07:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Process BottomRight({c_x}, {c_y})"
-            elif array[1] == 0x08:  # Same value given to F2 05
-                v0 = self.decode14(array[2:4])
-                v1 = self.decode14(array[4:6])
-                v2 = self.decode14(array[6:8])
-                v3 = self.decode14(array[8:10])
-                v4 = self.decode14(array[10:12])
-                v5 = self.decode14(array[12:14])
-                v6 = self.decode14(array[14:16])
-                desc = f"Array Repeat ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
-            elif array[1] == 0x09:
-                v1 = self.decodeu35(array[2:7])
-                desc = f"Feed Length {v1}"
-            elif array[1] == 0x0B:
-                v1 = array[2]
-                desc = f"Unknown 1 {v1}"
-            elif array[1] == 0x13:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Min Point ({c_x},{c_y})"
-            elif array[1] == 0x17:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Max Point ({c_x},{c_y})"
-            elif array[1] == 0x23:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Array Add ({c_x},{c_y})"
-            elif array[1] == 0x24:
-                v1 = array[2]
-                desc = f"Array Mirror {v1}"
-            elif array[1] == 0x32:
-                v1 = self.decodeu35(array[2:7])
-                desc = f"Unknown Preamble {v1}"
-            elif array[1] == 0x35:
-                v1 = self.decodeu35(array[2:7])
-                v2 = self.decodeu35(array[7:12])
-                desc = f"Block X Size {v1} {v2}"
-            elif array[1] == 0x38:
-                v1 = array[2]
-                desc = f"Unknown 2 {v1}"
-            elif array[1] == 0x46:
-                desc = "BY Test 0x11227766"
-            elif array[1] == 0x50:
-                c_x = self.abscoord(array[1:6]) * UNITS_PER_uM
-                c_y = self.abscoord(array[6:11]) * UNITS_PER_uM
-                desc = f"Document Min Point({c_x}, {c_y})"
-            elif array[1] == 0x51:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Document Max Point({c_x}, {c_y})"
-            elif array[1] == 0x52:
-                part = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, Min Point({c_x}, {c_y})"
-            elif array[1] == 0x53:
-                part = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MaxPoint({c_x}, {c_y})"
-            elif array[1] == 0x54:
-                axis = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                desc = f"Pen Offset {axis}: {c_x}"
-            elif array[1] == 0x55:
-                axis = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                desc = f"Layer Offset {axis}: {c_x}"
-            elif array[1] == 0x60:
-                desc = f"Set Current Element Index ({array[2]})"
-            elif array[1] == 0x61:
-                part = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MinPointEx({c_x}, {c_y})"
-            elif array[1] == 0x62:
-                part = array[2]
-                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
-                desc = f"{part}, MaxPointEx({c_x}, {c_y})"
+                return True
+            return False
         elif array[0] == 0xE8:
+            # FILE INTERACTIONS
             if array[1] == 0x00:
                 # e8 00 00 00 00 00
-                v1 = self.parse_filenumber(array[2:4])
-                v2 = self.parse_filenumber(array[4:6])
+                v1 = parse_filenumber(array[2:4])
+                v2 = parse_filenumber(array[4:6])
                 from glob import glob
                 from os.path import join, realpath
 
@@ -1290,14 +668,14 @@ class RuidaEmulator:
                 if v1 == 0:
                     for f in files:
                         os.remove(f)
-                    desc = "Delete All Documents"
+                    self._describe(array, "Delete All Documents")
                 else:
                     name = files[v1 - 1]
                     os.remove(name)
-                    desc = f"Delete Document {v1} {v2}"
+                    self._describe(array, f"Delete Document {v1} {v2}")
             elif array[1] == 0x01:
-                filenumber = self.parse_filenumber(array[2:4])
-                desc = f"Document Name {filenumber}"
+                filenumber = parse_filenumber(array[2:4])
+                self._describe(array, f"Document Name {filenumber}")
                 from glob import glob
                 from os.path import join, realpath
 
@@ -1308,14 +686,15 @@ class RuidaEmulator:
                 name = os.path.split(name)[-1]
                 name = name.split(".")[0]
                 name = name.upper()[:8]
-
-                respond = bytes(array[:4]) + bytes(name, "utf8") + b"\00"
-                respond_desc = f"Document {filenumber} Named: {name}"
+                self._respond(
+                    bytes(array[:4]) + bytes(name, "utf8") + b"\00",
+                    f"Document {filenumber} Named: {name}",
+                )
             elif array[1] == 0x02:
                 self.saving = True
-                desc = "File transfer"
+                self._describe(array, "File transfer")
             elif array[1] == 0x03:
-                filenumber = self.parse_filenumber(array[2:4])
+                filenumber = parse_filenumber(array[2:4])
 
                 from glob import glob
                 from os.path import join, realpath
@@ -1329,78 +708,13 @@ class RuidaEmulator:
                         self.write(f.read())
                 except OSError:
                     pass
-                desc = f"Start Select Document {filenumber}"
+                self._describe(array, f"Start Select Document {filenumber}")
             elif array[1] == 0x04:
-                filenumber = self.parse_filenumber(array[2:4])
-                desc = f"Calculate Document Time {filenumber}"
-        elif array[0] == 0xEA:
-            index = array[1]  # TODO: Index error raised here.
-            desc = f"Array Start ({index})"
-        elif array[0] == 0xEB:
-            desc = "Array End"
-        elif array[0] == 0xF0:
-            desc = "Ref Point Set"
-        elif array[0] == 0xF1:
-            if array[1] == 0x00:
-                index = array[2]
-                desc = f"Element Max Index ({index})"
-            elif array[1] == 0x01:
-                index = array[2]
-                desc = f"Element Name Max Index({index})"
-            elif array[1] == 0x02:
-                enable = array[2]
-                desc = f"Enable Block Cutting ({enable})"
-            elif array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Display Offset ({c_x},{c_y})"
-            elif array[1] == 0x04:
-                enable = array[2]
-                desc = f"Feed Auto Calc ({enable})"
-            elif array[1] == 0x20:
-                desc = f"Unknown ({array[2]},{array[3]})"
-        elif array[0] == 0xF2:
-            if array[1] == 0x00:
-                index = array[2]
-                desc = f"Element Index ({index})"
-            if array[1] == 0x01:
-                index = array[2]
-                desc = f"Element Name Index ({index})"
-            if array[1] == 0x02:
-                name = bytes(array[2:12])
-                desc = f"Element Name ({str(name)})"
-            if array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Min Point ({c_x},{c_y})"
-            if array[1] == 0x04:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Max Point ({c_x},{c_y})"
-            if array[1] == 0x05:
-                v0 = self.decode14(array[2:4])
-                v1 = self.decode14(array[4:6])
-                v2 = self.decode14(array[6:8])
-                v3 = self.decode14(array[8:10])
-                v4 = self.decode14(array[10:12])
-                v5 = self.decode14(array[12:14])
-                v6 = self.decode14(array[14:16])
-                desc = f"Element Array ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
-            if array[1] == 0x06:
-                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
-                desc = f"Element Array Add ({c_x},{c_y})"
-            if array[1] == 0x07:
-                index = array[2]
-                desc = f"Element Array Mirror ({index})"
-        else:
-            desc = "Unknown Command!"
-        if self.describe:
-            self.describe(f"{str(bytes(array).hex())}\t{desc}")
-        if self.channel:
-            self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
-        if respond is not None:
-            self.msg_reply(respond, desc=respond_desc)
+                filenumber = parse_filenumber(array[2:4])
+                self._describe(array, f"Calculate Document Time {filenumber}")
+            return True
+
+        return False
 
     def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:
         if mem == 0x0002:
@@ -1944,7 +1258,7 @@ class RuidaEmulator:
             return "VTool Preset Cur Depth", 0
         if mem == 0x0200:
             # 22 ok, 23 paused. 21 running.
-            pos, state, minor = self.driver.status()
+            pos, state, minor = self.device.driver.status()
             if state == "idle":
                 return "Machine Status", 22
             if state == "hold":
@@ -1999,42 +1313,44 @@ class RuidaEmulator:
         if mem == 0x021F:
             return "Ring Number", 0
         if mem == 0x0221:
-            pos, state, minor = self.driver.status()
+            pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            x /= UNITS_PER_uM
             return "Axis Preferred Position 1, Pos X", int(x)
         if mem == 0x0223:
             return "X Total Travel (m)", 0
         if mem == 0x0224:
             return "Position Point 0", 0
         if mem == 0x0231:
-            pos, state, minor = self.driver.status()
+            pos, state, minor = self.device.driver.status()
             x, y = self.units_to_device_matrix.point_in_inverse_space(pos)
+            y /= UNITS_PER_uM
             return "Axis Preferred Position 2, Pos Y", int(y)
         if mem == 0x0233:
             return "Y Total Travel (m)", 0
         if mem == 0x0234:
             return "Position Point 1", 0
         if mem == 0x0241:
-            pos, state, minor = self.driver.status()
+            pos, state, minor = self.device.driver.status()
             if len(pos) >= 3:
                 z = pos[2]
             else:
-                z = self.z
+                z = self.job.z
             return "Axis Preferred Position 3, Pos Z", int(z)
         if mem == 0x0243:
             return "Z Total Travel (m)", 0
         if mem == 0x0251:
-            return "Axis Preferred Position 4, Pos U", int(self.u)
+            return "Axis Preferred Position 4, Pos U", int(self.job.u)
         if mem == 0x0253:
             return "U Total Travel (m)", 0
         if mem == 0x025A:
-            return "Axis Preferred Position 5, Pos A", int(self.a)
+            return "Axis Preferred Position 5, Pos A", int(self.job.a)
         if mem == 0x025B:
-            return "Axis Preferred Position 6, Pos B", int(self.b)
+            return "Axis Preferred Position 6, Pos B", int(self.job.b)
         if mem == 0x025C:
-            return "Axis Preferred Position 7, Pos C", int(self.c)
+            return "Axis Preferred Position 7, Pos C", int(self.job.c)
         if mem == 0x025D:
-            return "Axis Preferred Position 8, Pos D", int(self.d)
+            return "Axis Preferred Position 8, Pos D", int(self.job.d)
         if mem == 0x0260:
             return "DocumentWorkNum", 0
         if 0x0261 <= mem < 0x02C4:
@@ -2077,43 +1393,3 @@ class RuidaEmulator:
 
     def swizzle(self, data):
         return bytes([self.lut_swizzle[b] for b in data])
-
-    @staticmethod
-    def swizzle_byte(b, magic):
-        b ^= (b >> 7) & 0xFF
-        b ^= (b << 7) & 0xFF
-        b ^= (b >> 7) & 0xFF
-        b ^= magic
-        b = (b + 1) & 0xFF
-        return b
-
-    @staticmethod
-    def unswizzle_byte(b, magic):
-        b = (b - 1) & 0xFF
-        b ^= magic
-        b ^= (b >> 7) & 0xFF
-        b ^= (b << 7) & 0xFF
-        b ^= (b >> 7) & 0xFF
-        return b
-
-    @staticmethod
-    def swizzles_lut(magic):
-        lut_swizzle = [RuidaEmulator.swizzle_byte(s, magic) for s in range(256)]
-        lut_unswizzle = [RuidaEmulator.unswizzle_byte(s, magic) for s in range(256)]
-        return lut_swizzle, lut_unswizzle
-
-    @staticmethod
-    def decode_bytes(data, magic=0x88):
-        lut_swizzle, lut_unswizzle = RuidaEmulator.swizzles_lut(magic)
-        array = list()
-        for b in data:
-            array.append(lut_unswizzle[b])
-        return bytes(array)
-
-    @staticmethod
-    def encode_bytes(data, magic=0x88):
-        lut_swizzle, lut_unswizzle = RuidaEmulator.swizzles_lut(magic)
-        array = list()
-        for b in data:
-            array.append(lut_swizzle[b])
-        return bytes(array)
