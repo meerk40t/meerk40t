@@ -40,7 +40,7 @@ def _tokenize_code(code_line):
     if code is not None:
         yield code
 
-
+OKAY = 0
 # G-code words consist of a letter and a value. Letter was not found.
 ERROR_GCODE_LETTER_NOT_FOUND = 1
 # Numeric value format is not valid or missing an expected value.
@@ -294,14 +294,14 @@ class GcodeJob:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
-                    return 0
+                    return OKAY
                 elif v == 30:
                     # Program Flow: Program Stop
                     try:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
-                    return 0
+                    return OKAY
                 elif v in (3, 4):
                     # Spindle Control - Spindle On - Clockwise/CCW Laser Mode
                     self.program_mode = True
@@ -630,7 +630,7 @@ class GcodeJob:
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
                         self.plot_location(x, y, power)
-        return 0
+        return OKAY
 
     def plot_location(self, x, y, power):
         """
