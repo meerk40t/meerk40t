@@ -1579,6 +1579,8 @@ def init_commands(kernel):
                     newnode, "mktext"
                 ):
                     newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, newnode)
             # Newly created! Classification needed?
             post.append(classify_new(add_elem))
             self.signal("refresh_scene", "Scene")
@@ -3955,9 +3957,16 @@ def init_commands(kernel):
             if e.type == "elem text":
                 old_text = e.text
                 e.text = new_text
-                channel(f"Node {e} anchor changed from {old_text} to {new_text}")
-
+            elif hasattr(e, "mktext"):
+                old_text = e.mktext
+                e.mktext = new_text
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, e)
+            else:
+                continue
+            channel(f"Node {e} anchor changed from {old_text} to {new_text}")
             e.altered()
+
         return "elements", data
 
 
