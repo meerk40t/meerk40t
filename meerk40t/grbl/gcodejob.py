@@ -41,6 +41,80 @@ def _tokenize_code(code_line):
         yield code
 
 
+# G-code words consist of a letter and a value. Letter was not found.
+ERROR_GCODE_LETTER_NOT_FOUND = 1
+# Numeric value format is not valid or missing an expected value.
+ERROR_NUMERIC_VALUE_INVALID = 2
+# Grbl '$' system command was not recognized or supported.
+ERROR_REALTIME_NOT_SUPPORTED = 3
+# Negative value received for an expected positive value.
+ERROR_NEGATIVE_VALUE = 4
+# Homing cycle is not enabled via settings.
+ERROR_HOMING_CYCLE_DISABLED = 5
+# Minimum step pulse time must be greater than 3usec
+ERROR_STEP_PULSE_INVALID = 6
+# EEPROM read failed. Reset and restored to default values.
+ERROR_EEPROM_READ_ERROR = 7
+# Grbl '$' command cannot be used unless Grbl is IDLE. Ensures smooth operation during a job.
+ERROR_NOT_IDLE = 8
+# G-code locked out during alarm or jog state
+ERROR_ALARM_OR_JOG = 9
+# Soft limits cannot be enabled without homing also enabled.
+ERROR_SOFT_LIMITS = 10
+# Max characters per line exceeded. Line was not processed and executed.
+ERROR_MAX_CHARACTERS = 11
+# (Compile Option) Grbl '$' setting value exceeds the maximum step rate supported.
+ERROR_EXCEEDED_MAX_STEP = 12
+# Safety door detected as opened and door state initiated.
+ERROR_SAFETY_DOOR = 13
+# (Grbl-Mega Only) Build info or startup line exceeded EEPROM line length limit.
+ERROR_EEPROM_LINE_LIMIT = 14
+# Jog target exceeds machine travel. Command ignored.
+ERROR_JOG_EXCEEDS_MACHINE = 15
+# Jog command with no '=' or contains prohibited g-code.
+ERROR_JOG_SYNTAX = 16
+# Laser mode requires PWM output.
+ERROR_REQUIRED_POWER = 17
+# Unsupported or invalid g-code command found in block.
+ERROR_UNSUPPORTED_GCODE = 20
+# More than one g-code command from same modal group found in block.
+ERROR_DUPLICATE_COMMAND_MODAL = 21
+# Feed rate has not yet been set or is undefined.
+ERROR_FEED_RATE_UNSET = 22
+# G-code command in block requires an integer value.
+ERROR_NUMERIC_VALUE_MISSING = 23
+# Two G-code commands that both require the use of the XYZ axis words were detected in the block.
+ERROR_OVERLAPPING_GCODE = 24
+# A G-code word was repeated in the block.
+ERROR_DUPLICATE_COMMAND = 25
+# A G-code command implicitly or explicitly requires XYZ axis words in the block, but none were detected.
+ERROR_REQUIRES_COORDINATES = 26
+# N line number value is not within the valid range of 1 - 9,999,999.
+ERROR_INVALID_LINENUMBER = 27
+# A G-code command was sent, but is missing some required P or L value words in the line.
+ERROR_MISSING_REQUIRED_INFO = 28
+# Grbl supports six work coordinate systems G54-G59. G59.1, G59.2, and G59.3 are not supported.
+ERROR_UNSUPPORTED_WORK_COORDS = 29
+# The G53 G-code command requires either a G0 seek or G1 feed motion mode to be active. A different motion was active.
+ERROR_INVALID_MOVE_COMMAND = 30
+# There are unused axis words in the block and G80 motion mode cancel is active.
+ERROR_UNUSED_AXIS_WORDS = 31
+# A G2 or G3 arc was commanded but there are no XYZ axis words in the selected plane to trace the arc.
+ERROR_ARC_WITHOUT_WORDS = 32
+# The motion command has an invalid target. G2, G3, and G38.2 generates this error, if the arc is impossible to generate or if the probe target is the current position.
+ERROR_INVALID_TARGET = 33
+# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semi-circles or quadrants, or redefine them with the arc offset definition.
+ERROR_ARC_COMPUTATION = 34
+# A G2 or G3 arc, traced with the offset definition, is missing the IJK offset word in the selected plane to trace the arc.
+ERROR_ARC_OFFSET_WORDS_MISSING = 35
+# There are unused, leftover G-code words that aren't used by any command in the block.
+ERROR_UNUSED_WORDS = 36
+# The G43.1 dynamic tool length offset command cannot apply an offset to an axis other than its configured axis. The Grbl default axis is the Z-axis.
+ERROR_TOOL_LENGTH_INVALID = 37
+# Tool number greater than max supported value.
+ERROR_EXCEEDED_TOOL_MAX = 38
+
+
 class GcodeJob:
     def __init__(self, driver=None, units_to_device_matrix=None, priority=0, channel=None):
         self.units_to_device_matrix = units_to_device_matrix
