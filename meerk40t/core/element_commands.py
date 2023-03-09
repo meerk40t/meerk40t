@@ -1,3 +1,7 @@
+"""
+This is a giant list of console commands that deal with and often implement the elements system in the program.
+"""
+
 import os.path
 import re
 from copy import copy
@@ -802,7 +806,7 @@ def init_commands(kernel):
                     elif value == "color":
                         operand.append(e.color)
                     elif value == "op":
-                        operand.append(e.type.remove("op").strip())
+                        operand.append(e.type.replace("op", "").strip())
                     elif value == "len":
                         operand.append(len(e.children))
                     else:

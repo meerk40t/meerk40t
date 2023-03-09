@@ -1,3 +1,8 @@
+"""
+Base wordlist class that holds some wordlist logic. Most of the interactions with wordlists are done in the
+elements service.
+"""
+
 import csv
 import json
 import os
@@ -423,7 +428,7 @@ class Wordlist:
         # list of tuples, (index found, old, new )
         # Lets gather the {} first...
         brackets = re.compile(r"\{[^}]+\}")
-        for bracketed_key in brackets.findall(orgtext):
+        for bracketed_key in brackets.findall(str(orgtext)):
             #            print(f"Key found: {bracketed_key}")
             newpattern = ""
             key = bracketed_key[1:-1].lower().strip()

@@ -7,6 +7,7 @@ from meerk40t.ruida.control import RuidaControl
 from meerk40t.ruida.device import RuidaDevice
 from meerk40t.ruida.emulator import RuidaEmulator
 from meerk40t.ruida.loader import RDLoader
+from meerk40t.ruida.rdjob import RDJob
 
 
 def plugin(kernel, lifecycle=None):
@@ -18,6 +19,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/ruida", RuidaDevice)
 
         _ = kernel.translation
+        kernel.register("spoolerjob/ruida", RDJob)
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
 

@@ -389,8 +389,8 @@ class SpeedPpiPanel(wx.Panel):
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
-        power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
-        speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
+        self.power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
+        speed_power_sizer.Add(self.power_sizer, 1, wx.EXPAND, 0)
 
         self.text_power = TextCtrl(
             self,
@@ -412,7 +412,7 @@ class SpeedPpiPanel(wx.Panel):
             )
         )
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
-        power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
+        self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
         freq = self.context.device.lookup("frequency")
         if freq:
@@ -476,8 +476,8 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.speed is not None:
             set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
-            self.update_power_label()
             set_ctrl_value(self.text_power, str(self.operation.power))
+            self.update_power_label()
         if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
         self.Show()
@@ -509,7 +509,11 @@ class SpeedPpiPanel(wx.Panel):
         #     self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         # else:
         #     self.power_label.SetLabel(_("Power (ppi):"))
-        pass
+        try:
+            value = float(self.text_power.GetValue())
+            self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value/10:.1f}%)")
+        except ValueError:
+            return
 
     def on_text_power(self):
         try:

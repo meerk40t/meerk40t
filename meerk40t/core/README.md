@@ -13,12 +13,6 @@ This includes nodes like LaserOperations are broad laser operations like `Engrav
 ## Cutcode
 Cutcode is a hybrid datatype of shapes combined with `LaserSettings` of speeds, power, and other laser specific settings.
 
-## Input
-Input controls input devices these are data sources like TCP or a file, and they define a portion of a device.
-
-## Output
-Output controls the output from various devices these can be data destinations like TCP or files, but also Controllers transmitting data over USB or serial connections.
-
 ## Planning
 The planning module is defines a number of `plan` commands and does help define the job being run. The conversion from the Operations to Cutcode, optimization of cutcode, and arrangement of things to be added to the spooler. This includes optimizations of the cutcode.
 

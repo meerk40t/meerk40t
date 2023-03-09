@@ -47,7 +47,7 @@ class RuidaControl:
             r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
             r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
             emulator = RuidaEmulator(
-                root.device.driver, root.device.scene_to_device_matrix()
+                root.device, root.device.scene_to_device_matrix()
             )
             self.emulator = emulator
             if r2m:

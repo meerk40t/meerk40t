@@ -24,6 +24,7 @@ mCH341_VENDOR_WRITE = 0x40
 mCH341A_BUF_CLEAR = 0xB2
 mCH341A_DELAY_MS = 0x5E
 mCH341A_GET_VER = 0x5F
+mCH341A_STATUS = 0x52
 
 
 def convert_to_list_bytes(data):
@@ -343,6 +344,36 @@ class Ch341LibusbDriver:
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
         device = self.devices[index]
         try:
+            buffer = device.ctrl_transfer(
+                bmRequestType=mCH341_VENDOR_READ,
+                bRequest=mCH341A_STATUS,
+                wValue=0,
+                wIndex=0,
+                data_or_wLength=8,
+                timeout=self.timeout,
+            )
+            status[0] = buffer
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+
+            self.channel(str(e))
+            raise ConnectionError
+        return status[0]
+
+    # pylint: disable=dangerous-default-value
+    def CH341GetStatusBulk(self, index=0, status=[0]):
+        """
+        Older bulk based version with a read and write rather than control transfer.
+
+        This version of the status check requires a bulk send of an A0 followed by a read. If the chip is
+        locked up, this will result in timeout errors.
+
+        @param index:
+        @param status:
+        @return:
+        """
+        device = self.devices[index]
+        try:
             device.write(
                 endpoint=BULK_WRITE_ENDPOINT,
                 data=[mCH341_PARA_CMD_STS],
@@ -358,7 +389,6 @@ class Ch341LibusbDriver:
             self.channel(str(e))
             raise ConnectionError
         return status[0]
-        # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
 
     def CH341GetVerIC(self, index=0):
         device = self.devices[index]
