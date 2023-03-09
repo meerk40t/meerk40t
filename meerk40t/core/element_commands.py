@@ -3905,7 +3905,6 @@ def init_commands(kernel):
             None,
             "elements",
         ),
-        hidden=True,
         output_type="elements",
     )
     def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
@@ -3931,7 +3930,7 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument(
-        "new_text", type=str, default="start", help=_("set text anchor")
+        "new_text", type=str, help=_("set text anchor")
     )
     @self.console_command(
         "text-edit",
@@ -3940,8 +3939,8 @@ def init_commands(kernel):
             None,
             "elements",
         ),
-        hidden=True,
         output_type="elements",
+        all_arguments_required=True,
     )
     def element_text_edit(command, channel, _, data, new_text=None, **kwargs):
         if data is None:
