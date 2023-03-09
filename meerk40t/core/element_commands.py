@@ -3930,7 +3930,7 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument(
-        "new_text", type=str, help=_("set text anchor")
+        "new_text", type=str, help=_("set new text contents")
     )
     @self.console_command(
         "text-edit",
