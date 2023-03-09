@@ -40,6 +40,7 @@ def _tokenize_code(code_line):
     if code is not None:
         yield code
 
+
 OKAY = 0
 # G-code words consist of a letter and a value. Letter was not found.
 ERROR_GCODE_LETTER_NOT_FOUND = 1
