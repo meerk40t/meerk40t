@@ -116,7 +116,9 @@ ERROR_EXCEEDED_TOOL_MAX = 38
 
 
 class GcodeJob:
-    def __init__(self, driver=None, units_to_device_matrix=None, priority=0, channel=None):
+    def __init__(
+        self, driver=None, units_to_device_matrix=None, priority=0, channel=None
+    ):
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
@@ -187,7 +189,9 @@ class GcodeJob:
             self.buffer.extend(lines)
 
     def write_blob(self, data):
-        self.write_all([r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()])
+        self.write_all(
+            [r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()]
+        )
 
     def execute(self, driver=None):
         """
@@ -242,6 +246,22 @@ class GcodeJob:
     def _process_gcode(self, data, jog=False):
         """
         Processes the gcode commands which are parsed into different dictionary objects.
+        List of Supported G-Codes in Grbl v1.1:
+          - Non-Modal Commands: G4, G10L2, G10L20, G28, G30, G28.1, G30.1, G53, G92, G92.1
+          - Motion Modes: G0, G1, G2, G3, G38.2, G38.3, G38.4, G38.5, G80
+          - Feed Rate Modes: G93, G94
+          - Unit Modes: G20, G21
+          - Distance Modes: G90, G91
+          - Arc IJK Distance Modes: G91.1
+          - Plane Select Modes: G17, G18, G19
+          - Tool Length Offset Modes: G43.1, G49
+          - Cutter Compensation Modes: G40
+          - Coordinate System Modes: G54, G55, G56, G57, G58, G59
+          - Control Modes: G61
+          - Program Flow: M0, M1, M2, M30*
+          - Coolant Control: M7*, M8, M9
+          - Spindle Control: M3, M4, M5
+          - Valid Non-Command Words: F, I, J, K, L, N, P, R, S, T, X, Y, Z
 
         @param data: gcode line to process
         @param jog: indicate this gcode line is operated as a jog.
@@ -259,13 +279,13 @@ class GcodeJob:
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
-                    # Stop or Unconditional Stop
+                    # Program Flow: Stop or Unconditional Stop
                     try:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
                 elif v == 2:
-                    # Program End
+                    # Program Flow: Program End
                     try:
                         self._driver.plot_start()
                     except AttributeError:
@@ -276,17 +296,17 @@ class GcodeJob:
                         pass
                     return 0
                 elif v == 30:
-                    # Program Stop
+                    # Program Flow: Program Stop
                     try:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
                     return 0
                 elif v in (3, 4):
-                    # Spindle On - Clockwise/CCW Laser Mode
+                    # Spindle Control - Spindle On - Clockwise/CCW Laser Mode
                     self.program_mode = True
                 elif v == 5:
-                    # Spindle Off - Laser Mode
+                    # Spindle Control - Spindle Off - Laser Mode
                     if self.program_mode:
                         try:
                             self.plot_commit()
@@ -299,32 +319,31 @@ class GcodeJob:
                         pass
                     self.program_mode = False
                 elif v == 7:
-                    #  Mist coolant control.
+                    #  Coolant Control: Mist coolant control.
                     pass
                 elif v == 8:
-                    # Flood coolant On
+                    # Coolant Control: Flood coolant On
                     try:
                         self._driver.signal("coolant", True)
                     except AttributeError:
                         pass
                 elif v == 9:
-                    # Flood coolant Off
+                    # Coolant Control: Flood coolant Off
                     try:
                         self._driver.signal("coolant", False)
                     except AttributeError:
                         pass
                 elif v == 56:
-                    pass  # Parking motion override control.
-                elif v == 911:
-                    pass  # Set TMC2130 holding currents
-                elif v == 912:
-                    pass  # M912: Set TMC2130 running currents
+                    # Parking motion override control.
+                    pass
                 else:
-                    return 20
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
             del gc["m"]
         if "g" in gc:
             for v in gc["g"]:
                 if v is None:
+                    # G but no number given.
                     return 2
                 elif v == 0:
                     # G0 Rapid Move.
@@ -357,6 +376,21 @@ class GcodeJob:
                             self._driver.wait(t)
                         except AttributeError:
                             pass
+                elif v == 10:
+                    l_value = gc["l"]
+                    if l_value is None:
+                        # A G-code command was sent, but is missing some required P or L value words in the line.
+                        return ERROR_MISSING_REQUIRED_INFO
+                    if l_value == 2:
+                        # Set Work Coordinate Offsets
+                        pass
+                    elif l_value == 20:
+                        # Set Work Coordinate Offsets
+                        # Sets the offset values for the coordinate system. P1 = G54
+                        pass
+                    else:
+                        # Unsupported or invalid g-code command found in block.
+                        return ERROR_UNSUPPORTED_GCODE
                 elif v == 17:
                     # Set XY coords.
                     pass
@@ -385,15 +419,21 @@ class GcodeJob:
                     self.x = 0
                     self.y = 0
                     self.z = 0
-                elif v == 38.1:
-                    # Touch Plate
+                elif v == 28.1:
+                    # Set Pre-defined Location
+                    pass
+                elif v == 30:
+                    # Goto Pre-defined Position
+                    pass
+                elif v == 30.1:
+                    # Set Pre-defined Position
                     pass
                 elif v == 38.2:
                     # Probe towards workpiece, stop on contact. Signal error.
-                    pass
+                    return 2
                 elif v == 38.3:
                     # Probe towards workpiece, stop on contact.
-                    pass
+                    return 2
                 elif v == 38.4:
                     # Probe away from workpiece, signal error
                     pass
@@ -440,7 +480,8 @@ class GcodeJob:
                     # Feed Rate Mode (Units Per Minute)
                     self.g94_feedrate()
                 else:
-                    return 20  # Unsupported or invalid g-code command found in block.
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
             del gc["g"]
 
         if "comment" in gc:
@@ -451,7 +492,8 @@ class GcodeJob:
         if "f" in gc:  # Feed_rate
             for v in gc["f"]:
                 if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 feed_rate = self.feed_convert(v)
                 if self.speed != feed_rate:
                     self.speed = feed_rate
@@ -464,7 +506,8 @@ class GcodeJob:
         if "s" in gc:
             for v in gc["s"]:
                 if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.power != v:
