@@ -344,7 +344,8 @@ class GcodeJob:
             for v in gc["g"]:
                 if v is None:
                     # G but no number given.
-                    return 2
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 elif v == 0:
                     # G0 Rapid Move.
                     self.move_mode = 0
@@ -377,17 +378,20 @@ class GcodeJob:
                         except AttributeError:
                             pass
                 elif v == 10:
-                    l_value = gc["l"]
+                    l_value = gc["l"].pop(0)
                     if l_value is None:
                         # A G-code command was sent, but is missing some required P or L value words in the line.
                         return ERROR_MISSING_REQUIRED_INFO
-                    if l_value == 2:
+                    elif l_value == 2:
                         # Set Work Coordinate Offsets
                         pass
                     elif l_value == 20:
                         # Set Work Coordinate Offsets
                         # Sets the offset values for the coordinate system. P1 = G54
-                        pass
+                        p_value = gc["p"].pop(0)
+                        if p_value is None:
+                            # A G-code command was sent, but is missing some required P or L value words in the line.
+                            return ERROR_MISSING_REQUIRED_INFO
                     else:
                         # Unsupported or invalid g-code command found in block.
                         return ERROR_UNSUPPORTED_GCODE
@@ -396,10 +400,12 @@ class GcodeJob:
                     pass
                 elif v == 18:
                     # Set the XZ plane for arc.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 19:
                     # Set the YZ plane for arc.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v in (20, 70):
                     # g20 is inch mode.
                     self.scale = UNITS_PER_INCH
@@ -430,10 +436,12 @@ class GcodeJob:
                     pass
                 elif v == 38.2:
                     # Probe towards workpiece, stop on contact. Signal error.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 38.3:
                     # Probe towards workpiece, stop on contact.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 38.4:
                     # Probe away from workpiece, signal error
                     pass
