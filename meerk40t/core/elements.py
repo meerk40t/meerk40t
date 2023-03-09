@@ -937,64 +937,74 @@ class Elemental(Service):
                         pass
 
         align_data = [e for e in data]
-        data_to_align = []
-        # We need to iterate through all the elements
-        # to establish if they belong to a group,
-        # if all the elements in this group are in
-        # the dataset too, then we just take the group
-        # as a representative.
-        data_len = len(align_data)
-        for idx1, node_1 in enumerate(align_data):
-            if node_1 is None:
-                # Has been dealt with already
-                # print (f"Eliminated node")
-                continue
-            # Is this a group? Then we just take this node
-            # and remove all children nodes
-            if node_1.type in ("file", "group"):
-                # print (f"Group node, eliminate children")
-                remove_children_from_list(align_data, node_1)
-                # No continue, as we still need to
-                # assess the parent case
+        needs_repetition = True
+        while needs_repetition:
+            # Will be set only if we add a parent, as the process needs then to be repeated
+            needs_repetition = False
 
-            parent = node_1.parent
-            if parent is None:
-                data_to_align.append(node_1)
-                align_data[idx1] = None
-                # print (f"Adding {node_1.type}, no parent")
-                continue
-            if parent.type not in ("file", "group"):
-                # That should not happen per se,
-                # only for root objects which parent
-                # is elem_branch
-                # print (f"Adding {node_1.type}, parent was: {parent.type}")
-                data_to_align.append(node_1)
-                align_data[idx1] = None
-                continue
-            # How many children are contained?
-            candidates = len(parent.children)
-            identified = 0
-            if candidates > 0:
-                # We only need to look to elements not yet dealt with,
-                # but we start with the current index to include
-                # node_1 in the count
-                for idx2 in range(idx1, data_len, 1):
-                    node_2 = align_data[idx2]
-                    if node_2 is not None:
-                        if node_2.parent is parent:
-                            identified += 1
-            if identified == candidates:
-                # All children of the parent object are contained
-                # So we add the parent instead...
-                data_to_align.append(parent)
-                remove_children_from_list(align_data, parent)
-                # print (f"Adding parent for {node_1.type}, all children inside")
+            data_to_align = []
+            # We need to iterate through all the elements
+            # to establish if they belong to a group,
+            # if all the elements in this group are in
+            # the dataset too, then we just take the group
+            # as a representative.
+            data_len = len(align_data)
 
-            else:
-                data_to_align.append(node_1)
-                align_data[idx1] = None
-                # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
+            for idx1, node_1 in enumerate(align_data):
+                if node_1 is None:
+                    # Has been dealt with already
+                    # print ("Eliminated node")
+                    continue
+                # Is this a group? Then we just take this node
+                # and remove all children nodes
+                if node_1.type in ("file", "group"):
+                    # print (f"Group node ({node_1.label}), eliminate children")
+                    remove_children_from_list(align_data, node_1)
+                    # No continue, as we still need to
+                    # assess the parent case
 
+                parent = node_1.parent
+                if parent is None:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, no parent")
+                    continue
+                if parent.type not in ("file", "group"):
+                    # That should not happen per se,
+                    # only for root objects which parent
+                    # is elem_branch
+                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    continue
+                # How many children are contained?
+                candidates = len(parent.children)
+                identified = 0
+                if candidates > 0:
+                    # We only need to look to elements not yet dealt with,
+                    # but we start with the current index to include
+                    # node_1 in the count
+                    for idx2 in range(idx1, data_len, 1):
+                        node_2 = align_data[idx2]
+                        if node_2 is not None:
+                            if node_2.parent is parent:
+                                identified += 1
+                if identified == candidates:
+                    # All children of the parent object are contained
+                    # So we add the parent instead...
+                    data_to_align.append(parent)
+                    remove_children_from_list(align_data, parent)
+                    # print (f"Adding parent for {node_1.type}, all children inside")
+                    needs_repetition = True
+
+                else:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
+            if needs_repetition:
+                # We copy the data and do it again....
+                # print ("Repetition required")
+                align_data = [e for e in data_to_align]
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
