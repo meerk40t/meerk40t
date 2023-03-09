@@ -3930,6 +3930,38 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
+    @self.console_argument(
+        "new_text", type=str, default="start", help=_("set text anchor")
+    )
+    @self.console_command(
+        "text-edit",
+        help=_("set text object text to new text"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        hidden=True,
+        output_type="elements",
+    )
+    def element_text_edit(command, channel, _, data, new_text=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        for e in data:
+            if hasattr(e, "lock") and e.lock:
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                continue
+            if e.type == "elem text":
+                old_text = e.text
+                e.text = new_text
+                channel(f"Node {e} anchor changed from {old_text} to {new_text}")
+
+            e.altered()
+        return "elements", data
+
+
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
     )
