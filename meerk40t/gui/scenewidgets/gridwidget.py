@@ -638,7 +638,7 @@ class GridWidget(Widget):
             y0 = -u_width / 2
             x1 = -x0
             y1 = -y0
-        gc.Clip(x0, y0, x1, y1)
+        gc.Clip(x0, y0, x1 - x0, y1 - y0)
         siz = sqrt(u_width * u_width + u_height * u_height)
         # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
         # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
