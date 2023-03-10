@@ -48,23 +48,32 @@ class BedWidget(Widget):
         """
         Draws the background on the scene.
         """
-        # print ("Bedwidget draw %s" % self.name)
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             unit_width = context.device.unit_width
             unit_height = context.device.unit_height
             background = self.background
+
+            x0 = 0
+            y0 = 0
+            x1 = unit_width
+            y1 = unit_height
+            if context.device.centered:
+                x = -unit_width / 2
+                y = -unit_width / 2
+                w = -x
+                h = -y
             if background is None:
                 brush = wx.Brush(
                     colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
                 )
                 gc.SetBrush(brush)
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
+                gc.DrawRectangle(x0, y0, x1, y1)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(0, 0, unit_width, unit_height)
+                gc.DrawRectangle(x0, y0, x1, y1)
             else:
-                gc.DrawBitmap(background, 0, 0, unit_width, unit_height)
+                gc.DrawBitmap(background, x0, y0, x1, y1)
 
     def signal(self, signal, *args, **kwargs):
         """

@@ -96,6 +96,7 @@ class ViewPort:
         show_origin_y=None,
         show_flip_x=None,
         show_flip_y=None,
+        centered=False,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -127,6 +128,7 @@ class ViewPort:
         self.show_origin_y = show_origin_y
         self.show_flip_x = show_flip_x
         self.show_flip_y = show_flip_y
+        self.centered = centered
 
         self._width = None
         self._height = None
@@ -374,6 +376,8 @@ class ViewPort:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if self.centered:
+            return " ".join(ops)
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
