@@ -59,10 +59,10 @@ class BedWidget(Widget):
             x1 = unit_width
             y1 = unit_height
             if context.device.centered:
-                x = -unit_width / 2
-                y = -unit_width / 2
-                w = -x
-                h = -y
+                x0 = -unit_width / 2
+                y0 = -unit_width / 2
+                x1 = -x0
+                y1 = -y0
             if background is None:
                 brush = wx.Brush(
                     colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
