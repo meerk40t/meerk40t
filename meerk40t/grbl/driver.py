@@ -401,6 +401,8 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
+        if self.service.rotary_active and self.service.rotary_supress_home:
+            return
         self.grbl(f"G28{self.line_end}")
 
     def rapid_mode(self, *values):
