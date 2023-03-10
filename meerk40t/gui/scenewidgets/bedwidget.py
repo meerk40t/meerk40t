@@ -68,12 +68,12 @@ class BedWidget(Widget):
                     colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_SOLID
                 )
                 gc.SetBrush(brush)
-                gc.DrawRectangle(x0, y0, x1, y1)
+                gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(x0, y0, x1, y1)
+                gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
             else:
-                gc.DrawBitmap(background, x0, y0, x1, y1)
+                gc.DrawBitmap(background, x0, y0, x1 - x0, y1 - y0)
 
     def signal(self, signal, *args, **kwargs):
         """
