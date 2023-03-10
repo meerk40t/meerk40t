@@ -705,6 +705,7 @@ class BalorDevice(Service, ViewPort):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
             centered=True,
+            raw_offset=(0x8000, 0x8000)
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)

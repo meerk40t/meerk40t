@@ -97,6 +97,7 @@ class ViewPort:
         show_flip_x=None,
         show_flip_y=None,
         centered=False,
+        raw_offset=None,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -128,6 +129,7 @@ class ViewPort:
         self.show_origin_y = show_origin_y
         self.show_flip_x = show_flip_x
         self.show_flip_y = show_flip_y
+        self.raw_offset = raw_offset
         self.centered = centered
 
         self._width = None
@@ -367,6 +369,9 @@ class ViewPort:
         dx = self.unit_width * self.origin_x
         dy = self.unit_height * self.origin_y
         ops = []
+        if self.raw_offset is not None:
+            rox, roy = self.raw_offset
+            ops.append(f"translate({rox:.13f}, {roy:.13f})")
         if sx != 1.0 or sy != 1.0:
             try:
                 ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
