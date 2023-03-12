@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.9.0"
+SVGELEMENTS_VERSION = "1.9.1"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3001,6 +3001,71 @@ class Matrix:
         return v
 
     @classmethod
+    def perspective(cls, p1, p2, p3, p4):
+        """
+        Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
+
+        If G and H are very close to 0, this is an affine transformation. If they are not, then the perspective
+        transform requires g and h, but we do not support non-affine transformations.
+
+        @param p1:
+        @param p2:
+        @param p3:
+        @param p4:
+        @return:
+        """
+        x1, y1 = p1
+        x2, y2 = p2
+        x3, y3 = p3
+        x4, y4 = p4
+
+        j = x1 - x2 - x3 + x4
+        k = -x1 - x2 + x3 + x4
+        l = -x1 + x2 - x3 + x4
+        m = y1 - y2 - y3 + y4
+        n = -y1 - y2 + y3 + y4
+        o = -y1 + y2 - y3 + y4
+        i = 1.0
+
+        try:
+            h = (j * o - m * l) * i / (m * k - j * n)
+        except ZeroDivisionError:
+            h = 0
+
+        try:
+            g = (k * h + l * i)
+        except ZeroDivisionError:
+            g = 0
+
+        f = (y1 * (g + h + i) + y3 * (-g - h + i)) / 2.0
+        e = (y1 * (g + h + i) - y2 * (g - h + i)) / 2.0
+        d = y1 * (g + h + i) - f - e
+        c = (x1 * (g + h + i) + x3 * (-g - h + i)) / 2.0
+        b = (x1 * (g + h + i) - x2 * (g - h + i)) / 2.0
+        a = x1 * (g + h + i) - c - b
+
+        matrix = Matrix(-2, 0, 0, -2, 1, 1)
+        return matrix * cls(a, d, b, e, c, f)
+
+    @classmethod
+    def map(cls, p1, p2, p3, p4,  p5, p6, p7, p8):
+        """
+        Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
+
+        If G and H are very close to 0, this is an affine transformation. If they are not, then the perspective
+        transform requires g and h, but we do not support non-affine transformations.
+
+        @param p1:
+        @param p2:
+        @param p3:
+        @param p4:
+        @return:
+        """
+        m1 = Matrix.perspective(p1, p2, p3, p4)
+        m2 = Matrix.perspective(p5, p6, p7, p8)
+        return cls(~m1 * m2)
+
+    @classmethod
     def scale(cls, sx=1.0, sy=None):
         if sy is None:
             sy = sx
@@ -4724,7 +4789,12 @@ class CubicBezier(Curve):
                 if 0 < r2 < 1:
                     local_extremizers.append(r2)
         else:
-            local_extremizers.append(0.5)
+            c = a[1] - a[0]
+            b = 2 * (a[0] - 2*a[1] + a[2])
+            if b != 0:
+                r0 = -c/b
+                if 0 < r0 < 1:
+                    local_extremizers.append(r0)
         local_extrema = [self.point(t)[v] for t in local_extremizers]
         return min(local_extrema), max(local_extrema)
 
@@ -9303,8 +9373,8 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
             xml_tree.set(SVG_ATTR_RADIUS, str(node.rx))
     elif isinstance(node, Image):
         xml_tree = subxml(xml_tree, SVG_TAG_IMAGE)
-        from base64 import b64encode
         from io import BytesIO
+        from base64 import b64encode
 
         if node.image is not None:
             stream = BytesIO()
