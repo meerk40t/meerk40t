@@ -247,25 +247,22 @@ class GridWidget(Widget):
             self.cy = self.sy
         else:
             self.cy = self.scene.grid_circular_cy
-        self.min_x = float("inf")
-        self.max_x = -float("inf")
-        self.min_y = float("inf")
-        self.max_y = -float("inf")
-        for xx in (0, w):
-            for yy in (0, h):
-                x, y = self.scene.convert_window_to_scene([xx, yy])
-                self.min_x = min(self.min_x, x)
-                self.min_y = min(self.min_y, y)
-                self.max_x = max(self.max_x, x)
-                self.max_y = max(self.max_y, y)
 
-        # self.min_x, self.min_y = self.scene.convert_window_to_scene([0, 0])
-        # self.max_x, self.max_y = self.scene.convert_window_to_scene([w, h])
+        bed_min_x, bed_min_y, bed_max_x, bed_max_y = p.bounds
 
-        self.min_x = max(0, self.min_x)
-        self.min_y = max(0, self.min_y)
-        self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
-        self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+        sx0, sy0 = self.scene.convert_window_to_scene([0, 0])
+        sx1, sy1 = self.scene.convert_window_to_scene([w, 0])
+        sx2, sy2 = self.scene.convert_window_to_scene([w, h])
+        sx3, sy3 = self.scene.convert_window_to_scene([0, h])
+        window_min_x = min(sx0, sx1, sx2, sx3)
+        window_max_x = max(sx0, sx1, sx2, sx3)
+        window_min_y = min(sy0, sy1, sy2, sy3)
+        window_max_y = max(sy0, sy1, sy2, sy3)
+
+        self.min_x = max(window_min_x, bed_min_x)
+        self.max_x = min(window_max_x, bed_max_x)
+        self.min_y = max(window_min_y, bed_min_y)
+        self.max_y = min(window_max_y, bed_max_y)
         tick_length = float(
             Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
