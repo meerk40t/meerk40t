@@ -326,8 +326,44 @@ class ViewPort:
         return Length(amount=self.height)
 
     @property
+    def size(self):
+        p1, p2, p3, p4 = self.scene_coords
+        x0, y0 = p1
+        x1, y1 = p2
+        x2, y2 = p3
+        x3, y3 = p4
+        bed_min_x = min(x0, x1, x2, x3)
+        bed_max_x = max(x0, x1, x2, x3)
+        bed_min_y = min(y0, y1, y2, y3)
+        bed_max_y = max(y0, y1, y2, y3)
+        bed_width = bed_max_x - bed_min_x
+        bed_height = bed_max_y - bed_min_y
+        return float(bed_width), float(bed_height)
+
+    @property
+    def bounds(self):
+        p1, p2, p3, p4 = self.scene_coords
+        x0, y0 = p1
+        x1, y1 = p2
+        x2, y2 = p3
+        x3, y3 = p4
+        bed_min_x = min(x0, x1, x2, x3)
+        bed_max_x = max(x0, x1, x2, x3)
+        bed_min_y = min(y0, y1, y2, y3)
+        bed_max_y = max(y0, y1, y2, y3)
+        return float(bed_min_x), float(bed_min_y), float(bed_max_x), float(bed_max_y)
+
+    @property
     def width(self):
-        return float(self.scene_coords[0][0] - self.scene_coords[2][0])
+        p1, p2, p3, p4 = self.scene_coords
+        x0, y0 = p1
+        x1, y1 = p2
+        x2, y2 = p3
+        x3, y3 = p4
+        bed_min_x = min(x0, x1, x2, x3)
+        bed_max_x = max(x0, x1, x2, x3)
+        bed_width = bed_max_x - bed_min_x
+        return float(bed_width)
 
     @property
     def unit_width(self):
@@ -335,7 +371,15 @@ class ViewPort:
 
     @property
     def height(self):
-        return float(self.scene_coords[0][1] - self.scene_coords[2][1])
+        p1, p2, p3, p4 = self.scene_coords
+        x0, y0 = p1
+        x1, y1 = p2
+        x2, y2 = p3
+        x3, y3 = p4
+        bed_min_y = min(y0, y1, y2, y3)
+        bed_max_y = max(y0, y1, y2, y3)
+        bed_height = bed_max_y - bed_min_y
+        return float(bed_height)
 
     @property
     def unit_height(self):
