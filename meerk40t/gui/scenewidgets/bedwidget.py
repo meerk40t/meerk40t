@@ -48,7 +48,6 @@ class BedWidget(Widget):
         """
         Draws the background on the scene.
         """
-        # print ("Bedwidget draw %s" % self.name)
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             p = context.device

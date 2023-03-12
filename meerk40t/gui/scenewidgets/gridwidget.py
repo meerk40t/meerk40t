@@ -47,8 +47,8 @@ class GridWidget(Widget):
         self.min_y = 0
         self.max_x = 0
         self.max_y = 0
-        self.tlenx1 = 0
-        self.tleny1 = 0
+        self.tick_length_x1 = 0
+        self.tick_lenght_y1 = 0
         self.tlenx2 = 0
         self.tleny2 = 0
         self.zero_x = 0
@@ -108,28 +108,28 @@ class GridWidget(Widget):
         # Primary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx1 > self.min_x:
-            start_x -= self.tlenx1
+        while start_x - self.tick_length_x1 > self.min_x:
+            start_x -= self.tick_length_x1
         start_y = self.zero_y
-        while start_y - self.tleny1 > self.min_y:
-            start_y -= self.tleny1
+        while start_y - self.tick_lenght_y1 > self.min_y:
+            start_y -= self.tick_lenght_y1
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx1
+            start_x += self.tick_length_x1
         while start_y < self.min_y:
-            start_y += self.tleny1
+            start_y += self.tick_lenght_y1
 
         x = start_x
         while x <= self.max_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
-            x += self.tlenx1
+            x += self.tick_length_x1
 
         y = start_y
         while y <= self.max_y:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
-            y += self.tleny1
+            y += self.tick_lenght_y1
         self.grid = starts, ends
 
     def _calc_secondary_grid(self):
@@ -168,7 +168,7 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         d = self.scene.context.device
-        self.zero_x, self.zero_y = d.scene_point(0, 0)
+        self.zero_x, self.zero_y = (0, 0)
         self._calc_primary_grid()
         self._calc_secondary_grid()
 
@@ -227,7 +227,9 @@ class GridWidget(Widget):
 
     def calculate_gridsize(self, w, h):
         p = self.scene.context
-        self.sx, self.sy = p.device.scene_point(0, 0)
+
+        self.sx = 0
+        self.sy = 0
         if self.scene.grid_secondary_cx is None:
             self.sx2 = self.sx
         else:
@@ -264,17 +266,17 @@ class GridWidget(Widget):
         self.min_y = max(0, self.min_y)
         self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
         self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
-        tlen = float(
+        tick_length = float(
             Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
-        if tlen == 0:
-            tlen = float(Length("10mm"))
-        self.tlenx1 = tlen
-        self.tleny1 = tlen
+        if tick_length == 0:
+            tick_length = float(Length("10mm"))
+        self.tick_length_x1 = tick_length
+        self.tick_lenght_y1 = tick_length
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
-        self.tlenx2 = self.tlenx1 * self.scene.grid_secondary_scale_x
-        self.tleny2 = self.tleny1 * self.scene.grid_secondary_scale_y
+        self.tlenx2 = self.tick_length_x1 * self.scene.grid_secondary_scale_x
+        self.tleny2 = self.tick_lenght_y1 * self.scene.grid_secondary_scale_y
         # let's establish which circles we really have to draw
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
@@ -413,24 +415,24 @@ class GridWidget(Widget):
         # That's easy just the rectangular stuff
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx1 > self.min_x:
-            start_x -= self.tlenx1
+        while start_x - self.tick_length_x1 > self.min_x:
+            start_x -= self.tick_length_x1
         start_y = self.zero_y
-        while start_y - self.tleny1 > self.min_y:
-            start_y -= self.tleny1
+        while start_y - self.tick_lenght_y1 > self.min_y:
+            start_y -= self.tick_lenght_y1
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx1
+            start_x += self.tick_length_x1
         while start_y < self.min_y:
-            start_y += self.tleny1
+            start_y += self.tick_lenght_y1
         x = start_x
         while x <= self.max_x:
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
                 self.scene.grid_points.append([x, y])
-                y += self.tleny1
-            x += self.tlenx1
+                y += self.tick_lenght_y1
+            x += self.tick_length_x1
 
     def _calculate_grid_points_secondary(self):
         if (
@@ -472,7 +474,7 @@ class GridWidget(Widget):
         # mx, my = self.scene.convert_scene_to_window([x, y])
         self.scene.grid_points.append([x, y])
         max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
-        tlen = (self.tlenx1 + self.tleny1) / 2
+        tlen = (self.tick_length_x1 + self.tick_lenght_y1) / 2
         r_fourth = max_r // (4 * tlen) * tlen
         segments = 48
         r_angle = 0
@@ -605,13 +607,23 @@ class GridWidget(Widget):
         gc.SetPen(self.grid_line_pen3)
         u_width = float(self.scene.context.device.unit_width)
         u_height = float(self.scene.context.device.unit_height)
-        gc.Clip(0, 0, u_width, u_height)
+        p1, p2, p3, p4 = self.scene.context.device.scene_coords
+        x0 = p2[0]
+        y0 = p2[1]
+        x1 = u_width
+        y1 = u_height
+        if self.scene.context.device.centered:
+            x0 = -u_width / 2
+            y0 = -u_width / 2
+            x1 = -x0
+            y1 = -y0
+        gc.Clip(x0, y0, x1 - x0, y1 - y0)
         siz = sqrt(u_width * u_width + u_height * u_height)
         # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
         # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
         sox = self.cx / u_width
         soy = self.cy / u_height
-        step = self.tlenx1
+        step = self.tick_length_x1
         factor = max(2 * (1 - sox), 2 * (1 - soy))
         # Initially I drew a complete circle, which is a waste in most situations,
         # so let's create a path
