@@ -51,7 +51,9 @@ class BedWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
             p = context.device
-            p1, p2, p3, p4 = p.scene_coords
+            bed_min_x, bed_min_y, bed_max_x, bed_max_y = p.bounds
+            bed_width = bed_max_x - bed_min_x
+            bed_height = bed_max_y - bed_min_y
             background = self.background
             if background is None:
                 brush = wx.Brush(
@@ -59,12 +61,12 @@ class BedWidget(Widget):
                 )
                 gc.SetBrush(brush)
 
-                gc.DrawRectangle(p2[0], p2[0], p.unit_width, p.unit_height)
+                gc.DrawRectangle(bed_min_x, bed_min_y, bed_width, bed_height)
             elif isinstance(background, int):
                 gc.SetBrush(wx.Brush(wx.Colour(swizzlecolor(background))))
-                gc.DrawRectangle(p2[0], p2[0], p.unit_width, p.unit_height)
+                gc.DrawRectangle(bed_min_x, bed_min_y, bed_width, bed_height)
             else:
-                gc.DrawBitmap(background, p2[0], p2[0], p.unit_width, p.unit_height)
+                gc.DrawBitmap(background, bed_min_x, bed_min_y, bed_width, bed_height)
 
     def signal(self, signal, *args, **kwargs):
         """
