@@ -476,8 +476,7 @@ class GuideWidget(Widget):
         Calculate center position for primary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.device.scene_point(0,0)
         return self.scene.convert_scene_to_window([x, y])
 
     def _get_center_secondary(self):
@@ -522,8 +521,8 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
-                if p.device.show_flip_x:
-                    mark_point *= -1
+                # if p.device.show_flip_x:
+                #     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 starts.append((x, edge_gap))
@@ -555,8 +554,8 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
-                if p.device.show_flip_y:
-                    mark_point *= -1
+                # if p.device.show_flip_y:
+                #     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
                 starts.append((edge_gap, y))

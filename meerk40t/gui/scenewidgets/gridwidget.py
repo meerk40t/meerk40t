@@ -168,8 +168,7 @@ class GridWidget(Widget):
         Based on the current matrix calculate the grid within the bed-space.
         """
         d = self.scene.context.device
-        self.zero_x = d.unit_width * d.show_origin_x
-        self.zero_y = d.unit_height * d.show_origin_y
+        self.zero_x, self.zero_y = d.scene_point(0, 0)
         self._calc_primary_grid()
         self._calc_secondary_grid()
 
@@ -228,9 +227,7 @@ class GridWidget(Widget):
 
     def calculate_gridsize(self, w, h):
         p = self.scene.context
-
-        self.sx = p.device.unit_width * p.device.show_origin_x
-        self.sy = p.device.unit_height * p.device.show_origin_y
+        self.sx, self.sy = p.device.scene_point(0, 0)
         if self.scene.grid_secondary_cx is None:
             self.sx2 = self.sx
         else:

@@ -686,24 +686,17 @@ class BalorDevice(Service, ViewPort):
         self.register_choices("balor-extra", choices)
 
         self.state = 0
-
-        unit_size = float(Length(self.lens_size))
-        galvo_range = 0xFFFF
-        units_per_galvo = unit_size / galvo_range
-
+        dim = float(Length(self.lens_size))
         ViewPort.__init__(
             self,
-            self.lens_size,
-            self.lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if self.flip_x else 0.0,
-            origin_y=1.0 if self.flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
+            scene1=(dim / 2, dim / 2),
+            scene2=(-dim / 2, dim / 2),
+            scene3=(-dim / 2, -dim / 2),
+            scene4=(dim / 2, -dim / 2),
+            laser1=(0xFFFF, 0),
+            laser2=(0, 0),
+            laser3=(0, 0xFFFF),
+            laser4=(0xFFFF, 0xFFFF),
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)

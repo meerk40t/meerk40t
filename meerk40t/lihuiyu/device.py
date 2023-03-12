@@ -92,21 +92,18 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        width = float(Length(self.bedwidth))
+        height = float(Length(self.bedheight))
         ViewPort.__init__(
             self,
-            self.bedwidth,
-            self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
+            scene1=(width / 2, height / 2),
+            scene2=(-width / 2, height / 2),
+            scene3=(-width / 2, -height / 2),
+            scene4=(width / 2, -height / 2),
+            laser1=(UNITS_PER_MIL / width, 0),
+            laser2=(0, 0),
+            laser3=(0, UNITS_PER_MIL / height),
+            laser4=(UNITS_PER_MIL / width, UNITS_PER_MIL / height),
         )
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)

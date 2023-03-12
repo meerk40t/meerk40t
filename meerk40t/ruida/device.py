@@ -9,7 +9,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
-from ..core.units import Length, ViewPort
+from ..core.units import Length, ViewPort, UNITS_PER_uM
 
 
 class RuidaDevice(Service, ViewPort):
@@ -85,12 +85,18 @@ class RuidaDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        width = float(Length(self.bedwidth))
+        height = float(Length(self.bedheight))
         ViewPort.__init__(
             self,
-            self.bedwidth,
-            self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
+            scene1=(width / 2, height / 2),
+            scene2=(-width / 2, height / 2),
+            scene3=(-width / 2, -height / 2),
+            scene4=(width / 2, -height / 2),
+            laser1=(UNITS_PER_uM / width, 0),
+            laser2=(0, 0),
+            laser3=(0, UNITS_PER_uM / height),
+            laser4=(UNITS_PER_uM / width, UNITS_PER_uM / height),
         )
         self.state = 0
 
@@ -101,8 +107,6 @@ class RuidaDevice(Service, ViewPort):
         _ = self.kernel.translation
 
     def realize(self):
-        self.width = self.bedwidth
-        self.height = self.bedheight
         super().realize()
 
     @property
