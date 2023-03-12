@@ -86,6 +86,11 @@ class ViewPort:
         self._device_to_scene_matrix = None
         self._scene_to_device_matrix = None
 
+    def update_scene(self, scene1, scene2, scene3, scene4):
+        self.scene_coords = scene1, scene2, scene3, scene4
+        self._device_to_scene_matrix = None
+        self._scene_to_device_matrix = None
+
     def realize(self):
         self._device_to_scene_matrix = None
         self._scene_to_device_matrix = None
