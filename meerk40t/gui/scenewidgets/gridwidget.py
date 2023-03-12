@@ -190,7 +190,7 @@ class GridWidget(Widget):
         # points = scaled_conversion * round(points / scaled_conversion * 10.0) / 10.0
         delta = points / scaled_conversion
         # Let's establish a proper delta: we want to understand the log and x.yyy multiplikator
-        x = delta
+        x = abs(delta)
         factor = 1
         if x >= 1:
             while x >= 10:

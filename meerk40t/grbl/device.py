@@ -156,10 +156,10 @@ class GRBLDevice(Service, ViewPort):
         height = float(Length(self.bedheight))
         ViewPort.__init__(
             self,
-            scene1=(width / 2, height / 2),
-            scene2=(-width / 2, height / 2),
-            scene3=(-width / 2, -height / 2),
-            scene4=(width / 2, -height / 2),
+            scene1=(width, 0),
+            scene2=(0, 0),
+            scene3=(0, height),
+            scene4=(width, height),
             laser1=(UNITS_PER_MIL / width, 0),
             laser2=(0, 0),
             laser3=(0, UNITS_PER_MIL / height),

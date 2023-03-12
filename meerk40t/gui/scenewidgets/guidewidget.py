@@ -513,7 +513,7 @@ class GuideWidget(Widget):
 
         starts = []
         ends = []
-        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
+        points_x_primary = abs(self.scene.tick_distance * self.scaled_conversion_x)
         offset_x_primary = float(sx_primary) % points_x_primary
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
@@ -546,7 +546,7 @@ class GuideWidget(Widget):
                     last_text_pos = x
             x += points_x_primary
 
-        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
+        points_y_primary = abs(self.scene.tick_distance * self.scaled_conversion_y)
         offset_y_primary = float(sy_primary) % points_y_primary
         y = offset_y_primary
         last_text_pos = y - 30  # arbitrary
