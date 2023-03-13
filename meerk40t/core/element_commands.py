@@ -678,24 +678,24 @@ def init_commands(kernel):
         self.set_emphasis(ops)
         return "ops", ops
 
-    @self.console_argument("start", type=int, help=_("operation start"))
-    @self.console_argument("end", type=int, help=_("operation end"))
-    @self.console_argument("step", type=int, help=_("operation step"))
+    @self.console_argument("start", type=int, help=_("start"))
+    @self.console_argument("end", type=int, help=_("end"))
+    @self.console_option("step", "s", type=int, default=1, help=_("step"))
     @self.console_command(
         "range",
         help=_("Subset existing selection by begin and end indices and step"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subops = list()
+    def opelem_select_range(data=None, data_type=None, start=None, end=None, step=1, **kwargs):
+        sublist = list()
         for e in range(start, end, step):
             try:
-                subops.append(data[e])
+                sublist.append(data[e])
             except IndexError:
                 pass
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
 
     @self.console_argument("filter", type=str, help=_("Filter to apply"))
     @self.console_command(
@@ -1815,25 +1815,6 @@ def init_commands(kernel):
                 channel(f"{i}: {name}")
         channel("----------")
         return "elements", data
-
-    @self.console_argument("start", type=int, help=_("elements start"))
-    @self.console_argument("end", type=int, help=_("elements end"))
-    @self.console_argument("step", type=int, help=_("elements step"))
-    @self.console_command(
-        "range",
-        help=_("Subset selection by begin & end indices and step"),
-        input_type="elements",
-        output_type="elements",
-    )
-    def element_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subelem = list()
-        for e in range(start, end, step):
-            try:
-                subelem.append(data[e])
-            except IndexError:
-                pass
-        self.set_emphasis(subelem)
-        return "elements", subelem
 
     @self.console_command(
         "merge",
