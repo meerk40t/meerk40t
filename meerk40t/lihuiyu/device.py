@@ -9,13 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    CommandSyntaxError,
-    Service,
-    signal_listener,
-)
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -33,7 +27,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
-
         choices = [
             {
                 "attr": "bedwidth",
@@ -863,25 +856,6 @@ class LihuiyuDevice(Service, ViewPort):
                 except KeyError:
                     channel(_("Intepreter cannot be attached to any device."))
                 return
-
-    @signal_listener("bedwidth")
-    @signal_listener("bedheight")
-    def realize(self, origin=None, *args):
-        bedwidth = float(Length(self.bedwidth))
-        bedheight = float(Length(self.bedheight))
-        x0, y0, x1, y1 = 0, 0, float(bedwidth), float(bedheight)
-        width = x1 - x0
-        height = y1 - y0
-        scene1 = (x1, y0)
-        scene2 = (x0, y0)
-        scene3 = (x0, y1)
-        scene4 = (x1, y1)
-        self.update_scene(scene1, scene2, scene3, scene4)
-        laser1 = (UNITS_PER_MIL / width, 0)
-        laser2 = (0, 0)
-        laser3 = (0, UNITS_PER_MIL / height)
-        laser4 = (UNITS_PER_MIL / width, UNITS_PER_MIL / height)
-        self.update_laser(laser1, laser2, laser3, laser4)
 
     @property
     def viewbuffer(self):

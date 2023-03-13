@@ -333,6 +333,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
 
+        # end wxGlade
         if self.context.mock:
             self.panel_tcp_config.Hide()
             self.panel_usb_settings.Hide()
