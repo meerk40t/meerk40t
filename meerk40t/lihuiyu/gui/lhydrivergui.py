@@ -368,39 +368,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.Layout()
 
 
-class ConfigurationConfigPanel(ScrolledPanel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: ConfigurationInterfacePanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        ScrolledPanel.__init__(self, *args, **kwds)
-        self.context = context
-
-        sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
-
-        self.config_orient_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_orientation"
-        )
-        sizer_page_1.Add(self.config_orient_panel, 1, wx.EXPAND, 0)
-
-        self.config_dimensions_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_dim"
-        )
-        sizer_page_1.Add(self.config_dimensions_panel, 1, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_page_1)
-
-        self.Layout()
-        self.SetupScrolling()
-
-    def pane_show(self):
-        self.config_dimensions_panel.pane_show()
-        self.config_orient_panel.pane_show()
-
-    def pane_hide(self):
-        self.config_dimensions_panel.pane_hide()
-        self.config_orient_panel.pane_hide()
-
-
 class ConfigurationSetupPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationSetupPanel.__init__
@@ -486,9 +453,10 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.panels = []
-
-        panel_config = ConfigurationConfigPanel(
-            self.notebook_main, wx.ID_ANY, context=self.context
+        c1 = self.context.lookup("choices/bed_orientation")
+        panel_config = ChoicePropertyPanel(
+            self.notebook_main, wx.ID_ANY, context=self.context, choices="bed_dim",
+            injector=c1,
         )
 
         panel_interface = ConfigurationInterfacePanel(
@@ -521,8 +489,6 @@ class LihuiyuDriverGui(MWindow):
 
         for panel in self.panels:
             self.add_module_delegate(panel)
-        self.add_module_delegate(panel_config.config_dimensions_panel)
-        self.add_module_delegate(panel_config.config_orient_panel)
         self.add_module_delegate(panel_setup.config_general_panel)
 
     def window_open(self):
