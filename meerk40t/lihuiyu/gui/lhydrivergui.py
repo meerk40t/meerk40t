@@ -405,6 +405,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         sizer_page_2.Add(sizer_speed, 0, wx.EXPAND, 0)
 
         sizer_32 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_speed.Add(sizer_32, 0, wx.EXPAND, 0)
 
         self.check_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
@@ -429,7 +430,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.SetSizer(sizer_page_2)
 
         self.Layout()
-        self.check_fix_speeds.SetValue(self.context.fix_speeds)
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
         self.SetupScrolling()
 
     def pane_show(self):
