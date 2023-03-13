@@ -334,7 +334,7 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("Update m2nano codes for movement"),
         )
         def codes_update(**kwargs):
-            self.realize()
+            pass
 
         @self.console_command(
             "network_update",
@@ -676,6 +676,20 @@ class LihuiyuDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
+
+    def update_dimensions(self, x0, y0, x1, y1):
+        width = x1 - x0
+        height = y1 - y0
+        scene1 = (x1, y0)
+        scene2 = (x0, y0)
+        scene3 = (x0, y1)
+        scene4 = (x1, y1)
+        self.update_scene(scene1, scene2, scene3, scene4)
+        laser1 = (UNITS_PER_MIL / width, 0)
+        laser2 = (0, 0)
+        laser3 = (0, UNITS_PER_MIL / height)
+        laser4 = (UNITS_PER_MIL / width, UNITS_PER_MIL / height)
+        self.update_laser(laser1, laser2, laser3, laser4)
 
     @property
     def output(self):
