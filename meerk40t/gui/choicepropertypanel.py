@@ -571,6 +571,46 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_combo_text(attr, control, obj, data_type, additional_signal),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type in (str, int) and data_style == "radio":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                control = wx.RadioBox(
+                    self,
+                    wx.ID_ANY,
+                    label,
+                    choices=choice_list,
+                    majorDimension=3,
+                    style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
+                )
+                if data is not None:
+                    if data_type == str:
+                        control.SetSelection(0)
+                        for i, c in enumerate(choice_list):
+                            if c == data:
+                                control.SetSelection(i)
+                    else:
+                        control.SetSelection(int(data))
+
+                def on_radio_select(param, ctrl, obj, dtype, addsig):
+                    def select(event=None):
+                        if dtype == int:
+                            v = dtype(ctrl.GetSelection())
+                        else:
+                            v = dtype(ctrl.GetLabel())
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v, obj)
+                            for _sig in addsig:
+                                self.context.signal(_sig)
+
+                    return select
+
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                control.Bind(wx.EVT_RADIOBOX, on_radio_select(attr, control, obj, data_type, additional_signal))
+                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, str) and data_style == "option":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 display_list = list(map(str, c.get("display")))
