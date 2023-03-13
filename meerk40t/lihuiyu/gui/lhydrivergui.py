@@ -1,9 +1,9 @@
 import wx
 
-from meerk40t.core.units import Length
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
@@ -267,165 +267,6 @@ class ConfigurationTcp(wx.Panel):
             pass
 
 
-class ConfigurationLaserPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: ConfigurationLaserPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        v_sizer_main = StaticBoxSizer(
-            self, wx.ID_ANY, _("Laser Parameters"), wx.VERTICAL
-        )
-
-        sizer_bed = StaticBoxSizer(self, wx.ID_ANY, _("Bed Dimensions"), wx.HORIZONTAL)
-        v_sizer_main.Add(sizer_bed, 0, wx.EXPAND, 0)
-
-        h_sizer_wd = StaticBoxSizer(self, wx.ID_ANY, _("Width"), wx.HORIZONTAL)
-        sizer_bed.Add(h_sizer_wd, 1, wx.EXPAND, 0)
-
-        self.text_bedwidth = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "310mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-            nonzero=True,
-        )
-        self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
-        h_sizer_wd.Add(self.text_bedwidth, 1, wx.EXPAND, 0)
-
-        h_sizer_ht = StaticBoxSizer(self, wx.ID_ANY, _("Height"), wx.HORIZONTAL)
-        sizer_bed.Add(h_sizer_ht, 1, wx.EXPAND, 0)
-
-        label_3 = wx.StaticText(self, wx.ID_ANY, "")
-        h_sizer_ht.Add(label_3, 0, wx.EXPAND, 0)
-
-        self.text_bedheight = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "210mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-            nonzero=True,
-        )
-        self.text_bedheight.SetToolTip(_("Height of the laser bed."))
-        h_sizer_ht.Add(self.text_bedheight, 1, wx.EXPAND, 0)
-
-        sizer_scale_factors = StaticBoxSizer(
-            self, wx.ID_ANY, _("User Scale Factor"), wx.HORIZONTAL
-        )
-        v_sizer_main.Add(sizer_scale_factors, 0, wx.EXPAND, 0)
-
-        h_sizer_x_2 = StaticBoxSizer(self, wx.ID_ANY, _("X:"), wx.HORIZONTAL)
-        sizer_scale_factors.Add(h_sizer_x_2, 1, wx.EXPAND, 0)
-
-        self.text_scale_x = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1.000",
-            limited=True,
-            check="float",
-            nonzero=True,
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_scale_x.SetToolTip(
-            _("Scale factor for the X-axis. Board units to actual physical units.")
-        )
-        h_sizer_x_2.Add(self.text_scale_x, 1, wx.EXPAND, 0)
-
-        h_sizer_y_2 = StaticBoxSizer(self, wx.ID_ANY, _("Y:"), wx.HORIZONTAL)
-        sizer_scale_factors.Add(h_sizer_y_2, 1, wx.EXPAND, 0)
-
-        self.text_scale_y = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1.000",
-            limited=True,
-            check="float",
-            nonzero=True,
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_scale_y.SetToolTip(
-            _("Scale factor for the Y-axis. Board units to actual physical units.")
-        )
-        h_sizer_y_2.Add(self.text_scale_y, 1, wx.EXPAND, 0)
-
-        self.SetSizer(v_sizer_main)
-
-        self.text_bedwidth.SetValue(self.context.bedwidth)
-        self.text_bedheight.SetValue(self.context.bedheight)
-        self.text_scale_x.SetValue(f"{self.context.scale_x:.4f}")
-        self.text_scale_y.SetValue(f"{self.context.scale_y:.4f}")
-
-        self.Layout()
-
-        self.text_bedwidth.SetActionRoutine(self.on_text_bedwidth)
-        self.text_bedheight.SetActionRoutine(self.on_text_bedheight)
-        self.text_scale_x.SetActionRoutine(self.on_text_x_scale)
-        self.text_scale_y.SetActionRoutine(self.on_text_y_scale)
-
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
-
-    def on_text_bedwidth(self):
-        ctrl = self.text_bedwidth
-        try:
-            bedwidth = Length(ctrl.GetValue())
-        except ValueError:
-            return
-        self.context.device.bedwidth = bedwidth.preferred_length
-        self.context.signal(
-            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
-        )
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_text_bedheight(self):
-        ctrl = self.text_bedheight
-        try:
-            bedheight = Length(ctrl.GetValue())
-        except ValueError:
-            return
-        self.context.device.bedheight = bedheight.preferred_length
-        self.context.signal(
-            "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
-        )
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_text_x_scale(self):
-        try:
-            self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
-            self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
-            self.context.signal(
-                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
-            )
-            self.context("viewport_update\n")
-            self.context.signal("bedsize", False)
-        except ValueError:
-            pass
-
-    def on_text_y_scale(self):
-        try:
-            self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
-            self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
-            self.context.device.scale_x = self.context.device.user_scale_x
-            self.context.device.scale_y = self.context.device.user_scale_y
-            self.context.signal(
-                "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
-            )
-            self.context("viewport_update\n")
-            self.context.signal("bedsize", False)
-        except ValueError:
-            pass
-
-
 class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
@@ -543,10 +384,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.panel_tcp_config = ConfigurationTcp(self, wx.ID_ANY, context=self.context)
         sizer_interface.Add(self.panel_tcp_config, 0, wx.EXPAND, 0)
 
-        self.ConfigurationLaserPanel = ConfigurationLaserPanel(
-            self, wx.ID_ANY, context=self.context
+        self.config_laser_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="bed_dim"
         )
-        sizer_page_1.Add(self.ConfigurationLaserPanel, 1, wx.EXPAND, 0)
+        sizer_page_1.Add(self.config_laser_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_page_1)
 
@@ -583,12 +424,12 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.SetupScrolling()
 
     def pane_show(self):
-        self.ConfigurationLaserPanel.pane_show()
+        self.config_laser_panel.pane_show()
         self.panel_usb_settings.pane_show()
         self.panel_tcp_config.pane_show()
 
     def pane_hide(self):
-        self.ConfigurationLaserPanel.pane_hide()
+        self.config_laser_panel.pane_hide()
         self.panel_usb_settings.pane_hide()
         self.panel_tcp_config.pane_hide()
 
@@ -1111,6 +952,7 @@ class LihuiyuDriverGui(MWindow):
 
         for panel in self.panels:
             self.add_module_delegate(panel)
+        self.add_module_delegate(panel_config.config_laser_panel)
 
     def window_open(self):
         for panel in self.panels:

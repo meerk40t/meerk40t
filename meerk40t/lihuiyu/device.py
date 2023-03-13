@@ -9,7 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -33,17 +33,25 @@ class LihuiyuDevice(Service, ViewPort):
                 "attr": "bedwidth",
                 "object": self,
                 "default": "310mm",
-                "type": str,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "section": _("Laser Parameters"),
+                "nonzero": True,
+                "subsection": _("Bed Dimensions"),
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
                 "object": self,
                 "default": "210mm",
-                "type": str,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "section": _("Laser Parameters"),
+                "nonzero": True,
+                "subsection": _("Bed Dimensions"),
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
@@ -54,6 +62,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "section": _("Laser Parameters"),
+                "subsection": _("User Scale Factor"),
+                "nonzero": True,
             },
             {
                 "attr": "scale_y",
@@ -64,6 +75,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "section": _("Laser Parameters"),
+                "subsection": _("User Scale Factor"),
+                "nonzero": True,
             },
         ]
 
@@ -647,7 +661,9 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
-    def realize(self):
+    @signal_listener("bedwidth")
+    @signal_listener("bedheight")
+    def realize(self, origin=None, *args):
         bedwidth = float(Length(self.bedwidth))
         bedheight = float(Length(self.bedheight))
         x0, y0, x1, y1 = 0, 0, float(bedwidth), float(bedheight)
