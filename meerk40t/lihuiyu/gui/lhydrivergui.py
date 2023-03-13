@@ -406,7 +406,6 @@ class ConfigurationLaserPanel(wx.Panel):
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
-            self.context.device.realize()
             self.context("viewport_update\n")
             self.context.signal("bedsize", False)
         except ValueError:
@@ -421,7 +420,6 @@ class ConfigurationLaserPanel(wx.Panel):
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
-            self.context.device.realize()
             self.context("viewport_update\n")
             self.context.signal("bedsize", False)
         except ValueError:
