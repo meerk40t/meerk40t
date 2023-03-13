@@ -431,10 +431,10 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.SetupScrolling()
 
     def pane_show(self):
-        pass
+        self.config_general_panel.pane_show()
 
     def pane_hide(self):
-        pass
+        self.config_general_panel.pane_hide()
 
     def on_check_fix_speeds(self, event=None):
         self.context.fix_speeds = self.check_fix_speeds.GetValue()
