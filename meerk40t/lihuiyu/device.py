@@ -9,7 +9,13 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service, signal_listener
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_PAUSE,
+    CommandSyntaxError,
+    Service,
+    signal_listener,
+)
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -80,7 +86,6 @@ class LihuiyuDevice(Service, ViewPort):
                 "nonzero": True,
             },
         ]
-
         self.register_choices("bed_dim", choices)
 
         choices = [
@@ -103,7 +108,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "label": _("Board"),
                 "style": "combosmall",
                 "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
-                "tip": _("Select the board to use. This has an effects the speedcodes used."),
+                "tip": _(
+                    "Select the board to use. This has an effects the speedcodes used."
+                ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": _("Board Setup"),
                 "signals": "bedsize",
@@ -158,7 +165,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": True,
                 "type": bool,
                 "label": _("Swap X and Y"),
-                "tip": _("Swaps the X and Y axis. This happens before the FlipX and FlipY."),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
                 "signals": "bedsize",
@@ -183,23 +192,23 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Pulse Grouping"),
                 "tip": "\n".join(
-                        [
-                            _(
-                                "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
-                            ),
-                            "",
-                            _(
-                                "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
-                            ),
-                            "",
-                            _(
-                                'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
-                            ),
-                            _(
-                                "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
-                            ),
-                        ]
-                    ),
+                    [
+                        _(
+                            "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                        ),
+                        "",
+                        _(
+                            "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                        ),
+                        "",
+                        _(
+                            'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                        ),
+                        _(
+                            "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
+                        ),
+                    ]
+                ),
                 "section": "_00_" + _("General Options"),
             },
             {
@@ -209,7 +218,8 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Strict"),
                 "tip": _(
-                    "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."),
+                    "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+                ),
                 "section": "_00_" + _("General Options"),
             },
             {
@@ -223,7 +233,7 @@ class LihuiyuDevice(Service, ViewPort):
                     "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
                     "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
                     "This option allows you to turn on the previous mode if you experience problems."
-                    ),
+                ),
                 "section": "_00_" + _("General Options"),
             },
         ]
@@ -258,7 +268,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "label": _("Jog Method"),
                 "style": "radio",
                 "choices": [_("Default"), _("Reset"), _("Finish")],
-                "tip": _("Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."),
+                "tip": _(
+                    "Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."
+                ),
                 "section": "_00_" + _("Rapid Jog"),
             },
         ]

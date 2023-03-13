@@ -393,7 +393,11 @@ class ConfigurationSetupPanel(ScrolledPanel):
         c1 = self.context.lookup("choices/lhy-jog")
         c2 = self.context.lookup("choices/lhy-rapid-override")
         self.config_general_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="lhy-general", injector=c1 + c2
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices="lhy-general",
+            injector=c1 + c2,
         )
         sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 0)
 
