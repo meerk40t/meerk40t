@@ -770,6 +770,8 @@ class LihuiyuDriverGui(MWindow):
 
         for panel in self.panels:
             self.add_module_delegate(panel)
+        self.add_module_delegate(panel_config.config_dimensions_panel)
+        self.add_module_delegate(panel_config.config_orient_panel)
 
     def window_open(self):
         for panel in self.panels:
