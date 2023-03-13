@@ -344,10 +344,10 @@ class LihuiyuDevice(Service, ViewPort):
             scene2=(0, 0),
             scene3=(0, height),
             scene4=(width, height),
-            laser1=(UNITS_PER_MIL / width, 0),
+            laser1=(width / UNITS_PER_MIL, 0),
             laser2=(0, 0),
-            laser3=(0, UNITS_PER_MIL / height),
-            laser4=(UNITS_PER_MIL / width, UNITS_PER_MIL / height),
+            laser3=(0, height / UNITS_PER_MIL),
+            laser4=(width / UNITS_PER_MIL,  height / UNITS_PER_MIL),
         )
 
         self.setting(int, "buffer_max", 900)
@@ -877,8 +877,6 @@ class LihuiyuDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
         super().realize()
 
 
