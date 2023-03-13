@@ -387,25 +387,22 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.panels = []
-        c1 = self.context.lookup("choices/bed_orientation")
         panel_config = ChoicePropertyPanel(
-            self.notebook_main, wx.ID_ANY, context=self.context, choices="bed_dim",
-            injector=c1,
+            self.notebook_main,
+            wx.ID_ANY,
+            context=self.context,
+            choices=("bed_dim", "bed_orientation"),
         )
 
         panel_interface = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
 
-        c1 = self.context.lookup("choices/lhy-jog")
-        c2 = self.context.lookup("choices/lhy-rapid-override")
-        c3 = self.context.lookup("choices/lhy-speed")
         panel_setup = ChoicePropertyPanel(
             self,
             wx.ID_ANY,
             context=self.context,
-            choices="lhy-general",
-            injector=c1 + c2 + c3,
+            choices=("lhy-general", "lhy-jog", "lhy-rapid-override", "lhy-speed"),
         )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
