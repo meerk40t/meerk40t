@@ -35,7 +35,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
                 "signals": "bedsize",
@@ -47,7 +47,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
                 "signals": "bedsize",
@@ -61,7 +61,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "subsection": _("User Scale Factor"),
                 "nonzero": True,
             },
@@ -74,7 +74,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "subsection": _("User Scale Factor"),
                 "nonzero": True,
             },
