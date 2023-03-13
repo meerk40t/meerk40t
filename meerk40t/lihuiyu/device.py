@@ -9,7 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -858,6 +858,18 @@ class LihuiyuDevice(Service, ViewPort):
                 except KeyError:
                     channel(_("Intepreter cannot be attached to any device."))
                 return
+
+    @signal_listener("user_scale_x")
+    @signal_listener("user_scale_y")
+    @signal_listener("bedsize")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
+
 
     @property
     def viewbuffer(self):
