@@ -133,7 +133,7 @@ class LihuiyuDevice(Service, ViewPort):
             {
                 "attr": "flip_y",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
@@ -155,7 +155,7 @@ class LihuiyuDevice(Service, ViewPort):
             {
                 "attr": "swap_xy",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Swap X and Y"),
                 "tip": _(
