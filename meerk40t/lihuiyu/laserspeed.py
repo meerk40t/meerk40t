@@ -406,7 +406,7 @@ def get_suffix_c(board, mm_per_second=None):
     if board == "B2":
         if mm_per_second < 7:
             return True
-    if board == "M2" and mm_per_second < 7:
+    if board in ("M2", "M3") and mm_per_second < 7:
         return True
     return False
 
