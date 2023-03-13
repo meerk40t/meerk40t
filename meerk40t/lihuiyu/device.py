@@ -353,13 +353,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
 
-        self.setting(bool, "scale_speed_enabled", False)
-        self.setting(float, "scale_speed", 1.000)
-        self.setting(bool, "max_speed_vector_enabled", False)
-        self.setting(float, "max_speed_vector", 100.0)
-        self.setting(bool, "max_speed_raster_enabled", False)
-        self.setting(float, "max_speed_raster", 750.0)
-
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)

@@ -423,113 +423,11 @@ class ConfigurationSetupPanel(ScrolledPanel):
         h_sizer_y9 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_speed.Add(h_sizer_y9, 0, wx.EXPAND, 0)
 
-        self.check_scale_speed = wx.CheckBox(self, wx.ID_ANY, _("Scale Speed"))
-        self.check_scale_speed.SetToolTip(
-            _(
-                "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
-            )
-        )
-        self.check_scale_speed.SetMaxSize(wx.Size(300, -1))
-        h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
-
-        self.text_speed_scale_amount = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1.000",
-            limited=True,
-            check="float",
-            nonzero=True,
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_speed_scale_amount.SetToolTip(
-            _(
-                "Scales the machine's speed ratio so that rated speeds speeds multiplied by this ratio."
-            )
-        )
-        h_sizer_y9.Add(self.text_speed_scale_amount, 1, wx.EXPAND, 0)
-
-        sizer_30 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_30, 0, wx.EXPAND, 0)
-
-        self.check_max_speed_vector = wx.CheckBox(
-            self, wx.ID_ANY, _("Max Speed (Vector)")
-        )
-        self.check_max_speed_vector.SetToolTip(
-            _("Limit the maximum vector speed to this value")
-        )
-        self.check_max_speed_vector.SetMaxSize(wx.Size(300, -1))
-        sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
-
-        self.text_max_speed_vector = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "100",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_max_speed_vector.SetToolTip(
-            _("maximum speed at which all greater speeds are limited")
-        )
-        sizer_30.Add(self.text_max_speed_vector, 1, wx.EXPAND, 0)
-
-        sizer_31 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_31, 0, wx.EXPAND, 0)
-
-        self.check_max_speed_raster = wx.CheckBox(
-            self, wx.ID_ANY, _("Max Speed (Raster)")
-        )
-        self.check_max_speed_raster.SetToolTip(
-            _("Limit the maximum raster speed to this value")
-        )
-        self.check_max_speed_raster.SetMaxSize(wx.Size(300, -1))
-        sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
-
-        self.text_max_speed_raster = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "750",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_max_speed_raster.SetToolTip(
-            _("maximum speed at which all greater speeds are limited")
-        )
-        sizer_31.Add(self.text_max_speed_raster, 1, wx.EXPAND, 0)
-
         self.SetSizer(sizer_page_2)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_scale_speed, self.check_scale_speed)
-        self.text_speed_scale_amount.SetActionRoutine(self.on_text_speed_scale)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_max_speed_vector, self.check_max_speed_vector
-        )
-        self.text_max_speed_vector.SetActionRoutine(self.on_text_speed_max_vector)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_max_speed_raster, self.check_max_speed_raster
-        )
-        self.text_max_speed_raster.SetActionRoutine(self.on_text_speed_max_raster)
-        # end wxGlade
-
-        self.check_fix_speeds.SetValue(self.context.fix_speeds)
-        self.check_scale_speed.SetValue(self.context.scale_speed_enabled)
-        self.text_speed_scale_amount.SetValue(str(self.context.scale_speed))
-        self.check_max_speed_vector.SetValue(self.context.max_speed_vector_enabled)
-        self.text_max_speed_vector.SetValue(str(self.context.max_speed_vector))
-        self.check_max_speed_raster.SetValue(self.context.max_speed_raster_enabled)
-        self.text_max_speed_raster.SetValue(str(self.context.max_speed_raster))
-
-        # Disables of features not yet supported.
-        self.text_max_speed_raster.Enable(False)
-        self.text_max_speed_vector.Enable(False)
-        self.text_speed_scale_amount.Enable(False)
-        self.check_max_speed_raster.Enable(False)
-        self.check_max_speed_vector.Enable(False)
-        self.check_scale_speed.Enable(False)
         self.SetupScrolling()
 
     def pane_show(self):
@@ -543,39 +441,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_fix_rated_speed.SetValue(
             "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
         )
-
-    def on_check_scale_speed(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.scale_speed_enabled = self.check_scale_speed.GetValue()
-
-    def on_text_speed_scale(self):
-        try:
-            self.context.scale_speed = float(self.text_speed_scale_amount.GetValue())
-        except ValueError:
-            pass
-
-    def on_check_max_speed_vector(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.max_speed_vector_enabled = self.check_max_speed_vector.GetValue()
-
-    def on_text_speed_max_vector(self):
-        try:
-            self.context.max_speed_vector = float(self.text_max_speed_vector.GetValue())
-        except ValueError:
-            pass
-
-    def on_check_max_speed_raster(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.max_speed_raster_enabled = self.check_max_speed_raster.GetValue()
-
-    def on_text_speed_max_raster(self):
-        try:
-            self.context.max_speed_raster = float(self.text_max_speed_raster.GetValue())
-        except ValueError:
-            pass
 
 
 class LihuiyuDriverGui(MWindow):
