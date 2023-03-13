@@ -267,6 +267,7 @@ class ConfigurationTcp(wx.Panel):
         except ValueError:
             pass
 
+
 class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
@@ -275,11 +276,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.context = context
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
-
-        self.config_orient_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_orientation"
-        )
-        sizer_page_1.Add(self.config_orient_panel, 1, wx.EXPAND, 0)
 
         sizer_interface = StaticBoxSizer(self, wx.ID_ANY, _("Interface"), wx.VERTICAL)
         sizer_page_1.Add(sizer_interface, 0, wx.EXPAND, 0)
@@ -320,11 +316,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.panel_tcp_config = ConfigurationTcp(self, wx.ID_ANY, context=self.context)
         sizer_interface.Add(self.panel_tcp_config, 0, wx.EXPAND, 0)
 
-        self.config_dimensions_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="bed_dim"
-        )
-        sizer_page_1.Add(self.config_dimensions_panel, 1, wx.EXPAND, 0)
-
         self.SetSizer(sizer_page_1)
 
         self.Layout()
@@ -346,14 +337,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.SetupScrolling()
 
     def pane_show(self):
-        self.config_dimensions_panel.pane_show()
-        self.config_orient_panel.pane_show()
         self.panel_usb_settings.pane_show()
         self.panel_tcp_config.pane_show()
 
     def pane_hide(self):
-        self.config_dimensions_panel.pane_hide()
-        self.config_orient_panel.pane_hide()
         self.panel_usb_settings.pane_hide()
         self.panel_tcp_config.pane_hide()
 
@@ -379,6 +366,39 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.context.mock = True
             self.context(".network_update\n")
         self.Layout()
+
+
+class ConfigurationConfigPanel(ScrolledPanel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: ConfigurationInterfacePanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        ScrolledPanel.__init__(self, *args, **kwds)
+        self.context = context
+
+        sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
+
+        self.config_orient_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="bed_orientation"
+        )
+        sizer_page_1.Add(self.config_orient_panel, 1, wx.EXPAND, 0)
+
+        self.config_dimensions_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="bed_dim"
+        )
+        sizer_page_1.Add(self.config_dimensions_panel, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_page_1)
+
+        self.Layout()
+        self.SetupScrolling()
+
+    def pane_show(self):
+        self.config_dimensions_panel.pane_show()
+        self.config_orient_panel.pane_show()
+
+    def pane_hide(self):
+        self.config_dimensions_panel.pane_hide()
+        self.config_orient_panel.pane_hide()
 
 
 class ConfigurationSetupPanel(ScrolledPanel):
@@ -467,7 +487,11 @@ class LihuiyuDriverGui(MWindow):
         )
         self.panels = []
 
-        panel_config = ConfigurationInterfacePanel(
+        panel_config = ConfigurationConfigPanel(
+            self.notebook_main, wx.ID_ANY, context=self.context
+        )
+
+        panel_interface = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
 
@@ -480,12 +504,14 @@ class LihuiyuDriverGui(MWindow):
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
         self.panels.append(panel_config)
+        self.panels.append(panel_interface)
         self.panels.append(panel_setup)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(newpanel)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
+        self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
