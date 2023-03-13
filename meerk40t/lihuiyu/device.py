@@ -82,6 +82,90 @@ class LihuiyuDevice(Service, ViewPort):
         ]
 
         self.register_choices("bed_dim", choices)
+
+        choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": "lihuiyu-device",
+                "type": str,
+                "label": _("Device Name"),
+                "tip": _("The internal label to be used for this device"),
+                "section": "_00_" + _("General"),
+                "priority": "10",
+                "signals": "device;renamed",
+            },
+            {
+                "attr": "board",
+                "object": self,
+                "default": "M2",
+                "type": str,
+                "label": _("Board"),
+                "style": "combosmall",
+                "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
+                "tip": _("Select the board to use. This has an effects the speedcodes used."),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Board Setup"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _("Flip the Right and Left commands sent to the controller"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("X Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is on the right"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("X Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _("Flip the Y axis for the Balor device"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Y Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Y Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Swap X and Y"),
+                "tip": _("Swaps the X and Y axis. This happens before the FlipX and FlipY."),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_" + _("Axis corrections"),
+                "signals": "bedsize",
+            },
+        ]
+        self.register_choices("bed_orientation", choices)
+
         self.setting(bool, "swap_xy", False)
         self.setting(bool, "flip_x", False)
         self.setting(bool, "flip_y", False)

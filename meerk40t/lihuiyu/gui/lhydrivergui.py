@@ -276,74 +276,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_name = StaticBoxSizer(self, wx.ID_ANY, _("Device Name"), wx.HORIZONTAL)
-        self.text_device_label = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        self.config_orient_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="bed_orientation"
         )
-        self.text_device_label.SetToolTip(
-            _("The internal label to be used for this device")
-        )
-        sizer_name.Add(self.text_device_label, 1, wx.EXPAND, 0)
-        sizer_page_1.Add(sizer_name, 0, wx.EXPAND, 0)
-
-        sizer_config = StaticBoxSizer(
-            self, wx.ID_ANY, _("Configuration"), wx.HORIZONTAL
-        )
-        sizer_page_1.Add(sizer_config, 0, wx.EXPAND, 0)
-
-        sizer_board = StaticBoxSizer(self, wx.ID_ANY, _("Board Setup"), wx.HORIZONTAL)
-        sizer_config.Add(sizer_board, 0, wx.EXPAND, 0)
-
-        self.combobox_board = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=["M2", "B2", "M", "M1", "A", "B", "B1"],
-            style=wx.CB_DROPDOWN,
-        )
-        self.combobox_board.SetToolTip(
-            _("Select the board to use. This has an effects the speedcodes used.")
-        )
-        self.combobox_board.SetSelection(0)
-        sizer_board.Add(self.combobox_board, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_17 = wx.BoxSizer(wx.VERTICAL)
-        sizer_config.Add(sizer_17, 1, wx.EXPAND, 0)
-
-        self.checkbox_flip_x = wx.CheckBox(self, wx.ID_ANY, _("Flip X"))
-        self.checkbox_flip_x.SetToolTip(
-            _("Flip the Right and Left commands sent to the controller")
-        )
-        sizer_17.Add(self.checkbox_flip_x, 0, wx.EXPAND, 0)
-
-        self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
-        self.checkbox_home_right.SetToolTip(
-            _("Indicates the device Home is on the right")
-        )
-        sizer_17.Add(self.checkbox_home_right, 0, wx.EXPAND, 0)
-
-        label_1 = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_17.Add(label_1, 0, wx.EXPAND, 0)
-
-        sizer_16 = wx.BoxSizer(wx.VERTICAL)
-        sizer_config.Add(sizer_16, 1, wx.EXPAND, 0)
-
-        self.checkbox_flip_y = wx.CheckBox(self, wx.ID_ANY, _("Flip Y"))
-        self.checkbox_flip_y.SetToolTip(
-            _("Flip the Top and Bottom commands sent to the controller")
-        )
-        sizer_16.Add(self.checkbox_flip_y, 0, wx.EXPAND, 0)
-
-        self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
-        self.checkbox_home_bottom.SetToolTip(
-            _("Indicates the device Home is on the bottom")
-        )
-        sizer_16.Add(self.checkbox_home_bottom, 0, wx.EXPAND, 0)
-
-        self.checkbox_swap_xy = wx.CheckBox(self, wx.ID_ANY, _("Swap X and Y"))
-        self.checkbox_swap_xy.SetToolTip(
-            _("Swaps the X and Y axis. This happens before the FlipX and FlipY.")
-        )
-        sizer_16.Add(self.checkbox_swap_xy, 0, wx.EXPAND, 0)
+        sizer_page_1.Add(self.config_orient_panel, 1, wx.EXPAND, 0)
 
         sizer_interface = StaticBoxSizer(self, wx.ID_ANY, _("Interface"), wx.VERTICAL)
         sizer_page_1.Add(sizer_interface, 0, wx.EXPAND, 0)
@@ -384,33 +320,19 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.panel_tcp_config = ConfigurationTcp(self, wx.ID_ANY, context=self.context)
         sizer_interface.Add(self.panel_tcp_config, 0, wx.EXPAND, 0)
 
-        self.config_laser_panel = ChoicePropertyPanel(
+        self.config_dimensions_panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="bed_dim"
         )
-        sizer_page_1.Add(self.config_laser_panel, 1, wx.EXPAND, 0)
+        sizer_page_1.Add(self.config_dimensions_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_page_1)
 
         self.Layout()
 
-        self.text_device_label.SetActionRoutine(self.on_device_label)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_y, self.checkbox_flip_y)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_swapxy, self.checkbox_swap_xy)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_usb)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
-        # end wxGlade
-        self.text_device_label.SetValue(self.context.label)
-        self.checkbox_swap_xy.SetValue(self.context.swap_xy)
-        self.checkbox_flip_x.SetValue(self.context.flip_x)
-        self.checkbox_flip_y.SetValue(self.context.flip_y)
-        self.checkbox_home_right.SetValue(self.context.home_right)
-        self.checkbox_home_bottom.SetValue(self.context.home_bottom)
-        self.combobox_board.SetValue(self.context.board)
+
         if self.context.mock:
             self.panel_tcp_config.Hide()
             self.panel_usb_settings.Hide()
@@ -424,62 +346,16 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.SetupScrolling()
 
     def pane_show(self):
-        self.config_laser_panel.pane_show()
+        self.config_dimensions_panel.pane_show()
+        self.config_orient_panel.pane_show()
         self.panel_usb_settings.pane_show()
         self.panel_tcp_config.pane_show()
 
     def pane_hide(self):
-        self.config_laser_panel.pane_hide()
+        self.config_dimensions_panel.pane_hide()
+        self.config_orient_panel.pane_hide()
         self.panel_usb_settings.pane_hide()
         self.panel_tcp_config.pane_hide()
-
-    def on_combobox_boardtype(self, event=None):
-        self.context.board = self.combobox_board.GetValue()
-
-    def on_check_swapxy(self, event=None):
-        self.context.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_check_flip_x(self, event=None):
-        self.context.flip_x = self.checkbox_flip_x.GetValue()
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_check_home_right(self, event=None):
-        direction = self.checkbox_home_right.GetValue()
-        self.context.home_right = direction
-        if direction:
-            self.context.show_flip_x = True
-            self.context.origin_x = 1.0
-        else:
-            self.context.show_flip_x = False
-            self.context.origin_x = 0.0
-        self.context.show_origin_x = self.context.origin_x
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_check_flip_y(self, event=None):
-        self.context.flip_y = self.checkbox_flip_y.GetValue()
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_check_home_bottom(self, event=None):
-        direction = self.checkbox_home_bottom.GetValue()
-        self.context.home_bottom = direction
-        if direction:
-            self.context.show_flip_y = True
-            self.context.origin_y = 1.0
-        else:
-            self.context.show_flip_y = False
-            self.context.origin_y = 0.0
-        self.context.show_origin_y = self.context.origin_y
-        self.context("viewport_update\n")
-        self.context.signal("bedsize", False)
-
-    def on_device_label(self):
-        self.context.label = self.text_device_label.GetValue()
-        self.context.signal("device;renamed")
 
     def on_radio_interface(
         self, event
@@ -952,7 +828,8 @@ class LihuiyuDriverGui(MWindow):
 
         for panel in self.panels:
             self.add_module_delegate(panel)
-        self.add_module_delegate(panel_config.config_laser_panel)
+        self.add_module_delegate(panel_config.config_dimensions_panel)
+        self.add_module_delegate(panel_config.config_orient_panel)
 
     def window_open(self):
         for panel in self.panels:
