@@ -212,7 +212,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.setting(bool, "autolock", True)
 
-        self.setting(str, "board", "M2")
         self.setting(bool, "fix_speeds", False)
 
         self.setting(int, "usb_index", -1)
@@ -230,7 +229,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
-        self.setting(str, "label", "m2nano")
 
         self.setting(bool, "twitches", False)
 
