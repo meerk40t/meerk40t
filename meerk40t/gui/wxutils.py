@@ -9,7 +9,10 @@ from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 
+import wx.lib.mixins.listctrl as listmix
+
 _ = wx.GetTranslation
+
 
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
@@ -774,6 +777,18 @@ class ScrolledPanel(SP):
                 self.Scroll(0, 0)
         except RuntimeError:
             pass
+
+
+class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    """TextEditMixin allows any column to be edited."""
+
+    # ----------------------------------------------------------------------
+    def __init__(
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+    ):
+        """Constructor"""
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.TextEditMixin.__init__(self)
 
 
 WX_METAKEYS = [

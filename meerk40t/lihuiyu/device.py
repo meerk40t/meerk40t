@@ -9,7 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -35,7 +35,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
                 "signals": "bedsize",
@@ -47,7 +47,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "nonzero": True,
                 "subsection": _("Bed Dimensions"),
                 "signals": "bedsize",
@@ -61,7 +61,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "subsection": _("User Scale Factor"),
                 "nonzero": True,
             },
@@ -74,7 +74,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
-                "section": _("Laser Parameters"),
+                "section": "_30_" + _("Laser Parameters"),
                 "subsection": _("User Scale Factor"),
                 "nonzero": True,
             },
@@ -133,7 +133,7 @@ class LihuiyuDevice(Service, ViewPort):
             {
                 "attr": "flip_y",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
@@ -155,7 +155,7 @@ class LihuiyuDevice(Service, ViewPort):
             {
                 "attr": "swap_xy",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Swap X and Y"),
                 "tip": _(
@@ -303,6 +303,19 @@ class LihuiyuDevice(Service, ViewPort):
             },
         ]
         self.register_choices("lhy-rapid-override", choices)
+
+        choices = [
+            {
+                "attr": "fix_speeds",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Fix rated to actual speed"),
+                "tip":  _("Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"),
+                "section": "_40_" + _("Speed"),
+            },
+        ]
+        self.register_choices("lhy-speed", choices)
 
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
@@ -856,6 +869,18 @@ class LihuiyuDevice(Service, ViewPort):
                 except KeyError:
                     channel(_("Intepreter cannot be attached to any device."))
                 return
+
+    @signal_listener("user_scale_x")
+    @signal_listener("user_scale_y")
+    @signal_listener("bedsize")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
+
 
     @property
     def viewbuffer(self):
