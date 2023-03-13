@@ -701,20 +701,24 @@ def init_commands(kernel):
     @self.console_command(
         "filter",
         help=_("Filter data by given value"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_filter(channel=None, data=None, filter=None, **kwargs):
+    def opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs):
         """
         Apply a filter string to a filter particular operations from the current data.
-        Operations are evaluated in an infix prioritized stack format without spaces.
-        Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
+        Operations or elements are evaluated in an infix prioritized stack format without spaces.
+        Qualified values for all node types are: id, label, len, type
+        Qualified element values are stroke, fill, dpi, elem
+        Qualified operation values are speed, power, frequency, dpi, acceleration, op, passes, color, overscan
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+        String values require single-quotes ', because the console interface requires double-quotes.
         eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
+        eg. operation* filter "type='op image'" list
         """
-        subops = list()
+        sublist = list()
         _filter_parse = [
             ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
             ("OP20", r"(\*|/)"),
@@ -725,6 +729,7 @@ def init_commands(kernel):
             ("OP4", r"(&)"),
             ("OP3", r"(\|\|)"),
             ("OP2", r"(\|)"),
+            ("STR", r"'([^']*)'"),
             ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
             (
                 "COLOR",
@@ -732,11 +737,11 @@ def init_commands(kernel):
             ),
             (
                 "TYPE",
-                r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                r"(raster|image|cut|engrave|dots|blob|rect|path|ellipse|point|image|line|polyline)",
             ),
             (
                 "VAL",
-                r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                r"(type|op|speed|power|frequency|dpi|passes|color|overscan|len|elem|stroke|fill|id|label)",
             ),
         ]
         filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
@@ -801,35 +806,69 @@ def init_commands(kernel):
                 if kind == "COLOR":
                     operand.append(Color(value))
                 elif kind == "VAL":
-                    if value == "dpi":
-                        operand.append(e.dpi)
-                    elif value == "color":
-                        operand.append(e.color)
-                    elif value == "op":
-                        operand.append(e.type.replace("op", "").strip())
-                    elif value == "len":
-                        operand.append(len(e.children))
-                    else:
-                        if hasattr(e, "settings"):
+                    try:
+                        if value == "type":
+                            operand.append(e.type)
+                        elif value == "op":
+                            if e.type.startswith("op"):
+                                operand.append(e.type.replace("op", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "speed":
+                            operand.append(e.speed)
+                        elif value == "power":
+                            operand.append(e.power)
+                        elif value == "frequency":
+                            operand.append(e.frequency)
+                        elif value == "dpi":
+                            operand.append(e.dpi)
+                        elif value == "passes":
+                            operand.append(e.passes)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "len":
+                            try:
+                                operand.append(len(e.children))
+                            except AttributeError:
+                                operand.append(0)
+                        elif value == "elem":
+                            if e.type.startswith("elem"):
+                                operand.append(e.type.replace("elem", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "stroke":
+                            operand.append(e.stroke)
+                        elif value == "fill":
+                            operand.append(e.fill)
+                        elif value == "stroke_width":
+                            operand.append(e.stroke_width)
+                        elif value == "id":
+                            operand.append(e.id)
+                        elif value == "label":
+                            operand.append(e.label)
+                        else:
                             operand.append(e.settings.get(value))
-
+                    except AttributeError:
+                        operand.append(None)
                 elif kind == "NUM":
                     operand.append(float(value))
                 elif kind == "TYPE":
                     operand.append(value)
+                elif kind == "STR":
+                    operand.append(value[1:-1])
                 elif kind.startswith("OP"):
-                    prec = int(kind[2:])
-                    solve_to(prec)
-                    operator.append((prec, value))
+                    precedence = int(kind[2:])
+                    solve_to(precedence)
+                    operator.append((precedence, value))
             solve_to(0)
             if len(operand) == 1:
                 if operand.pop():
-                    subops.append(e)
+                    sublist.append(e)
             else:
                 raise CommandSyntaxError(_("Filter parse failed"))
 
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
 
     @self.console_command(
         "list",
