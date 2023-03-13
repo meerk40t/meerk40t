@@ -229,6 +229,41 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("lhy-general", choices)
 
+        choices = [
+            {
+                "attr": "opt_rapid_between",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Rapid Moves Between Objects"),
+                "tip": _("Perform rapid moves between the objects"),
+                "section": "_00_" + _("Rapid Jog"),
+            },
+            {
+                "attr": "opt_jog_minimum",
+                "object": self,
+                "default": 256,
+                "type": int,
+                "label": _("Minimum Jog Distance"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "conditional": (self, "opt_rapid_between"),
+                "limited": True,
+                "section": "_00_" + _("Rapid Jog"),
+            },
+            {
+                "attr": "opt_jog_mode",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Jog Method"),
+                "style": "radio",
+                "choices": [_("Default"), _("Reset"), _("Finish")],
+                "tip": _("Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."),
+                "section": "_00_" + _("Rapid Jog"),
+            },
+        ]
+        self.register_choices("lhy-jog", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)

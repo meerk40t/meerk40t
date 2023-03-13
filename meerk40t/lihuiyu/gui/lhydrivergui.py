@@ -393,52 +393,12 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.config_general_panel = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="lhy-general"
         )
-        sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 1)
+        sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 0)
 
-        sizer_jog = StaticBoxSizer(self, wx.ID_ANY, _("Rapid Jog"), wx.VERTICAL)
-        sizer_page_2.Add(sizer_jog, 0, wx.EXPAND, 0)
-
-        h_sizer_y3 = wx.BoxSizer(wx.VERTICAL)
-        sizer_jog.Add(h_sizer_y3, 0, wx.EXPAND, 0)
-
-        self.check_rapid_moves_between = wx.CheckBox(
-            self, wx.ID_ANY, _("Rapid Moves Between Objects")
+        self.config_rapid_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="lhy-jog"
         )
-        self.check_rapid_moves_between.SetToolTip(
-            _("Perform rapid moves between the objects")
-        )
-        self.check_rapid_moves_between.SetValue(1)
-        h_sizer_y3.Add(self.check_rapid_moves_between, 0, wx.EXPAND, 0)
-
-        h_sizer_y5 = StaticBoxSizer(
-            self, wx.ID_ANY, _("Minimum Jog Distance"), wx.HORIZONTAL
-        )
-        h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
-
-        self.text_minimum_jog_distance = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "",
-            limited=True,
-            style=wx.TE_PROCESS_ENTER,
-        )
-        h_sizer_y5.Add(self.text_minimum_jog_distance, 1, wx.EXPAND, 0)
-
-        self.radio_box_jog_method = wx.RadioBox(
-            self,
-            wx.ID_ANY,
-            _("Jog Method"),
-            choices=[_("Default"), _("Reset"), _("Finish")],
-            majorDimension=3,
-            style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
-        )
-        self.radio_box_jog_method.SetToolTip(
-            _(
-                "Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."
-            )
-        )
-        self.radio_box_jog_method.SetSelection(0)
-        sizer_jog.Add(self.radio_box_jog_method, 0, wx.EXPAND, 0)
+        sizer_page_2.Add(self.config_rapid_panel, 1, wx.EXPAND, 0)
 
         sizer_rapid_override = StaticBoxSizer(
             self, wx.ID_ANY, _("Rapid Override"), wx.VERTICAL
@@ -589,11 +549,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.Layout()
 
         self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
-        )
-        self.text_minimum_jog_distance.SetActionRoutine(self.on_text_min_jog_distance)
-        self.Bind(wx.EVT_RADIOBOX, self.on_jog_method_radio, self.radio_box_jog_method)
-        self.Bind(
             wx.EVT_CHECKBOX, self.on_check_override_rapid, self.check_override_rapid
         )
         self.text_rapid_x.SetActionRoutine(self.on_text_rapid_x)
@@ -611,9 +566,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_max_speed_raster.SetActionRoutine(self.on_text_speed_max_raster)
         # end wxGlade
 
-        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
-        self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
-        self.radio_box_jog_method.SetSelection(self.context.opt_jog_mode)
         self.check_override_rapid.SetValue(self.context.rapid_override)
         self.text_rapid_x.SetValue(str(self.context.rapid_override_speed_x))
         self.text_rapid_y.SetValue(str(self.context.rapid_override_speed_y))
@@ -645,20 +597,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_fix_rated_speed.SetValue(
             "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
         )
-
-    def on_check_rapid_between(self, event):
-        self.context.opt_rapid_between = self.check_rapid_moves_between.GetValue()
-
-    def on_text_min_jog_distance(self):
-        try:
-            self.context.opt_jog_minimum = int(
-                self.text_minimum_jog_distance.GetValue()
-            )
-        except ValueError:
-            pass
-
-    def on_jog_method_radio(self, event):
-        self.context.opt_jog_mode = self.radio_box_jog_method.GetSelection()
 
     def on_check_override_rapid(self, event):
         self.context.rapid_override = self.check_override_rapid.GetValue()
