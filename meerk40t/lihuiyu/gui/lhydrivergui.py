@@ -379,13 +379,10 @@ class ConfigurationLaserPanel(wx.Panel):
             bedwidth = Length(ctrl.GetValue())
         except ValueError:
             return
-
-        self.context.device.width = bedwidth.preferred_length
         self.context.device.bedwidth = bedwidth.preferred_length
         self.context.signal(
             "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
-        self.context.device.realize()
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
 
@@ -395,12 +392,10 @@ class ConfigurationLaserPanel(wx.Panel):
             bedheight = Length(ctrl.GetValue())
         except ValueError:
             return
-        self.context.device.height = bedheight.preferred_length
         self.context.device.bedheight = bedheight.preferred_length
         self.context.signal(
             "bed_size", (self.context.device.bedwidth, self.context.device.bedheight)
         )
-        self.context.device.realize()
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
 
