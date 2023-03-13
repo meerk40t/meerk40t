@@ -939,17 +939,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         self.text_rapid_x.SetActionRoutine(self.on_text_rapid_x)
         self.text_rapid_y.SetActionRoutine(self.on_text_rapid_y)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_scale_speed, self.check_scale_speed)
-        self.text_speed_scale_amount.SetActionRoutine(self.on_text_speed_scale)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_max_speed_vector, self.check_max_speed_vector
-        )
-        self.text_max_speed_vector.SetActionRoutine(self.on_text_speed_max_vector)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_max_speed_raster, self.check_max_speed_raster
-        )
-        self.text_max_speed_raster.SetActionRoutine(self.on_text_speed_max_raster)
         # end wxGlade
 
         self.check_autolock.SetValue(self.context.autolock)
