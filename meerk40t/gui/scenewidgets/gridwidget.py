@@ -248,7 +248,7 @@ class GridWidget(Widget):
         else:
             self.cy = self.scene.grid_circular_cy
 
-        bed_min_x, bed_min_y, bed_max_x, bed_max_y = p.bounds
+        bed_min_x, bed_min_y, bed_max_x, bed_max_y = p.device.bounds
 
         sx0, sy0 = self.scene.convert_window_to_scene([0, 0])
         sx1, sy1 = self.scene.convert_window_to_scene([w, 0])
