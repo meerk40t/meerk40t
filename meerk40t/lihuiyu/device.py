@@ -264,6 +264,41 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("lhy-jog", choices)
 
+        choices = [
+            {
+                "attr": "rapid_override",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Override Rapid Movements"),
+                "tip": _("Perform rapid moves between the objects"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+            {
+                "attr": "rapid_override_speed_x",
+                "object": self,
+                "default": 50.0,
+                "type": float,
+                "label": _("X Travel Speed:"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "trailer": "mm/s",
+                "conditional": (self, "rapid_override"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+            {
+                "attr": "rapid_override_speed_y",
+                "object": self,
+                "default": 50.0,
+                "type": float,
+                "label": _("Y Travel Speed:"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "trailer": "mm/s",
+                "conditional": (self, "rapid_override"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+        ]
+        self.register_choices("lhy-rapid-override", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -296,12 +331,6 @@ class LihuiyuDevice(Service, ViewPort):
             laser3=(0, UNITS_PER_MIL / height),
             laser4=(UNITS_PER_MIL / width, UNITS_PER_MIL / height),
         )
-        self.setting(bool, "opt_rapid_between", True)
-        self.setting(int, "opt_jog_mode", 0)
-        self.setting(int, "opt_jog_minimum", 256)
-        self.setting(bool, "rapid_override", False)
-        self.setting(float, "rapid_override_speed_x", 50.0)
-        self.setting(float, "rapid_override_speed_y", 50.0)
 
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)

@@ -395,54 +395,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 0)
 
-        self.config_rapid_panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="lhy-jog"
-        )
-        sizer_page_2.Add(self.config_rapid_panel, 1, wx.EXPAND, 0)
-
-        sizer_rapid_override = StaticBoxSizer(
-            self, wx.ID_ANY, _("Rapid Override"), wx.VERTICAL
-        )
-        sizer_page_2.Add(sizer_rapid_override, 0, wx.EXPAND, 0)
-
-        self.check_override_rapid = wx.CheckBox(
-            self, wx.ID_ANY, _("Override Rapid Movements")
-        )
-        sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
-        self.check_override_rapid.SetMaxSize(wx.Size(300, -1))
-
-        sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
-
-        sizer_36 = StaticBoxSizer(self, wx.ID_ANY, _("X Travel Speed:"), wx.HORIZONTAL)
-
-        self.text_rapid_x = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_36.Add(self.text_rapid_x, 1, wx.EXPAND, 0)
-
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
-        sizer_36.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_35 = StaticBoxSizer(self, wx.ID_ANY, _("Y Travel Speed:"), wx.HORIZONTAL)
-
-        sizer_speed_xy.Add(sizer_36, 1, wx.EXPAND, 0)
-        sizer_speed_xy.Add(sizer_35, 1, wx.EXPAND, 0)
-
-        sizer_rapid_override.Add(sizer_speed_xy, 0, wx.EXPAND, 0)
-
-        self.text_rapid_y = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER
-        )
-        sizer_35.Add(self.text_rapid_y, 1, wx.EXPAND, 0)
-
-        label_4 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
-        sizer_35.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
         sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed:"), wx.VERTICAL)
         sizer_page_2.Add(sizer_speed, 0, wx.EXPAND, 0)
 
@@ -548,11 +500,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         self.Layout()
 
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_override_rapid, self.check_override_rapid
-        )
-        self.text_rapid_x.SetActionRoutine(self.on_text_rapid_x)
-        self.text_rapid_y.SetActionRoutine(self.on_text_rapid_y)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_scale_speed, self.check_scale_speed)
         self.text_speed_scale_amount.SetActionRoutine(self.on_text_speed_scale)
@@ -566,9 +513,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_max_speed_raster.SetActionRoutine(self.on_text_speed_max_raster)
         # end wxGlade
 
-        self.check_override_rapid.SetValue(self.context.rapid_override)
-        self.text_rapid_x.SetValue(str(self.context.rapid_override_speed_x))
-        self.text_rapid_y.SetValue(str(self.context.rapid_override_speed_y))
         self.check_fix_speeds.SetValue(self.context.fix_speeds)
         self.check_scale_speed.SetValue(self.context.scale_speed_enabled)
         self.text_speed_scale_amount.SetValue(str(self.context.scale_speed))
@@ -597,21 +541,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_fix_rated_speed.SetValue(
             "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
         )
-
-    def on_check_override_rapid(self, event):
-        self.context.rapid_override = self.check_override_rapid.GetValue()
-
-    def on_text_rapid_x(self):
-        try:
-            self.context.rapid_override_speed_x = float(self.text_rapid_x.GetValue())
-        except ValueError:
-            pass
-
-    def on_text_rapid_y(self):
-        try:
-            self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
-        except ValueError:
-            pass
 
     def on_check_scale_speed(
         self, event
