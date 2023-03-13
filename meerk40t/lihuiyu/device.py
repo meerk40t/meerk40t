@@ -648,8 +648,8 @@ class LihuiyuDevice(Service, ViewPort):
                 return
 
     def realize(self):
-        bedwidth = self.length(self.bedwidth,0)
-        bedheight = self.length(self.bedheight, 1)
+        bedwidth = float(Length(self.bedwidth))
+        bedheight = float(Length(self.bedheight))
         x0, y0, x1, y1 = 0, 0, float(bedwidth), float(bedheight)
         width = x1 - x0
         height = y1 - y0
