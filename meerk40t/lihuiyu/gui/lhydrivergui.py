@@ -963,20 +963,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_rapid_x.SetValue(str(self.context.rapid_override_speed_x))
         self.text_rapid_y.SetValue(str(self.context.rapid_override_speed_y))
         self.check_fix_speeds.SetValue(self.context.fix_speeds)
-        self.check_scale_speed.SetValue(self.context.scale_speed_enabled)
-        self.text_speed_scale_amount.SetValue(str(self.context.scale_speed))
-        self.check_max_speed_vector.SetValue(self.context.max_speed_vector_enabled)
-        self.text_max_speed_vector.SetValue(str(self.context.max_speed_vector))
-        self.check_max_speed_raster.SetValue(self.context.max_speed_raster_enabled)
-        self.text_max_speed_raster.SetValue(str(self.context.max_speed_raster))
-
-        # Disables of features not yet supported.
-        self.text_max_speed_raster.Enable(False)
-        self.text_max_speed_vector.Enable(False)
-        self.text_speed_scale_amount.Enable(False)
-        self.check_max_speed_raster.Enable(False)
-        self.check_max_speed_vector.Enable(False)
-        self.check_scale_speed.Enable(False)
         self.SetupScrolling()
 
     def pane_show(self):
@@ -1033,39 +1019,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_rapid_y(self):
         try:
             self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
-        except ValueError:
-            pass
-
-    def on_check_scale_speed(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.scale_speed_enabled = self.check_scale_speed.GetValue()
-
-    def on_text_speed_scale(self):
-        try:
-            self.context.scale_speed = float(self.text_speed_scale_amount.GetValue())
-        except ValueError:
-            pass
-
-    def on_check_max_speed_vector(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.max_speed_vector_enabled = self.check_max_speed_vector.GetValue()
-
-    def on_text_speed_max_vector(self):
-        try:
-            self.context.max_speed_vector = float(self.text_max_speed_vector.GetValue())
-        except ValueError:
-            pass
-
-    def on_check_max_speed_raster(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
-        self.context.max_speed_raster_enabled = self.check_max_speed_raster.GetValue()
-
-    def on_text_speed_max_raster(self):
-        try:
-            self.context.max_speed_raster = float(self.text_max_speed_raster.GetValue())
         except ValueError:
             pass
 
