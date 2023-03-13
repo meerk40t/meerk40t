@@ -27,23 +27,30 @@ class LihuiyuDevice(Service, ViewPort):
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
-
         choices = [
             {
                 "attr": "bedwidth",
                 "object": self,
                 "default": "310mm",
-                "type": str,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "section": _("Laser Parameters"),
+                "nonzero": True,
+                "subsection": _("Bed Dimensions"),
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
                 "object": self,
                 "default": "210mm",
-                "type": str,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "section": _("Laser Parameters"),
+                "nonzero": True,
+                "subsection": _("Bed Dimensions"),
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
@@ -54,6 +61,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "section": _("Laser Parameters"),
+                "subsection": _("User Scale Factor"),
+                "nonzero": True,
             },
             {
                 "attr": "scale_y",
@@ -64,15 +74,236 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "section": _("Laser Parameters"),
+                "subsection": _("User Scale Factor"),
+                "nonzero": True,
             },
         ]
-
         self.register_choices("bed_dim", choices)
-        self.setting(bool, "swap_xy", False)
-        self.setting(bool, "flip_x", False)
-        self.setting(bool, "flip_y", False)
-        self.setting(bool, "home_right", False)
-        self.setting(bool, "home_bottom", False)
+
+        choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": "lihuiyu-device",
+                "type": str,
+                "label": _("Device Name"),
+                "tip": _("The internal label to be used for this device"),
+                "section": "_00_" + _("General"),
+                "priority": "10",
+                "signals": "device;renamed",
+            },
+            {
+                "attr": "board",
+                "object": self,
+                "default": "M2",
+                "type": str,
+                "label": _("Board"),
+                "style": "combosmall",
+                "choices": ["M2", "M3", "B2", "M", "M1", "A", "B", "B1"],
+                "tip": _(
+                    "Select the board to use. This has an effects the speedcodes used."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Board Setup"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _("Flip the Right and Left commands sent to the controller"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("X Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is on the right"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("X Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _("Flip the Y axis for the Balor device"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Y Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "section": "_10_" + _("Configuration"),
+                "subsection": _("Y Axis"),
+                "signals": "bedsize",
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Swap X and Y"),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
+                "section": "_10_" + _("Configuration"),
+                "subsection": "_10_" + _("Axis corrections"),
+                "signals": "bedsize",
+            },
+        ]
+        self.register_choices("bed_orientation", choices)
+
+        choices = [
+            {
+                "attr": "autolock",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Automatically lock rail"),
+                "tip": _("Lock rail after operations are finished."),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "plot_shift",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Pulse Grouping"),
+                "tip": "\n".join(
+                    [
+                        _(
+                            "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                        ),
+                        "",
+                        _(
+                            "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                        ),
+                        "",
+                        _(
+                            'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                        ),
+                        _(
+                            "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
+                        ),
+                    ]
+                ),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "strict",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Strict"),
+                "tip": _(
+                    "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
+                ),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "twitches",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Twitch Vectors"),
+                "tip": _(
+                    "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                    "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                    "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
+                    "This option allows you to turn on the previous mode if you experience problems."
+                ),
+                "section": "_00_" + _("General Options"),
+            },
+        ]
+        self.register_choices("lhy-general", choices)
+
+        choices = [
+            {
+                "attr": "opt_rapid_between",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Rapid Moves Between Objects"),
+                "tip": _("Perform rapid moves between the objects"),
+                "section": "_00_" + _("Rapid Jog"),
+            },
+            {
+                "attr": "opt_jog_minimum",
+                "object": self,
+                "default": 256,
+                "type": int,
+                "label": _("Minimum Jog Distance"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "conditional": (self, "opt_rapid_between"),
+                "limited": True,
+                "section": "_00_" + _("Rapid Jog"),
+            },
+            {
+                "attr": "opt_jog_mode",
+                "object": self,
+                "default": 0,
+                "type": int,
+                "label": _("Jog Method"),
+                "style": "radio",
+                "choices": [_("Default"), _("Reset"), _("Finish")],
+                "tip": _(
+                    "Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."
+                ),
+                "section": "_00_" + _("Rapid Jog"),
+            },
+        ]
+        self.register_choices("lhy-jog", choices)
+
+        choices = [
+            {
+                "attr": "rapid_override",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Override Rapid Movements"),
+                "tip": _("Perform rapid moves between the objects"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+            {
+                "attr": "rapid_override_speed_x",
+                "object": self,
+                "default": 50.0,
+                "type": float,
+                "label": _("X Travel Speed:"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "trailer": "mm/s",
+                "conditional": (self, "rapid_override"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+            {
+                "attr": "rapid_override_speed_y",
+                "object": self,
+                "default": 50.0,
+                "type": float,
+                "label": _("Y Travel Speed:"),
+                "tip": _("Minimum travel distance before invoking a rapid jog move."),
+                "trailer": "mm/s",
+                "conditional": (self, "rapid_override"),
+                "section": "_00_" + _("Rapid Override"),
+            },
+        ]
+        self.register_choices("lhy-rapid-override", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -108,21 +339,9 @@ class LihuiyuDevice(Service, ViewPort):
             show_flip_x=self.home_right,
             show_flip_y=self.home_bottom,
         )
-        self.setting(bool, "opt_rapid_between", True)
-        self.setting(int, "opt_jog_mode", 0)
-        self.setting(int, "opt_jog_minimum", 256)
-        self.setting(bool, "rapid_override", False)
-        self.setting(float, "rapid_override_speed_x", 50.0)
-        self.setting(float, "rapid_override_speed_y", 50.0)
-        self.setting(bool, "plot_shift", False)
-
-        self.setting(bool, "strict", False)
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
-        self.setting(bool, "autolock", True)
-
-        self.setting(str, "board", "M2")
         self.setting(bool, "fix_speeds", False)
 
         self.setting(int, "usb_index", -1)
@@ -140,16 +359,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
-        self.setting(str, "label", "m2nano")
-
-        self.setting(bool, "twitches", False)
-
-        self.setting(bool, "scale_speed_enabled", False)
-        self.setting(float, "scale_speed", 1.000)
-        self.setting(bool, "max_speed_vector_enabled", False)
-        self.setting(float, "max_speed_vector", 100.0)
-        self.setting(bool, "max_speed_raster_enabled", False)
-        self.setting(float, "max_speed_raster", 750.0)
 
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
