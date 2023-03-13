@@ -91,6 +91,11 @@ class ViewPort:
         self._device_to_scene_matrix = None
         self._scene_to_device_matrix = None
 
+    def update_laser(self, laser1, laser2, laser3, laser4):
+        self.laser_coords = laser1, laser2, laser3, laser4
+        self._device_to_scene_matrix = None
+        self._scene_to_device_matrix = None
+
     def realize(self):
         self._device_to_scene_matrix = None
         self._scene_to_device_matrix = None
