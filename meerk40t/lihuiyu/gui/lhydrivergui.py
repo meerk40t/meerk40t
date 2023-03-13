@@ -390,151 +390,21 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         sizer_page_2 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_general = StaticBoxSizer(
-            self, wx.ID_ANY, _("General Options"), wx.VERTICAL
-        )
-        sizer_page_2.Add(sizer_general, 0, wx.EXPAND, 0)
-
-        self.check_autolock = wx.CheckBox(self, wx.ID_ANY, _("Automatically lock rail"))
-        self.check_autolock.SetToolTip(_("Lock rail after operations are finished."))
-        self.check_autolock.SetValue(1)
-        sizer_general.Add(self.check_autolock, 0, wx.EXPAND, 0)
-
-        self.check_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
-        self.check_plot_shift.SetToolTip(
-            "\n".join(
-                [
-                    _(
-                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
-                    ),
-                    "",
-                    _(
-                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
-                    ),
-                    "",
-                    _(
-                        'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
-                    ),
-                    _(
-                        "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
-                    ),
-                ]
-            ),
-        )
-        sizer_general.Add(self.check_plot_shift, 0, wx.EXPAND, 0)
-
-        self.check_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict"))
-        self.check_strict.SetToolTip(
-            _(
-                "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
-            )
-        )
-        sizer_general.Add(self.check_strict, 0, wx.EXPAND, 0)
-
-        self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
-        self.check_twitches.SetToolTip(
-            _(
-                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
-                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
-                "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
-                "This option allows you to turn on the previous mode if you experience problems."
-            )
-        )
-        sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
-
-        sizer_jog = StaticBoxSizer(self, wx.ID_ANY, _("Rapid Jog"), wx.VERTICAL)
-        sizer_page_2.Add(sizer_jog, 0, wx.EXPAND, 0)
-
-        h_sizer_y3 = wx.BoxSizer(wx.VERTICAL)
-        sizer_jog.Add(h_sizer_y3, 0, wx.EXPAND, 0)
-
-        self.check_rapid_moves_between = wx.CheckBox(
-            self, wx.ID_ANY, _("Rapid Moves Between Objects")
-        )
-        self.check_rapid_moves_between.SetToolTip(
-            _("Perform rapid moves between the objects")
-        )
-        self.check_rapid_moves_between.SetValue(1)
-        h_sizer_y3.Add(self.check_rapid_moves_between, 0, wx.EXPAND, 0)
-
-        h_sizer_y5 = StaticBoxSizer(
-            self, wx.ID_ANY, _("Minimum Jog Distance"), wx.HORIZONTAL
-        )
-        h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
-
-        self.text_minimum_jog_distance = TextCtrl(
+        c1 = self.context.lookup("choices/lhy-jog")
+        c2 = self.context.lookup("choices/lhy-rapid-override")
+        self.config_general_panel = ChoicePropertyPanel(
             self,
             wx.ID_ANY,
-            "",
-            limited=True,
-            style=wx.TE_PROCESS_ENTER,
+            context=self.context,
+            choices="lhy-general",
+            injector=c1 + c2,
         )
-        h_sizer_y5.Add(self.text_minimum_jog_distance, 1, wx.EXPAND, 0)
-
-        self.radio_box_jog_method = wx.RadioBox(
-            self,
-            wx.ID_ANY,
-            _("Jog Method"),
-            choices=[_("Default"), _("Reset"), _("Finish")],
-            majorDimension=3,
-            style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
-        )
-        self.radio_box_jog_method.SetToolTip(
-            _(
-                "Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished are @FNSE jogs followed by a wait."
-            )
-        )
-        self.radio_box_jog_method.SetSelection(0)
-        sizer_jog.Add(self.radio_box_jog_method, 0, wx.EXPAND, 0)
-
-        sizer_rapid_override = StaticBoxSizer(
-            self, wx.ID_ANY, _("Rapid Override"), wx.VERTICAL
-        )
-        sizer_page_2.Add(sizer_rapid_override, 0, wx.EXPAND, 0)
-
-        self.check_override_rapid = wx.CheckBox(
-            self, wx.ID_ANY, _("Override Rapid Movements")
-        )
-        sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
-        self.check_override_rapid.SetMaxSize(wx.Size(300, -1))
-
-        sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
-
-        sizer_36 = StaticBoxSizer(self, wx.ID_ANY, _("X Travel Speed:"), wx.HORIZONTAL)
-
-        self.text_rapid_x = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        sizer_36.Add(self.text_rapid_x, 1, wx.EXPAND, 0)
-
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
-        sizer_36.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_35 = StaticBoxSizer(self, wx.ID_ANY, _("Y Travel Speed:"), wx.HORIZONTAL)
-
-        sizer_speed_xy.Add(sizer_36, 1, wx.EXPAND, 0)
-        sizer_speed_xy.Add(sizer_35, 1, wx.EXPAND, 0)
-
-        sizer_rapid_override.Add(sizer_speed_xy, 0, wx.EXPAND, 0)
-
-        self.text_rapid_y = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER
-        )
-        sizer_35.Add(self.text_rapid_y, 1, wx.EXPAND, 0)
-
-        label_4 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
-        sizer_35.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 0)
 
         sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed:"), wx.VERTICAL)
         sizer_page_2.Add(sizer_speed, 0, wx.EXPAND, 0)
 
         sizer_32 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_32, 0, wx.EXPAND, 0)
 
         self.check_fix_speeds = wx.CheckBox(
             self, wx.ID_ANY, _("Fix rated to actual speed")
@@ -556,170 +426,23 @@ class ConfigurationSetupPanel(ScrolledPanel):
         h_sizer_y9 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_speed.Add(h_sizer_y9, 0, wx.EXPAND, 0)
 
-        self.check_scale_speed = wx.CheckBox(self, wx.ID_ANY, _("Scale Speed"))
-        self.check_scale_speed.SetToolTip(
-            _(
-                "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
-            )
-        )
-        self.check_scale_speed.SetMaxSize(wx.Size(300, -1))
-        h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
-
-        self.text_speed_scale_amount = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "1.000",
-            limited=True,
-            check="float",
-            nonzero=True,
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_speed_scale_amount.SetToolTip(
-            _(
-                "Scales the machine's speed ratio so that rated speeds speeds multiplied by this ratio."
-            )
-        )
-        h_sizer_y9.Add(self.text_speed_scale_amount, 1, wx.EXPAND, 0)
-
-        sizer_30 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_30, 0, wx.EXPAND, 0)
-
-        self.check_max_speed_vector = wx.CheckBox(
-            self, wx.ID_ANY, _("Max Speed (Vector)")
-        )
-        self.check_max_speed_vector.SetToolTip(
-            _("Limit the maximum vector speed to this value")
-        )
-        self.check_max_speed_vector.SetMaxSize(wx.Size(300, -1))
-        sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
-
-        self.text_max_speed_vector = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "100",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_max_speed_vector.SetToolTip(
-            _("maximum speed at which all greater speeds are limited")
-        )
-        sizer_30.Add(self.text_max_speed_vector, 1, wx.EXPAND, 0)
-
-        sizer_31 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_31, 0, wx.EXPAND, 0)
-
-        self.check_max_speed_raster = wx.CheckBox(
-            self, wx.ID_ANY, _("Max Speed (Raster)")
-        )
-        self.check_max_speed_raster.SetToolTip(
-            _("Limit the maximum raster speed to this value")
-        )
-        self.check_max_speed_raster.SetMaxSize(wx.Size(300, -1))
-        sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
-
-        self.text_max_speed_raster = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "750",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_max_speed_raster.SetToolTip(
-            _("maximum speed at which all greater speeds are limited")
-        )
-        sizer_31.Add(self.text_max_speed_raster, 1, wx.EXPAND, 0)
-
         self.SetSizer(sizer_page_2)
 
         self.Layout()
-
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.check_autolock)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_pulse_shift, self.check_plot_shift)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.check_strict)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitches, self.check_twitches)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
-        )
-        self.text_minimum_jog_distance.SetActionRoutine(self.on_text_min_jog_distance)
-        self.Bind(wx.EVT_RADIOBOX, self.on_jog_method_radio, self.radio_box_jog_method)
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_override_rapid, self.check_override_rapid
-        )
-        self.text_rapid_x.SetActionRoutine(self.on_text_rapid_x)
-        self.text_rapid_y.SetActionRoutine(self.on_text_rapid_y)
-        # end wxGlade
-
-        self.check_autolock.SetValue(self.context.autolock)
-        self.check_plot_shift.SetValue(self.context.plot_shift)
-        self.check_strict.SetValue(self.context.strict)
-        self.check_twitches.SetValue(self.context.twitches)
-        self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
-        self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
-        self.radio_box_jog_method.SetSelection(self.context.opt_jog_mode)
-        self.check_override_rapid.SetValue(self.context.rapid_override)
-        self.text_rapid_x.SetValue(str(self.context.rapid_override_speed_x))
-        self.text_rapid_y.SetValue(str(self.context.rapid_override_speed_y))
         self.check_fix_speeds.SetValue(self.context.fix_speeds)
         self.SetupScrolling()
 
     def pane_show(self):
-        pass
+        self.config_general_panel.pane_show()
 
     def pane_hide(self):
-        pass
+        self.config_general_panel.pane_hide()
 
     def on_check_fix_speeds(self, event=None):
         self.context.fix_speeds = self.check_fix_speeds.GetValue()
         self.text_fix_rated_speed.SetValue(
             "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
         )
-
-    def on_check_strict(self, event=None):
-        self.context.strict = self.check_strict.GetValue()
-
-    def on_check_autolock(self, event=None):
-        self.context.autolock = self.check_autolock.GetValue()
-
-    def on_check_pulse_shift(self, event=None):
-        self.context.plot_shift = self.check_plot_shift.GetValue()
-        try:
-            self.context.plot_planner.force_shift = self.context.plot_shift
-        except (AttributeError, TypeError):
-            pass
-
-    def on_check_twitches(self, event):
-        self.context.twitches = self.check_twitches.GetValue()
-
-    def on_check_rapid_between(self, event):
-        self.context.opt_rapid_between = self.check_rapid_moves_between.GetValue()
-
-    def on_text_min_jog_distance(self):
-        try:
-            self.context.opt_jog_minimum = int(
-                self.text_minimum_jog_distance.GetValue()
-            )
-        except ValueError:
-            pass
-
-    def on_jog_method_radio(self, event):
-        self.context.opt_jog_mode = self.radio_box_jog_method.GetSelection()
-
-    def on_check_override_rapid(self, event):
-        self.context.rapid_override = self.check_override_rapid.GetValue()
-
-    def on_text_rapid_x(self):
-        try:
-            self.context.rapid_override_speed_x = float(self.text_rapid_x.GetValue())
-        except ValueError:
-            pass
-
-    def on_text_rapid_y(self):
-        try:
-            self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
-        except ValueError:
-            pass
 
 
 class LihuiyuDriverGui(MWindow):
@@ -772,6 +495,7 @@ class LihuiyuDriverGui(MWindow):
             self.add_module_delegate(panel)
         self.add_module_delegate(panel_config.config_dimensions_panel)
         self.add_module_delegate(panel_config.config_orient_panel)
+        self.add_module_delegate(panel_setup.config_general_panel)
 
     def window_open(self):
         for panel in self.panels:
