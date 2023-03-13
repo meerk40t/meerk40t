@@ -166,6 +166,69 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("bed_orientation", choices)
 
+        choices = [
+            {
+                "attr": "autolock",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Automatically lock rail"),
+                "tip": _("Lock rail after operations are finished."),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "plot_shift",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Pulse Grouping"),
+                "tip": "\n".join(
+                        [
+                            _(
+                                "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
+                            ),
+                            "",
+                            _(
+                                "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
+                            ),
+                            "",
+                            _(
+                                'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
+                            ),
+                            _(
+                                "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
+                            ),
+                        ]
+                    ),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "strict",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Strict"),
+                "tip": _(
+                    "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."),
+                "section": "_00_" + _("General Options"),
+            },
+            {
+                "attr": "twitches",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Twitch Vectors"),
+                "tip": _(
+                    "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                    "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                    "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
+                    "This option allows you to turn on the previous mode if you experience problems."
+                    ),
+                "section": "_00_" + _("General Options"),
+            },
+        ]
+        self.register_choices("lhy-general", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -204,13 +267,9 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "rapid_override", False)
         self.setting(float, "rapid_override_speed_x", 50.0)
         self.setting(float, "rapid_override_speed_y", 50.0)
-        self.setting(bool, "plot_shift", False)
 
-        self.setting(bool, "strict", False)
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
-
-        self.setting(bool, "autolock", True)
 
         self.setting(bool, "fix_speeds", False)
 
@@ -229,8 +288,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.setting(int, "port", 1022)
         self.setting(str, "address", "localhost")
-
-        self.setting(bool, "twitches", False)
 
         self.setting(bool, "scale_speed_enabled", False)
         self.setting(float, "scale_speed", 1.000)

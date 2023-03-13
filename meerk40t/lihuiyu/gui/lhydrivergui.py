@@ -390,57 +390,10 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         sizer_page_2 = wx.BoxSizer(wx.VERTICAL)
 
-        sizer_general = StaticBoxSizer(
-            self, wx.ID_ANY, _("General Options"), wx.VERTICAL
+        self.config_general_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="lhy-general"
         )
-        sizer_page_2.Add(sizer_general, 0, wx.EXPAND, 0)
-
-        self.check_autolock = wx.CheckBox(self, wx.ID_ANY, _("Automatically lock rail"))
-        self.check_autolock.SetToolTip(_("Lock rail after operations are finished."))
-        self.check_autolock.SetValue(1)
-        sizer_general.Add(self.check_autolock, 0, wx.EXPAND, 0)
-
-        self.check_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
-        self.check_plot_shift.SetToolTip(
-            "\n".join(
-                [
-                    _(
-                        "Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds."
-                    ),
-                    "",
-                    _(
-                        "It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches."
-                    ),
-                    "",
-                    _(
-                        'As an example, instead of X_X_ it will burn XX__ - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification.'
-                    ),
-                    _(
-                        "Whilst the Pulse Grouping option in Operations are set for that operation before the job is spooled, and cannot be changed on the fly, this global Pulse Grouping option is checked as instructions are sent to the laser and can turned on and off during the burn process. Because the changes are believed to be small enough to be undetectable, you may wish to leave this permanently checked."
-                    ),
-                ]
-            ),
-        )
-        sizer_general.Add(self.check_plot_shift, 0, wx.EXPAND, 0)
-
-        self.check_strict = wx.CheckBox(self, wx.ID_ANY, _("Strict"))
-        self.check_strict.SetToolTip(
-            _(
-                "Forces the device to enter and exit programmed speed mode from the same direction.\nThis may prevent devices like the M2-V4 and earlier from having issues. Not typically needed."
-            )
-        )
-        sizer_general.Add(self.check_strict, 0, wx.EXPAND, 0)
-
-        self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
-        self.check_twitches.SetToolTip(
-            _(
-                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
-                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
-                "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
-                "This option allows you to turn on the previous mode if you experience problems."
-            )
-        )
-        sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
+        sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 1)
 
         sizer_jog = StaticBoxSizer(self, wx.ID_ANY, _("Rapid Jog"), wx.VERTICAL)
         sizer_page_2.Add(sizer_jog, 0, wx.EXPAND, 0)
@@ -635,10 +588,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_autolock, self.check_autolock)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_pulse_shift, self.check_plot_shift)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_strict, self.check_strict)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_twitches, self.check_twitches)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
         )
@@ -662,10 +611,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_max_speed_raster.SetActionRoutine(self.on_text_speed_max_raster)
         # end wxGlade
 
-        self.check_autolock.SetValue(self.context.autolock)
-        self.check_plot_shift.SetValue(self.context.plot_shift)
-        self.check_strict.SetValue(self.context.strict)
-        self.check_twitches.SetValue(self.context.twitches)
         self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
         self.text_minimum_jog_distance.SetValue(str(self.context.opt_jog_minimum))
         self.radio_box_jog_method.SetSelection(self.context.opt_jog_mode)
@@ -700,22 +645,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.text_fix_rated_speed.SetValue(
             "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
         )
-
-    def on_check_strict(self, event=None):
-        self.context.strict = self.check_strict.GetValue()
-
-    def on_check_autolock(self, event=None):
-        self.context.autolock = self.check_autolock.GetValue()
-
-    def on_check_pulse_shift(self, event=None):
-        self.context.plot_shift = self.check_plot_shift.GetValue()
-        try:
-            self.context.plot_planner.force_shift = self.context.plot_shift
-        except (AttributeError, TypeError):
-            pass
-
-    def on_check_twitches(self, event):
-        self.context.twitches = self.check_twitches.GetValue()
 
     def on_check_rapid_between(self, event):
         self.context.opt_rapid_between = self.check_rapid_moves_between.GetValue()
@@ -830,6 +759,7 @@ class LihuiyuDriverGui(MWindow):
             self.add_module_delegate(panel)
         self.add_module_delegate(panel_config.config_dimensions_panel)
         self.add_module_delegate(panel_config.config_orient_panel)
+        self.add_module_delegate(panel_setup.config_general_panel)
 
     def window_open(self):
         for panel in self.panels:
