@@ -166,11 +166,6 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("bed_orientation", choices)
 
-        self.setting(bool, "swap_xy", False)
-        self.setting(bool, "flip_x", False)
-        self.setting(bool, "flip_y", False)
-        self.setting(bool, "home_right", False)
-        self.setting(bool, "home_bottom", False)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
