@@ -117,23 +117,35 @@ class ChoicePropertyPanel(ScrolledPanel):
         if choices is None:
             return
         if isinstance(choices, str):
-            tempchoices = self.context.lookup("choices", choices)
-            # we need to create an independent copy of the lookup, otherwise
-            # any amendments to choices like injector will affect the original
-            choices = []
-            for c in tempchoices:
+            choices = [choices]
+
+        new_choices = []
+        # we need to create an independent copy of the lookup, otherwise
+        # any amendments to choices like injector will affect the original
+
+        for choice in choices:
+            if isinstance(choice, dict):
+                new_choices.append(choice)
+            elif isinstance(choice, str):
+                lookup_choice = self.context.lookup("choices", choice)
+                if lookup_choice is None:
+                    continue
+                new_choices.extend(lookup_choice)
+            else:
+                new_choices.extend(choice)
+        choices = new_choices
+        if injector is not None:
+            # We have additional stuff to be added, so be it
+            for c in injector:
                 choices.append(c)
-            if choices is None:
-                return
+        if len(choices) == 0:
+            # No choices to process.
+            return
         for c in choices:
             needs_dynamic_call = c.get("dynamic")
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
                 needs_dynamic_call(c)
-        if injector is not None:
-            # We have additional stuff to be added, so be it
-            for c in injector:
-                choices.append(c)
         # Let's see whether we have a section and a page property...
         for c in choices:
             try:
