@@ -368,72 +368,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.Layout()
 
 
-class ConfigurationSetupPanel(ScrolledPanel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: ConfigurationSetupPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        sizer_page_2 = wx.BoxSizer(wx.VERTICAL)
-
-        c1 = self.context.lookup("choices/lhy-jog")
-        c2 = self.context.lookup("choices/lhy-rapid-override")
-        self.config_general_panel = ChoicePropertyPanel(
-            self,
-            wx.ID_ANY,
-            context=self.context,
-            choices="lhy-general",
-            injector=c1 + c2,
-        )
-        sizer_page_2.Add(self.config_general_panel, 1, wx.EXPAND, 0)
-
-        sizer_speed = StaticBoxSizer(self, wx.ID_ANY, _("Speed:"), wx.VERTICAL)
-        sizer_page_2.Add(sizer_speed, 0, wx.EXPAND, 0)
-
-        sizer_32 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(sizer_32, 0, wx.EXPAND, 0)
-
-        self.check_fix_speeds = wx.CheckBox(
-            self, wx.ID_ANY, _("Fix rated to actual speed")
-        )
-        self.check_fix_speeds.SetToolTip(
-            _(
-                "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
-            )
-        )
-        self.check_fix_speeds.SetMaxSize(wx.Size(300, -1))
-
-        sizer_32.Add(self.check_fix_speeds, 1, wx.EXPAND, 0)
-
-        self.text_fix_rated_speed = TextCtrl(
-            self, wx.ID_ANY, str(FIX_SPEEDS_RATIO), style=wx.TE_READONLY, limited=True
-        )
-        sizer_32.Add(self.text_fix_rated_speed, 1, wx.EXPAND, 0)
-
-        h_sizer_y9 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_speed.Add(h_sizer_y9, 0, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_page_2)
-
-        self.Layout()
-
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
-        self.SetupScrolling()
-
-    def pane_show(self):
-        self.config_general_panel.pane_show()
-
-    def pane_hide(self):
-        self.config_general_panel.pane_hide()
-
-    def on_check_fix_speeds(self, event=None):
-        self.context.fix_speeds = self.check_fix_speeds.GetValue()
-        self.text_fix_rated_speed.SetValue(
-            "1.000" if self.context.fix_speeds else str(FIX_SPEEDS_RATIO)
-        )
-
-
 class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(330, 630, *args, **kwds)
@@ -463,10 +397,16 @@ class LihuiyuDriverGui(MWindow):
             self.notebook_main, wx.ID_ANY, context=self.context
         )
 
-        panel_setup = ConfigurationSetupPanel(
-            self.notebook_main, wx.ID_ANY, context=self.context
+        c1 = self.context.lookup("choices/lhy-jog")
+        c2 = self.context.lookup("choices/lhy-rapid-override")
+        c3 = self.context.lookup("choices/lhy-speed")
+        panel_setup = ChoicePropertyPanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            choices="lhy-general",
+            injector=c1 + c2 + c3,
         )
-
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
         newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
@@ -489,7 +429,6 @@ class LihuiyuDriverGui(MWindow):
 
         for panel in self.panels:
             self.add_module_delegate(panel)
-        self.add_module_delegate(panel_setup.config_general_panel)
 
     def window_open(self):
         for panel in self.panels:

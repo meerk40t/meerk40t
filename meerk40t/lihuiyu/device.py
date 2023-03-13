@@ -304,6 +304,19 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("lhy-rapid-override", choices)
 
+        choices = [
+            {
+                "attr": "fix_speeds",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Fix rated to actual speed"),
+                "tip":  _("Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"),
+                "section": "_40_" + _("Speed"),
+            },
+        ]
+        self.register_choices("lhy-speed", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
