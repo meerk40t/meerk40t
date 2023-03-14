@@ -162,7 +162,7 @@ class GridWidget(Widget):
             y += self.secondary_tick_length_y
         self.secondary_grid_lines = starts2, ends2
 
-    def calculate_grid(self):
+    def calculate_grid_lines(self):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
@@ -231,7 +231,6 @@ class GridWidget(Widget):
 
     def calculate_gridsize(self, w, h):
         p = self.scene.context
-
         self.primary_start_x = p.device.unit_width * p.device.show_origin_x
         self.primary_start_y = p.device.unit_height * p.device.show_origin_y
 
@@ -384,7 +383,7 @@ class GridWidget(Widget):
     # CALCULATE GRID POINTS
     ###########################
 
-    def calculate_grid_points(self):
+    def calculate_scene_grid_points(self):
         """
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False)
         and identifies all attraction points (center, corners, sides)
@@ -538,8 +537,8 @@ class GridWidget(Widget):
             return  # Do not draw grid.
 
         if self.primary_grid_lines is None or self.secondary_grid_lines is None:
-            self.calculate_grid()
-            self.calculate_grid_points()
+            self.calculate_grid_lines()
+            self.calculate_scene_grid_points()
 
         self._set_pen_width_from_matrix()
 
