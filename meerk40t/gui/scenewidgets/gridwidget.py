@@ -229,7 +229,7 @@ class GridWidget(Widget):
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
 
-    def calculate_gridsize(self, w, h):
+    def calculate_center_start(self):
         p = self.scene.context
         self.primary_start_x = p.device.unit_width * p.device.show_origin_x
         self.primary_start_y = p.device.unit_height * p.device.show_origin_y
@@ -253,6 +253,8 @@ class GridWidget(Widget):
             self.circular_grid_center_y = self.primary_start_y
         else:
             self.circular_grid_center_y = self.scene.grid_circular_cy
+
+    def calculate_gridsize(self, w, h):
         self.min_x = float("inf")
         self.max_x = -float("inf")
         self.min_y = float("inf")
@@ -272,6 +274,8 @@ class GridWidget(Widget):
         self.min_y = max(0, self.min_y)
         self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
         self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+
+    def calculate_tick_length(self):
         tick_length = float(
             Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
@@ -281,8 +285,10 @@ class GridWidget(Widget):
         self.primary_tick_length_y = tick_length
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
-        self.tick_length_x2 = self.tick_length_x1 * self.scene.grid_secondary_scale_x
-        self.tick_length_y2 = self.tick_length_y1 * self.scene.grid_secondary_scale_y
+        self.secondary_tick_length_x = self.primary_tick_length_x * self.scene.grid_secondary_scale_x
+        self.secondary_tick_length_y = self.primary_tick_length_y * self.scene.grid_secondary_scale_y
+
+    def calculate_radii_angles(self):
         # let's establish which circles we really have to draw
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
@@ -511,7 +517,10 @@ class GridWidget(Widget):
             return
         if self.scene.auto_tick:
             self.calculate_tickdistance(w, h)
+        self.calculate_center_start()
         self.calculate_gridsize(w, h)
+        self.calculate_tick_length()
+        self.calculate_radii_angles()
 
         # When do we need to redraw?!
         if self.last_ticksize != self.scene.tick_distance:
