@@ -37,10 +37,10 @@ class GridWidget(Widget):
         self.suppress_labels_in_all_cases = suppress_labels
 
         self.draw_grid = True
-        self.sx = 0
-        self.sy = 0
-        self.sx2 = 0
-        self.sy2 = 0
+        self.primary_start_x = 0
+        self.primary_start_y = 0
+        self.secondary_start_x = 0
+        self.secondary_start_y = 0
         self.circular_grid_center_x = 0
         self.circular_grid_center_y = 0
         # Min and max coords of the screen estate
@@ -209,23 +209,26 @@ class GridWidget(Widget):
     def calculate_gridsize(self, w, h):
         p = self.scene.context
 
-        self.sx = p.device.unit_width * p.device.show_origin_x
-        self.sy = p.device.unit_height * p.device.show_origin_y
+        self.primary_start_x = p.device.unit_width * p.device.show_origin_x
+        self.primary_start_y = p.device.unit_height * p.device.show_origin_y
+
         if self.scene.grid_secondary_cx is None:
-            self.sx2 = self.sx
+            self.secondary_start_x = self.primary_start_x
         else:
-            self.sx2 = self.scene.grid_secondary_cx
+            self.secondary_start_x = self.scene.grid_secondary_cx
+
         if self.scene.grid_secondary_cy is None:
-            self.sy2 = self.sy
+            self.secondary_start_y = self.primary_start_y
         else:
-            self.sy2 = self.scene.grid_secondary_cy
+            self.secondary_start_y = self.scene.grid_secondary_cy
 
         if self.scene.grid_circular_cx is None:
-            self.circular_grid_center_x = self.sx
+            self.circular_grid_center_x = self.primary_start_x
         else:
             self.circular_grid_center_x = self.scene.grid_circular_cx
+
         if self.scene.grid_circular_cy is None:
-            self.circular_grid_center_y = self.sy
+            self.circular_grid_center_y = self.primary_start_y
         else:
             self.circular_grid_center_y = self.scene.grid_circular_cy
         self.min_x = float("inf")
@@ -397,8 +400,8 @@ class GridWidget(Widget):
     def _calculate_grid_points_secondary(self):
         if (
             self.scene.draw_grid_primary
-            and self.sx == 0
-            and self.sy == 0
+            and self.primary_start_x == 0
+            and self.primary_start_y == 0
             and self.scene.grid_secondary_scale_x == 1
             and self.scene.grid_secondary_scale_y == 1
         ):
