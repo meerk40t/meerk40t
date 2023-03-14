@@ -154,12 +154,12 @@ class RotarySettingsPanel(ScrolledPanel):
         self.rotary.rotary_enabled = self.checkbox_rotary.GetValue()
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
-        self.scene.grid_secondary_scale_x = 1
-        self.scene.grid_secondary_scale_y = 1
+        self.scene.pane.grid_secondary_scale_x = 1
+        self.scene.pane.grid_secondary_scale_y = 1
         if self.rotary.rotary_enabled:
             try:
-                self.scene.grid_secondary_scale_x = self.rotary.scale_x
-                self.scene.grid_secondary_scale_y = self.rotary.scale_y
+                self.scene.pane.grid_secondary_scale_x = self.rotary.scale_x
+                self.scene.pane.grid_secondary_scale_y = self.rotary.scale_y
             except ValueError:
                 pass
         # Forces guide and grid refresh
@@ -173,7 +173,7 @@ class RotarySettingsPanel(ScrolledPanel):
             self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
         except ValueError:
             pass
-        self.scene.grid_secondary_scale_y = self.rotary.scale_y
+        self.scene.pane.grid_secondary_scale_y = self.rotary.scale_y
         self.rotary.signal("units")
         self.rotary.signal("refresh_scene", "Scene")
 
@@ -184,7 +184,7 @@ class RotarySettingsPanel(ScrolledPanel):
             self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
         except ValueError:
             return
-        self.scene.grid_secondary_scale_x = self.rotary.scale_x
+        self.scene.pane.grid_secondary_scale_x = self.rotary.scale_x
         self.rotary.signal("units")
         self.rotary.signal("refresh_scene")
 

@@ -678,48 +678,57 @@ def init_commands(kernel):
         self.set_emphasis(ops)
         return "ops", ops
 
-    @self.console_argument("start", type=int, help=_("operation start"))
-    @self.console_argument("end", type=int, help=_("operation end"))
-    @self.console_argument("step", type=int, help=_("operation step"))
+    @self.console_argument("start", type=int, help=_("start"))
+    @self.console_argument("end", type=int, help=_("end"))
+    @self.console_option("step", "s", type=int, default=1, help=_("step"))
     @self.console_command(
         "range",
         help=_("Subset existing selection by begin and end indices and step"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subops = list()
+    def opelem_select_range(
+        data=None, data_type=None, start=None, end=None, step=1, **kwargs
+    ):
+        sublist = list()
         for e in range(start, end, step):
             try:
-                subops.append(data[e])
+                sublist.append(data[e])
             except IndexError:
                 pass
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
 
     @self.console_argument("filter", type=str, help=_("Filter to apply"))
     @self.console_command(
         "filter",
         help=_("Filter data by given value"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_filter(channel=None, data=None, filter=None, **kwargs):
+    def opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs):
         """
         Apply a filter string to a filter particular operations from the current data.
-        Operations are evaluated in an infix prioritized stack format without spaces.
-        Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
+        Operations or elements are evaluated in an infix prioritized stack format without spaces.
+        Qualified values for all node types are: id, label, len, type
+        Qualified element values are stroke, fill, dpi, elem
+        Qualified operation values are speed, power, frequency, dpi, acceleration, op, passes, color, overscan
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+        Valid string operators are startswith, endswith, contains.
+        String values require single-quotes ', because the console interface requires double-quotes.
         eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
+        eg. operation* filter "type='op image'" list
+        eg. element* filter "id startwith 'p'" list
         """
-        subops = list()
+        sublist = list()
         _filter_parse = [
+            ("STR", r"'([^']*)'"),
             ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
             ("OP20", r"(\*|/)"),
             ("OP15", r"(\+|-)"),
-            ("OP11", r"(<=|>=|==|!=)"),
+            ("OP11", r"(<=|>=|==|!=|startswith|endswith|contains)"),
             ("OP10", r"(<|>|=)"),
             ("OP5", r"(&&)"),
             ("OP4", r"(&)"),
@@ -732,11 +741,11 @@ def init_commands(kernel):
             ),
             (
                 "TYPE",
-                r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                r"(raster|image|cut|engrave|dots|blob|rect|path|ellipse|point|image|line|polyline)",
             ),
             (
                 "VAL",
-                r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                r"(type|op|speed|power|frequency|dpi|passes|color|overscan|len|elem|stroke|fill|id|label)",
             ),
         ]
         filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
@@ -789,6 +798,12 @@ def init_commands(kernel):
                             operand.append(v1 + v2)
                         elif op == "-":
                             operand.append(v1 - v2)
+                        elif op == "startswith":
+                            operand.append(str(v1).startswith(str(v2)))
+                        elif op == "endswith":
+                            operand.append(str(v1).endswith(str(v2)))
+                        elif op == "contains":
+                            operand.append(str(v2) in (str(v1)))
                     except TypeError:
                         raise CommandSyntaxError("Cannot evaluate expression")
                     except ZeroDivisionError:
@@ -801,35 +816,140 @@ def init_commands(kernel):
                 if kind == "COLOR":
                     operand.append(Color(value))
                 elif kind == "VAL":
-                    if value == "dpi":
-                        operand.append(e.dpi)
-                    elif value == "color":
-                        operand.append(e.color)
-                    elif value == "op":
-                        operand.append(e.type.replace("op", "").strip())
-                    elif value == "len":
-                        operand.append(len(e.children))
-                    else:
-                        if hasattr(e, "settings"):
+                    try:
+                        if value == "type":
+                            operand.append(e.type)
+                        elif value == "op":
+                            if e.type.startswith("op"):
+                                operand.append(e.type.replace("op", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "speed":
+                            operand.append(e.speed)
+                        elif value == "power":
+                            operand.append(e.power)
+                        elif value == "frequency":
+                            operand.append(e.frequency)
+                        elif value == "dpi":
+                            operand.append(e.dpi)
+                        elif value == "passes":
+                            operand.append(e.passes)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "len":
+                            try:
+                                operand.append(len(e.children))
+                            except AttributeError:
+                                operand.append(0)
+                        elif value == "elem":
+                            if e.type.startswith("elem"):
+                                operand.append(e.type.replace("elem", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "stroke":
+                            operand.append(e.stroke)
+                        elif value == "fill":
+                            operand.append(e.fill)
+                        elif value == "stroke_width":
+                            operand.append(e.stroke_width)
+                        elif value == "id":
+                            operand.append(e.id)
+                        elif value == "label":
+                            operand.append(e.label)
+                        else:
                             operand.append(e.settings.get(value))
-
+                    except AttributeError:
+                        operand.append(None)
                 elif kind == "NUM":
                     operand.append(float(value))
                 elif kind == "TYPE":
                     operand.append(value)
+                elif kind == "STR":
+                    operand.append(value[1:-1])
                 elif kind.startswith("OP"):
-                    prec = int(kind[2:])
-                    solve_to(prec)
-                    operator.append((prec, value))
+                    precedence = int(kind[2:])
+                    solve_to(precedence)
+                    operator.append((precedence, value))
             solve_to(0)
             if len(operand) == 1:
                 if operand.pop():
-                    subops.append(e)
+                    sublist.append(e)
             else:
                 raise CommandSyntaxError(_("Filter parse failed"))
 
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
+
+    @self.console_argument(
+        "id",
+        type=str,
+        help=_("new id to set values to"),
+    )
+    @self.console_command(
+        "id",
+        help=_("id <id>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs):
+        if id is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("ID Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - id = {id}").format(index=i, name=name, id=e.id)
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.id = id
+        self.validate_ids()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
+
+    @self.console_argument(
+        "label",
+        type=str,
+        help=_("new label to set values to"),
+    )
+    @self.console_command(
+        "label",
+        help=_("label <label>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_label(
+        command, channel, _, label=None, data=None, data_type=None, **kwargs
+    ):
+        if label is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("Label Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - label = {label}").format(
+                        index=i, name=name, label=e.label
+                    )
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.label = label
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
 
     @self.console_command(
         "list",
@@ -1815,25 +1935,6 @@ def init_commands(kernel):
                 channel(f"{i}: {name}")
         channel("----------")
         return "elements", data
-
-    @self.console_argument("start", type=int, help=_("elements start"))
-    @self.console_argument("end", type=int, help=_("elements end"))
-    @self.console_argument("step", type=int, help=_("elements step"))
-    @self.console_command(
-        "range",
-        help=_("Subset selection by begin & end indices and step"),
-        input_type="elements",
-        output_type="elements",
-    )
-    def element_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subelem = list()
-        for e in range(start, end, step):
-            try:
-                subelem.append(data[e])
-            except IndexError:
-                pass
-        self.set_emphasis(subelem)
-        return "elements", subelem
 
     @self.console_command(
         "merge",
@@ -3931,9 +4032,7 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
-    @self.console_argument(
-        "new_text", type=str, help=_("set new text contents")
-    )
+    @self.console_argument("new_text", type=str, help=_("set new text contents"))
     @self.console_command(
         "text-edit",
         help=_("set text object text to new text"),
@@ -3968,7 +4067,6 @@ def init_commands(kernel):
             e.altered()
 
         return "elements", data
-
 
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"

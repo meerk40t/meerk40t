@@ -96,11 +96,11 @@ class PolygonTool(ToolWidget):
             ):
                 self.end_tool()
                 response = RESPONSE_ABORT
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             response = RESPONSE_CONSUME
         elif event_type == "rightdown":
             was_already_empty = len(self.point_series) == 0
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
@@ -108,7 +108,7 @@ class PolygonTool(ToolWidget):
                 self.scene.context("tool none\n")
             response = RESPONSE_ABORT
         elif event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.mouse_position = space_pos[0], space_pos[1]
             else:
@@ -128,8 +128,8 @@ class PolygonTool(ToolWidget):
             self.end_tool()
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
@@ -150,7 +150,7 @@ class PolygonTool(ToolWidget):
         )
         if elements.classify_new:
             elements.classify([node])
-        self.scene.tool_active = False
+        self.scene.pane.tool_active = False
         self.point_series = []
         self.notify_created(node)
         self.mouse_position = None
