@@ -34,12 +34,12 @@ class GuideWidget(Widget):
         self.scaled_conversion_y = 0
         self.units = None
         self.options = []
-        self.pen_guide1 = wx.Pen()
-        self.pen_guide2 = wx.Pen()
+        self.primary_guides_pen = wx.Pen()
+        self.secondary_guides_pen = wx.Pen()
         self.pen_magnets = wx.Pen()
         self.color_units = None
-        self.color_guide1 = None
-        self.color_guide2 = None
+        self.primary_guides_color = None
+        self.secondary_guides_color = None
         self.set_colors()
         self.font = wx.Font(
             10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
@@ -47,10 +47,10 @@ class GuideWidget(Widget):
 
     def set_colors(self):
         self.color_units = self.scene.colors.color_guide
-        self.color_guide1 = self.scene.colors.color_guide
-        self.color_guide2 = self.scene.colors.color_guide2
-        self.pen_guide1.SetColour(self.color_guide1)
-        self.pen_guide2.SetColour(self.color_guide2)
+        self.primary_guides_color = self.scene.colors.color_guide
+        self.secondary_guides_color = self.scene.colors.color_guide2
+        self.primary_guides_pen.SetColour(self.primary_guides_color)
+        self.secondary_guides_pen.SetColour(self.secondary_guides_color)
         self.pen_magnets.SetColour(self.scene.colors.color_magnetline)
         self.pen_magnets.SetWidth(2)
 
@@ -508,10 +508,10 @@ class GuideWidget(Widget):
         sx_primary, sy_primary = self._get_center_primary()
         length = self.line_length
         edge_gap = self.edge_gap
-        gc.SetPen(self.pen_guide1)
-        gc.SetFont(self.font, self.color_guide1)
+        gc.SetPen(self.primary_guides_pen)
+        gc.SetFont(self.font, self.primary_guides_color)
 
-        (t_width, t_height) = gc.GetTextExtent("0")
+        text_width, text_height = gc.GetTextExtent("0")
 
         starts = []
         ends = []
@@ -532,7 +532,7 @@ class GuideWidget(Widget):
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
                 # Show half distance as well if there's enough room
-                if t_height < 0.5 * points_x_primary:
+                if text_height < 0.5 * points_x_primary:
                     starts.append((x - 0.5 * points_x_primary, edge_gap))
                     ends.append((x - 0.5 * points_x_primary, 0.25 * length + edge_gap))
 
@@ -543,7 +543,7 @@ class GuideWidget(Widget):
                     ends.append(
                         (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
                     )
-                if (x - last_text_pos) >= t_height * 1.25:
+                if (x - last_text_pos) >= text_height * 1.25:
                     gc.DrawText(f"{mark_point:g}", x, edge_gap, -math.tau / 4)
                     last_text_pos = x
             x += points_x_primary
@@ -562,7 +562,7 @@ class GuideWidget(Widget):
                 starts.append((edge_gap, y))
                 ends.append((length + edge_gap, y))
                 # if there is enough room for a mid-distance stroke...
-                if t_height < 0.5 * points_y_primary:
+                if text_height < 0.5 * points_y_primary:
                     starts.append((edge_gap, y - 0.5 * points_y_primary))
                     ends.append((0.25 * length + edge_gap, y - 0.5 * points_y_primary))
 
@@ -574,7 +574,7 @@ class GuideWidget(Widget):
                         (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
                     )
 
-                if (y - last_text_pos) >= t_height * 1.25:
+                if (y - last_text_pos) >= text_height * 1.25:
                     # Adding zero makes -0 into positive 0
                     gc.DrawText(f"{mark_point + 0:g}", edge_gap, y + 0)
                     last_text_pos = y
@@ -602,9 +602,9 @@ class GuideWidget(Widget):
         length = self.line_length
         edge_gap = self.edge_gap
 
-        gc.SetPen(self.pen_guide2)
-        gc.SetFont(self.font, self.color_guide2)
-        (t_width, t_height) = gc.GetTextExtent("0")
+        gc.SetPen(self.secondary_guides_pen)
+        gc.SetFont(self.font, self.secondary_guides_color)
+        t_width, t_height = gc.GetTextExtent("0")
 
         starts = []
         ends = []
