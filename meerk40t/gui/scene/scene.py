@@ -208,8 +208,6 @@ class Scene(Module, Job):
         self.overrule_background = None
 
         # Stuff related to grids and guides
-        self.auto_tick = False  # by definition do not auto_tick
-        self.reset_grids()
 
         self._last_snap_position = None
         self._last_snap_ts = 0
@@ -242,20 +240,6 @@ class Scene(Module, Job):
             self._last_snap_ts = 0
         else:
             self._last_snap_ts = time.time()
-
-    def reset_grids(self):
-        self.draw_grid_primary = True
-        self.pane.tick_distance = 0
-        # Secondary grid, perpendicular, but with definable center and scaling
-        self.draw_grid_secondary = False
-        self.grid_secondary_cx = None
-        self.grid_secondary_cy = None
-        self.grid_secondary_scale_x = 1
-        self.grid_secondary_scale_y = 1
-        # Circular grid
-        self.draw_grid_circular = False
-        self.grid_circular_cx = None
-        self.grid_circular_cy = None
 
     def module_open(self, *args, **kwargs):
         context = self.context

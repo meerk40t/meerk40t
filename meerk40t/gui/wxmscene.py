@@ -108,6 +108,21 @@ class MeerK40tScenePanel(wx.Panel):
         self.active_tool = "none"
         self.tick_distance = 0
 
+        self.draw_grid_primary = True
+        # Secondary grid, perpendicular, but with definable center and scaling
+        self.draw_grid_secondary = False
+        self.grid_secondary_cx = None
+        self.grid_secondary_cy = None
+        self.grid_secondary_scale_x = 1
+        self.grid_secondary_scale_y = 1
+        # Circular grid
+        self.draw_grid_circular = False
+        self.grid_circular_cx = None
+        self.grid_circular_cy = None
+        self.auto_tick = False  # by definition do not auto_tick
+        # Let the grid resize itself
+        self.auto_tick = True
+
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
@@ -119,8 +134,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
-        # Let the grid resize itself
-        self.widget_scene.auto_tick = True
+
 
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
@@ -521,7 +535,7 @@ class MeerK40tScenePanel(wx.Panel):
         def make_reference(**kwgs):
             # Take first emphasized element
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                self.widget_scene.pane.reference_object = e
+                self.reference_object = e
                 break
             self.context.signal("reference")
 
@@ -555,37 +569,37 @@ class MeerK40tScenePanel(wx.Panel):
         ):
             if target is None:
                 channel(_("Grid-Parameters:"))
-                p_state = _("On") if self.widget_scene.draw_grid_primary else _("Off")
+                p_state = _("On") if self.draw_grid_primary else _("Off")
                 channel(f"Primary: {p_state}")
-                if self.widget_scene.draw_grid_secondary:
+                if self.draw_grid_secondary:
                     channel(f"Secondary: {_('On')}")
-                    if self.widget_scene.grid_secondary_cx is not None:
+                    if self.grid_secondary_cx is not None:
                         channel(
-                            f"   cx: {Length(amount=self.widget_scene.grid_secondary_cx).length_mm}"
+                            f"   cx: {Length(amount=self.grid_secondary_cx).length_mm}"
                         )
-                    if self.widget_scene.grid_secondary_cy is not None:
+                    if self.grid_secondary_cy is not None:
                         channel(
-                            f"   cy: {Length(amount=self.widget_scene.grid_secondary_cy).length_mm}"
+                            f"   cy: {Length(amount=self.grid_secondary_cy).length_mm}"
                         )
-                    if self.widget_scene.grid_secondary_scale_x is not None:
+                    if self.grid_secondary_scale_x is not None:
                         channel(
-                            f"   scale-x: {self.widget_scene.grid_secondary_scale_x:.2f}"
+                            f"   scale-x: {self.grid_secondary_scale_x:.2f}"
                         )
-                    if self.widget_scene.grid_secondary_scale_y is not None:
+                    if self.grid_secondary_scale_y is not None:
                         channel(
-                            f"   scale-y: {self.widget_scene.grid_secondary_scale_y:.2f}"
+                            f"   scale-y: {self.grid_secondary_scale_y:.2f}"
                         )
                 else:
                     channel(f"Secondary: {_('Off')}")
-                if self.widget_scene.draw_grid_circular:
+                if self.draw_grid_circular:
                     channel(f"Circular: {_('On')}")
-                    if self.widget_scene.grid_circular_cx is not None:
+                    if self.grid_circular_cx is not None:
                         channel(
-                            f"   cx: {Length(amount=self.widget_scene.grid_circular_cx).length_mm}"
+                            f"   cx: {Length(amount=self.grid_circular_cx).length_mm}"
                         )
-                    if self.widget_scene.grid_circular_cy is not None:
+                    if self.grid_circular_cy is not None:
                         channel(
-                            f"   cy: {Length(amount=self.widget_scene.grid_circular_cy).length_mm}"
+                            f"   cy: {Length(amount=self.grid_circular_cy).length_mm}"
                         )
                 else:
                     channel(f"Circular: {_('Off')}")
@@ -593,35 +607,35 @@ class MeerK40tScenePanel(wx.Panel):
             else:
                 target = target.lower()
                 if target[0] == "p":
-                    self.widget_scene.draw_grid_primary = (
-                        not self.widget_scene.draw_grid_primary
+                    self.draw_grid_primary = (
+                        not self.draw_grid_primary
                     )
                     channel(
                         _("Turned primary grid on")
-                        if self.widget_scene.draw_grid_primary
+                        if self.draw_grid_primary
                         else _("Turned primary grid off")
                     )
                     self.scene.signal("guide")
                     self.scene.signal("grid")
                     self.request_refresh()
                 elif target[0] == "s":
-                    self.widget_scene.draw_grid_secondary = (
-                        not self.widget_scene.draw_grid_secondary
+                    self.draw_grid_secondary = (
+                        not self.draw_grid_secondary
                     )
-                    if self.widget_scene.draw_grid_secondary:
+                    if self.draw_grid_secondary:
 
                         if ox is None:
-                            self.widget_scene.grid_secondary_cx = None
-                            self.widget_scene.grid_secondary_cy = None
+                            self.grid_secondary_cx = None
+                            self.grid_secondary_cy = None
                             scalex = None
                             scaley = None
                         else:
                             if oy is None:
                                 oy = ox
-                            self.widget_scene.grid_secondary_cx = float(
+                            self.grid_secondary_cx = float(
                                 Length(ox, relative_length=self.context.device.width)
                             )
-                            self.widget_scene.grid_secondary_cy = float(
+                            self.grid_secondary_cy = float(
                                 Length(oy, relative_length=self.context.device.height)
                             )
                         if scalex is None:
@@ -638,12 +652,12 @@ class MeerK40tScenePanel(wx.Panel):
                             scaley = scalex
                         else:
                             scaley = float(scaley)
-                        self.widget_scene.grid_secondary_scale_x = scalex
-                        self.widget_scene.grid_secondary_scale_y = scaley
+                        self.grid_secondary_scale_x = scalex
+                        self.grid_secondary_scale_y = scaley
                     channel(
                         _(
                             "Turned secondary grid on"
-                            if self.widget_scene.draw_grid_secondary
+                            if self.draw_grid_secondary
                             else "Turned secondary grid off"
                         )
                     )
@@ -651,26 +665,26 @@ class MeerK40tScenePanel(wx.Panel):
                     self.scene.signal("grid")
                     self.request_refresh()
                 elif target[0] == "c":
-                    self.widget_scene.draw_grid_circular = (
-                        not self.widget_scene.draw_grid_circular
+                    self.draw_grid_circular = (
+                        not self.draw_grid_circular
                     )
-                    if self.widget_scene.draw_grid_circular:
+                    if self.draw_grid_circular:
                         if ox is None:
-                            self.widget_scene.grid_circular_cx = None
-                            self.widget_scene.grid_circular_cy = None
+                            self.grid_circular_cx = None
+                            self.grid_circular_cy = None
                         else:
                             if oy is None:
                                 oy = ox
-                            self.widget_scene.grid_circular_cx = float(
+                            self.grid_circular_cx = float(
                                 Length(ox, relative_length=self.context.device.width)
                             )
-                            self.widget_scene.grid_circular_cy = float(
+                            self.grid_circular_cy = float(
                                 Length(oy, relative_length=self.context.device.height)
                             )
                     channel(
                         _(
                             "Turned circular grid on"
-                            if self.widget_scene.draw_grid_circular
+                            if self.draw_grid_circular
                             else "Turned circular grid off"
                         )
                     )
@@ -682,10 +696,10 @@ class MeerK40tScenePanel(wx.Panel):
 
     def toggle_ref_obj(self):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
-            if self.widget_scene.pane.reference_object == e:
-                self.widget_scene.pane.reference_object = None
+            if self.reference_object == e:
+                self.reference_object = None
             else:
-                self.widget_scene.pane.reference_object = e
+                self.reference_object = e
             break
         self.context.signal("reference")
         self.request_refresh()
@@ -889,18 +903,18 @@ class MeerK40tScenePanel(wx.Panel):
 
         def toggle_grid(gridtype):
             if gridtype == "primary":
-                self.widget_scene.draw_grid_primary = (
-                    not self.widget_scene.draw_grid_primary
+                self.draw_grid_primary = (
+                    not self.draw_grid_primary
                 )
             elif gridtype == "secondary":
-                self.widget_scene.draw_grid_secondary = (
-                    not self.widget_scene.draw_grid_secondary
+                self.draw_grid_secondary = (
+                    not self.draw_grid_secondary
                 )
             elif gridtype == "circular":
-                self.widget_scene.draw_grid_circular = (
-                    not self.widget_scene.draw_grid_circular
+                self.draw_grid_circular = (
+                    not self.draw_grid_circular
                 )
-            self.widget_scene.request_refresh()
+            self.request_refresh()
 
         def toggle_grid_p(event=None):
             toggle_grid("primary")
@@ -940,7 +954,7 @@ class MeerK40tScenePanel(wx.Panel):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, toggle_grid_p, id=id2.GetId())
-        menu.Check(id2.GetId(), self.widget_scene.draw_grid_primary)
+        menu.Check(id2.GetId(), self.draw_grid_primary)
         id3 = menu.Append(
             wx.ID_ANY,
             _("Show Secondary Grid"),
@@ -948,7 +962,7 @@ class MeerK40tScenePanel(wx.Panel):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, toggle_grid_s, id=id3.GetId())
-        menu.Check(id3.GetId(), self.widget_scene.draw_grid_secondary)
+        menu.Check(id3.GetId(), self.draw_grid_secondary)
         id4 = menu.Append(
             wx.ID_ANY,
             _("Show Circular Grid"),
@@ -956,8 +970,8 @@ class MeerK40tScenePanel(wx.Panel):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
-        menu.Check(id4.GetId(), self.widget_scene.draw_grid_circular)
-        if self.widget_scene.pane.has_background:
+        menu.Check(id4.GetId(), self.draw_grid_circular)
+        if self.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
@@ -1150,7 +1164,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        ignore = self.widget_scene.pane.tool_active
+        ignore = self.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_down: {keyvalue}.")
         if not ignore and self.context.bind.trigger(keyvalue):
@@ -1168,7 +1182,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
-        ignore = self.widget_scene.pane.tool_active
+        ignore = self.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_up: {keyvalue}.")
         if not ignore and self.context.bind.untrigger(keyvalue):

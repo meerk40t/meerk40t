@@ -75,9 +75,9 @@ class GuideWidget(Widget):
 
     def set_auto_tick(self, value):
         if value == 0:
-            self.scene.auto_tick = True
+            self.scene.pane.auto_tick = True
         else:
-            self.scene.auto_tick = False
+            self.scene.pane.auto_tick = False
             self.scene.pane.tick_distance = value
         self.scene._signal_widget(self.scene.widget_root, "grid")
         self.scene.request_refresh()
@@ -112,7 +112,7 @@ class GuideWidget(Widget):
     def fill_magnets(self):
         # Let's set the full grid
         p = self.scene.context
-        if self.scene.draw_grid_primary:
+        if self.scene.pane.draw_grid_primary:
             tlen = float(Length(f"{self.scene.pane.tick_distance}{p.units_name}"))
             amount = (
                 round(
@@ -144,7 +144,7 @@ class GuideWidget(Widget):
             while y <= p.device.unit_height:
                 self.scene.pane.toggle_y_magnet(y)
                 y += tlen
-        elif self.scene.draw_grid_secondary:
+        elif self.scene.pane.draw_grid_secondary:
             # Placeholder for a use case, as you can define them manually...
             pass
 
@@ -166,7 +166,7 @@ class GuideWidget(Widget):
             except:
                 return
             self.scene.pane.tick_distance = value
-            self.scene.auto_tick = False
+            self.scene.pane.auto_tick = False
             self.scene._signal_widget(self.scene.widget_root, "grid")
             self.scene.request_refresh()
 
@@ -176,7 +176,7 @@ class GuideWidget(Widget):
 
             return check
 
-        kind = wx.ITEM_CHECK if self.scene.auto_tick else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.auto_tick else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Auto-Scale"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -199,7 +199,7 @@ class GuideWidget(Widget):
         for option in self.options:
             kind = (
                 wx.ITEM_CHECK
-                if self.scene.pane.tick_distance == option and not self.scene.auto_tick
+                if self.scene.pane.tick_distance == option and not self.scene.pane.auto_tick
                 else wx.ITEM_NORMAL
             )
             item = menu.Append(
@@ -320,7 +320,7 @@ class GuideWidget(Widget):
 
     def _add_grid_draw_options(self, menu):
         menu.AppendSeparator()
-        kind = wx.ITEM_CHECK if self.scene.draw_grid_primary else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.draw_grid_primary else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Draw primary grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -329,7 +329,7 @@ class GuideWidget(Widget):
             lambda e: self.toggle_rect(),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.draw_grid_secondary else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.draw_grid_secondary else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Draw secondary grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -341,7 +341,7 @@ class GuideWidget(Widget):
         # DISABLE, AS NOT YET READY
         # menu.Enable(item.GetId(), False)
 
-        kind = wx.ITEM_CHECK if self.scene.draw_grid_circular else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.draw_grid_circular else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Draw circular grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -356,12 +356,12 @@ class GuideWidget(Widget):
         secondary = False
         is_y = self.scale_x_lower <= space_pos[0] <= self.scale_x_upper
         if not is_y:
-            if self.scene.draw_grid_secondary:
+            if self.scene.pane.draw_grid_secondary:
                 is_y = self.scale_x2_lower <= space_pos[0] <= self.scale_x2_upper
                 secondary = True
         is_x = self.scale_y_lower <= space_pos[1] <= self.scale_y_upper
         if not is_x:
-            if self.scene.draw_grid_secondary:
+            if self.scene.pane.draw_grid_secondary:
                 is_x = self.scale_y2_lower <= space_pos[1] <= self.scale_y2_upper
                 secondary = True
         # print ("is_x=%s, is_y=%s, secondary=%s" % (is_x, is_y, secondary))
@@ -378,14 +378,14 @@ class GuideWidget(Widget):
         tick_distance_x = self.scene.pane.tick_distance
         tick_distance_y = self.scene.pane.tick_distance
         if secondary:
-            if self.scene.grid_secondary_cx is not None:
-                sx = self.scene.grid_secondary_cx
-            if self.scene.grid_secondary_cy is not None:
-                sy = self.scene.grid_secondary_cy
-            if self.scene.grid_secondary_scale_x is not None:
-                tick_distance_x *= self.scene.grid_secondary_scale_x
-            if self.scene.grid_secondary_scale_y is not None:
-                tick_distance_y *= self.scene.grid_secondary_scale_y
+            if self.scene.pane.grid_secondary_cx is not None:
+                sx = self.scene.pane.grid_secondary_cx
+            if self.scene.pane.grid_secondary_cy is not None:
+                sy = self.scene.pane.grid_secondary_cy
+            if self.scene.pane.grid_secondary_scale_x is not None:
+                tick_distance_x *= self.scene.pane.grid_secondary_scale_x
+            if self.scene.pane.grid_secondary_scale_y is not None:
+                tick_distance_y *= self.scene.pane.grid_secondary_scale_y
         ox, oy = self.scene.convert_scene_to_window([sx, sy])
 
         # print(
@@ -487,11 +487,11 @@ class GuideWidget(Widget):
         p = self.scene.context
         x = p.device.unit_width * p.device.show_origin_x
         y = p.device.unit_height * p.device.show_origin_y
-        if self.scene.grid_secondary_cx is not None:
-            x = self.scene.grid_secondary_cx
+        if self.scene.pane.grid_secondary_cx is not None:
+            x = self.scene.pane.grid_secondary_cx
 
-        if self.scene.grid_secondary_cy is not None:
-            y = self.scene.grid_secondary_cy
+        if self.scene.pane.grid_secondary_cy is not None:
+            y = self.scene.pane.grid_secondary_cy
 
         return self.scene.convert_scene_to_window([x, y])
 
@@ -536,7 +536,7 @@ class GuideWidget(Widget):
                     starts.append((x - 0.5 * points_x_primary, edge_gap))
                     ends.append((x - 0.5 * points_x_primary, 0.25 * length + edge_gap))
 
-                if not self.scene.draw_grid_secondary:
+                if not self.scene.pane.draw_grid_secondary:
                     starts.append((x, h - edge_gap))
                     ends.append((x, h - length - edge_gap))
                     starts.append((x - 0.5 * points_x_primary, h - edge_gap))
@@ -566,7 +566,7 @@ class GuideWidget(Widget):
                     starts.append((edge_gap, y - 0.5 * points_y_primary))
                     ends.append((0.25 * length + edge_gap, y - 0.5 * points_y_primary))
 
-                if not self.scene.draw_grid_secondary:
+                if not self.scene.pane.draw_grid_secondary:
                     starts.append((w - edge_gap, y))
                     ends.append((w - length - edge_gap, y))
                     starts.append((w - edge_gap, y - 0.5 * points_y_primary))
@@ -587,13 +587,13 @@ class GuideWidget(Widget):
         p = self.scene.context
 
         fx = 1.0
-        if self.scene.grid_secondary_scale_x is not None:
-            fx = self.scene.grid_secondary_scale_x
+        if self.scene.pane.grid_secondary_scale_x is not None:
+            fx = self.scene.pane.grid_secondary_scale_x
         points_x = fx * self.scene.pane.tick_distance * self.scaled_conversion_x
 
         fy = 1.0
-        if self.scene.grid_secondary_scale_y is not None:
-            fy = self.scene.grid_secondary_scale_y
+        if self.scene.pane.grid_secondary_scale_y is not None:
+            fy = self.scene.pane.grid_secondary_scale_y
         points_y = fy * self.scene.pane.tick_distance * self.scaled_conversion_y
         self.units = p.units_name
 
@@ -718,7 +718,7 @@ class GuideWidget(Widget):
 
         self._draw_primary_guides(gc)
 
-        if self.scene.draw_grid_secondary:
+        if self.scene.pane.draw_grid_secondary:
             self._draw_secondary_guides(gc)
         self._draw_magnet_lines(gc)
 
