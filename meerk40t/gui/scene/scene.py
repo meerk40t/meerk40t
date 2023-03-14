@@ -199,7 +199,6 @@ class Scene(Module, Job):
         self._down_start_pos = None
         self._cursor = None
         self._reference = None  # Reference Object
-        self.attraction_points = []  # Clear all
         self.compute = True
         self.has_background = False
         self.suppress_changes = True
