@@ -956,7 +956,7 @@ class EditTool(ToolWidget):
         """
         We are done with node editing, so shutdown stuff
         """
-        self.scene.tool_active = False
+        self.scene.pane.tool_active = False
         self.scene.modif_active = False
         self.p1 = None
         self.p2 = None
@@ -1901,7 +1901,7 @@ class EditTool(ToolWidget):
         Returns:
             Indicator how to proceed with this event after its execution (consume, chain etc)
         """
-        if self.scene.active_tool != "edit":
+        if self.scene.pane.active_tool != "edit":
             return RESPONSE_CHAIN
         # print (f"event: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'")
         offset = 5
@@ -1912,7 +1912,7 @@ class EditTool(ToolWidget):
             self.pen = wx.Pen()
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(25)
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             self.scene.modif_active = True
 
             self.scene.context.signal("statusmsg", self.message)
@@ -2065,12 +2065,12 @@ class EditTool(ToolWidget):
                 self.modify_element(False)
             return RESPONSE_CONSUME
         elif event_type == "key_down":
-            if not self.scene.tool_active:
+            if not self.scene.pane.tool_active:
                 return RESPONSE_CHAIN
             # print (f"event: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'")
             return RESPONSE_CONSUME
         elif event_type == "key_up":
-            if not self.scene.tool_active:
+            if not self.scene.pane.tool_active:
                 return RESPONSE_CHAIN
             # print (f"event: {event_type}, modifiers: '{modifiers}', keycode: '{keycode}'")
             if modifiers == "escape":
@@ -2086,7 +2086,7 @@ class EditTool(ToolWidget):
             return RESPONSE_CONSUME
 
         elif event_type == "lost":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 self.done()
                 return RESPONSE_CONSUME
             else:

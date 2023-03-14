@@ -77,7 +77,7 @@ class AttractionWidget(Widget):
         if (
             event_type
             in ("leftdown", "leftup", "leftclick", "move", "hover", "hover_start")
-            and (self.scene.tool_active or self.scene.modif_active)
+            and (self.scene.pane.tool_active or self.scene.modif_active)
             and "shift" not in modifiers
         ):
             self.calculate_display_points()

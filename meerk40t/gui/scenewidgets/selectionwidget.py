@@ -42,7 +42,7 @@ def process_event(
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
 
     # Not during an edit !
-    if widget.scene.active_tool.startswith("edit"):
+    if widget.scene.pane.active_tool.startswith("edit"):
         return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
@@ -75,7 +75,7 @@ def process_event(
     dx = space_pos[4]
     dy = space_pos[5]
     # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.modif_active}, snap={nearest_snap}")
-    if widget.scene.tool_active:
+    if widget.scene.pane.tool_active:
         # print ("ignore")
         return RESPONSE_CHAIN
 
@@ -2486,7 +2486,7 @@ class SelectionWidget(Widget):
             # self.scene.tool_active = False
             pass
         elif event_type == "rightdown":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers

@@ -90,6 +90,9 @@ class MeerK40tScenePanel(wx.Panel):
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
         self.widget_scene = self.scene.scene
+
+        self.tool_active = False
+
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
@@ -982,7 +985,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
-        ignore = self.widget_scene.tool_active
+        ignore = self.widget_scene.pane.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_down: {keyvalue}.")
         if not ignore and self.context.bind.trigger(keyvalue):
@@ -1000,7 +1003,7 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
-        ignore = self.widget_scene.tool_active
+        ignore = self.widget_scene.pane.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_up: {keyvalue}.")
         if not ignore and self.context.bind.untrigger(keyvalue):

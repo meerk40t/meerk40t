@@ -95,7 +95,7 @@ class LineTextTool(ToolWidget):
                 self.node.stroke = self.color
                 self.node.altered()
                 self.node.focus()
-                self.scene.tool_active = False
+                self.scene.pane.tool_active = False
                 self.scene.context.signal("element_property_update", [self.node])
                 self.scene.request_refresh()
             self.node = None
@@ -106,7 +106,7 @@ class LineTextTool(ToolWidget):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             if self.p1 is None:
-                self.scene.tool_active = True
+                self.scene.pane.tool_active = True
                 self.scene.animate(self)
                 elements = self.scene.context.elements
                 if elements.default_stroke is None:
@@ -147,21 +147,21 @@ class LineTextTool(ToolWidget):
             done()
             response = RESPONSE_CONSUME
         elif event_type == "key_up" and modifiers == "escape":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 done()
                 # print ("Done - escape")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up" and modifiers == "return":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 done()
                 # print ("Done - return")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
                 to_add = ""
                 if keycode is not None:
