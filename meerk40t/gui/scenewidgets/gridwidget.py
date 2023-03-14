@@ -61,6 +61,24 @@ class GridWidget(Widget):
         self.max_angle = tau
         self.os = system()
 
+        # Stuff related to grids and guides
+        self.draw_grid_primary = True
+        # Secondary grid, perpendicular, but with definable center and scaling
+        self.draw_grid_secondary = False
+        self.grid_secondary_cx = None
+        self.grid_secondary_cy = None
+        self.grid_secondary_scale_x = 1
+        self.grid_secondary_scale_y = 1
+        # Circular grid
+        self.draw_grid_circular = False
+        self.grid_circular_cx = None
+        self.grid_circular_cy = None
+        # self.auto_tick = False  # by definition do not auto_tick
+        # Let the grid resize itself
+        self.auto_tick = True
+
+        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+
         self.set_colors()
 
     @property
@@ -233,25 +251,25 @@ class GridWidget(Widget):
         self.primary_start_x = p.device.unit_width * p.device.show_origin_x
         self.primary_start_y = p.device.unit_height * p.device.show_origin_y
 
-        if self.scene.pane.grid_secondary_cx is None:
+        if self.grid_secondary_cx is None:
             self.secondary_start_x = self.primary_start_x
         else:
-            self.secondary_start_x = self.scene.pane.grid_secondary_cx
+            self.secondary_start_x = self.grid_secondary_cx
 
-        if self.scene.pane.grid_secondary_cy is None:
+        if self.grid_secondary_cy is None:
             self.secondary_start_y = self.primary_start_y
         else:
-            self.secondary_start_y = self.scene.pane.grid_secondary_cy
+            self.secondary_start_y = self.grid_secondary_cy
 
-        if self.scene.pane.grid_circular_cx is None:
+        if self.grid_circular_cx is None:
             self.circular_grid_center_x = self.primary_start_x
         else:
-            self.circular_grid_center_x = self.scene.pane.grid_circular_cx
+            self.circular_grid_center_x = self.grid_circular_cx
 
-        if self.scene.pane.grid_circular_cy is None:
+        if self.grid_circular_cy is None:
             self.circular_grid_center_y = self.primary_start_y
         else:
-            self.circular_grid_center_y = self.scene.pane.grid_circular_cy
+            self.circular_grid_center_y = self.grid_circular_cy
 
     def calculate_gridsize(self, w, h):
         self.min_x = float("inf")
@@ -284,8 +302,8 @@ class GridWidget(Widget):
         self.primary_tick_length_y = tick_length
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
-        self.secondary_tick_length_x = self.primary_tick_length_x * self.scene.pane.grid_secondary_scale_x
-        self.secondary_tick_length_y = self.primary_tick_length_y * self.scene.pane.grid_secondary_scale_y
+        self.secondary_tick_length_x = self.primary_tick_length_x * self.grid_secondary_scale_x
+        self.secondary_tick_length_y = self.primary_tick_length_y * self.grid_secondary_scale_y
 
     def calculate_radii_angles(self):
         # let's establish which circles we really have to draw
@@ -394,15 +412,15 @@ class GridWidget(Widget):
         and identifies all attraction points (center, corners, sides)
         Notabene this calculation generates SCREEN coordinates
         """
-        self.scene.pane.grid_points = []  # Clear all
+        self.grid_points = []  # Clear all
 
         # Let's add grid points - set just the visible part of the grid
 
-        if self.scene.pane.draw_grid_primary:
+        if self.draw_grid_primary:
             self._calculate_grid_points_primary()
-        if self.scene.pane.draw_grid_secondary:
+        if self.draw_grid_secondary:
             self._calculate_grid_points_secondary()
-        if self.scene.pane.draw_grid_circular:
+        if self.draw_grid_circular:
             self._calculate_grid_points_circular()
 
     def _calculate_grid_points_primary(self):
@@ -424,17 +442,17 @@ class GridWidget(Widget):
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
-                self.scene.pane.grid_points.append([x, y])
+                self.grid_points.append([x, y])
                 y += self.primary_tick_length_y
             x += self.primary_tick_length_x
 
     def _calculate_grid_points_secondary(self):
         if (
-            self.scene.pane.draw_grid_primary
+            self.draw_grid_primary
             and self.primary_start_x == 0
             and self.primary_start_y == 0
-            and self.scene.pane.grid_secondary_scale_x == 1
-            and self.scene.pane.grid_secondary_scale_y == 1
+            and self.grid_secondary_scale_x == 1
+            and self.grid_secondary_scale_y == 1
         ):
             return  # is it identical to the primary?
         # We could be way too high
@@ -454,7 +472,7 @@ class GridWidget(Widget):
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
-                self.scene.pane.grid_points.append([x, y])
+                self.grid_points.append([x, y])
                 y += self.secondary_tick_length_y
             x += self.secondary_tick_length_x
 
@@ -466,7 +484,7 @@ class GridWidget(Widget):
         x = start_x
         y = start_y
         # mx, my = self.scene.convert_scene_to_window([x, y])
-        self.scene.pane.grid_points.append([x, y])
+        self.grid_points.append([x, y])
         max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
         tick_length = (self.primary_tick_length_x + self.primary_tick_length_y) / 2
         r_fourth = max_r // (4 * tick_length) * tick_length
@@ -494,7 +512,7 @@ class GridWidget(Widget):
 
                 if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
                     # mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.pane.grid_points.append([x, y])
+                    self.grid_points.append([x, y])
 
             i += 1
             r_angle += tau / segments
@@ -514,7 +532,7 @@ class GridWidget(Widget):
         if w < 50 or h < 50:
             # Algorithm is unstable for very low values of w or h.
             return
-        if self.scene.pane.auto_tick:
+        if self.auto_tick:
             self.calculate_tickdistance(w, h)
         self.calculate_center_start()
         self.calculate_gridsize(w, h)
@@ -559,11 +577,11 @@ class GridWidget(Widget):
         # At a matrix scale value of about 17.2 and a corresponding line width of 0.058 everything looks good
         # but one step more with 18.9 and 0.053 the lines degenerate...
         # Interestingly, this does not apply to arcs in a path, they remain at 1 pixel.
-        if self.scene.pane.draw_grid_circular:
+        if self.draw_grid_circular:
             self._draw_grid_circular(gc)
-        if self.scene.pane.draw_grid_secondary:
+        if self.draw_grid_secondary:
             self._draw_grid_secondary(gc)
-        if self.scene.pane.draw_grid_primary:
+        if self.draw_grid_primary:
             self._draw_grid_primary(gc)
 
     def _draw_grid_primary(self, gc):

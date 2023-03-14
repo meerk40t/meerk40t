@@ -204,6 +204,7 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
+        self.has_background = False
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 

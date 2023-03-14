@@ -73,9 +73,9 @@ class BedWidget(Widget):
         if signal == "background":
             self.background = args[0]
             if args[0] is None:
-                self.scene.pane.has_background = False
+                self.scene.has_background = False
             elif isinstance(args[0], int):
                 # A pure color is not deemed to represent a 'real' background
-                self.scene.pane.has_background = False
+                self.scene.has_background = False
             else:
-                self.scene.pane.has_background = True
+                self.scene.has_background = True
