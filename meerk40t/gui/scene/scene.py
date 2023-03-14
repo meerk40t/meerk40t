@@ -207,11 +207,6 @@ class Scene(Module, Job):
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
 
-        # Stuff related to grids and guides
-
-        self._last_snap_position = None
-        self._last_snap_ts = 0
-
         self._animating = list()
         self._animate_lock = threading.Lock()
         self._adding_widgets = list()
@@ -222,22 +217,6 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
-
-    @property
-    def last_snap(self):
-        result = self._last_snap_position
-        # Too old? Discard
-        if (time.time() - self._last_snap_ts) > 0.5:
-            result = None
-        return result
-
-    @last_snap.setter
-    def last_snap(self, value):
-        self._last_snap_position = value
-        if value is None:
-            self._last_snap_ts = 0
-        else:
-            self._last_snap_ts = time.time()
 
     def module_open(self, *args, **kwargs):
         context = self.context

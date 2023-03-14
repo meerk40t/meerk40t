@@ -697,7 +697,7 @@ class CornerWidget(Widget):
         elements = self.scene.context.elements
         if nearest_snap is None:
             # print ("Took last snap instead...")
-            nearest_snap = self.scene.last_snap
+            nearest_snap = self.scene.pane.last_snap
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -935,7 +935,7 @@ class SideWidget(Widget):
         elements = self.scene.context.elements
         if nearest_snap is None:
             # print ("Took last snap instead...")
-            nearest_snap = self.scene.last_snap
+            nearest_snap = self.scene.pane.last_snap
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -1505,7 +1505,7 @@ class MoveWidget(Widget):
         lastdy = 0
         if nearest_snap is None:
             # print ("Took last snap instead...")
-            nearest_snap = self.scene.last_snap
+            nearest_snap = self.scene.pane.last_snap
         # sweeping it under the rug for now until we have figured out a way
         # to move a defined reference and not an arbitrary point on the
         # Widget area.
@@ -1660,7 +1660,7 @@ class MoveRotationOriginWidget(Widget):
         lastdy = 0
         if nearest_snap is None:
             # print ("Took last snap instead...")
-            nearest_snap = self.scene.last_snap
+            nearest_snap = self.scene.pane.last_snap
         elements = self.scene.context.elements
         if nearest_snap is not None:
             # Position is space_pos:

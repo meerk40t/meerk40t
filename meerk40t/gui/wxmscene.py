@@ -124,6 +124,10 @@ class MeerK40tScenePanel(wx.Panel):
         self.auto_tick = True
 
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+        # Stuff related to grids and guides
+
+        self._last_snap_position = None
+        self._last_snap_ts = 0
 
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
@@ -855,6 +859,25 @@ class MeerK40tScenePanel(wx.Panel):
     def has_magnets(self):
         return len(self.magnet_x) + len(self.magnet_y) > 0
 
+    ##############
+    # SNAPS
+    ##############
+
+    @property
+    def last_snap(self):
+        result = self._last_snap_position
+        # Too old? Discard
+        if (time.time() - self._last_snap_ts) > 0.5:
+            result = None
+        return result
+
+    @last_snap.setter
+    def last_snap(self, value):
+        self._last_snap_position = value
+        if value is None:
+            self._last_snap_ts = 0
+        else:
+            self._last_snap_ts = time.time()
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
