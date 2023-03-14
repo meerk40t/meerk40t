@@ -687,7 +687,9 @@ def init_commands(kernel):
         input_type=("ops", "elements"),
         output_type=("ops", "elements"),
     )
-    def opelem_select_range(data=None, data_type=None, start=None, end=None, step=1, **kwargs):
+    def opelem_select_range(
+        data=None, data_type=None, start=None, end=None, step=1, **kwargs
+    ):
         sublist = list()
         for e in range(start, end, step):
             try:
@@ -886,10 +888,7 @@ def init_commands(kernel):
     @self.console_command(
         "id",
         help=_("id <id>"),
-        input_type=(
-            "ops",
-            "elements"
-        ),
+        input_type=("ops", "elements"),
         output_type=("elements", "ops"),
     )
     def opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs):
@@ -900,13 +899,7 @@ def init_commands(kernel):
             for i, e in enumerate(data):
                 name = str(e)
                 channel(
-                    _(
-                        "{index}: {name} - id = {id}"
-                    ).format(
-                        index=i,
-                        name=name,
-                        id=e.id
-                    )
+                    _("{index}: {name} - id = {id}").format(index=i, name=name, id=e.id)
                 )
             channel("----------")
             return
@@ -921,7 +914,6 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return data_type, data
 
-
     @self.console_argument(
         "label",
         type=str,
@@ -930,13 +922,12 @@ def init_commands(kernel):
     @self.console_command(
         "label",
         help=_("label <label>"),
-        input_type=(
-            "ops",
-            "elements"
-        ),
+        input_type=("ops", "elements"),
         output_type=("elements", "ops"),
     )
-    def opelem_label(command, channel, _, label=None, data=None, data_type=None, **kwargs):
+    def opelem_label(
+        command, channel, _, label=None, data=None, data_type=None, **kwargs
+    ):
         if label is None:
             # Display data about id.
             channel("----------")
@@ -944,12 +935,8 @@ def init_commands(kernel):
             for i, e in enumerate(data):
                 name = str(e)
                 channel(
-                    _(
-                        "{index}: {name} - label = {label}"
-                    ).format(
-                        index=i,
-                        name=name,
-                        label=e.label
+                    _("{index}: {name} - label = {label}").format(
+                        index=i, name=name, label=e.label
                     )
                 )
             channel("----------")
@@ -963,7 +950,6 @@ def init_commands(kernel):
         self.signal("element_property_update", data)
         self.signal("refresh_scene", "Scene")
         return data_type, data
-
 
     @self.console_command(
         "list",
@@ -4046,9 +4032,7 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
-    @self.console_argument(
-        "new_text", type=str, help=_("set new text contents")
-    )
+    @self.console_argument("new_text", type=str, help=_("set new text contents"))
     @self.console_command(
         "text-edit",
         help=_("set text object text to new text"),
@@ -4083,7 +4067,6 @@ def init_commands(kernel):
             e.altered()
 
         return "elements", data
-
 
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
