@@ -303,8 +303,12 @@ class GridWidget(Widget):
         self.primary_tick_length_y = tick_length
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
-        self.secondary_tick_length_x = self.primary_tick_length_x * self.grid_secondary_scale_x
-        self.secondary_tick_length_y = self.primary_tick_length_y * self.grid_secondary_scale_y
+        self.secondary_tick_length_x = (
+            self.primary_tick_length_x * self.grid_secondary_scale_x
+        )
+        self.secondary_tick_length_y = (
+            self.primary_tick_length_y * self.grid_secondary_scale_y
+        )
 
     def calculate_radii_angles(self):
         # let's establish which circles we really have to draw

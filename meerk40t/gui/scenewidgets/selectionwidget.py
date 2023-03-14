@@ -1372,7 +1372,7 @@ class MoveWidget(Widget):
             oldparent = entry[1]
             newparent = entry[2]
             if newparent is None:
-              # Add a new group...
+                # Add a new group...
                 if oldparent.label is None:
                     newlabel = "Copy"
                 else:

@@ -199,7 +199,8 @@ class GuideWidget(Widget):
         for option in self.options:
             kind = (
                 wx.ITEM_CHECK
-                if self.scene.pane.grid.tick_distance == option and not self.scene.pane.grid.auto_tick
+                if self.scene.pane.grid.tick_distance == option
+                and not self.scene.pane.grid.auto_tick
                 else wx.ITEM_NORMAL
             )
             item = menu.Append(
@@ -232,7 +233,9 @@ class GuideWidget(Widget):
     def _add_attraction_strength_menu(self, menu):
         item = menu.Append(wx.ID_ANY, _("Attraction strength..."), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), False)
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 0 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 0 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Off"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -241,7 +244,9 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(0),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 1 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 1 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Weak"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -250,7 +255,9 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(1),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 2 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 2 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Normal"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -259,7 +266,9 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(2),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 3 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 3 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Strong"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -268,7 +277,9 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(3),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 4 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 4 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Very Strong"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -277,7 +288,9 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(4),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 5 else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 5 else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Enormous"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -320,7 +333,9 @@ class GuideWidget(Widget):
 
     def _add_grid_draw_options(self, menu):
         menu.AppendSeparator()
-        kind = wx.ITEM_CHECK if self.scene.pane.grid.draw_grid_primary else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.grid.draw_grid_primary else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Draw primary grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -329,7 +344,11 @@ class GuideWidget(Widget):
             lambda e: self.toggle_rect(),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.pane.grid.draw_grid_secondary else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK
+            if self.scene.pane.grid.draw_grid_secondary
+            else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Draw secondary grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -341,7 +360,9 @@ class GuideWidget(Widget):
         # DISABLE, AS NOT YET READY
         # menu.Enable(item.GetId(), False)
 
-        kind = wx.ITEM_CHECK if self.scene.pane.grid.draw_grid_circular else wx.ITEM_NORMAL
+        kind = (
+            wx.ITEM_CHECK if self.scene.pane.grid.draw_grid_circular else wx.ITEM_NORMAL
+        )
         item = menu.Append(wx.ID_ANY, _("Draw circular grid"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
