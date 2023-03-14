@@ -94,6 +94,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.tool_active = False
         self.modif_active = False
         self._reference = None  # Reference Object
+        self.has_background = False
 
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
@@ -825,7 +826,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
         menu.Check(id4.GetId(), self.widget_scene.draw_grid_circular)
-        if self.widget_scene.has_background:
+        if self.widget_scene.pane.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())

@@ -198,8 +198,6 @@ class Scene(Module, Job):
         self._down_start_time = None
         self._down_start_pos = None
         self._cursor = None
-        self.compute = True
-        self.has_background = False
         self.suppress_changes = True
 
         self.colors = GuiColors(self.context)
