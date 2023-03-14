@@ -74,7 +74,7 @@ def process_event(
     elements = widget.scene.context.elements
     dx = space_pos[4]
     dy = space_pos[5]
-    # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.modif_active}, snap={nearest_snap}")
+    # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.pane.modif_active}, snap={nearest_snap}")
     if widget.scene.pane.tool_active:
         # print ("ignore")
         return RESPONSE_CHAIN
@@ -443,7 +443,7 @@ class RotationWidget(Widget):
             self.master.rotated_angle = 0
             self.scene.context.signal("tool_modified")
         elif event == -1:
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
@@ -723,10 +723,10 @@ class CornerWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(None)
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
             self.scene.context.signal("tool_modified")
         elif event == -1:
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
@@ -970,10 +970,10 @@ class SideWidget(Widget):
                     images.append(e)
             for e in images:
                 e.update(None)
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
             self.scene.context.signal("tool_modified")
         elif event == -1:
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
@@ -1201,7 +1201,7 @@ class SkewWidget(Widget):
                 e.update(None)
             self.scene.context.signal("tool_modified")
         elif event == -1:
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
@@ -1556,11 +1556,11 @@ class MoveWidget(Widget):
             #     elements.update_bounds([bx0, by0, bx1, by1])
 
             self.scene.context.signal("tool_modified")
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             # Normally this would happen automagically in the background, but as we are going
             # to suppress undo during the execution of this tool (to allow to go back to the
             # very starting point) we need to set the recovery point ourselves.
@@ -1679,9 +1679,9 @@ class MoveRotationOriginWidget(Widget):
             self.master.rotation_cx += lastdx - self.master.offset_x
             self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
         elif event == -1:  # start
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
             return
         elif event == 0:  # move
             self.master.rotation_cx += dx
@@ -2487,7 +2487,7 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.pane.tool_active = False
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )
@@ -2507,7 +2507,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.pane.tool_active = False
-            self.scene.modif_active = False
+            self.scene.pane.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )

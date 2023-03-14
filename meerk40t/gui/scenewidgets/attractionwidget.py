@@ -77,7 +77,7 @@ class AttractionWidget(Widget):
         if (
             event_type
             in ("leftdown", "leftup", "leftclick", "move", "hover", "hover_start")
-            and (self.scene.pane.tool_active or self.scene.modif_active)
+            and (self.scene.pane.tool_active or self.scene.pane.modif_active)
             and "shift" not in modifiers
         ):
             self.calculate_display_points()
@@ -358,7 +358,7 @@ class AttractionWidget(Widget):
             dummy = 0
             for pts in self.attraction_points:
                 doit = True  # Not sure why not :-)
-                if self.scene.modif_active:
+                if self.scene.pane.modif_active:
                     doit = not pts[3]  # not emphasized
                 if doit:
                     if (

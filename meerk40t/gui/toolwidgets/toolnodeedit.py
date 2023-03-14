@@ -957,7 +957,7 @@ class EditTool(ToolWidget):
         We are done with node editing, so shutdown stuff
         """
         self.scene.pane.tool_active = False
-        self.scene.modif_active = False
+        self.scene.pane.modif_active = False
         self.p1 = None
         self.p2 = None
         self.move_type = "node"
@@ -1913,7 +1913,7 @@ class EditTool(ToolWidget):
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             self.pen.SetWidth(25)
             self.scene.pane.tool_active = True
-            self.scene.modif_active = True
+            self.scene.pane.modif_active = True
 
             self.scene.context.signal("statusmsg", self.message)
             self.move_type = "node"

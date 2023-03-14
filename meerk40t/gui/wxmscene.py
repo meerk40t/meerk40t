@@ -92,6 +92,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.widget_scene = self.scene.scene
 
         self.tool_active = False
+        self.modif_active = False
 
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))

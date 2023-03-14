@@ -225,8 +225,6 @@ class Scene(Module, Job):
         self.auto_tick = False  # by definition do not auto_tick
         self.reset_grids()
 
-        self.modif_active = False
-
         self._last_snap_position = None
         self._last_snap_ts = 0
 
