@@ -878,6 +878,49 @@ def init_commands(kernel):
         self.set_emphasis(sublist)
         return data_type, sublist
 
+    @self.console_argument(
+        "id",
+        type=str,
+        help=_("new id to set values to"),
+    )
+    @self.console_command(
+        "id",
+        help=_("id <id>"),
+        input_type=(
+            "ops",
+            "elements"
+        ),
+        output_type=("elements", "ops"),
+    )
+    def opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs):
+        if id is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("ID Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _(
+                        "{index}: {name} - id = {id}"
+                    ).format(
+                        index=i,
+                        name=name,
+                        id=e.id
+                    )
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.id = id
+        self.validate_ids()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
+
     @self.console_command(
         "list",
         help=_("Show information about the chained data"),
