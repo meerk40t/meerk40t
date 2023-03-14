@@ -47,10 +47,10 @@ class GridWidget(Widget):
         self.min_y = 0
         self.max_x = 0
         self.max_y = 0
-        self.tlenx1 = 0
-        self.tleny1 = 0
-        self.tlenx2 = 0
-        self.tleny2 = 0
+        self.tick_length_x1 = 0
+        self.tick_length_y1 = 0
+        self.tick_length_x2 = 0
+        self.tick_length_y2 = 0
         self.zero_x = 0
         self.zero_y = 0
         # Circular Grid
@@ -86,9 +86,6 @@ class GridWidget(Widget):
             # Mac
             if line_width < 1:
                 line_width = 1
-        else:
-            # Linux
-            pass  # no changes
         try:
             pen.SetWidth(line_width)
         except TypeError:
@@ -108,28 +105,28 @@ class GridWidget(Widget):
         # Primary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx1 > self.min_x:
-            start_x -= self.tlenx1
+        while start_x - self.tick_length_x1 > self.min_x:
+            start_x -= self.tick_length_x1
         start_y = self.zero_y
-        while start_y - self.tleny1 > self.min_y:
-            start_y -= self.tleny1
+        while start_y - self.tick_length_y1 > self.min_y:
+            start_y -= self.tick_length_y1
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx1
+            start_x += self.tick_length_x1
         while start_y < self.min_y:
-            start_y += self.tleny1
+            start_y += self.tick_length_y1
 
         x = start_x
         while x <= self.max_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
-            x += self.tlenx1
+            x += self.tick_length_x1
 
         y = start_y
         while y <= self.max_y:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
-            y += self.tleny1
+            y += self.tick_length_y1
         self.grid = starts, ends
 
     def _calc_secondary_grid(self):
@@ -139,28 +136,28 @@ class GridWidget(Widget):
         # Secondary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx2 > self.min_x:
-            start_x -= self.tlenx2
+        while start_x - self.tick_length_x2 > self.min_x:
+            start_x -= self.tick_length_x2
         start_y = self.zero_y
-        while start_y - self.tleny2 > self.min_y:
-            start_y -= self.tleny2
+        while start_y - self.tick_length_y2 > self.min_y:
+            start_y -= self.tick_length_y2
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx2
+            start_x += self.tick_length_x2
         while start_y < self.min_y:
-            start_y += self.tleny2
+            start_y += self.tick_length_y2
 
         x = start_x
         while x <= self.max_x:
             starts2.append((x, self.min_y))
             ends2.append((x, self.max_y))
-            x += self.tlenx2
+            x += self.tick_length_x2
 
         y = start_y
         while y <= self.max_y:
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
-            y += self.tleny2
+            y += self.tick_length_y2
         self.grid2 = starts2, ends2
 
     def calculate_grid(self):
@@ -272,12 +269,12 @@ class GridWidget(Widget):
         )
         if tlen == 0:
             tlen = float(Length("10mm"))
-        self.tlenx1 = tlen
-        self.tleny1 = tlen
+        self.tick_length_x1 = tlen
+        self.tick_length_y1 = tlen
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
-        self.tlenx2 = self.tlenx1 * self.scene.grid_secondary_scale_x
-        self.tleny2 = self.tleny1 * self.scene.grid_secondary_scale_y
+        self.tick_length_x2 = self.tick_length_x1 * self.scene.grid_secondary_scale_x
+        self.tick_length_y2 = self.tick_length_y1 * self.scene.grid_secondary_scale_y
         # let's establish which circles we really have to draw
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
@@ -416,24 +413,24 @@ class GridWidget(Widget):
         # That's easy just the rectangular stuff
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx1 > self.min_x:
-            start_x -= self.tlenx1
+        while start_x - self.tick_length_x1 > self.min_x:
+            start_x -= self.tick_length_x1
         start_y = self.zero_y
-        while start_y - self.tleny1 > self.min_y:
-            start_y -= self.tleny1
+        while start_y - self.tick_length_y1 > self.min_y:
+            start_y -= self.tick_length_y1
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx1
+            start_x += self.tick_length_x1
         while start_y < self.min_y:
-            start_y += self.tleny1
+            start_y += self.tick_length_y1
         x = start_x
         while x <= self.max_x:
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
                 self.scene.grid_points.append([x, y])
-                y += self.tleny1
-            x += self.tlenx1
+                y += self.tick_length_y1
+            x += self.tick_length_x1
 
     def _calculate_grid_points_secondary(self):
         if (
@@ -446,24 +443,24 @@ class GridWidget(Widget):
             return  # is it identical to the primary?
         # We could be way too high
         start_x = self.zero_x
-        while start_x - self.tlenx2 > self.min_x:
-            start_x -= self.tlenx2
+        while start_x - self.tick_length_x2 > self.min_x:
+            start_x -= self.tick_length_x2
         start_y = self.zero_y
-        while start_y - self.tleny2 > self.min_y:
-            start_y -= self.tleny2
+        while start_y - self.tick_length_y2 > self.min_y:
+            start_y -= self.tick_length_y2
         # But we could be way too low, too
         while start_x < self.min_x:
-            start_x += self.tlenx2
+            start_x += self.tick_length_x2
         while start_y < self.min_y:
-            start_y += self.tleny2
+            start_y += self.tick_length_y2
         x = start_x
         while x <= self.max_x:
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
                 self.scene.grid_points.append([x, y])
-                y += self.tleny2
-            x += self.tlenx2
+                y += self.tick_length_y2
+            x += self.tick_length_x2
 
     def _calculate_grid_points_circular(self):
         p = self.scene.context
@@ -475,7 +472,7 @@ class GridWidget(Widget):
         # mx, my = self.scene.convert_scene_to_window([x, y])
         self.scene.grid_points.append([x, y])
         max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
-        tlen = (self.tlenx1 + self.tleny1) / 2
+        tlen = (self.tick_length_x1 + self.tick_length_y1) / 2
         r_fourth = max_r // (4 * tlen) * tlen
         segments = 48
         r_angle = 0
@@ -614,7 +611,7 @@ class GridWidget(Widget):
         # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
         sox = self.cx / u_width
         soy = self.cy / u_height
-        step = self.tlenx1
+        step = self.tick_length_x1
         factor = max(2 * (1 - sox), 2 * (1 - soy))
         # Initially I drew a complete circle, which is a waste in most situations,
         # so let's create a path
