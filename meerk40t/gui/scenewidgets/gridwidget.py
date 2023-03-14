@@ -248,13 +248,13 @@ class GridWidget(Widget):
         self.min_y = max(0, self.min_y)
         self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
         self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
-        tlen = float(
+        tick_length = float(
             Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
-        if tlen == 0:
-            tlen = float(Length("10mm"))
-        self.tick_length_x1 = tlen
-        self.tick_length_y1 = tlen
+        if tick_length == 0:
+            tick_length = float(Length("10mm"))
+        self.tick_length_x1 = tick_length
+        self.tick_length_y1 = tick_length
         # print (f"x={self.tlenx1} ({Length(amount=self.tlenx1, digits=3).length_mm})")
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
         self.tick_length_x2 = self.tick_length_x1 * self.scene.grid_secondary_scale_x
@@ -361,20 +361,6 @@ class GridWidget(Widget):
         self.max_angle = max_a
         if self.min_x < self.cx < self.max_x and self.min_y < self.cy < self.max_y:
             self.min_radius = 0
-        # print(
-        #    "Min-Radius: %.1f, Max-Radius=%.1f, min-angle = %.2f (%.1f), max-angle=%.2f (%.1f)"
-        #    % (
-        #        self.min_radius,
-        #        self.max_radius,
-        #        self.min_angle,
-        #        self.min_angle / tau * 360,
-        #        self.max_angle,
-        #        self.max_angle / tau * 360,
-        #    )
-        # )
-        # print ("calculate_gridsize %s, tlen=%.1f" % (self.name, tlen))
-        # print ("Min= %.1f, %.1f" % (self.min_x, self.min_y))
-        # print ("Max= %.1f, %.1f" % (self.max_x, self.max_y))
 
     def calculate_grid_points(self):
         """
