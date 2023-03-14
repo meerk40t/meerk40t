@@ -93,6 +93,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.tool_active = False
         self.modif_active = False
+        self._reference = None  # Reference Object
 
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
@@ -507,7 +508,7 @@ class MeerK40tScenePanel(wx.Panel):
         def make_reference(**kwgs):
             # Take first emphasized element
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                self.widget_scene.reference_object = e
+                self.widget_scene.pane.reference_object = e
                 break
             self.context.signal("reference")
 
@@ -668,13 +669,44 @@ class MeerK40tScenePanel(wx.Panel):
 
     def toggle_ref_obj(self):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
-            if self.widget_scene.reference_object == e:
-                self.widget_scene.reference_object = None
+            if self.widget_scene.pane.reference_object == e:
+                self.widget_scene.pane.reference_object = None
             else:
-                self.widget_scene.reference_object = e
+                self.widget_scene.pane.reference_object = e
             break
         self.context.signal("reference")
         self.request_refresh()
+
+
+    def validate_reference(self):
+        """
+        Check whether the reference is still valid
+        """
+        found = False
+        if self._reference:
+            for e in self.context.elements.flat(types=elem_nodes):
+                # Here we ignore the lock-status of an element
+                if e is self._reference:
+                    found = True
+                    break
+        if not found:
+            self._reference = None
+
+    @property
+    def reference_object(self):
+        return self._reference
+
+    @reference_object.setter
+    def reference_object(self, ref_object):
+        prev = self._reference
+        self._reference = ref_object
+        dlist = []
+        if prev is not None:
+            dlist.append(prev)
+        if self._reference is not None:
+            dlist.append(self._reference)
+        if len(dlist) > 0:
+            self.context.signal("element_property_update", dlist)
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):

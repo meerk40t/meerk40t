@@ -198,7 +198,6 @@ class Scene(Module, Job):
         self._down_start_time = None
         self._down_start_pos = None
         self._cursor = None
-        self._reference = None  # Reference Object
         self.compute = True
         self.has_background = False
         self.suppress_changes = True
@@ -1036,33 +1035,3 @@ class Scene(Module, Job):
         Delegate to the SceneSpaceWidget interface.
         """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
-
-    def validate_reference(self):
-        """
-        Check whether the reference is still valid
-        """
-        found = False
-        if self._reference:
-            for e in self.context.elements.flat(types=elem_nodes):
-                # Here we ignore the lock-status of an element
-                if e is self._reference:
-                    found = True
-                    break
-        if not found:
-            self._reference = None
-
-    @property
-    def reference_object(self):
-        return self._reference
-
-    @reference_object.setter
-    def reference_object(self, ref_object):
-        prev = self._reference
-        self._reference = ref_object
-        dlist = []
-        if prev is not None:
-            dlist.append(prev)
-        if self._reference is not None:
-            dlist.append(self._reference)
-        if len(dlist) > 0:
-            self.context.signal("element_property_update", dlist)

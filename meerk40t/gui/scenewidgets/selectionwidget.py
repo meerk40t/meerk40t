@@ -1827,12 +1827,12 @@ class ReferenceWidget(Widget):
             return
         elif event == 1:  # leftup, leftclick
             if self.is_reference_object:
-                self.scene.reference_object = None
+                self.scene.pane.reference_object = None
             else:
                 for e in elements.flat(types=elem_nodes, emphasized=True):
                     try:
                         # First object
-                        self.scene.reference_object = e
+                        self.scene.pane.reference_object = e
                         break
                     except AttributeError:
                         pass
@@ -2255,7 +2255,7 @@ class SelectionWidget(Widget):
             return HITCHAIN_DELEGATE
 
     def move_selection_to_ref(self, pos="c"):
-        refob = self.scene.reference_object
+        refob = self.scene.pane.reference_object
 
         elements = self.scene.context.elements
         if refob is None:
@@ -2287,7 +2287,7 @@ class SelectionWidget(Widget):
     def rotate_elements_if_needed(self, doit):
         if not doit:
             return
-        refob = self.scene.reference_object
+        refob = self.scene.pane.reference_object
         if refob is None:
             return
         bb = refob.bounds
@@ -2314,7 +2314,7 @@ class SelectionWidget(Widget):
             elements.update_bounds([cc[0], cc[1], cc[2], cc[3]])
 
     def scale_selection_to_ref(self, method="none"):
-        refob = self.scene.reference_object
+        refob = self.scene.pane.reference_object
         if refob is None:
             return
         bb = refob.bounds
@@ -2376,7 +2376,7 @@ class SelectionWidget(Widget):
         for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
                 # First object
-                self.scene.reference_object = e
+                self.scene.pane.reference_object = e
                 break
             except AttributeError:
                 pass
@@ -2385,7 +2385,7 @@ class SelectionWidget(Widget):
         self.scene.request_refresh()
 
     def delete_reference(self, event):
-        self.scene.reference_object = None
+        self.scene.pane.reference_object = None
         self.scene.context.signal("reference")
         # Simplify, no complete scene refresh required
         # print("unset...")
@@ -2398,7 +2398,7 @@ class SelectionWidget(Widget):
             node = node.node
         menu = create_menu_for_node(gui, node, elements)
         # Now check whether we have a reference object
-        reference_object = self.scene.reference_object
+        reference_object = self.scene.pane.reference_object
         if reference_object is not None:
             # Okay, just lets make sure we are not doing this on the refobject itself...
             for e in self.scene.context.elements.flat(
@@ -2422,7 +2422,7 @@ class SelectionWidget(Widget):
                 submenu = wx.Menu()
             item2 = submenu.Append(wx.ID_ANY, _("Become reference object"))
             gui.Bind(wx.EVT_MENU, self.become_reference, id=item2.GetId())
-        if self.scene.reference_object is not None:
+        if self.scene.pane.reference_object is not None:
             if submenu is None:
                 submenu = wx.Menu()
             item3 = submenu.Append(wx.ID_ANY, _("Clear reference object"))
@@ -2498,7 +2498,7 @@ class SelectionWidget(Widget):
                 exit_over_selection=True,
             )
             # Check if reference is still existing
-            self.scene.validate_reference()
+            self.scene.pane.validate_reference()
             if not elements.has_emphasis():
                 return RESPONSE_CONSUME
             self.create_menu(
@@ -2627,7 +2627,7 @@ class SelectionWidget(Widget):
             self.single_element = True
             is_locked = True
             for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
-                if e is self.scene.reference_object:
+                if e is self.scene.pane.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?
                 is_locked = is_locked and e.lock

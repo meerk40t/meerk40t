@@ -1496,7 +1496,7 @@ class ShadowTree:
                 state_num = self.iconstates["lock"]
             scene = getattr(self.context.root, "mainscene", None)
             if scene is not None:
-                if node == scene.reference_object:
+                if node == scene.pane.reference_object:
                     state_num = self.iconstates["refobject"]
         if state_num < 0:
             state_num = wx.TREE_ITEMSTATE_NONE
