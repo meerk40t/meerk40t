@@ -712,24 +712,26 @@ def init_commands(kernel):
         Qualified element values are stroke, fill, dpi, elem
         Qualified operation values are speed, power, frequency, dpi, acceleration, op, passes, color, overscan
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+        Valid string operators are startswith, endswith, contains.
         String values require single-quotes ', because the console interface requires double-quotes.
         eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
         eg. operation* filter "type='op image'" list
+        eg. element* filter "id startwith 'p'" list
         """
         sublist = list()
         _filter_parse = [
+            ("STR", r"'([^']*)'"),
             ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
             ("OP20", r"(\*|/)"),
             ("OP15", r"(\+|-)"),
-            ("OP11", r"(<=|>=|==|!=)"),
+            ("OP11", r"(<=|>=|==|!=|startswith|endswith|contains)"),
             ("OP10", r"(<|>|=)"),
             ("OP5", r"(&&)"),
             ("OP4", r"(&)"),
             ("OP3", r"(\|\|)"),
             ("OP2", r"(\|)"),
-            ("STR", r"'([^']*)'"),
             ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
             (
                 "COLOR",
@@ -794,6 +796,12 @@ def init_commands(kernel):
                             operand.append(v1 + v2)
                         elif op == "-":
                             operand.append(v1 - v2)
+                        elif op == "startswith":
+                            operand.append(str(v1).startswith(str(v2)))
+                        elif op == "endswith":
+                            operand.append(str(v1).endswith(str(v2)))
+                        elif op == "contains":
+                            operand.append(str(v2) in (str(v1)))
                     except TypeError:
                         raise CommandSyntaxError("Cannot evaluate expression")
                     except ZeroDivisionError:
