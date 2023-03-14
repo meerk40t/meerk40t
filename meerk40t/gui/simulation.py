@@ -1013,13 +1013,13 @@ class SimulationPanel(wx.Panel, Job):
         # Don't let grid resize itself
         self.widget_scene.auto_tick = False
         if self.context.units_name == "mm":
-            self.widget_scene.pane.tick_distance = 10  # mm
+            self.widget_scene.pane.grid.tick_distance = 10  # mm
         elif self.context.units_name == "cm":
-            self.widget_scene.pane.tick_distance = 1
+            self.widget_scene.pane.grid.tick_distance = 1
         elif self.context.units_name == "inch":
-            self.widget_scene.pane.tick_distance = 0.5
+            self.widget_scene.pane.grid.tick_distance = 0.5
         elif self.context.units_name == "mil":
-            self.widget_scene.pane.tick_distance = 500
+            self.widget_scene.pane.grid.tick_distance = 500
         self.grid = GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
         self.widget_scene.add_scenewidget(self.grid)
         self.widget_scene.add_scenewidget(

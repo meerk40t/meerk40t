@@ -78,7 +78,7 @@ class GuideWidget(Widget):
             self.scene.pane.grid.auto_tick = True
         else:
             self.scene.pane.grid.auto_tick = False
-            self.scene.pane.tick_distance = value
+            self.scene.pane.grid.tick_distance = value
         self.scene._signal_widget(self.scene.widget_root, "grid")
         self.scene.request_refresh()
 
@@ -113,7 +113,7 @@ class GuideWidget(Widget):
         # Let's set the full grid
         p = self.scene.context
         if self.scene.pane.grid.draw_grid_primary:
-            tlen = float(Length(f"{self.scene.pane.tick_distance}{p.units_name}"))
+            tlen = float(Length(f"{self.scene.pane.grid.tick_distance}{p.units_name}"))
             amount = (
                 round(
                     (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
@@ -156,7 +156,7 @@ class GuideWidget(Widget):
                     units=self.scene.context.units_name
                 ),
                 caption=_("User-defined grid-size"),
-                value=str(self.scene.pane.tick_distance),
+                value=str(self.scene.pane.grid.tick_distance),
             )
             dlg.ShowModal()
             result = dlg.GetValue()
@@ -165,7 +165,7 @@ class GuideWidget(Widget):
                 value = float(result)
             except:
                 return
-            self.scene.pane.tick_distance = value
+            self.scene.pane.grid.tick_distance = value
             self.scene.pane.grid.auto_tick = False
             self.scene._signal_widget(self.scene.widget_root, "grid")
             self.scene.request_refresh()
@@ -199,7 +199,7 @@ class GuideWidget(Widget):
         for option in self.options:
             kind = (
                 wx.ITEM_CHECK
-                if self.scene.pane.tick_distance == option and not self.scene.pane.grid.auto_tick
+                if self.scene.pane.grid.tick_distance == option and not self.scene.pane.grid.auto_tick
                 else wx.ITEM_NORMAL
             )
             item = menu.Append(
@@ -219,7 +219,7 @@ class GuideWidget(Widget):
         menu.AppendSeparator()
         item = menu.Append(
             wx.ID_ANY,
-            f"User defined value: {self.scene.pane.tick_distance}{units}",
+            f"User defined value: {self.scene.pane.grid.tick_distance}{units}",
             "",
             wx.ITEM_NORMAL,
         )
@@ -375,8 +375,8 @@ class GuideWidget(Widget):
         p = self.scene.context
         sx = 0
         sy = 0
-        tick_distance_x = self.scene.pane.tick_distance
-        tick_distance_y = self.scene.pane.tick_distance
+        tick_distance_x = self.scene.pane.grid.tick_distance
+        tick_distance_y = self.scene.pane.grid.tick_distance
         if secondary:
             if self.scene.pane.grid.grid_secondary_cx is not None:
                 sx = self.scene.pane.grid.grid_secondary_cx
@@ -515,7 +515,7 @@ class GuideWidget(Widget):
 
         starts = []
         ends = []
-        points_x_primary = self.scene.pane.tick_distance * self.scaled_conversion_x
+        points_x_primary = self.scene.pane.grid.tick_distance * self.scaled_conversion_x
         offset_x_primary = float(sx_primary) % points_x_primary
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
@@ -548,7 +548,7 @@ class GuideWidget(Widget):
                     last_text_pos = x
             x += points_x_primary
 
-        points_y_primary = self.scene.pane.tick_distance * self.scaled_conversion_y
+        points_y_primary = self.scene.pane.grid.tick_distance * self.scaled_conversion_y
         offset_y_primary = float(sy_primary) % points_y_primary
         y = offset_y_primary
         last_text_pos = y - 30  # arbitrary
@@ -589,12 +589,12 @@ class GuideWidget(Widget):
         fx = 1.0
         if self.scene.pane.grid.grid_secondary_scale_x is not None:
             fx = self.scene.pane.grid.grid_secondary_scale_x
-        points_x = fx * self.scene.pane.tick_distance * self.scaled_conversion_x
+        points_x = fx * self.scene.pane.grid.tick_distance * self.scaled_conversion_x
 
         fy = 1.0
         if self.scene.pane.grid.grid_secondary_scale_y is not None:
             fy = self.scene.pane.grid.grid_secondary_scale_y
-        points_y = fy * self.scene.pane.tick_distance * self.scaled_conversion_y
+        points_y = fy * self.scene.pane.grid.tick_distance * self.scaled_conversion_y
         self.units = p.units_name
 
         sx, sy = self._get_center_secondary()
@@ -710,7 +710,7 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         self._set_scaled_conversion()
-        if self.scaled_conversion_x == 0 or self.scene.pane.tick_distance == 0:
+        if self.scaled_conversion_x == 0 or self.scene.pane.grid.tick_distance == 0:
             # Cannot be drawn.
             return
 

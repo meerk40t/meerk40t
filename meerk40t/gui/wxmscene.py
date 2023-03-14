@@ -106,7 +106,6 @@ class MeerK40tScenePanel(wx.Panel):
         self.magnet_attract_c = True  # Shall the center be affected
 
         self.active_tool = "none"
-        self.tick_distance = 0
 
         self._last_snap_position = None
         self._last_snap_ts = 0
