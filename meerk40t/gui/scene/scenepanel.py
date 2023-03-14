@@ -8,12 +8,13 @@ class ScenePanel(wx.Panel):
     wxPanel that holds the Scene. This serves as the wx.Control object that holds and draws the scene.
     """
 
-    def __init__(self, context, *args, scene_name="Scene", **kwds):
+    def __init__(self, context, parent, scene_name="Scene", **kwds):
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        wx.Panel.__init__(self, parent, **kwds)
         #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
         self.scene_panel = wx.Window(self, wx.ID_ANY)
         self.scene = context.open_as("module/Scene", scene_name, self)
+        self.scene.pane = parent
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
 

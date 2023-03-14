@@ -188,6 +188,7 @@ class Scene(Module, Job):
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
+        self.pane = None
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
