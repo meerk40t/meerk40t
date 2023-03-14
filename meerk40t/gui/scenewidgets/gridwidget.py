@@ -19,8 +19,8 @@ class GridWidget(Widget):
             self.name = "Standard"
         else:
             self.name = name
-        self.primary_grid_points = None
-        self.secondary_grid_points = None
+        self.primary_grid_lines = None
+        self.secondary_grid_lines = None
         self.background = None
         self.primary_grid_line_pen = wx.Pen()
         self.secondary_grid_line_pen = wx.Pen()
@@ -63,6 +63,10 @@ class GridWidget(Widget):
 
         self.set_colors()
 
+    ###########################
+    # PEN SETUP
+    ###########################
+
     def set_line_width(self, pen, line_width):
         # Sets the linewidth of a wx.pen
         # establish os-system
@@ -74,6 +78,17 @@ class GridWidget(Widget):
         except TypeError:
             pen.SetWidth(int(line_width))
 
+    def _set_pen_width_from_matrix(self):
+        matrix = self.scene.widget_root.scene_widget.matrix
+        try:
+            line_width = 1.0 / sqrt(abs(matrix.determinant))
+        except (OverflowError, ValueError, ZeroDivisionError):
+            matrix.reset()
+            return
+        self.set_line_width(self.primary_grid_line_pen, line_width)
+        self.set_line_width(self.secondary_grid_line_pen, line_width)
+        self.set_line_width(self.circular_grid_line_pen, line_width)
+
     def set_colors(self):
         self.primary_grid_line_pen.SetColour(self.scene.colors.color_grid)
         self.secondary_grid_line_pen.SetColour(self.scene.colors.color_grid2)
@@ -82,7 +97,11 @@ class GridWidget(Widget):
         self.set_line_width(self.secondary_grid_line_pen, 1)
         self.set_line_width(self.circular_grid_line_pen, 1)
 
-    def _calc_primary_grid(self):
+    ###########################
+    # CALCULATE GRID LINES
+    ###########################
+
+    def _calc_primary_grid_lines(self):
         starts = []
         ends = []
         # Primary grid
@@ -110,9 +129,9 @@ class GridWidget(Widget):
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
             y += self.tick_length_y1
-        self.primary_grid_points = starts, ends
+        self.primary_grid_lines = starts, ends
 
-    def _calc_secondary_grid(self):
+    def _calc_secondary_grid_lines(self):
         starts2 = []
         ends2 = []
         # Primary grid
@@ -141,7 +160,7 @@ class GridWidget(Widget):
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
             y += self.tick_length_y2
-        self.secondary_grid_points = starts2, ends2
+        self.secondary_grid_lines = starts2, ends2
 
     def calculate_grid(self):
         """
@@ -150,8 +169,12 @@ class GridWidget(Widget):
         d = self.scene.context.device
         self.zero_x = d.unit_width * d.show_origin_x
         self.zero_y = d.unit_height * d.show_origin_y
-        self._calc_primary_grid()
-        self._calc_secondary_grid()
+        self._calc_primary_grid_lines()
+        self._calc_secondary_grid_lines()
+
+    ###########################
+    # CALCULATE TICK DISTANCES
+    ###########################
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
@@ -357,6 +380,10 @@ class GridWidget(Widget):
         ):
             self.min_radius = 0
 
+    ###########################
+    # CALCULATE GRID POINTS
+    ###########################
+
     def calculate_grid_points(self):
         """
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False)
@@ -468,6 +495,10 @@ class GridWidget(Widget):
             i += 1
             r_angle += tau / segments
 
+    ###########################
+    # WIDGET DRAW AND PROCESS
+    ###########################
+
     def process_draw(self, gc):
         """
         Draw the grid on the scene.
@@ -486,39 +517,31 @@ class GridWidget(Widget):
         # When do we need to redraw?!
         if self.last_ticksize != self.scene.tick_distance:
             self.last_ticksize = self.scene.tick_distance
-            self.primary_grid_points = None
+            self.primary_grid_lines = None
         # With the new zoom-algorithm we also need to redraw if the origin
         # or the size have changed...
         # That's a price I am willing to pay...
         if self.last_w != w or self.last_h != h:
             self.last_w = w
             self.last_h = h
-            self.primary_grid_points = None
+            self.primary_grid_lines = None
         if self.min_x != self.last_min_x or self.min_y != self.last_min_y:
             self.last_min_x = self.min_x
             self.last_min_y = self.min_y
-            self.primary_grid_points = None
+            self.primary_grid_lines = None
         if self.max_x != self.last_max_x or self.max_y != self.last_max_y:
             self.last_max_x = self.max_x
             self.last_max_y = self.max_y
-            self.primary_grid_points = None
+            self.primary_grid_lines = None
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID != 0:
             return  # Do not draw grid.
 
-        if self.primary_grid_points is None or self.secondary_grid_points is None:
+        if self.primary_grid_lines is None or self.secondary_grid_lines is None:
             self.calculate_grid()
             self.calculate_grid_points()
 
-        matrix = self.scene.widget_root.scene_widget.matrix
-        try:
-            line_width = 1.0 / sqrt(abs(matrix.determinant))
-        except (OverflowError, ValueError, ZeroDivisionError):
-            matrix.reset()
-            return
-        self.set_line_width(self.primary_grid_line_pen, line_width)
-        self.set_line_width(self.secondary_grid_line_pen, line_width)
-        self.set_line_width(self.circular_grid_line_pen, line_width)
+        self._set_pen_width_from_matrix()
 
         gc.SetPen(self.primary_grid_line_pen)
         brush = wx.Brush(
@@ -537,7 +560,7 @@ class GridWidget(Widget):
             self._draw_grid_primary(gc)
 
     def _draw_grid_primary(self, gc):
-        starts, ends = self.primary_grid_points
+        starts, ends = self.primary_grid_lines
         gc.SetPen(self.primary_grid_line_pen)
         grid_path = gc.CreatePath()
         if starts and ends:
@@ -551,7 +574,7 @@ class GridWidget(Widget):
             gc.StrokePath(grid_path)
 
     def _draw_grid_secondary(self, gc):
-        starts2, ends2 = self.secondary_grid_points
+        starts2, ends2 = self.secondary_grid_lines
         gc.SetPen(self.secondary_grid_line_pen)
         grid_path = gc.CreatePath()
         if starts2 and ends2:
@@ -572,8 +595,6 @@ class GridWidget(Widget):
         u_height = float(self.scene.context.device.unit_height)
         gc.Clip(0, 0, u_width, u_height)
         siz = sqrt(u_width * u_width + u_height * u_height)
-        # print("Wid=%.1f, Ht=%.1f, siz=%.1f, step=%.1f, sx=%.1f, sy=%.1f" %(u_width, u_height, siz, step, self.sx, self.sy))
-        # print("Wid=%s, Ht=%s, siz=%s, step=%s, sx=%s, sy=%s" %(Length(amount=u_width).length_mm, Length(amount=u_height).length_mm, Length(amount=siz).length_mm, Length(amount=step).length_mm, Length(amount=self.sx).length_mm, Length(amount=self.sy).length_mm))
         sox = self.circular_grid_center_x / u_width
         soy = self.circular_grid_center_y / u_height
         step = self.tick_length_x1
@@ -687,6 +708,6 @@ class GridWidget(Widget):
         Signal commands which draw the background and updates the grid when needed to recalculate the lines
         """
         if signal == "grid":
-            self.primary_grid_points = None
+            self.primary_grid_lines = None
         elif signal == "theme":
             self.set_colors()
