@@ -1010,17 +1010,18 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.widget_scene.add_scenewidget(self.sim_travel)
-        # Don't let grid resize itself
-        self.widget_scene.auto_tick = False
-        if self.context.units_name == "mm":
-            self.widget_scene.pane.grid.tick_distance = 10  # mm
-        elif self.context.units_name == "cm":
-            self.widget_scene.pane.grid.tick_distance = 1
-        elif self.context.units_name == "inch":
-            self.widget_scene.pane.grid.tick_distance = 0.5
-        elif self.context.units_name == "mil":
-            self.widget_scene.pane.grid.tick_distance = 500
+
         self.grid = GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
+        # Don't let grid resize itself
+        self.grid.auto_tick = False
+        if self.context.units_name == "mm":
+            self.grid.tick_distance = 10  # mm
+        elif self.context.units_name == "cm":
+            self.grid.tick_distance = 1
+        elif self.context.units_name == "inch":
+            self.grid.tick_distance = 0.5
+        elif self.context.units_name == "mil":
+            self.grid.tick_distance = 500
         self.widget_scene.add_scenewidget(self.grid)
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
@@ -1249,16 +1250,16 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_grid(self, gridtype):
         if gridtype == "primary":
-            self.widget_scene.pane.grid.draw_grid_primary = (
-                not self.widget_scene.pane.grid.draw_grid_primary
+            self.grid.draw_grid_primary = (
+                not self.grid.draw_grid_primary
             )
         elif gridtype == "secondary":
-            self.widget_scene.pane.grid.draw_grid_secondary = (
-                not self.widget_scene.pane.grid.draw_grid_secondary
+            self.grid.draw_grid_secondary = (
+                not self.grid.draw_grid_secondary
             )
         elif gridtype == "circular":
-            self.widget_scene.pane.grid.draw_grid_circular = (
-                not self.widget_scene.pane.grid.draw_grid_circular
+            self.grid.draw_grid_circular = (
+                not self.grid.draw_grid_circular
             )
         self.widget_scene.request_refresh()
 
@@ -1370,7 +1371,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_p, id=id2.GetId())
-        menu.Check(id2.GetId(), self.widget_scene.pane.grid.draw_grid_primary)
+        menu.Check(id2.GetId(), self.grid.draw_grid_primary)
         id3 = menu.Append(
             wx.ID_ANY,
             _("Show Secondary Grid"),
@@ -1378,7 +1379,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_s, id=id3.GetId())
-        menu.Check(id3.GetId(), self.widget_scene.pane.grid.draw_grid_secondary)
+        menu.Check(id3.GetId(), self.grid.draw_grid_secondary)
         id4 = menu.Append(
             wx.ID_ANY,
             _("Show Circular Grid"),
@@ -1386,7 +1387,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
-        menu.Check(id4.GetId(), self.widget_scene.pane.grid.draw_grid_circular)
+        menu.Check(id4.GetId(), self.grid.draw_grid_circular)
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
