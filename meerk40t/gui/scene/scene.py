@@ -793,7 +793,7 @@ class Scene(Module, Job):
                             snap_x,
                             snap_y,
                         )
-                        self.last_snap = nearest_snap
+                        self.pane.last_snap = nearest_snap
             else:
                 params = None
 
