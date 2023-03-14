@@ -177,7 +177,7 @@ class GridWidget(Widget):
         self._calc_secondary_grid_lines()
 
     ###########################
-    # CALCULATE TICK DISTANCES
+    # CALCULATE PROPERTIES
     ###########################
 
     @property
