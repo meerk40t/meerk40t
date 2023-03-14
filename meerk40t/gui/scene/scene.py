@@ -176,7 +176,7 @@ class Scene(Module, Job):
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
 
-    def __init__(self, context, path, gui, **kwargs):
+    def __init__(self, context, path, gui, pane=None, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
@@ -188,7 +188,7 @@ class Scene(Module, Job):
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
-        self.pane = None
+        self.pane = pane
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)

@@ -13,8 +13,7 @@ class ScenePanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwds)
         #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
         self.scene_panel = wx.Window(self, wx.ID_ANY)
-        self.scene = context.open_as("module/Scene", scene_name, self)
-        self.scene.pane = parent
+        self.scene = context.open_as("module/Scene", scene_name, self, pane=parent)
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
 
