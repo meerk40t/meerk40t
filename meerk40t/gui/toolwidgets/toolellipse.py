@@ -111,7 +111,7 @@ class EllipseTool(ToolWidget):
                 self.creation_mode = 1
                 update_required = True
         if event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.p1 = complex(space_pos[0], space_pos[1])
             else:
@@ -129,11 +129,11 @@ class EllipseTool(ToolWidget):
             # Dear user: that's too quick for my taste - take your time...
             self.p1 = None
             self.p2 = None
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.request_refresh()
             response = RESPONSE_ABORT
         elif event_type == "leftup":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             try:
                 if self.p1 is None:
                     return
@@ -193,8 +193,8 @@ class EllipseTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

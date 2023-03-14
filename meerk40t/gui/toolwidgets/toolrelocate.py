@@ -34,10 +34,10 @@ class RelocateTool(ToolWidget):
         # Add snap behaviour
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
         elif event_type in ("leftup", "leftclick"):
             bed_width = self.scene.context.device.unit_width
@@ -61,10 +61,10 @@ class RelocateTool(ToolWidget):
             y /= UNITS_PER_MM
             self.scene.context(f"move_absolute {x}mm {y}mm\n")
             response = RESPONSE_CONSUME
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

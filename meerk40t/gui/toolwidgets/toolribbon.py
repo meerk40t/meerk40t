@@ -84,8 +84,8 @@ class RibbonTool(ToolWidget):
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.stop = True
             self.series.clear()
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 return RESPONSE_CONSUME
             else:
