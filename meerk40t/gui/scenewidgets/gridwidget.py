@@ -60,7 +60,6 @@ class GridWidget(Widget):
         self.min_angle = 0
         self.max_angle = tau
         self.os = system()
-        self.sector = 0
 
         self.set_colors()
 
@@ -294,56 +293,46 @@ class GridWidget(Widget):
             # left
             if self.cy <= self.min_y:
                 # below
-                quadrant = 7
                 pt1 = (self.min_x, self.max_y)
                 pt2 = (self.max_x, self.min_y)
             elif self.cy >= self.max_y:
                 # above
-                quadrant = 1
                 pt1 = (self.max_x, self.max_y)
                 pt2 = (self.min_x, self.min_y)
             else:
                 # between
-                quadrant = 4
                 pt1 = (self.min_x, self.max_y)
                 pt2 = (self.min_x, self.min_y)
         elif self.cx >= self.max_x:
             # right
             if self.cy <= self.min_y:
                 # below
-                quadrant = 9
                 pt1 = (self.min_x, self.min_y)
                 pt2 = (self.max_x, self.max_y)
             elif self.cy >= self.max_y:
                 # above
-                quadrant = 3
                 pt1 = (self.max_x, self.min_y)
                 pt2 = (self.min_x, self.max_y)
             else:
                 # between
-                quadrant = 6
                 pt1 = (self.max_x, self.min_y)
                 pt2 = (self.max_x, self.max_y)
         else:
             # between
             if self.cy <= self.min_y:
                 # below
-                quadrant = 8
                 pt1 = (self.min_x, self.min_y)
                 pt2 = (self.max_x, self.min_y)
             elif self.cy >= self.max_y:
                 # above
-                quadrant = 2
                 pt1 = (self.max_x, self.max_y)
                 pt2 = (self.min_x, self.max_y)
             else:
                 # between
-                quadrant = 5
                 pt1 = None
                 pt2 = None
                 min_a = 0
                 max_a = tau
-        self.sector = quadrant
         if pt1 is not None:
             dx1 = pt1[0] - self.cx
             dy1 = pt1[1] - self.cy
