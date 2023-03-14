@@ -1,4 +1,5 @@
 from math import atan2, cos, sin, sqrt, tau
+from platform import system
 
 import wx
 
@@ -58,7 +59,7 @@ class GridWidget(Widget):
         self.max_radius = -float("inf")
         self.min_angle = 0
         self.max_angle = tau
-        self.osv = -1
+        self.os = system()
         self.sector = 0
 
         self.set_colors()
@@ -66,26 +67,9 @@ class GridWidget(Widget):
     def set_line_width(self, pen, line_width):
         # Sets the linewidth of a wx.pen
         # establish os-system
-        if self.osv < 0:
-            from platform import system
-
-            sysname = system()
-            if sysname == "Windows":
-                # Windows
-                self.osv = 0
-            elif sysname == "Darwin":
-                # Mac
-                self.osv = 1
-            else:
-                # Linux
-                self.osv = 2
-        if self.osv == 0:
-            # Windows
-            pass  # no changes
-        elif self.osv == 1:
+        if line_width < 1 and self.os == "Darwin":
             # Mac
-            if line_width < 1:
-                line_width = 1
+            line_width = 1
         try:
             pen.SetWidth(line_width)
         except TypeError:
