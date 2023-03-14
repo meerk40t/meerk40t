@@ -1,5 +1,6 @@
 import platform
 import random
+import time
 
 import wx
 from wx import aui
