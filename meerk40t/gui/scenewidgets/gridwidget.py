@@ -226,7 +226,7 @@ class GridWidget(Widget):
         # print("New Delta={delta}".format(delta=delta))
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
-        self.scene.tick_distance = delta1
+        self.scene.pane.tick_distance = delta1
 
     def calculate_center_start(self):
         p = self.scene.context
@@ -276,7 +276,7 @@ class GridWidget(Widget):
 
     def calculate_tick_length(self):
         tick_length = float(
-            Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
+            Length(f"{self.scene.pane.tick_distance}{self.scene.context.units_name}")
         )
         if tick_length == 0:
             tick_length = float(Length("10mm"))
@@ -522,8 +522,8 @@ class GridWidget(Widget):
         self.calculate_radii_angles()
 
         # When do we need to redraw?!
-        if self.last_ticksize != self.scene.tick_distance:
-            self.last_ticksize = self.scene.tick_distance
+        if self.last_ticksize != self.scene.pane.tick_distance:
+            self.last_ticksize = self.scene.pane.tick_distance
             self.primary_grid_lines = None
         # With the new zoom-algorithm we also need to redraw if the origin
         # or the size have changed...

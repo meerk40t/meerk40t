@@ -78,7 +78,7 @@ class GuideWidget(Widget):
             self.scene.auto_tick = True
         else:
             self.scene.auto_tick = False
-            self.scene.tick_distance = value
+            self.scene.pane.tick_distance = value
         self.scene._signal_widget(self.scene.widget_root, "grid")
         self.scene.request_refresh()
 
@@ -87,15 +87,15 @@ class GuideWidget(Widget):
         self.set_auto_tick(value)
 
     def attract_event(self, value):
-        self.scene.magnet_attraction = value
+        self.scene.pane.magnet_attraction = value
 
     def affect_event(self, value):
         if value == 0:
-            self.scene.magnet_attract_x = not self.scene.magnet_attract_x
+            self.scene.pane.magnet_attract_x = not self.scene.pane.magnet_attract_x
         elif value == 1:
-            self.scene.magnet_attract_y = not self.scene.magnet_attract_y
+            self.scene.pane.magnet_attract_y = not self.scene.pane.magnet_attract_y
         elif value == 2:
-            self.scene.magnet_attract_c = not self.scene.magnet_attract_c
+            self.scene.pane.magnet_attract_c = not self.scene.pane.magnet_attract_c
 
     def toggle_circles(self):
         # toggle circular grid
@@ -113,7 +113,7 @@ class GuideWidget(Widget):
         # Let's set the full grid
         p = self.scene.context
         if self.scene.draw_grid_primary:
-            tlen = float(Length(f"{self.scene.tick_distance}{p.units_name}"))
+            tlen = float(Length(f"{self.scene.pane.tick_distance}{p.units_name}"))
             amount = (
                 round(
                     (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
@@ -137,12 +137,12 @@ class GuideWidget(Widget):
 
             x = 0
             while x <= p.device.unit_width:
-                self.scene.toggle_x_magnet(x)
+                self.scene.pane.toggle_x_magnet(x)
                 x += tlen
 
             y = 0
             while y <= p.device.unit_height:
-                self.scene.toggle_y_magnet(y)
+                self.scene.pane.toggle_y_magnet(y)
                 y += tlen
         elif self.scene.draw_grid_secondary:
             # Placeholder for a use case, as you can define them manually...
@@ -156,7 +156,7 @@ class GuideWidget(Widget):
                     units=self.scene.context.units_name
                 ),
                 caption=_("User-defined grid-size"),
-                value=str(self.scene.tick_distance),
+                value=str(self.scene.pane.tick_distance),
             )
             dlg.ShowModal()
             result = dlg.GetValue()
@@ -165,7 +165,7 @@ class GuideWidget(Widget):
                 value = float(result)
             except:
                 return
-            self.scene.tick_distance = value
+            self.scene.pane.tick_distance = value
             self.scene.auto_tick = False
             self.scene._signal_widget(self.scene.widget_root, "grid")
             self.scene.request_refresh()
@@ -199,7 +199,7 @@ class GuideWidget(Widget):
         for option in self.options:
             kind = (
                 wx.ITEM_CHECK
-                if self.scene.tick_distance == option and not self.scene.auto_tick
+                if self.scene.pane.tick_distance == option and not self.scene.auto_tick
                 else wx.ITEM_NORMAL
             )
             item = menu.Append(
@@ -219,7 +219,7 @@ class GuideWidget(Widget):
         menu.AppendSeparator()
         item = menu.Append(
             wx.ID_ANY,
-            f"User defined value: {self.scene.tick_distance}{units}",
+            f"User defined value: {self.scene.pane.tick_distance}{units}",
             "",
             wx.ITEM_NORMAL,
         )
@@ -232,7 +232,7 @@ class GuideWidget(Widget):
     def _add_attraction_strength_menu(self, menu):
         item = menu.Append(wx.ID_ANY, _("Attraction strength..."), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), False)
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 0 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 0 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Off"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -241,7 +241,7 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(0),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 1 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 1 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Weak"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -250,7 +250,7 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(1),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 2 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 2 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Normal"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -259,7 +259,7 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(2),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 3 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 3 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Strong"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -268,7 +268,7 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(3),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 4 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 4 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Very Strong"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -277,7 +277,7 @@ class GuideWidget(Widget):
             lambda e: self.attract_event(4),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attraction == 5 else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attraction == 5 else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Enormous"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -290,7 +290,7 @@ class GuideWidget(Widget):
     def _add_attraction_options_menu(self, menu):
         item = menu.Append(wx.ID_ANY, _("Attraction areas..."), "", wx.ITEM_NORMAL)
         menu.Enable(item.GetId(), False)
-        kind = wx.ITEM_CHECK if self.scene.magnet_attract_x else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attract_x else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Left/Right Side"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -299,7 +299,7 @@ class GuideWidget(Widget):
             lambda e: self.affect_event(0),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attract_y else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attract_y else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Top/Bottom Side"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -308,7 +308,7 @@ class GuideWidget(Widget):
             lambda e: self.affect_event(1),
             id=item.GetId(),
         )
-        kind = wx.ITEM_CHECK if self.scene.magnet_attract_c else wx.ITEM_NORMAL
+        kind = wx.ITEM_CHECK if self.scene.pane.magnet_attract_c else wx.ITEM_NORMAL
         item = menu.Append(wx.ID_ANY, _("Center"), "", kind)
         if kind == wx.ITEM_CHECK:
             menu.Check(item.GetId(), True)
@@ -375,8 +375,8 @@ class GuideWidget(Widget):
         p = self.scene.context
         sx = 0
         sy = 0
-        tick_distance_x = self.scene.tick_distance
-        tick_distance_y = self.scene.tick_distance
+        tick_distance_x = self.scene.pane.tick_distance
+        tick_distance_y = self.scene.pane.tick_distance
         if secondary:
             if self.scene.grid_secondary_cx is not None:
                 sx = self.scene.grid_secondary_cx
@@ -413,18 +413,18 @@ class GuideWidget(Widget):
             round(2.0 * mark_point_y / tick_distance_y) * 0.5 * tick_distance_y
         )
         if is_x and is_y:
-            if self.scene.has_magnets():
-                self.scene.clear_magnets()
+            if self.scene.pane.has_magnets():
+                self.scene.pane.clear_magnets()
             else:
                 self.fill_magnets()
         elif is_x:
             # Get the X coordinate from space_pos [0]
             value = float(Length(f"{mark_point_x:.1f}{self.units}"))
-            self.scene.toggle_x_magnet(value)
+            self.scene.pane.toggle_x_magnet(value)
         elif is_y:
             # Get the Y coordinate from space_pos [1]
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
-            self.scene.toggle_y_magnet(value)
+            self.scene.pane.toggle_y_magnet(value)
 
         self.scene.request_refresh()
 
@@ -440,11 +440,11 @@ class GuideWidget(Widget):
             menu = wx.Menu()
             self._add_scale_options(menu)
             menu.AppendSeparator()
-            if self.scene.has_magnets():
+            if self.scene.pane.has_magnets():
                 item = menu.Append(wx.ID_ANY, _("Clear all magnets"), "")
                 self.scene.context.gui.Bind(
                     wx.EVT_MENU,
-                    lambda e: self.scene.clear_magnets(),
+                    lambda e: self.scene.pane.clear_magnets(),
                     id=item.GetId(),
                 )
                 menu.AppendSeparator()
@@ -515,7 +515,7 @@ class GuideWidget(Widget):
 
         starts = []
         ends = []
-        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
+        points_x_primary = self.scene.pane.tick_distance * self.scaled_conversion_x
         offset_x_primary = float(sx_primary) % points_x_primary
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
@@ -548,7 +548,7 @@ class GuideWidget(Widget):
                     last_text_pos = x
             x += points_x_primary
 
-        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
+        points_y_primary = self.scene.pane.tick_distance * self.scaled_conversion_y
         offset_y_primary = float(sy_primary) % points_y_primary
         y = offset_y_primary
         last_text_pos = y - 30  # arbitrary
@@ -589,12 +589,12 @@ class GuideWidget(Widget):
         fx = 1.0
         if self.scene.grid_secondary_scale_x is not None:
             fx = self.scene.grid_secondary_scale_x
-        points_x = fx * self.scene.tick_distance * self.scaled_conversion_x
+        points_x = fx * self.scene.pane.tick_distance * self.scaled_conversion_x
 
         fy = 1.0
         if self.scene.grid_secondary_scale_y is not None:
             fy = self.scene.grid_secondary_scale_y
-        points_y = fy * self.scene.tick_distance * self.scaled_conversion_y
+        points_y = fy * self.scene.pane.tick_distance * self.scaled_conversion_y
         self.units = p.units_name
 
         sx, sy = self._get_center_secondary()
@@ -678,12 +678,12 @@ class GuideWidget(Widget):
         starts_hi = []
         ends_hi = []
 
-        for x in self.scene.magnet_x:
+        for x in self.scene.pane.magnet_x:
             sx, sy = self.scene.convert_scene_to_window([x, 0])
             starts_hi.append((sx, length + edge_gap))
             ends_hi.append((sx, h - length - edge_gap))
 
-        for y in self.scene.magnet_y:
+        for y in self.scene.pane.magnet_y:
             sx, sy = self.scene.convert_scene_to_window([0, y])
             starts_hi.append((length + edge_gap, sy))
             ends_hi.append((w - length - edge_gap, sy))
@@ -710,7 +710,7 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         self._set_scaled_conversion()
-        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
+        if self.scaled_conversion_x == 0 or self.scene.pane.tick_distance == 0:
             # Cannot be drawn.
             return
 

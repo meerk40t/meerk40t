@@ -1456,7 +1456,7 @@ class MoveWidget(Widget):
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
-            dx, dy = self.scene.revised_magnet_bound(b)
+            dx, dy = self.scene.pane.revised_magnet_bound(b)
             self.total_dx += dx
             self.total_dy += dy
             if dx != 0 or dy != 0:
@@ -2558,7 +2558,7 @@ class SelectionWidget(Widget):
             return
         self.clear()  # Clearing children as we are generating them in a bit...
         # Don't interfere during node editing
-        if self.scene.active_tool.startswith("edit"):
+        if self.scene.pane.active_tool.startswith("edit"):
             return
         context = self.scene.context
         try:
