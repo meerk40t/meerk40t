@@ -2506,7 +2506,7 @@ class SelectionWidget(Widget):
             )
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
