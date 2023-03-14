@@ -63,6 +63,15 @@ class GridWidget(Widget):
 
         self.set_colors()
 
+    @property
+    def scene_scale(self):
+        matrix = self.scene.widget_root.scene_widget.matrix
+        try:
+            return sqrt(abs(matrix.determinant))
+        except (OverflowError, ValueError, ZeroDivisionError):
+            matrix.reset()
+        return 1.0
+
     ###########################
     # PEN SETUP
     ###########################
@@ -79,12 +88,7 @@ class GridWidget(Widget):
             pen.SetWidth(int(line_width))
 
     def _set_pen_width_from_matrix(self):
-        matrix = self.scene.widget_root.scene_widget.matrix
-        try:
-            line_width = 1.0 / sqrt(abs(matrix.determinant))
-        except (OverflowError, ValueError, ZeroDivisionError):
-            matrix.reset()
-            return
+        line_width = 1.0 / self.scene_scale
         self.set_line_width(self.primary_grid_line_pen, line_width)
         self.set_line_width(self.secondary_grid_line_pen, line_width)
         self.set_line_width(self.circular_grid_line_pen, line_width)
@@ -176,18 +180,22 @@ class GridWidget(Widget):
     # CALCULATE TICK DISTANCES
     ###########################
 
+    @property
+    def scaled_conversion(self):
+        return (
+            self.scene.context.device.length(
+                f"1{self.scene.context.units_name}",
+                as_float=True,
+            )
+            * self.scene_scale
+        )
+
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
         wpoints = w / 30.0
         hpoints = h / 20.0
         points = (wpoints + hpoints) / 2
-        scaled_conversion = (
-            self.scene.context.device.length(
-                f"1{self.scene.context.units_name}",
-                as_float=True,
-            )
-            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
-        )
+        scaled_conversion = self.scaled_conversion
         if scaled_conversion == 0:
             return
         # tweak the scaled points into being useful.
@@ -219,15 +227,6 @@ class GridWidget(Widget):
         # points = self.scaled_conversion * float("{:.1g}".format(points / self.scaled_conversion))
 
         self.scene.tick_distance = delta1
-
-    def get_scaled_conversion(self):
-        return (
-            self.scene.context.device.length(
-                f"1{self.scene.context.units_name}",
-                as_float=True,
-            )
-            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
-        )
 
     def calculate_center_start(self):
         p = self.scene.context
