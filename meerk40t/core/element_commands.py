@@ -921,6 +921,50 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return data_type, data
 
+
+    @self.console_argument(
+        "label",
+        type=str,
+        help=_("new label to set values to"),
+    )
+    @self.console_command(
+        "label",
+        help=_("label <label>"),
+        input_type=(
+            "ops",
+            "elements"
+        ),
+        output_type=("elements", "ops"),
+    )
+    def opelem_label(command, channel, _, label=None, data=None, data_type=None, **kwargs):
+        if label is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("Label Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _(
+                        "{index}: {name} - label = {label}"
+                    ).format(
+                        index=i,
+                        name=name,
+                        label=e.label
+                    )
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.label = label
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
+
+
     @self.console_command(
         "list",
         help=_("Show information about the chained data"),
