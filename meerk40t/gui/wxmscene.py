@@ -123,6 +123,8 @@ class MeerK40tScenePanel(wx.Panel):
         # Let the grid resize itself
         self.auto_tick = True
 
+        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))

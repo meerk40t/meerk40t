@@ -212,8 +212,6 @@ class Scene(Module, Job):
         self._last_snap_position = None
         self._last_snap_ts = 0
 
-        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
-
         self._animating = list()
         self._animate_lock = threading.Lock()
         self._adding_widgets = list()

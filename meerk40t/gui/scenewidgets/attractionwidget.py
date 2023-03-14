@@ -369,11 +369,11 @@ class AttractionWidget(Widget):
 
         if (
             self.context.snap_grid
-            and self.scene.grid_points is not None
-            and len(self.scene.grid_points) > 0
+            and self.scene.pane.grid_points is not None
+            and len(self.scene.pane.grid_points) > 0
             and not self.my_x is None
         ):
-            for pts in self.scene.grid_points:
+            for pts in self.scene.pane.grid_points:
                 if (
                     abs(pts[0] - self.my_x) <= pixel
                     and abs(pts[1] - self.my_y) <= pixel

@@ -394,7 +394,7 @@ class GridWidget(Widget):
         and identifies all attraction points (center, corners, sides)
         Notabene this calculation generates SCREEN coordinates
         """
-        self.scene.grid_points = []  # Clear all
+        self.scene.pane.grid_points = []  # Clear all
 
         # Let's add grid points - set just the visible part of the grid
 
@@ -424,7 +424,7 @@ class GridWidget(Widget):
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
-                self.scene.grid_points.append([x, y])
+                self.scene.pane.grid_points.append([x, y])
                 y += self.primary_tick_length_y
             x += self.primary_tick_length_x
 
@@ -454,7 +454,7 @@ class GridWidget(Widget):
             y = start_y
             while y <= self.max_y:
                 # mx, my = self.scene.convert_scene_to_window([x, y])
-                self.scene.grid_points.append([x, y])
+                self.scene.pane.grid_points.append([x, y])
                 y += self.secondary_tick_length_y
             x += self.secondary_tick_length_x
 
@@ -466,7 +466,7 @@ class GridWidget(Widget):
         x = start_x
         y = start_y
         # mx, my = self.scene.convert_scene_to_window([x, y])
-        self.scene.grid_points.append([x, y])
+        self.scene.pane.grid_points.append([x, y])
         max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
         tick_length = (self.primary_tick_length_x + self.primary_tick_length_y) / 2
         r_fourth = max_r // (4 * tick_length) * tick_length
@@ -494,7 +494,7 @@ class GridWidget(Widget):
 
                 if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
                     # mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([x, y])
+                    self.scene.pane.grid_points.append([x, y])
 
             i += 1
             r_angle += tau / segments
