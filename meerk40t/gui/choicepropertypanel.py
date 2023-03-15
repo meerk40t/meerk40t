@@ -117,23 +117,35 @@ class ChoicePropertyPanel(ScrolledPanel):
         if choices is None:
             return
         if isinstance(choices, str):
-            tempchoices = self.context.lookup("choices", choices)
-            # we need to create an independent copy of the lookup, otherwise
-            # any amendments to choices like injector will affect the original
-            choices = []
-            for c in tempchoices:
+            choices = [choices]
+
+        new_choices = []
+        # we need to create an independent copy of the lookup, otherwise
+        # any amendments to choices like injector will affect the original
+
+        for choice in choices:
+            if isinstance(choice, dict):
+                new_choices.append(choice)
+            elif isinstance(choice, str):
+                lookup_choice = self.context.lookup("choices", choice)
+                if lookup_choice is None:
+                    continue
+                new_choices.extend(lookup_choice)
+            else:
+                new_choices.extend(choice)
+        choices = new_choices
+        if injector is not None:
+            # We have additional stuff to be added, so be it
+            for c in injector:
                 choices.append(c)
-            if choices is None:
-                return
+        if len(choices) == 0:
+            # No choices to process.
+            return
         for c in choices:
             needs_dynamic_call = c.get("dynamic")
             if needs_dynamic_call:
                 # Calls dynamic function to update this dictionary before production
                 needs_dynamic_call(c)
-        if injector is not None:
-            # We have additional stuff to be added, so be it
-            for c in injector:
-                choices.append(c)
         # Let's see whether we have a section and a page property...
         for c in choices:
             try:
@@ -570,6 +582,46 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj, data_type, additional_signal),
                 )
+                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type in (str, int) and data_style == "radio":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                control = wx.RadioBox(
+                    self,
+                    wx.ID_ANY,
+                    label,
+                    choices=choice_list,
+                    majorDimension=3,
+                    style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
+                )
+                if data is not None:
+                    if data_type == str:
+                        control.SetSelection(0)
+                        for i, c in enumerate(choice_list):
+                            if c == data:
+                                control.SetSelection(i)
+                    else:
+                        control.SetSelection(int(data))
+
+                def on_radio_select(param, ctrl, obj, dtype, addsig):
+                    def select(event=None):
+                        if dtype == int:
+                            v = dtype(ctrl.GetSelection())
+                        else:
+                            v = dtype(ctrl.GetLabel())
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v, obj)
+                            for _sig in addsig:
+                                self.context.signal(_sig)
+
+                    return select
+
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+                control.Bind(wx.EVT_RADIOBOX, on_radio_select(attr, control, obj, data_type, additional_signal))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, str) and data_style == "option":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)

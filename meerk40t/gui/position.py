@@ -227,27 +227,22 @@ class PositionPanel(wx.Panel):
         if reset:
             x0, y0, x1, y1 = bounds
             # conversion = ViewPort.conversion(self.position_units)
-            conversion = float(Length(f"1{self.position_units}"))
+            conversion_x = float(Length(f"1{self.position_units}", relative_length=self.context.device.unit_width))
+            conversion_y = float(Length(f"1{self.position_units}", relative_length=self.context.device.unit_height))
             # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
-            self.position_x = x0 / conversion
-            self.position_y = y0 / conversion
-            self.position_w = (x1 - x0) / conversion
-            self.position_h = (y1 - y0) / conversion
+            self.position_x = x0 / conversion_x
+            self.position_y = y0 / conversion_y
+            self.position_w = (x1 - x0) / conversion_x
+            self.position_h = (y1 - y0) / conversion_y
             self.org_x = self.position_x
             self.org_y = self.position_y
             self.org_w = self.position_w
             self.org_h = self.position_h
 
-        if self.position_units == "%":
-            self.text_x.SetValue(f"{100:.2f}")
-            self.text_y.SetValue(f"{100:.2f}")
-            self.text_w.SetValue(f"{100:.2f}")
-            self.text_h.SetValue(f"{100:.2f}")
-        else:
-            self.text_x.SetValue(f"{self.position_x:.2f}")
-            self.text_y.SetValue(f"{self.position_y:.2f}")
-            self.text_w.SetValue(f"{self.position_w:.2f}")
-            self.text_h.SetValue(f"{self.position_h:.2f}")
+        self.text_x.SetValue(f"{self.position_x:.2f}")
+        self.text_y.SetValue(f"{self.position_y:.2f}")
+        self.text_w.SetValue(f"{self.position_w:.2f}")
+        self.text_h.SetValue(f"{self.position_h:.2f}")
         self.combo_box_units.SetSelection(self.choices.index(self.position_units))
 
     def space_changed(self, origin, *args):
@@ -430,22 +425,18 @@ class PositionPanel(wx.Panel):
     def on_text_w_action(self, force):
         original = self.position_w
 
-        if self.position_units == "%":
-            ratio_w = float(self.text_w.GetValue()) / 100.0
-            w = self.position_w * ratio_w
-        else:
+        try:
+            w = float(self.text_w.GetValue())
+        except ValueError:
             try:
-                w = float(self.text_w.GetValue())
+                w = self.context.device.length(
+                    self.text_w.GetValue(),
+                    0,
+                    new_units=self.position_units,
+                    unitless=UNITS_PER_PIXEL,
+                )
             except ValueError:
-                try:
-                    w = self.context.device.length(
-                        self.text_w.GetValue(),
-                        0,
-                        new_units=self.position_units,
-                        unitless=UNITS_PER_PIXEL,
-                    )
-                except ValueError:
-                    return
+                return
         if isinstance(w, str):
             return
         if abs(w) < 1e-8:
@@ -466,22 +457,18 @@ class PositionPanel(wx.Panel):
 
     def on_text_h_action(self, force):
         original = self.position_h
-        if self.position_units == "%":
-            ratio_w = float(self.text_h.GetValue()) / 100.0
-            h = self.position_h * ratio_w
-        else:
+        try:
+            h = float(self.text_h.GetValue())
+        except ValueError:
             try:
-                h = float(self.text_h.GetValue())
+                h = self.context.device.length(
+                    self.text_h.GetValue(),
+                    1,
+                    new_units=self.position_units,
+                    unitless=UNITS_PER_PIXEL,
+                )
             except ValueError:
-                try:
-                    h = self.context.device.length(
-                        self.text_h.GetValue(),
-                        1,
-                        new_units=self.position_units,
-                        unitless=UNITS_PER_PIXEL,
-                    )
-                except ValueError:
-                    return
+                return
         if isinstance(h, str):
             return
         if abs(h) < 1e-8:

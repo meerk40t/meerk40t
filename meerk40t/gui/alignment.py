@@ -302,7 +302,7 @@ class AlignmentPanel(wx.Panel):
                 active = False
             if (
                 self.scene is None
-                or self.scene.reference_object is None
+                or self.scene.pane.reference_object is None
                 and mode == "ref"
             ):
                 active = False
@@ -335,7 +335,7 @@ class AlignmentPanel(wx.Panel):
         addition = ""
         if mode == "ref":
             if self.scene is not None:
-                node = self.scene.reference_object
+                node = self.scene.pane.reference_object
                 if node is not None:
                     addition = f" --boundaries {node.bounds[0]},{node.bounds[1]},{node.bounds[2]},{node.bounds[3]}"
                 else:
@@ -370,7 +370,7 @@ class AlignmentPanel(wx.Panel):
         self.count, self.first_node, self.last_node = self.info_panel.show_stuff(
             has_emph
         )
-        flag = self.scene.reference_object is not None
+        flag = self.scene.pane.reference_object is not None
         self.rbox_relation.EnableItem(4, flag)
         self.validate_data()
 
@@ -886,7 +886,7 @@ class DistributionPanel(wx.Panel):
             # print (f"Target points: {len(target)}")
 
         # "default", "shape", "points", "bed", "ref")
-        if treatment == "ref" and self.scene.reference_object is None:
+        if treatment == "ref" and self.scene.pane.reference_object is None:
             treatment = "default"
         if treatment == "default":
             # Let's get the boundaries of the data-set
@@ -907,10 +907,10 @@ class DistributionPanel(wx.Panel):
             bottom_edge = float(Length(self.context.device.height))
             calc_basic()
         elif treatment == "ref":
-            left_edge = self.scene.reference_object.bounds[0]
-            top_edge = self.scene.reference_object.bounds[1]
-            right_edge = self.scene.reference_object.bounds[2]
-            bottom_edge = self.scene.reference_object.bounds[3]
+            left_edge = self.scene.pane.reference_object.bounds[0]
+            top_edge = self.scene.pane.reference_object.bounds[1]
+            right_edge = self.scene.pane.reference_object.bounds[2]
+            bottom_edge = self.scene.pane.reference_object.bounds[3]
             calc_basic()
         elif treatment == "points":
             # So what's the reference node? And delete it...
@@ -1107,7 +1107,7 @@ class DistributionPanel(wx.Panel):
         self.count, self.first_node, self.last_node = self.info_panel.show_stuff(
             has_emph
         )
-        flag = self.scene.reference_object is not None
+        flag = self.scene.pane.reference_object is not None
         self.rbox_treatment.EnableItem(4, flag)
 
         if showit:
