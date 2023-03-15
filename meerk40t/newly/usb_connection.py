@@ -26,7 +26,7 @@ class USBConnection:
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
-        self.timeout = 100
+        self.timeout = 2000
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -266,31 +266,35 @@ class USBConnection:
                 # Step 1: Write the size of the packet.
                 #####################################
                 # endpoint, data, timeout
+
                 length_data = struct.pack(">h", packet_length)  # Big-endian size write out.
+                self.channel(f"Sending Length: {length_data}")
                 dev.write(
                     endpoint=WRITE_INTERRUPT, data=length_data, timeout=self.timeout
                 )
-
+                self.channel(f"Length Sent.")
                 #####################################
                 # Step 2: read the confirmation value.
                 #####################################
                 # endpoint, data, timeout
+                self.channel(f"Read Confirmation.")
                 read = dev.read(
                     endpoint=READ_INTERRUPT, size_or_buffer=1, timeout=self.timeout
                 )
                 self.channel(f"Confirmation: {read}")
-                # if read != 1:
-                #     time.sleep(2)
-                #     continue
-
+                if read[0] != 1:
+                    time.sleep(2)
+                    continue
 
                 #####################################
                 # Step #3, write the bulk data of the packet.
                 #####################################
                 # endpoint, data, timeout
+                self.channel(f"Writing Data")
                 dev.write(
                     endpoint=WRITE_BULK, data=packet, timeout=self.timeout
                 )
+                self.channel(f"Data Written.")
             except usb.core.USBError as e:
                 """
                 The sending data protocol hit a core usb error. This will print the error and close and reopen the
