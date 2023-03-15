@@ -1,3 +1,6 @@
+from meerk40t.gui.icons import icons8_file_50
+
+
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/newly"
@@ -52,6 +55,77 @@ def plugin(service, lifecycle):
         # service.register("property/DotsOpNode/Newly", NewlyOperationPanel)
         # service.register("property/HatchOpNode/Newly", NewlyOperationPanel)
 
+    if lifecycle == "service_attach":
+        from meerk40t.gui.icons import (
+            icons8_computer_support_50,
+            icons8_connected_50,
+            icons8_move_50,
+            icons8_rectangular_50,
+            icons8_play_50,
+        )
+        _ = service.kernel.translation
+        selected = service.setting(int, "file_index", 1)
+        service.register(
+            "button/control/SelectFile",
+            {
+                "label": _("File {index}").format(index=selected),
+                "icon": icons8_file_50,
+                "tip": _(
+                    "Select active file to use for machine."
+                ),
+                "identifier": "file_index",
+                "object": service,
+                "priority": 1,
+                "multi": [
+                    {
+                        "identifier": 1,
+                        "label": _("File {index}").format(index=1),
+                        "action": lambda v: service("select_file 1\n"),
+                    },
+                    {
+                        "identifier": 2,
+                        "label": _("File {index}").format(index=2),
+                        "action": lambda v: service("select_file 2\n"),
+                    },
+                    {
+                        "identifier": 3,
+                        "label": _("File {index}").format(index=3),
+                        "action": lambda v: service("select_file 3\n"),
+                    },
+                    {
+                        "identifier": 4,
+                        "label": _("File {index}").format(index=4),
+                        "action": lambda v: service("select_file 4\n"),
+                    },
+                    {
+                        "identifier": 5,
+                        "label": _("File {index}").format(index=5),
+                        "action": lambda v: service("select_file 5\n"),
+                    },
+                    {
+                        "identifier": 6,
+                        "label": _("File {index}").format(index=6),
+                        "action": lambda v: service("select_file 6\n"),
+                    },
+                    {
+                        "identifier": 7,
+                        "label": _("File {index}").format(index=7),
+                        "action": lambda v: service("select_file 7\n"),
+                    },
+                    {
+                        "identifier": 8,
+                        "label": _("File {index}").format(index=8),
+                        "action": lambda v: service("select_file 8\n"),
+                    },
+                    {
+                        "identifier": 9,
+                        "label": _("File {index}").format(index=9),
+                        "action": lambda v: service("select_file 9\n"),
+                    },
+                ],
+            },
+        )
+
         service.register(
             "button/control/DrawFrame",
             {
@@ -60,36 +134,8 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Draw a bounding rectangle of the object saved in the machine"
                 ),
-                "action": lambda v: service("draw_frame 1\n"),
-                "identifier": "draw_frame_id",
+                "action": lambda v: service("draw_frame {index}\n".format(index=service.file_index)),
                 "priority": 3,
-                "multi": [
-                    {
-                        "identifier": "drawframe1",
-                        "label": _("Draw Frame {index}").format(index=1),
-                        "action": lambda v: service("draw_frame 1\n"),
-                    },
-                    {
-                        "identifier": "drawframe2",
-                        "label": _("Draw Frame {index}").format(index=2),
-                        "action": lambda v: service("draw_frame 2\n"),
-                    },
-                    {
-                        "identifier": "drawframe3",
-                        "label": _("Draw Frame {index}").format(index=3),
-                        "action": lambda v: service("draw_frame 3\n"),
-                    },
-                    {
-                        "identifier": "drawframe4",
-                        "label": _("Draw Frame {index}").format(index=4),
-                        "action": lambda v: service("draw_frame 4\n"),
-                    },
-                    {
-                        "identifier": "drawframe5",
-                        "label": _("Draw Frame {index}").format(index=5),
-                        "action": lambda v: service("draw_frame 5\n"),
-                    },
-                ],
             },
         )
         service.register(
@@ -100,35 +146,8 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Move the bounding rectangle of the object saved in the machine"
                 ),
-                "action": lambda v: service("move_frame 1\n"),
-                "identifier": "move_frame_id",
-                "multi": [
-                    {
-                        "identifier": "moveframe1",
-                        "label": _("Move Frame {index}").format(index=1),
-                        "action": lambda v: service("move_frame 1\n"),
-                    },
-                    {
-                        "identifier": "moveframe2",
-                        "label": _("Move Frame {index}").format(index=2),
-                        "action": lambda v: service("move_frame 2\n"),
-                    },
-                    {
-                        "identifier": "drawframe3",
-                        "label": _("Move Frame {index}").format(index=3),
-                        "action": lambda v: service("move_frame 3\n"),
-                    },
-                    {
-                        "identifier": "moveframe4",
-                        "label": _("Move Frame {index}").format(index=4),
-                        "action": lambda v: service("move_frame 4\n"),
-                    },
-                    {
-                        "identifier": "moveframe5",
-                        "label": _("Move Frame {index}").format(index=5),
-                        "action": lambda v: service("move_frame 5\n"),
-                    },
-                ],
+                "action": lambda v: service("move_frame {index}\n".format(index=service.file_index)),
+                "priority": 4,
             },
         )
         service.register(
@@ -137,35 +156,8 @@ def plugin(service, lifecycle):
                 "label": _("Replay"),
                 "icon": icons8_play_50,
                 "tip": _("Replay the file saved in the machine"),
-                "action": lambda v: service("replay 1\n"),
-                "identifier": "replay_id",
-                "multi": [
-                    {
-                        "identifier": "replay1",
-                        "label": _("Replay {index}").format(index=1),
-                        "action": lambda v: service("replay 1\n"),
-                    },
-                    {
-                        "identifier": "replay2",
-                        "label": _("Replay {index}").format(index=2),
-                        "action": lambda v: service("replay 2\n"),
-                    },
-                    {
-                        "identifier": "replay3",
-                        "label": _("Replay {index}").format(index=3),
-                        "action": lambda v: service("replay 3\n"),
-                    },
-                    {
-                        "identifier": "replay4",
-                        "label": _("Replay {index}").format(index=4),
-                        "action": lambda v: service("replay 4\n"),
-                    },
-                    {
-                        "identifier": "replay5",
-                        "label": _("Replay {index}").format(index=5),
-                        "action": lambda v: service("replay 5\n"),
-                    },
-                ],
+                "action": lambda v: service("replay {index}\n".format(index=service.file_index)),
+                "priority": 5,
             },
         )
         service.add_service_delegate(NewlyGui(service))

@@ -94,6 +94,7 @@ class NewlyDevice(Service, ViewPort):
             },
         ]
         self.register_choices("newly-speedchart", choices)
+
         choices = [
             {
                 "attr": "label",
