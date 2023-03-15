@@ -440,7 +440,8 @@ class RibbonPanel(wx.Panel):
             @return:
             """
             key_id = v.get("identifier")
-            setattr(self.context, button.save_id, key_id)
+            obj = button.button_dict.get("object", self.context)
+            setattr(obj, button.save_id, key_id)
             button.state_unpressed = key_id
             self._restore_button_aspect(button, key_id)
             self.ensure_realize()
