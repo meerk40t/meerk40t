@@ -37,8 +37,8 @@ class NewlyController:
         self._last_x = x
         self._last_y = y
 
-        self._speed = 15
-        self._power = 1000
+        self._speed = None
+        self._power = None
         self._acceleration = 24
         self._scan_speed = 200  # 200 mm/s
         self._relative = False
@@ -175,6 +175,8 @@ class NewlyController:
 
         @return:
         """
+        self._speed = None
+        self._power = None
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame()
         self("GZ")
@@ -293,13 +295,13 @@ class NewlyController:
     def program_mode(self):
         if self.mode == "program":
             return
-        # if self.mode == "started":
-        #     if self._pwm_frequency is not None:
-        #         self(f"PL{self._pwm_frequency}")
-        #     self(f"VP{self.service.cut_dc}")
-        #     self(f"VK{self.service.move_dc}")
-        # self("SP2")
-        # self("SP2")
+        if self.mode == "started":
+            if self._pwm_frequency is not None:
+                self(f"PL{self._pwm_frequency}")
+            self(f"VP{self.service.cut_dc}")
+            self(f"VK{self.service.move_dc}")
+        self("SP2")
+        self("SP2")
         self._write_speed_information()
         self._relative = True
         self("PR")
