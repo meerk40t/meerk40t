@@ -140,7 +140,7 @@ class NewlyController:
     # MODE SHIFTS
     #######################
 
-    def realtime_job(self):
+    def realtime_job(self, job=None):
         """
         Starts a realtime job, which runs on file0
         @return:
@@ -150,53 +150,61 @@ class NewlyController:
         self.mode = "started"
         self.command_buffer.append(f"ZZZFile0")
 
-    def open_job(self):
+    def _write_frame(self):
+        self("DW")
+        self("VP100")
+        self("VK100")
+        self("SP2")
+        self("SP2")
+        self("VQ15")
+        self("VJ24")
+        self("VS10")
+        self("DA0")
+        self("SP0")
+        self("VS20")
+        self("PR")
+        self("PD9891,0")
+        self("PD0,-19704")
+        self("PD-9891, 0")
+        self("PD0,19704")
+        self("ZED")
+
+    def open_job(self, job=None):
         """
         Opens a job at the declared file_index
 
         @return:
         """
-        if self.mode != "init":
-            return
+        self(f"ZZZFile{self.service.file_index}")
+        self._write_frame()
+        self("GZ")
         self.mode = "started"
 
-        self.command_buffer.append(f"ZZZFile{self.service.file_index}")
-
-    def close_job(self):
+    def close_job(self, job=None):
         """
         Closes the file and sends.
         @return:
         """
-        self.mode = "init"
         if not self.command_buffer:
             return
-        last_command = self.command_buffer[-1]
-
-        if last_command.startswith("ZZZ"):
+        if self.mode == "started":
             # Job contains no instructions.
             self.command_buffer.clear()
             return
 
-        if last_command != "ZED":
-            self("ZED")
+        self("ZED")
         cmd = ";".join(self.command_buffer) + ";"
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
         self.command_buffer.clear()
-        self.mode = "init"
+        self.mode = "closed"
 
     def rapid_mode(self):
-        if self.command_buffer:
-            last_command = self.command_buffer[-1]
-            if last_command != "ZED" and not last_command.startswith("ZZZ"):
-                self("ZED")
-        self.mode = "rapid"
+        pass
 
     def raster_mode(self):
         if self.mode == "raster":
             return
-        if self.mode == "rapid":
-            self("DW")
         self.mode = "raster"
         if self._pwm_frequency is not None:
             self(f"PL{self._pwm_frequency}")
@@ -253,7 +261,7 @@ class NewlyController:
             return 0
         return int(round(power))
 
-    def _init_settings(self):
+    def _write_speed_information(self):
         # Calculate speed and lookup factors in chart.
         speed_at_program_change = self._speed
         if speed_at_program_change is None:
@@ -282,42 +290,17 @@ class NewlyController:
         self(f"DA{self._map_power(power)}")
         self(f"VS{self._map_speed(speed_at_program_change)}")
 
-    def _write_frame(self):
-        self("DW;")
-        self("VP100;")
-        self("VK100;")
-        self("SP2;")
-        self("SP2;")
-        self("VQ15;")
-        self("VJ24;")
-        self("VS10;")
-        self("DA0;")
-        self("SP0;")
-        self("VS20;")
-        self("PR;")
-        self("PD9891,0;")
-        self("PD0,-19704;")
-        self("PD-9891, 0;")
-        self("PD0,19704;")
-        self("ZED;")
-
     def program_mode(self):
         if self.mode == "program":
             return
         if self.mode == "started":
-            self._write_frame()
-            self("GZ")
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
             self(f"VP{self.service.cut_dc}")
             self(f"VK{self.service.move_dc}")
-        if self.mode == "rapid":
-            self("ZED")
-            self("GZ")
-        self.mode = "program"
         self("SP2")
         self("SP2")
-        self._init_settings()
+        self._write_speed_information()
         self._relative = True
         self("PR")
 
@@ -342,7 +325,7 @@ class NewlyController:
         if self._speed != old:
             new_init = True
         if new_init:
-            self._init_settings()
+            self._write_speed_information()
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -353,6 +336,7 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=data)
 
     def mark(self, x, y):
+        self.mode = "program"
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -368,6 +352,7 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
+        self.mode = "program"
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
