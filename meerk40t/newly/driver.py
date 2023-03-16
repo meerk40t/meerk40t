@@ -83,6 +83,12 @@ class NewlyDriver:
         """
         return priority <= 0 and self.paused
 
+    def job_start(self, job):
+        self.connection.open_job()
+
+    def job_finish(self, job):
+        self.connection.close_job()
+
     def laser_off(self, *values):
         """
         This command expects to stop pulsing the laser in place.

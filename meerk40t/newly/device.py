@@ -535,7 +535,9 @@ class NewlyDevice(Service, ViewPort):
 
                     driver.connection.connect_if_needed()
                     driver.connection.connection.write = write
+                    driver.job_start(job)
                     job.execute()
+                    driver.job_finish(job)
 
             except (PermissionError, OSError):
                 channel(_("Could not save: {filename}").format(filename=filename))
