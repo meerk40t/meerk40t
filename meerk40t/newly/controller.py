@@ -8,7 +8,6 @@ from meerk40t.newly.mock_connection import MockConnection
 from meerk40t.newly.usb_connection import USBConnection
 
 
-
 class NewlyController:
     """
     Newly Controller
@@ -215,7 +214,10 @@ class NewlyController:
         for i, c in enumerate(chart):
             chart_speed = c.get("speed", 0)
             delta_speed = chart_speed - speed_at_raster_change
-            if chart_speed > speed_at_raster_change and smallest_difference > delta_speed:
+            if (
+                chart_speed > speed_at_raster_change
+                and smallest_difference > delta_speed
+            ):
                 smallest_difference = delta_speed
                 closest_index = i
         if closest_index is not None:
@@ -262,7 +264,10 @@ class NewlyController:
         for i, c in enumerate(chart):
             chart_speed = c.get("speed", 0)
             delta_speed = chart_speed - speed_at_program_change
-            if chart_speed > speed_at_program_change and smallest_difference > delta_speed:
+            if (
+                chart_speed > speed_at_program_change
+                and smallest_difference > delta_speed
+            ):
                 smallest_difference = delta_speed
                 closest_index = i
         if closest_index is not None:
@@ -277,10 +282,30 @@ class NewlyController:
         self(f"DA{self._map_power(power)}")
         self(f"VS{self._map_speed(speed_at_program_change)}")
 
+    def _write_frame(self):
+        self("DW;")
+        self("VP100;")
+        self("VK100;")
+        self("SP2;")
+        self("SP2;")
+        self("VQ15;")
+        self("VJ24;")
+        self("VS10;")
+        self("DA0;")
+        self("SP0;")
+        self("VS20;")
+        self("PR;")
+        self("PD9891,0;")
+        self("PD0,-19704;")
+        self("PD-9891, 0;")
+        self("PD0,19704;")
+        self("ZED;")
+
     def program_mode(self):
         if self.mode == "program":
             return
         if self.mode == "started":
+            self._write_frame()
             self("GZ")
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
