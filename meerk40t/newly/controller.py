@@ -168,7 +168,17 @@ class NewlyController:
         Closes the file and sends.
         @return:
         """
-        if self.command_buffer and self.command_buffer[-1] != "ZED":
+        self.mode = "init"
+        if not self.command_buffer:
+            return
+        last_command = self.command_buffer[-1]
+
+        if last_command.startswith("ZZZ"):
+            # Job contains no instructions.
+            self.command_buffer.clear()
+            return
+
+        if last_command != "ZED":
             self("ZED")
         cmd = ";".join(self.command_buffer) + ";"
         self.connect_if_needed()
@@ -177,8 +187,10 @@ class NewlyController:
         self.mode = "init"
 
     def rapid_mode(self):
-        if self.command_buffer and self.command_buffer[-1] != "ZED":
-            self("ZED")
+        if self.command_buffer:
+            last_command = self.command_buffer[-1]
+            if last_command != "ZED" and not last_command.startswith("ZZZ"):
+                self("ZED")
         self.mode = "rapid"
 
     def raster_mode(self):
