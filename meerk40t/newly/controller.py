@@ -42,7 +42,6 @@ class NewlyController:
         self._power = 1000
         self._acceleration = 24
         self._scan_speed = 200  # 200 mm/s
-        self._file_index = 0
         self._relative = False
         self._pwm_frequency = None
         self._unknown_vp = 100
@@ -161,7 +160,8 @@ class NewlyController:
         if self.mode != "init":
             return
         self.mode = "started"
-        self.command_buffer.append(f"ZZZFile{self._file_index}")
+
+        self.command_buffer.append(f"ZZZFile{self.service.file_index}")
 
     def close_job(self):
         """
