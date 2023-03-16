@@ -66,9 +66,6 @@ class LaserJob:
         self._stopped = False
         self.time_started = time.time()
         self.time_pass_started = time.time()
-        if hasattr(self._driver, "job_start"):
-            function = getattr(self._driver, "job_start")
-            function()
         self.steps_total = 0
         self.calc_steps()
         try:
@@ -88,15 +85,9 @@ class LaserJob:
                 self.loops_executed += 1
                 self.time_pass_started = time.time()
                 self.avg_time_per_pass = self.elapsed_time() / self.loops_executed
-            if hasattr(self._driver, "job_finished"):
-                function = getattr(self._driver, "job_finished")
-                function(False)
         finally:
             self.runtime += time.time() - self.time_started
             self._stopped = True
-            if hasattr(self._driver, "job_stop"):
-                function = getattr(self._driver, "job_stop")
-                function(False)
         return True
 
     def calc_steps(self):
