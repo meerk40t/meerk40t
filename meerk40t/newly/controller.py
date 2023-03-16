@@ -293,13 +293,13 @@ class NewlyController:
     def program_mode(self):
         if self.mode == "program":
             return
-        if self.mode == "started":
-            if self._pwm_frequency is not None:
-                self(f"PL{self._pwm_frequency}")
-            self(f"VP{self.service.cut_dc}")
-            self(f"VK{self.service.move_dc}")
-        self("SP2")
-        self("SP2")
+        # if self.mode == "started":
+        #     if self._pwm_frequency is not None:
+        #         self(f"PL{self._pwm_frequency}")
+        #     self(f"VP{self.service.cut_dc}")
+        #     self(f"VK{self.service.move_dc}")
+        # self("SP2")
+        # self("SP2")
         self._write_speed_information()
         self._relative = True
         self("PR")
