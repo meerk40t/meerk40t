@@ -281,7 +281,7 @@ class NewlyController:
         if self.mode == "program":
             return
         if self.mode == "started":
-            self("DW")
+            self("GZ")
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
             self(f"VP{self.service.cut_dc}")
