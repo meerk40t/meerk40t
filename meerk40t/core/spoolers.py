@@ -532,11 +532,11 @@ class Spooler:
         """
         Run thread for the spooler.
 
-        Process the real time queue.
-        Hold work queue if driver requires a hold
-        Process work queue.
-        Hold idle if driver requires idle to be held.
-        Process idle work
+        The thread runs while the spooler is not shutdown. This executes in the spooler thread. It waits, while
+        the queue is empty and is notified when items are added to the queue. Each job in the spooler is called
+        with execute(). If the function returns True, the job is finished and removed. We then move on to the next
+        spooler item. If execute() returns False the job is not finished and will be reattempted. Each spooler
+        cycle checks the priority and whether there's a wait/hold for jobs at that priority level.
 
         @return:
         """
@@ -556,6 +556,11 @@ class Spooler:
             if self.driver.hold_work(priority):
                 time.sleep(0.01)
                 continue
+            if program != self._current:
+                # A different job is loaded. If it has a job_start, we call that.
+                if hasattr(self.driver, "job_start"):
+                    function = getattr(self.driver, "job_start")
+                    function(program)
             self._current = program
             try:
                 fully_executed = program.execute(self.driver)
@@ -572,6 +577,11 @@ class Spooler:
             if fully_executed:
                 # all work finished
                 self.remove(program)
+
+                # If we finished this work we call job_finished.
+                if hasattr(self.driver, "job_finish"):
+                    function = getattr(self.driver, "job_finish")
+                    function(program)
 
     @property
     def is_idle(self):
