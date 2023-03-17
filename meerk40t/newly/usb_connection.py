@@ -256,9 +256,6 @@ class USBConnection:
         while data_remaining > 0:
             packet_length = min(0x1000, data_remaining)
             packet = data[:packet_length]
-
-            data = data[packet_length:]
-            data_remaining -= packet_length
             try:
                 dev = self.devices[index]
 
@@ -295,6 +292,9 @@ class USBConnection:
                     endpoint=WRITE_BULK, data=packet, timeout=self.timeout
                 )
                 self.channel(f"Data Written.")
+
+                data = data[packet_length:]
+                data_remaining -= packet_length
             except usb.core.USBError as e:
                 """
                 The sending data protocol hit a core usb error. This will print the error and close and reopen the
