@@ -53,9 +53,6 @@ class MockConnection:
             packet_length = min(0x1000, data_remaining)
             packet = data[:packet_length]
 
-            data = data[packet_length:]
-            data_remaining -= packet_length
-
             #####################################
             # Step 1: Write the size of the packet.
             #####################################
@@ -70,6 +67,9 @@ class MockConnection:
             # Step #3, write the bulk data of the packet.
             #####################################
             self._write_bulk(index=index, packet=packet)
+
+            data = data[packet_length:]
+            data_remaining -= packet_length
 
     def _write_packet_size(self, index=0, packet=None, attempt=0):
         packet_length = len(packet)
