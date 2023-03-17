@@ -574,7 +574,7 @@ def init_tree(kernel):
     def compile_and_simulate(node, **kwargs):
         self.set_node_emphasis(node, True)
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
-        self("window open Simulation 0\n")
+        self("window open Simulation 0 1 1\n")   # Plan Name, Auto-Clear, Optimise
 
     # ==========
     # General menu-entries for operation branch
