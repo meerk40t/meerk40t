@@ -62,6 +62,7 @@ class MoshiDevice(Service, ViewPort):
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "bedheight",
@@ -73,6 +74,7 @@ class MoshiDevice(Service, ViewPort):
                 "section": "_10_Dimensions",
                 "subsection": "Bed",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",

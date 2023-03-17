@@ -16,6 +16,7 @@ class PlannerPanel(wx.Panel):
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
+        self.busy = False
 
         self.plan_name = plan_name
         self.available_devices = list(self.context.kernel.services("device"))
@@ -128,6 +129,10 @@ class PlannerPanel(wx.Panel):
         event.Skip()
 
     def on_button_start(self, event=None):  # wxGlade: Preview.<event_handler>
+        if self.busy:
+            return
+        self.busy = True
+        self.button_start.Enable(False)
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
                 self.context(f"plan{self.plan_name} copy preprocess\n")
@@ -161,6 +166,8 @@ class PlannerPanel(wx.Panel):
                     self.GetParent().Close()
                 except (TypeError, AttributeError):
                     pass
+        self.busy = False
+        self.button_start.Enable(True)
         self.update_gui()
 
     def pane_show(self):
@@ -195,6 +202,9 @@ class PlannerPanel(wx.Panel):
             except AttributeError:
                 return str(e)
 
+        if self.busy:
+            return
+
         self.list_operations.Clear()
         self.list_command.Clear()
         cutplan = self.context.planner.default_plan
@@ -219,7 +229,7 @@ class PlannerPanel(wx.Panel):
                 _("Run the commands to make these operations valid.")
             )
         elif self.stage == 3:
-            self.button_start.SetLabelText(_("Blob"))
+            self.button_start.SetLabelText(_("Create Lasercode"))
             self.button_start.SetBackgroundColour(wx.Colour(102, 102, 255))
             self.button_start.SetToolTip(_("Turn this set of operations into Cutcode"))
         elif self.stage == 4:

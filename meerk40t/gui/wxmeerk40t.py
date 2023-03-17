@@ -34,6 +34,7 @@ from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
+from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .hersheymanager import (
     HersheyFontManager,
     HersheyFontSelector,
@@ -52,11 +53,9 @@ from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
+from .propertypanels.blobproperty import BlobPropertyPanel
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
-from .propertypanels.groupproperties import (
-    FilePropertiesPanel,
-    GroupPropertiesPanel,
-)
+from .propertypanels.groupproperties import FilePropertiesPanel, GroupPropertiesPanel
 from .propertypanels.imageproperty import (
     ImageModificationPanel,
     ImagePropertyPanel,
@@ -420,6 +419,7 @@ class wxMeerK40t(wx.App, Module):
         def window_list(channel, _, data, **kwargs):
             channel(_("----------"))
             channel(_("Windows Registered:"))
+            context = kernel.root
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
                 channel(f"{i + 1}: {name}")
@@ -637,6 +637,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
         kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
@@ -672,11 +673,13 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/HersheyFontManager", HersheyFontManager)
         kernel.register("window/HersheyFontSelector", HersheyFontSelector)
+        kernel.register("window/NodeEditIcons", NodeEditToolbar)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
+        kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
@@ -720,6 +723,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Stop", register_panel_stop)
         kernel.register("wxpane/Home", register_panel_home)
         kernel.register("wxpane/Pause", register_panel_pause)
+
+        from meerk40t.gui.dialogoptions import DialogOptions
+
+        kernel.register("dialog/options", DialogOptions)
 
         context = kernel.root
 

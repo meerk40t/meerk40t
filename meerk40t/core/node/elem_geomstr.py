@@ -1,5 +1,4 @@
 from copy import copy
-from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node

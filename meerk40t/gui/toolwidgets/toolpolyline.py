@@ -46,7 +46,7 @@ class PolylineTool(ToolWidget):
             points = list(self.point_series)
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
-            gc.DrawLines(points)
+            gc.StrokeLines(points)
             x0 = points[-2][0]
             y0 = points[-2][1]
             x1 = points[-1][0]
@@ -75,7 +75,7 @@ class PolylineTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.point_series.append((space_pos[0], space_pos[1]))
             else:
@@ -104,13 +104,13 @@ class PolylineTool(ToolWidget):
             was_already_empty = len(self.point_series) == 0
             self.point_series = []
             self.mouse_position = None
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.request_refresh()
             if was_already_empty:
                 self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.mouse_position = space_pos[0], space_pos[1]
             else:
@@ -131,8 +131,8 @@ class PolylineTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
@@ -154,7 +154,7 @@ class PolylineTool(ToolWidget):
         )
         if elements.classify_new:
             elements.classify([node])
-        self.scene.tool_active = False
+        self.scene.pane.tool_active = False
         self.point_series = []
         self.notify_created(node)
         self.mouse_position = None

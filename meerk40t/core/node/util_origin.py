@@ -28,9 +28,7 @@ class SetOriginOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super().default_map(
-            default_map=default_map
-        )
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "SetOrigin"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["adjust"] = (

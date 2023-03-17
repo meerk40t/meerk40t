@@ -30,7 +30,9 @@ class TestDriverGRBL(unittest.TestCase):
         try:
             kernel.console("service device start -i grbl 0\n")
             kernel.console("operation* remove\n")
-            kernel.console(f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
+            kernel.console(
+                f"rect 2cm 2cm 1cm 1cm engrave -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
         finally:
             kernel.shutdown()
         with open(file1) as f:
@@ -49,7 +51,8 @@ class TestDriverGRBL(unittest.TestCase):
             kernel.console("service device start -i grbl 0\n")
             kernel.console("operation* remove\n")
             kernel.console(
-                f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
+                f"rect 2cm 2cm 1cm 1cm cut -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
         finally:
             kernel.shutdown()
         with open(file1) as f:
@@ -70,7 +73,8 @@ class TestDriverGRBL(unittest.TestCase):
             kernel.console("service device start -i grbl 0\n")
             kernel.console("operation* remove\n")
             kernel.console(
-                f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n")
+                f"rect 2cm 2cm 1cm 1cm raster -s 15 plan copy-selected preprocess validate blob preopt optimize save_job {file1}\n"
+            )
         finally:
             kernel.shutdown()
         with open(file1) as f:

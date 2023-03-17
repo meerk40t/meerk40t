@@ -1,6 +1,6 @@
 import re
 from copy import copy
-from math import sqrt
+from math import sqrt, tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
@@ -35,7 +35,8 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    # r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    r"\s*'[^']+'|\s*\"[^\"]+\"|[^,\s]+"
 )
 
 
@@ -46,8 +47,6 @@ class TextNode(Node, Stroked):
 
     def __init__(self, **kwargs):
         self.text = None
-        self.x = 0
-        self.y = 0
         self.anchor = "start"  # start, middle, end.
         self.baseline = "hanging"
         self.matrix = None
@@ -83,35 +82,63 @@ class TextNode(Node, Stroked):
         else:
             font = None
         super().__init__(type="elem text", **kwargs)
+
+        # We might have relevant forn-information hidden inside settings...
+        rotangle = 0
+        if "settings" in kwargs:
+            kwa = kwargs["settings"]
+            # for prop in kwa:
+            #     v = getattr(self, prop, None)
+            #     print (f"{prop}, kwa={kwargs['settings'][prop]}, v={v}")
+            if "font-size" in kwa:
+                self.font_size = kwa["font-size"]
+            if "font-weight" in kwa:
+                self.font_weight = kwa["font-weight"]
+            if "font-family" in kwa:
+                self.font_family = kwa["font-family"]
+            if "rotate" in kwa:
+                try:
+                    rotangle = float(kwa["rotate"])
+                    while rotangle >= 360:
+                        rotangle -= 360
+                    while rotangle <= -360:
+                        rotangle += 360
+                except ValueError:
+                    rotangle = 0
+                # Don't leave it, elsewise it will be reapplied when copying this node
+                del kwa["rotate"]
+            self.validate_font()
         self.text = str(self.text)
         self._formatter = "{element_type} {id}: {text}"
         if self.matrix is None:
             self.matrix = Matrix()
-        if self.x != 0 or self.y != 0:
+        try:
+            # If there is an x or y this is an SVG pretranslate offset.
             self.matrix.pre_translate(self.x, self.y)
+            # It must be deleted to avoid applying it again to copies.
+            del self.x
+            del self.y
+        except AttributeError:
+            pass
+        if rotangle != 0:
+            rotangle = rotangle / 360 * tau
+            self.matrix.pre_rotate(rotangle)
+
         self.bounds_with_variables_translated = None
 
         if font is not None:
             self.parse_font(font)
         else:
-            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE, None)
-            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE, None)
-            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT, None)
-            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT, None)
-            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, None)
-            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, None)
+            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE, self.font_size)
+            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE, self.font_style)
+            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT, self.font_variant)
+            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT, self.font_weight)
+            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, self.font_stretch)
+            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, self.font_family)
             self.validate_font()
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = Matrix(kwargs.get("viewport_transform", ""))
-            self._stroke_zero = sqrt(abs(m.determinant))
-        if self._stroke_zero is None:
-            # This defines the stroke-width zero point scale
-            m = Matrix(kwargs.get("viewport_transform"))
-            if m:
-                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
-            else:
-                self.stroke_width_zero()
+            self.stroke_width_zero()
 
     def __copy__(self):
         nd = self.node_dict
@@ -233,7 +260,7 @@ class TextNode(Node, Stroked):
     def validate_font(self):
         if self.line_height is None:
             self.line_height = "12pt" if self.font_size is None else "100%"
-        if self.font_size:
+        if self.font_size and isinstance(self.font_size, str):
             size = self.font_size
             try:
                 self.font_size = Length(self.font_size, unitless=UNITS_PER_POINT).pt
@@ -258,12 +285,28 @@ class TextNode(Node, Stroked):
 
     @property
     def font_list(self):
-        if self.font_family is None:
-            return []
-        return [
-            family[1:-1] if family.startswith('"') or family.startswith("'") else family
-            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
-        ]
+        result = []
+        if self.font_family is not None:
+            fonts = re.findall(REGEX_CSS_FONT_FAMILY, self.font_family)
+            if len(fonts) == 0:
+                result.append(
+                    self.font_family[1:-1]
+                    if self.font_family.startswith('"')
+                    or self.font_family.startswith("'")
+                    else self.font_family
+                )
+            else:
+                if not "'" in self.font_family and not '"' in self.font_family:
+                    # Just for the sake of checking, add the full string -
+                    # this is most of the time the correct choice...
+                    result.append(self.font_family)
+                for font in fonts:
+                    result.append(
+                        font[1:-1]
+                        if font.startswith('"') or font.startswith("'")
+                        else font
+                    )
+        return result
 
     @property
     def weight(self):
@@ -336,3 +379,35 @@ class TextNode(Node, Stroked):
             xmax + delta,
             ymax + delta,
         )
+
+    """
+    A text node has no paint_bounds that is different to bounds,
+    so we overload the standard functions to acknowledge that and
+    always sync paint_bounds to bounds.
+    """
+
+    @property
+    def paint_bounds(self):
+        # Make sure that bounds is valid
+        if self._paint_bounds_dirty:
+            self._paint_bounds_dirty = False
+            self._paint_bounds = self.bounds
+        return self._paint_bounds
+
+    @property
+    def bounds(self):
+        # Make sure that bounds is valid
+        if not self._bounds_dirty:
+            if self._paint_bounds_dirty:
+                self._paint_bounds_dirty = False
+                self._paint_bounds = self._bounds
+            return self._bounds
+
+        try:
+            self._bounds = self.bbox(with_stroke=False)
+        except AttributeError:
+            self._bounds = None
+        self._paint_bounds = self._bounds
+        self._bounds_dirty = False
+        self._paint_bounds_dirty = False
+        return self._bounds

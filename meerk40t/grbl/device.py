@@ -5,7 +5,9 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 from time import sleep
+
 import serial.tools.list_ports
+
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -38,6 +40,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "bedheight",
@@ -48,6 +51,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
                 "signals": "bedsize",
+                "nonzero": True,
             },
             {
                 "attr": "scale_x",
@@ -197,7 +201,8 @@ class GRBLDevice(Service, ViewPort):
                 "style": "option",
                 "label": "",
                 "tip": _("What serial interface does this device connect to?"),
-                "subsection": "Serial Interface",
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
                 "dynamic": update,
             },
             {
@@ -207,7 +212,22 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
-                "subsection": "Serial Interface",
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+            },
+            {
+                "attr": "buffer_mode",
+                "object": self,
+                "default": "buffered",
+                "type": str,
+                "style": "combo",
+                "choices": ["buffered", "sync"],
+                "label": _("Sending Protocol"),
+                "tip": _(
+                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
             },
             {
                 "attr": "planning_buffer_size",
@@ -216,18 +236,8 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Planning Buffer Size"),
                 "tip": _("Size of Planning Buffer"),
-            },
-            {
-                "attr": "buffer_mode",
-                "object": self,
-                "default": "buffered",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["buffered", "sync"],
-                "label": _("Sending Protocol"),
-                "tip": _(
-                    "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
-                ),
+                "section": "_20_Protocol",
+                "subsection": "_00_",
             },
             {
                 "attr": "interpolate",
@@ -236,6 +246,19 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+            },
+            {
+                "attr": "line_end",
+                "object": self,
+                "default": "CR",
+                "type": str,
+                "style": "combosmall",
+                "choices": ["CR", "LF", "CRLF"],
+                "label": _("Line Ending"),
+                "tip": _(
+                    "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+                ),
+                "section": "_20_Protocol",
             },
             {
                 "attr": "mock",
@@ -302,12 +325,14 @@ class GRBLDevice(Service, ViewPort):
         self.register_choices("grbl-global", choices)
 
         self.driver = GRBLDriver(self)
+
         self.controller = GrblController(self)
         self.channel("grbl").watch(self.controller.write)
         self.channel("grbl-realtime").watch(self.controller.realtime)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
+        self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
 
@@ -541,20 +566,6 @@ class GRBLDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
 
     def realize(self):
         self.width = self.bedwidth

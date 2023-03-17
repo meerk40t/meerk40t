@@ -176,7 +176,7 @@ class Scene(Module, Job):
     to the scene and then the interface widget which contains all the non-scene widget elements.
     """
 
-    def __init__(self, context, path, gui, **kwargs):
+    def __init__(self, context, path, gui, pane=None, **kwargs):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
@@ -188,6 +188,7 @@ class Scene(Module, Job):
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
+        self.pane = pane
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
@@ -197,40 +198,15 @@ class Scene(Module, Job):
         self._down_start_time = None
         self._down_start_pos = None
         self._cursor = None
-        self._reference = None  # Reference Object
-        self.attraction_points = []  # Clear all
-        self.compute = True
-        self.has_background = False
+        self.suppress_changes = True
 
         self.colors = GuiColors(self.context)
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
+        self.has_background = False
         # If set this color will be used for the scene background (used during burn)
         self.overrule_background = None
-        # Stuff for magnet-lines
-        self.magnet_x = []
-        self.magnet_y = []
-        self.magnet_attraction = 2
-        # 0 off, `1..x` increasing strength (quadratic behaviour)
-
-        self.magnet_attract_x = True  # Shall the X-Axis be affected
-        self.magnet_attract_y = True  # Shall the Y-Axis be affected
-        self.magnet_attract_c = True  # Shall the center be affected
-
-        # Stuff related to grids and guides
-        self.tick_distance = 0
-        self.auto_tick = False  # by definition do not auto_tick
-        self.reset_grids()
-
-        self.tool_active = False
-        self.modif_active = False
-
-        self._last_snap_position = None
-        self._last_snap_ts = 0
-
-        self.active_tool = "none"
-        self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
         self._animating = list()
         self._animate_lock = threading.Lock()
@@ -242,150 +218,6 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
-
-    @property
-    def last_snap(self):
-        result = self._last_snap_position
-        # Too old? Discard
-        if (time.time() - self._last_snap_ts) > 0.5:
-            result = None
-        return result
-
-    @last_snap.setter
-    def last_snap(self, value):
-        self._last_snap_position = value
-        if value is None:
-            self._last_snap_ts = 0
-        else:
-            self._last_snap_ts = time.time()
-
-    def reset_grids(self):
-        self.draw_grid_primary = True
-        self.tick_distance = 0
-        # Secondary grid, perpendicular, but with definable center and scaling
-        self.draw_grid_secondary = False
-        self.grid_secondary_cx = None
-        self.grid_secondary_cy = None
-        self.grid_secondary_scale_x = 1
-        self.grid_secondary_scale_y = 1
-        # Circular grid
-        self.draw_grid_circular = False
-        self.grid_circular_cx = None
-        self.grid_circular_cy = None
-
-    def clear_magnets(self):
-        self.magnet_x = []
-        self.magnet_y = []
-        self.context.signal("magnets", False)
-
-    def toggle_x_magnet(self, x_value):
-        prev = self.has_magnets()
-        if x_value in self.magnet_x:
-            self.magnet_x.remove(x_value)
-            # print("Remove x magnet for %.1f" % x_value)
-            now = self.has_magnets()
-        else:
-            self.magnet_x += [x_value]
-            # print("Add x magnet for %.1f" % x_value)
-            now = True
-        if prev != now:
-            self.context.signal("magnets", now)
-
-    def toggle_y_magnet(self, y_value):
-        prev = self.has_magnets()
-        if y_value in self.magnet_y:
-            self.magnet_y.remove(y_value)
-            # print("Remove y magnet for %.1f" % y_value)
-            now = self.has_magnets()
-        else:
-            self.magnet_y += [y_value]
-            now = True
-            # print("Add y magnet for %.1f" % y_value)
-        if prev != now:
-            self.context.signal("magnets", now)
-
-    def magnet_attracted_x(self, x_value, useit):
-        delta = float("inf")
-        x_val = None
-        if useit:
-            for mag_x in self.magnet_x:
-                if abs(x_value - mag_x) < delta:
-                    delta = abs(x_value - mag_x)
-                    x_val = mag_x
-        return delta, x_val
-
-    def magnet_attracted_y(self, y_value, useit):
-        delta = float("inf")
-        y_val = None
-        if useit:
-            for mag_y in self.magnet_y:
-                if abs(y_value - mag_y) < delta:
-                    delta = abs(y_value - mag_y)
-                    y_val = mag_y
-        return delta, y_val
-
-    def revised_magnet_bound(self, bounds=None):
-
-        dx = 0
-        dy = 0
-        if self.has_magnets() and self.magnet_attraction > 0:
-            if self.tick_distance > 0:
-                s = f"{self.tick_distance}{self.context.units_name}"
-                len_tick = float(Length(s))
-                # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
-                # fmt: off
-                attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * len_tick
-
-                # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self.magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
-                # fmt: on
-            else:
-                attraction_len = float(Length("1mm"))
-
-            delta_x1, x1 = self.magnet_attracted_x(bounds[0], self.magnet_attract_x)
-            delta_x2, x2 = self.magnet_attracted_x(bounds[2], self.magnet_attract_x)
-            delta_x3, x3 = self.magnet_attracted_x(
-                (bounds[0] + bounds[2]) / 2, self.magnet_attract_c
-            )
-            delta_y1, y1 = self.magnet_attracted_y(bounds[1], self.magnet_attract_y)
-            delta_y2, y2 = self.magnet_attracted_y(bounds[3], self.magnet_attract_y)
-            delta_y3, y3 = self.magnet_attracted_y(
-                (bounds[1] + bounds[3]) / 2, self.magnet_attract_c
-            )
-            if delta_x3 < delta_x1 and delta_x3 < delta_x2:
-                if delta_x3 < attraction_len:
-                    if x3 is not None:
-                        dx = x3 - (bounds[0] + bounds[2]) / 2
-                        # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
-            elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
-                if delta_x1 < attraction_len:
-                    if x1 is not None:
-                        dx = x1 - bounds[0]
-                        # print("X Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
-            elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
-                if delta_x2 < attraction_len:
-                    if x2 is not None:
-                        dx = x2 - bounds[2]
-                        # print("X Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
-            if delta_y3 < delta_y1 and delta_y3 < delta_y2:
-                if delta_y3 < attraction_len:
-                    if y3 is not None:
-                        dy = y3 - (bounds[1] + bounds[3]) / 2
-                        # print("Y Take center , x=%.1f, dx=%.1f" % ((bounds[1] + bounds[3]) / 2, dy))
-            elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
-                if delta_y1 < attraction_len:
-                    if y1 is not None:
-                        dy = y1 - bounds[1]
-                        # print("Y Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
-            elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
-                if delta_y2 < attraction_len:
-                    if y2 is not None:
-                        dy = y2 - bounds[3]
-                        # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
-
-        return dx, dy
-
-    def has_magnets(self):
-        return len(self.magnet_x) + len(self.magnet_y) > 0
 
     def module_open(self, *args, **kwargs):
         context = self.context
@@ -469,13 +301,14 @@ class Scene(Module, Job):
             self.log("Animating Scene...")
         if self._adding_widgets:
             with self._animate_lock:
-                for widget in self._adding_widgets:
-                    self._animating.append(widget)
-                    try:
-                        widget.start_threaded()
-                    except AttributeError:
-                        pass
+                animate_add = list(self._adding_widgets)
                 self._adding_widgets.clear()
+            for widget in animate_add:
+                self._animating.append(widget)
+                try:
+                    widget.start_threaded()
+                except AttributeError:
+                    pass
         if self._animating:
             for idx in range(len(self._animating) - 1, -1, -1):
                 widget = self._animating[idx]
@@ -621,7 +454,7 @@ class Scene(Module, Job):
         """
         Scene Draw routine to be called on paint when the _Buffer bitmap needs to be redrawn.
         """
-        if self.widget_root is not None:
+        if self.widget_root is not None and not self.suppress_changes:
             self.widget_root.draw(canvas)
             if self.log:
                 self.log("Redraw Canvas")
@@ -960,7 +793,7 @@ class Scene(Module, Job):
                             snap_x,
                             snap_y,
                         )
-                        self.last_snap = nearest_snap
+                        self.pane.last_snap = nearest_snap
             else:
                 params = None
 
@@ -1037,33 +870,3 @@ class Scene(Module, Job):
         Delegate to the SceneSpaceWidget interface.
         """
         self.widget_root.interface_widget.add_widget(-1, widget, properties)
-
-    def validate_reference(self):
-        """
-        Check whether the reference is still valid
-        """
-        found = False
-        if self._reference:
-            for e in self.context.elements.flat(types=elem_nodes):
-                # Here we ignore the lock-status of an element
-                if e is self._reference:
-                    found = True
-                    break
-        if not found:
-            self._reference = None
-
-    @property
-    def reference_object(self):
-        return self._reference
-
-    @reference_object.setter
-    def reference_object(self, ref_object):
-        prev = self._reference
-        self._reference = ref_object
-        dlist = []
-        if prev is not None:
-            dlist.append(prev)
-        if self._reference is not None:
-            dlist.append(self._reference)
-        if len(dlist) > 0:
-            self.context.signal("element_property_update", dlist)

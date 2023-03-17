@@ -40,6 +40,9 @@ class PointNode(Node):
     def preprocess(self, context, matrix, plan):
         self.matrix *= matrix
         self.set_dirty_bounds()
+        if not self.matrix.is_identity():
+            self.point = matrix.point_in_matrix_space(self.point)
+            self.matrix.reset()
 
     def bbox(self, transformed=True, with_stroke=False):
         if self.point is None:

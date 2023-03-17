@@ -1,3 +1,7 @@
+"""
+This is a giant list of console commands that deal with and often implement the elements system in the program.
+"""
+
 import os.path
 import re
 from copy import copy
@@ -63,7 +67,7 @@ def init_commands(kernel):
             "page": "Laser",
             "section": "General",
             "style": "option",
-            "display": ("Immediate", "User confirmation", "Delay 5 seconds"),
+            "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
             "choices": (0, 1, 2),
         },
     ]
@@ -674,48 +678,57 @@ def init_commands(kernel):
         self.set_emphasis(ops)
         return "ops", ops
 
-    @self.console_argument("start", type=int, help=_("operation start"))
-    @self.console_argument("end", type=int, help=_("operation end"))
-    @self.console_argument("step", type=int, help=_("operation step"))
+    @self.console_argument("start", type=int, help=_("start"))
+    @self.console_argument("end", type=int, help=_("end"))
+    @self.console_option("step", "s", type=int, default=1, help=_("step"))
     @self.console_command(
         "range",
         help=_("Subset existing selection by begin and end indices and step"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subops = list()
+    def opelem_select_range(
+        data=None, data_type=None, start=None, end=None, step=1, **kwargs
+    ):
+        sublist = list()
         for e in range(start, end, step):
             try:
-                subops.append(data[e])
+                sublist.append(data[e])
             except IndexError:
                 pass
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
 
     @self.console_argument("filter", type=str, help=_("Filter to apply"))
     @self.console_command(
         "filter",
         help=_("Filter data by given value"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_filter(channel=None, data=None, filter=None, **kwargs):
+    def opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs):
         """
         Apply a filter string to a filter particular operations from the current data.
-        Operations are evaluated in an infix prioritized stack format without spaces.
-        Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
+        Operations or elements are evaluated in an infix prioritized stack format without spaces.
+        Qualified values for all node types are: id, label, len, type
+        Qualified element values are stroke, fill, dpi, elem
+        Qualified operation values are speed, power, frequency, dpi, acceleration, op, passes, color, overscan
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+        Valid string operators are startswith, endswith, contains.
+        String values require single-quotes ', because the console interface requires double-quotes.
         eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
+        eg. operation* filter "type='op image'" list
+        eg. element* filter "id startwith 'p'" list
         """
-        subops = list()
+        sublist = list()
         _filter_parse = [
+            ("STR", r"'([^']*)'"),
             ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
             ("OP20", r"(\*|/)"),
             ("OP15", r"(\+|-)"),
-            ("OP11", r"(<=|>=|==|!=)"),
+            ("OP11", r"(<=|>=|==|!=|startswith|endswith|contains)"),
             ("OP10", r"(<|>|=)"),
             ("OP5", r"(&&)"),
             ("OP4", r"(&)"),
@@ -728,11 +741,11 @@ def init_commands(kernel):
             ),
             (
                 "TYPE",
-                r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                r"(raster|image|cut|engrave|dots|blob|rect|path|ellipse|point|image|line|polyline)",
             ),
             (
                 "VAL",
-                r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                r"(type|op|speed|power|frequency|dpi|passes|color|overscan|len|elem|stroke|fill|id|label)",
             ),
         ]
         filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
@@ -785,6 +798,12 @@ def init_commands(kernel):
                             operand.append(v1 + v2)
                         elif op == "-":
                             operand.append(v1 - v2)
+                        elif op == "startswith":
+                            operand.append(str(v1).startswith(str(v2)))
+                        elif op == "endswith":
+                            operand.append(str(v1).endswith(str(v2)))
+                        elif op == "contains":
+                            operand.append(str(v2) in (str(v1)))
                     except TypeError:
                         raise CommandSyntaxError("Cannot evaluate expression")
                     except ZeroDivisionError:
@@ -797,34 +816,140 @@ def init_commands(kernel):
                 if kind == "COLOR":
                     operand.append(Color(value))
                 elif kind == "VAL":
-                    if value == "dpi":
-                        operand.append(e.dpi)
-                    elif value == "color":
-                        operand.append(e.color)
-                    elif value == "op":
-                        operand.append(e.type.remove("op").strip())
-                    elif value == "len":
-                        operand.append(len(e.children))
-                    else:
-                        operand.append(e.settings.get(value))
-
+                    try:
+                        if value == "type":
+                            operand.append(e.type)
+                        elif value == "op":
+                            if e.type.startswith("op"):
+                                operand.append(e.type.replace("op", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "speed":
+                            operand.append(e.speed)
+                        elif value == "power":
+                            operand.append(e.power)
+                        elif value == "frequency":
+                            operand.append(e.frequency)
+                        elif value == "dpi":
+                            operand.append(e.dpi)
+                        elif value == "passes":
+                            operand.append(e.passes)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "len":
+                            try:
+                                operand.append(len(e.children))
+                            except AttributeError:
+                                operand.append(0)
+                        elif value == "elem":
+                            if e.type.startswith("elem"):
+                                operand.append(e.type.replace("elem", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "stroke":
+                            operand.append(e.stroke)
+                        elif value == "fill":
+                            operand.append(e.fill)
+                        elif value == "stroke_width":
+                            operand.append(e.stroke_width)
+                        elif value == "id":
+                            operand.append(e.id)
+                        elif value == "label":
+                            operand.append(e.label)
+                        else:
+                            operand.append(e.settings.get(value))
+                    except AttributeError:
+                        operand.append(None)
                 elif kind == "NUM":
                     operand.append(float(value))
                 elif kind == "TYPE":
                     operand.append(value)
+                elif kind == "STR":
+                    operand.append(value[1:-1])
                 elif kind.startswith("OP"):
-                    prec = int(kind[2:])
-                    solve_to(prec)
-                    operator.append((prec, value))
+                    precedence = int(kind[2:])
+                    solve_to(precedence)
+                    operator.append((precedence, value))
             solve_to(0)
             if len(operand) == 1:
                 if operand.pop():
-                    subops.append(e)
+                    sublist.append(e)
             else:
                 raise CommandSyntaxError(_("Filter parse failed"))
 
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
+
+    @self.console_argument(
+        "id",
+        type=str,
+        help=_("new id to set values to"),
+    )
+    @self.console_command(
+        "id",
+        help=_("id <id>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs):
+        if id is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("ID Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - id = {id}").format(index=i, name=name, id=e.id)
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.id = id
+        self.validate_ids()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
+
+    @self.console_argument(
+        "label",
+        type=str,
+        help=_("new label to set values to"),
+    )
+    @self.console_command(
+        "label",
+        help=_("label <label>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_label(
+        command, channel, _, label=None, data=None, data_type=None, **kwargs
+    ):
+        if label is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("Label Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - label = {label}").format(
+                        index=i, name=name, label=e.label
+                    )
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.label = label
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
 
     @self.console_command(
         "list",
@@ -1574,6 +1699,8 @@ def init_commands(kernel):
                     newnode, "mktext"
                 ):
                     newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, newnode)
             # Newly created! Classification needed?
             post.append(classify_new(add_elem))
             self.signal("refresh_scene", "Scene")
@@ -1584,11 +1711,11 @@ def init_commands(kernel):
     )
     def e_delete(command, channel, _, data=None, data_type=None, **kwargs):
         channel(_("Deleting…"))
-        if data_type == "elements":
-            self.remove_elements(data)
-        else:
-            self.remove_operations(data)
-        self.signal("tree_changed")
+        with self.static("e_delete"):
+            if data_type == "elements":
+                self.remove_elements(data)
+            else:
+                self.remove_operations(data)
 
     # ==========
     # ELEMENT BASE
@@ -1663,34 +1790,34 @@ def init_commands(kernel):
     )
     def regmark(command, channel, _, data, cmd=None, **kwargs):
         # Move regmarks into the regular element tree and vice versa
-        if cmd == "free":
-            target = self.elem_branch
-        else:
-            target = self.reg_branch
-
-        if data is None:
-            data = list()
+        with self.static("regmark"):
             if cmd == "free":
-                for item in list(self.regmarks()):
-                    data.append(item)
+                target = self.elem_branch
             else:
-                for item in list(self.elems(emphasized=True)):
-                    data.append(item)
-        if cmd in ("free", "add"):
-            if len(data) == 0:
-                channel(_("No elements to transfer"))
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd == "free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data) == 0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+                    if cmd == "free" and self.classify_new:
+                        self.classify(data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
             else:
-                move_nodes_to(target, data)
-                if cmd == "free" and self.classify_new:
-                    self.classify(data)
-        elif cmd == "clear":
-            self.clear_regmarks()
-            data = None
-        else:
-            # Unknown command
-            channel(_("Invalid command, use one of add, free, clear"))
-            data = None
-        self.signal("tree_changed")
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
         return "elements", data
 
     # ==========
@@ -1809,25 +1936,6 @@ def init_commands(kernel):
         channel("----------")
         return "elements", data
 
-    @self.console_argument("start", type=int, help=_("elements start"))
-    @self.console_argument("end", type=int, help=_("elements end"))
-    @self.console_argument("step", type=int, help=_("elements step"))
-    @self.console_command(
-        "range",
-        help=_("Subset selection by begin & end indices and step"),
-        input_type="elements",
-        output_type="elements",
-    )
-    def element_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subelem = list()
-        for e in range(start, end, step):
-            try:
-                subelem.append(data[e])
-            except IndexError:
-                pass
-        self.set_emphasis(subelem)
-        return "elements", subelem
-
     @self.console_command(
         "merge",
         help=_("merge elements"),
@@ -1921,7 +2029,6 @@ def init_commands(kernel):
         align_bounds = None
         align_x = align_x.lower()
         align_y = align_y.lower()
-
         if align_x not in ("min", "max", "center", "none"):
             channel(_("Invalid alignment parameter for x"))
             return
@@ -1941,9 +2048,12 @@ def init_commands(kernel):
             elements.sort(key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of first element, delta was: {delta:.2f}")
+                # print (f"Time 1: {elements[0].type} - {elements[0]._emphasized_time}, Time 2: {elements[-1].type} - {elements[-1]._emphasized_time}")
+                # elements.pop(0)
         elif mode == "last":
             if len(elements) < 2:
                 channel(_("No sense in aligning an element to itself"))
@@ -1951,9 +2061,12 @@ def init_commands(kernel):
             elements.sort(reverse=True, key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            # print(f"Mode: {mode}, type={elements[0].type}")
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of last element, delta was: {delta:.2f}")
+                # elements.pop(0)
         elif mode == "bed":
             align_bounds = bounds
         elif mode == "ref":
@@ -2171,38 +2284,6 @@ def init_commands(kernel):
             return
         if data is None:
             data = list(self.elems(emphasized=True))
-        # Element conversion.
-        # We need to establish, if for a given node within a group
-        # all it's siblings are selected as well, if that's the case
-        # then use the parent instead - unless there are no other elements
-        # selected ie all selected belong to the same group...
-        d = list()
-        elem_branch = self.elem_branch
-        for node in data:
-            snode = node
-            if snode.parent and snode.parent is not elem_branch:
-                # I need all other siblings
-                singular = False
-                for n in list(node.parent.children):
-                    if n not in data:
-                        singular = True
-                        break
-                if not singular:
-                    while (
-                        snode.parent
-                        and snode.parent is not elem_branch
-                        and snode.parent.type != "file"
-                    ):
-                        snode = snode.parent
-            if snode is not None and snode not in d:
-                d.append(snode)
-        if len(d) == 1 and d[0].type == "group":
-            # This is just on single group - expand...
-            data = list(d[0].flat(emphasized=True, types=elem_nodes))
-            for n in data:
-                n._emphasized_time = d[0]._emphasized_time
-        else:
-            data = d
         return "align", (
             self._align_mode,
             self._align_group,
@@ -2354,7 +2435,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(-delta, 0)
                     except AttributeError:
                         continue
             dim_pos += subbox[2] - subbox[0] + distributed_distance
@@ -2402,7 +2483,7 @@ def init_commands(kernel):
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
-                        q.modified()
+                        q.translated(0, -delta)
                     except AttributeError:
                         continue
             dim_pos += subbox[3] - subbox[1] + distributed_distance
@@ -2807,7 +2888,7 @@ def init_commands(kernel):
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
                     e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.modified()
+                    e.translated(x_pos, y_pos)
                 self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
@@ -3927,7 +4008,6 @@ def init_commands(kernel):
             None,
             "elements",
         ),
-        hidden=True,
         output_type="elements",
     )
     def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
@@ -3950,6 +4030,42 @@ def init_commands(kernel):
                 channel(f"Node {e} anchor changed from {old_anchor} to {anchor}")
 
             e.altered()
+        return "elements", data
+
+    @self.console_argument("new_text", type=str, help=_("set new text contents"))
+    @self.console_command(
+        "text-edit",
+        help=_("set text object text to new text"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_text_edit(command, channel, _, data, new_text=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        for e in data:
+            if hasattr(e, "lock") and e.lock:
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                continue
+            if e.type == "elem text":
+                old_text = e.text
+                e.text = new_text
+            elif hasattr(e, "mktext"):
+                old_text = e.mktext
+                e.mktext = new_text
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, e)
+            else:
+                continue
+            channel(f"Node {e} anchor changed from {old_text} to {new_text}")
+            e.altered()
+
         return "elements", data
 
     @self.console_command(
@@ -4310,7 +4426,11 @@ def init_commands(kernel):
                 e.stroke_width_zero()
             except AttributeError:
                 pass
-            e.modified()
+            # No full modified required, we are effectively only adjusting
+            # the painted_bounds
+            e.translated(0, 0)
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -4335,6 +4455,8 @@ def init_commands(kernel):
                 continue
             e.stroke_scaled = command == "enable_stroke_scale"
             e.altered()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -4625,7 +4747,9 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        elif color == "none":
+        self.set_start_time("full_load")
+        if color == "none":
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4633,8 +4757,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         else:
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4642,10 +4769,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4657,8 +4787,12 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+            self.set_end_time("classify")
             # self.signal("rebuild_tree")
             self.signal("refresh_tree", apply)
+        else:
+            self.signal("element_property_update", apply)
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -4721,6 +4855,7 @@ def init_commands(kernel):
             channel("----------")
             return "elements", data
         elif color == "none":
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4728,8 +4863,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         else:
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4737,10 +4875,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4753,7 +4894,11 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
             self.signal("refresh_tree", apply)
-        #                self.signal("rebuild_tree")
+            #                self.signal("rebuild_tree")
+            self.set_end_time("classify")
+        else:
+            self.signal("element_property_update", apply)
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument(
@@ -4865,30 +5010,27 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-        rot = angle.as_degrees
 
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
-        matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
         images = []
         try:
             if not absolute:
                 for node in data:
                     if hasattr(node, "lock") and node.lock:
                         continue
-
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
             else:
                 for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     start_angle = node.matrix.rotation
-                    amount = rot - start_angle
-                    matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle - start_angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
@@ -4985,7 +5127,7 @@ def init_commands(kernel):
                     if hasattr(node, "lock") and node.lock:
                         continue
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
             else:
@@ -4998,7 +5140,7 @@ def init_commands(kernel):
                     nsy = scale_y / osy
                     matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
         except ValueError:
@@ -5126,6 +5268,7 @@ def init_commands(kernel):
             tx = 0
         if ty is None:
             ty = 0
+        changes = False
         matrix = Matrix.translate(tx, ty)
         try:
             if not absolute:
@@ -5138,7 +5281,8 @@ def init_commands(kernel):
                         continue
 
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(tx, ty)
+                    changes = True
             else:
                 for node in data:
                     if (
@@ -5153,9 +5297,12 @@ def init_commands(kernel):
                     nty = ty - oty
                     matrix = Matrix.translate(ntx, nty)
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(ntx, nty)
+                    changes = True
         except ValueError:
             raise CommandSyntaxError
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -5177,7 +5324,7 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
-
+        changes = False
         dbounds = Node.union_bounds(data)
         for node in data:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
@@ -5187,7 +5334,11 @@ def init_commands(kernel):
             dy = ty - dbounds[1]
             if dx != 0 or dy != 0:
                 node.matrix.post_translate(dx, dy)
-            node.modified()
+                # node.modified()
+                node.translated(dx, dy)
+                changes = True
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -5213,7 +5364,8 @@ def init_commands(kernel):
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     continue
                 node.matrix.post_translate(ntx, nty)
-                node.modified()
+                # node.modified()
+                node.translated(ntx, nty)
         except ValueError:
             raise CommandSyntaxError
         return "elements", data
@@ -5299,11 +5451,13 @@ def init_commands(kernel):
     def element_matrix(
         command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
     ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
         if ty is None:
             channel("----------")
             channel(_("Matrix Values:"))
             i = 0
-            for node in self.elems():
+            for node in data:
                 name = str(node)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -5311,8 +5465,6 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        if data is None:
-            data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
@@ -5573,17 +5725,17 @@ def init_commands(kernel):
             data = [self._tree]
         if drop is None:
             raise CommandSyntaxError
-        try:
-            drag_node = self._tree
-            for n in drag.split("."):
-                drag_node = drag_node.children[int(n)]
-            drop_node = self._tree
-            for n in drop.split("."):
-                drop_node = drop_node.children[int(n)]
-            drop_node.drop(drag_node)
-        except (IndexError, AttributeError, ValueError):
-            raise CommandSyntaxError
-        self.signal("tree_changed")
+        with self.static("tree_dnd"):
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise CommandSyntaxError
         return "tree", data
 
     @self.console_argument("node", help="Node address for menu")
@@ -5837,9 +5989,9 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        self.remove_nodes(todelete[entry])
-        self.validate_selected_area()
-        self.signal("tree_changed")
+        with self.static("delete"):
+            self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -5856,8 +6008,8 @@ def init_commands(kernel):
         """
         # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
-        self.remove_nodes(data)
-        self.signal("tree_changed")
+        with self.static("remove"):
+            self.remove_nodes(data)
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -5954,9 +6106,16 @@ def init_commands(kernel):
         self._clipboard[destination] = []
         for e in data:
             copy_node = copy(e)
+            # Need to add stroke and fill, as copy will take the
+            # default values for these attributes
+            for optional in ("fill", "stroke"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+            hadoptional = False
             for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
+                    hadoptional = True
             self._clipboard[destination].append(copy_node)
         # Let the world know we have filled the clipboard
         self.signal("icons")
@@ -5974,11 +6133,32 @@ def init_commands(kernel):
         command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs
     ):
         destination = self._clipboard_default
+        pasted = []
         try:
-            pasted = [copy(e) for e in self._clipboard[destination]]
+            for e in self._clipboard[destination]:
+                copy_node = copy(e)
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                for optional in ("fill", "stroke"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                hadoptional = False
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                        hadoptional = True
+                if hadoptional:
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, copy_node)
+
+                pasted.append(copy_node)
         except (TypeError, KeyError):
             channel(_("Error: Clipboard Empty"))
             return
+        if len(pasted) == 0:
+            channel(_("Error: Clipboard Empty"))
+            return
+
         if dx is not None:
             dx = float(dx)
         else:
@@ -5995,12 +6175,19 @@ def init_commands(kernel):
             group = self.elem_branch.add(type="group", label="Group", id="Copy")
         else:
             group = self.elem_branch
+        target = []
         for p in pasted:
             if hasattr(p, "label"):
                 s = "Copy" if p.label is None else f"{p.label} (copy)"
                 p.label = s
             group.add_node(p)
-        self.set_emphasis([group])
+            target.append(p)
+        # Make sure we are selecting the right thing...
+        if len(pasted) > 1:
+            self.set_emphasis([group])
+        else:
+            self.set_emphasis(target)
+
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
         post.append(classify_new(pasted))

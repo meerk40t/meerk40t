@@ -1,3 +1,12 @@
+"""
+LaserJob is the basic Spooler Job. It stores a list of items that are merely called in order on the driver. Between
+each call a cycle is returned with False until the processing is finished and True is returned.
+
+The LaserJob itself permits looping. This will send the list of items that many times until the job is completed.
+This could be an infinite number of times.
+"""
+
+
 import time
 from math import isinf
 

@@ -15,9 +15,7 @@ class BranchOperationsNode(Node):
         self._formatter = "{element_type} {loops}"
 
     def default_map(self, default_map=None):
-        default_map = super().default_map(
-            default_map=default_map
-        )
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Operations"
         if self.loop_continuous:
             default_map["loops"] = "∞"

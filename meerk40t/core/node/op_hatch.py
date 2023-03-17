@@ -53,6 +53,10 @@ class HatchOpNode(Node, Parameters):
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = True
+        if label is None:
+            self.label = "Hatch"
+        else:
+            self.label = label
 
     def __repr__(self):
         return "HatchOpNode()"
@@ -318,6 +322,8 @@ class HatchOpNode(Node, Parameters):
             hatch_cache = dict()
             for p in range(self.implicit_passes):
                 chain_settings = dict(settings)
+                if "type" in chain_settings:
+                    del chain_settings["type"]
                 if penbox_pass is not None:
                     try:
                         chain_settings.update(penbox_pass[p])
@@ -355,7 +361,7 @@ class HatchOpNode(Node, Parameters):
                     )
                 for polyline in HatchOpNode.split(hatches):
                     node = PolylineNode(shape=Polyline(*polyline), **chain_settings)
-                    # node.settings.update(chain_settings)
+                    node.settings = chain_settings
                     self.add_node(node)
 
         if self.children:
@@ -371,5 +377,7 @@ class HatchOpNode(Node, Parameters):
             plot = PlotCut(settings=settings, color=node.stroke)
             for p in node.shape:
                 x, y = p
+                if plot:
+                    plot.plot_init(int(round(x)), int(round(y)))
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot

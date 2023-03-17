@@ -14,10 +14,10 @@ def plugin(service, lifecycle):
             icons8_computer_support_50,
             icons8_connected_50,
             icons8_emergency_stop_button_50,
+            icons8_flash_off_50,
             icons8_info_50,
             icons8_pause_50,
             icons8_quick_mode_on_50,
-            icons8_flash_off_50,
         )
 
         service.register("window/Serial-Controller", SerialController)

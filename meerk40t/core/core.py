@@ -1,3 +1,8 @@
+"""
+This plugin registers the other major plugins found in core.
+"""
+
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":

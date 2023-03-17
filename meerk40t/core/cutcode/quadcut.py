@@ -23,7 +23,6 @@ class QuadCut(CutObject):
             parent=parent,
             color=color,
         )
-        self.raster_step = 0
         self._control = control_point
 
     def __repr__(self):

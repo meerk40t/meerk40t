@@ -43,7 +43,7 @@ BOOL_PARAMETERS = (
     "job_enabled",
     "ppi_enabled",
     "shift_enabled",
-    "raster_swing",
+    "bidirectional",
     "advanced",
     "stopop",
 )
@@ -115,7 +115,7 @@ class Parameters:
                     myarr = []
                     sett = settings[v]
                     if sett != "":
-                        # First of all is it in he old format where we used eval?
+                        # First of all is it in the old format where we used eval?
                         if sett.startswith("["):
                             sett = sett[1:-1]
                         if "'," in sett:
@@ -368,12 +368,12 @@ class Parameters:
         self.settings["raster_direction"] = value
 
     @property
-    def raster_swing(self):
-        return self.settings.get("raster_swing", False)
+    def bidirectional(self):
+        return self.settings.get("bidirectional", True)
 
-    @raster_swing.setter
-    def raster_swing(self, value):
-        self.settings["raster_swing"] = value
+    @bidirectional.setter
+    def bidirectional(self, value):
+        self.settings["bidirectional"] = value
 
     #####################
     # HATCH PROPERTIES

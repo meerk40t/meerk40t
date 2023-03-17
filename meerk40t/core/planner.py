@@ -19,6 +19,13 @@ from .node.util_wait import WaitOperation
 from .units import Length
 
 
+"""
+The planner module provides cut planning services. This provides a method of going from operations + elements into
+cutcode which is then put inside a laserjob and sent to a spooler. Most of these operations are called on the
+individual CutPlan objects.
+"""
+
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.add_service("planner", Planner(kernel))

@@ -1,3 +1,9 @@
+"""
+Tree Operation decorators help define the Tree Operations found mostly in element_treeop class. We create dynamic menus
+and thus need to classify the various different methods to access a node, without actually creating giant and
+redundant code for each command on each code type.
+"""
+
 import functools
 
 

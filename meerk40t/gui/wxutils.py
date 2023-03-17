@@ -9,7 +9,10 @@ from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 
+import wx.lib.mixins.listctrl as listmix
+
 _ = wx.GetTranslation
+
 
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
@@ -343,6 +346,7 @@ class TextCtrl(wx.TextCtrl):
         name="",
         check="",
         limited=False,
+        nonzero=False,
     ):
         super().__init__(
             parent,
@@ -358,6 +362,9 @@ class TextCtrl(wx.TextCtrl):
         self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
+        self._nonzero = nonzero
+        if self._nonzero is None:
+            self._nonzero = False
         # For the sake of readability we allow multiple occurrences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
@@ -502,6 +509,8 @@ class TextCtrl(wx.TextCtrl):
                 if self.lower_limit_err is not None and value < self.lower_limit_err:
                     status = "error"
                 if self.upper_limit_err is not None and value > self.upper_limit_err:
+                    status = "error"
+                if self._nonzero and value == 0:
                     status = "error"
         except ValueError:
             status = "error"
@@ -768,6 +777,18 @@ class ScrolledPanel(SP):
                 self.Scroll(0, 0)
         except RuntimeError:
             pass
+
+
+class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    """TextEditMixin allows any column to be edited."""
+
+    # ----------------------------------------------------------------------
+    def __init__(
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+    ):
+        """Constructor"""
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.TextEditMixin.__init__(self)
 
 
 WX_METAKEYS = [

@@ -91,7 +91,7 @@ def register_panel_console(window, context):
     context.register("pane/console", pane)
 
     @context.console_command(
-        "cls",
+        ("cls", "clear"),
         help=_("Clear console screen"),
     )
     def clear_console(channel, _, *args, **kwargs):
@@ -360,12 +360,47 @@ class ConsolePanel(wx.ScrolledWindow):
             webbrowser.open_new_tab(url)
 
     def on_key_down_main(self, event):
+
+        def isrealchar(keycode):
+            if keycode in (wx.WXK_LEFT, wx.WXK_RIGHT):
+                # There are much more, but I am lazy...
+                return False
+            else:
+                return chr(keycode).isprintable
+
+        def refocus():
+            self.text_entry.SetInsertionPointEnd()
+            self.text_entry.SetFocus()
+
         key = event.GetKeyCode()
-        if key != wx.WXK_CONTROL and (key != ord("C") or not event.ControlDown()):
+        if (key != wx.WXK_CONTROL and (key != ord("C")) and not event.ControlDown()):
             if self.FindFocus() is not self.text_entry:
-                self.text_entry.SetFocus()
-                self.text_entry.AppendText(str(chr(key)).lower())
-        event.Skip()
+                try:
+                    if key == wx.WXK_DOWN:
+                        self.text_entry.SetValue(self.command_log[self.command_position + 1])
+                        if not wx.IsMainThread():
+                            wx.CallAfter(refocus)
+                        else:
+                            refocus()
+                        self.command_position += 1
+                    elif key == wx.WXK_UP:
+                        self.text_entry.SetValue(self.command_log[self.command_position - 1])
+                        if not wx.IsMainThread():
+                            wx.CallAfter(refocus)
+                        else:
+                            refocus()
+                        self.command_position -= 1
+                    elif isrealchar(key):
+                        self.text_entry.SetFocus()
+                        self.text_entry.AppendText(str(chr(key)).lower())
+                    else:
+                        self.text_entry.SetFocus()
+                        # event.Skip()
+                except IndexError:
+                    self.command_position = 0
+                    self.text_entry.SetValue("")
+        else:
+            event.Skip()
 
     def on_key_down(self, event):
         key = event.GetKeyCode()

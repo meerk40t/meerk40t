@@ -232,8 +232,10 @@ class GalvoController:
         goto_speed=None,
         light_speed=None,
         dark_speed=None,
+        force_mock=False,
     ):
         self.service = service
+        self.force_mock = force_mock
         self.is_shutdown = False  # Shutdown finished.
 
         name = self.service.label
@@ -243,7 +245,7 @@ class GalvoController:
         self.connection = None
         self._is_opening = False
         self._abort_open = False
-        self._backbone_error = False
+        self._disable_connect = False
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -279,8 +281,21 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
-    def set_backbone_error(self, status):
-        self._backbone_error = status
+    @property
+    def state(self):
+        if self.mode == DRIVER_STATE_RAPID:
+            return "idle", "idle"
+        if self.paused:
+            return "hold", "paused"
+        if self.mode == DRIVER_STATE_RAW:
+            return "busy", "raw"
+        if self.mode == DRIVER_STATE_LIGHT:
+            return "busy", "light"
+        if self.mode == DRIVER_STATE_PROGRAM:
+            return "busy", "program"
+
+    def set_disable_connect(self, status):
+        self._disable_connect = status
 
     def added(self):
         pass
@@ -314,15 +329,18 @@ class GalvoController:
             pass
         self.connection = None
         # Reset error to allow another attempt
-        self.set_backbone_error(False)
+        self.set_disable_connect(False)
 
     def connect_if_needed(self):
-        if self._backbone_error:
+        if self._disable_connect:
+            # After many failures automatic connects are disabled. We require a manual connection.
             self.abort_connect()
             self.connection = None
-            return
+            raise ConnectionRefusedError(
+                "LMC was unreachable. Explicit connect required."
+            )
         if self.connection is None:
-            if self.service.setting(bool, "mock", False):
+            if self.service.setting(bool, "mock", False) or self.force_mock:
                 self.connection = MockConnection(self.usb_log)
                 name = self.service.label
                 self.connection.send = self.service.channel(f"{name}/send")
@@ -338,6 +356,7 @@ class GalvoController:
                     raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
+                time.sleep(0.3)
                 count += 1
                 # self.usb_log(f"Error-Routine pass #{count}")
                 if self.is_shutdown or self._abort_open:
@@ -347,8 +366,11 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
-                    self.set_backbone_error(True)
+                    # We have failed too many times.
+                    self._is_opening = False
+                    self.set_disable_connect(True)
                     self.usb_log("Could not connect to the LMC controller.")
+                    self.usb_log("Automatic connections disabled.")
                     raise ConnectionRefusedError(
                         "Could not connect to the LMC controller."
                     )
@@ -363,7 +385,7 @@ class GalvoController:
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
-        except (ConnectionError, AttributeError):
+        except ConnectionError:
             return -1, -1, -1, -1
         if read:
             try:
@@ -389,7 +411,7 @@ class GalvoController:
         self.list_end_of_list()  # Ensure at least one list_end_of_list
         self._list_end()
         if not self._list_executing and self._number_of_list_packets:
-            # If we never ran the list and we sent some lists.
+            # If we never ran the list, and we sent some lists.
             self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0
@@ -999,7 +1021,7 @@ class GalvoController:
         @param time:
         @return:
         """
-        self._list_write(listDelayTime, time)
+        self._list_write(listDelayTime, abs(time))
 
     def list_mark(self, x, y, angle=0):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
@@ -1029,10 +1051,7 @@ class GalvoController:
         if self._delay_on == delay:
             return
         self._delay_on = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listLaserOnDelay, delay, sign)
+        self._list_write(listLaserOnDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_laser_off_delay(self, delay):
         """
@@ -1043,10 +1062,7 @@ class GalvoController:
         if self._delay_off == delay:
             return
         self._delay_off = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listLaserOffDelay, delay, sign)
+        self._list_write(listLaserOffDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_mark_frequency(self, frequency):
         """
@@ -1093,10 +1109,7 @@ class GalvoController:
         if self._delay_jump == delay:
             return
         self._delay_jump = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listJumpDelay, delay, sign)
+        self._list_write(listJumpDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_polygon_delay(self, delay):
         """
@@ -1107,10 +1120,7 @@ class GalvoController:
         if self._delay_poly == delay:
             return
         self._delay_poly = delay
-        sign = 0
-        if delay < 0:
-            sign = 0x8000
-        self._list_write(listPolygonDelay, delay, sign)
+        self._list_write(listPolygonDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_write_port(self):
         """
@@ -1172,7 +1182,7 @@ class GalvoController:
         @param delay:
         @return:
         """
-        self._list_write(listFlyDelay, delay)
+        self._list_write(listFlyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000)
 
     def list_set_co2_fpk(self):
         """
@@ -1198,13 +1208,13 @@ class GalvoController:
         """
         self._list_write(listFiberOpenMO, open_mo)
 
-    def list_wait_for_input(self, wait_state):
+    def list_wait_for_input(self, wait_mask, wait_level):
         """
         Unknown.
 
         @return:
         """
-        self._list_write(listWaitForInput, wait_state)
+        self._list_write(listWaitForInput, wait_mask, wait_level)
 
     def list_change_mark_count(self, count):
         """
@@ -1338,7 +1348,9 @@ class GalvoController:
         return self._command(SetDelayMode, mode)
 
     def set_max_poly_delay(self, delay):
-        return self._command(SetMaxPolyDelay, delay)
+        return self._command(
+            SetMaxPolyDelay, abs(delay), 0x0000 if delay > 0 else 0x8000
+        )
 
     def set_end_of_list(self, end):
         return self._command(SetEndOfList, end)

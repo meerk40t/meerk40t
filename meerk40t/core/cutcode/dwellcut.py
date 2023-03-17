@@ -23,7 +23,6 @@ class DwellCut(CutObject):
         self.dwell_time = dwell_time
         self.first = True  # Dwell cuts are standalone
         self.last = True
-        self.raster_step = 0
 
     def reversible(self):
         return False

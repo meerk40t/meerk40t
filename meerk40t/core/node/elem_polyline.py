@@ -3,7 +3,6 @@ from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
@@ -49,11 +48,7 @@ class PolylineNode(Node, Stroked):
             )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
-            m = self.shape.values.get("viewport_transform")
-            if m:
-                self._stroke_zero = sqrt(abs(Matrix(m).determinant))
-            else:
-                self.stroke_width_zero()
+            self.stroke_width_zero()
 
         self.set_dirty_bounds()
 
@@ -68,9 +63,57 @@ class PolylineNode(Node, Stroked):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
 
+    def scaled(self, sx, sy, ox, oy):
+        """
+        This is a special case of the modified call, we are scaling
+        the node without fundamentally altering it's properties
+        """
+
+        def apply_it(box):
+            x0, y0, x1, y1 = box
+            if sx != 1.0:
+                d1 = x0 - ox
+                d2 = x1 - ox
+                x0 = ox + sx * d1
+                x1 = ox + sx * d2
+            if sy != 1.0:
+                d1 = y0 - oy
+                d2 = y1 - oy
+                y0 = oy + sy * d1
+                y1 = oy + sy * d2
+            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+
+        if self._bounds_dirty or self._bounds is None:
+            # A pity but we need proper data
+            self.modified()
+            return
+
+        self._bounds = apply_it(self._bounds)
+        self._sync_svg()
+        delta = float(self.implied_stroke_width) / 2.0
+        self._paint_bounds = (
+            self._bounds[0] - delta,
+            self._bounds[1] - delta,
+            self._bounds[2] + delta,
+            self._bounds[3] + delta,
+        )
+        self._points_dirty = True
+        self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
+
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
-        return self.shape.bbox(transformed=True, with_stroke=with_stroke)
+        xmin, ymin, xmax, ymax = self.shape.bbox(
+            transformed=transformed, with_stroke=False
+        )
+        if with_stroke:
+            delta = float(self.implied_stroke_width) / 2.0
+            return (
+                xmin - delta,
+                ymin - delta,
+                xmax + delta,
+                ymax + delta,
+            )
+        return xmin, ymin, xmax, ymax
 
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
@@ -98,27 +141,37 @@ class PolylineNode(Node, Stroked):
         bounds = self.bounds
         if bounds is None:
             return
-        if len(self._points) < 9:
-            self._points.extend([None] * (9 - len(self._points)))
-        self._points[0] = [bounds[0], bounds[1], "bounds top_left"]
-        self._points[1] = [bounds[2], bounds[1], "bounds top_right"]
-        self._points[2] = [bounds[0], bounds[3], "bounds bottom_left"]
-        self._points[3] = [bounds[2], bounds[3], "bounds bottom_right"]
+        self._points = []
         cx = (bounds[0] + bounds[2]) / 2
         cy = (bounds[1] + bounds[3]) / 2
-        self._points[4] = [cx, cy, "bounds center_center"]
-        self._points[5] = [cx, bounds[1], "bounds top_center"]
-        self._points[6] = [cx, bounds[3], "bounds bottom_center"]
-        self._points[7] = [bounds[0], cy, "bounds center_left"]
-        self._points[8] = [bounds[2], cy, "bounds center_right"]
+        # self._points.append([bounds[0], bounds[1], "bounds top_left"])
+        # self._points.append([bounds[2], bounds[1], "bounds top_right"])
+        # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
+        # self._points.append([bounds[2], bounds[3], "bounds bottom_right"])
+        # self._points.append([cx, cy, "bounds center_center"])
+        # self._points.append([cx, bounds[1], "bounds top_center"])
+        # self._points.append([cx, bounds[3], "bounds bottom_center"])
+        # self._points.append([bounds[0], cy, "bounds center_left"])
+        # self._points.append([bounds[2], cy, "bounds center_right"])
         obj = self.shape
-        if hasattr(obj, "point"):
-            if len(self._points) <= 11:
-                self._points.extend([None] * (11 - len(self._points)))
-            start = obj.point(0)
-            end = obj.point(1)
-            self._points[9] = [start[0], start[1], "endpoint"]
-            self._points[10] = [end[0], end[1], "endpoint"]
+        lastpt = None
+        if not obj.transform.is_identity():
+            points = list(map(obj.transform.point_in_matrix_space, obj.points))
+        else:
+            points = obj.points
+        maxidx = len(points) - 1
+        for idx, pt in enumerate(points):
+            if idx == 0:
+                self._points.append([pt.x, pt.y, "endpoint"])
+            elif idx == maxidx:
+                self._points.append([pt.x, pt.y, "endpoint"])
+            else:
+                self._points.append([pt.x, pt.y, "point"])
+            if idx > 0:
+                self._points.append(
+                    [0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"]
+                )
+            lastpt = pt
 
     def update_point(self, index, point):
         return False

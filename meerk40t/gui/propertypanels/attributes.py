@@ -81,6 +81,7 @@ class ColorPanel(wx.Panel):
         )
         self.btn_color[self.last_col_idx].SetFont(font)
         self.SetSizer(self.main_sizer)
+        self.main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
 
@@ -225,12 +226,17 @@ class ColorPanel(wx.Panel):
 
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, **kwds):
+    def __init__(
+        self, *args, context=None, node=None, showid=True, showlabel=True, **kwds
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
+        # Shall we display id / label?
+        self.showid = showid
+        self.showlabel = showlabel
         self.text_id = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
@@ -246,6 +252,7 @@ class IdPanel(wx.Panel):
         main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.text_id.SetActionRoutine(self.on_text_id_change)
         self.text_label.SetActionRoutine(self.on_text_label_change)
@@ -282,15 +289,18 @@ class IdPanel(wx.Panel):
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
-        if hasattr(self.node, "id"):
+        if hasattr(self.node, "id") and self.showid:
             vis1 = True
             self.text_id.SetValue(mklabel(node.id))
         self.text_id.Show(vis1)
-        if hasattr(self.node, "label"):
+        self.sizer_id.Show(vis1)
+
+        if hasattr(self.node, "label") and self.showlabel:
             vis2 = True
             self.text_label.SetValue(mklabel(node.label))
-
         self.text_label.Show(vis2)
+        self.sizer_label.Show(vis2)
+
         if vis1 or vis2:
             self.Show()
         else:
@@ -339,6 +349,7 @@ class LinePropPanel(wx.Panel):
         main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
         self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
@@ -457,6 +468,7 @@ class StrokeWidthPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
 
@@ -515,15 +527,18 @@ class StrokeWidthPanel(wx.Panel):
                 best_post = 99999999
                 delta = 0.99999999
                 best_pre = 0
-                factor = (
-                    sqrt(abs(self.node.matrix.determinant))
-                    if self.node.stroke_scaled
-                    else 1.0
-                )
+                # # We don't need to scale it here...
+                # factor = (
+                #     sqrt(abs(self.node.matrix.determinant))
+                #     if self.node.stroke_scaled
+                #     else 1.0
+                # )
+                factor = 1
                 node_stroke_width = self.node.stroke_width * factor
+                # print (f"Stroke-width={self.node.stroke_width} ({node_stroke_width}), scaled={self.node.stroke_scaled}")
                 for idx, unit in enumerate(self.unit_choices):
                     std = float(Length(f"1{unit}"))
-                    fraction = abs(node_stroke_width / std)
+                    fraction = abs(round(node_stroke_width / std, 6))
                     if fraction == 0:
                         continue
                     curr_post = 0
@@ -532,7 +547,7 @@ class StrokeWidthPanel(wx.Panel):
                         curr_post += 1
                         fraction *= 10
                     fraction -= curr_pre
-                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={node_stroke_width / std}")
                     takespref = False
                     if fraction < delta:
                         takespref = True
@@ -579,16 +594,33 @@ class PositionSizePanel(wx.Panel):
         self.context = context
         self.node = node
         self.text_x = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
         )
         self.text_y = TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
         )
         self.text_w = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+            nonzero=True,
         )
         self.text_h = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+            self,
+            wx.ID_ANY,
+            "",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
+            check="length",
+            nonzero=True,
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         self.btn_lock_ratio.SetValue(True)
@@ -742,7 +774,8 @@ class PositionSizePanel(wx.Panel):
         dy = newy - bb[1]
         if dx != 0 or dy != 0:
             self.node.matrix.post_translate(dx, dy)
-            self.node.modified()
+            # self.node.modified()
+            self.node.translated(dx, dy)
             self.context.elements.signal("element_property_update", self.node)
 
     def scale_it(self, was_width):
@@ -770,7 +803,8 @@ class PositionSizePanel(wx.Panel):
                 sx = sy
         if sx != 1.0 or sy != 1.0:
             self.node.matrix.post_scale(sx, sy, bb[0], bb[1])
-            self.node.modified()
+            self.node.scaled(sx=sx, sy=sy, ox=bb[0], oy=bb[1])
+            # self.node.modified()
             bb = self.node.bounds
             w = bb[2] - bb[0]
             h = bb[3] - bb[1]
@@ -921,6 +955,7 @@ class RoundedRectPanel(wx.Panel):
         main_sizer.Add(sizer_x, 1, wx.EXPAND, 0)
         main_sizer.Add(sizer_y, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         self.set_widgets(self.node)
         self.slider_x.Bind(wx.EVT_SLIDER, self.on_slider_x)

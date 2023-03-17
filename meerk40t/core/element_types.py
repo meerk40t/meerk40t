@@ -1,3 +1,10 @@
+"""
+Helper list to define node types according to some criteria. For example, you'd likely want to delete
+to only show up for the non-structural nodes. However, there's not a simple method for specifying that
+and listing all the nodes a tree-op would apply to can result in a very long list.
+These are those long list.
+"""
+
 from meerk40t.svgelements import (
     Circle,
     Ellipse,

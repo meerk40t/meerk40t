@@ -56,6 +56,12 @@ class LiveFullLightJob:
         self.runtime += time.time() - self.time_started
         self.service.unlisten("emphasized", self.on_emphasis_changed)
         self.service.signal("stop_tracing", True)
+        if self.service.redlight_preferred:
+            connection.light_on()
+            connection.write_port()
+        else:
+            connection.light_off()
+            connection.write_port()
         return True
 
     def stop(self):

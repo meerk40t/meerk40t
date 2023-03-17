@@ -8,6 +8,7 @@ def plugin(service, lifecycle):
         import wx  # pylint: disable=unused-import
 
         from meerk40t.gui.icons import (
+            icons8_center_of_gravity_50,
             icons8_computer_support_50,
             icons8_connected_50,
             icons8_flash_off_50,
@@ -116,6 +117,16 @@ def plugin(service, lifecycle):
                 },
             },
         )
+        service.register(
+            "button/control/Center",
+            {
+                "label": _("Center"),
+                "icon": icons8_center_of_gravity_50,
+                "tip": _("Center selection on laserbed"),
+                "action": lambda v: service("align bed group xy center center\n"),
+            },
+        )
+
         service.add_service_delegate(BalorGui(service))
 
 

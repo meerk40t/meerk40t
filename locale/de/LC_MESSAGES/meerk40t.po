@@ -2900,6 +2900,9 @@ msgstr "Lösche Arbeitsgang '{name}' vollständig"
 msgid "Delete group '{name}' and all its child-elements fully"
 msgstr "Lösche Gruppe '{name}' und all Unterelemente vollständig"
 
+msgid "Delete blob '{name}' fully"
+msgstr "Lösche Binär-Objekt '{name}' vollständig"
+
 #: meerk40t/core/elements.py:6924
 msgid "Remove loaded file '{name}' and all its child-elements fully"
 msgstr "Lösche Datei '{name}' und alle Unterelemente vollständig"
@@ -3114,6 +3117,9 @@ msgstr "Füge 'Input' hinzu"
 #: meerk40t/core/elements.py:7299
 msgid "Append Home/Beep/Interrupt"
 msgstr "Füge 'Home + Beep + Nachricht' hinzu"
+
+msgid "Append Origin/Beep/Interrupt"
+msgstr "Füge 'Startposition + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7307
 msgid "Append Shutdown"
@@ -10320,7 +10326,7 @@ msgstr "Bild zuschneiden"
 msgid "How many pixels do you want to crop from the left?"
 msgstr "Wieviele Pixel sollen auf der linken Seite abgeschnitten werden?"
 
-msgid "How many pixels do you want to crop from the lefright?"
+msgid "How many pixels do you want to crop from the right?"
 msgstr "Wieviele Pixel sollen auf der rechten Seite abgeschnitten werden?"
 
 msgid "How many pixels do you want to crop from the top?"
@@ -11119,8 +11125,8 @@ msgid "Toggle strikethrough"
 msgstr "Schalte Durchstreichen-Attribut um"
 
 #: meerk40t/gui/propertypanels/textproperty.py:380
-msgid "Define where to place the origin (i.e. current mouse position"
-msgstr ""
+msgid "Define where to place the origin (i.e. current mouse position)"
+msgstr "Lege die Textorientierung relativ zum Ursprung fest"
 
 #: meerk40t/gui/propertypanels/textproperty.py:474
 msgid "Text-Variables"
@@ -14966,7 +14972,7 @@ msgstr "Bestätigen"
 
 msgid ""
 "You will be led now to a source in the web, where you can download free fonts.\n"
-"Please be respect individual property rights!\nDestination: {url}\n"
+"Please respect individual property rights!\nDestination: {url}\n"
 msgstr ""
 "Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
 "Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
@@ -15078,3 +15084,457 @@ msgstr "Linker/Rechter Einzug"
 
 msgid "Top/Bottom Indentation"
 msgstr "Oberer/Unterer Einzug"
+
+msgid "Save the job"
+msgstr "Speichere den Laserjob"
+
+msgid "Undo last operation"
+msgstr "Mach letzte Operation rückgängig"
+
+msgid "Redo last operation"
+msgstr "Wende letzte Operation doch wieder an"
+
+msgid "Cut selected elements"
+msgstr "Element ausschneiden und in die Zwischenablage kopieren"
+
+msgid "Copy selected elements to clipboard"
+msgstr "Kopiere selektierte Elemente in die Zwischenablage"
+
+msgid "Paste elements from clipboard"
+msgstr "Kopierte Elemente aus Zwischenablage einsetzen"
+
+msgid "Delay hull trace"
+msgstr "Verzögere 'Umriss abfahren'"
+
+msgid "Establish if and how an element hull trace should wait"
+msgstr "Legt fest wie das Abfahren des Umrisses gestartet wird"
+
+msgid "Immediate"
+msgstr "Sofort ausführen"
+
+msgid "User confirmation"
+msgstr "Warte auf Freigabe'
+
+msgid "Delay 5 seconds"
+msgstr "Warte 5 Sekunden"
+
+msgid "Mini icon in tree"
+msgstr "Zeige Miniatur-Bild"
+
+msgid ""
+"Active: Display a miniature representation of the element in the tree\n"
+"Inactive: Use a standard icon for the element type instead"
+msgstr ""
+"Aktiv: Zeigt im Arbeitsvorgangsbereich ein Miniatur-Bild des Elements an\n"
+"Inaktiv: Nutze ein Standard-Smybol für alle Elemente des selben Typs\n"
+"(weniger detailliert aber dafür deutlich weniger Ressourcen-fressend)"
+
+msgid "Copy will increase {variable} references"
+msgstr "Kopiervorgang erhöht {variable} Index"
+
+msgid ""
+"Active: if you copy a text-element containing a wordlist-reference, "
+"this will be increased (effectively referencing the next entry in the wordlist)"
+msgstr ""
+"Aktiv: wird ein Textelement mit einem Wordlist-Verweis kopiert, so wird\n"
+"automatisch der Index erhöht (also das nächste Element in der Liste verwendet)"
+
+msgid "Sending Protocol"
+msgstr "Sende-Protokoll"
+
+msgid "Buffered sends data as long as the planning buffer permits it being sent. Sync requires an 'ok' between each line sent."
+msgstr ""
+"'Buffered' sendet die Daten so schnell wie möglich an den Laser.\n"
+"'Sync' wartet auf die 'OK'-Rückmeldung des Lasers (sicherer aber langsamer)
+
+msgid "Protocol"
+msgstr "Kommunikations-Protokoll"
+
+msgid "Line Ending"
+msgstr "Zeilenende"
+
+msgid "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
+msgstr "CR für carriage return ($0D), LF für line feed ($0A), CRLF für beide"
+
+msgid "What serial interface does this device connect to?"
+msgstr "An welcher Schnittstelle hängt der Laser?"
+
+msgid "Device has endstops"
+msgstr "Gerät hat Endstopps"
+
+msgid "If the device has endstops, then the laser can home itself to this position = physical home ($H)"
+msgstr ""
+"Falls das Gerät Endstopps besitzt, so kann der Laser selbständig\n"
+"zur Home-Position zurückkehren = Physikalisches Home ($H)"
+
+msgid "Simulate reddot"
+msgstr "Simuliere Rotpunkt-Indikator"
+
+msgid ""
+"If active then you can turn on the laser at a very low power to get a visual representation "
+"of the current position to help with focusing and positioning. Use with care!"
+msgstr ""
+"Falls aktiv, kann der Laser mit sehr geringer Stärke angeschaltet werden:\n"
+"der Auftreffpunkt des Lasers wird sichtbar ohne das Material zu verändern,\n"
+"was das Fokussieren oder das Positionieren des Lasers vereinfacht.\n"
+"Bitte mit Sinn und Verstand verwenden, Laserstrahlen sind gefährlich!"
+
+msgid "Reddot Laser strength"
+msgstr "Laser-Stärke Indikator"
+
+msgid "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
+msgstr "Definiere die Laser-Stärke für den Indikator-Modus, muss unterhalb der kritischen Laser-Stärke zum Gravieren von Materialien liegen"
+
+msgid "Query properties"
+msgstr "Geräte-Parameter ermitteln"
+
+msgid "Auto-Configuration"
+msgstr "Auto-Konfiguration"
+
+msgid "Connect to laser and try to establish some properties"
+msgstr "Baut Verbindung zum Laser auf und frägt Geräte-Parameter ab"
+
+msgid "Convert attached binary object to elements"
+msgstr "Wandle angefügte Binär-Daten in reguläre Elemente um"
+
+msgid "Blob-Conversion"
+msgstr "Binär-Daten Umwandlung"
+
+msgid "You can influence the way MK will process the attached binary data:"
+msgstr "Steuere die Umwandlung der angefügten Binär-Daten in reguläre Elemente:"
+
+msgid "Ignore travel"
+msgstr "Ignoriere 'Travel'-Bewegungen"
+
+msgid "Try to take only 'valid' movements"
+msgstr "Versucht nur 'relevante' Bewegungen zu verwenden"
+
+msgid "Split paths"
+msgstr "Pfade aufspalten"
+
+msgid "Split path into smaller chunks"
+msgstr "Spalte Pfade in separate zusammengehörende Segmente auf"
+
+msgid "Single occurence"
+msgstr "Nur einzelner Durchlauf"
+
+msgid "Prevent duplicate creation of segments (like in a multipass operation)"
+msgstr "Mehrfach-Durchläufe (Duplikate von Bewegungsabläufen) werden nur einmal übernommen"
+
+msgid "Treat Z-Movement as On/Off"
+msgstr "Z-Bewegung als Ein/Aus-Indikator"
+
+msgid "Use negative Z-Values as a Power-On indicator, positive values as travel"
+msgstr ""
+"Interpretiere Bewegungen in negative Z-Richtung als 'Laser An'-Indikator,\n"
+"Bewegungen in positive Richtung als 'Laser Aus'-Signal"
+
+msgid "Only negative"
+msgstr "Nur negative Werte"
+
+msgid ""
+"Active: use positive values as travel\n"
+"Inactive: use all non-zero values"
+msgstr ""
+"Aktiv: Z-Werte > 0 werden noch als Travel interpretiert\n"
+"Inaktiv: Alle Werte bei Bewegungen in negative Richtung werden als 'Laser An' gewertet"
+
+msgid "Top Left"
+msgstr "Oben links"
+
+msgid "Bottom Left"
+msgstr "Unten rechts"
+
+msgid "Center"
+msgstr "Mittelpunkt"
+
+msgid "Center (Y mirrored)"
+msgstr "Mittelpunkt (Y gespiegelt)"
+
+msgid "Bed-Origin"
+msgstr "Ursprung (0,0)"
+
+msgid "Correct starting point"
+msgstr "Korrigiere Startpunkt"
+
+msgid "Create operations"
+msgstr "Erzeuge Arbeitsabläufe"
+
+msgid "Create corresponding operations for Power and Speed pairs"
+msgstr "Erzeuge zugehörige Arbeitsabläufe für Leistung/Geschwindigkeit-Paare"
+
+msgid "Scale Speed"
+msgstr "Geschwindigkeit skalieren"
+
+msgid ""
+"Set lower and higher level to scale the speed\n"
+"Minimum speed used will be mapped to lower level\n"
+"Maximum speed used will be mapped to upper level"
+msgstr ""
+"Definiere den Ziel-Bereich für Geschwindigkeit\n"
+"Der niedrigst gefundene Wert wird auf die untere Geschwindigkeit,\n"
+"der größte gefundene Wert auf die obere Geschwindigkeit abgebildet."
+
+msgid "Lowest speed"
+msgstr "Minimale Geschwindigkeit"
+
+msgid "Minimum speed used will be mapped to lower level"
+msgstr "Der niedrigst gefundene Wert wird auf die minimale Geschwindigkeit gesetzt"
+
+msgid "Highest speed"
+msgstr "Maximale Geschwindigkeit"
+
+msgid "Maximum speed used will be mapped to upper level"
+msgstr "Der höchste gefundene Wert wird auf die maximale Geschwindigkeit gesetzt"
+
+msgid "Scale Power"
+msgstr "Skaliere Laser-Leistung"
+
+msgid ""
+"Set lower and higher level to scale the power\n"
+"Minimum power used will be mapped to lower level\n"
+"Maximum power used will be mapped to upper level"
+msgstr ""
+"Definiere den Ziel-Bereich für die Laser-Leistung\n"
+"Der niedrigst gefundene Wert wird auf die minimale Leistung,\n"
+"der größte gefundene Wert auf die maximale Leistung abgebildet."
+
+msgid "Lowest Power"
+msgstr "Minimale Leistung"
+
+msgid "Minimum power used will be mapped to lower level"
+msgstr "Der niedrigst gefundene Wert wird auf die minimale Leistung gesetzt"
+
+msgid "Highest power"
+msgstr "Maximale Leistung"
+
+msgid "Maximum power used will be mapped to upper level"
+msgstr "Der höchste gefundene Wert wird auf die maximale Leistung gesetzt"
+
+msgid "Correct Orientation"
+msgstr "Ursprung korrigieren"
+
+msgid "Z-Axis"
+msgstr "Z-Achse"
+
+msgid "You have unassigned elements, that won't be burned"
+msgstr ""
+"Achtung: Nicht alle Elemente sind Arbeitsvorgängen\n"
+"zugeordnet und werden somit nicht gelasert."
+
+msgid "Select unassigned elements"
+msgstr "Selektiere nicht zugeordnete Elemente"
+
+msgid "Select all elements that won't be burned"
+msgstr "Selektiere alle Elemente, die nicht einem Arbeitsvorgang zugeordnet sind"
+
+msgid "Stroke-Width"
+msgstr "Linienbreite"
+
+msgid "Left click to go to saved position\nRight click to save coordinates"
+msgstr ""
+"Linksklick: bewege Laser zur gespeicherten Position"
+"\nRechtsklick: speichere angegebene Koordinaten"
+
+msgid "Select all elements of same type"
+msgstr "Selektiere alle gleichartigen Elemente"
+
+msgid "Speed for Raster-Operation"
+msgstr "Geschwindigkeit für Raster-Operation"
+
+msgid "Simplify group"
+msgstr "Vereinfache Gruppen-Struktur"
+
+msgid "Remove transparent objects"
+msgstr "Lösche alle transparenten Objekte"
+
+msgid ""
+"This is binary data imported or generated\n"
+"that will be sent directly to the laser.\n"
+"Double-click to view."
+msgstr ""
+"Dies sind importierte oder generierte Binär-Daten,\"
+"die unverändert zum Laser gesendet werden.\n"
+"Doppel-Klick um diese anzuzeigen."
+
+msgid ""
+"This will engrave/cut the elements contained,\n"
+"following the vector-paths of the data.\n"
+"(Usually done last)"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Schneiden).\n"
+"(Normalerweise am Ende aller Arbeitsabläufe)"
+
+msgid ""
+"This will engrave the elements contained,\n"
+"following the vector-paths of the data."
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Gravieren)."
+
+msgid ""
+"This is an operation that will engrave a vector shape\n"
+"filled with a set of vector-patterns like lines"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt, die mit Vektor-Schraffuren gefüllt werden."
+
+msgid ""
+"This engraves already created images pixel by pixel,\n"
+"applying the settings to the individual pictures"
+msgstr ""
+"Alle enthaltenen Elemente (zuvor generierte Pixel-Grafiken)\n"
+"werden Bildpunkt pro Bildpunkt graviert, nachdem die\n"
+"Arbeitsablauf-Einstellungen auf die Bilder angewandt wurden."
+
+msgid ""
+"This will render all contained elements\n"
+"into an intermediary image which then will be\n"
+"engraved pixel by pixel."
+msgstr ""
+"Alle enthaltenen Elemente werden in ein temporäres\n"
+"Bild gerendert, welches dann pixelgetreu graviert wird."
+
+msgid ""
+"This will engrave a single point for a given period of time"
+msgstr ""
+"Ein einzelner Punkt wird für eine angegebene Zeitdauer gebrannt"
+
+msgid ""
+"This allows to execute an arbitrary command during the engrave process"
+msgstr ""
+"Die erlaubt die Ausführung eines Meerk40t-eigenen\n"
+"Befehles während des Brennvorgangs"
+
+msgid ""
+"This will send the laser back to its logical start position"
+msgstr ""
+"Dies sendet den Laser an seine relative Startposition zurück"
+
+msgid ""
+"This will send the laser back to its physical start position"
+msgstr ""
+"Dies sendet den Laser an seine physische Startposition zurück"
+
+msgid ""
+"This will wait for active IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies wartet darauf, dass IO-Bits am Laser aktiv werden,\n"
+"z.B. das Fußpedal eines Faserlasers"
+
+msgid ""
+"This will set some IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies setzt einzelne IO-Bits am (Faser-)Laser"
+
+msgid ""
+"This will pause the engrave process for a given period"
+msgstr ""
+"Dies hält den Brennvorgang für einen definierten Zeitraum an"
+
+msgid ""
+"The elements under this section will not be engraved,\n"
+"they can serve as a template or registration marks."
+msgstr ""
+"Die Elemente innerhalb dieses Bereiches werden nicht gebrannt\n"
+"sie können als Vorlage oder Positionierungsmarken genutzt werden."
+
+msgid "Node Edit"
+msgstr "Node Editor"
+
+msgid "Node-Editor"
+msgstr "Node-Editor"
+
+msgid "Edit nodes of a polyline/path-object"
+msgstr "Editiert die Knoten eines Polyline/Path-Objektes"
+
+msgid "Insert point before"
+msgstr "Punkt davor einfügen"
+
+msgid "Insert"
+msgstr "Einfügen"
+
+msgid "Append point at end"
+msgstr "Punkt am Ende anhängen"
+
+msgid "Append"
+msgstr "Anhängen"
+
+msgid "Delete point"
+msgstr "Punkt löschen"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Make segment a line"
+msgstr "Wandle Segment in Gerade um"
+
+msgid "> Line"
+msgstr "> Gerade"
+
+msgid "Make segment a curve"
+msgstr "Wandle Segment in Kurve um"
+
+msgid "> Curve"
+msgstr "> Kurve"
+
+msgid "Make segment symmetrical"
+msgstr "Mache Kurvensegment symmetrisch"
+
+msgid "Symmetrical"
+msgstr "Symmetrisch"
+
+msgid "Join two segments"
+msgstr "Verbinde zwei Segmente"
+
+msgid "Join"
+msgstr "Verbinden"
+
+msgid "Break segment apart"
+msgstr "Breche Segment auf"
+
+msgid "Break"
+msgstr "Aufbrechen"
+
+msgid "Smoothen transit to adjacent segments"
+msgstr "Glätte Übergänge zu angrenzenden Segmenten"
+
+msgid "Smooth"
+msgstr "Glätten"
+
+msgid "Convert all lines into curves and smoothen"
+msgstr "Wandle alle Geraden in Kurven um und glätte diese"
+
+msgid "Very smooth"
+msgstr "Glätten²"
+
+msgid "Toggle closed status"
+msgstr "Wechsel von geschlossener zu offener Kurve und umgekehrt"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Convert polyline to a path element"
+msgstr "Wandle Polyline in Pfad um"
+
+msgid "To path"
+msgstr "Umwandeln"
+
+msgid "Smoothen"
+msgstr "Glätten"
+
+msgid "Smooth all"
+msgstr "Alle glätten"
+
+msgid "Line all"
+msgstr "Zu Geraden"
+
+msgid "Close path"
+msgstr "Path schließen"
+
+msgid "Line"
+msgstr "Gerade"
+
+msgid "Curve"
+msgstr "Kurve"

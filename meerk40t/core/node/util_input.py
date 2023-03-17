@@ -25,7 +25,7 @@ class InputOperation(Node):
         return 1
 
     def bitstring(self):
-        mask = -1
+        mask = self.input_mask
         value = self.input_value
         bits = bytearray(b"X" * 16)
         for m in range(16):

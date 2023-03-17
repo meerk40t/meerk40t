@@ -32,11 +32,23 @@ class TemplatePanel(wx.Panel):
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
+        # A tuple defining whether a free color-selection scheme is allowed, linked to default_op
+        self.color_scheme_free = []
         self.default_op.append(CutOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(EngraveOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(RasterOpNode())
+        self.color_scheme_free.append(False)
         self.default_op.append(ImageOpNode())
+        self.color_scheme_free.append(True)
         self.default_op.append(HatchOpNode())
+        self.color_scheme_free.append(True)
+
+        self.use_image = [False] * len(self.default_op)
+        self.use_image[3] = True
+
+        self._freecolor = True
 
         self.parameters = []
         color_choices = [_("Red"), _("Green"), _("Blue")]
@@ -44,7 +56,36 @@ class TemplatePanel(wx.Panel):
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+        self.images = []
+        self.image_labels = []
+        self.image_labels.append(_("Choose image..."))
 
+        for node in self.context.elements.elems():
+            if node.type == "elem image":
+                imagenode = copy(node)
+                bb = imagenode.bounds
+                if bb is not None:
+                    # Put it back on origin
+                    imagenode.matrix.post_translate(-bb[0], -bb[1])
+                self.images.append(imagenode)
+                w, h = imagenode.active_image.size
+                label = f"{w} x {h} Pixel"
+                if node.label:
+                    label += "(" + node.label + ")"
+                self.image_labels.append(label)
+
+        self.combo_images = wx.ComboBox(
+            self,
+            id=wx.ID_ANY,
+            choices=self.image_labels,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_images.SetToolTip(
+            _(
+                "Choose from one of the existing images on your canvas to use as the test template"
+            )
+        )
+        self.combo_images.SetSelection(0)
         self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
         self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
 
@@ -94,12 +135,15 @@ class TemplatePanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer_param_op = StaticBoxSizer(
-            self, wx.ID_ANY, _("Operation to test"), wx.HORIZONTAL
+        self.sizer_param_op = StaticBoxSizer(
+            self, wx.ID_ANY, _("Operation to test"), wx.VERTICAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
-        sizer_param_op.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_param_op.Add(self.combo_ops, 1, wx.EXPAND, 0)
+        h1 = wx.BoxSizer(wx.HORIZONTAL)
+        h1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
+        self.sizer_param_op.Add(h1, 0, wx.EXPAND, 0)
+        self.sizer_param_op.Add(self.combo_images, 0, wx.EXPAND, 0)
 
         sizer_param_check = StaticBoxSizer(
             self, wx.ID_ANY, _("Show Labels / Values"), wx.HORIZONTAL
@@ -107,7 +151,7 @@ class TemplatePanel(wx.Panel):
         sizer_param_check.Add(self.check_labels, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_check.Add(self.check_values, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_param_optype.Add(sizer_param_op, 1, wx.EXPAND, 0)
+        sizer_param_optype.Add(self.sizer_param_op, 1, wx.EXPAND, 0)
         sizer_param_optype.Add(sizer_param_check, 1, wx.EXPAND, 0)
 
         sizer_param_xy = wx.BoxSizer(wx.HORIZONTAL)
@@ -327,6 +371,7 @@ class TemplatePanel(wx.Panel):
         self.text_delta_2.Bind(wx.EVT_TEXT, self.validate_input)
         self.combo_param_1.Bind(wx.EVT_COMBOBOX, self.on_combo_1)
         self.combo_param_2.Bind(wx.EVT_COMBOBOX, self.on_combo_2)
+        self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -346,6 +391,19 @@ class TemplatePanel(wx.Panel):
         )
         # Make sure units appear properly
         self.on_combo_2(None)
+
+    def on_combo_image(self, event):
+        op = self.combo_ops.GetSelection()
+        if op != 3:  # No Image?
+            return
+        idx = self.combo_images.GetSelection() - 1
+        if idx >= 0 and idx < len(self.images):
+            bb = self.images[idx].bounds
+            if bb is not None:
+                wd = Length(amount=bb[2] - bb[0], preferred_units="mm")
+                ht = Length(amount=bb[3] - bb[1], preferred_units="mm")
+                self.text_dim_1.SetValue(f"{wd.mm:.1f}")
+                self.text_dim_2.SetValue(f"{ht.mm:.1f}")
 
     def set_callback(self, routine):
         self.callback = routine
@@ -395,12 +453,26 @@ class TemplatePanel(wx.Panel):
             return
         self.current_op = opidx
 
+        self.Freeze()
         if opidx < 0:
             opnode = None
+            self._freecolor = True
+            self.combo_images.Show(False)
+            self.text_dim_1.Enable(True)
+            self.text_dim_2.Enable(True)
         else:
             opnode = self.default_op[opidx]
+            self._freecolor = self.color_scheme_free[opidx]
+            self.combo_images.Show(self.use_image[opidx])
+            self.text_dim_1.Enable(not self.use_image[opidx])
+            self.text_dim_2.Enable(not self.use_image[opidx])
+        self.sizer_param_op.Layout()
         if self.callback is not None:
             self.callback(opnode)
+        self.combo_color_1.Enable(self._freecolor)
+        self.combo_color_2.Enable(self._freecolor)
+        self.check_color_direction_1.Enable(self._freecolor)
+        self.check_color_direction_2.Enable(self._freecolor)
 
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
         self.parameters = [
@@ -544,6 +616,8 @@ class TemplatePanel(wx.Panel):
         self.on_combo_1(None)
         self.combo_param_2.SetSelection(idx2)
         self.on_combo_2(None)
+        self.Layout()
+        self.Thaw()
 
     def on_combo_1(self, input):
         s_unit = ""
@@ -589,6 +663,10 @@ class TemplatePanel(wx.Panel):
         optype = self.combo_ops.GetSelection()
         if optype < 0:
             active = False
+        if (
+            optype == 3 and self.combo_images.GetSelection() < 1
+        ):  # image and no valid image chosen
+            active = False
         idx1 = self.combo_param_1.GetSelection()
         if idx1 < 0:
             active = False
@@ -618,43 +696,48 @@ class TemplatePanel(wx.Panel):
 
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2, aspect1, growing1, aspect2, growing2):
-            r = 0
-            g = 0
-            b = 0
+            if self._freecolor:
+                r = 0
+                g = 0
+                b = 0
 
-            rel = max1 - 1
-            if rel < 1:
-                rel = 1
-            if growing1:
-                val1 = int(idx1 / rel * 255.0)
-            else:
-                val1 = 255 - int(idx1 / rel * 255.0)
+                rel = max1 - 1
+                if rel < 1:
+                    rel = 1
+                if growing1:
+                    val1 = int(idx1 / rel * 255.0)
+                else:
+                    val1 = 255 - int(idx1 / rel * 255.0)
 
-            rel = max2 - 1
-            if rel < 1:
-                rel = 1
-            if growing2:
-                val2 = int(idx2 / rel * 255.0)
+                rel = max2 - 1
+                if rel < 1:
+                    rel = 1
+                if growing2:
+                    val2 = int(idx2 / rel * 255.0)
+                else:
+                    val2 = 255 - int(idx2 / rel * 255.0)
+                if aspect1 == 1:
+                    g = val1
+                elif aspect1 == 2:
+                    b = val1
+                else:
+                    r = val1
+                if aspect2 == 1:
+                    g = val1
+                elif aspect2 == 2:
+                    b = val2
+                else:
+                    r = val2
             else:
-                val2 = 255 - int(idx2 / rel * 255.0)
-            if aspect1 == 1:
-                g = val1
-            elif aspect1 == 2:
-                b = val1
-            else:
-                r = val1
-            if aspect2 == 1:
-                g = val1
-            elif aspect2 == 2:
-                b = val2
-            else:
-                r = val2
+                r = 0
+                g = 0
+                b = 0
             mycolor = Color(r, g, b)
             return mycolor
 
         def clear_all():
-            self.context("operation* delete\n")
-            self.context("element* delete\n")
+            self.context.elements.clear_operations(fast=True)
+            self.context.elements.clear_elements(fast=True)
 
         def create_operations():
             def shortened(value, digits):
@@ -808,6 +891,8 @@ class TemplatePanel(wx.Panel):
                         # quick and dirty
                         if param_type_1 == "passes":
                             value = int(value)
+                        if param_type_1 == "hatch_distance":
+                            value = f"{value}mm"
                         setattr(this_op, param_type_1, value)
                     else:  # Try setting
                         this_op.settings[param_type_1] = value
@@ -823,6 +908,8 @@ class TemplatePanel(wx.Panel):
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
+                        if param_type_2 == "hatch_distance":
+                            value = f"{value}mm"
                         setattr(this_op, param_type_2, value)
                     else:  # Try setting
                         this_op.settings[param_type_2] = value
@@ -846,20 +933,12 @@ class TemplatePanel(wx.Panel):
                     else:
                         fill_color = None
                     if shapetype == "image":
-                        imgsx = int(size_x / UNITS_PER_PIXEL)
-                        imgsy = int(size_y / UNITS_PER_PIXEL)
-                        image = PIL.Image.new(
-                            "RGBA",
-                            size=(imgsx, imgsy),
-                            color=(set_color.red, set_color.green, set_color.blue, 255),
-                        )
-                        elemnode = ImageNode(image=image)
-                        elemnode.matrix.post_translate(xx, yy)
-                        elemnode.matrix.post_scale(
-                            UNITS_PER_PIXEL, UNITS_PER_PIXEL, xx, yy
-                        )
-                        elemnode.modified()
-                        self.context.elements.elem_branch.add_node(elemnode)
+                        idx = self.combo_images.GetSelection() - 1
+                        if idx >= 0 and idx < len(self.images):
+                            elemnode = copy(self.images[idx])
+                            elemnode.matrix.post_translate(xx, yy)
+                            elemnode.modified()
+                            self.context.elements.elem_branch.add_node(elemnode)
                     elif shapetype == "rect":
                         pattern = Rect(
                             x=xx,
@@ -1012,20 +1091,24 @@ class TemplatePanel(wx.Panel):
             gap_2 = 5
 
         message = _("This will delete all existing operations and elements") + "\n"
-        message += _("and replace them by the test-pattern! Are you really sure?")
+        message += (
+            _("and replace them by the test-pattern! Are you really sure?") + "\n"
+        )
+        message += _("(Yes=Empty and Create, No=Keep existing)")
         caption = _("Create Test-Pattern")
         dlg = wx.MessageDialog(
             self,
             message,
             caption,
-            wx.YES_NO | wx.ICON_WARNING,
+            wx.YES_NO | wx.CANCEL | wx.ICON_WARNING,
         )
         result = dlg.ShowModal()
         dlg.Destroy()
-        if result == wx.ID_NO:
+        if result == wx.ID_YES:
+            clear_all()
+        elif result == wx.ID_CANCEL:
             return
 
-        clear_all()
         create_operations()
 
         self.context.signal("rebuild_tree")

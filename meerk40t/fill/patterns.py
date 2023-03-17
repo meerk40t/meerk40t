@@ -1,23 +1,7 @@
 from copy import copy
 
-from numpy import linspace
-
-from meerk40t.svgelements import (
-    Arc,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    Move,
-    Path,
-    Point,
-    Polygon,
-    Polyline,
-    QuadraticBezier,
-)
+from meerk40t.svgelements import Path, Polyline
 from meerk40t.tools.geomstr import Geomstr
-from meerk40t.tools.pathtools import VectorMontonizer
 
 _FACTOR = 1000
 
