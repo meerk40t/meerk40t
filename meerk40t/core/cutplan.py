@@ -57,7 +57,7 @@ class CutPlan:
         self.spool_commands = list()
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
-        # self.setting(bool, "opt_rasters_split", True)
+        self.outline = None
 
     def __str__(self):
         parts = list()
