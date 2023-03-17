@@ -2694,6 +2694,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
+
     @self.console_argument("repeats", type=int, help=_("Number of repeats"))
     @self.console_argument("radius", type=self.length, help=_("Radius"))
     @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
@@ -4067,6 +4068,197 @@ def init_commands(kernel):
             e.altered()
 
         return "elements", data
+
+    def calculate_text_bounds(data):
+        # A render operation will use the LaserRender class
+        # and will re-calculate the element bounds
+        make_raster = self.lookup("render-op/make_raster")
+        if not make_raster:
+            # No renderer is registered to perform render.
+            return
+        for e in data:
+            e.set_dirty_bounds()
+        # arbitrary bounds...
+        bounds = (0, 0, float(Length("5cm")), float(Length("5cm")))
+        image = make_raster(
+            data,
+            bounds=bounds,
+            width=500,
+            height=500,
+        )
+
+    @self.console_argument("prop", type=str, help=_("property to set"))
+    @self.console_argument("new_value", type=str, help=_("new property value"))
+    @self.console_command(
+        "property-set",
+        help=_("set property to new value"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_property_set(command, channel, _, data, post=None, prop=None, new_value=None, **kwargs):
+        """
+        Generic node manipulation routine, use with care
+        """
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        if prop is None:
+            channel(_("You need to provide the property to set."))
+            return
+        classify_required = False
+        prop = prop.lower()
+        if len(new_value) == 0:
+            new_value = None
+        if prop in ("fill", "stroke") and self.classify_on_color:
+            classify_required = True
+        # Let's distinguish a couple of special cases...
+        prevalidated = False
+        if prop in ("fill", "stroke", "color"):
+            if new_value is not None:
+                if new_value.lower() == "none":
+                    # The text...
+                    new_value = None
+                try:
+                    new_value = Color(new_value)
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid color value: {value}").format(value=new_value))
+                    return
+        elif prop in ("x", "y", "width", "height", "stroke_width"):
+            if new_value is  None:
+                channel(_("Invalid length: {value}").format(value=new_value))
+                return
+            else:
+                try:
+                    new_value = float(Length(new_value))
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid length: {value}").format(value=new_value))
+                    return
+
+        changed = []
+        text_elems = []
+
+        if prop == "lock":
+            if new_value.lower() in ("1", "true"):
+                setval = True
+            elif new_value.lower() in ("0", "false"):
+                setval = False
+            else:
+                try:
+                    setval = bool(new_value)
+                except ValueError:
+                    channel(_("Can't set '{val}' for {field}.").format(val=new_value, field=prop))
+                    return
+            # print (f"Will set lock to {setval} ({new_value})")
+            for e in data:
+                if hasattr(e, "lock"):
+                    e.lock = setval
+                    changed.append(e)
+        else:
+            for e in data:
+                if prop in ("x", "y"):
+                    # We need to adjust the matrix
+                    if hasattr(e, "matrix"):
+                        dx = 0
+                        dy = 0
+                        otx = e.matrix.value_trans_x()
+                        oty = e.matrix.value_trans_y()
+                        if prop == "x":
+                            dx = new_value - otx
+                        else:
+                            dy = new_value - oty
+                        e.matrix.post_translate(dx, dy)
+                    else:
+                        channel(_("Element has no matrix to modify: {name}").format(name=str(e)))
+                        continue
+                elif prop in ("width", "height"):
+                    if new_value == 0:
+                        channel(_("Can't set {field} to zero").format(field=prop))
+                        continue
+                    if hasattr(e, "matrix") and hasattr(e, "bounds"):
+                        bb = e.bounds
+                        sx = 1.0
+                        sy = 1.0
+                        wd = bb[2] - bb[0]
+                        ht = bb[3] - bb[1]
+                        if prop == "width":
+                            sx = new_value / wd
+                        else:
+                            sy = new_value / ht
+                        e.matrix.post_scale(sx, sy)
+                    else:
+                        channel(_("Element has no matrix to modify: {name}").format(name=str(e)))
+                        continue
+                elif hasattr(e, prop):
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                        continue
+                    try:
+                        oldval = getattr(e, prop)
+                        if prevalidated:
+                            setval = new_value
+                        else:
+                            if oldval is not None:
+                                proptype = type(oldval)
+                                setval = proptype(new_value)
+                                if isinstance(oldval, bool):
+                                    if new_value.lower() in ("1", "true"):
+                                        setval = True
+                                    elif new_value.lower() in ("0", "false"):
+                                        setval = False
+                            else:
+                                setval = new_value
+                        setattr(e, prop, setval)
+                    except TypeError:
+                        channel(_("Can't set '{val}' for {field} (invalid type, old={oldval}).").format(val=new_value, field=prop, oldval=oldval))
+                    except ValueError:
+                        channel(_("Can't set '{val}' for {field} (invalid value, old={oldval}).").format(val=new_value, field=prop, oldval=oldval))
+
+                    if "font" in prop:
+                        # We need to force a recalculation of the underlying wxfont property
+                        if hasattr(e, "wxfont"):
+                            delattr(e, "wxfont")
+                            text_elems.append(e)
+                    if prop in ("mktext", "mkfont"):
+                        for property_op in self.kernel.lookup_all("path_updater/.*"):
+                            property_op(self.kernel.root, e)
+                else:
+                    channel(_("Element {name} has no property {field}").format(name=str(e), field=prop))
+                    continue
+                e.altered()
+                changed.append(e)
+        if len(changed) > 0:
+            if len(text_elems) > 0:
+                # Recalculate bounds
+                calculate_text_bounds(text_elems)
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_update", changed)
+            self.validate_selected_area()
+            if classify_required:
+                post.append(classify_new(changed))
+
+        return "elements", data
+
+    @self.console_command(
+        "recalc", input_type=("elements", None), output_type="elements"
+    )
+    def recalc(command, channel, _, data=None, post=None, **kwargs):
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        for e in data:
+            e.set_dirty_bounds()
+        self.signal("refresh_scene", "Scene")
+        self.validate_selected_area()
 
     @self.console_command(
         "simplify", input_type=("elements", None), output_type="elements"
