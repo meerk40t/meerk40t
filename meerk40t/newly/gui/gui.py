@@ -12,9 +12,6 @@ def plugin(service, lifecycle):
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
-            icons8_move_50,
-            icons8_rectangular_50,
-            icons8_play_50,
         )
         from .newlycontroller import NewlyController
         from .newlyconfig import NewlyConfiguration
