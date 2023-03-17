@@ -346,7 +346,7 @@ class MoshiDevice(Service, ViewPort):
         """
         return self.driver.native_x, self.driver.native_y
 
-    def realize(self):
+    def realize(self, origin=None):
         self.width = self.bedwidth
         self.height = self.bedheight
         self.origin_x = 1.0 if self.home_right else 0.0
