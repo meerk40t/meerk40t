@@ -2694,7 +2694,6 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
-
     @self.console_argument("repeats", type=int, help=_("Number of repeats"))
     @self.console_argument("radius", type=self.length, help=_("Radius"))
     @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
@@ -4099,7 +4098,9 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_property_set(command, channel, _, data, post=None, prop=None, new_value=None, **kwargs):
+    def element_property_set(
+        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
+    ):
         """
         Generic node manipulation routine, use with care
         """
@@ -4131,7 +4132,7 @@ def init_commands(kernel):
                     channel(_("Invalid color value: {value}").format(value=new_value))
                     return
         elif prop in ("x", "y", "width", "height", "stroke_width"):
-            if new_value is  None:
+            if new_value is None:
                 channel(_("Invalid length: {value}").format(value=new_value))
                 return
             else:
@@ -4154,7 +4155,11 @@ def init_commands(kernel):
                 try:
                     setval = bool(new_value)
                 except ValueError:
-                    channel(_("Can't set '{val}' for {field}.").format(val=new_value, field=prop))
+                    channel(
+                        _("Can't set '{val}' for {field}.").format(
+                            val=new_value, field=prop
+                        )
+                    )
                     return
             # print (f"Will set lock to {setval} ({new_value})")
             for e in data:
@@ -4176,7 +4181,11 @@ def init_commands(kernel):
                             dy = new_value - oty
                         e.matrix.post_translate(dx, dy)
                     else:
-                        channel(_("Element has no matrix to modify: {name}").format(name=str(e)))
+                        channel(
+                            _("Element has no matrix to modify: {name}").format(
+                                name=str(e)
+                            )
+                        )
                         continue
                 elif prop in ("width", "height"):
                     if new_value == 0:
@@ -4194,11 +4203,19 @@ def init_commands(kernel):
                             sy = new_value / ht
                         e.matrix.post_scale(sx, sy)
                     else:
-                        channel(_("Element has no matrix to modify: {name}").format(name=str(e)))
+                        channel(
+                            _("Element has no matrix to modify: {name}").format(
+                                name=str(e)
+                            )
+                        )
                         continue
                 elif hasattr(e, prop):
                     if hasattr(e, "lock") and e.lock:
-                        channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
                         continue
                     try:
                         oldval = getattr(e, prop)
@@ -4217,9 +4234,17 @@ def init_commands(kernel):
                                 setval = new_value
                         setattr(e, prop, setval)
                     except TypeError:
-                        channel(_("Can't set '{val}' for {field} (invalid type, old={oldval}).").format(val=new_value, field=prop, oldval=oldval))
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
                     except ValueError:
-                        channel(_("Can't set '{val}' for {field} (invalid value, old={oldval}).").format(val=new_value, field=prop, oldval=oldval))
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
 
                     if "font" in prop:
                         # We need to force a recalculation of the underlying wxfont property
@@ -4230,7 +4255,11 @@ def init_commands(kernel):
                         for property_op in self.kernel.lookup_all("path_updater/.*"):
                             property_op(self.kernel.root, e)
                 else:
-                    channel(_("Element {name} has no property {field}").format(name=str(e), field=prop))
+                    channel(
+                        _("Element {name} has no property {field}").format(
+                            name=str(e), field=prop
+                        )
+                    )
                     continue
                 e.altered()
                 changed.append(e)
