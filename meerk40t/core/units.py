@@ -289,6 +289,10 @@ class ViewPort:
             point = self.show_to_scene_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
+    def device_position(self, x, y):
+        m = self.scene_to_device_matrix()
+        return m.point_in_matrix_space((x, y))
+
     def _calculate_matrices(self):
         """
         Calculate the matrices between the scene and device units.
