@@ -300,7 +300,7 @@ class NewlyDevice(Service, ViewPort):
                 "default": 2,
                 "type": int,
                 "style": "combo",
-                "choices": [2, 4],
+                "choices": [1, 2, 3, 4, 5, 10, 20, 50, 75, 100, 200 255],
                 "conditional": (self, "pwm_enabled"),
                 "label": _("PWM Frequency"),
                 "trailer": "khz",
