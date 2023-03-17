@@ -1,4 +1,3 @@
-from meerk40t.gui.icons import icons8_file_50
 
 
 def plugin(service, lifecycle):
@@ -60,6 +59,7 @@ def plugin(service, lifecycle):
             icons8_computer_support_50,
             icons8_connected_50,
             icons8_move_50,
+            icons8_file_50,
             icons8_rectangular_50,
             icons8_play_50,
         )
