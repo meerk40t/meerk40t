@@ -45,7 +45,7 @@ def plugin(kernel, lifecycle):
                 else:
                     if e.loop_enabled:
                         loops = e.loop_n
-                spooler.laserjob(data.plan, loops=loops, label=label)
+                spooler.laserjob(data.plan, loops=loops, label=label, outline=data.outline)
                 channel(_("Spooled Plan."))
                 kernel.root.signal("plan", data.name, 6)
 
@@ -595,7 +595,7 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1, label=None, helper=False):
+    def laserjob(self, job, priority=0, loops=1, label=None, helper=False, outline=None):
         """
         send a wrapped laser job to the spooler.
         """
@@ -603,7 +603,7 @@ class Spooler:
             label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
         ljob = LaserJob(
-            label, list(job), driver=self.driver, priority=priority, loops=loops
+            label, list(job), driver=self.driver, priority=priority, loops=loops, outline=outline
         )
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
@@ -614,8 +614,8 @@ class Spooler:
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def command(self, *job, priority=0, helper=True):
-        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+    def command(self, *job, priority=0, helper=True, outline=None):
+        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority, outline=outline)
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
         with self._lock:
