@@ -130,6 +130,8 @@ class ViewPort:
 
         self._width = None
         self._height = None
+        self.scene_coords = None
+        self.laser_coords = None
         self.realize()
 
     def realize(self):
@@ -141,6 +143,20 @@ class ViewPort:
         self._show_to_scene_matrix = None
         self._width = self.unit_width
         self._height = self.unit_height
+
+        # Write laser and scene coords.
+        self.scene_coords = (0, 0), (self._width, 0), (self._width, self._height), (0, self._width)
+        sx = self.user_scale_x * self.native_scale_x
+        sy = self.user_scale_y * self.native_scale_y
+        dx = self.unit_width * self.origin_x
+        dy = self.unit_height * self.origin_y
+        bed_width = self._width / sx
+        bed_height = self._height / sy
+        laser1 = (dx, dy)
+        laser2 = (dx + bed_width, dy)
+        laser3 = (dx + bed_width, dy + bed_height)
+        laser4 = (dx, dy + bed_height)
+        self.laser_coords = laser1, laser2, laser3, laser4
 
     def physical_to_device_position(self, x, y, unitless=1):
         """
@@ -297,17 +313,15 @@ class ViewPort:
         """
         Calculate the matrices between the scene and device units.
         """
-        self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
-        self._device_to_scene_matrix = Matrix(self._scene_to_device_matrix)
-        self._device_to_scene_matrix.inverse()
+        self._scene_to_device_matrix = Matrix.map(*self.scene_coords, *self.laser_coords)
+        # self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
+        self._device_to_scene_matrix = ~self._scene_to_device_matrix
         self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
-        self._show_to_scene_matrix = Matrix(self._scene_to_show_matrix)
-        self._show_to_scene_matrix.inverse()
+        self._show_to_scene_matrix = ~self._scene_to_show_matrix
         self._show_to_device_matrix = (
             self._show_to_scene_matrix * self._scene_to_device_matrix
         )
-        self._device_to_show_matrix = Matrix(self._show_to_device_matrix)
-        self._device_to_show_matrix.inverse()
+        self._device_to_show_matrix = ~self._show_to_device_matrix
 
     def device_to_scene_matrix(self):
         """
