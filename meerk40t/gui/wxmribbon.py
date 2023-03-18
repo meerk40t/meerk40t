@@ -535,6 +535,58 @@ class RibbonPanel(wx.Panel):
             if kwargs[k] is not None:
                 key_dict[k] = kwargs[k]
 
+    def _create_button(self, button_bar, button):
+        """
+        Creates a button and places it on the button_bar depending on the required definition.
+
+        @param button_bar:
+        @param button:
+        @return:
+        """
+        resize_param = button.get("size")
+        show_tip = not self.context.disable_tool_tips
+        # NewIdRef is only available after 4.1
+        try:
+            new_id = wx.NewIdRef()
+        except AttributeError:
+            new_id = wx.NewId()
+
+        # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
+        if "multi" in button:
+            # Button is a multi-type button
+            b = button_bar.AddHybridButton(
+                button_id=new_id,
+                label=button["label"],
+                bitmap=button["icon"].GetBitmap(resize=resize_param),
+                help_string=button["tip"] if show_tip else "",
+            )
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                self.drop_click,
+                id=new_id,
+            )
+        else:
+            if "group" in button or "toggle" in button:
+                bkind = RB.RIBBON_BUTTON_TOGGLE
+            else:
+                bkind = RB.RIBBON_BUTTON_NORMAL
+            b = button_bar.AddButton(
+                button_id=new_id,
+                label=button["label"],
+                bitmap=button["icon"].GetBitmap(resize=resize_param),
+                bitmap_disabled=button["icon"].GetBitmap(
+                    resize=resize_param, color=Color("grey")
+                ),
+                help_string=button["tip"] if show_tip else "",
+                kind=bkind,
+            )
+
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
+        )
+        button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
+        return b
+
     def set_buttons(self, new_values, button_bar):
         """
         Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
@@ -554,7 +606,6 @@ class RibbonPanel(wx.Panel):
         @param button_bar: specific button bar these buttons are applied to.
         @return:
         """
-        show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
         button_bar._hovered_button = None
         button_bar._active_button = None
@@ -563,51 +614,17 @@ class RibbonPanel(wx.Panel):
         for button, name, sname in new_values:
             buttons.append(button)
 
+        # Sort buttons by priority
         def sort_priority(elem):
             return elem.get("priority", 0)
 
-        buttons.sort(key=sort_priority)  # Sort buttons by priority
+        buttons.sort(key=sort_priority)
 
         for button in buttons:
             # Every registered button in the updated lookup gets created.
             group = button.get("group")
             resize_param = button.get("size")
-            # NewIdRef is only available after 4.1
-            try:
-                new_id = wx.NewIdRef()
-            except AttributeError:
-                new_id = wx.NewId()
-
-            if "multi" in button:
-                # Button is a multi-type button
-                b = button_bar.AddHybridButton(
-                    button_id=new_id,
-                    label=button["label"],
-                    bitmap=button["icon"].GetBitmap(resize=resize_param),
-                    help_string=button["tip"] if show_tip else "",
-                )
-                button_bar.Bind(
-                    RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    self.drop_click,
-                    id=new_id,
-                )
-            else:
-                if "group" in button:
-                    bkind = RB.RIBBON_BUTTON_TOGGLE
-                else:
-                    bkind = RB.RIBBON_BUTTON_NORMAL
-                if "toggle" in button:
-                    bkind = RB.RIBBON_BUTTON_TOGGLE
-                b = button_bar.AddButton(
-                    button_id=new_id,
-                    label=button["label"],
-                    bitmap=button["icon"].GetBitmap(resize=resize_param),
-                    bitmap_disabled=button["icon"].GetBitmap(
-                        resize=resize_param, color=Color("grey")
-                    ),
-                    help_string=button["tip"] if show_tip else "",
-                    kind=bkind,
-                )
+            b = self._create_button(button_bar, button)
 
             # Store all relevant aspects for newly registered button.
             b.button_dict = button
@@ -729,7 +746,9 @@ class RibbonPanel(wx.Panel):
                             resize=small_resize, color=Color("grey")
                         ),
                     )
+
             # Store newly created button in the various lookups
+            new_id = b.id
             self.button_lookup[new_id] = b
             if group is not None:
                 c_group = self.group_lookup.get(group)
@@ -737,11 +756,6 @@ class RibbonPanel(wx.Panel):
                     c_group = []
                     self.group_lookup[group] = c_group
                 c_group.append(b)
-
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
-            )
-            button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
 
         self.ensure_realize()
 
