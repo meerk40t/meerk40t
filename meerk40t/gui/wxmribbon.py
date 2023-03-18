@@ -471,6 +471,7 @@ class RibbonPanel(wx.Panel):
         except KeyError:
             return
         base_button.action = alt.get("action", base_button.action)
+        base_button.action_right = alt.get("action_right", base_button.action_right)
         base_button.label = alt.get("label", base_button.label)
         base_button.help_string = alt.get("help_string", base_button.help_string)
         base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
@@ -502,6 +503,7 @@ class RibbonPanel(wx.Panel):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
             "action": base_button.action,
+            "action_right": base_button.action_right,
             "label": base_button.label,
             "help_string": base_button.help_string,
             "bitmap_large": base_button.bitmap_large,
