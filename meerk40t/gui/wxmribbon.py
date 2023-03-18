@@ -637,11 +637,7 @@ class RibbonPanel(wx.Panel):
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
-            if "rule_enabled" in button:
-                b.enable_rule = button.get("rule_enabled")
-            else:
-                b.enable_rule = lambda cond: True
-
+            b.enable_rule = button.get("rule_enabled", lambda cond: True)
             if "multi" in button:
                 # Store alternative aspects for multi-buttons, load stored previous state.
 
