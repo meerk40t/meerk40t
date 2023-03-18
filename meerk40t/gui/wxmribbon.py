@@ -587,6 +587,47 @@ class RibbonPanel(wx.Panel):
         button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
         return b
 
+    def _setup_multi_button(self, button, b):
+        # Store alternative aspects for multi-buttons, load stored previous state.
+        resize_param = button.get("size")
+        multi_action = button["multi"]
+        multi_ident = button.get("identifier")
+        b.save_id = multi_ident
+        initial_id = self.context.setting(str, b.save_id, "default")
+
+        for i, v in enumerate(multi_action):
+            key = v.get("identifier", i)
+            self._store_button_aspect(b, key)
+            self._update_button_aspect(b, key, **v)
+            if "icon" in v:
+                v_icon = v.get("icon")
+                self._update_button_aspect(
+                    b,
+                    key,
+                    bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                    bitmap_large_disabled=v_icon.GetBitmap(
+                        resize=resize_param, color=Color("grey")
+                    ),
+                )
+                if resize_param is None:
+                    siz = v_icon.GetBitmap().GetSize()
+                    small_resize = 0.5 * siz[0]
+                else:
+                    small_resize = 0.5 * resize_param
+                self._update_button_aspect(
+                    b,
+                    key,
+                    bitmap_small=v_icon.GetBitmap(resize=small_resize),
+                    bitmap_small_disabled=v_icon.GetBitmap(
+                        resize=small_resize, color=Color("grey")
+                    ),
+                )
+            if "signal" in v:
+                self._create_signal_multi(b, key, v["signal"])
+
+            if key == initial_id:
+                self._restore_button_aspect(b, key)
+
     def _create_signal_multi(self, button, key, signal):
         """
         Creates a signal to restore the state of a multi button.
@@ -689,46 +730,7 @@ class RibbonPanel(wx.Panel):
             b.action_right = button.get("right")
             b.enable_rule = button.get("rule_enabled", lambda cond: True)
             if "multi" in button:
-                # Store alternative aspects for multi-buttons, load stored previous state.
-
-                multi_action = button["multi"]
-                multi_ident = button.get("identifier")
-                b.save_id = multi_ident
-                initial_id = self.context.setting(str, b.save_id, "default")
-
-                for i, v in enumerate(multi_action):
-                    key = v.get("identifier", i)
-                    self._store_button_aspect(b, key)
-                    self._update_button_aspect(b, key, **v)
-                    if "icon" in v:
-                        v_icon = v.get("icon")
-                        self._update_button_aspect(
-                            b,
-                            key,
-                            bitmap_large=v_icon.GetBitmap(resize=resize_param),
-                            bitmap_large_disabled=v_icon.GetBitmap(
-                                resize=resize_param, color=Color("grey")
-                            ),
-                        )
-                        if resize_param is None:
-                            siz = v_icon.GetBitmap().GetSize()
-                            small_resize = 0.5 * siz[0]
-                        else:
-                            small_resize = 0.5 * resize_param
-                        self._update_button_aspect(
-                            b,
-                            key,
-                            bitmap_small=v_icon.GetBitmap(resize=small_resize),
-                            bitmap_small_disabled=v_icon.GetBitmap(
-                                resize=small_resize, color=Color("grey")
-                            ),
-                        )
-                    if "signal" in v:
-                        self._create_signal_multi(b, key, v["signal"])
-
-                    if key == initial_id:
-                        self._restore_button_aspect(b, key)
-
+                self._setup_multi_button(button, b)
             if "toggle" in button:
                 # Store toggle and original aspects for toggle-buttons
                 b.state_pressed = "toggle"
