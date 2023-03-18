@@ -587,6 +587,57 @@ class RibbonPanel(wx.Panel):
         button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
         return b
 
+    def _create_signal_multi(self, button, key, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param button:
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def make_multi_click(_tb, _key):
+            def multi_click(origin, set_value):
+                self._restore_button_aspect(_tb, _key)
+
+            return multi_click
+
+        signal_multi_listener = make_multi_click(button, key)
+        self.context.listen(signal, signal_multi_listener)
+        self.toggle_signals.append((signal, signal_multi_listener))
+
+    def _create_signal_toggler(self, button, signal):
+        """
+        Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
+
+        E.G. If a toggle has a signal called "stop_tracing" and the context.signal("stop_tracing") is called this will
+        automatically set the toggle state.
+
+        Note: It will not call any of the associated actions, it will simply set the toggle state.
+
+        @param button:
+        @param signal:
+        @return:
+        """
+
+        def make_toggle_click(_tb):
+            def toggle_click(origin, set_value):
+                if set_value:
+                    _tb.toggle = False
+                    self._restore_button_aspect(_tb, _tb.state_unpressed)
+                else:
+                    _tb.toggle = True
+                    self._restore_button_aspect(_tb, _tb.state_pressed)
+                _tb.parent.ToggleButton(_tb.id, _tb.toggle)
+                _tb.parent.Refresh()
+
+            return toggle_click
+
+        signal_toggle_listener = make_toggle_click(button)
+        self.context.listen(signal, signal_toggle_listener)
+        self.toggle_signals.append((signal, signal_toggle_listener))
+
     def set_buttons(self, new_values, button_bar):
         """
         Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
@@ -673,23 +724,13 @@ class RibbonPanel(wx.Panel):
                             ),
                         )
                     if "signal" in v:
-
-                        def make_multi_click(_tb, _key):
-                            def multi_click(origin, set_value):
-                                self._restore_button_aspect(_tb, _key)
-
-                            return multi_click
-
-                        signal_multi_listener = make_multi_click(b, key)
-                        self.context.listen(v["signal"], signal_multi_listener)
-                        self.toggle_signals.append((v["signal"], signal_multi_listener))
+                        self._create_signal_multi(b, key, v["signal"])
 
                     if key == initial_id:
                         self._restore_button_aspect(b, key)
 
             if "toggle" in button:
                 # Store toggle and original aspects for toggle-buttons
-
                 b.state_pressed = "toggle"
                 b.state_unpressed = "original"
 
@@ -698,25 +739,7 @@ class RibbonPanel(wx.Panel):
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
                 if "signal" in toggle_action:
-
-                    def make_toggle_click(_tb):
-                        def toggle_click(origin, set_value):
-                            if set_value:
-                                _tb.toggle = False
-                                self._restore_button_aspect(_tb, _tb.state_unpressed)
-                            else:
-                                _tb.toggle = True
-                                self._restore_button_aspect(_tb, _tb.state_pressed)
-                            _tb.parent.ToggleButton(_tb.id, _tb.toggle)
-                            _tb.parent.Refresh()
-
-                        return toggle_click
-
-                    signal_toggle_listener = make_toggle_click(b)
-                    self.context.listen(toggle_action["signal"], signal_toggle_listener)
-                    self.toggle_signals.append(
-                        (toggle_action["signal"], signal_toggle_listener)
-                    )
+                    self._create_signal_toggler(b, toggle_action["signal"])
 
                 self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
