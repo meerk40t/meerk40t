@@ -356,6 +356,13 @@ class RibbonPanel(wx.Panel):
         self._button_click_id(evt_id, event=event)
 
     def _button_click_id(self, evt_id, event=None):
+        """
+        Process button click of button at provided button_id
+
+        @param evt_id:
+        @param event:
+        @return:
+        """
         button = self.button_lookup.get(evt_id)
         if button is None:
             return
@@ -449,6 +456,14 @@ class RibbonPanel(wx.Panel):
         return menu_item_click
 
     def _restore_button_aspect(self, base_button, key):
+        """
+        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
+        we restore the given aspect.
+
+        @param base_button:
+        @param key:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             return
         try:
@@ -473,6 +488,16 @@ class RibbonPanel(wx.Panel):
         base_button.key = key
 
     def _store_button_aspect(self, base_button, key, **kwargs):
+        """
+        Stores visual aspects of the buttons within the "alternatives" dictionary.
+
+        This stores the various icons, labels, help, and other properties found on the base_button.
+
+        @param base_button: button with these askpects
+        @param key: aspects to store.
+        @param kwargs:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
@@ -494,6 +519,14 @@ class RibbonPanel(wx.Panel):
                 key_dict[k] = kwargs[k]
 
     def _update_button_aspect(self, base_button, key, **kwargs):
+        """
+        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
+
+        @param base_button:
+        @param key:
+        @param kwargs:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         key_dict = base_button.alternatives[key]
@@ -504,6 +537,17 @@ class RibbonPanel(wx.Panel):
     def set_buttons(self, new_values, button_bar):
         """
         Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
+
+        * The button definition is a dynamically created and stored dictionary.
+        * Buttons are sorted by priority.
+        * Multi buttons get a hybrid type.
+        * Toggle buttons get a toggle type (Unless they are also multi).
+        * Created button objects have attributes assigned to them.
+            * toggle, parent, group, identifier, toggle_identifier, action, right, rule_enabled
+        * Multi-buttons have an identifier attr which is applied to the root context, or given "object".
+        * The identifier is used to set the state of the object, the attr-identifier is set to the value-identifier
+        * Toggle buttons have a toggle_identifier, this is used to set the and retrieve the state of the toggle.
+
 
         @param new_values: dictionary of button values to use.
         @param button_bar: specific button bar these buttons are applied to.
