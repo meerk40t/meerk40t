@@ -68,6 +68,8 @@ class GRBLDriver(Parameters):
         self.move_mode = 0
         self.reply = None
         self.elements = None
+        self.power_scale = 1.0
+        self.speed_scale = 1.0
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -652,3 +654,43 @@ class GRBLDriver(Parameters):
         self.units = 21
         self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
         self.units_dirty = True
+
+    def set_power_scale(self, factor):
+        if 0 < factor < 100:
+            self.power_scale = factor
+        else:
+            self.power_scale = 1.0
+        # Grbl can only deal with factors between 10% and 200%
+        ifactor = int(self.power_scale * 10 + 10)
+        ifactor = min(20, max(1, ifactor))
+        self.grbl_realtime("\x99")
+        if ifactor < 10:
+            for idx in range(10 - ifactor):
+                self.grbl_realtime("\x9A")
+        elif ifactor > 10:
+            for idx in range(ifactor - 10):
+                self.grbl_realtime("\x9B")
+
+    def set_speed_scale(self, factor):
+        if 0 < factor < 100:
+            self.speed_scale = factor
+        else:
+            self.speed_scale = 1.0
+        # Grbl can only deal with factors between 10% and 200%
+        ifactor = int(self.speed_scale * 10 + 10)
+        ifactor = min(20, max(1, ifactor))
+        self.grbl_realtime("\x90")
+        if ifactor < 10:
+            for idx in range(10 - ifactor):
+                self.grbl_realtime("\x92")
+        elif ifactor > 10:
+            for idx in range(ifactor - 10):
+                self.grbl_realtime("\x91")
+
+    @staticmethod
+    def has_adjustable_power():
+        return True
+
+    @staticmethod
+    def has_adjustable_speed():
+        return True

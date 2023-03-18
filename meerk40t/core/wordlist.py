@@ -423,7 +423,7 @@ class Wordlist:
         return ct, colcount, headers
 
     def wordlist_delta(self, orgtext, increase):
-        newtext = orgtext
+        newtext = str(orgtext)
         toreplace = []
         # list of tuples, (index found, old, new )
         # Lets gather the {} first...

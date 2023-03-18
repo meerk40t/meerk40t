@@ -63,8 +63,8 @@ class ElementsWidget(Widget):
     ):
 
         if event_type == "rightdown" and not modifiers:
-            if not self.scene.tool_active:
-                if self.scene.active_tool != "none":
+            if not self.scene.pane.tool_active:
+                if self.scene.pane.active_tool != "none":
                     self.scene.context("tool none")
                     return RESPONSE_CONSUME
                 else:

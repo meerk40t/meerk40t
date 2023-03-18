@@ -356,6 +356,13 @@ class RibbonPanel(wx.Panel):
         self._button_click_id(evt_id, event=event)
 
     def _button_click_id(self, evt_id, event=None):
+        """
+        Process button click of button at provided button_id
+
+        @param evt_id:
+        @param event:
+        @return:
+        """
         button = self.button_lookup.get(evt_id)
         if button is None:
             return
@@ -448,6 +455,14 @@ class RibbonPanel(wx.Panel):
         return menu_item_click
 
     def _restore_button_aspect(self, base_button, key):
+        """
+        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
+        we restore the given aspect.
+
+        @param base_button:
+        @param key:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             return
         try:
@@ -455,6 +470,7 @@ class RibbonPanel(wx.Panel):
         except KeyError:
             return
         base_button.action = alt.get("action", base_button.action)
+        base_button.action_right = alt.get("action_right", base_button.action_right)
         base_button.label = alt.get("label", base_button.label)
         base_button.help_string = alt.get("help_string", base_button.help_string)
         base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
@@ -472,10 +488,21 @@ class RibbonPanel(wx.Panel):
         base_button.key = key
 
     def _store_button_aspect(self, base_button, key, **kwargs):
+        """
+        Stores visual aspects of the buttons within the "alternatives" dictionary.
+
+        This stores the various icons, labels, help, and other properties found on the base_button.
+
+        @param base_button: button with these askpects
+        @param key: aspects to store.
+        @param kwargs:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
             "action": base_button.action,
+            "action_right": base_button.action_right,
             "label": base_button.label,
             "help_string": base_button.help_string,
             "bitmap_large": base_button.bitmap_large,
@@ -493,6 +520,14 @@ class RibbonPanel(wx.Panel):
                 key_dict[k] = kwargs[k]
 
     def _update_button_aspect(self, base_button, key, **kwargs):
+        """
+        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
+
+        @param base_button:
+        @param key:
+        @param kwargs:
+        @return:
+        """
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         key_dict = base_button.alternatives[key]
@@ -500,15 +535,169 @@ class RibbonPanel(wx.Panel):
             if kwargs[k] is not None:
                 key_dict[k] = kwargs[k]
 
+    def _create_button(self, button_bar, button):
+        """
+        Creates a button and places it on the button_bar depending on the required definition.
+
+        @param button_bar:
+        @param button:
+        @return:
+        """
+        resize_param = button.get("size")
+        show_tip = not self.context.disable_tool_tips
+        # NewIdRef is only available after 4.1
+        try:
+            new_id = wx.NewIdRef()
+        except AttributeError:
+            new_id = wx.NewId()
+
+        # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
+        if "multi" in button:
+            # Button is a multi-type button
+            b = button_bar.AddHybridButton(
+                button_id=new_id,
+                label=button["label"],
+                bitmap=button["icon"].GetBitmap(resize=resize_param),
+                help_string=button["tip"] if show_tip else "",
+            )
+            button_bar.Bind(
+                RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
+                self.drop_click,
+                id=new_id,
+            )
+        else:
+            if "group" in button or "toggle" in button:
+                bkind = RB.RIBBON_BUTTON_TOGGLE
+            else:
+                bkind = RB.RIBBON_BUTTON_NORMAL
+            b = button_bar.AddButton(
+                button_id=new_id,
+                label=button["label"],
+                bitmap=button["icon"].GetBitmap(resize=resize_param),
+                bitmap_disabled=button["icon"].GetBitmap(
+                    resize=resize_param, color=Color("grey")
+                ),
+                help_string=button["tip"] if show_tip else "",
+                kind=bkind,
+            )
+
+        button_bar.Bind(
+            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
+        )
+        button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
+        return b
+
+    def _setup_multi_button(self, button, b):
+        # Store alternative aspects for multi-buttons, load stored previous state.
+        resize_param = button.get("size")
+        multi_action = button["multi"]
+        multi_ident = button.get("identifier")
+        b.save_id = multi_ident
+        initial_id = self.context.setting(str, b.save_id, "default")
+
+        for i, v in enumerate(multi_action):
+            key = v.get("identifier", i)
+            self._store_button_aspect(b, key)
+            self._update_button_aspect(b, key, **v)
+            if "icon" in v:
+                v_icon = v.get("icon")
+                self._update_button_aspect(
+                    b,
+                    key,
+                    bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                    bitmap_large_disabled=v_icon.GetBitmap(
+                        resize=resize_param, color=Color("grey")
+                    ),
+                )
+                if resize_param is None:
+                    siz = v_icon.GetBitmap().GetSize()
+                    small_resize = 0.5 * siz[0]
+                else:
+                    small_resize = 0.5 * resize_param
+                self._update_button_aspect(
+                    b,
+                    key,
+                    bitmap_small=v_icon.GetBitmap(resize=small_resize),
+                    bitmap_small_disabled=v_icon.GetBitmap(
+                        resize=small_resize, color=Color("grey")
+                    ),
+                )
+            if "signal" in v:
+                self._create_signal_multi(b, key, v["signal"])
+
+            if key == initial_id:
+                self._restore_button_aspect(b, key)
+
+    def _create_signal_multi(self, button, key, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param button:
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def make_multi_click(_tb, _key):
+            def multi_click(origin, set_value):
+                self._restore_button_aspect(_tb, _key)
+
+            return multi_click
+
+        signal_multi_listener = make_multi_click(button, key)
+        self.context.listen(signal, signal_multi_listener)
+        self.toggle_signals.append((signal, signal_multi_listener))
+
+    def _create_signal_toggler(self, button, signal):
+        """
+        Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
+
+        E.G. If a toggle has a signal called "stop_tracing" and the context.signal("stop_tracing") is called this will
+        automatically set the toggle state.
+
+        Note: It will not call any of the associated actions, it will simply set the toggle state.
+
+        @param button:
+        @param signal:
+        @return:
+        """
+
+        def make_toggle_click(_tb):
+            def toggle_click(origin, set_value):
+                if set_value:
+                    _tb.toggle = False
+                    self._restore_button_aspect(_tb, _tb.state_unpressed)
+                else:
+                    _tb.toggle = True
+                    self._restore_button_aspect(_tb, _tb.state_pressed)
+                _tb.parent.ToggleButton(_tb.id, _tb.toggle)
+                _tb.parent.Refresh()
+
+            return toggle_click
+
+        signal_toggle_listener = make_toggle_click(button)
+        self.context.listen(signal, signal_toggle_listener)
+        self.toggle_signals.append((signal, signal_toggle_listener))
+
     def set_buttons(self, new_values, button_bar):
         """
         Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
+
+        * The button definition is a dynamically created and stored dictionary.
+        * Buttons are sorted by priority.
+        * Multi buttons get a hybrid type.
+        * Toggle buttons get a toggle type (Unless they are also multi).
+        * Created button objects have attributes assigned to them.
+            * toggle, parent, group, identifier, toggle_identifier, action, right, rule_enabled
+        * Multi-buttons have an identifier attr which is applied to the root context, or given "object".
+        * The identifier is used to set the state of the object, the attr-identifier is set to the value-identifier
+        * Toggle buttons have a toggle_identifier, this is used to set the and retrieve the state of the toggle.
+
 
         @param new_values: dictionary of button values to use.
         @param button_bar: specific button bar these buttons are applied to.
         @return:
         """
-        show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
         button_bar._hovered_button = None
         button_bar._active_button = None
@@ -517,51 +706,17 @@ class RibbonPanel(wx.Panel):
         for button, name, sname in new_values:
             buttons.append(button)
 
+        # Sort buttons by priority
         def sort_priority(elem):
             return elem.get("priority", 0)
 
-        buttons.sort(key=sort_priority)  # Sort buttons by priority
+        buttons.sort(key=sort_priority)
 
         for button in buttons:
             # Every registered button in the updated lookup gets created.
             group = button.get("group")
             resize_param = button.get("size")
-            # NewIdRef is only available after 4.1
-            try:
-                new_id = wx.NewIdRef()
-            except AttributeError:
-                new_id = wx.NewId()
-
-            if "multi" in button:
-                # Button is a multi-type button
-                b = button_bar.AddHybridButton(
-                    button_id=new_id,
-                    label=button["label"],
-                    bitmap=button["icon"].GetBitmap(resize=resize_param),
-                    help_string=button["tip"] if show_tip else "",
-                )
-                button_bar.Bind(
-                    RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    self.drop_click,
-                    id=new_id,
-                )
-            else:
-                if "group" in button:
-                    bkind = RB.RIBBON_BUTTON_TOGGLE
-                else:
-                    bkind = RB.RIBBON_BUTTON_NORMAL
-                if "toggle" in button:
-                    bkind = RB.RIBBON_BUTTON_TOGGLE
-                b = button_bar.AddButton(
-                    button_id=new_id,
-                    label=button["label"],
-                    bitmap=button["icon"].GetBitmap(resize=resize_param),
-                    bitmap_disabled=button["icon"].GetBitmap(
-                        resize=resize_param, color=Color("grey")
-                    ),
-                    help_string=button["tip"] if show_tip else "",
-                    kind=bkind,
-                )
+            b = self._create_button(button_bar, button)
 
             # Store all relevant aspects for newly registered button.
             b.button_dict = button
@@ -573,64 +728,11 @@ class RibbonPanel(wx.Panel):
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
-            if "rule_enabled" in button:
-                b.enable_rule = button.get("rule_enabled")
-            else:
-                b.enable_rule = lambda cond: True
-
+            b.enable_rule = button.get("rule_enabled", lambda cond: True)
             if "multi" in button:
-                # Store alternative aspects for multi-buttons, load stored previous state.
-
-                multi_action = button["multi"]
-                multi_ident = button.get("identifier")
-                b.save_id = multi_ident
-                initial_id = self.context.setting(str, b.save_id, "default")
-
-                for i, v in enumerate(multi_action):
-                    key = v.get("identifier", i)
-                    self._store_button_aspect(b, key)
-                    self._update_button_aspect(b, key, **v)
-                    if "icon" in v:
-                        v_icon = v.get("icon")
-                        self._update_button_aspect(
-                            b,
-                            key,
-                            bitmap_large=v_icon.GetBitmap(resize=resize_param),
-                            bitmap_large_disabled=v_icon.GetBitmap(
-                                resize=resize_param, color=Color("grey")
-                            ),
-                        )
-                        if resize_param is None:
-                            siz = v_icon.GetBitmap().GetSize()
-                            small_resize = 0.5 * siz[0]
-                        else:
-                            small_resize = 0.5 * resize_param
-                        self._update_button_aspect(
-                            b,
-                            key,
-                            bitmap_small=v_icon.GetBitmap(resize=small_resize),
-                            bitmap_small_disabled=v_icon.GetBitmap(
-                                resize=small_resize, color=Color("grey")
-                            ),
-                        )
-                    if "signal" in v:
-
-                        def make_multi_click(_tb, _key):
-                            def multi_click(origin, set_value):
-                                self._restore_button_aspect(_tb, _key)
-
-                            return multi_click
-
-                        signal_multi_listener = make_multi_click(b, key)
-                        self.context.listen(v["signal"], signal_multi_listener)
-                        self.toggle_signals.append((v["signal"], signal_multi_listener))
-
-                    if key == initial_id:
-                        self._restore_button_aspect(b, key)
-
+                self._setup_multi_button(button, b)
             if "toggle" in button:
                 # Store toggle and original aspects for toggle-buttons
-
                 b.state_pressed = "toggle"
                 b.state_unpressed = "original"
 
@@ -639,25 +741,7 @@ class RibbonPanel(wx.Panel):
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
                 if "signal" in toggle_action:
-
-                    def make_toggle_click(_tb):
-                        def toggle_click(origin, set_value):
-                            if set_value:
-                                _tb.toggle = False
-                                self._restore_button_aspect(_tb, _tb.state_unpressed)
-                            else:
-                                _tb.toggle = True
-                                self._restore_button_aspect(_tb, _tb.state_pressed)
-                            _tb.parent.ToggleButton(_tb.id, _tb.toggle)
-                            _tb.parent.Refresh()
-
-                        return toggle_click
-
-                    signal_toggle_listener = make_toggle_click(b)
-                    self.context.listen(toggle_action["signal"], signal_toggle_listener)
-                    self.toggle_signals.append(
-                        (toggle_action["signal"], signal_toggle_listener)
-                    )
+                    self._create_signal_toggler(b, toggle_action["signal"])
 
                 self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
@@ -683,7 +767,9 @@ class RibbonPanel(wx.Panel):
                             resize=small_resize, color=Color("grey")
                         ),
                     )
+
             # Store newly created button in the various lookups
+            new_id = b.id
             self.button_lookup[new_id] = b
             if group is not None:
                 c_group = self.group_lookup.get(group)
@@ -691,11 +777,6 @@ class RibbonPanel(wx.Panel):
                     c_group = []
                     self.group_lookup[group] = c_group
                 c_group.append(b)
-
-            button_bar.Bind(
-                RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
-            )
-            button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
 
         self.ensure_realize()
 

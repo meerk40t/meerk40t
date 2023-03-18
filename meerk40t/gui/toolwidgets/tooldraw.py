@@ -59,8 +59,8 @@ class DrawTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.series = None
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

@@ -41,8 +41,85 @@ def _tokenize_code(code_line):
         yield code
 
 
+OKAY = 0
+# G-code words consist of a letter and a value. Letter was not found.
+ERROR_GCODE_LETTER_NOT_FOUND = 1
+# Numeric value format is not valid or missing an expected value.
+ERROR_NUMERIC_VALUE_INVALID = 2
+# Grbl '$' system command was not recognized or supported.
+ERROR_REALTIME_NOT_SUPPORTED = 3
+# Negative value received for an expected positive value.
+ERROR_NEGATIVE_VALUE = 4
+# Homing cycle is not enabled via settings.
+ERROR_HOMING_CYCLE_DISABLED = 5
+# Minimum step pulse time must be greater than 3usec
+ERROR_STEP_PULSE_INVALID = 6
+# EEPROM read failed. Reset and restored to default values.
+ERROR_EEPROM_READ_ERROR = 7
+# Grbl '$' command cannot be used unless Grbl is IDLE. Ensures smooth operation during a job.
+ERROR_NOT_IDLE = 8
+# G-code locked out during alarm or jog state
+ERROR_ALARM_OR_JOG = 9
+# Soft limits cannot be enabled without homing also enabled.
+ERROR_SOFT_LIMITS = 10
+# Max characters per line exceeded. Line was not processed and executed.
+ERROR_MAX_CHARACTERS = 11
+# (Compile Option) Grbl '$' setting value exceeds the maximum step rate supported.
+ERROR_EXCEEDED_MAX_STEP = 12
+# Safety door detected as opened and door state initiated.
+ERROR_SAFETY_DOOR = 13
+# (Grbl-Mega Only) Build info or startup line exceeded EEPROM line length limit.
+ERROR_EEPROM_LINE_LIMIT = 14
+# Jog target exceeds machine travel. Command ignored.
+ERROR_JOG_EXCEEDS_MACHINE = 15
+# Jog command with no '=' or contains prohibited g-code.
+ERROR_JOG_SYNTAX = 16
+# Laser mode requires PWM output.
+ERROR_REQUIRED_POWER = 17
+# Unsupported or invalid g-code command found in block.
+ERROR_UNSUPPORTED_GCODE = 20
+# More than one g-code command from same modal group found in block.
+ERROR_DUPLICATE_COMMAND_MODAL = 21
+# Feed rate has not yet been set or is undefined.
+ERROR_FEED_RATE_UNSET = 22
+# G-code command in block requires an integer value.
+ERROR_NUMERIC_VALUE_MISSING = 23
+# Two G-code commands that both require the use of the XYZ axis words were detected in the block.
+ERROR_OVERLAPPING_GCODE = 24
+# A G-code word was repeated in the block.
+ERROR_DUPLICATE_COMMAND = 25
+# A G-code command implicitly or explicitly requires XYZ axis words in the block, but none were detected.
+ERROR_REQUIRES_COORDINATES = 26
+# N line number value is not within the valid range of 1 - 9,999,999.
+ERROR_INVALID_LINENUMBER = 27
+# A G-code command was sent, but is missing some required P or L value words in the line.
+ERROR_MISSING_REQUIRED_INFO = 28
+# Grbl supports six work coordinate systems G54-G59. G59.1, G59.2, and G59.3 are not supported.
+ERROR_UNSUPPORTED_WORK_COORDS = 29
+# The G53 G-code command requires either a G0 seek or G1 feed motion mode to be active. A different motion was active.
+ERROR_INVALID_MOVE_COMMAND = 30
+# There are unused axis words in the block and G80 motion mode cancel is active.
+ERROR_UNUSED_AXIS_WORDS = 31
+# A G2 or G3 arc was commanded but there are no XYZ axis words in the selected plane to trace the arc.
+ERROR_ARC_WITHOUT_WORDS = 32
+# The motion command has an invalid target. G2, G3, and G38.2 generates this error, if the arc is impossible to generate or if the probe target is the current position.
+ERROR_INVALID_TARGET = 33
+# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semi-circles or quadrants, or redefine them with the arc offset definition.
+ERROR_ARC_COMPUTATION = 34
+# A G2 or G3 arc, traced with the offset definition, is missing the IJK offset word in the selected plane to trace the arc.
+ERROR_ARC_OFFSET_WORDS_MISSING = 35
+# There are unused, leftover G-code words that aren't used by any command in the block.
+ERROR_UNUSED_WORDS = 36
+# The G43.1 dynamic tool length offset command cannot apply an offset to an axis other than its configured axis. The Grbl default axis is the Z-axis.
+ERROR_TOOL_LENGTH_INVALID = 37
+# Tool number greater than max supported value.
+ERROR_EXCEEDED_TOOL_MAX = 38
+
+
 class GcodeJob:
-    def __init__(self, driver=None, units_to_device_matrix=None, priority=0, channel=None):
+    def __init__(
+        self, driver=None, units_to_device_matrix=None, priority=0, channel=None
+    ):
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
@@ -113,7 +190,9 @@ class GcodeJob:
             self.buffer.extend(lines)
 
     def write_blob(self, data):
-        self.write_all([r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()])
+        self.write_all(
+            [r for r in re.split("[\n|\r]", data.decode("utf-8")) if r.strip()]
+        )
 
     def execute(self, driver=None):
         """
@@ -168,6 +247,22 @@ class GcodeJob:
     def _process_gcode(self, data, jog=False):
         """
         Processes the gcode commands which are parsed into different dictionary objects.
+        List of Supported G-Codes in Grbl v1.1:
+          - Non-Modal Commands: G4, G10L2, G10L20, G28, G30, G28.1, G30.1, G53, G92, G92.1
+          - Motion Modes: G0, G1, G2, G3, G38.2, G38.3, G38.4, G38.5, G80
+          - Feed Rate Modes: G93, G94
+          - Unit Modes: G20, G21
+          - Distance Modes: G90, G91
+          - Arc IJK Distance Modes: G91.1
+          - Plane Select Modes: G17, G18, G19
+          - Tool Length Offset Modes: G43.1, G49
+          - Cutter Compensation Modes: G40
+          - Coordinate System Modes: G54, G55, G56, G57, G58, G59
+          - Control Modes: G61
+          - Program Flow: M0, M1, M2, M30*
+          - Coolant Control: M7*, M8, M9
+          - Spindle Control: M3, M4, M5
+          - Valid Non-Command Words: F, I, J, K, L, N, P, R, S, T, X, Y, Z
 
         @param data: gcode line to process
         @param jog: indicate this gcode line is operated as a jog.
@@ -185,13 +280,13 @@ class GcodeJob:
         if "m" in gc:
             for v in gc["m"]:
                 if v in (0, 1):
-                    # Stop or Unconditional Stop
+                    # Program Flow: Stop or Unconditional Stop
                     try:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
                 elif v == 2:
-                    # Program End
+                    # Program Flow: Program End
                     try:
                         self._driver.plot_start()
                     except AttributeError:
@@ -200,19 +295,19 @@ class GcodeJob:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
-                    return 0
+                    return OKAY
                 elif v == 30:
-                    # Program Stop
+                    # Program Flow: Program Stop
                     try:
                         self._driver.rapid_mode()
                     except AttributeError:
                         pass
-                    return 0
+                    return OKAY
                 elif v in (3, 4):
-                    # Spindle On - Clockwise/CCW Laser Mode
+                    # Spindle Control - Spindle On - Clockwise/CCW Laser Mode
                     self.program_mode = True
                 elif v == 5:
-                    # Spindle Off - Laser Mode
+                    # Spindle Control - Spindle Off - Laser Mode
                     if self.program_mode:
                         try:
                             self.plot_commit()
@@ -225,33 +320,33 @@ class GcodeJob:
                         pass
                     self.program_mode = False
                 elif v == 7:
-                    #  Mist coolant control.
+                    #  Coolant Control: Mist coolant control.
                     pass
                 elif v == 8:
-                    # Flood coolant On
+                    # Coolant Control: Flood coolant On
                     try:
                         self._driver.signal("coolant", True)
                     except AttributeError:
                         pass
                 elif v == 9:
-                    # Flood coolant Off
+                    # Coolant Control: Flood coolant Off
                     try:
                         self._driver.signal("coolant", False)
                     except AttributeError:
                         pass
                 elif v == 56:
-                    pass  # Parking motion override control.
-                elif v == 911:
-                    pass  # Set TMC2130 holding currents
-                elif v == 912:
-                    pass  # M912: Set TMC2130 running currents
+                    # Parking motion override control.
+                    pass
                 else:
-                    return 20
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
             del gc["m"]
         if "g" in gc:
             for v in gc["g"]:
                 if v is None:
-                    return 2
+                    # G but no number given.
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 elif v == 0:
                     # G0 Rapid Move.
                     self.move_mode = 0
@@ -283,15 +378,35 @@ class GcodeJob:
                             self._driver.wait(t)
                         except AttributeError:
                             pass
+                elif v == 10:
+                    l_value = gc["l"].pop(0)
+                    if l_value is None:
+                        # A G-code command was sent, but is missing some required P or L value words in the line.
+                        return ERROR_MISSING_REQUIRED_INFO
+                    elif l_value == 2:
+                        # Set Work Coordinate Offsets
+                        pass
+                    elif l_value == 20:
+                        # Set Work Coordinate Offsets
+                        # Sets the offset values for the coordinate system. P1 = G54
+                        p_value = gc["p"].pop(0)
+                        if p_value is None:
+                            # A G-code command was sent, but is missing some required P or L value words in the line.
+                            return ERROR_MISSING_REQUIRED_INFO
+                    else:
+                        # Unsupported or invalid g-code command found in block.
+                        return ERROR_UNSUPPORTED_GCODE
                 elif v == 17:
                     # Set XY coords.
                     pass
                 elif v == 18:
                     # Set the XZ plane for arc.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 19:
                     # Set the YZ plane for arc.
-                    return 2
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v in (20, 70):
                     # g20 is inch mode.
                     self.scale = UNITS_PER_INCH
@@ -311,15 +426,23 @@ class GcodeJob:
                     self.x = 0
                     self.y = 0
                     self.z = 0
-                elif v == 38.1:
-                    # Touch Plate
+                elif v == 28.1:
+                    # Set Pre-defined Location
+                    pass
+                elif v == 30:
+                    # Goto Pre-defined Position
+                    pass
+                elif v == 30.1:
+                    # Set Pre-defined Position
                     pass
                 elif v == 38.2:
                     # Probe towards workpiece, stop on contact. Signal error.
-                    pass
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 38.3:
                     # Probe towards workpiece, stop on contact.
-                    pass
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
                 elif v == 38.4:
                     # Probe away from workpiece, signal error
                     pass
@@ -366,7 +489,8 @@ class GcodeJob:
                     # Feed Rate Mode (Units Per Minute)
                     self.g94_feedrate()
                 else:
-                    return 20  # Unsupported or invalid g-code command found in block.
+                    # Unsupported or invalid g-code command found in block.
+                    return ERROR_UNSUPPORTED_GCODE
             del gc["g"]
 
         if "comment" in gc:
@@ -377,7 +501,8 @@ class GcodeJob:
         if "f" in gc:  # Feed_rate
             for v in gc["f"]:
                 if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 feed_rate = self.feed_convert(v)
                 if self.speed != feed_rate:
                     self.speed = feed_rate
@@ -390,7 +515,8 @@ class GcodeJob:
         if "s" in gc:
             for v in gc["s"]:
                 if v is None:
-                    return 2  # Numeric value format is not valid or missing an expected value.
+                    # Numeric value format is not valid or missing an expected value.
+                    return ERROR_NUMERIC_VALUE_INVALID
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
                 if self.power != v:
@@ -505,7 +631,7 @@ class GcodeJob:
                     for p in range(self._interpolate + 1):
                         x, y = arc.point(p / self._interpolate)
                         self.plot_location(x, y, power)
-        return 0
+        return OKAY
 
     def plot_location(self, x, y, power):
         """

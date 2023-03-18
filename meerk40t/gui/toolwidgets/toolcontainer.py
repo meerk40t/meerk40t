@@ -28,7 +28,7 @@ class ToolContainer(Widget):
         if self._active_tool == tool:
             return
         self._active_tool = tool
-        self.scene.tool_active = False
+        self.scene.pane.tool_active = False
         self.remove_all_widgets()
         self.scene.cursor("arrow")
         if tool is not None:
@@ -37,7 +37,7 @@ class ToolContainer(Widget):
                 self.add_widget(0, new_tool(self.scene))
         if tool is None:
             tool = "none"
-        self.scene.active_tool = tool.lower()
+        self.scene.pane.active_tool = tool.lower()
         message = ("tool", tool)
         self.scene.context.signal("tool_changed", message)
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
