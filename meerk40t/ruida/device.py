@@ -101,8 +101,6 @@ class RuidaDevice(Service, ViewPort):
         )
         self.state = 0
 
-        self.spooler = Spooler(self)
-
         self.viewbuffer = ""
 
         _ = self.kernel.translation
