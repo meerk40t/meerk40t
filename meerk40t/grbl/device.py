@@ -141,7 +141,6 @@ class GRBLDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Rotary-Mode active"),
                 "tip": _("Is the rotary mode active for this device"),
-                "hidden": 1,
             },
             {
                 "attr": "rotary_scale_x",
@@ -152,7 +151,6 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Scale that needs to be applied to the X-Axis"),
                 "conditional": (self, "rotary_active"),
                 "subsection": _("Scale"),
-                "hidden": 1,
             },
             {
                 "attr": "rotary_scale_y",
@@ -163,7 +161,6 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Scale that needs to be applied to the Y-Axis"),
                 "conditional": (self, "rotary_active"),
                 "subsection": _("Scale"),
-                "hidden": 1,
             },
             {
                 "attr": "rotary_supress_home",
@@ -173,7 +170,6 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Ignore Home"),
                 "tip": _("Ignore Home-Command"),
                 "conditional": (self, "rotary_active"),
-                "hidden": 1,
             },
             {
                 "attr": "rotary_mirror_x",
@@ -184,7 +180,6 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Mirror the elements on the X-Axis"),
                 "conditional": (self, "rotary_active"),
                 "subsection": _("Mirror Output"),
-                "hidden": 1,
             },
             {
                 "attr": "rotary_mirror_y",
@@ -195,7 +190,6 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("Mirror the elements on the Y-Axis"),
                 "conditional": (self, "rotary_active"),
                 "subsection": _("Mirror Output"),
-                "hidden": 1,
             },
         ]
         self.register_choices("rotary", choices)
