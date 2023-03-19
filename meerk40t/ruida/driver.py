@@ -228,7 +228,7 @@ class RuidaDriver:
             elif isinstance(q, HomeCut):
                 con.home_xy()
             elif isinstance(q, GotoCut):
-                con.goto(0,0)
+                con.goto(0, 0)
             elif isinstance(q, SetOriginCut):
                 # Currently not supporting set origin cut.
                 pass
@@ -268,12 +268,8 @@ class RuidaDriver:
                             last_on = on
                             # We are using traditional power-scaling
                             settings = self.plot_planner.settings
-                            percent_power = (
-                                float(
-                                    settings.get(
-                                        "power", self.service.default_power
-                                    )
-                                )
+                            percent_power = float(
+                                settings.get("power", self.service.default_power)
                             )
                             con.max_power_1(percent_power)
                             con.min_power_1(percent_power)

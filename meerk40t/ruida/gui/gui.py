@@ -1,4 +1,3 @@
-
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         return not service.has_feature("wx")
@@ -12,6 +11,7 @@ def plugin(service, lifecycle):
             icons8_computer_support_50,
             icons8_connected_50,
         )
+
         _ = service._
 
         def popup_info(event):

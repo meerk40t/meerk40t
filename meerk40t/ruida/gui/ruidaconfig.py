@@ -28,9 +28,7 @@ class RuidaConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        options = (
-            ("bed_dim", "Ruida"),
-        )
+        options = (("bed_dim", "Ruida"),)
         self.panels = []
         for item in options:
             section = item[0]
