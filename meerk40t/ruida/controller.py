@@ -68,42 +68,31 @@ END_POWER_3 = b"\xC4"  # power(2)
 END_POWER_4 = b"\xC5"  # power(2)
 MIN_POWER_1 = b"\xC6\x01"  # power(2)
 MAX_POWER_1 = b"\xC6\x02"  # power(2)
-
 MIN_POWER_2 = b"\xC6\x21"  # power(2)
 MAX_POWER_2 = b"\xC6\x22"  # power(2)
-
 MIN_POWER_3 = b"\xC6\x05"  # power(2)
 MAX_POWER_3 = b"\xC6\x06"  # power(2)
-
 MIN_POWER_4 = b"\xC6\x07"  # power(2)
 MAX_POWER_4 = b"\xC6\x08"  # power(2)
 LASER_INTERVAL = b"\xC6\x10"  # time(5)
 ADD_DELAY = b"\xC6\x11"  # time(5)
 LASER_ON_DELAY = b"\xC6\x12"  # time(5)
 LASER_OFF_DELAY = b"\xC6\x13"  # time(5)
-
 LASER_ON_DELAY2 = b"\xC6\x15"  # time(5)
 LASER_OFF_DELAY2 = b"\xC6\x16"  # time(5)
-
 MIN_POWER_1_PART = b"\xC6\x31"  # part(1), power(2)
 MAX_POWER_1_PART = b"\xC6\x32"  # part(1), power(2)
-
 MIN_POWER_2_PART = b"\xC6\x41"  # part(1), power(2)
 MAX_POWER_2_PART = b"\xC6\x42"  # part(1), power(2)
-
 MIN_POWER_3_PART = b"\xC6\x35"  # part(1), power(2)
-MAX_POWER_3_PART = b"\xC6\x36"  # part(1), power(2)
-
+MAX_POWER_3_PART = b"\xC6\x36"  # part(1), power(2
 MIN_POWER_4_PART = b"\xC6\x37"  # part(1), power(2)
 MAX_POWER_4_PART = b"\xC6\x38"  # part(1), power(2)
-
 THROUGH_POWER_1 = b"\xC6\x50"  # power(2)
 THROUGH_POWER_2 = b"\xC6\x51"  # power(2)
 THROUGH_POWER_3 = b"\xC6\x55"  # power(2)
 THROUGH_POWER_4 = b"\xC6\x56"  # power(2)
-
 FREQUENCY_PART = b"\xC6\x60"  # laser(1), part(1), frequency(5)
-
 SPEED_LASER_1 = b"\xC9\x02"  # speed(5)
 SPEED_AXIS = b"\xC9\x03"  # speed(5)
 SPEED_LASER_1_PART = b"\xC9\x04"  # part(1), speed(5)
@@ -267,6 +256,7 @@ class RuidaController:
 
         self.connection = None
         self.mode = "init"
+        self.paused = False
         self._is_opening = False
         self._abort_open = False
         self._disable_connect = False
@@ -458,18 +448,6 @@ class RuidaController:
 
     def init_laser(self):
         self.usb_log("Ready")
-
-    def power(self, power):
-        """
-        Accepts power in percent, automatically converts to power_ratio
-
-        @param power:
-        @return:
-        """
-        pass
-
-    def frequency(self, frequency):
-        pass
 
     #######################
     # Specific Commands
