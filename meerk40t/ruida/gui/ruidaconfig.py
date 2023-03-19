@@ -29,7 +29,7 @@ class RuidaConfiguration(MWindow):
         )
 
         options = (
-            ("ruida", "Ruida"),
+            ("bed_dim", "Ruida"),
         )
         self.panels = []
         for item in options:
