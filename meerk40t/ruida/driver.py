@@ -1,8 +1,7 @@
 """
-Galvo Driver
+Ruida Driver
 
-The Driver has a set of different commands which are standardly sent and utilizes those which can be performed by this
-driver.
+The Driver has a set of different commands which are sent and utilizes those which can be performed by this driver.
 """
 import time
 
@@ -213,36 +212,30 @@ class RuidaDriver:
                             q.settings.get("power", self.service.default_power)
                         )
                         percent_power = max_power / 10.0
-                        # Max power is the percent max power, scaled by the pixel power.
-                        con.power(percent_power * on)
+                        con.max_power_1(percent_power)
+                        con.min_power_1(percent_power)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
                 con.goto(start[0], start[1])
-                dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
-                while dwell_time > 0:
-                    d = min(dwell_time, 60000)
-                    con.list_laser_on_point(int(d))
-                    dwell_time -= d
-                con.list_delay_time(int(self.service.delay_end / 10.0))
+                dwell_time = q.dwell_time
+                # TODO: Unknown accuracy
+                con.laser_interval(dwell_time)
             elif isinstance(q, WaitCut):
-                dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
-                while dwell_time > 0:
-                    d = min(dwell_time, 60000)
-                    con.list_delay_time(int(d))
-                    dwell_time -= d
+                dwell_time = q.dwell_time
+                # TODO: Unknown accuracy
+                con.add_delay(dwell_time)
             elif isinstance(q, HomeCut):
-                con.goto(0x8000, 0x8000)
+                con.home_xy()
             elif isinstance(q, GotoCut):
-                con.goto(0x8000, 0x8000)
+                con.goto(0,0)
             elif isinstance(q, SetOriginCut):
                 # Currently not supporting set origin cut.
                 pass
             elif isinstance(q, OutputCut):
-                con.port_set(q.output_mask, q.output_value)
-                con.list_write_port()
+                pass
             elif isinstance(q, InputCut):
-                con.list_wait_for_input(q.input_mask, 0)
+                pass
             else:
                 # Rastercut
                 self.plot_planner.push(q)
@@ -271,7 +264,6 @@ class RuidaDriver:
                         con.goto(x, y)
                     else:
                         # on is in range 0 exclusive and 1 inclusive.
-                        # This is a regular cut position
                         if last_on is None or on != last_on:
                             last_on = on
                             # We are using traditional power-scaling
@@ -282,11 +274,10 @@ class RuidaDriver:
                                         "power", self.service.default_power
                                     )
                                 )
-                                / 10.0
                             )
-                            con.power(percent_power * on)
+                            con.max_power_1(percent_power)
+                            con.min_power_1(percent_power)
                         con.mark(x, y)
-        con.list_delay_time(int(self.service.delay_end / 10.0))
         con.rapid_mode()
 
     def move_abs(self, x, y):
@@ -354,7 +345,7 @@ class RuidaDriver:
 
         @return:
         """
-        self.move_abs("50%", "50%")
+        self.move_abs(0, 0)
 
     def physical_home(self):
         """ "
@@ -482,7 +473,8 @@ class RuidaDriver:
         @param time_in_ms:
         @return:
         """
-        pass
+
+        self.connection.laser_interval(time_in_ms)
 
     def set_abort(self):
         self._aborting = True
