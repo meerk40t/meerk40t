@@ -114,6 +114,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context = context
         self.listeners = list()
         self.entries_per_column = entries_per_column
+        self._detached = False
         if choices is None:
             return
         if isinstance(choices, str):
@@ -247,7 +248,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_main_sizer = sizer_main
         current_sec_sizer = sizer_main
         current_sizer = sizer_main
-        # By default 0 as we are stacking up stuff
+        # By default, 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
         for i, c in enumerate(self.choices):
@@ -1297,7 +1298,6 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
-        self._detached = False
 
     @staticmethod
     def unsorted_label(original):

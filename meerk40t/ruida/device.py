@@ -162,6 +162,7 @@ class RuidaDevice(Service, ViewPort):
         self.state = 0
 
         self.spooler = Spooler(self)
+        self.driver = None
 
         self.viewbuffer = ""
 
