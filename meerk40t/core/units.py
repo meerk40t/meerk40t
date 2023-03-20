@@ -66,7 +66,6 @@ UNITS_MILS = 3
 UNITS_INCH = 4
 UNITS_PERCENT = 100
 
-
 class ViewPort:
     """
     The width and height are of the viewport are stored in MK native units (1/65535) in.
@@ -553,105 +552,6 @@ class ViewPort:
         return float(Length(self.height))
 
     @staticmethod
-    def viewbox_transform(
-        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
-    ):
-        """
-        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
-
-        It creates transform commands equal to that viewport expected.
-
-        Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-        Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
-        respectively.
-
-        Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        or if meetOrSlice is missing from this value.
-
-        @param e_x: element_x value
-        @param e_y: element_y value
-        @param e_width: element_width value
-        @param e_height: element_height value
-        @param vb_x: viewbox_x value
-        @param vb_y: viewbox_y value
-        @param vb_width: viewbox_width value
-        @param vb_height: viewbox_height value
-        @param aspect: preserve aspect ratio value
-        @return: string of the SVG transform commands to account for the viewbox.
-        """
-        if (
-            e_x is None
-            or e_y is None
-            or e_width is None
-            or e_height is None
-            or vb_x is None
-            or vb_y is None
-            or vb_width is None
-            or vb_height is None
-        ):
-            return ""
-        if aspect is not None:
-            aspect_slice = aspect.split(" ")
-            try:
-                align = aspect_slice[0]
-            except IndexError:
-                align = "xMidyMid"
-            try:
-                meet_or_slice = aspect_slice[1]
-            except IndexError:
-                meet_or_slice = "meet"
-        else:
-            align = "xMidyMid"
-            meet_or_slice = "meet"
-        # Initialize scale-x to e-width/vb-width.
-        scale_x = e_width / vb_width
-        # Initialize scale-y to e-height/vb-height.
-        scale_y = e_height / vb_height
-
-        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
-        if align != "none" and meet_or_slice == "meet":
-            scale_x = scale_y = min(scale_x, scale_y)
-        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
-        elif align != "none" and meet_or_slice == "slice":
-            scale_x = scale_y = max(scale_x, scale_y)
-        # Initialize translate-x to e-x - (vb-x * scale-x).
-        translate_x = e_x - (vb_x * scale_x)
-        # Initialize translate-y to e-y - (vb-y * scale-y)
-        translate_y = e_y - (vb_y * scale_y)
-        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
-        align = align.lower()
-        if "xmid" in align:
-            translate_x += (e_width - vb_width * scale_x) / 2.0
-        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
-        if "xmax" in align:
-            translate_x += e_width - vb_width * scale_x
-        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
-        if "ymid" in align:
-            translate_y += (e_height - vb_height * scale_y) / 2.0
-        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
-        if "ymax" in align:
-            translate_y += e_height - vb_height * scale_y
-        # The transform applied to content contained by the element is given by:
-        # translate(translate-x, translate-y) scale(scale-x, scale-y)
-        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
-            raise ValueError
-        if translate_x == 0 and translate_y == 0:
-            if scale_x == 1 and scale_y == 1:
-                return ""  # Nothing happens.
-            else:
-                return f"scale({scale_x:.12f}, {scale_y:.12f})"
-        else:
-            if scale_x == 1 and scale_y == 1:
-                return f"translate({translate_x:.12f}, {translate_y:.12f})"
-            else:
-                return (
-                    f"translate({translate_x:.12f}, {translate_y:.12f}) "
-                    f"scale({scale_x:.12f}, {scale_y:.12f})"
-                )
-
-    @staticmethod
     def conversion(units, amount=1):
         return Length(f"{amount}{units}").preferred
 
@@ -1129,6 +1029,106 @@ class Angle:
 
     def is_orthogonal(self):
         return (self.angle % (tau / 4.0)) == 0
+
+
+
+def viewbox_transform(
+        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
+):
+    """
+    SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
+    With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+
+    It creates transform commands equal to that viewport expected.
+
+    Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+    Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
+    respectively.
+
+    Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+    Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+    or if meetOrSlice is missing from this value.
+
+    @param e_x: element_x value
+    @param e_y: element_y value
+    @param e_width: element_width value
+    @param e_height: element_height value
+    @param vb_x: viewbox_x value
+    @param vb_y: viewbox_y value
+    @param vb_width: viewbox_width value
+    @param vb_height: viewbox_height value
+    @param aspect: preserve aspect ratio value
+    @return: string of the SVG transform commands to account for the viewbox.
+    """
+    if (
+            e_x is None
+            or e_y is None
+            or e_width is None
+            or e_height is None
+            or vb_x is None
+            or vb_y is None
+            or vb_width is None
+            or vb_height is None
+    ):
+        return ""
+    if aspect is not None:
+        aspect_slice = aspect.split(" ")
+        try:
+            align = aspect_slice[0]
+        except IndexError:
+            align = "xMidyMid"
+        try:
+            meet_or_slice = aspect_slice[1]
+        except IndexError:
+            meet_or_slice = "meet"
+    else:
+        align = "xMidyMid"
+        meet_or_slice = "meet"
+    # Initialize scale-x to e-width/vb-width.
+    scale_x = e_width / vb_width
+    # Initialize scale-y to e-height/vb-height.
+    scale_y = e_height / vb_height
+
+    # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
+    if align != "none" and meet_or_slice == "meet":
+        scale_x = scale_y = min(scale_x, scale_y)
+    # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
+    elif align != "none" and meet_or_slice == "slice":
+        scale_x = scale_y = max(scale_x, scale_y)
+    # Initialize translate-x to e-x - (vb-x * scale-x).
+    translate_x = e_x - (vb_x * scale_x)
+    # Initialize translate-y to e-y - (vb-y * scale-y)
+    translate_y = e_y - (vb_y * scale_y)
+    # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+    align = align.lower()
+    if "xmid" in align:
+        translate_x += (e_width - vb_width * scale_x) / 2.0
+    # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
+    if "xmax" in align:
+        translate_x += e_width - vb_width * scale_x
+    # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+    if "ymid" in align:
+        translate_y += (e_height - vb_height * scale_y) / 2.0
+    # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
+    if "ymax" in align:
+        translate_y += e_height - vb_height * scale_y
+    # The transform applied to content contained by the element is given by:
+    # translate(translate-x, translate-y) scale(scale-x, scale-y)
+    if isinstance(scale_x, Length) or isinstance(scale_y, Length):
+        raise ValueError
+    if translate_x == 0 and translate_y == 0:
+        if scale_x == 1 and scale_y == 1:
+            return ""  # Nothing happens.
+        else:
+            return f"scale({scale_x:.12f}, {scale_y:.12f})"
+    else:
+        if scale_x == 1 and scale_y == 1:
+            return f"translate({translate_x:.12f}, {translate_y:.12f})"
+        else:
+            return (
+                f"translate({translate_x:.12f}, {translate_y:.12f}) "
+                f"scale({scale_x:.12f}, {scale_y:.12f})"
+            )
 
 
 # TODO: Add in speed for units. mm/s in/s mm/minute.
