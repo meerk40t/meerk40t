@@ -184,13 +184,6 @@ class ViewPort:
                 s_top_right,
                 s_top_left,
             )
-        if self.show_swap_xy:
-            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
-                (s_top_left[1], s_top_left[0]),
-                (s_top_right[1], s_top_right[0]),
-                (s_bottom_right[1], s_bottom_right[0]),
-                (s_bottom_left[1], s_bottom_left[0]),
-            )
         dx = self._width * -self.show_origin_x
         dy = self._height * -self.show_origin_y
         if dx != 0 or dy != 0:
@@ -200,6 +193,14 @@ class ViewPort:
                 (s_bottom_right[0] + dx, s_bottom_right[1] + dy),
                 (s_bottom_left[0] + dx, s_bottom_left[1] + dy),
             )
+        if self.show_swap_xy:
+            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
+                (s_top_left[1], s_top_left[0]),
+                (s_top_right[1], s_top_right[0]),
+                (s_bottom_right[1], s_bottom_right[0]),
+                (s_bottom_left[1], s_bottom_left[0]),
+            )
+
         self.show_coords = s_top_left, s_top_right, s_bottom_right, s_bottom_left
         self._scene_to_show_matrix = Matrix.map(
             *self.scene_coords, *self.show_coords
@@ -235,13 +236,6 @@ class ViewPort:
                 top_right,
                 top_left,
             )
-        if self.swap_xy:
-            top_left, top_right, bottom_right, bottom_left = (
-                (top_left[1], top_left[0]),
-                (top_right[1], top_right[0]),
-                (bottom_right[1], bottom_right[0]),
-                (bottom_left[1], bottom_left[0]),
-            )
         if dx != 0 or dy != 0:
             top_left, top_right, bottom_right, bottom_left = (
                 (top_left[0] + dx, top_left[1] + dy),
@@ -249,7 +243,13 @@ class ViewPort:
                 (bottom_right[0] + dx, bottom_right[1] + dy),
                 (bottom_left[0] + dx, bottom_left[1] + dy),
             )
-
+        if self.swap_xy:
+            top_left, top_right, bottom_right, bottom_left = (
+                (top_left[1], top_left[0]),
+                (top_right[1], top_right[0]),
+                (bottom_right[1], bottom_right[0]),
+                (bottom_left[1], bottom_left[0]),
+            )
         self.laser_coords = top_left, top_right, bottom_right, bottom_left
         self._scene_to_device_matrix = Matrix.map(
             *self.scene_coords, *self.laser_coords
