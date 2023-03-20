@@ -162,7 +162,7 @@ class TestViewport(unittest.TestCase):
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
             origin_x=0,
-            origin_y=1,
+            origin_y=0,
             flip_y=True,
         )
         x, y = view.scene_to_device_position(0, 0)
