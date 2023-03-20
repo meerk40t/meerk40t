@@ -56,3 +56,8 @@ def bootstrap():
     kernel.console("channel print console\n")
     kernel.console("service device start dummy 0\n")
     return kernel
+
+
+def destroy(kernel):
+    for i in range(50):
+        kernel.console(f"service device destroy {i}\n")

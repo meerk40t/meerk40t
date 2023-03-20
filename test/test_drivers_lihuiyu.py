@@ -236,8 +236,6 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             kernel.console("service device start -i lhystudios 0\n")
-            for i in range(3):
-                kernel.console(f"service device destroy {i}\n")
 
             # X fast, X long.
             kernel.console("operation* delete\n")
@@ -414,4 +412,5 @@ class TestDriverLihuiyuOverrideSpeed(unittest.TestCase):
             self.assertEqual("ICV2452421011000060CNBLS1Ezzzzzzz215FNSE-\n", data[-2])
             self.assertEqual(data[-3], data[-1])
         finally:
+            bootstrap.destroy(kernel)
             kernel.shutdown()
