@@ -78,12 +78,13 @@ class View:
         @param width:
         @param height:
         """
-
         self.width = Length(width)
         self.height = Length(height)
         self.user_width = None
         self.user_height = None
         self.coords = None
+        self._coords = None
+        self._matrix = None
         self.reset()
 
     def reset(self):
@@ -94,7 +95,29 @@ class View:
         top_right = self.user_width, 0
         bottom_right = self.user_width, self.user_height
         bottom_left = 0, self.user_height
-        self.coords = top_left, top_right, bottom_right, bottom_left
+        self._coords = top_left, top_right, bottom_right, bottom_left
+        self.coords = self._coords
+        self._matrix = None
+
+    def physical_position(self, x, y, vector=False):
+        return self.position(
+            Length(x, relative_length=self.user_width, unitless=1).units,
+            Length(y, relative_length=self.user_height, unitless=1).units,
+            vector=vector,
+        )
+
+    def position(self, x, y, vector=False):
+        unit_x = x
+        unit_y = y
+        if vector:
+            return self.matrix.transform_vector([unit_x, unit_y])
+        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+
+    @property
+    def matrix(self):
+        if self._matrix is None:
+            self._matrix = Matrix.map(*self._coords, *self.coords)
+        return self._matrix
 
     def scale(self, scale_x, scale_y):
         self.user_width *= scale_x
@@ -284,8 +307,8 @@ class ViewPort:
             self.show.swap_xy()
 
         # Calculate regular device matrix
-        self.laser.scale(1.0/self.native_scale_x, 1.0/self.native_scale_y)
-        self.laser.scale(1.0/self.user_scale_x, 1.0/self.user_scale_y)
+        self.laser.scale(1.0 / self.native_scale_x, 1.0 / self.native_scale_y)
+        self.laser.scale(1.0 / self.user_scale_x, 1.0 / self.user_scale_y)
 
         if self.flip_x:
             self.laser.flip_x()
