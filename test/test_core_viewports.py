@@ -204,8 +204,8 @@ class TestViewport(unittest.TestCase):
                                 lens_size_y,
                                 native_scale_x=units_per_galvo_x,
                                 native_scale_y=units_per_galvo_y,
-                                origin_x=1.0 if flip_x else 0.0,
-                                origin_y=1.0 if flip_y else 0.0,
+                                origin_x=0,
+                                origin_y=0,
                                 flip_x=flip_x,
                                 flip_y=flip_y,
                                 swap_xy=swap_xy,
@@ -215,12 +215,9 @@ class TestViewport(unittest.TestCase):
                                 show_flip_y=show_flip_y,
                             )
                             sx, sy = view.device_to_scene_position(0x7FFF, 0x7FFF)
-                            if swap_xy:
-                                self.assertAlmostEqual(sx, unit_size_y / 2, delta=10)
-                                self.assertAlmostEqual(sy, unit_size_x / 2, delta=10)
-                            else:
-                                self.assertAlmostEqual(sx, unit_size_x / 2, delta=10)
-                                self.assertAlmostEqual(sy, unit_size_y / 2, delta=10)
+                            # print((flip_x, flip_y, swap_xy, show_flip_x, show_flip_y))
+                            self.assertAlmostEqual(sx, unit_size_x / 2, delta=10)
+                            self.assertAlmostEqual(sy, unit_size_y / 2, delta=10)
                             vx, vy = view.physical_to_device_position("50%", "50%")
                             self.assertAlmostEqual(vx, 0x7FFF, delta=10)
                             self.assertAlmostEqual(vy, 0x7FFF, delta=10)
@@ -339,12 +336,8 @@ class TestViewport(unittest.TestCase):
 
                     dim0 = view.unit_width / 2
                     dim1 = view.unit_height / 2
-                    if swap_xy:
-                        self.assertAlmostEqual(sx, dim1)
-                        self.assertAlmostEqual(sy, dim0)
-                    else:
-                        self.assertAlmostEqual(sx, dim0)
-                        self.assertAlmostEqual(sy, dim1)
+                    self.assertAlmostEqual(sx, dim0)
+                    self.assertAlmostEqual(sy, dim1)
 
                     cx, cy = view.device_to_scene_position(0x7FFF, 0x7FFF)
                     self.assertAlmostEqual(sx, cx, delta=10)

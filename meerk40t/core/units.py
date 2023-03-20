@@ -155,32 +155,61 @@ class ViewPort:
         self._height = self.unit_height
 
         # Write laser and scene coords.
-        self.scene_coords = (0, 0), (self._width, 0), (self._width, self._height), (0, self._height)
+        self.scene_coords = (
+            (0, 0),
+            (self._width, 0),
+            (self._width, self._height),
+            (0, self._height),
+        )
 
         sx = self.native_scale_x
         sy = self.native_scale_y
-        dx = self.unit_width * self.origin_x
-        dy = self.unit_height * self.origin_y
         if self.rotary_active:
             sx *= self.rotary_scale_x
             sy *= self.rotary_scale_y
         bed_width = (self.unit_width / sx) / self.user_scale_x
         bed_height = (self.unit_height / sy) / self.user_scale_y
+        dx = bed_width * -self.origin_x
+        dy = bed_height * -self.origin_y
 
-        top_left = (dx, dy)
-        top_right = (dx + bed_width, dy)
-        bottom_right = (dx + bed_width, dy + bed_height)
-        bottom_left = (dx, dy + bed_height)
+        top_left = (0, 0)
+        top_right = (bed_width, 0)
+        bottom_right = (bed_width, bed_height)
+        bottom_left = (0, bed_height)
 
         if self.flip_x:
-            top_left, top_right, bottom_right, bottom_left = top_right,  top_left, bottom_left, bottom_right
+            top_left, top_right, bottom_right, bottom_left = (
+                top_right,
+                top_left,
+                bottom_left,
+                bottom_right,
+            )
         if self.flip_y:
-            top_left, top_right, bottom_right, bottom_left = bottom_left, bottom_right, top_right, top_left
+            top_left, top_right, bottom_right, bottom_left = (
+                bottom_left,
+                bottom_right,
+                top_right,
+                top_left,
+            )
         if self.swap_xy:
-            top_left, top_right, bottom_right, bottom_left = (top_left[1], top_left[0]), (top_right[1], top_right[0]), (bottom_right[1], bottom_right[0]), (bottom_left[1], bottom_left[0]),
+            top_left, top_right, bottom_right, bottom_left = (
+                (top_left[1], top_left[0]),
+                (top_right[1], top_right[0]),
+                (bottom_right[1], bottom_right[0]),
+                (bottom_left[1], bottom_left[0]),
+            )
+        if dx != 0 or dy != 0:
+            top_left, top_right, bottom_right, bottom_left = (
+                (top_left[0] + dx, top_left[1] + dy),
+                (top_right[0] + dx, top_right[1] + dy),
+                (bottom_right[0] + dx, bottom_right[1] + dy),
+                (bottom_left[0] + dx, bottom_left[1] + dy),
+            )
 
         self.laser_coords = top_left, top_right, bottom_right, bottom_left
-        self._scene_to_device_matrix = Matrix.map(*self.scene_coords, *self.laser_coords)
+        self._scene_to_device_matrix = Matrix.map(
+            *self.scene_coords, *self.laser_coords
+        )
 
     def physical_to_device_position(self, x, y, unitless=1):
         """
@@ -207,8 +236,8 @@ class ViewPort:
         """
         unit_x = Length(x, relative_length=self._width, unitless=unitless).units
         unit_y = Length(y, relative_length=self._height, unitless=unitless).units
-        if self.swap_xy:
-            return unit_y, unit_x
+        # if self.swap_xy:
+        #     return unit_y, unit_x
         return unit_x, unit_y
 
     def physical_to_show_position(self, x, y, unitless=1):
@@ -337,7 +366,9 @@ class ViewPort:
         """
         Calculate the matrices between the scene and device units.
         """
-        self._scene_to_device_matrix = Matrix.map(*self.scene_coords, *self.laser_coords)
+        self._scene_to_device_matrix = Matrix.map(
+            *self.scene_coords, *self.laser_coords
+        )
         # self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
         self._device_to_scene_matrix = ~self._scene_to_device_matrix
         self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
