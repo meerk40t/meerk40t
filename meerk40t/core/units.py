@@ -96,6 +96,11 @@ class ViewPort:
         show_origin_y=None,
         show_flip_x=None,
         show_flip_y=None,
+        rotary_active=False,
+        rotary_scale_x=1.0,
+        rotary_scale_y=1.0,
+        rotary_flip_x=False,
+        rotary_flip_y=False,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -114,6 +119,11 @@ class ViewPort:
         self.native_scale_y = native_scale_y
         self.flip_x = flip_x
         self.flip_y = flip_y
+        self.rotary_active = rotary_active
+        self.rotary_flip_x = rotary_flip_x
+        self.rotary_flip_y = rotary_flip_y
+        self.rotary_scale_x = rotary_scale_x
+        self.rotary_scale_y = rotary_scale_y
         self.swap_xy = swap_xy
         if show_origin_x is None:
             show_origin_x = origin_x
@@ -380,6 +390,9 @@ class ViewPort:
         """
         sx = self.user_scale_x * self.native_scale_x
         sy = self.user_scale_y * self.native_scale_y
+        if self.rotary_active:
+            sx *= self.rotary_scale_x
+            sy *= self.rotary_scale_y
         dx = self.unit_width * self.origin_x
         dy = self.unit_height * self.origin_y
         ops = []
@@ -390,7 +403,12 @@ class ViewPort:
                 pass
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
+        if self.rotary_active and self.rotary_flip_y:
+            ops.append("scale(1.0, -1.0)")
+
         if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self.rotary_active and self.rotary_flip_x:
             ops.append("scale(-1.0, 1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")

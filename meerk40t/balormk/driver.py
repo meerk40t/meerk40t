@@ -441,6 +441,8 @@ class BalorDriver:
 
         @return:
         """
+        if self.service.rotary_active and self.service.rotary_supress_home:
+            return
         self.move_abs("50%", "50%")
 
     def physical_home(self):
