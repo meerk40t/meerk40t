@@ -66,6 +66,116 @@ UNITS_MILS = 3
 UNITS_INCH = 4
 UNITS_PERCENT = 100
 
+
+class View:
+    def __init__(self, width, height):
+        """
+        This should init the simple width and height dimensions.
+
+        The default coordinate system is (0,0), (width,0), (width,height), (0,height), In top_left, top_right,
+        bottom_right, bottom_left ordering.
+
+        @param width:
+        @param height:
+        """
+
+        self.width = Length(width)
+        self.height = Length(height)
+        self.user_width = None
+        self.user_height = None
+        self.coords = None
+        self.reset()
+
+    def reset(self):
+        self.user_width = float(self.width)
+        self.user_height = float(self.height)
+
+        top_left = 0, 0
+        top_right = self.user_width, 0
+        bottom_right = self.user_width, self.user_height
+        bottom_left = 0, self.user_height
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def scale(self, scale_x, scale_y):
+        self.user_width *= scale_x
+        self.user_height *= scale_y
+        top_left, top_right, bottom_right, bottom_left = self.coords
+        top_left, top_right, bottom_right, bottom_left = (
+            (top_left[0] * scale_x, top_left[1] * scale_y),
+            (top_right[0] * scale_x, top_right[1] * scale_y),
+            (bottom_right[0] * scale_x, bottom_right[1] * scale_y),
+            (bottom_left[0] * scale_x, bottom_left[1] * scale_y),
+        )
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def origin(self, origin_x, origin_y):
+        dx = self.user_width * -origin_x
+        dy = self.user_height * -origin_y
+
+        top_left, top_right, bottom_right, bottom_left = self.coords
+        top_left, top_right, bottom_right, bottom_left = (
+            (top_left[0] + dx, top_left[1] + dy),
+            (top_right[0] + dx, top_right[1] + dy),
+            (bottom_right[0] + dx, bottom_right[1] + dy),
+            (bottom_left[0] + dx, bottom_left[1] + dy),
+        )
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def flip_x(self):
+        top_left, top_right, bottom_right, bottom_left = self.coords
+        top_left, top_right, bottom_right, bottom_left = (
+            top_right,
+            top_left,
+            bottom_left,
+            bottom_right,
+        )
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def flip_y(self):
+        top_left, top_right, bottom_right, bottom_left = self.coords
+        top_left, top_right, bottom_right, bottom_left = (
+            bottom_left,
+            bottom_right,
+            top_right,
+            top_left,
+        )
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def swap_xy(self):
+        top_left, top_right, bottom_right, bottom_left = self.coords
+        top_left, top_right, bottom_right, bottom_left = (
+            (top_left[1], top_left[0]),
+            (top_right[1], top_right[0]),
+            (bottom_right[1], bottom_right[0]),
+            (bottom_left[1], bottom_left[0]),
+        )
+        self.coords = top_left, top_right, bottom_right, bottom_left
+
+    def transform(
+        self,
+        origin_x=0.0,
+        origin_y=0.0,
+        user_scale_x=1.0,
+        user_scale_y=1.0,
+        native_scale_x=1.0,
+        native_scale_y=1.0,
+        flip_x=False,
+        flip_y=False,
+        swap_xy=False,
+    ):
+        self.reset()
+        self.scale(native_scale_x, native_scale_y)
+        self.scale(user_scale_x, user_scale_y)
+        if flip_x:
+            self.flip_x()
+        if flip_y:
+            self.flip_y()
+        if origin_x != 0 or origin_y != 0:
+            self.origin(origin_x, origin_y)
+        if swap_xy:
+            self.swap_xy()
+
+
 class ViewPort:
     """
     The width and height are of the viewport are stored in MK native units (1/65535) in.
@@ -143,9 +253,9 @@ class ViewPort:
 
         self._width = None
         self._height = None
-        self.scene_coords = None
-        self.laser_coords = None
-        self.show_coords = None
+        self.scene = None
+        self.laser = None
+        self.show = None
         self.realize()
 
     def realize(self):
@@ -158,100 +268,36 @@ class ViewPort:
         self._width = self.unit_width
         self._height = self.unit_height
 
-        # Write laser and scene coords.
-        s_top_left = (0, 0)
-        s_top_right = (self._width, 0)
-        s_bottom_right = (self._width, self._height)
-        s_bottom_left = (0, self._height)
-        self.scene_coords = (
-            s_top_left,
-            s_top_right,
-            s_bottom_right,
-            s_bottom_left,
-        )
-        if self.show_flip_x:
-            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
-                s_top_right,
-                s_top_left,
-                s_bottom_left,
-                s_bottom_right,
-            )
-        if self.show_flip_y:
-            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
-                s_bottom_left,
-                s_bottom_right,
-                s_top_right,
-                s_top_left,
-            )
-        dx = self._width * -self.show_origin_x
-        dy = self._height * -self.show_origin_y
-        if dx != 0 or dy != 0:
-            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
-                (s_top_left[0] + dx, s_top_left[1] + dy),
-                (s_top_right[0] + dx, s_top_right[1] + dy),
-                (s_bottom_right[0] + dx, s_bottom_right[1] + dy),
-                (s_bottom_left[0] + dx, s_bottom_left[1] + dy),
-            )
-        if self.show_swap_xy:
-            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
-                (s_top_left[1], s_top_left[0]),
-                (s_top_right[1], s_top_right[0]),
-                (s_bottom_right[1], s_bottom_right[0]),
-                (s_bottom_left[1], s_bottom_left[0]),
-            )
+        # Write laser, scene, and show coords.
+        self.scene = View(self._width, self.height)
+        self.laser = View(self._width, self.height)
+        self.show = View(self._width, self.height)
 
-        self.show_coords = s_top_left, s_top_right, s_bottom_right, s_bottom_left
-        self._scene_to_show_matrix = Matrix.map(
-            *self.scene_coords, *self.show_coords
-        )
+        # calculate show view
+        if self.show_flip_x:
+            self.show.flip_x()
+        if self.show_flip_y:
+            self.show.flip_y()
+        if self.show_origin_x != 0 or self.show_origin_y != 0:
+            self.show.origin(self.show_origin_x, self.show_origin_y)
+        if self.show_swap_xy:
+            self.show.swap_xy()
 
         # Calculate regular device matrix
-        sx = self.native_scale_x
-        sy = self.native_scale_y
-        if self.rotary_active:
-            sx *= self.rotary_scale_x
-            sy *= self.rotary_scale_y
-        bed_width = (self.unit_width / sx) / self.user_scale_x
-        bed_height = (self.unit_height / sy) / self.user_scale_y
-        dx = bed_width * -self.origin_x
-        dy = bed_height * -self.origin_y
-
-        top_left = (0, 0)
-        top_right = (bed_width, 0)
-        bottom_right = (bed_width, bed_height)
-        bottom_left = (0, bed_height)
+        self.laser.scale(1.0/self.native_scale_x, 1.0/self.native_scale_y)
+        self.laser.scale(1.0/self.user_scale_x, 1.0/self.user_scale_y)
 
         if self.flip_x:
-            top_left, top_right, bottom_right, bottom_left = (
-                top_right,
-                top_left,
-                bottom_left,
-                bottom_right,
-            )
+            self.laser.flip_x()
         if self.flip_y:
-            top_left, top_right, bottom_right, bottom_left = (
-                bottom_left,
-                bottom_right,
-                top_right,
-                top_left,
-            )
-        if dx != 0 or dy != 0:
-            top_left, top_right, bottom_right, bottom_left = (
-                (top_left[0] + dx, top_left[1] + dy),
-                (top_right[0] + dx, top_right[1] + dy),
-                (bottom_right[0] + dx, bottom_right[1] + dy),
-                (bottom_left[0] + dx, bottom_left[1] + dy),
-            )
+            self.laser.flip_y()
+        if self.origin_x != 0 or self.origin_y != 0:
+            self.laser.origin(self.origin_x, self.origin_y)
         if self.swap_xy:
-            top_left, top_right, bottom_right, bottom_left = (
-                (top_left[1], top_left[0]),
-                (top_right[1], top_right[0]),
-                (bottom_right[1], bottom_right[0]),
-                (bottom_left[1], bottom_left[0]),
-            )
-        self.laser_coords = top_left, top_right, bottom_right, bottom_left
+            self.laser.swap_xy()
+        self._scene_to_show_matrix = Matrix.map(*self.scene.coords, *self.show.coords)
         self._scene_to_device_matrix = Matrix.map(
-            *self.scene_coords, *self.laser_coords
+            *self.scene.coords, *self.laser.coords
         )
 
     def physical_to_device_position(self, x, y, unitless=1):
@@ -410,14 +456,12 @@ class ViewPort:
         Calculate the matrices between the scene and device units.
         """
         self._scene_to_device_matrix = Matrix.map(
-            *self.scene_coords, *self.laser_coords
+            *self.scene.coords, *self.laser.coords
         )
         # self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
         self._device_to_scene_matrix = ~self._scene_to_device_matrix
 
-        self._scene_to_show_matrix = Matrix.map(
-            *self.scene_coords, *self.show_coords
-        )
+        self._scene_to_show_matrix = Matrix.map(*self.scene.coords, *self.show.coords)
         # self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
         self._show_to_scene_matrix = ~self._scene_to_show_matrix
         self._show_to_device_matrix = (
@@ -472,58 +516,6 @@ class ViewPort:
         if self._show_to_scene_matrix is None:
             self._calculate_matrices()
         return self._show_to_scene_matrix
-
-    # def _scene_to_device_transform(self):
-    #     """
-    #     Transform for moving from scene units to device units. This takes into account the user and native scaling, the
-    #     shift in origin point, flips to the y-axis, flips to the x-axis, and axis_swapping.
-    #
-    #     @return:
-    #     """
-    #     sx = self.user_scale_x * self.native_scale_x
-    #     sy = self.user_scale_y * self.native_scale_y
-    #     if self.rotary_active:
-    #         sx *= self.rotary_scale_x
-    #         sy *= self.rotary_scale_y
-    #     dx = self.unit_width * self.origin_x
-    #     dy = self.unit_height * self.origin_y
-    #     ops = []
-    #     if sx != 1.0 or sy != 1.0:
-    #         try:
-    #             ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
-    #         except ZeroDivisionError:
-    #             pass
-    #     if self.flip_y:
-    #         ops.append("scale(1.0, -1.0)")
-    #     if self.rotary_active and self.rotary_flip_y:
-    #         ops.append("scale(1.0, -1.0)")
-    #
-    #     if self.flip_x:
-    #         ops.append("scale(-1.0, 1.0)")
-    #     if self.rotary_active and self.rotary_flip_x:
-    #         ops.append("scale(-1.0, 1.0)")
-    #     if dx != 0 or dy != 0:
-    #         ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-    #     if self.swap_xy:
-    #         ops.append("scale(-1.0, 1.0) rotate(90deg)")
-    #     return " ".join(ops)
-
-    # def _scene_to_show_transform(self):
-    #     """
-    #     @return:
-    #     """
-    #     dx = self.unit_width * self.show_origin_x
-    #     dy = self.unit_height * self.show_origin_y
-    #     ops = []
-    #     if self.show_flip_x:
-    #         ops.append("scale(-1.0, 1.0)")
-    #     if self.show_flip_y:
-    #         ops.append("scale(1.0, -1.0)")
-    #     if dx != 0 or dy != 0:
-    #         ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-    #     if self.swap_xy:
-    #         ops.append("scale(-1.0, 1.0) rotate(90deg)")
-    #     return " ".join(ops)
 
     def native_mm(self):
         matrix = self.scene_to_device_matrix()
@@ -1138,9 +1130,8 @@ class Angle:
         return (self.angle % (tau / 4.0)) == 0
 
 
-
 def viewbox_transform(
-        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
+    e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
 ):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
@@ -1168,14 +1159,14 @@ def viewbox_transform(
     @return: string of the SVG transform commands to account for the viewbox.
     """
     if (
-            e_x is None
-            or e_y is None
-            or e_width is None
-            or e_height is None
-            or vb_x is None
-            or vb_y is None
-            or vb_width is None
-            or vb_height is None
+        e_x is None
+        or e_y is None
+        or e_width is None
+        or e_height is None
+        or vb_x is None
+        or vb_y is None
+        or vb_width is None
+        or vb_height is None
     ):
         return ""
     if aspect is not None:
