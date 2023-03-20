@@ -83,8 +83,10 @@ class View:
         self.user_width = None
         self.user_height = None
         self.coords = None
-        self._coords = None
-        self._matrix = None
+
+        self._native_coords = None
+        self._native_to_view = None
+        self._view_to_native = None
         self.reset()
 
     def reset(self):
@@ -95,29 +97,127 @@ class View:
         top_right = self.user_width, 0
         bottom_right = self.user_width, self.user_height
         bottom_left = 0, self.user_height
-        self._coords = top_left, top_right, bottom_right, bottom_left
-        self.coords = self._coords
-        self._matrix = None
+        self._native_coords = top_left, top_right, bottom_right, bottom_left
 
-    def physical_position(self, x, y, vector=False):
-        return self.position(
+        self.coords = self._native_coords
+        self._native_to_view = None
+        self._view_to_native = None
+
+    def as_native_position(self, x, y, vector=False):
+        if isinstance(x, (int, float)):
+            return self._as_native_position(x, y, vector=vector)
+        native_x = Length(x, relative_length=self.user_width, unitless=1).units
+        native_y = Length(y, relative_length=self.user_height, unitless=1).units
+        return native_x, native_y
+
+    def _as_native_position(self, x, y, vector=False):
+        unit_x = x
+        unit_y = y
+        if vector:
+            return self.view_to_native_matrix.transform_vector([unit_x, unit_y])
+        return self.view_to_native_matrix.point_in_matrix_space([unit_x, unit_y])
+
+    def native_contains(self, x, y):
+        x, y = self.as_native_position(x, y)
+        if x > self.user_width:
+            return False
+        if y > self.user_height:
+            return False
+        if x < 0:
+            return False
+        if y < 0:
+            return False
+        return True
+
+    def as_view_position(self, x, y, vector=False):
+        if isinstance(x, (int, float)):
+            return self._as_view_position(x, y, vector=vector)
+        return self._as_view_position(
             Length(x, relative_length=self.user_width, unitless=1).units,
             Length(y, relative_length=self.user_height, unitless=1).units,
             vector=vector,
         )
 
-    def position(self, x, y, vector=False):
+    def _as_view_position(self, x, y, vector=False):
         unit_x = x
         unit_y = y
         if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
+            return self.native_to_view_matrix.transform_vector([unit_x, unit_y])
+        return self.native_to_view_matrix.point_in_matrix_space([unit_x, unit_y])
+
+    def view_contains(self, x, y):
+        x, y = self.as_view_position(x, y)
+        if x > self.user_width:
+            return False
+        if y > self.user_height:
+            return False
+        if x < 0:
+            return False
+        if y < 0:
+            return False
+        return True
+
+    def _calculate_matrices(self):
+        self._native_to_view = Matrix.map(*self._native_coords, *self.coords)
+        self._view_to_native = Matrix.map(*self.coords, *self._native_coords)
 
     @property
-    def matrix(self):
-        if self._matrix is None:
-            self._matrix = Matrix.map(*self._coords, *self.coords)
-        return self._matrix
+    def native_to_view_matrix(self):
+        if self._native_to_view is None:
+            self._calculate_matrices()
+        return self._native_to_view
+
+    @property
+    def view_to_native_matrix(self):
+        if self._view_to_native is None:
+            self._calculate_matrices()
+        return self._view_to_native
+
+    def view_mm(self):
+        x, y = self.as_view_position(0, UNITS_PER_MM, vector=True)
+        return abs(complex(x, y))
+
+    def native_mm(self):
+        return UNITS_PER_NM
+
+    def native_bbox(self):
+        return (
+            0,
+            0,
+            self.user_width,
+            self.user_height,
+        )
+
+    def view_bbox(self):
+        return (
+            min(self.coords[0][0], self.coords[1][0], self.coords[2][0], self.coords[3][0]),
+            min(self.coords[0][1], self.coords[1][1], self.coords[2][1], self.coords[3][1]),
+            max(self.coords[0][0], self.coords[1][0], self.coords[2][0], self.coords[3][0]),
+            max(self.coords[0][1], self.coords[1][1], self.coords[2][1], self.coords[3][1])
+        )
+
+    def dpi_to_steps(self, dpi):
+        """
+        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
+        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
+        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
+        per 2 mils.
+
+        Note, steps size can be negative if our driver is x or y flipped.
+
+        @param dpi:
+        @param matrix: matrix to use rather than the scene to device matrix if supplied.
+        @return:
+        """
+        # We require vectors so any positional offsets are non-contributing.
+        unit_x = UNITS_PER_INCH
+        unit_y = UNITS_PER_INCH
+        matrix = self.native_to_view_matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
+        step_x = float(oneinch_x / dpi)
+        step_y = float(oneinch_y / dpi)
+        return step_x, step_y
 
     def scale(self, scale_x, scale_y):
         self.user_width *= scale_x
