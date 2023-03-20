@@ -108,14 +108,14 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(0, Length(bed_height).mil)
-        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
+        self.assertAlmostEqual(x, float(Length(bed_height)) * 1.2, delta=10)
         self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(
             Length(bed_width).mil, Length(bed_height).mil
         )
-        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
-        self.assertAlmostEqual(y, float(Length(bed_width)) * 1.2, delta=10)
+        self.assertAlmostEqual(x, float(Length(bed_height)) * 1.2, delta=10)
+        self.assertAlmostEqual(y, float(Length(bed_width)), delta=10)
 
     def test_viewport_grbl(self):
         """
@@ -249,8 +249,8 @@ class TestViewport(unittest.TestCase):
                                 lens_size_y,
                                 native_scale_x=units_per_galvo_x,
                                 native_scale_y=units_per_galvo_y,
-                                origin_x=1.0 if flip_x else 0.0,
-                                origin_y=1.0 if flip_y else 0.0,
+                                origin_x=0.0,
+                                origin_y=0.0,
                                 flip_x=flip_x,
                                 flip_y=flip_y,
                                 swap_xy=swap_xy,
@@ -289,8 +289,8 @@ class TestViewport(unittest.TestCase):
                         lens_size_y,
                         native_scale_x=units_per_galvo_x,
                         native_scale_y=units_per_galvo_y,
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
+                        origin_x=0.0,
+                        origin_y=0.0,
                         show_origin_x=0.5,
                         show_origin_y=0.5,
                         flip_x=flip_x,
