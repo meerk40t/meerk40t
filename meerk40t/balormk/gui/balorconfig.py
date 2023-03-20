@@ -35,7 +35,7 @@ class BalorConfiguration(MWindow):
             ("balor-global", "Global"),
             ("balor-global-timing", "Timings"),
             ("balor-extra", "Extras"),
-            ("rotary", "Rotary"),
+            # ("rotary", "Rotary"),
         )
         self.panels = []
         for item in options:
