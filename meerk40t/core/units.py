@@ -96,6 +96,7 @@ class ViewPort:
         show_origin_y=None,
         show_flip_x=None,
         show_flip_y=None,
+        show_swap_xy=None,
         rotary_active=False,
         rotary_scale_x=1.0,
         rotary_scale_y=1.0,
@@ -133,15 +134,19 @@ class ViewPort:
             show_flip_x = flip_x
         if show_flip_y is None:
             show_flip_y = flip_y
+        if show_swap_xy is None:
+            show_swap_xy = swap_xy
         self.show_origin_x = show_origin_x
         self.show_origin_y = show_origin_y
         self.show_flip_x = show_flip_x
         self.show_flip_y = show_flip_y
+        self.show_swap_xy = show_swap_xy
 
         self._width = None
         self._height = None
         self.scene_coords = None
         self.laser_coords = None
+        self.show_coords = None
         self.realize()
 
     def realize(self):
@@ -155,13 +160,52 @@ class ViewPort:
         self._height = self.unit_height
 
         # Write laser and scene coords.
+        s_top_left = (0, 0)
+        s_top_right = (self._width, 0)
+        s_bottom_right = (self._width, self._height)
+        s_bottom_left = (0, self._height)
         self.scene_coords = (
-            (0, 0),
-            (self._width, 0),
-            (self._width, self._height),
-            (0, self._height),
+            s_top_left,
+            s_top_right,
+            s_bottom_right,
+            s_bottom_left,
+        )
+        if self.show_flip_x:
+            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
+                s_top_right,
+                s_top_left,
+                s_bottom_left,
+                s_bottom_right,
+            )
+        if self.show_flip_y:
+            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
+                s_bottom_left,
+                s_bottom_right,
+                s_top_right,
+                s_top_left,
+            )
+        if self.show_swap_xy:
+            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
+                (s_top_left[1], s_top_left[0]),
+                (s_top_right[1], s_top_right[0]),
+                (s_bottom_right[1], s_bottom_right[0]),
+                (s_bottom_left[1], s_bottom_left[0]),
+            )
+        dx = self._width * -self.show_origin_x
+        dy = self._height * -self.show_origin_y
+        if dx != 0 or dy != 0:
+            s_top_left, s_top_right, s_bottom_right, s_bottom_left = (
+                (s_top_left[0] + dx, s_top_left[1] + dy),
+                (s_top_right[0] + dx, s_top_right[1] + dy),
+                (s_bottom_right[0] + dx, s_bottom_right[1] + dy),
+                (s_bottom_left[0] + dx, s_bottom_left[1] + dy),
+            )
+        self.show_coords = s_top_left, s_top_right, s_bottom_right, s_bottom_left
+        self._scene_to_show_matrix = Matrix.map(
+            *self.scene_coords, *self.show_coords
         )
 
+        # Calculate regular device matrix
         sx = self.native_scale_x
         sy = self.native_scale_y
         if self.rotary_active:
@@ -371,7 +415,11 @@ class ViewPort:
         )
         # self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
         self._device_to_scene_matrix = ~self._scene_to_device_matrix
-        self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
+
+        self._scene_to_show_matrix = Matrix.map(
+            *self.scene_coords, *self.show_coords
+        )
+        # self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
         self._show_to_scene_matrix = ~self._scene_to_show_matrix
         self._show_to_device_matrix = (
             self._show_to_scene_matrix * self._scene_to_device_matrix
@@ -426,57 +474,57 @@ class ViewPort:
             self._calculate_matrices()
         return self._show_to_scene_matrix
 
-    def _scene_to_device_transform(self):
-        """
-        Transform for moving from scene units to device units. This takes into account the user and native scaling, the
-        shift in origin point, flips to the y-axis, flips to the x-axis, and axis_swapping.
+    # def _scene_to_device_transform(self):
+    #     """
+    #     Transform for moving from scene units to device units. This takes into account the user and native scaling, the
+    #     shift in origin point, flips to the y-axis, flips to the x-axis, and axis_swapping.
+    #
+    #     @return:
+    #     """
+    #     sx = self.user_scale_x * self.native_scale_x
+    #     sy = self.user_scale_y * self.native_scale_y
+    #     if self.rotary_active:
+    #         sx *= self.rotary_scale_x
+    #         sy *= self.rotary_scale_y
+    #     dx = self.unit_width * self.origin_x
+    #     dy = self.unit_height * self.origin_y
+    #     ops = []
+    #     if sx != 1.0 or sy != 1.0:
+    #         try:
+    #             ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+    #         except ZeroDivisionError:
+    #             pass
+    #     if self.flip_y:
+    #         ops.append("scale(1.0, -1.0)")
+    #     if self.rotary_active and self.rotary_flip_y:
+    #         ops.append("scale(1.0, -1.0)")
+    #
+    #     if self.flip_x:
+    #         ops.append("scale(-1.0, 1.0)")
+    #     if self.rotary_active and self.rotary_flip_x:
+    #         ops.append("scale(-1.0, 1.0)")
+    #     if dx != 0 or dy != 0:
+    #         ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
+    #     if self.swap_xy:
+    #         ops.append("scale(-1.0, 1.0) rotate(90deg)")
+    #     return " ".join(ops)
 
-        @return:
-        """
-        sx = self.user_scale_x * self.native_scale_x
-        sy = self.user_scale_y * self.native_scale_y
-        if self.rotary_active:
-            sx *= self.rotary_scale_x
-            sy *= self.rotary_scale_y
-        dx = self.unit_width * self.origin_x
-        dy = self.unit_height * self.origin_y
-        ops = []
-        if sx != 1.0 or sy != 1.0:
-            try:
-                ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
-            except ZeroDivisionError:
-                pass
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.rotary_active and self.rotary_flip_y:
-            ops.append("scale(1.0, -1.0)")
-
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if self.rotary_active and self.rotary_flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-        if self.swap_xy:
-            ops.append("scale(-1.0, 1.0) rotate(90deg)")
-        return " ".join(ops)
-
-    def _scene_to_show_transform(self):
-        """
-        @return:
-        """
-        dx = self.unit_width * self.show_origin_x
-        dy = self.unit_height * self.show_origin_y
-        ops = []
-        if self.show_flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if self.show_flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-        if self.swap_xy:
-            ops.append("scale(-1.0, 1.0) rotate(90deg)")
-        return " ".join(ops)
+    # def _scene_to_show_transform(self):
+    #     """
+    #     @return:
+    #     """
+    #     dx = self.unit_width * self.show_origin_x
+    #     dy = self.unit_height * self.show_origin_y
+    #     ops = []
+    #     if self.show_flip_x:
+    #         ops.append("scale(-1.0, 1.0)")
+    #     if self.show_flip_y:
+    #         ops.append("scale(1.0, -1.0)")
+    #     if dx != 0 or dy != 0:
+    #         ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
+    #     if self.swap_xy:
+    #         ops.append("scale(-1.0, 1.0) rotate(90deg)")
+    #     return " ".join(ops)
 
     def native_mm(self):
         matrix = self.scene_to_device_matrix()
