@@ -155,18 +155,32 @@ class ViewPort:
         self._height = self.unit_height
 
         # Write laser and scene coords.
-        self.scene_coords = (0, 0), (self._width, 0), (self._width, self._height), (0, self._width)
-        sx = self.user_scale_x * self.native_scale_x
-        sy = self.user_scale_y * self.native_scale_y
+        self.scene_coords = (0, 0), (self._width, 0), (self._width, self._height), (0, self._height)
+
+        sx = self.native_scale_x
+        sy = self.native_scale_y
         dx = self.unit_width * self.origin_x
         dy = self.unit_height * self.origin_y
-        bed_width = self._width / sx
-        bed_height = self._height / sy
-        laser1 = (dx, dy)
-        laser2 = (dx + bed_width, dy)
-        laser3 = (dx + bed_width, dy + bed_height)
-        laser4 = (dx, dy + bed_height)
-        self.laser_coords = laser1, laser2, laser3, laser4
+        if self.rotary_active:
+            sx *= self.rotary_scale_x
+            sy *= self.rotary_scale_y
+        bed_width = (self.unit_width / sx) / self.user_scale_x
+        bed_height = (self.unit_height / sy) / self.user_scale_y
+
+        top_left = (dx, dy)
+        top_right = (dx + bed_width, dy)
+        bottom_right = (dx + bed_width, dy + bed_height)
+        bottom_left = (dx, dy + bed_height)
+
+        if self.flip_x:
+            top_left, top_right, bottom_right, bottom_left = top_right,  top_left, bottom_left, bottom_right
+        if self.flip_y:
+            top_left, top_right, bottom_right, bottom_left = bottom_left, bottom_right, top_right, top_left
+        if self.swap_xy:
+            top_left, top_right, bottom_right, bottom_left = (top_left[1], top_left[0]), (top_right[1], top_right[0]), (bottom_right[1], bottom_right[0]), (bottom_left[1], bottom_left[0]),
+
+        self.laser_coords = top_left, top_right, bottom_right, bottom_left
+        self._scene_to_device_matrix = Matrix.map(*self.scene_coords, *self.laser_coords)
 
     def physical_to_device_position(self, x, y, unitless=1):
         """
