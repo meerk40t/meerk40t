@@ -848,7 +848,7 @@ class LaserRender:
             dc.SelectObject(wx.NullBitmap)
             dc.Destroy()
             del dc
-            bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+            bmp = wx.Bitmap(int(dimension_x), int(dimension_y), 32)
             dc = wx.MemoryDC()
             dc.SelectObject(bmp)
             dc.SetBackground(wx.BLACK_BRUSH)

@@ -3466,6 +3466,9 @@ msgstr "Öffne das Spooler-Fenster automatisch, sobald ein Job ausgeführt wird"
 msgid "Reduce Travel Time"
 msgstr "Verringere Bewegungen"
 
+msgid "Reducing Movements"
+msgstr "Vermeide Bewegungen"
+
 #: meerk40t/core/planner.py:50
 msgid ""
 "Using this option can significantly reduce the time spent moving between "
@@ -3957,7 +3960,7 @@ msgstr "Höhe des Laserbettes."
 #: meerk40t/device/dummydevice.py:53 meerk40t/lihuiyu/device.py:129
 #: meerk40t/ruida/device.py:242
 msgid "X Scale Factor"
-msgstr ""
+msgstr "Faktor X-Achse"
 
 #: meerk40t/device/dummydevice.py:54 meerk40t/grbl/device.py:116
 #: meerk40t/lihuiyu/device.py:130 meerk40t/lihuiyu/gui/lhydrivergui.py:352
@@ -3968,7 +3971,7 @@ msgstr ""
 #: meerk40t/device/dummydevice.py:63 meerk40t/lihuiyu/device.py:139
 #: meerk40t/ruida/device.py:252
 msgid "Y Scale Factor"
-msgstr ""
+msgstr "Faktor Y-Achse"
 
 #: meerk40t/device/dummydevice.py:64 meerk40t/grbl/device.py:127
 #: meerk40t/lihuiyu/device.py:140 meerk40t/lihuiyu/gui/lhydrivergui.py:370
@@ -9545,6 +9548,45 @@ msgstr ""
 #: meerk40t/rotary/rotary.py:22
 msgid "Rotary Enabled"
 msgstr "Verwende Drehachse"
+
+msgid "Rotary-Mode active"
+msgstr "Verwende Drehachse"
+
+msgid "Is the rotary mode active for this device"
+msgstr "Soll der Drehachsen-Modus verwendet werden"
+
+msgid "Ignore Home"
+msgstr "'Home' ignorieren"
+
+msgid "Ignore Home-Command"
+msgstr "Ignoriere 'Home'-Kommandos"
+
+msgid "Mirror Output"
+msgstr "Ausgabe spiegeln"
+
+msgid "Mirror X"
+msgstr "X-Achse spiegeln"
+
+msgid "Mirror Y"
+msgstr "Y-Achse spiegeln"
+
+msgid "Mirror the elements on the X-Axis"
+msgstr "Element in X-Richtung am Nullpunkt spiegeln"
+
+msgid "Mirror the elements on the Y-Axis"
+msgstr "Element in Y-Richtung am Nullpunkt spiegeln"
+
+msgid "X-Scale"
+msgstr "Faktor X-Achse"
+
+msgid "Y-Scale"
+msgstr "Faktor Y-Achse"
+
+msgid "Scale that needs to be applied to the X-Axis"
+msgstr "Korrektufaktor für die X-Achse"
+
+msgid "Scale that needs to be applied to the Y-Axis"
+msgstr "Korrektufaktor für die Y-Achse"
 
 #: meerk40t/rotary/rotary.py:23
 msgid "Turn on rotary"
@@ -15538,3 +15580,18 @@ msgstr "Gerade"
 
 msgid "Curve"
 msgstr "Kurve"
+
+msgid "Override"
+msgstr "Übersteuern"
+
+msgid "Allow ad-hoc adjustment of speed and power."
+msgstr "Erlaubt die ad-hoc Anpassung von Geschwindigkeit und Laserleistung"
+
+msgid "This affects running jobs, so use with care!"
+msgstr "Das wirkt unmittelbar auf laufende Jobs, bitte mit Bedacht nutzen!"
+
+msgid "Increases/decreases the regular laser power by this amount."
+msgstr "Erhöht/Verringert die eingestellte Laserleistung um diesen Faktor."
+
+msgid "Increases/decreases the regular speed by this amount."
+msgstr "Erhöht/Verringert die eingestellte Geschwindigkeit um diesen Faktor."

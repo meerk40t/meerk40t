@@ -1043,7 +1043,7 @@ class RDJob:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Process BottomRight({c_x}, {c_y})"
-            elif array[1] == 0x08:  # Same value given to F2 05
+            elif array[1] == 0x08:  # Same value given to F2 04
                 v0 = decode14(array[2:4])
                 v1 = decode14(array[4:6])
                 v2 = decode14(array[6:8])

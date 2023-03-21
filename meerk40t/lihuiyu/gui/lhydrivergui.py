@@ -406,21 +406,26 @@ class LihuiyuDriverGui(MWindow):
         )
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
-        newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_format = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_rotary = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="rotary"
+        )
 
         self.panels.append(panel_config)
         self.panels.append(panel_interface)
         self.panels.append(panel_setup)
+        self.panels.append(panel_rotary)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
-        self.panels.append(newpanel)
+        self.panels.append(panel_format)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
+        self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
-        self.notebook_main.AddPage(newpanel, _("Display Options"))
+        self.notebook_main.AddPage(panel_format, _("Display Options"))
 
         self.Layout()
 
