@@ -297,9 +297,13 @@ class TestViewport(unittest.TestCase):
                         flip_y=flip_y,
                         swap_xy=swap_xy,
                     )
-                    hx, hy = view.physical_to_show_position("55mm", "50mm")
-                    self.assertAlmostEqual(hx, 0)
-                    self.assertAlmostEqual(hy, 0)
+                    hx_scene, hy_scene = view.physical_to_scene_position("55mm", "50mm")
+                    hx_show, hy_show = view.physical_to_show_position("55mm", "50mm")
+                    self.assertAlmostEqual(hx_scene, 0)
+                    self.assertAlmostEqual(hy_scene, 0)
+                    self.assertAlmostEqual(hx_show, 0)
+                    self.assertAlmostEqual(hy_show, 0)
+
 
     def test_viewport_balor_physical_to_scene(self):
         """
