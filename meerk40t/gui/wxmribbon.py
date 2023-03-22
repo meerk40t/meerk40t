@@ -663,7 +663,7 @@ class RibbonPanel(wx.Panel):
         """
 
         def make_toggle_click(_tb):
-            def toggle_click(origin, set_value):
+            def toggle_click(origin, set_value, *args):
                 if set_value:
                     _tb.toggle = False
                     self._restore_button_aspect(_tb, _tb.state_unpressed)
