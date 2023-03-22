@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from meerk40t.core.units import UNITS_PER_MIL, Length, ViewPort
+from meerk40t.core.units import UNITS_PER_MIL, Length, ViewPort, UNITS_PER_MM
 
 
 class TestViewport(unittest.TestCase):
@@ -304,6 +304,25 @@ class TestViewport(unittest.TestCase):
                     self.assertAlmostEqual(hx_show, 0)
                     self.assertAlmostEqual(hy_show, 0)
 
+    def test_viewport_physical_device_length(self):
+        """
+        Test whether physical length does not include offset.
+
+        :return:
+        """
+        view = ViewPort(
+            "330mm",
+            "225mm",
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            origin_x=0,
+            origin_y=0,
+            show_origin_x=20,
+            show_origin_y=20,
+        )
+        dx, dy = view.physical_to_device_length("1mm", "1mm")
+        self.assertAlmostEqual(dx,  UNITS_PER_MM / UNITS_PER_MIL)
+        self.assertAlmostEqual(dy, UNITS_PER_MM / UNITS_PER_MIL)
 
     def test_viewport_balor_physical_to_scene(self):
         """
