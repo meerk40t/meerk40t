@@ -318,13 +318,6 @@ class ViewPort:
         rotary_flip_x=False,
         rotary_flip_y=False,
     ):
-        self._device_to_scene_matrix = None
-        self._device_to_show_matrix = None
-        self._scene_to_device_matrix = None
-        self._scene_to_show_matrix = None
-        self._show_to_device_matrix = None
-        self._show_to_scene_matrix = None
-
         self.width = width
         self.height = height
         self.origin_x = origin_x
