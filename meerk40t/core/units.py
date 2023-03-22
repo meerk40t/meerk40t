@@ -435,7 +435,8 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        return self.scene_view.physical(x, y)
+        px, py = self.scene_view.physical(x, y)
+        return self.scene_to_device_position(px, py, vector=True)
 
     def device_to_scene_position(self, x, y, vector=False):
         """
