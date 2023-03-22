@@ -540,7 +540,7 @@ class ViewPort:
         """
         Returns the device-to-scene matrix.
         """
-        return self._device_to_show.matrix
+        return self.device_to_show.matrix
 
     def scene_to_device_matrix(self):
         """
