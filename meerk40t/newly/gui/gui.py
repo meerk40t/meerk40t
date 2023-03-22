@@ -59,9 +59,12 @@ def plugin(service, lifecycle):
             icons8_file_50,
             icons8_rectangular_50,
             icons8_play_50,
+            icons8_circled_stop_50,
+            icons8_circled_play_50
         )
         _ = service.kernel.translation
         selected = service.setting(int, "file_index", 1)
+        autostart = service.setting(bool, "autostart", True)
         service.register(
             "button/control/SelectFile",
             {
@@ -122,7 +125,22 @@ def plugin(service, lifecycle):
                 ],
             },
         )
-
+        service.register(
+            "button/control/AutoStart",
+            {
+                "label": _("Send & Start"),
+                "icon": icons8_circled_play_50,
+                "tip": _("Automatically start the device after send"),
+                "identifier": "autostart",
+                "object": service,
+                "priority": 1,
+                "toggle":
+                    {
+                        "label": _("Send Only"),
+                        "icon": icons8_circled_stop_50,
+                    },
+            },
+        )
         service.register(
             "button/control/DrawFrame",
             {
