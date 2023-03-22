@@ -200,6 +200,8 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=cmd)
         self.command_buffer.clear()
         self.mode = "closed"
+        if self.service.autoplay:
+            self.replay(self.service.file_index)
 
     def _map_speed(self, speed):
         if speed > 100:

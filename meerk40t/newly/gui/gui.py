@@ -64,7 +64,7 @@ def plugin(service, lifecycle):
         )
         _ = service.kernel.translation
         selected = service.setting(int, "file_index", 1)
-        autostart = service.setting(bool, "autostart", True)
+        autoplay = service.setting(bool, "autoplay", True)
         service.register(
             "button/control/SelectFile",
             {
@@ -131,7 +131,7 @@ def plugin(service, lifecycle):
                 "label": _("Send & Start"),
                 "icon": icons8_circled_play_50,
                 "tip": _("Automatically start the device after send"),
-                "identifier": "autostart",
+                "identifier": "autoplay",
                 "object": service,
                 "priority": 1,
                 "toggle":
@@ -139,6 +139,7 @@ def plugin(service, lifecycle):
                         "label": _("Send Only"),
                         "icon": icons8_circled_stop_50,
                     },
+                "signal": "autoplay",
             },
         )
         service.register(

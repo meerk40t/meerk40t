@@ -225,6 +225,17 @@ class NewlyDevice(Service, ViewPort):
                 ),
                 "section": "_30_Output",
             },
+            {
+                "attr": "autoplay",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Automatically Start"),
+                "tip": _(
+                    "Automatically start the job when the output file is sent. You can send without execution if this is unchecked."
+                ),
+                "section": "_30_Output",
+            },
         ]
         self.register_choices("newly", choices)
 
