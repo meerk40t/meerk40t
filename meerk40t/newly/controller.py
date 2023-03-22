@@ -201,46 +201,6 @@ class NewlyController:
         self.command_buffer.clear()
         self.mode = "closed"
 
-    def rapid_mode(self):
-        pass
-
-    def raster_mode(self):
-        if self.mode == "raster":
-            return
-        self.mode = "raster"
-        if self._pwm_frequency is not None:
-            self(f"PL{self._pwm_frequency}")
-        self(f"VP{self.service.cut_dc}")
-        self(f"VK{self.service.move_dc}")
-        self("SP2")
-        self("SP2")
-
-        speed_at_raster_change = self._speed
-        if speed_at_raster_change is None:
-            speed_at_raster_change = self.service.default_raster_speed
-        chart = self.service.speedchart
-        smallest_difference = float("inf")
-        closest_index = None
-        for i, c in enumerate(chart):
-            chart_speed = c.get("speed", 0)
-            delta_speed = chart_speed - speed_at_raster_change
-            if (
-                chart_speed > speed_at_raster_change
-                and smallest_difference > delta_speed
-            ):
-                smallest_difference = delta_speed
-                closest_index = i
-        if closest_index is not None:
-            settings = chart[closest_index]
-        else:
-            settings = chart[-1]
-        self(f"VQ{int(round(settings['corner_speed']))}")
-        self(f"VJ{int(round(settings['acceleration_length']))}")
-        self(f"VS{int(round(speed_at_raster_change / 10))}")
-        self(f"PR;PR;PR;PR")
-
-        # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
-
     def _map_speed(self, speed):
         if speed > 100:
             return int(round(speed / 10))
@@ -305,6 +265,37 @@ class NewlyController:
         self._write_speed_information()
         self._relative = True
         self("PR")
+
+    def rapid_mode(self):
+        pass
+
+    def raster_mode(self):
+        if self.mode == "raster":
+            return
+        self.mode = "raster"
+        if self.mode == "started":
+            if self._pwm_frequency is not None:
+                self(f"PL{self._pwm_frequency}")
+            self(f"VP{self.service.cut_dc}")
+            self(f"VK{self.service.move_dc}")
+        self("SP2")
+        self("SP2")
+        self._write_speed_information()
+        self._relative = True
+        self(f"PR;PR;PR;PR")
+        # Moves to the start postion of the raster.
+        bt = 1
+        self(f"BT{bt}")
+        power = self.service.default_raster_power if self._power is None else self._power
+        self(f"DA{self._map_power(power)}")
+        bc = 0
+        self(f"BC{bc}")
+        bd = 8
+        self(f"BD{bd}")
+        self("PR")
+        self("SP0")
+        self._write_speed_information()
+        # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
 
     #######################
     # SETS FOR PLOTLIKES
