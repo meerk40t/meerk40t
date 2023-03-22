@@ -399,8 +399,8 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        px, py = self.show_view.physical(x, y)
-        return self.scene_to_device_position(x, y)
+        px, py = self.scene_view.physical(x, y)
+        return self.scene_to_device_position(px, py)
 
     def physical_to_scene_position(self, x, y, unitless=1):
         """
@@ -424,7 +424,8 @@ class ViewPort:
         @param unitless:
         @return:
         """
-        return self.show_view.physical(x, y)
+        px, py = self.scene_view.physical(x, y)
+        return self.scene_to_show_position(px, py)
 
     def physical_to_device_length(self, x, y, unitless=1):
         """
