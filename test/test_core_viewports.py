@@ -324,6 +324,26 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(dx,  UNITS_PER_MM / UNITS_PER_MIL)
         self.assertAlmostEqual(dy, UNITS_PER_MM / UNITS_PER_MIL)
 
+    def test_viewport_physical_device_position(self):
+        """
+        Test whether physical length does not include offset.
+
+        :return:
+        """
+        view = ViewPort(
+            "330mm",
+            "225mm",
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            origin_x=10,
+            origin_y=10,
+            show_origin_x=20,
+            show_origin_y=20,
+        )
+        x, y = view.physical_to_device_position(0, 0)
+        self.assertAlmostEqual(x, (UNITS_PER_MM / UNITS_PER_MIL) * 330 * -10)
+        self.assertAlmostEqual(y, (UNITS_PER_MM / UNITS_PER_MIL) * 225 * -10)
+
     def test_viewport_balor_physical_to_scene(self):
         """
         Test Balor-esque viewport.
