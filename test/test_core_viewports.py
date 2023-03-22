@@ -315,8 +315,8 @@ class TestViewport(unittest.TestCase):
             "225mm",
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
-            origin_x=0,
-            origin_y=0,
+            origin_x=10,
+            origin_y=10,
             show_origin_x=20,
             show_origin_y=20,
         )
