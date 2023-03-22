@@ -131,6 +131,7 @@ def plugin(service, lifecycle):
                 "label": _("Send & Start"),
                 "icon": icons8_circled_play_50,
                 "tip": _("Automatically start the device after send"),
+                "action": lambda v: service.signal("autoplay", True),
                 "identifier": "autoplay",
                 "object": service,
                 "priority": 1,
@@ -138,8 +139,9 @@ def plugin(service, lifecycle):
                     {
                         "label": _("Send Only"),
                         "icon": icons8_circled_stop_50,
+                        "action": lambda v: service.signal("autoplay", False),
+                        "signal": "autoplay",
                     },
-                "signal": "autoplay",
             },
         )
         service.register(
