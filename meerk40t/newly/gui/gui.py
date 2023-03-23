@@ -128,18 +128,16 @@ def plugin(service, lifecycle):
         service.register(
             "button/control/AutoStart",
             {
-                "label": _("Send & Start"),
-                "icon": icons8_circled_play_50,
+                "label": _("Send Only"),
+                "icon": icons8_circled_stop_50,
                 "tip": _("Automatically start the device after send"),
-                "action": lambda v: service.signal("autoplay", True),
                 "identifier": "autoplay",
                 "object": service,
                 "priority": 1,
                 "toggle":
                     {
-                        "label": _("Send Only"),
-                        "icon": icons8_circled_stop_50,
-                        "action": lambda v: service.signal("autoplay", False),
+                        "label": _("Send & Start"),
+                        "icon": icons8_circled_play_50,
                         "signal": "autoplay",
                     },
             },
