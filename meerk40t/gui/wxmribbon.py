@@ -1,3 +1,8 @@
+"""
+The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All of the buttons are dynmically generated but the
+panels themselves are created in a static fashion here.
+"""
+
 import copy
 import platform
 import threading
@@ -662,6 +667,56 @@ class RibbonPanel(wx.Panel):
         self.context.listen(signal, signal_multi_listener)
         self._registered_signals.append((signal, signal_multi_listener))
 
+    def _setup_toggle_button(self, button, b):
+        """
+        Store toggle and original aspects for toggle-buttons
+
+        @param button:
+        @param b:
+        @return:
+        """
+
+        b.state_pressed = "toggle"
+        b.state_unpressed = "original"
+
+        self._store_button_aspect(b, "original")
+
+        toggle_action = button["toggle"]
+        key = toggle_action.get("identifier", "toggle")
+        if "signal" in toggle_action:
+            self._create_signal_for_toggle(b, toggle_action["signal"])
+
+        self._store_button_aspect(b, key, **toggle_action)
+        if "icon" in toggle_action:
+            toggle_icon = toggle_action.get("icon")
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
+                bitmap_large_disabled=toggle_icon.GetBitmap(
+                    resize=resize_param, color=Color("grey")
+                ),
+            )
+            if resize_param is None:
+                siz = toggle_icon.GetBitmap().GetSize()
+                small_resize = 0.5 * siz[0]
+            else:
+                small_resize = 0.5 * resize_param
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
+                bitmap_small_disabled=toggle_icon.GetBitmap(
+                    resize=small_resize, color=Color("grey")
+                ),
+            )
+        # Set initial value by identifer and object
+        if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
+            b.toggle = True
+            self._restore_button_aspect(b, b.state_pressed)
+            b.parent.ToggleButton(b.id, b.toggle)
+            b.parent.Refresh()
+
     def _create_signal_for_toggle(self, button, signal):
         """
         Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
@@ -748,47 +803,7 @@ class RibbonPanel(wx.Panel):
             if "multi" in button:
                 self._setup_multi_button(button, b)
             if "toggle" in button:
-                # Store toggle and original aspects for toggle-buttons
-                b.state_pressed = "toggle"
-                b.state_unpressed = "original"
-
-                self._store_button_aspect(b, "original")
-
-                toggle_action = button["toggle"]
-                key = toggle_action.get("identifier", "toggle")
-                if "signal" in toggle_action:
-                    self._create_signal_for_toggle(b, toggle_action["signal"])
-
-                self._store_button_aspect(b, key, **toggle_action)
-                if "icon" in toggle_action:
-                    toggle_icon = toggle_action.get("icon")
-                    self._update_button_aspect(
-                        b,
-                        key,
-                        bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
-                        bitmap_large_disabled=toggle_icon.GetBitmap(
-                            resize=resize_param, color=Color("grey")
-                        ),
-                    )
-                    if resize_param is None:
-                        siz = toggle_icon.GetBitmap().GetSize()
-                        small_resize = 0.5 * siz[0]
-                    else:
-                        small_resize = 0.5 * resize_param
-                    self._update_button_aspect(
-                        b,
-                        key,
-                        bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
-                        bitmap_small_disabled=toggle_icon.GetBitmap(
-                            resize=small_resize, color=Color("grey")
-                        ),
-                    )
-                # Set initial value by identifer and object
-                if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
-                    b.toggle = True
-                    self._restore_button_aspect(b, b.state_pressed)
-                    b.parent.ToggleButton(b.id, b.toggle)
-                    b.parent.Refresh()
+                self._setup_toggle_button(button, b)
 
             # Store newly created button in the various lookups
             new_id = b.id
