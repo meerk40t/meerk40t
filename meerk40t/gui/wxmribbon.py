@@ -710,6 +710,7 @@ class RibbonPanel(wx.Panel):
         @param b:
         @return:
         """
+        resize_param = button.get("size")
 
         b.state_pressed = "toggle"
         b.state_unpressed = "original"
