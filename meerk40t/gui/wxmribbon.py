@@ -1,6 +1,41 @@
 """
 The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All of the buttons are dynmically generated but the
-panels themselves are created in a static fashion here.
+panels themselves are created in a static fashion. But the contents of those individual ribbon panels are defined
+in the kernel lookup.
+
+        service.register(
+            "button/control/Redlight",
+            {
+                "label": _("Red Dot On"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+                "toggle": {
+                    "label": _("Red Dot Off"),
+                    "action": lambda v: service("red off\n"),
+                    "icon": icons8_flash_off_50,
+                    "signal": "grbl_red_dot",
+                },
+                "rule_enabled": lambda v: has_red_dot_enabled(),
+            },
+        )
+
+For example would register a button in the control panel with a discrete name "Redlight" the definitions for label,
+icon, tip, action are all pretty standard to setup a button. This can often be registered as part of a service such
+that if you switch the service it will change the lookup and that change will be detected here and rebuilt the buttons.
+
+The toggle defines an alternative set of values for the toggle state of the button.
+The multi defines a series of alternative states, and creates a hybrid button with a drop down to select the state
+    desired.
+Other properties like `rule_enabled` provides a check for whether this button should be enabled or not.
+
+The `toggle_attr` will permit a toggle to set an attribute on the given `object` which would default to the root
+context but could need to set a more local object attribute.
+
+If a `signal` is assigned as an aspect of multi it triggers that specfic option in the multi button.
+If a `signal` is assigned within the toggle it sets the state of the given toggle.
+
+The action is a function which is run when the button is pressed.
 """
 
 import copy
