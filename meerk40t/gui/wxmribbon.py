@@ -302,7 +302,7 @@ class RibbonPanel(wx.Panel):
         self.button_lookup = {}
         self.group_lookup = {}
 
-        self.toggle_signals = list()
+        self._registered_signals = list()
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
@@ -652,7 +652,7 @@ class RibbonPanel(wx.Panel):
 
         signal_multi_listener = make_multi_click(button, key)
         self.context.listen(signal, signal_multi_listener)
-        self.toggle_signals.append((signal, signal_multi_listener))
+        self._registered_signals.append((signal, signal_multi_listener))
 
     def _create_signal_toggler(self, button, signal):
         """
@@ -683,7 +683,7 @@ class RibbonPanel(wx.Panel):
 
         signal_toggle_listener = make_toggle_click(button)
         self.context.listen(signal, signal_toggle_listener)
-        self.toggle_signals.append((signal, signal_toggle_listener))
+        self._registered_signals.append((signal, signal_toggle_listener))
 
     def set_buttons(self, new_values, button_bar):
         """
@@ -1157,7 +1157,7 @@ class RibbonPanel(wx.Panel):
         pass
 
     def pane_hide(self):
-        for key, listener in self.toggle_signals:
+        for key, listener in self._registered_signals:
             self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):
