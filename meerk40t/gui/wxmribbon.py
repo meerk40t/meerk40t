@@ -403,14 +403,14 @@ class RibbonPanel(wx.Panel):
             return
         button.toggle = not button.toggle
         if button.toggle:
-            if button.identifier is not None:
-                setattr(button.object, button.identifier, True)
-                self.context.signal(button.identifier, True, button.object)
+            if button.toggle_attr is not None:
+                setattr(button.object, button.toggle_attr, True)
+                self.context.signal(button.toggle_attr, True, button.object)
             self._restore_button_aspect(button, button.state_pressed)
         else:
-            if button.identifier is not None:
-                setattr(button.object, button.identifier, False)
-                self.context.signal(button.identifier, False, button.object)
+            if button.toggle_attr is not None:
+                setattr(button.object, button.toggle_attr, False)
+                self.context.signal(button.toggle_attr, False, button.object)
             self._restore_button_aspect(button, button.state_unpressed)
         self.ensure_realize()
 
@@ -731,6 +731,7 @@ class RibbonPanel(wx.Panel):
             b.toggle = False
             b.parent = button_bar
             b.group = group
+            b.toggle_attr = button.get("toggle_attr")
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
@@ -775,7 +776,7 @@ class RibbonPanel(wx.Panel):
                         ),
                     )
                 # Set initial value by identifer and object
-                if b.identifier is not None and getattr(b.object, b.identifier, False):
+                if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
                     b.toggle = True
                     self._restore_button_aspect(b, b.state_pressed)
                     b.parent.ToggleButton(b.id, b.toggle)
