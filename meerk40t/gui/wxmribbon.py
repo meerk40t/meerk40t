@@ -658,7 +658,7 @@ class RibbonPanel(wx.Panel):
         """
         Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
 
-        E.G. If a toggle has a signal called "stop_tracing" and the context.signal("stop_tracing") is called this will
+        E.G. If a toggle has a signal called "tracing" and the context.signal("tracing", True) is called this will
         automatically set the toggle state.
 
         Note: It will not call any of the associated actions, it will simply set the toggle state.
