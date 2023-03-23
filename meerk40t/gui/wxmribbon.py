@@ -594,14 +594,22 @@ class RibbonPanel(wx.Panel):
         return b
 
     def _setup_multi_button(self, button, b):
-        # Store alternative aspects for multi-buttons, load stored previous state.
+        """
+        Store alternative aspects for multi-buttons, load stored previous state.
+
+        @param button:
+        @param b:
+        @return:
+        """
         resize_param = button.get("size")
         multi_aspects = button["multi"]
+        # This is the key used for the multi button.
         multi_ident = button.get("identifier")
         b.save_id = multi_ident
-        initial_id = self.context.setting(str, b.save_id, "default")
+        initial_value = self.context.setting(str, b.save_id, "default")
 
         for i, v in enumerate(multi_aspects):
+            # These are values for the outer identifier
             key = v.get("identifier", i)
             self._store_button_aspect(b, key)
             self._update_button_aspect(b, key, **v)
@@ -629,12 +637,12 @@ class RibbonPanel(wx.Panel):
                     ),
                 )
             if "signal" in v:
-                self._create_signal_multi(b, key, v["signal"])
+                self._create_signal_for_multi(b, key, v["signal"])
 
-            if key == initial_id:
+            if key == initial_value:
                 self._restore_button_aspect(b, key)
 
-    def _create_signal_multi(self, button, key, signal):
+    def _create_signal_for_multi(self, button, key, signal):
         """
         Creates a signal to restore the state of a multi button.
 
@@ -654,7 +662,7 @@ class RibbonPanel(wx.Panel):
         self.context.listen(signal, signal_multi_listener)
         self._registered_signals.append((signal, signal_multi_listener))
 
-    def _create_signal_toggler(self, button, signal):
+    def _create_signal_for_toggle(self, button, signal):
         """
         Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
 
@@ -749,7 +757,7 @@ class RibbonPanel(wx.Panel):
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
                 if "signal" in toggle_action:
-                    self._create_signal_toggler(b, toggle_action["signal"])
+                    self._create_signal_for_toggle(b, toggle_action["signal"])
 
                 self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
