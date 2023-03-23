@@ -567,7 +567,12 @@ class NewlyDevice(Service, ViewPort):
             Raw for newly performs raw actions and sends these commands directly to the laser.
             """
             if remainder is not None:
-                self.driver.connection.raw(remainder)
+                if "\\x" in remainder:
+                    for i in range(256):
+                        remainder = remainder.replace(f"\\x{i:02X}", chr(i))
+                    self.driver.connection.raw(remainder)
+                else:
+                    self.driver.connection.raw(remainder)
                 channel(f"Raw: {remainder}")
 
         @self.console_argument("file_index", type=int)

@@ -248,7 +248,7 @@ class USBConnection:
     def abort(self):
         pass
 
-    def write(self, index=0, data=None, attempt=0):
+    def write(self, index=0, data=None):
         if data is None:
             return
         self.channel(f"USB SEND: {data}")
