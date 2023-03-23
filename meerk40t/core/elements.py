@@ -2956,20 +2956,34 @@ class Elemental(Service):
     def load(self, pathname, **kwargs):
         kernel = self.kernel
         _ = kernel.translation
+        filename_to_process = pathname
+        # Lets check first if we have a preprocessor
+        # Use-case: if we identify functionalities in the file
+        # which aren't supported by mk yet, we could ask a program
+        # to convert these elements into supported artifacts
+        # This may change the fileformat (and filename)
+
+        fn_name, fn_extension = os.path.splitext(filename_to_process)
+        if fn_extension:
+            preproc = self.lookup(f"preprocessor/{fn_extension}")
+            # print (f"Preprocessor routine for preprocessor/{fn_extension}: {preproc}")
+            if preproc is not None:
+                filename_to_process = preproc(self, pathname)
+                # print (f"Gave: {pathname}, received: {filename_to_process}")
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
-                if str(pathname).lower().endswith(extensions):
+                if str(filename_to_process).lower().endswith(extensions):
                     self.set_start_time("load")
                     self.set_start_time("full_load")
                     with self.static("load elements"):
                         try:
                             # We could stop the attachment to shadowtree for the duration
-                            # of the load to avoid unnecessary actions, will provide
+                            # of the load to avoid unnecessary actions, this will provide
                             # about 8% speed increase, but probably not worth the risk
                             # with attachment: 77.2 sec
                             # without attachm: 72.1 sec
                             # self.unlisten_tree(self)
-                            results = loader.load(self, self, pathname, **kwargs)
+                            results = loader.load(self, self, filename_to_process, **kwargs)
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             end_time = time()

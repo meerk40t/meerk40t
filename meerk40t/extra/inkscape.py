@@ -1,9 +1,10 @@
+import gzip
 import os.path
 import platform
-from subprocess import PIPE, run
+from subprocess import PIPE, run, TimeoutExpired
 
 from meerk40t.core.exceptions import BadFileError
-
+from meerk40t.kernel.kernel import get_safe_path
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -152,13 +153,16 @@ def plugin(kernel, lifecycle):
             )
             return "inkscape", data
 
+        @kernel.console_argument(
+            "inkpath", type=str, help=_("Optional: location of inkscape executable")
+        )
         @kernel.console_command(
             "locate",
             help=_("inkscape locate    - set the path to inkscape on your computer"),
             input_type="inkscape",
             output_type="inkscape",
         )
-        def inkscape_locate(channel, _, data, **kwargs):
+        def inkscape_locate(channel, _, data, inkpath=None, **kwargs):
             system = platform.system()
             if system == "Darwin":
                 inkscape = [
@@ -178,12 +182,17 @@ def plugin(kernel, lifecycle):
                     "/usr/bin/inkscape",
                 ]
             else:
-                channel(
-                    _(
-                        "Inkscape location: Platform '{platform}' unknown. No idea where to look"
-                    ).format(platform=platform)
-                )
-                return
+                if inkpath:
+                    inkscape = []
+                else:
+                    channel(
+                        _(
+                            "Inkscape location: Platform '{platform}' unknown. No idea where to look"
+                        ).format(platform=platform)
+                    )
+                    return
+            if inkpath:
+                inkscape.insert(0, inkpath)
             inkscape_path, filename = data
             channel(_("----------"))
             channel(_("Finding Inkscape"))
@@ -218,3 +227,253 @@ def plugin(kernel, lifecycle):
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             return "inkscape", (root_context.inkscape_path, None)
+
+
+def register_inkscape_conversion(kernel):
+
+    import wx
+    _ = wx.GetTranslation
+
+    def check_for_features(context, pathname, **kwargs):
+
+        # We try to establish if a file contains certain features...
+        def get_inkscape():
+            root_context = kernel.root
+            root_context.setting(str, "inkscape_path", "inkscape.exe")
+            inkscape = ""
+            try:
+                inkscape = root_context.inkscape_path
+            except AttributeError:
+                inkscape = ""
+            system = platform.system()
+            if system == "Darwin":
+                candidates = [
+                    "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
+                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
+                ]
+            elif system == "Windows":
+                candidates = [
+                    "C:/Program Files (x86)/Inkscape/inkscape.exe",
+                    "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
+                    "C:/Program Files/Inkscape/inkscape.exe",
+                    "C:/Program Files/Inkscape/bin/inkscape.exe",
+                ]
+            elif system == "Linux":
+                candidates = [
+                    "/usr/local/bin/inkscape",
+                    "/usr/bin/inkscape",
+                ]
+            else:
+                    candidates = []
+            if inkscape:
+                candidates.insert(0, inkscape)
+            match = None
+            for ink in candidates:
+                if os.path.exists(ink):
+                    match = ink
+                    root_context.inkscape_path = match
+                    break
+            if match is None:
+                inkscape = ""
+            return inkscape
+
+
+        source = pathname
+        if pathname.lower().endswith("svgz"):
+            source = gzip.open(pathname, "rb")
+        METHOD_CONVERT_TO_OBJECT = 1
+        METHOD_CONVERT_TO_PNG = 2
+        features = {
+            "text": [False, ("<text",), METHOD_CONVERT_TO_OBJECT],
+            "clipping": [False, ("<clippath",), METHOD_CONVERT_TO_PNG],
+            "mask": [False, ("<mask",), METHOD_CONVERT_TO_PNG],
+            "gradient": [False, ("<lineargradient", "<radialgradient"), METHOD_CONVERT_TO_PNG],
+            "pattern": [False, ("<pattern", ), METHOD_CONVERT_TO_PNG],
+        }
+        needs_conversion = 0
+        with open(source, mode="r") as f:
+            while True:
+                line = f.readline().lower()
+                if not line:
+                    break
+                for feat, entry in features.items():
+                    for candidate in entry[1]:
+                        if candidate in line:
+                            entry[0] = True
+                            if entry[2] > needs_conversion:
+                                needs_conversion = entry[2]
+
+        inkscape = get_inkscape()
+        timeout_value = None
+        if needs_conversion == 0:
+            return pathname
+        if len(inkscape) == 0:
+            # Inkscape not found.
+            return pathname
+        # What is our preference? Load, convert, ask?
+        conversion_preference = int(kernel.root.svg_not_supported)
+
+        if conversion_preference == 1:
+            # Ask
+            msg = _("This file contains certain features that might not be fully supported by MeerK40t")
+            for feat, entry in features.items():
+                if entry[0]:
+                    msg += "\n" + f" - {feat}"
+            if needs_conversion == METHOD_CONVERT_TO_PNG:
+                msg += "\n" + ("The complete design would be rendered into a single graphic.")
+            elif needs_conversion == METHOD_CONVERT_TO_OBJECT:
+                msg += "\n" + ("Text elements would be converted into path objects.")
+            dlg = wx.MessageDialog(
+                None,
+                message=msg,
+                caption=_("SVG-Conversion"),
+                style = wx.YES_NO | wx.ICON_QUESTION
+            )
+            if dlg.SetYesNoLabels(_("Convert"), _("Load original")):
+                dlg.SetMessage(msg + "\n" + _("Do you want to convert the file or do you want load the unmodified file?"))
+            else:
+                dlg.SetMessage(msg + "\n" + _("Do you want to convert the file (Yes) or do you want load the unmodified file (No)?"))
+
+            response = dlg.ShowModal()
+            if response == wx.ID_YES:
+                # convert
+                conversion_preference = 2
+            else:
+                # Load
+                conversion_preference = 0
+            dlg.Destroy()
+
+        if conversion_preference == 0:
+            # Load
+            return pathname
+
+        try:
+            c = run([inkscape, "-V"], timeout=timeout_value, stdout=PIPE)
+        except (FileNotFoundError, TimeoutExpired):
+            # Return std response
+            # print ("Error while getting version")
+            return pathname
+
+        version = c.stdout.decode("utf-8")
+        safe_dir = os.path.realpath(get_safe_path(context.kernel.name))
+        svg_temp_file = os.path.join(safe_dir, "temp.svg")
+        png_temp_file = os.path.join(safe_dir, "temp.png")
+
+        if needs_conversion == METHOD_CONVERT_TO_OBJECT:
+            # Ask inkscape to convert all text elements to paths
+            # slightly different invocation for different values
+            # Check Version of Inkscape
+            if "inkscape 1." in version.lower():
+                cmd = [
+                    inkscape,
+                    "--export-text-to-path",
+                    "--export-plain-svg",
+                    f"--export-filename={svg_temp_file}",
+                    pathname,
+                ]
+            else:
+                cmd = [
+                    inkscape,
+                    "--export-text-to-path",
+                    "--export-plain-svg",
+                    svg_temp_file,
+                    pathname,
+                ]
+            try:
+                with wx.BusyInfo(_("Calling inkscape in the background...")):
+                    c = run(cmd, timeout=timeout_value, stdout=PIPE)
+                print (c)
+                return svg_temp_file
+            except (FileNotFoundError, TimeoutExpired):
+                # Return std response
+                # print (f"Error while converting text: {cmd}")
+                return pathname
+
+        if needs_conversion == METHOD_CONVERT_TO_PNG:
+            dpi = 500
+            if "inkscape 1." in version.lower():
+                cmd = [
+                    inkscape,
+                    "--export-background",
+                    "white",
+                    "--export-background-opacity",
+                    "255",
+                    "--export-area-drawing",
+                    "--export-type=png",
+                    f"--export-filename={png_temp_file}",
+                    f"--export-dpi={dpi}",
+                    pathname,
+                ]
+            else:
+                cmd = [
+                    inkscape,
+                    "--export-area-drawing",
+                    "--export-dpi", dpi,
+                    "--export-background", "rgb(255, 255, 255)",
+                    "--export-background-opacity", "255" ,
+                    "--export-png", png_temp_file,
+                    pathname,
+                ]
+            try:
+                with wx.BusyInfo(_("Calling inkscape in the background...")):
+                    c = run(cmd, timeout=timeout_value, stdout=PIPE)
+                return png_temp_file
+            except (FileNotFoundError, TimeoutExpired):
+                # Return std response
+                # print (f"Error while converting to bitmap: {cmd}")
+                return pathname
+
+    kernel.register("preprocessor/.svg", check_for_features)
+    # Lets establish some settings too
+    stip = (
+        _("Meerk40t does not support all svg-features, so you might want") + "\n" +
+        _("to preprocess the file to get a proper representation of the design.") + "\n" +
+        _(" - Certain subvariants of Fonts - single element will be converted to a path") + "\n" +
+        _(" - Gradient fills / patterns - the whole design will be rendered into a graphic") + "\n" +
+        _(" - Clipping/Mask - the whole design will be rendered into a graphic")
+    )
+    system = platform.system()
+    if system == "Darwin":
+        wildcard ="Inkscape|(Inkscape;inkscape)|All files|*.*"
+    elif system == "Windows":
+        wildcard ="Inkscape|inkscape.exe|All files|*.*"
+    elif system == "Linux":
+        wildcard ="Inkscape|inkscape|All files|*.*"
+    else:
+        wildcard ="Inkscape|(Inkscape;inkscape)|All files|*.*"
+
+    kernel.root.setting(str, "inkscape_path", "")
+    choices = [
+        {
+            "attr": "inkscape_path",
+            "object": kernel.root,
+            "default": "",
+            "type": str,
+            "style": "file",
+            "wildcard": wildcard,
+            "label": _("Inkscape"),
+            "tip": _(
+                "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
+                ),
+            "page": "Input/Output",
+            "section": "SVG-Features",
+        },
+        {
+            "attr": "svg_not_supported",
+            "object": kernel.root,
+            "default": 0,
+            "type": int,
+            "style": "option",
+            "label": _("Unsupported elements"),
+            "choices": (0, 2, 1),
+            "display": (
+                _("Always load into meerk40t"),
+                _("Convert with inkscape"),
+                _("Ask at load time"),
+            ),
+            "tip": stip,
+            "page": "Input/Output",
+            "section": "SVG-Features",
+        },
+    ]
+    kernel.register_choices("preferences", choices)
