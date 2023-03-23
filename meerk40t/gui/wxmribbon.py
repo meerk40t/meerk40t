@@ -442,6 +442,7 @@ class RibbonPanel(wx.Panel):
         if button.state_pressed is None:
             # If there's a pressed state we should change the button state
             return
+
         button.toggle = not button.toggle
         if button.toggle:
             if button.toggle_attr is not None:
@@ -628,9 +629,7 @@ class RibbonPanel(wx.Panel):
                 kind=bkind,
             )
 
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
-        )
+        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id)
         button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
         return b
 
