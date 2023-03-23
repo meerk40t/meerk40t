@@ -131,7 +131,7 @@ def plugin(service, lifecycle):
                 "label": _("Send Only"),
                 "icon": icons8_circled_stop_50,
                 "tip": _("Automatically start the device after send"),
-                "identifier": "autoplay",
+                "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
                 "toggle":
