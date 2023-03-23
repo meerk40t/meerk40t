@@ -63,7 +63,7 @@ class ElementLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
-        self.service.signal("stop_tracing", True)
+        self.service.signal("light_simulate", False)
 
         if self.service.redlight_preferred:
             connection.light_on()

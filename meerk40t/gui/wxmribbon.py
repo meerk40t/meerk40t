@@ -1,3 +1,44 @@
+"""
+The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All of the buttons are dynmically generated but the
+panels themselves are created in a static fashion. But the contents of those individual ribbon panels are defined
+in the kernel lookup.
+
+        service.register(
+            "button/control/Redlight",
+            {
+                "label": _("Red Dot On"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+                "toggle": {
+                    "label": _("Red Dot Off"),
+                    "action": lambda v: service("red off\n"),
+                    "icon": icons8_flash_off_50,
+                    "signal": "grbl_red_dot",
+                },
+                "rule_enabled": lambda v: has_red_dot_enabled(),
+            },
+        )
+
+For example would register a button in the control panel with a discrete name "Redlight" the definitions for label,
+icon, tip, action are all pretty standard to setup a button. This can often be registered as part of a service such
+that if you switch the service it will change the lookup and that change will be detected here and rebuilt the buttons.
+
+The toggle defines an alternative set of values for the toggle state of the button.
+The multi defines a series of alternative states, and creates a hybrid button with a drop down to select the state
+    desired.
+Other properties like `rule_enabled` provides a check for whether this button should be enabled or not.
+
+The `toggle_attr` will permit a toggle to set an attribute on the given `object` which would default to the root
+context but could need to set a more local object attribute.
+
+If a `signal` is assigned as an aspect of multi it triggers that specfic option in the multi button.
+If a `signal` is assigned within the toggle it sets the state of the given toggle. These should be compatible with
+the signals issued by choice panels.
+
+The action is a function which is run when the button is pressed.
+"""
+
 import copy
 import platform
 import threading
@@ -302,7 +343,7 @@ class RibbonPanel(wx.Panel):
         self.button_lookup = {}
         self.group_lookup = {}
 
-        self.toggle_signals = list()
+        self._registered_signals = list()
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
@@ -401,10 +442,17 @@ class RibbonPanel(wx.Panel):
         if button.state_pressed is None:
             # If there's a pressed state we should change the button state
             return
+
         button.toggle = not button.toggle
         if button.toggle:
+            if button.toggle_attr is not None:
+                setattr(button.object, button.toggle_attr, True)
+                self.context.signal(button.toggle_attr, True, button.object)
             self._restore_button_aspect(button, button.state_pressed)
         else:
+            if button.toggle_attr is not None:
+                setattr(button.object, button.toggle_attr, False)
+                self.context.signal(button.toggle_attr, False, button.object)
             self._restore_button_aspect(button, button.state_unpressed)
         self.ensure_realize()
 
@@ -581,21 +629,27 @@ class RibbonPanel(wx.Panel):
                 kind=bkind,
             )
 
-        button_bar.Bind(
-            RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
-        )
+        button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id)
         button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
         return b
 
     def _setup_multi_button(self, button, b):
-        # Store alternative aspects for multi-buttons, load stored previous state.
+        """
+        Store alternative aspects for multi-buttons, load stored previous state.
+
+        @param button:
+        @param b:
+        @return:
+        """
         resize_param = button.get("size")
-        multi_action = button["multi"]
+        multi_aspects = button["multi"]
+        # This is the key used for the multi button.
         multi_ident = button.get("identifier")
         b.save_id = multi_ident
-        initial_id = self.context.setting(str, b.save_id, "default")
+        initial_value = self.context.setting(str, b.save_id, "default")
 
-        for i, v in enumerate(multi_action):
+        for i, v in enumerate(multi_aspects):
+            # These are values for the outer identifier
             key = v.get("identifier", i)
             self._store_button_aspect(b, key)
             self._update_button_aspect(b, key, **v)
@@ -623,12 +677,12 @@ class RibbonPanel(wx.Panel):
                     ),
                 )
             if "signal" in v:
-                self._create_signal_multi(b, key, v["signal"])
+                self._create_signal_for_multi(b, key, v["signal"])
 
-            if key == initial_id:
+            if key == initial_value:
                 self._restore_button_aspect(b, key)
 
-    def _create_signal_multi(self, button, key, signal):
+    def _create_signal_for_multi(self, button, key, signal):
         """
         Creates a signal to restore the state of a multi button.
 
@@ -646,13 +700,64 @@ class RibbonPanel(wx.Panel):
 
         signal_multi_listener = make_multi_click(button, key)
         self.context.listen(signal, signal_multi_listener)
-        self.toggle_signals.append((signal, signal_multi_listener))
+        self._registered_signals.append((signal, signal_multi_listener))
 
-    def _create_signal_toggler(self, button, signal):
+    def _setup_toggle_button(self, button, b):
+        """
+        Store toggle and original aspects for toggle-buttons
+
+        @param button:
+        @param b:
+        @return:
+        """
+        resize_param = button.get("size")
+
+        b.state_pressed = "toggle"
+        b.state_unpressed = "original"
+
+        self._store_button_aspect(b, "original")
+
+        toggle_action = button["toggle"]
+        key = toggle_action.get("identifier", "toggle")
+        if "signal" in toggle_action:
+            self._create_signal_for_toggle(b, toggle_action["signal"])
+
+        self._store_button_aspect(b, key, **toggle_action)
+        if "icon" in toggle_action:
+            toggle_icon = toggle_action.get("icon")
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
+                bitmap_large_disabled=toggle_icon.GetBitmap(
+                    resize=resize_param, color=Color("grey")
+                ),
+            )
+            if resize_param is None:
+                siz = toggle_icon.GetBitmap().GetSize()
+                small_resize = 0.5 * siz[0]
+            else:
+                small_resize = 0.5 * resize_param
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
+                bitmap_small_disabled=toggle_icon.GetBitmap(
+                    resize=small_resize, color=Color("grey")
+                ),
+            )
+        # Set initial value by identifer and object
+        if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
+            b.toggle = True
+            self._restore_button_aspect(b, b.state_pressed)
+            b.parent.ToggleButton(b.id, b.toggle)
+            b.parent.Refresh()
+
+    def _create_signal_for_toggle(self, button, signal):
         """
         Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
 
-        E.G. If a toggle has a signal called "stop_tracing" and the context.signal("stop_tracing") is called this will
+        E.G. If a toggle has a signal called "tracing" and the context.signal("tracing", True) is called this will
         automatically set the toggle state.
 
         Note: It will not call any of the associated actions, it will simply set the toggle state.
@@ -665,11 +770,11 @@ class RibbonPanel(wx.Panel):
         def make_toggle_click(_tb):
             def toggle_click(origin, set_value, *args):
                 if set_value:
-                    _tb.toggle = False
-                    self._restore_button_aspect(_tb, _tb.state_unpressed)
-                else:
                     _tb.toggle = True
                     self._restore_button_aspect(_tb, _tb.state_pressed)
+                else:
+                    _tb.toggle = False
+                    self._restore_button_aspect(_tb, _tb.state_unpressed)
                 _tb.parent.ToggleButton(_tb.id, _tb.toggle)
                 _tb.parent.Refresh()
 
@@ -677,7 +782,7 @@ class RibbonPanel(wx.Panel):
 
         signal_toggle_listener = make_toggle_click(button)
         self.context.listen(signal, signal_toggle_listener)
-        self.toggle_signals.append((signal, signal_toggle_listener))
+        self._registered_signals.append((signal, signal_toggle_listener))
 
     def set_buttons(self, new_values, button_bar):
         """
@@ -725,48 +830,16 @@ class RibbonPanel(wx.Panel):
             b.toggle = False
             b.parent = button_bar
             b.group = group
+            b.toggle_attr = button.get("toggle_attr")
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
             b.enable_rule = button.get("rule_enabled", lambda cond: True)
+            b.object = button.get("object", self.context)
             if "multi" in button:
                 self._setup_multi_button(button, b)
             if "toggle" in button:
-                # Store toggle and original aspects for toggle-buttons
-                b.state_pressed = "toggle"
-                b.state_unpressed = "original"
-
-                self._store_button_aspect(b, "original")
-
-                toggle_action = button["toggle"]
-                key = toggle_action.get("identifier", "toggle")
-                if "signal" in toggle_action:
-                    self._create_signal_toggler(b, toggle_action["signal"])
-
-                self._store_button_aspect(b, key, **toggle_action)
-                if "icon" in toggle_action:
-                    toggle_icon = toggle_action.get("icon")
-                    self._update_button_aspect(
-                        b,
-                        key,
-                        bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
-                        bitmap_large_disabled=toggle_icon.GetBitmap(
-                            resize=resize_param, color=Color("grey")
-                        ),
-                    )
-                    if resize_param is None:
-                        siz = toggle_icon.GetBitmap().GetSize()
-                        small_resize = 0.5 * siz[0]
-                    else:
-                        small_resize = 0.5 * resize_param
-                    self._update_button_aspect(
-                        b,
-                        key,
-                        bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
-                        bitmap_small_disabled=toggle_icon.GetBitmap(
-                            resize=small_resize, color=Color("grey")
-                        ),
-                    )
+                self._setup_toggle_button(button, b)
 
             # Store newly created button in the various lookups
             new_id = b.id
@@ -1143,7 +1216,7 @@ class RibbonPanel(wx.Panel):
         pass
 
     def pane_hide(self):
-        for key, listener in self.toggle_signals:
+        for key, listener in self._registered_signals:
             self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):

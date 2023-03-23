@@ -522,7 +522,7 @@ class GRBLDevice(Service, ViewPort):
                 self.driver.move_mode = 0
                 # self.redlight_preferred = False
                 channel("Turning off redlight.")
-                self.signal("grbl_red_dot", True)
+                self.signal("grbl_red_dot", False)
             else:
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
@@ -536,7 +536,7 @@ class GRBLDevice(Service, ViewPort):
                 # An arbitrary move to turn the laser really on!
                 # self.driver.grbl("G1")
                 channel("Turning on redlight.")
-                self.signal("grbl_red_dot", False)
+                self.signal("grbl_red_dot", True)
 
         @self.console_option(
             "idonotlovemyhouse",
