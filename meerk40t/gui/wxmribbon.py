@@ -33,7 +33,8 @@ The `toggle_attr` will permit a toggle to set an attribute on the given `object`
 context but could need to set a more local object attribute.
 
 If a `signal` is assigned as an aspect of multi it triggers that specfic option in the multi button.
-If a `signal` is assigned within the toggle it sets the state of the given toggle.
+If a `signal` is assigned within the toggle it sets the state of the given toggle. These should be compatible with
+the signals issued by choice panels.
 
 The action is a function which is run when the button is pressed.
 """
