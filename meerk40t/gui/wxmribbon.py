@@ -596,12 +596,12 @@ class RibbonPanel(wx.Panel):
     def _setup_multi_button(self, button, b):
         # Store alternative aspects for multi-buttons, load stored previous state.
         resize_param = button.get("size")
-        multi_action = button["multi"]
+        multi_aspects = button["multi"]
         multi_ident = button.get("identifier")
         b.save_id = multi_ident
         initial_id = self.context.setting(str, b.save_id, "default")
 
-        for i, v in enumerate(multi_action):
+        for i, v in enumerate(multi_aspects):
             key = v.get("identifier", i)
             self._store_button_aspect(b, key)
             self._update_button_aspect(b, key, **v)
