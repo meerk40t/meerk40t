@@ -108,6 +108,8 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         except AttributeError:
             return
         try:
+            if isinstance(status, bytes):
+                status = status.decode("unicode-escape")
             self.button_device_connect.SetLabel(status)
             if connected:
                 self.set_button_connected()

@@ -327,6 +327,7 @@ class NewlyController:
     #######################
 
     def raw(self, data):
+        data = bytes(data, "latin1")
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=data)
 
