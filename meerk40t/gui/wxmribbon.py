@@ -646,7 +646,7 @@ class RibbonPanel(wx.Panel):
         # This is the key used for the multi button.
         multi_ident = button.get("identifier")
         b.save_id = multi_ident
-        initial_value = self.context.setting(str, b.save_id, "default")
+        initial_value = getattr(b.object, b.save_id, "default")
 
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
