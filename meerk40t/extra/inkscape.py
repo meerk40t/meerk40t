@@ -327,12 +327,9 @@ def plugin(kernel, lifecycle):
                     msg += "\n" + (
                         "Text elements would be converted into path objects."
                     )
-                (
-                    msg
-                    + "\n"
-                    + _(
-                        "Do you want to convert the file or do you want load the unmodified file?"
-                    )
+
+                msg += "\n" + _(
+                    "Do you want to convert the file via inkscape or do you want load the unmodified file?"
                 )
 
                 response = kernel.yesno(
