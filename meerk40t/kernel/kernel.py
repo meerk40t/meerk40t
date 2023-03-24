@@ -3406,7 +3406,9 @@ class Kernel(Settings):
             option_yes = "Yes"
         if option_no is None:
             option_yes = "No"
-        value = input(prompt + "\n?" + f"({option_yes} / {option_no}, default={option_yes})\n")
+        value = input(
+            prompt + "\n?" + f"({option_yes} / {option_no}, default={option_yes})\n"
+        )
         if value is None or value == "":
             value = option_yes
         value = value.lower()

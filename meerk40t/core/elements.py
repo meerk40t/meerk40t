@@ -2983,7 +2983,9 @@ class Elemental(Service):
                             # with attachment: 77.2 sec
                             # without attachm: 72.1 sec
                             # self.unlisten_tree(self)
-                            results = loader.load(self, self, filename_to_process, **kwargs)
+                            results = loader.load(
+                                self, self, filename_to_process, **kwargs
+                            )
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             end_time = time()

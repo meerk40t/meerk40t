@@ -6,6 +6,7 @@ from subprocess import PIPE, run, TimeoutExpired
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel.kernel import get_safe_path
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -258,7 +259,7 @@ def plugin(kernel, lifecycle):
                         "/usr/bin/inkscape",
                     ]
                 else:
-                        candidates = []
+                    candidates = []
                 if inkscape:
                     candidates.insert(0, inkscape)
                 match = None
@@ -271,7 +272,6 @@ def plugin(kernel, lifecycle):
                     inkscape = ""
                 return inkscape
 
-
             source = pathname
             if pathname.lower().endswith("svgz"):
                 source = gzip.open(pathname, "rb")
@@ -281,8 +281,12 @@ def plugin(kernel, lifecycle):
                 "text": [False, ("<text",), METHOD_CONVERT_TO_OBJECT],
                 "clipping": [False, ("<clippath",), METHOD_CONVERT_TO_PNG],
                 "mask": [False, ("<mask",), METHOD_CONVERT_TO_PNG],
-                "gradient": [False, ("<lineargradient", "<radialgradient"), METHOD_CONVERT_TO_PNG],
-                "pattern": [False, ("<pattern", ), METHOD_CONVERT_TO_PNG],
+                "gradient": [
+                    False,
+                    ("<lineargradient", "<radialgradient"),
+                    METHOD_CONVERT_TO_PNG,
+                ],
+                "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
             needs_conversion = 0
             with open(source, mode="r") as f:
@@ -309,17 +313,34 @@ def plugin(kernel, lifecycle):
 
             if conversion_preference == 1:
                 # Ask
-                msg = _("This file contains certain features that might not be fully supported by MeerK40t")
+                msg = _(
+                    "This file contains certain features that might not be fully supported by MeerK40t"
+                )
                 for feat, entry in features.items():
                     if entry[0]:
                         msg += "\n" + f" - {feat}"
                 if needs_conversion == METHOD_CONVERT_TO_PNG:
-                    msg += "\n" + ("The complete design would be rendered into a single graphic.")
+                    msg += "\n" + (
+                        "The complete design would be rendered into a single graphic."
+                    )
                 elif needs_conversion == METHOD_CONVERT_TO_OBJECT:
-                    msg += "\n" + ("Text elements would be converted into path objects.")
-                msg + "\n" + _("Do you want to convert the file or do you want load the unmodified file?")
+                    msg += "\n" + (
+                        "Text elements would be converted into path objects."
+                    )
+                (
+                    msg
+                    + "\n"
+                    + _(
+                        "Do you want to convert the file or do you want load the unmodified file?"
+                    )
+                )
 
-                response = kernel.yesno(msg, option_yes=_("Convert"), option_no=_("Load original"),  caption=_("SVG-Conversion"))
+                response = kernel.yesno(
+                    msg,
+                    option_yes=_("Convert"),
+                    option_no=_("Load original"),
+                    caption=_("SVG-Conversion"),
+                )
                 if response:
                     # convert
                     conversion_preference = 2
@@ -390,10 +411,14 @@ def plugin(kernel, lifecycle):
                     cmd = [
                         inkscape,
                         "--export-area-drawing",
-                        "--export-dpi", dpi,
-                        "--export-background", "rgb(255, 255, 255)",
-                        "--export-background-opacity", "255" ,
-                        "--export-png", png_temp_file,
+                        "--export-dpi",
+                        dpi,
+                        "--export-background",
+                        "rgb(255, 255, 255)",
+                        "--export-background-opacity",
+                        "255",
+                        "--export-png",
+                        png_temp_file,
                         pathname,
                     ]
                 try:
@@ -407,21 +432,29 @@ def plugin(kernel, lifecycle):
         kernel.register("preprocessor/.svg", check_for_features)
         # Lets establish some settings too
         stip = (
-            _("Meerk40t does not support all svg-features, so you might want") + "\n" +
-            _("to preprocess the file to get a proper representation of the design.") + "\n" +
-            _(" - Certain subvariants of Fonts - single element will be converted to a path") + "\n" +
-            _(" - Gradient fills / patterns - the whole design will be rendered into a graphic") + "\n" +
-            _(" - Clipping/Mask - the whole design will be rendered into a graphic")
+            _("Meerk40t does not support all svg-features, so you might want")
+            + "\n"
+            + _("to preprocess the file to get a proper representation of the design.")
+            + "\n"
+            + _(
+                " - Certain subvariants of Fonts - single element will be converted to a path"
+            )
+            + "\n"
+            + _(
+                " - Gradient fills / patterns - the whole design will be rendered into a graphic"
+            )
+            + "\n"
+            + _(" - Clipping/Mask - the whole design will be rendered into a graphic")
         )
         system = platform.system()
         if system == "Darwin":
-            wildcard ="Inkscape|(Inkscape;inkscape)|All files|*.*"
+            wildcard = "Inkscape|(Inkscape;inkscape)|All files|*.*"
         elif system == "Windows":
-            wildcard ="Inkscape|inkscape.exe|All files|*.*"
+            wildcard = "Inkscape|inkscape.exe|All files|*.*"
         elif system == "Linux":
-            wildcard ="Inkscape|inkscape|All files|*.*"
+            wildcard = "Inkscape|inkscape|All files|*.*"
         else:
-            wildcard ="Inkscape|(Inkscape;inkscape)|All files|*.*"
+            wildcard = "Inkscape|(Inkscape;inkscape)|All files|*.*"
 
         kernel.root.setting(str, "inkscape_path", "")
         choices = [
@@ -435,7 +468,7 @@ def plugin(kernel, lifecycle):
                 "label": _("Inkscape"),
                 "tip": _(
                     "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
-                    ),
+                ),
                 "page": "Input/Output",
                 "section": "SVG-Features",
             },
