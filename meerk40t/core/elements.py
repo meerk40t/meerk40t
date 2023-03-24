@@ -2968,7 +2968,7 @@ class Elemental(Service):
             preproc = self.lookup(f"preprocessor/{fn_extension}")
             # print (f"Preprocessor routine for preprocessor/{fn_extension}: {preproc}")
             if preproc is not None:
-                filename_to_process = preproc(self, pathname)
+                filename_to_process = preproc(pathname)
                 # print (f"Gave: {pathname}, received: {filename_to_process}")
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():

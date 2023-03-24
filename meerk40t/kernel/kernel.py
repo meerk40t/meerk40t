@@ -3390,6 +3390,30 @@ class Kernel(Settings):
     # Prompt should be replaced with higher level versions of this depending on the user interface.
     prompt = _text_prompt
 
+    def _yes_no_prompt(self, prompt, option_yes=None, option_no=None, caption=None):
+        """
+        Kernel yesno should be replaced with higher level versions of this depending on the user interface.
+
+        Default this is purely text based input() yes_no_prompt.
+
+        @param prompt: question asked of the user.
+        @param option_yes: input to be interpreted as yes (first letter is okay too).
+        @param option_no: input to be interpreted as no (first letter is okay too).
+        @param caption: Ignored in the cli
+        @return:
+        """
+        if option_yes is None:
+            option_yes = "Yes"
+        if option_no is None:
+            option_yes = "No"
+        value = input(prompt + "\n?" + f"({option_yes} / {option_no}, default={option_yes})\n")
+        if value is None or value == "":
+            value = option_yes
+        value = value.lower()
+        return bool(value == option_yes or value[0] == option_yes[0])
+
+    yesno = _yes_no_prompt
+
     # ==========
     # CONSOLE DECORATORS
     # ==========

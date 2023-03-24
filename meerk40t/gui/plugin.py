@@ -203,6 +203,36 @@ and a wxpython version <= 4.1.1."""
 
         kernel.prompt = prompt_popup
 
+        def yesno_popup(prompt, option_yes=None, option_no=None, caption=None):
+            """
+            @param prompt: question asked of the user.
+            @param option_yes: input to be interpreted as yes (first letter is okay too).
+            @param option_no: input to be interpreted as no (first letter is okay too).
+            """
+            import wx
+            if option_yes is None:
+                option_yes = "Yes"
+            if option_no is None:
+                option_yes = "No"
+            if caption is None:
+                caption = _("Question")
+            dlg = wx.MessageDialog(
+                None,
+                message=prompt,
+                caption=caption,
+                style = wx.YES_NO | wx.ICON_QUESTION
+            )
+            if dlg.SetYesNoLabels(option_yes, option_no):
+                dlg.SetMessage(prompt)
+            else:
+                dlg.SetMessage(prompt + "\n" + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no))
+
+            response = dlg.ShowModal()
+            dlg.Destroy()
+            return bool(response == wx.ID_YES)
+
+        kernel.yesno = yesno_popup
+
         @kernel.console_argument("message")
         @kernel.console_command("notify", hidden=True)
         def notification_message(message=None, **kwargs):

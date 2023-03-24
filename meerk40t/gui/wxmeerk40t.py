@@ -20,7 +20,6 @@ try:
     from wx import richtext
 except ImportError:
     pass
-from meerk40t.extra.inkscape import register_inkscape_conversion
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
@@ -682,9 +681,6 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
-
-        # Register inkscape conversion options
-        register_inkscape_conversion(kernel)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
