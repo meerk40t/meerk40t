@@ -50,13 +50,26 @@ def get_inkscape(context, manual_candidate=None):
         inkscape = ""
     return inkscape
 
-class MultiLoader():
+
+class MultiLoader:
     """
     This module makes use of inkscape to convert a multitude of format into svg :
     """
+
     @staticmethod
     def load_types():
-        yield "Inkscape supported files", ("pdf",  "pdxf", "eps", "cdr", "cmx", "ccx", "cdt", "wmf", "vsd", "ai"), "image/svg+xml"
+        yield "Inkscape supported files", (
+            "pdf",
+            "pdxf",
+            "eps",
+            "cdr",
+            "cmx",
+            "ccx",
+            "cdt",
+            "wmf",
+            "vsd",
+            "ai",
+        ), "image/svg+xml"
         # yield "Portable Document Format files", ("pdf",  "pdxf", "eps"), "image/svg+xml"
         # yield "Corel Draw files", ("cdr", "cmx", "ccx", "cdt"), "image/svg+xml"
         # yield "Windows Metafile files", ("wmf",), "image/svg+xml"
@@ -140,7 +153,6 @@ class MultiLoader():
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
-
 
         @kernel.console_command(
             "load",
@@ -300,9 +312,7 @@ def plugin(kernel, lifecycle):
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             if match:
-                channel(
-                    _("Inkscape location: {match}").format(match=match)
-                )
+                channel(_("Inkscape location: {match}").format(match=match))
             else:
                 root_context.inkscape_path = "inkscape.exe"
                 channel(
