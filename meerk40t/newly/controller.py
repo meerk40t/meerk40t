@@ -43,8 +43,7 @@ class NewlyController:
         self._scan_speed = 200  # 200 mm/s
         self._relative = False
         self._pwm_frequency = None
-        self._unknown_vp = 100
-        self._unknown_vk = 100
+        self._realtime = False
 
         self.mode = "init"
         self.paused = False
@@ -147,27 +146,34 @@ class NewlyController:
         """
         if self.mode != "init":
             return
+        self._realtime = True
         self.mode = "started"
-        self.command_buffer.append(f"ZZZFile0")
+        self(f"ZZZFile0")
 
-    def _write_frame(self):
-        self("DW")
-        self("VP100")
-        self("VK100")
-        self("SP2")
-        self("SP2")
-        self("VQ15")
-        self("VJ24")
-        self("VS10")
-        self("DA0")
-        self("SP0")
-        self("VS20")
-        self("PR")
-        self("PD9891,0")
-        self("PD0,-19704")
-        self("PD-9891, 0")
-        self("PD0,19704")
+    def _write_position(self, outline):
+        pass
+
+    def _write_frame(self, outline):
+        self.mode = "frame"
+        if outline is not None:
+            x, y = self._last_x, self._last_y
+            self("DW")
+            self._write_dc_information()
+            self("SP2")
+            self("SP2")
+            self._write_speed_information(speed=100, power=0)
+            self("PR")
+            for pt in outline:
+                self.goto(*pt)
+            self.goto(x, y)
+            self("ZED")
+
+    def _execute_job(self):
         self("ZED")
+        cmd = ";".join(self.command_buffer) + ";"
+        self.connect_if_needed()
+        self.connection.write(index=self._machine_index, data=cmd)
+        self.command_buffer.clear()
 
     def open_job(self, job=None):
         """
@@ -175,10 +181,18 @@ class NewlyController:
 
         @return:
         """
+        self._realtime = True
         self._speed = None
         self._power = None
         self(f"ZZZFile{self.service.file_index}")
-        self._write_frame()
+
+        outline = None
+        try:
+            print(job.outline)
+            outline = job.outline
+        except AttributeError:
+            pass
+        self._write_frame(outline)
         self("GZ")
         self.mode = "started"
 
@@ -189,18 +203,14 @@ class NewlyController:
         """
         if not self.command_buffer:
             return
-        if self.mode == "started":
+        if self.mode in ("started", "init"):
             # Job contains no instructions.
+            self.mode = "init"
             self.command_buffer.clear()
             return
-
-        self("ZED")
-        cmd = ";".join(self.command_buffer) + ";"
-        self.connect_if_needed()
-        self.connection.write(index=self._machine_index, data=cmd)
-        self.command_buffer.clear()
-        self.mode = "closed"
-        if self.service.autoplay:
+        self._execute_job()
+        self.mode = "init"
+        if self.service.autoplay and not self._realtime:
             self.replay(self.service.file_index)
 
     def _map_speed(self, speed):
@@ -225,11 +235,17 @@ class NewlyController:
             return 0
         return int(round(power))
 
-    def _write_speed_information(self):
+    def _write_dc_information(self):
+        self(f"VP{self.service.cut_dc}")
+        self(f"VK{self.service.move_dc}")
+
+    def _write_speed_information(self, speed=None, power=None):
         # Calculate speed and lookup factors in chart.
         speed_at_program_change = self._speed
         if speed_at_program_change is None:
             speed_at_program_change = self.service.default_cut_speed
+        if speed is not None:
+            speed_at_program_change = speed
         chart = self.service.speedchart
         smallest_difference = float("inf")
         closest_index = None
@@ -250,8 +266,10 @@ class NewlyController:
         self(f"VQ{int(round(settings['corner_speed']))}")
         self(f"VJ{int(round(settings['acceleration_length']))}")
         self(f"SP1")
-        power = self.service.default_cut_power if self._power is None else self._power
-        self(f"DA{self._map_power(power)}")
+        power_at_program_change = self.service.default_cut_power if self._power is None else self._power
+        if power is not None:
+            power_at_program_change = power
+        self(f"DA{self._map_power(power_at_program_change)}")
         self(f"VS{self._map_speed(speed_at_program_change)}")
 
     def program_mode(self):
@@ -260,8 +278,7 @@ class NewlyController:
         if self.mode == "started":
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
-            self(f"VP{self.service.cut_dc}")
-            self(f"VK{self.service.move_dc}")
+        self._write_dc_information()
         self("SP2")
         self("SP2")
         self._write_speed_information()
@@ -278,8 +295,7 @@ class NewlyController:
         if self.mode == "started":
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
-            self(f"VP{self.service.cut_dc}")
-            self(f"VK{self.service.move_dc}")
+            self._write_dc_information()
         self("SP2")
         self("SP2")
         self._write_speed_information()
@@ -297,7 +313,6 @@ class NewlyController:
         self("PR")
         self("SP0")
         self._write_speed_information()
-        # "VQ15;VJ24;VS10;PR;PR;PR;PR;PU5481,-14819;BT1;DA128;BC0;BD8;PR;PU8,0;SP0;VQ20;VJ14;VS30;YZ"
 
     #######################
     # SETS FOR PLOTLIKES
@@ -332,7 +347,6 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=data)
 
     def mark(self, x, y):
-        self.mode = "program"
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -347,8 +361,7 @@ class NewlyController:
             self(f"PD{y},{x}")
             self._last_x, self._last_y = x, y
 
-    def goto(self, x, y, long=None, short=None, distance_limit=None):
-        self.mode = "program"
+    def goto(self, x, y):
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -364,33 +377,26 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def set_xy(self, x, y, relative=False):
-        self.connect_if_needed()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append(f"VP{self.service.cut_dc}")
-        command_buffer.append(f"VK{self.service.move_dc}")
-        command_buffer.append("SP2")
-        command_buffer.append("SP2")
-        command_buffer.append(f"VQ{int(round(self.service.default_corner_speed))}")
-        command_buffer.append(
-            f"VJ{int(round(self.service.default_acceleration_distance))}"
-        )
-        command_buffer.append(f"VS{int(round(self.service.moving_speed / 10.0))}")
+        self.realtime_job()
+        self.mode = "jog"
+        self._write_dc_information()
+        self("SP2")
+        self("SP2")
+        self._write_speed_information(speed=self.service.moving_speed, power=0)
         if relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
-            command_buffer.append("PR")
-            command_buffer.append(f"PU{dy},{dx}")
+            self("PR")
+            self(f"PU{dy},{dx}")
             self._last_x += dx
             self._last_y += dy
         else:
             x = int(round(x))
             y = int(round(y))
-            command_buffer.append("PA")
-            command_buffer.append(f"PU{y},{x}")
+            self("PA")
+            self(f"PU{y},{x}")
             self._last_x, self._last_y = x, y
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.close_job()
 
     def get_last_xy(self):
         return self._last_x, self._last_y
@@ -400,40 +406,28 @@ class NewlyController:
     #######################
 
     def move_frame(self, file_index):
-        self.connect_if_needed()
-        self.rapid_mode()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append(f"ZK{file_index}")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "move_frame"
+        self(f"ZK{file_index}")
+        self.close_job()
 
     def draw_frame(self, file_index):
-        self.connect_if_needed()
-        self.rapid_mode()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append(f"ZH{file_index}")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "draw_frame"
+        self(f"ZH{file_index}")
+        self.close_job()
 
     def replay(self, file_index):
-        self.connect_if_needed()
-        self.rapid_mode()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append(f"ZG{file_index}")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "replay"
+        self(f"ZG{file_index}")
+        self.close_job()
 
     def home(self):
-        self.connect_if_needed()
-        self.rapid_mode()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append("RS")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "home"
+        self("RS")
+        self.close_job()
 
     def origin(self):
         self.home()
@@ -445,12 +439,10 @@ class NewlyController:
         # self.connection.write(index=self._machine_index, data=";".join(command_buffer))
 
     def abort(self):
-        self.connect_if_needed()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append("ZQ")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "abort"
+        self("ZQ")
+        self.close_job()
 
     def dwell(self, time_in_ms):
         self.connect_if_needed()
@@ -465,17 +457,16 @@ class NewlyController:
 
     def pause(self):
         self.realtime_job()
+        self.mode = "pause"
         self("ZT")
         self.close_job()
         self.paused = True
 
     def resume(self):
-        self.connect_if_needed()
-        command_buffer = list()
-        command_buffer.append(f"ZZZFile0")
-        command_buffer.append("ZG")
-        command_buffer.append("ZED;")
-        self.connection.write(index=self._machine_index, data=";".join(command_buffer))
+        self.realtime_job()
+        self.mode = "resume"
+        self("ZG")
+        self.close_job()
         self.paused = False
 
     def wait_finished(self):
