@@ -1,7 +1,7 @@
 """
 Newly Controller
 """
-
+import struct
 import time
 
 from meerk40t.newly.mock_connection import MockConnection
@@ -39,11 +39,13 @@ class NewlyController:
 
         self._speed = None
         self._power = None
-        self._acceleration = 24
-        self._scan_speed = 200  # 200 mm/s
         self._relative = False
         self._pwm_frequency = None
         self._realtime = False
+
+        self._unknown_bt = 1
+        self._unknown_bc = 1
+        self._unknown_bd = 1
 
         self.mode = "init"
         self.paused = False
@@ -293,10 +295,10 @@ class NewlyController:
     def rapid_mode(self):
         pass
 
-    def raster_mode(self):
-        if self.mode == "raster":
+    def raster_mode_horizontal(self):
+        if self.mode == "raster_horizontal":
             return
-        self.mode = "raster"
+        self.mode = "raster_horizontal"
         if self.mode == "started":
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
@@ -307,17 +309,30 @@ class NewlyController:
         self._relative = True
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
-        bt = 1
-        self(f"BT{bt}")
+        self(f"BT{self._unknown_bt}")
         power = self.service.default_raster_power if self._power is None else self._power
         self(f"DA{self._map_power(power)}")
-        bc = 0
-        self(f"BC{bc}")
-        bd = 8
-        self(f"BD{bd}")
+        self(f"BC{self._unknown_bc}")
+        self(f"BD{self._unknown_bd}")
         self("PR")
         self("SP0")
         self._write_speed_information()
+
+    def write_scanline(self, bits, dx, dy):
+        cmd = None
+        if dy < 0: # left movement
+            cmd = "YF"
+        elif dy > 0:
+            cmd = "YZ"
+        elif dx < 0:
+            cmd = "XF"
+        elif dx > 0:
+            cmd = "XZ"
+        if cmd is None:
+            return  # 0,0 goes nowhere.
+        count = len(bits)
+        self(struct.pack(">i",count)[1:])
+        self(bits)
 
     #######################
     # SETS FOR PLOTLIKES
