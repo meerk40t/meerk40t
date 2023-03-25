@@ -14,7 +14,7 @@ from meerk40t.core.cutcode.cutcode import CutCode
 
 
 class LaserJob:
-    def __init__(self, label, items, driver=None, priority=0, loops=1):
+    def __init__(self, label, items, driver=None, priority=0, loops=1, outline=None):
         self.items = items
         self.label = label
         self.priority = priority
@@ -41,9 +41,28 @@ class LaserJob:
                 time_cuts = item.duration_cut()
                 time_extra = item.extra_time()
                 self._estimate += time_travel + time_cuts + time_extra
+        self.outline = outline
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
+
+    def bounds(self):
+        if self.outline is None:
+            return None
+        max_x = float("-inf")
+        max_y = float("-inf")
+        min_x = float("inf")
+        min_y = float("inf")
+        for x, y in self.outline:
+            if x > max_x:
+                max_x = x
+            if y > max_y:
+                max_y = y
+            if x < min_x:
+                min_x = x
+            if y < min_y:
+                min_y = y
+        return min_x, min_y, max_x, max_y
 
     @property
     def status(self):
