@@ -11,6 +11,48 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
 
+        def get_inkscape(manual_candidate=None):
+            root_context = kernel.root
+            root_context.setting(str, "inkscape_path", "inkscape.exe")
+            inkscape = ""
+            try:
+                inkscape = root_context.inkscape_path
+            except AttributeError:
+                inkscape = ""
+            system = platform.system()
+            if system == "Darwin":
+                candidates = [
+                    "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
+                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
+                ]
+            elif system == "Windows":
+                candidates = [
+                    "C:/Program Files (x86)/Inkscape/inkscape.exe",
+                    "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
+                    "C:/Program Files/Inkscape/inkscape.exe",
+                    "C:/Program Files/Inkscape/bin/inkscape.exe",
+                ]
+            elif system == "Linux":
+                candidates = [
+                    "/usr/local/bin/inkscape",
+                    "/usr/bin/inkscape",
+                ]
+            else:
+                candidates = []
+            if inkscape and inkscape not in candidates:
+                candidates.insert(0, inkscape)
+            if manual_candidate and manual_candidate not in candidates:
+                candidates.insert(0, manual_candidate)
+            match = None
+            for ink in candidates:
+                if os.path.exists(ink):
+                    match = ink
+                    root_context.inkscape_path = match
+                    break
+            if match is None:
+                inkscape = ""
+            return inkscape
+
         @kernel.console_command(
             "load",
             help=_("inkscape ... load  - load the previous conversion"),
@@ -164,59 +206,22 @@ def plugin(kernel, lifecycle):
             output_type="inkscape",
         )
         def inkscape_locate(channel, _, data, inkpath=None, **kwargs):
-            system = platform.system()
-            if system == "Darwin":
-                inkscape = [
-                    "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
-                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
-                ]
-            elif system == "Windows":
-                inkscape = [
-                    "C:/Program Files (x86)/Inkscape/inkscape.exe",
-                    "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
-                    "C:/Program Files/Inkscape/inkscape.exe",
-                    "C:/Program Files/Inkscape/bin/inkscape.exe",
-                ]
-            elif system == "Linux":
-                inkscape = [
-                    "/usr/local/bin/inkscape",
-                    "/usr/bin/inkscape",
-                ]
-            else:
-                if inkpath:
-                    inkscape = []
-                else:
-                    channel(
-                        _(
-                            "Inkscape location: Platform '{platform}' unknown. No idea where to look"
-                        ).format(platform=platform)
-                    )
-                    return
-            if inkpath:
-                inkscape.insert(0, inkpath)
             inkscape_path, filename = data
-            channel(_("----------"))
-            channel(_("Finding Inkscape"))
-            match = None
-            for ink in inkscape:
-                if os.path.exists(ink):
-                    match = ink
-                    channel(_("Searching: {path} -- Result: Success").format(path=ink))
-                else:
-                    channel(_("Searching: {path} -- Result: Fail").format(path=ink))
-
-            channel(_("----------"))
+            match = get_inkscape(inkpath)
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
-            if match is None:
+            if match:
+                channel(
+                    _("Inkscape location: {match}").format(match=match)
+                )
+            else:
                 root_context.inkscape_path = "inkscape.exe"
                 channel(
                     _(
                         "Inkscape location: Inkscape not found in default installation directories"
                     )
                 )
-                return
-            root_context.inkscape_path = match
+
             return "inkscape", (match, filename)
 
         @kernel.console_command(
@@ -232,45 +237,6 @@ def plugin(kernel, lifecycle):
         def check_for_features(pathname, **kwargs):
 
             # We try to establish if a file contains certain features...
-            def get_inkscape():
-                root_context = kernel.root
-                root_context.setting(str, "inkscape_path", "inkscape.exe")
-                inkscape = ""
-                try:
-                    inkscape = root_context.inkscape_path
-                except AttributeError:
-                    inkscape = ""
-                system = platform.system()
-                if system == "Darwin":
-                    candidates = [
-                        "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
-                        "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
-                    ]
-                elif system == "Windows":
-                    candidates = [
-                        "C:/Program Files (x86)/Inkscape/inkscape.exe",
-                        "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
-                        "C:/Program Files/Inkscape/inkscape.exe",
-                        "C:/Program Files/Inkscape/bin/inkscape.exe",
-                    ]
-                elif system == "Linux":
-                    candidates = [
-                        "/usr/local/bin/inkscape",
-                        "/usr/bin/inkscape",
-                    ]
-                else:
-                    candidates = []
-                if inkscape:
-                    candidates.insert(0, inkscape)
-                match = None
-                for ink in candidates:
-                    if os.path.exists(ink):
-                        match = ink
-                        root_context.inkscape_path = match
-                        break
-                if match is None:
-                    inkscape = ""
-                return inkscape
 
             source = pathname
             if pathname.lower().endswith("svgz"):
