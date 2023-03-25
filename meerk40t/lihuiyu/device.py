@@ -483,7 +483,7 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
-                self.spooler.laserjob(list(timed_fire()), label=label, helper=True)
+                self.spooler.laserjob(list(timed_fire()), label=label, helper=True, outline=[self.native] * 4)
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -509,6 +509,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
+                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil)
                 )
             else:
                 channel(_("Busy"))
@@ -943,6 +944,16 @@ class LihuiyuDevice(Service, ViewPort):
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
+
+    def outline_move_relative(self, dx, dy):
+        x, y = self.native
+        new_x = x + dx
+        new_y = y + dy
+        min_x = min(x, new_x)
+        min_y = min(y, new_y)
+        max_x = max(x, new_x)
+        max_y = max(y, new_y)
+        return (min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)
 
 
     @property
