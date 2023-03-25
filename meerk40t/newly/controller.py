@@ -182,10 +182,6 @@ class NewlyController:
 
         @return:
         """
-        self._realtime = False
-        self._speed = None
-        self._power = None
-        self(f"ZZZFile{self.service.file_index}")
 
         outline = None
         try:
@@ -193,6 +189,14 @@ class NewlyController:
             outline = job.outline
         except AttributeError:
             pass
+
+        if outline is not None:
+            self.set_xy(*outline[0], relative=False)
+
+        self._realtime = False
+        self._speed = None
+        self._power = None
+        self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
         self("GZ")
         self.mode = "program"
