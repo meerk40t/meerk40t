@@ -163,6 +163,7 @@ class NewlyController:
             self("SP2")
             self._write_speed_information(speed=100, power=0)
             self("PR")
+            self._relative = True
             for pt in outline:
                 self.goto(*pt)
             self.goto(x, y)
@@ -181,20 +182,20 @@ class NewlyController:
 
         @return:
         """
-        self._realtime = True
+        self._realtime = False
         self._speed = None
         self._power = None
         self(f"ZZZFile{self.service.file_index}")
 
         outline = None
         try:
-            print(job.outline)
+            # print(job.outline)
             outline = job.outline
         except AttributeError:
             pass
         self._write_frame(outline)
         self("GZ")
-        self.mode = "started"
+        self.mode = "program"
 
     def close_job(self, job=None):
         """
@@ -387,6 +388,7 @@ class NewlyController:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
             self("PR")
+            self._relative = True
             self(f"PU{dy},{dx}")
             self._last_x += dx
             self._last_y += dy
@@ -394,6 +396,7 @@ class NewlyController:
             x = int(round(x))
             y = int(round(y))
             self("PA")
+            self._relative = False
             self(f"PU{y},{x}")
             self._last_x, self._last_y = x, y
         self.close_job()

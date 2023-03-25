@@ -84,7 +84,8 @@ class NewlyDriver:
         return priority <= 0 and self.paused
 
     def job_start(self, job):
-        if job.helper:
+        helper = getattr(job, "helper", False)
+        if helper:
             self.connection.realtime_job(job)
         else:
             self.connection.open_job(job)
