@@ -1,5 +1,6 @@
 import gzip
 import os.path
+from pathlib import Path
 import platform
 from subprocess import PIPE, run, TimeoutExpired
 
@@ -7,51 +8,139 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel.kernel import get_safe_path
 
 
+def get_inkscape(context, manual_candidate=None):
+    root_context = context
+    root_context.setting(str, "inkscape_path", "inkscape.exe")
+    inkscape = ""
+    try:
+        inkscape = root_context.inkscape_path
+    except AttributeError:
+        inkscape = ""
+    system = platform.system()
+    if system == "Darwin":
+        candidates = [
+            "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
+            "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
+        ]
+    elif system == "Windows":
+        candidates = [
+            "C:/Program Files (x86)/Inkscape/inkscape.exe",
+            "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
+            "C:/Program Files/Inkscape/inkscape.exe",
+            "C:/Program Files/Inkscape/bin/inkscape.exe",
+        ]
+    elif system == "Linux":
+        candidates = [
+            "/usr/local/bin/inkscape",
+            "/usr/bin/inkscape",
+        ]
+    else:
+        candidates = []
+    if inkscape and inkscape not in candidates:
+        candidates.insert(0, inkscape)
+    if manual_candidate and manual_candidate not in candidates:
+        candidates.insert(0, manual_candidate)
+    match = None
+    for ink in candidates:
+        if os.path.exists(ink):
+            match = ink
+            root_context.inkscape_path = match
+            break
+    if match is None:
+        inkscape = ""
+    return inkscape
+
+class MultiLoader():
+    """
+    This module makes use of inkscape to convert a multitude of format into svg :
+    """
+    @staticmethod
+    def load_types():
+        yield "Inkscape supported files", ("pdf",  "pdxf", "eps", "cdr", "cmx", "ccx", "cdt", "wmf", "vsd", "ai"), "image/svg+xml"
+        # yield "Portable Document Format files", ("pdf",  "pdxf", "eps"), "image/svg+xml"
+        # yield "Corel Draw files", ("cdr", "cmx", "ccx", "cdt"), "image/svg+xml"
+        # yield "Windows Metafile files", ("wmf",), "image/svg+xml"
+        # yield "Visio files", ("vsd",), "image/svg+xml"
+        # yield "Adobe Illustrator files", ("ai",), "image/svg+xml"
+
+    @staticmethod
+    def load(kernel_service, elements_service, pathname, **kwargs):
+        """
+        Load content by means of inkscapes ability to convert
+        multiple vector formats into svg.
+        Requires the installation of inkscape on your system.
+        """
+        # Elemental calls this routine claiming it would be the kernel...
+        if hasattr(kernel_service, "kernel"):
+            kernel = kernel_service.kernel
+        else:
+            kernel = kernel_service
+
+        safe_dir = os.path.realpath(get_safe_path(kernel.name))
+
+        # Establish the standard svg-handler first
+        handler = None
+        for loader, loader_name, sname in kernel.find("load"):
+            for description, extensions, mimetype in loader.load_types():
+                if "svg" in extensions:
+                    handler = loader
+                    break
+
+        context_root = kernel.root
+        safe_dir = os.path.realpath(get_safe_path(kernel.name))
+        timeout_value = None
+
+        inkscape = get_inkscape(context_root)
+        if not inkscape:
+            raise BadFileError("Inkscape not found")
+
+        try:
+            c = run([inkscape, "-V"], timeout=timeout_value, stdout=PIPE)
+        except (FileNotFoundError, TimeoutExpired):
+            # Return std response
+            # print ("Error while getting version")
+            return pathname
+
+        version = c.stdout.decode("utf-8")
+
+        svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+
+        # Check Version of Inkscape
+        if "inkscape 1." in version.lower():
+            cmd = [
+                inkscape,
+                "--export-plain-svg",
+                f"--export-filename={svg_temp_file}",
+                pathname,
+            ]
+        else:
+            cmd = [
+                inkscape,
+                "--export-plain-svg",
+                svg_temp_file,
+                pathname,
+            ]
+        try:
+            c = run(cmd, timeout=timeout_value, stdout=PIPE)
+            if c.returncode == 1:
+                return False
+            filename_to_process = svg_temp_file
+            preproc = elements_service.lookup(f"preprocessor/.svg")
+            if preproc is not None:
+                filename_to_process = preproc(filename_to_process)
+            results = handler.load(
+                elements_service, elements_service, filename_to_process
+            )
+            return results
+        except (FileNotFoundError, TimeoutExpired) as e:
+            # Return std response
+            raise BadFileError(str(e)) from e
+
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
 
-        def get_inkscape(manual_candidate=None):
-            root_context = kernel.root
-            root_context.setting(str, "inkscape_path", "inkscape.exe")
-            inkscape = ""
-            try:
-                inkscape = root_context.inkscape_path
-            except AttributeError:
-                inkscape = ""
-            system = platform.system()
-            if system == "Darwin":
-                candidates = [
-                    "/Applications/Inkscape.app/Contents/MacOS/Inkscape",
-                    "/Applications/Inkscape.app/Contents/Resources/bin/inkscape",
-                ]
-            elif system == "Windows":
-                candidates = [
-                    "C:/Program Files (x86)/Inkscape/inkscape.exe",
-                    "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
-                    "C:/Program Files/Inkscape/inkscape.exe",
-                    "C:/Program Files/Inkscape/bin/inkscape.exe",
-                ]
-            elif system == "Linux":
-                candidates = [
-                    "/usr/local/bin/inkscape",
-                    "/usr/bin/inkscape",
-                ]
-            else:
-                candidates = []
-            if inkscape and inkscape not in candidates:
-                candidates.insert(0, inkscape)
-            if manual_candidate and manual_candidate not in candidates:
-                candidates.insert(0, manual_candidate)
-            match = None
-            for ink in candidates:
-                if os.path.exists(ink):
-                    match = ink
-                    root_context.inkscape_path = match
-                    break
-            if match is None:
-                inkscape = ""
-            return inkscape
 
         @kernel.console_command(
             "load",
@@ -207,7 +296,7 @@ def plugin(kernel, lifecycle):
         )
         def inkscape_locate(channel, _, data, inkpath=None, **kwargs):
             inkscape_path, filename = data
-            match = get_inkscape(inkpath)
+            match = get_inkscape(kernel.root, inkpath)
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")
             if match:
@@ -266,8 +355,8 @@ def plugin(kernel, lifecycle):
                                 entry[0] = True
                                 if entry[2] > needs_conversion:
                                     needs_conversion = entry[2]
-
-            inkscape = get_inkscape()
+            context = kernel.root
+            inkscape = get_inkscape(context)
             timeout_value = None
             if needs_conversion == 0:
                 return pathname
@@ -454,3 +543,4 @@ def plugin(kernel, lifecycle):
             },
         ]
         kernel.register_choices("preferences", choices)
+        kernel.register("load/MultiLoader", MultiLoader)
