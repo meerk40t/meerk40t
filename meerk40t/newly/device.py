@@ -542,7 +542,7 @@ class NewlyDevice(Service, ViewPort):
                     job = LaserJob(filename, list(data.plan), driver=driver, outline=data.outline)
 
                     def write(index, data):
-                        f.write(bytes(data, encoding="latin-1"))
+                        f.write(data)
 
                     driver.connection.connect_if_needed()
                     driver.connection.connection.write = write

@@ -75,13 +75,13 @@ class NewlyControllerPanel(wx.ScrolledWindow):
 
     def update_text(self, text):
         with self._buffer_lock:
-            self._buffer.append(text)
+            self._buffer.append(f"{text}\n")
         self.context.signal("newly_controller_update")
 
     @signal_listener("newly_controller_update")
     def update_text_gui(self, origin):
         with self._buffer_lock:
-            buffer = "\n".join(self._buffer)
+            buffer = "".join(self._buffer)
             self._buffer.clear()
         self.text_usb_log.AppendText(buffer)
 

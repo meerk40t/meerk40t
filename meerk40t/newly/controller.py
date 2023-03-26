@@ -54,7 +54,11 @@ class NewlyController:
         self.command_buffer = []
 
     def __call__(self, cmd, *args, **kwargs):
-        self.command_buffer.append(cmd)
+        if isinstance(cmd, str):
+            # Any string data sent is latin-1 encoded.
+            self.command_buffer.append(cmd.encode("latin-1"))
+        else:
+            self.command_buffer.append(cmd)
 
     def set_disable_connect(self, status):
         self._disable_connect = status
@@ -175,7 +179,7 @@ class NewlyController:
 
     def _execute_job(self):
         self("ZED")
-        cmd = ";".join(self.command_buffer) + ";"
+        cmd = b";".join(self.command_buffer) + b";"
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
         self.command_buffer.clear()
@@ -275,7 +279,9 @@ class NewlyController:
         self(f"VQ{int(round(settings['corner_speed']))}")
         self(f"VJ{int(round(settings['acceleration_length']))}")
         self(f"SP1")
-        power_at_program_change = self.service.default_cut_power if self._power is None else self._power
+        power_at_program_change = (
+            self.service.default_cut_power if self._power is None else self._power
+        )
         if power is not None:
             power_at_program_change = power
         self(f"DA{self._map_power(power_at_program_change)}")
@@ -316,7 +322,7 @@ class NewlyController:
         cmd += struct.pack(">i", count)[1:]
         binary = "".join([str(b) for b in bits])
         cmd += int(binary, 2).to_bytes(byte_length, "little")
-        self(cmd.decode("latin-1"))
+        self(cmd)
         if left:
             self._last_x -= count
         elif right:
