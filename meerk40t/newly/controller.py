@@ -320,7 +320,7 @@ class NewlyController:
 
     def write_scanline(self, bits, dx, dy):
         cmd = None
-        if dy < 0: # left movement
+        if dy < 0:  # left movement
             cmd = "YF"
         elif dy > 0:
             cmd = "YZ"
@@ -331,7 +331,7 @@ class NewlyController:
         if cmd is None:
             return  # 0,0 goes nowhere.
         count = len(bits)
-        self(struct.pack(">i",count)[1:])
+        self(struct.pack(">i", count)[1:])
         self(bits)
 
     #######################
@@ -444,6 +444,43 @@ class NewlyController:
         self.mode = "replay"
         self(f"ZG{file_index}")
         self.close_job()
+
+    def home_speeds(self, x_speed, y_speed, m_speed):
+        self.realtime_job()
+        self.mode = "home_speeds"
+        self(f"VX{int(round(x_speed / 10))}")
+        self(f"VY{int(round(y_speed / 10))}")
+        self(f"VM{int(round(m_speed / 10))}")
+        self.close_job()
+
+    def z_relative(self, amount, speed=100):
+        self.realtime_job()
+        self.mode = "zmove"
+        self(f"CV{int(round(speed / 10))}")
+        self(f"CR{int(round(amount))}")
+        self.close_job()
+
+    def z_absolute(self, z_position, speed=100):
+        self.realtime_job()
+        self.mode = "zmove"
+        self(f"CV{int(round(speed / 10))}")
+        self(f"CU{int(round(z_position))}")
+        self.close_job()
+
+    def w_relative(self, amount, speed=100):
+        self.realtime_job()
+        self.mode = "wmove"
+        self(f"WV{int(round(speed / 10))}")
+        self(f"WR{int(round(amount))}")
+        self.close_job()
+
+    def w_absolute(self, w_position, speed=100):
+        self.realtime_job()
+        self.mode = "wmove"
+        self(f"WV{int(round(speed / 10))}")
+        self(f"WU{int(round(w_position))}")
+        self.close_job()
+
 
     def home(self):
         self.realtime_job()
