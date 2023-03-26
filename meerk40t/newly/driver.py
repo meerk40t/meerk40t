@@ -134,19 +134,20 @@ class NewlyDriver:
         for q in queue:
             settings = q.settings
             con.set_settings(settings)
-            con.program_mode()
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
                 self._aborting = False
                 return
             if isinstance(q, LineCut):
+                con.program_mode()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 con.mark(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
+                con.program_mode()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -167,6 +168,7 @@ class NewlyDriver:
                     con.mark(*p)
                     t += step_size
             elif isinstance(q, PlotCut):
+                con.program_mode()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -192,12 +194,16 @@ class NewlyDriver:
                         con.power(percent_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
-                pass
+                con.program_mode()
+                con.dwell(q.dwell_time)
             elif isinstance(q, WaitCut):
-                pass
+                con.program_mode()
+                con.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
+                con.program_mode()
                 con.goto(0, 0)
             elif isinstance(q, GotoCut):
+                con.program_mode()
                 con.goto(0, 0)
             elif isinstance(q, SetOriginCut):
                 pass

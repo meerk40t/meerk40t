@@ -205,7 +205,6 @@ class NewlyController:
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
         self("GZ")
-        self.program_mode()
 
     def close_job(self, job=None):
         """
@@ -459,13 +458,13 @@ class NewlyController:
         self._write_raster_speed_info()
         self._relative = True
         self(f"PR;PR;PR;PR")
-        # Moves to the start postion of the raster.
+        # Moves to the start position of the raster.
         self(f"BT{self.raster_bit_depth}")
         self(f"BC{bc}")
         self(f"BD{bd}")
         self("SP0")
         self._write_raster_speed_info()
-
+        # IN;PL5;VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;PR;PR;PR;PR;PU1000,-394;BT1;DA40;BC0;BD4;PR;PU-4,0;SP0;VQ20;VJ8;VS9;YF
         # IN;PL5;VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;PR;PR;PR;PR;PU1000,-1147;BT8;BC0;BD4;SP0;VQ20;VJ8;VS6;YZ...
 
 
