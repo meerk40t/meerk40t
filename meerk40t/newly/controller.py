@@ -45,9 +45,7 @@ class NewlyController:
         self._pwm_frequency = None
         self._realtime = False
 
-        self._unknown_bt = 1
-        self._unknown_bc = 1
-        self._unknown_bd = 1
+        self.raster_bit_depth = 1
 
         self.mode = "init"
         self.paused = False
@@ -169,7 +167,7 @@ class NewlyController:
             self._write_dc_information()
             self("SP2")
             self("SP2")
-            self._write_speed_information(speed=100, power=0)
+            self._write_vector_speed_info(speed=100, power=0)
             self("PR")
             self._relative = True
             for pt in outline:
@@ -226,8 +224,14 @@ class NewlyController:
         if self.service.autoplay and not self._realtime:
             self.replay(self.service.file_index)
 
-    def _map_speed(self, speed):
-        if speed > 100:
+    def _map_raster_speed(self, speed):
+        v = int(round(speed / 10))
+        if v == 0:
+            v = 1
+        return v
+
+    def _map_vector_speed(self, speed):
+        if speed >= 93:
             return int(round(speed / 10))
         if speed >= 15:
             return 162 + int(round(speed))
@@ -252,7 +256,7 @@ class NewlyController:
         self(f"VP{self.service.cut_dc}")
         self(f"VK{self.service.move_dc}")
 
-    def _write_speed_information(self, speed=None, power=None):
+    def _write_vector_speed_info(self, speed=None, power=None):
         # Calculate speed and lookup factors in chart.
         speed_at_program_change = self._speed
         if speed_at_program_change is None:
@@ -285,7 +289,7 @@ class NewlyController:
         if power is not None:
             power_at_program_change = power
         self(f"DA{self._map_power(power_at_program_change)}")
-        self(f"VS{self._map_speed(speed_at_program_change)}")
+        self(f"VS{self._map_vector_speed(speed_at_program_change)}")
 
     def program_mode(self):
         if self.mode == "program":
@@ -296,7 +300,7 @@ class NewlyController:
         self._write_dc_information()
         self("SP2")
         self("SP2")
-        self._write_speed_information()
+        self._write_vector_speed_info()
         self._relative = True
         self("PR")
 
@@ -401,6 +405,41 @@ class NewlyController:
                 previous_x, previous_y = x, y
         commit_scanline()
 
+    def _write_raster_speed_info(self, speed=None, power=None):
+        # Calculate speed and lookup factors in chart.
+        speed_at_program_change = self._speed
+        if speed_at_program_change is None:
+            speed_at_program_change = self.service.default_raster_speed
+        if speed is not None:
+            speed_at_program_change = speed
+        chart = self.service.speedchart
+        smallest_difference = float("inf")
+        closest_index = None
+        for i, c in enumerate(chart):
+            chart_speed = c.get("speed", 0)
+            delta_speed = chart_speed - speed_at_program_change
+            if (
+                chart_speed > speed_at_program_change
+                and smallest_difference > delta_speed
+            ):
+                smallest_difference = delta_speed
+                closest_index = i
+        if closest_index is not None:
+            settings = chart[closest_index]
+        else:
+            settings = chart[-1]
+
+        self(f"VQ{int(round(settings['corner_speed']))}")
+        self(f"VJ{int(round(settings['acceleration_length']))}")
+        self(f"SP1")
+        power_at_program_change = (
+            self.service.default_raster_power if self._power is None else self._power
+        )
+        if power is not None:
+            power_at_program_change = power
+        self(f"DA{self._map_power(power_at_program_change)}")
+        self(f"VS{self._map_raster_speed(speed_at_program_change)}")
+
     def raster_mode_horizontal(self):
         if self.mode == "raster_horizontal":
             return
@@ -411,11 +450,11 @@ class NewlyController:
             self._write_dc_information()
         self("SP2")
         self("SP2")
-        self._write_speed_information()
+        self._write_vector_speed_info()
         self._relative = True
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
-        self(f"BT{self._unknown_bt}")
+        self(f"BT{self.raster_bit_depth}")
         power = (
             self.service.default_raster_power if self._power is None else self._power
         )
@@ -426,7 +465,7 @@ class NewlyController:
         self(f"BD{bd}")
         self("PR")
         self("SP0")
-        self._write_speed_information()
+        self._write_raster_speed_info()
 
     def raster_mode_vertical(self):
         if self.mode == "raster_vertical":
@@ -438,11 +477,11 @@ class NewlyController:
             self._write_dc_information()
         self("SP2")
         self("SP2")
-        self._write_speed_information()
+        self._write_vector_speed_info()
         self._relative = True
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
-        self(f"BT{self._unknown_bt}")
+        self(f"BT{self.raster_bit_depth}")
         power = (
             self.service.default_raster_power if self._power is None else self._power
         )
@@ -453,7 +492,7 @@ class NewlyController:
         self(f"BD{bd}")
         self("PR")
         self("SP0")
-        self._write_speed_information()
+        self._write_raster_speed_info()
 
     #######################
     # SETS FOR PLOTLIKES
@@ -476,7 +515,7 @@ class NewlyController:
         if self._speed != old:
             new_init = True
         if new_init:
-            self._write_speed_information()
+            self._write_vector_speed_info()
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -523,7 +562,7 @@ class NewlyController:
         self._write_dc_information()
         self("SP2")
         self("SP2")
-        self._write_speed_information(speed=self.service.moving_speed, power=0)
+        self._write_vector_speed_info(speed=self.service.moving_speed, power=0)
         if relative:
             dx = int(round(x - self._last_x))
             dy = int(round(y - self._last_y))
