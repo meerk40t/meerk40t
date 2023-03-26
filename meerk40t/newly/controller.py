@@ -430,7 +430,6 @@ class NewlyController:
             settings = chart[-1]
         self(f"VQ{int(round(settings['corner_speed']))}")
         self(f"VJ{int(round(settings['acceleration_length']))}")
-        self(f"SP1")
         power_at_program_change = (
             self.service.default_raster_power if self._power is None else self._power
         )
