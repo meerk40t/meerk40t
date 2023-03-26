@@ -444,6 +444,7 @@ class NewlyController:
         if self.mode == "raster_horizontal":
             return
         self.mode = "raster_horizontal"
+        self("IN")
         if self.mode == "started":
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
@@ -471,6 +472,7 @@ class NewlyController:
         if self.mode == "raster_vertical":
             return
         self.mode = "raster_vertical"
+        self("IN")
         if self.mode == "started":
             if self._pwm_frequency is not None:
                 self(f"PL{self._pwm_frequency}")
