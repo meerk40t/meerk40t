@@ -1,5 +1,3 @@
-
-
 def plugin(service, lifecycle):
     if lifecycle == "service":
         return "provider/device/newly"
@@ -15,6 +13,7 @@ def plugin(service, lifecycle):
         )
         from .newlycontroller import NewlyController
         from .newlyconfig import NewlyConfiguration
+
         # from .operationproperties import NewlyOperationPanel
 
         service.register("window/Controller", NewlyController)
@@ -60,8 +59,9 @@ def plugin(service, lifecycle):
             icons8_rectangular_50,
             icons8_play_50,
             icons8_circled_stop_50,
-            icons8_circled_play_50
+            icons8_circled_play_50,
         )
+
         _ = service.kernel.translation
         selected = service.setting(int, "file_index", 1)
         autoplay = service.setting(bool, "autoplay", True)
@@ -70,9 +70,7 @@ def plugin(service, lifecycle):
             {
                 "label": _("File {index}").format(index=selected),
                 "icon": icons8_file_50,
-                "tip": _(
-                    "Select active file to use for machine."
-                ),
+                "tip": _("Select active file to use for machine."),
                 "identifier": "file_index",
                 "object": service,
                 "priority": 1,
@@ -134,12 +132,11 @@ def plugin(service, lifecycle):
                 "toggle_attr": "autoplay",
                 "object": service,
                 "priority": 1,
-                "toggle":
-                    {
-                        "label": _("Send & Start"),
-                        "icon": icons8_circled_play_50,
-                        "signal": "autoplay",
-                    },
+                "toggle": {
+                    "label": _("Send & Start"),
+                    "icon": icons8_circled_play_50,
+                    "signal": "autoplay",
+                },
             },
         )
         service.register(
@@ -150,7 +147,9 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Draw a bounding rectangle of the object saved in the machine"
                 ),
-                "action": lambda v: service("draw_frame {index}\n".format(index=service.file_index)),
+                "action": lambda v: service(
+                    "draw_frame {index}\n".format(index=service.file_index)
+                ),
                 "priority": 3,
             },
         )
@@ -162,7 +161,9 @@ def plugin(service, lifecycle):
                 "tip": _(
                     "Move the bounding rectangle of the object saved in the machine"
                 ),
-                "action": lambda v: service("move_frame {index}\n".format(index=service.file_index)),
+                "action": lambda v: service(
+                    "move_frame {index}\n".format(index=service.file_index)
+                ),
                 "priority": 4,
             },
         )
@@ -172,7 +173,9 @@ def plugin(service, lifecycle):
                 "label": _("Replay"),
                 "icon": icons8_play_50,
                 "tip": _("Replay the file saved in the machine"),
-                "action": lambda v: service("replay {index}\n".format(index=service.file_index)),
+                "action": lambda v: service(
+                    "replay {index}\n".format(index=service.file_index)
+                ),
                 "priority": 5,
             },
         )

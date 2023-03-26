@@ -333,8 +333,12 @@ class NewlyController:
             self._last_y += count
 
     def raster(self, raster_cut: RasterCut):
-        self._speed = raster_cut.settings.get("speed", self.service.default_raster_speed)
-        self._power = raster_cut.settings.get("power", self.service.default_raster_power)
+        self._speed = raster_cut.settings.get(
+            "speed", self.service.default_raster_speed
+        )
+        self._power = raster_cut.settings.get(
+            "power", self.service.default_raster_power
+        )
         scanline = []
         increasing = True
 
@@ -412,7 +416,9 @@ class NewlyController:
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
         self(f"BT{self._unknown_bt}")
-        power = self.service.default_raster_power if self._power is None else self._power
+        power = (
+            self.service.default_raster_power if self._power is None else self._power
+        )
         self(f"DA{self._map_power(power)}")
         bc = 0
         bd = 1
@@ -437,7 +443,9 @@ class NewlyController:
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
         self(f"BT{self._unknown_bt}")
-        power = self.service.default_raster_power if self._power is None else self._power
+        power = (
+            self.service.default_raster_power if self._power is None else self._power
+        )
         self(f"DA{self._map_power(power)}")
         bc = 0
         bd = 1

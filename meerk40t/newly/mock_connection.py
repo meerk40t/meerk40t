@@ -79,5 +79,5 @@ class MockConnection:
     def _read_confirmation(self, index=0, attempt=0):
         self.channel("1")
 
-    def _write_bulk(self, index=0, packet: str=None):
+    def _write_bulk(self, index=0, packet: str = None):
         self.channel(packet)

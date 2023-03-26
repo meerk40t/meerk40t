@@ -539,7 +539,9 @@ class NewlyDevice(Service, ViewPort):
             try:
                 with open(filename, "wb") as f:
                     driver = NewlyDriver(self, force_mock=True)
-                    job = LaserJob(filename, list(data.plan), driver=driver, outline=data.outline)
+                    job = LaserJob(
+                        filename, list(data.plan), driver=driver, outline=data.outline
+                    )
 
                     def write(index, data):
                         f.write(data)

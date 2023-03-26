@@ -264,7 +264,9 @@ class USBConnection:
                 #####################################
                 # endpoint, data, timeout
 
-                length_data = struct.pack(">h", packet_length)  # Big-endian size write out.
+                length_data = struct.pack(
+                    ">h", packet_length
+                )  # Big-endian size write out.
                 self.channel(f"Sending Length: {length_data}")
                 dev.write(
                     endpoint=WRITE_INTERRUPT, data=length_data, timeout=self.timeout
@@ -288,9 +290,7 @@ class USBConnection:
                 #####################################
                 # endpoint, data, timeout
                 self.channel(f"Writing Data")
-                dev.write(
-                    endpoint=WRITE_BULK, data=packet, timeout=self.timeout
-                )
+                dev.write(endpoint=WRITE_BULK, data=packet, timeout=self.timeout)
                 self.channel(f"Data Written.")
 
                 data = data[packet_length:]
@@ -320,4 +320,3 @@ class USBConnection:
                     self.open(index)
                 except ConnectionError:
                     continue
-
