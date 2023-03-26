@@ -641,6 +641,12 @@ class NewlyController:
         self(f"WU{int(round(w_position))}")
         self.close_job()
 
+    def pulse(self, pulse_time_ms):
+        self.realtime_job()
+        self.mode = "pulse"
+        self.dwell(pulse_time_ms)
+        self.close_job()
+
     def home(self):
         self.realtime_job()
         self.mode = "home"
@@ -672,7 +678,8 @@ class NewlyController:
     def dwell(self, time_in_ms):
         if self._pwm_frequency is not None:
             self(f"PL{self._pwm_frequency}")
-        self(f"DA{self._power}")
+        power = self.service.default_cut_power if self._power is None else self._power
+        self(f"DA{self._map_power(power)}")
         while time_in_ms > 255:
             time_in_ms -= 255
             self("TX255")

@@ -413,6 +413,9 @@ class NewlyDriver:
         """
         pass
 
+    def pulse(self, pulse_time):
+        self.connection.pulse(pulse_time)
+
     def dwell(self, time_in_ms):
         """
         Requests that the laser fire in place for the given time period. This could be done in a series of commands,
