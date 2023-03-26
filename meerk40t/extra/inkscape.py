@@ -1,8 +1,7 @@
 import gzip
 import os.path
-from pathlib import Path
 import platform
-from subprocess import PIPE, run, TimeoutExpired
+from subprocess import PIPE, TimeoutExpired, run
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel.kernel import get_safe_path
@@ -138,7 +137,7 @@ class MultiLoader:
             if c.returncode == 1:
                 return False
             filename_to_process = svg_temp_file
-            preproc = elements_service.lookup(f"preprocessor/.svg")
+            preproc = elements_service.lookup("preprocessor/.svg")
             if preproc is not None:
                 filename_to_process = preproc(filename_to_process)
             results = handler.load(
