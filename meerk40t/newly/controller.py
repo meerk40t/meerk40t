@@ -1,9 +1,11 @@
 """
 Newly Controller
 """
+import math
 import struct
 import time
 
+from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.newly.mock_connection import MockConnection
 from meerk40t.newly.usb_connection import USBConnection
 
@@ -295,6 +297,100 @@ class NewlyController:
     def rapid_mode(self):
         pass
 
+    def scanline(self, bits, right=False, left=False, top=False, bottom=False):
+        cmd = None
+        if left:  # left movement
+            cmd = bytearray(b"YF")
+        elif right:
+            cmd = bytearray(b"YZ")
+            bits = bits[::-1]
+        elif top:
+            cmd = bytearray(b"XF")
+        elif bottom:
+            cmd = bytearray(b"XZ")
+            bits = bits[::-1]
+        if cmd is None:
+            return  # 0,0 goes nowhere.
+        count = len(bits)
+        byte_length = int(math.ceil(count / 8))
+        cmd += struct.pack(">i", count)[1:]
+        binary = "".join([str(b) for b in bits])
+        cmd += int(binary, 2).to_bytes(byte_length, "little")
+        self(cmd.decode("latin-1"))
+        if left:
+            self._last_x -= count
+        elif right:
+            self._last_x += count
+        elif top:
+            self._last_y -= count
+        elif right:
+            self._last_y += count
+
+    def raster(self, raster_cut: RasterCut):
+        self._speed = raster_cut.settings.get("speed", self.service.default_raster_speed)
+        self._power = raster_cut.settings.get("power", self.service.default_raster_power)
+        scanline = []
+        increasing = True
+
+        def commit_scanline():
+            if scanline:
+                # If there is a scanline commit the scanline.
+                if raster_cut.horizontal:
+                    # Horizontal Raster.
+                    if increasing:
+                        self.scanline(scanline, right=True)
+                        scanline.clear()
+                    else:
+                        self.scanline(scanline, left=True)
+                        scanline.clear()
+                else:
+                    # Vertical raster.
+                    if increasing:
+                        self.scanline(scanline, bottom=True)
+                        scanline.clear()
+                    else:
+                        self.scanline(scanline, top=True)
+                        scanline.clear()
+
+        previous_x, previous_y = raster_cut.plot.initial_position_in_scene()
+        self.goto(previous_x, previous_y)
+
+        if raster_cut.horizontal:
+            self.raster_mode_horizontal()
+            for x, y, on in raster_cut.plot.plot():
+                dx = x - previous_x
+                dy = y - previous_y
+                if dx < 0 and increasing or dx > 0 and not increasing:
+                    # X direction has switched.
+                    commit_scanline()
+                    increasing = not increasing
+                if dy != 0:
+                    # We are moving in the Y direction.
+                    commit_scanline()
+                    self.goto(x, y)
+                if dx != 0:
+                    # Normal move, extend bytes.
+                    scanline.extend([int(on)] * abs(dx))
+                previous_x, previous_y = x, y
+        else:
+            self.raster_mode_vertical()
+            for x, y, on in raster_cut.plot.plot():
+                dx = x - previous_x
+                dy = y - previous_y
+                if dy < 0 and increasing or dy > 0 and not increasing:
+                    # Y direction has switched.
+                    commit_scanline()
+                    increasing = not increasing
+                if dx != 0:
+                    # We are moving in the X direction.
+                    commit_scanline()
+                    self.goto(x, y)
+                if dy != 0:
+                    # Normal move, extend bytes
+                    scanline.extend([int(on)] * abs(dx))
+                previous_x, previous_y = x, y
+        commit_scanline()
+
     def raster_mode_horizontal(self):
         if self.mode == "raster_horizontal":
             return
@@ -312,27 +408,38 @@ class NewlyController:
         self(f"BT{self._unknown_bt}")
         power = self.service.default_raster_power if self._power is None else self._power
         self(f"DA{self._map_power(power)}")
-        self(f"BC{self._unknown_bc}")
-        self(f"BD{self._unknown_bd}")
+        bc = 0
+        bd = 1
+        self(f"BC{bc}")
+        self(f"BD{bd}")
         self("PR")
         self("SP0")
         self._write_speed_information()
 
-    def write_scanline(self, bits, dx, dy):
-        cmd = None
-        if dy < 0:  # left movement
-            cmd = "YF"
-        elif dy > 0:
-            cmd = "YZ"
-        elif dx < 0:
-            cmd = "XF"
-        elif dx > 0:
-            cmd = "XZ"
-        if cmd is None:
-            return  # 0,0 goes nowhere.
-        count = len(bits)
-        self(struct.pack(">i", count)[1:])
-        self(bits)
+    def raster_mode_vertical(self):
+        if self.mode == "raster_vertical":
+            return
+        self.mode = "raster_vertical"
+        if self.mode == "started":
+            if self._pwm_frequency is not None:
+                self(f"PL{self._pwm_frequency}")
+            self._write_dc_information()
+        self("SP2")
+        self("SP2")
+        self._write_speed_information()
+        self._relative = True
+        self(f"PR;PR;PR;PR")
+        # Moves to the start postion of the raster.
+        self(f"BT{self._unknown_bt}")
+        power = self.service.default_raster_power if self._power is None else self._power
+        self(f"DA{self._map_power(power)}")
+        bc = 0
+        bd = 1
+        self(f"BC{bc}")
+        self(f"BD{bd}")
+        self("PR")
+        self("SP0")
+        self._write_speed_information()
 
     #######################
     # SETS FOR PLOTLIKES
@@ -480,7 +587,6 @@ class NewlyController:
         self(f"WV{int(round(speed / 10))}")
         self(f"WU{int(round(w_position))}")
         self.close_job()
-
 
     def home(self):
         self.realtime_job()

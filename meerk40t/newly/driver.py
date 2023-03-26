@@ -207,43 +207,7 @@ class NewlyDriver:
                 pass
             else:
                 # Rastercut
-                self.plot_planner.push(q)
-                for x, y, on in self.plot_planner.gen():
-                    # LOOP CHECKS
-                    if self._aborting:
-                        con.abort()
-                        self._aborting = False
-                        return
-                    while self.paused:
-                        time.sleep(0.05)
-
-                    if on > 1:
-                        # Special Command.
-                        if on & PLOT_FINISH:  # Plot planner is ending.
-                            break
-                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                            settings = self.plot_planner.settings
-                            con.set_settings(settings)
-                        elif on & (
-                            PLOT_RAPID | PLOT_JOG
-                        ):  # Plot planner requests position change.
-                            con.goto(x, y)
-                        continue
-                    if on == 0:
-                        con.goto(x, y)
-                    else:
-                        # on is in range 0 exclusive and 1 inclusive.
-                        # This is a regular cut position
-                        if last_on is None or on != last_on:
-                            last_on = on
-                            # We are using traditional power-scaling
-                            settings = self.plot_planner.settings
-                            percent_power = (
-                                float(settings.get("power", self.service.default_raster_power))
-                                / 10.0
-                            )
-                            con.power(percent_power * on)
-                        con.mark(x, y)
+                con.raster(q)
         con.rapid_mode()
 
     def move_abs(self, x, y):
