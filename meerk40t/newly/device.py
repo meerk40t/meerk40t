@@ -537,12 +537,12 @@ class NewlyDevice(Service, ViewPort):
             if filename is None:
                 raise CommandSyntaxError
             try:
-                with open(filename, "w") as f:
+                with open(filename, "wb") as f:
                     driver = NewlyDriver(self, force_mock=True)
                     job = LaserJob(filename, list(data.plan), driver=driver, outline=data.outline)
 
                     def write(index, data):
-                        f.write(data)
+                        f.write(bytes(data, encoding="latin-1"))
 
                     driver.connection.connect_if_needed()
                     driver.connection.connection.write = write
