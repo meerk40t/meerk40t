@@ -201,7 +201,7 @@ class NewlyController:
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
         self("GZ")
-        self.mode = "program"
+        self.program_mode()
 
     def close_job(self, job=None):
         """
