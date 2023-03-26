@@ -662,16 +662,22 @@ class NewlyController:
         self("ZQ")
         self.close_job()
 
-    def dwell(self, time_in_ms):
-        self.connect_if_needed()
-        if self._pwm_frequency is not None:
-            self(f"PL{self._pwm_frequency}")
-        self(f"DA{self._power}")
+    def wait(self, time_in_ms):
         while time_in_ms > 255:
             time_in_ms -= 255
             self("TO255")
         if time_in_ms > 0:
             self(f"TO{int(round(time_in_ms))}")
+
+    def dwell(self, time_in_ms):
+        if self._pwm_frequency is not None:
+            self(f"PL{self._pwm_frequency}")
+        self(f"DA{self._power}")
+        while time_in_ms > 255:
+            time_in_ms -= 255
+            self("TX255")
+        if time_in_ms > 0:
+            self(f"TX{int(round(time_in_ms))}")
 
     def pause(self):
         self.realtime_job()

@@ -345,7 +345,7 @@ class NewlyDriver:
         @param time_in_ms:
         @return:
         """
-        time.sleep(time_in_ms / 1000.0)
+        self.connection.wait(time_in_ms)
 
     def console(self, value):
         """
