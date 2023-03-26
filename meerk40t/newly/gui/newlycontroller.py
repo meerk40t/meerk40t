@@ -23,7 +23,7 @@ class NewlyControllerPanel(wx.ScrolledWindow):
         )
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self._buffer = ""
+        self._buffer = []
         self._buffer_lock = threading.Lock()
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
@@ -75,14 +75,14 @@ class NewlyControllerPanel(wx.ScrolledWindow):
 
     def update_text(self, text):
         with self._buffer_lock:
-            self._buffer += f"{text}\n"
+            self._buffer.append(text)
         self.context.signal("newly_controller_update")
 
     @signal_listener("newly_controller_update")
     def update_text_gui(self, origin):
         with self._buffer_lock:
-            buffer = self._buffer
-            self._buffer = ""
+            buffer = "\n".join(self._buffer)
+            self._buffer.clear()
         self.text_usb_log.AppendText(buffer)
 
     def set_button_connected(self):
