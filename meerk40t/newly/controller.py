@@ -370,7 +370,7 @@ class NewlyController:
         self.goto(previous_x, previous_y)
 
         if raster_cut.horizontal:
-            self.raster_mode_horizontal()
+            self.raster_mode(horizontal=True)
             for x, y, on in raster_cut.plot.plot():
                 dx = x - previous_x
                 dy = y - previous_y
@@ -387,7 +387,7 @@ class NewlyController:
                     scanline.extend([int(on)] * abs(dx))
                 previous_x, previous_y = x, y
         else:
-            self.raster_mode_vertical()
+            self.raster_mode(horizontal=False)
             for x, y, on in raster_cut.plot.plot():
                 dx = x - previous_x
                 dy = y - previous_y
@@ -428,7 +428,6 @@ class NewlyController:
             settings = chart[closest_index]
         else:
             settings = chart[-1]
-
         self(f"VQ{int(round(settings['corner_speed']))}")
         self(f"VJ{int(round(settings['acceleration_length']))}")
         self(f"SP1")
@@ -440,10 +439,17 @@ class NewlyController:
         self(f"DA{self._map_power(power_at_program_change)}")
         self(f"VS{self._map_raster_speed(speed_at_program_change)}")
 
-    def raster_mode_horizontal(self):
-        if self.mode == "raster_horizontal":
+    def raster_mode(self, horizontal=True):
+        mode = "raster_horizontal" if horizontal else "raster_vertical"
+        if self.mode == mode:
             return
-        self.mode = "raster_horizontal"
+        self.mode = mode
+        if horizontal:
+            bc = 0
+            bd = 1
+        else:
+            bc = 1
+            bd = 0
         self("IN")
         if self.mode == "started":
             if self._pwm_frequency is not None:
@@ -451,50 +457,18 @@ class NewlyController:
             self._write_dc_information()
         self("SP2")
         self("SP2")
-        self._write_vector_speed_info()
+        self._write_raster_speed_info()
         self._relative = True
         self(f"PR;PR;PR;PR")
         # Moves to the start postion of the raster.
         self(f"BT{self.raster_bit_depth}")
-        power = (
-            self.service.default_raster_power if self._power is None else self._power
-        )
-        self(f"DA{self._map_power(power)}")
-        bc = 0
-        bd = 1
         self(f"BC{bc}")
         self(f"BD{bd}")
-        self("PR")
         self("SP0")
         self._write_raster_speed_info()
 
-    def raster_mode_vertical(self):
-        if self.mode == "raster_vertical":
-            return
-        self.mode = "raster_vertical"
-        self("IN")
-        if self.mode == "started":
-            if self._pwm_frequency is not None:
-                self(f"PL{self._pwm_frequency}")
-            self._write_dc_information()
-        self("SP2")
-        self("SP2")
-        self._write_vector_speed_info()
-        self._relative = True
-        self(f"PR;PR;PR;PR")
-        # Moves to the start postion of the raster.
-        self(f"BT{self.raster_bit_depth}")
-        power = (
-            self.service.default_raster_power if self._power is None else self._power
-        )
-        self(f"DA{self._map_power(power)}")
-        bc = 0
-        bd = 1
-        self(f"BC{bc}")
-        self(f"BD{bd}")
-        self("PR")
-        self("SP0")
-        self._write_raster_speed_info()
+        # IN;PL5;VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;PR;PR;PR;PR;PU1000,-1147;BT8;BC0;BD4;SP0;VQ20;VJ8;VS6;YZ...
+
 
     #######################
     # SETS FOR PLOTLIKES
