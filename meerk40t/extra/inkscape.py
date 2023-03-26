@@ -374,6 +374,7 @@ def plugin(kernel, lifecycle):
                 return pathname
             # What is our preference? Load, convert, ask?
             conversion_preference = int(kernel.root.svg_not_supported)
+            wasbusy = kernel.busyinfo.shown
 
             if conversion_preference == 1:
                 # Ask
@@ -395,7 +396,8 @@ def plugin(kernel, lifecycle):
                 msg += "\n" + _(
                     "Do you want to convert the file via inkscape or do you want load the unmodified file?"
                 )
-
+                if wasbusy:
+                    kernel.busyinfo.hide()
                 response = kernel.yesno(
                     msg,
                     option_yes=_("Convert"),
@@ -408,11 +410,16 @@ def plugin(kernel, lifecycle):
                 else:
                     # Load
                     conversion_preference = 0
+                if wasbusy:
+                    kernel.busyinfo.show()
 
             if conversion_preference == 0:
                 # Load
                 return pathname
 
+            if wasbusy:
+                kernel.busyinfo.change(msg=_("Calling inkscape..."))
+                kernel.busyinfo.show()
             try:
                 c = run([inkscape, "-V"], timeout=timeout_value, stdout=PIPE)
             except (FileNotFoundError, TimeoutExpired):

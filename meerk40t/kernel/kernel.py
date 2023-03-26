@@ -31,6 +31,29 @@ KERNEL_VERSION = "0.0.10"
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
 
+class BusyInfo():
+    def __init__(self, **kwds):
+        self.busy_object = None
+        self.shown = False
+
+    def start(self, **kwds):
+        self.shown = True
+        return
+
+    def end(self):
+        self.shown = False
+        return
+
+    def change(self, **kwds):
+        return
+
+    def hide(self):
+        self.shown = False
+        return
+
+    def show(self):
+        self.shown = True
+        return
 
 class Kernel(Settings):
     """
@@ -3415,6 +3438,7 @@ class Kernel(Settings):
         return bool(value == option_yes or value[0] == option_yes[0])
 
     yesno = _yes_no_prompt
+    busyinfo = BusyInfo()
 
     # ==========
     # CONSOLE DECORATORS
