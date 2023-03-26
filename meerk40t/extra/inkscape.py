@@ -353,7 +353,7 @@ def plugin(kernel, lifecycle):
                 "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
             needs_conversion = 0
-            with open(source, mode="r") as f:
+            with open(source, mode="r", encoding="utf8") as f:
                 while True:
                     line = f.readline().lower()
                     if not line:
