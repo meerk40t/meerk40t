@@ -2,7 +2,7 @@ import gzip
 import os.path
 import platform
 from subprocess import PIPE, TimeoutExpired, run
-
+from time import time
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel.kernel import get_safe_path
 
@@ -49,6 +49,38 @@ def get_inkscape(context, manual_candidate=None):
         inkscape = ""
     return inkscape
 
+def run_command_and_log(command_array, logfile):
+    f = None
+    timeout_value = None
+    try:
+        f = open(logfile, "w")
+    except:
+        # Any error...
+        f = None
+    if f:
+        for idx, param in enumerate(command_array):
+            if idx == 0:
+                f.write(f"Executing: {param}\n")
+                f.write("Parameters:\n")
+            else:
+                f.write(f"{param}\n")
+    result = False
+    c = None
+    try:
+        start_time = time()
+        c = run(command_array, timeout=timeout_value, stdout=PIPE)
+        end_time = time()
+        if f:
+            f.write(f"Executed successfully, result: {c.returncode} (execution time: {end_time-start_time:.1f} sec)\n")
+            f.write("Output:\n")
+            f.write(c.stdout.decode("utf-8") + "\n")
+        result = True
+    except (FileNotFoundError, TimeoutExpired) as e:
+        if f:
+            f.write(f"Execution failed: {str(e)}\n")
+    if f:
+        f.close()
+    return result, c
 
 class MultiLoader:
     """
@@ -87,7 +119,7 @@ class MultiLoader:
             kernel = kernel_service.kernel
         else:
             kernel = kernel_service
-
+        _ = kernel.translation
         safe_dir = os.path.realpath(get_safe_path(kernel.name))
 
         # Establish the standard svg-handler first
@@ -100,22 +132,24 @@ class MultiLoader:
 
         context_root = kernel.root
         safe_dir = os.path.realpath(get_safe_path(kernel.name))
+        logfile = os.path.join(safe_dir, "inkscape.log")
         timeout_value = None
 
         inkscape = get_inkscape(context_root)
         if not inkscape:
             raise BadFileError("Inkscape not found")
 
-        try:
-            c = run([inkscape, "-V"], timeout=timeout_value, stdout=PIPE)
-        except (FileNotFoundError, TimeoutExpired):
-            # Return std response
-            # print ("Error while getting version")
+        result, c = run_command_and_log(
+            [inkscape, "-V"],
+            logfile
+        )
+        if not result:
             return pathname
 
         version = c.stdout.decode("utf-8")
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
+        logfile = os.path.join(safe_dir, "inkscape.log")
 
         # Check Version of Inkscape
         if "inkscape 1." in version.lower():
@@ -132,22 +166,28 @@ class MultiLoader:
                 svg_temp_file,
                 pathname,
             ]
-        try:
-            c = run(cmd, timeout=timeout_value, stdout=PIPE)
-            if c.returncode == 1:
-                return False
-            filename_to_process = svg_temp_file
-            preproc = elements_service.lookup("preprocessor/.svg")
-            if preproc is not None:
-                filename_to_process = preproc(filename_to_process)
-            results = handler.load(
-                elements_service, elements_service, filename_to_process
-            )
-            return results
-        except (FileNotFoundError, TimeoutExpired) as e:
-            # Return std response
-            raise BadFileError(str(e)) from e
+        was_shown = kernel.busyinfo.shown
+        if was_shown:
+            kernel.busyinfo.change(msg=_("Calling inkscape..."))
+            kernel.busyinfo.show()
 
+        result, c = run_command_and_log(
+            cmd,
+            logfile
+        )
+        if not result or c.returncode == 1:
+            return False
+        if was_shown:
+            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + svg_temp_file)
+            kernel.busyinfo.show()
+        filename_to_process = svg_temp_file
+        preproc = elements_service.lookup("preprocessor/.svg")
+        if preproc is not None:
+            filename_to_process = preproc(filename_to_process)
+        results = handler.load(
+            elements_service, elements_service, filename_to_process
+        )
+        return results
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -352,6 +392,9 @@ def plugin(kernel, lifecycle):
                 ],
                 "pattern": [False, ("<pattern",), METHOD_CONVERT_TO_PNG],
             }
+            safe_dir = os.path.realpath(get_safe_path(kernel.name))
+            svg_temp_file = os.path.join(safe_dir, "temp.svg")
+            png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0
             with open(source, mode="r", encoding="utf8") as f:
                 while True:
@@ -385,11 +428,11 @@ def plugin(kernel, lifecycle):
                     if entry[0]:
                         msg += "\n" + f" - {feat}"
                 if needs_conversion == METHOD_CONVERT_TO_PNG:
-                    msg += "\n" + (
+                    msg += "\n" + _(
                         "The complete design would be rendered into a single graphic."
                     )
                 elif needs_conversion == METHOD_CONVERT_TO_OBJECT:
-                    msg += "\n" + (
+                    msg += "\n" + _(
                         "Text elements would be converted into path objects."
                     )
 
@@ -410,6 +453,8 @@ def plugin(kernel, lifecycle):
                 else:
                     # Load
                     conversion_preference = 0
+                # translate = ["load", "ask", "convert"]
+                # print (f"Conversion preference: {translate[conversion_preference]} - {conversion_preference}")
                 if wasbusy:
                     kernel.busyinfo.show()
 
@@ -420,17 +465,15 @@ def plugin(kernel, lifecycle):
             if wasbusy:
                 kernel.busyinfo.change(msg=_("Calling inkscape..."))
                 kernel.busyinfo.show()
-            try:
-                c = run([inkscape, "-V"], timeout=timeout_value, stdout=PIPE)
-            except (FileNotFoundError, TimeoutExpired):
-                # Return std response
-                # print ("Error while getting version")
+            log_file = os.path.join(safe_dir, "inkscape.log")
+            result, c = run_command_and_log(
+                [inkscape, "-V"],
+                log_file
+            )
+            if not result:
                 return pathname
 
             version = c.stdout.decode("utf-8")
-            safe_dir = os.path.realpath(get_safe_path(kernel.name))
-            svg_temp_file = os.path.join(safe_dir, "temp.svg")
-            png_temp_file = os.path.join(safe_dir, "temp.png")
 
             if needs_conversion == METHOD_CONVERT_TO_OBJECT:
                 # Ask inkscape to convert all text elements to paths
@@ -452,13 +495,14 @@ def plugin(kernel, lifecycle):
                         svg_temp_file,
                         pathname,
                     ]
-                try:
-                    c = run(cmd, timeout=timeout_value, stdout=PIPE)
+                result, c = run_command_and_log(
+                    cmd,
+                    log_file
+                )
+                if result and c.returncode==0:
                     return svg_temp_file
-                except (FileNotFoundError, TimeoutExpired):
-                    # Return std response
-                    # print (f"Error while converting text: {cmd}")
-                    return pathname
+
+                return pathname
 
             if needs_conversion == METHOD_CONVERT_TO_PNG:
                 dpi = 500
@@ -489,13 +533,14 @@ def plugin(kernel, lifecycle):
                         png_temp_file,
                         pathname,
                     ]
-                try:
-                    c = run(cmd, timeout=timeout_value, stdout=PIPE)
+                result, c = run_command_and_log(
+                    cmd,
+                    log_file
+                )
+                if result and c.returncode==0:
                     return png_temp_file
-                except (FileNotFoundError, TimeoutExpired):
-                    # Return std response
-                    # print (f"Error while converting to bitmap: {cmd}")
-                    return pathname
+
+                return pathname
 
         kernel.register("preprocessor/.svg", check_for_features)
         # Lets establish some settings too
