@@ -15652,3 +15652,6 @@ msgstr "Mit Inkscape konvertieren"
 
 msgid "Ask at load time"
 msgstr "Nachfragen"
+
+msgid "Calling inkscape..."
+msgstr "Starte inkscape im Hintergrund..."
