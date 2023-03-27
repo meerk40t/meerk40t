@@ -3435,7 +3435,7 @@ class Kernel(Settings):
         if value is None or value == "":
             value = option_yes
         value = value.lower()
-        return bool(value == option_yes or value[0] == option_yes[0])
+        return bool(value == option_yes or value[0] == option_yes.lower()[0])
 
     yesno = _yes_no_prompt
     busyinfo = BusyInfo()
