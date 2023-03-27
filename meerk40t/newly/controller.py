@@ -444,12 +444,8 @@ class NewlyController:
         if self.mode == mode:
             return
         self.mode = mode
-        if horizontal:
-            bc = 0
-            bd = 1
-        else:
-            bc = 1
-            bd = 0
+        bc = 0
+        bd = 1
         self("IN")
         if self.mode == "started":
             if self._pwm_frequency is not None:
