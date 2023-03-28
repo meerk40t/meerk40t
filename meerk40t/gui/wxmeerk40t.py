@@ -20,7 +20,6 @@ try:
     from wx import richtext
 except ImportError:
     pass
-
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler

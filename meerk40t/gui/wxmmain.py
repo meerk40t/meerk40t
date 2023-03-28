@@ -3485,19 +3485,13 @@ class MeerK40t(MWindow):
 
     def clear_project(self):
         context = self.context
-        try:
-            with wx.BusyInfo(wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")):
-                self.working_file = None
-                context.elements.clear_all()
-                self.context(".laserpath_clear\n")
-                self.validate_save()
-        except AttributeError:
-            # wxPython 4.0
-            with wx.BusyInfo(_("Cleaning up...")):
-                self.working_file = None
-                context.elements.clear_all()
-                self.context(".laserpath_clear\n")
-                self.validate_save()
+        kernel = context.kernel
+        kernel.busyinfo.start(msg=_("Cleaning up..."))
+        self.working_file = None
+        context.elements.clear_all()
+        self.context(".laserpath_clear\n")
+        self.validate_save()
+        kernel.busyinfo.end()
 
     def clear_and_open(self, pathname):
         self.clear_project()
@@ -3512,29 +3506,19 @@ class MeerK40t(MWindow):
                 pass
 
     def load(self, pathname):
+        kernel = self.context.kernel
         try:
-            try:
-                # Reset to standard tool
-                self.context("tool none\n")
-                # wxPython 4.1.+
-                with wx.BusyInfo(
-                    wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
-                ):
-                    n = self.context.elements.note
-                    results = self.context.elements.load(
-                        pathname,
-                        channel=self.context.channel("load"),
-                        svg_ppi=self.context.elements.svg_ppi,
-                    )
-            except AttributeError:
-                # wxPython 4.0
-                with wx.BusyInfo(_("Loading File...")):
-                    n = self.context.elements.note
-                    results = self.context.elements.load(
-                        pathname,
-                        channel=self.context.channel("load"),
-                        svg_ppi=self.context.elements.svg_ppi,
-                    )
+            # Reset to standard tool
+            self.context("tool none\n")
+            info = _("Loading File...")+ "\n" + pathname
+            kernel.busyinfo.start(msg=info)
+            n = self.context.elements.note
+            results = self.context.elements.load(
+                pathname,
+                channel=self.context.channel("load"),
+                svg_ppi=self.context.elements.svg_ppi,
+            )
+            kernel.busyinfo.end()
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,
