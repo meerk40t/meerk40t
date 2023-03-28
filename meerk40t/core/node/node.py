@@ -344,7 +344,7 @@ class Node:
 
         flag = True
         if hasattr(self, "stroke"):
-            if self.stroke is None:
+            if self.stroke is None or self.stroke.argb is None:
                 flag = False
         try:
             self._paint_bounds = self.bbox(with_stroke=flag)
