@@ -2400,7 +2400,8 @@ def init_commands(kernel):
         output_type="align",
     )
     def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
-        mode, group, bound, elements = data
+        mode, group, bound, raw_elements = data
+        elements = self.condense_elements(raw_elements)
         boundary_points = []
         for node in elements:
             boundary_points.append(node.bounds)
@@ -2432,13 +2433,15 @@ def init_commands(kernel):
             delta = subbox[0] - dim_pos
             matrix = f"translate({-delta}, 0)"
             if delta != 0:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.translated(-delta, 0)
-                    except AttributeError:
-                        continue
+                self.translate_node(node, -delta, 0)
+                # for q in node.flat(types=elem_nodes):
+                #     try:
+                #         q.matrix *= matrix
+                #         q.translated(-delta, 0)
+                #     except AttributeError:
+                #         continue
             dim_pos += subbox[2] - subbox[0] + distributed_distance
+        self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
@@ -2448,7 +2451,8 @@ def init_commands(kernel):
         output_type="align",
     )
     def subtype_align_spacev(command, channel, _, data=None, **kwargs):
-        mode, group, bound, elements = data
+        mode, group, bound, raw_elements = data
+        elements = self.condense_elements(raw_elements)
         boundary_points = []
         for node in elements:
             boundary_points.append(node.bounds)
@@ -2480,13 +2484,15 @@ def init_commands(kernel):
             delta = subbox[1] - dim_pos
             matrix = f"translate(0, {-delta})"
             if delta != 0:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.translated(0, -delta)
-                    except AttributeError:
-                        continue
+                self.translate_node(node, 0, -delta)
+                # for q in node.flat(types=elem_nodes):
+                #     try:
+                #         q.matrix *= matrix
+                #         q.translated(0, -delta)
+                #     except AttributeError:
+                #         continue
             dim_pos += subbox[3] - subbox[1] + distributed_distance
+        self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
     @self.console_argument(
