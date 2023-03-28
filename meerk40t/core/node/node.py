@@ -342,8 +342,12 @@ class Node:
         if not self._paint_bounds_dirty:
             return self._paint_bounds
 
+        flag = True
+        if hasattr(self, "stroke"):
+            if self.stroke is None or self.stroke.argb is None:
+                flag = False
         try:
-            self._paint_bounds = self.bbox(with_stroke=True)
+            self._paint_bounds = self.bbox(with_stroke=flag)
         except AttributeError:
             self._paint_bounds = None
 
