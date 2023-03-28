@@ -884,6 +884,7 @@ class Elemental(Service):
         (ie group or file) are in this set, then they will be
         replaced and represented by this parent element
         """
+
         def remove_children_from_list(list_to_deal, parent_node):
             for idx, node in enumerate(list_to_deal):
                 if node is None:
