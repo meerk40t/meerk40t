@@ -65,7 +65,7 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str, ansi: bool = True):
+    def __init__(self, name: str, version: str, profile: str, ansi: bool = True, ignore_settings: bool = False):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -82,6 +82,7 @@ class Kernel(Settings):
             self,
             self.name,
             f"{profile}.cfg",
+            ignore_settings=ignore_settings
         )
         self.settings = self
 
