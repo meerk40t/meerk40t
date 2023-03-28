@@ -966,10 +966,12 @@ class Elemental(Service):
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
-        if len(data_to_align) == 1:
+        while len(data_to_align) == 1:
             node = data_to_align[0]
             if node is not None and node.type in ("file", "group"):
                 data_to_align = [e for e in node.children]
+            else:
+                break
         return data_to_align
 
     def translate_node(self, node, dx, dy):

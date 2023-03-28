@@ -2393,105 +2393,138 @@ def init_commands(kernel):
         _align_xy(channel, _, mode, bound, elements, "none", "center", group)
         return "align", (mode, group, bound, elements)
 
+    def distribute_elements(elements, in_x: bool = True, distance: bool = True):
+        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
+            return
+        if in_x:
+            elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
+        else:
+            elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
+        boundary_points = []
+        for node in elements:
+            boundary_points.append(node.bounds)
+        if not len(boundary_points):
+            return
+        if in_x:
+            idx = 0
+        else:
+            idx = 1
+        if distance:
+            left_edge = boundary_points[0][idx]
+            right_edge = boundary_points[-1][idx + 2]
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            for node in elements:
+                bounds = node.bounds
+                dim_available -= bounds[idx + 2] - bounds[idx]
+            distributed_distance = dim_available / (len(elements) - 1)
+            dim_pos = left_edge
+        else:
+            left_edge = (boundary_points[0][idx] + boundary_points[0][idx + 2]) / 2
+            right_edge = (boundary_points[-1][idx] + boundary_points[-1][idx + 2]) / 2
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            dim_pos = left_edge
+            distributed_distance = dim_available / (len(elements) - 1)
+
+        for node in elements:
+            subbox = node.bounds
+            if distance:
+                delta = subbox[idx] - dim_pos
+                dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
+            else:
+                delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
+                dim_pos += distributed_distance
+            if in_x:
+                dx = -delta
+                dy = 0
+            else:
+                dx = 0
+                dy = -delta
+            if dx != 0 or dy != 0:
+                self.translate_node(node, dx, dy)
+
     @self.console_command(
         "spaceh",
-        help=_("align elements across horizontal space"),
+        help=_("distribute elements across horizontal space"),
         input_type="align",
         output_type="align",
     )
     def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
         mode, group, bound, raw_elements = data
-        elements = self.condense_elements(raw_elements)
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
-            return
-        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
-            return "align", (mode, group, bound, elements)
-        left_edge = min([e[0] for e in boundary_points])
-        right_edge = max([e[2] for e in boundary_points])
-        dim_total = right_edge - left_edge
-        dim_available = dim_total
-        for node in elements:
-            bounds = node.bounds
-            dim_available -= bounds[2] - bounds[0]
-        distributed_distance = dim_available / (len(elements) - 1)
-        elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
-        dim_pos = left_edge
-
         haslock = False
-        for node in elements:
+        for node in raw_elements:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 haslock = True
                 break
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
-            return
-        for node in elements:
-            subbox = node.bounds
-            delta = subbox[0] - dim_pos
-            matrix = f"translate({-delta}, 0)"
-            if delta != 0:
-                self.translate_node(node, -delta, 0)
-                # for q in node.flat(types=elem_nodes):
-                #     try:
-                #         q.matrix *= matrix
-                #         q.translated(-delta, 0)
-                #     except AttributeError:
-                #         continue
-            dim_pos += subbox[2] - subbox[0] + distributed_distance
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=True, distance=True)
+        self.signal("refresh_scene", "Scene")
+        return "align", (mode, group, bound, elements)
+
+    @self.console_command(
+        "spaceh2",
+        help=_("distribute elements across horizontal space"),
+        input_type="align",
+        output_type="align",
+    )
+    def subtype_align_spaceh2(command, channel, _, data=None, **kwargs):
+        mode, group, bound, raw_elements = data
+        haslock = False
+        for node in raw_elements:
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                haslock = True
+                break
+        if haslock:
+            channel(_("Your selection contains a locked element, that cannot be moved"))
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=True, distance=False)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
         "spacev",
-        help=_("align elements down vertical space"),
+        help=_("distribute elements across vertical space"),
         input_type="align",
         output_type="align",
     )
     def subtype_align_spacev(command, channel, _, data=None, **kwargs):
         mode, group, bound, raw_elements = data
-        elements = self.condense_elements(raw_elements)
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
-            return
-        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
-            return "align", (mode, group, bound, elements)
-        top_edge = min([e[1] for e in boundary_points])
-        bottom_edge = max([e[3] for e in boundary_points])
-        dim_total = bottom_edge - top_edge
-        dim_available = dim_total
-        for node in elements:
-            bounds = node.bounds
-            dim_available -= bounds[3] - bounds[1]
-        distributed_distance = dim_available / (len(elements) - 1)
-        elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
-        dim_pos = top_edge
-
         haslock = False
-        for node in elements:
+        for node in raw_elements:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 haslock = True
                 break
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
-            return
-        for node in elements:
-            subbox = node.bounds
-            delta = subbox[1] - dim_pos
-            matrix = f"translate(0, {-delta})"
-            if delta != 0:
-                self.translate_node(node, 0, -delta)
-                # for q in node.flat(types=elem_nodes):
-                #     try:
-                #         q.matrix *= matrix
-                #         q.translated(0, -delta)
-                #     except AttributeError:
-                #         continue
-            dim_pos += subbox[3] - subbox[1] + distributed_distance
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=False, distance=True)
+        self.signal("refresh_scene", "Scene")
+        return "align", (mode, group, bound, elements)
+
+    @self.console_command(
+        "spacev2",
+        help=_("distribute elements across vertical space"),
+        input_type="align",
+        output_type="align",
+    )
+    def subtype_align_spacev2(command, channel, _, data=None, **kwargs):
+        mode, group, bound, raw_elements = data
+        haslock = False
+        for node in raw_elements:
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                haslock = True
+                break
+        if haslock:
+            channel(_("Your selection contains a locked element, that cannot be moved"))
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=False, distance=False)
         self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
