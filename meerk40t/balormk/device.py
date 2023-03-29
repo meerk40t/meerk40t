@@ -88,6 +88,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
                 "section": "_00_General",
                 "priority": "10",
+                "signals": "device;renamed",
             },
             {
                 "attr": "corfile_enabled",

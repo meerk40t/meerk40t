@@ -51,6 +51,7 @@ class MoshiDevice(Service, ViewPort):
                 "label": _("Label"),
                 "tip": _("What is this device called."),
                 "section": "_00_General",
+                "signals": "device;renamed",
             },
             {
                 "attr": "bedwidth",
