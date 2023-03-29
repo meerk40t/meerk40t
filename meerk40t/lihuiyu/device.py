@@ -21,6 +21,7 @@ class LihuiyuDevice(Service, ViewPort):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
+    priority = 1
 
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
@@ -954,7 +955,6 @@ class LihuiyuDevice(Service, ViewPort):
         max_x = max(x, new_x)
         max_y = max(y, new_y)
         return (min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)
-
 
     @property
     def viewbuffer(self):
