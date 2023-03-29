@@ -299,7 +299,9 @@ class DevicePanel(wx.Panel):
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         names = []
-        for obj, name, sname in self.context.find("provider", "device"):
+        devices = list(self.context.find("provider", "device"))
+        devices.sort(key=lambda e: getattr(e[0], "priority", 0), reverse=True)
+        for obj, name, sname in devices:
             names.append(sname)
         with wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), names
