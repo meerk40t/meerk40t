@@ -21,6 +21,9 @@ def plugin(kernel, lifecycle):
         from meerk40t.balormk.device import BalorDevice
 
         kernel.register("provider/device/balor", BalorDevice)
+        _ = kernel.translation
+        kernel.register_friendly_name("provider/device/balor", _("Fibre-Laser (JCZ-Controller)"))
+
     elif lifecycle == "preboot":
         suffix = "balor"
         for d in kernel.settings.derivable(suffix):

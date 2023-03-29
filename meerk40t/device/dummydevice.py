@@ -7,6 +7,9 @@ from ..core.units import UNITS_PER_MIL, ViewPort
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/dummy", DummyDevice)
+        _ = kernel.translation
+        kernel.register_friendly_name("provider/device/dummy", _("The device name goes here"))
+
 
 
 class DummyDevice(Service, ViewPort):

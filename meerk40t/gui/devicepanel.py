@@ -169,11 +169,13 @@ class DevicePanel(wx.Panel):
             self.devices.append(device)
             dev_index = len(self.devices) - 1
             lbl = device.label
-            dev_name = ""
-            for sname in names:
-                if sname in device.path.lower():
-                    dev_name = sname
-                    break
+            # dev_name = ""
+            # for sname in names:
+            #     if sname in device.path.lower():
+            #         dev_name = sname
+            #         break
+            # print (vars(device))
+            dev_name = self.context.kernel.friendly_name(device.registered_path)
             index = self.devices_list.InsertItem(self.devices_list.GetItemCount(), lbl)
             self.devices_list.SetItem(index, 1, dev_name)
             self.devices_list.SetItemData(index, dev_index)
@@ -299,12 +301,15 @@ class DevicePanel(wx.Panel):
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         names = []
+        desc = []
         devices = list(self.context.find("provider", "device"))
         devices.sort(key=lambda e: getattr(e[0], "priority", 0), reverse=True)
         for obj, name, sname in devices:
             names.append(sname)
+            description = self.context.kernel.friendly_name(name)
+            desc.append(description)
         with wx.SingleChoiceDialog(
-            None, _("What type of driver is being added?"), _("Device Type"), names
+            None, _("What type of driver is being added?"), _("Device Type"), desc
         ) as dlg:
             dlg.SetSelection(0)
             if dlg.ShowModal() == wx.ID_OK:

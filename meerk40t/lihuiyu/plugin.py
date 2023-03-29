@@ -21,6 +21,8 @@ def plugin(kernel, lifecycle=None):
             return True
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
+        _ = kernel.translation
+        kernel.register_friendly_name("provider/device/lhystudios", _("K40-CO2-Laser (m2nano-Board)"))
         try:
             from .loader import EgvLoader
 

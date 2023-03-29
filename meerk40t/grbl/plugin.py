@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
 
         kernel.register("provider/device/grbl", GRBLDevice)
+        kernel.register_friendly_name("provider/device/grbl", _("Diode-Laser (GRBL-Controller)"))
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)

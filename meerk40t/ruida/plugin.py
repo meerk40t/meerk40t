@@ -16,9 +16,9 @@ def plugin(kernel, lifecycle=None):
 
         return [gui.plugin]
     if lifecycle == "register":
-        kernel.register("provider/device/ruida", RuidaDevice)
-
         _ = kernel.translation
+        kernel.register("provider/device/ruida", RuidaDevice)
+        kernel.register_friendly_name("provider/device/ruida", _("K50/K60-CO2-Laser (Ruida-Controller)"))
         kernel.register("spoolerjob/ruida", RDJob)
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
