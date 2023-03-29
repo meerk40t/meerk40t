@@ -1324,8 +1324,13 @@ class MeerK40t(MWindow):
             {
                 "label": _("Distr. Hor."),
                 "icon": icons_evenspace_horiz,
-                "tip": _("Distribute Space Horizontally"),
+                "tip": _("Distribute Space Horizontally")
+                + "\n"
+                + _("Left click: Equal distances")
+                + "\n"
+                + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
+                "right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1338,8 +1343,13 @@ class MeerK40t(MWindow):
             {
                 "label": _("Distr. Vert."),
                 "icon": icons_evenspace_vert,
-                "tip": _("Distribute Space Vertically"),
+                "tip": _("Distribute Space Vertically")
+                + "\n"
+                + _("Left click: Equal distances")
+                + "\n"
+                + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spacev\n"),
+                "right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -3510,7 +3520,7 @@ class MeerK40t(MWindow):
         try:
             # Reset to standard tool
             self.context("tool none\n")
-            info = _("Loading File...")+ "\n" + pathname
+            info = _("Loading File...") + "\n" + pathname
             kernel.busyinfo.start(msg=info)
             n = self.context.elements.note
             results = self.context.elements.load(

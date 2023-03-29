@@ -877,40 +877,13 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
+    def condense_elements(self, data):
         """
-
-        @param data: elements to align
-        @param alignbounds: boundary tuple (left, top, right, bottom)
-                            to which data needs to be aligned to
-        @param positionx:   one of "min", "max", "center"
-        @param positiony:   one of "min", "max", "center"
-        @param as_group:    0, align every element of data to the edge
-                            1, align the group in total
-        @return:
+        This routine looks at a given dataset and will condense
+        it in the sense that if all elements of a given hierarchy
+        (ie group or file) are in this set, then they will be
+        replaced and represented by this parent element
         """
-
-        def calc_dx_dy():
-            dx = 0
-            dy = 0
-            if positionx == "min":
-                dx = alignbounds[0] - left_edge
-            elif positionx == "max":
-                dx = alignbounds[2] - right_edge
-            elif positionx == "center":
-                dx = (alignbounds[2] + alignbounds[0]) / 2 - (
-                    right_edge + left_edge
-                ) / 2
-
-            if positiony == "min":
-                dy = alignbounds[1] - top_edge
-            elif positiony == "max":
-                dy = alignbounds[3] - bottom_edge
-            elif positiony == "center":
-                dy = (alignbounds[3] + alignbounds[1]) / 2 - (
-                    bottom_edge + top_edge
-                ) / 2
-            return dx, dy
 
         def remove_children_from_list(list_to_deal, parent_node):
             for idx, node in enumerate(list_to_deal):
@@ -920,21 +893,6 @@ class Elemental(Service):
                     list_to_deal[idx] = None
                     if len(node.children) > 0:
                         remove_children_from_list(list_to_deal, node)
-
-        def translate_node(node, dx, dy):
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                return
-            else:
-                if node.type in ("group", "file"):
-                    for c in node.children:
-                        translate_node(c, dx, dy)
-                    node.translated(dx, dy)
-                else:
-                    try:
-                        node.matrix.post_translate(dx, dy)
-                        node.translated(dx, dy)
-                    except AttributeError:
-                        pass
 
         align_data = [e for e in data]
         needs_repetition = True
@@ -1008,10 +966,65 @@ class Elemental(Service):
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
-        if len(data_to_align) == 1:
+        while len(data_to_align) == 1:
             node = data_to_align[0]
             if node is not None and node.type in ("file", "group"):
                 data_to_align = [e for e in node.children]
+            else:
+                break
+        return data_to_align
+
+    def translate_node(self, node, dx, dy):
+        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            return
+        else:
+            if node.type in ("group", "file"):
+                for c in node.children:
+                    self.translate_node(c, dx, dy)
+                node.translated(dx, dy)
+            else:
+                try:
+                    node.matrix.post_translate(dx, dy)
+                    node.translated(dx, dy)
+                except AttributeError:
+                    pass
+
+    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
+        """
+
+        @param data: elements to align
+        @param alignbounds: boundary tuple (left, top, right, bottom)
+                            to which data needs to be aligned to
+        @param positionx:   one of "min", "max", "center"
+        @param positiony:   one of "min", "max", "center"
+        @param as_group:    0, align every element of data to the edge
+                            1, align the group in total
+        @return:
+        """
+
+        def calc_dx_dy():
+            dx = 0
+            dy = 0
+            if positionx == "min":
+                dx = alignbounds[0] - left_edge
+            elif positionx == "max":
+                dx = alignbounds[2] - right_edge
+            elif positionx == "center":
+                dx = (alignbounds[2] + alignbounds[0]) / 2 - (
+                    right_edge + left_edge
+                ) / 2
+
+            if positiony == "min":
+                dy = alignbounds[1] - top_edge
+            elif positiony == "max":
+                dy = alignbounds[3] - bottom_edge
+            elif positiony == "center":
+                dy = (alignbounds[3] + alignbounds[1]) / 2 - (
+                    bottom_edge + top_edge
+                ) / 2
+            return dx, dy
+
+        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
         for node in data_to_align:
@@ -1046,7 +1059,7 @@ class Elemental(Service):
             else:
                 dx = groupdx
                 dy = groupdy
-            translate_node(q, dx, dy)
+            self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
