@@ -115,7 +115,6 @@ class Kernel(Settings):
             run_main=True,
         )
         self._registered = {}
-        self._registered_friendly = {}
         self.lookups = {}
         self.lookup_previous = {}
         self._dirty_paths = []
@@ -1608,26 +1607,7 @@ class Kernel(Settings):
 
     def unregister(self, path: str):
         del self._registered[path]
-        del self._registered_friendly[path]
         self.lookup_change(path)
-
-    def register_friendly_name(self, path: str, desc: str):
-        """
-        Register an element at a given subpath.
-        If this Kernel is not root, then it is registered relative to this location.
-
-        @param path: a "/" separated hierarchical index to the object
-        @param desc: a user-friendly description of the service
-        @return:
-        """
-        self._registered_friendly[path] = desc
-
-    def friendly_name(self, path: str):
-        #  print (f"Looking for '{path}'")
-        if path in self._registered_friendly:
-            return self._registered_friendly[path]
-        # Fall back to provide just the very last part of the path
-        return list(path.split("/"))[-1]
 
     # ==========
     # PATH & CONTEXTS
