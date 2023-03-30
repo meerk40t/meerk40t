@@ -15595,3 +15595,63 @@ msgstr "Erhöht/Verringert die eingestellte Laserleistung um diesen Faktor."
 
 msgid "Increases/decreases the regular speed by this amount."
 msgstr "Erhöht/Verringert die eingestellte Geschwindigkeit um diesen Faktor."
+
+msgid "This file contains certain features that might not be fully supported by MeerK40t"
+msgstr "Die Datei enthält SVG-Features, die nicht (vollständig) von MeerK40t unterstützt werden"
+
+msgid "The complete design would be rendered into a single graphic."
+msgstr "Das komplette Design würde in eine einzige Grafik überführt."
+
+msgid "Text elements would be converted into path objects."
+msgstr "Text-Elemente würden in Pfad-Objekte umgewandelt."
+
+msgid "Do you want to convert the file via inkscape or do you want load the unmodified file?"
+msgstr "Soll die Datei mit Hilfe von inkscape umgewandelt oder die Original-Datei geladen werden?"
+
+msgid "Convert"
+msgstr "Umwandeln"
+
+msgid "Load original"
+msgstr "Original"
+
+msgid "SVG-Conversion"
+msgstr "SVG-Umwandlung"
+
+msgid "Meerk40t does not support all svg-features, so you might want"
+msgstr "MeerK40t unterstützt (noch) nicht alle SVG-Features, deswegen kann"
+
+msgid "to preprocess the file to get a proper representation of the design."
+msgstr "MK die Datei vorverarbeiten (lassen), um eine korrekte Darstellung zu erreichen"
+
+msgid " - Certain subvariants of Fonts - single element will be converted to a path"
+msgstr " - Spezielle Text-Designs - die einzelnen Elemente werden in Pfade umgewandelt"
+
+msgid " - Gradient fills / patterns - the whole design will be rendered into a graphic"
+msgstr " - Farbverläufe / Füllungen mit Muster - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid " - Clipping/Mask - the whole design will be rendered into a graphic"
+msgstr " - Clips / Masken - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
+msgstr "Pfad zur Inkscape-Anwendung. Leer lassen, damit MeerK40t die Standard-Verzeichnisse verwendet"
+
+msgid "SVG-Features"
+msgstr "SVG-Features"
+
+msgid "Inkscape"
+msgstr ""
+
+msgid "Unsupported elements"
+msgstr "Unsupportete Funktionen"
+
+msgid "Always load into meerk40t"
+msgstr "Immer direkt laden"
+
+msgid "Convert with inkscape"
+msgstr "Mit Inkscape konvertieren"
+
+msgid "Ask at load time"
+msgstr "Nachfragen"
+
+msgid "Calling inkscape..."
+msgstr "Starte inkscape im Hintergrund..."

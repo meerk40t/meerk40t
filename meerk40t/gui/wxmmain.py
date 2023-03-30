@@ -1324,8 +1324,13 @@ class MeerK40t(MWindow):
             {
                 "label": _("Distr. Hor."),
                 "icon": icons_evenspace_horiz,
-                "tip": _("Distribute Space Horizontally"),
+                "tip": _("Distribute Space Horizontally")
+                + "\n"
+                + _("Left click: Equal distances")
+                + "\n"
+                + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
+                "right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1338,8 +1343,13 @@ class MeerK40t(MWindow):
             {
                 "label": _("Distr. Vert."),
                 "icon": icons_evenspace_vert,
-                "tip": _("Distribute Space Vertically"),
+                "tip": _("Distribute Space Vertically")
+                + "\n"
+                + _("Left click: Equal distances")
+                + "\n"
+                + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spacev\n"),
+                "right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -3485,19 +3495,13 @@ class MeerK40t(MWindow):
 
     def clear_project(self):
         context = self.context
-        try:
-            with wx.BusyInfo(wx.BusyInfoFlags().Title(_("Cleaning up...")).Label("")):
-                self.working_file = None
-                context.elements.clear_all()
-                self.context(".laserpath_clear\n")
-                self.validate_save()
-        except AttributeError:
-            # wxPython 4.0
-            with wx.BusyInfo(_("Cleaning up...")):
-                self.working_file = None
-                context.elements.clear_all()
-                self.context(".laserpath_clear\n")
-                self.validate_save()
+        kernel = context.kernel
+        kernel.busyinfo.start(msg=_("Cleaning up..."))
+        self.working_file = None
+        context.elements.clear_all()
+        self.context(".laserpath_clear\n")
+        self.validate_save()
+        kernel.busyinfo.end()
 
     def clear_and_open(self, pathname):
         self.clear_project()
@@ -3512,29 +3516,19 @@ class MeerK40t(MWindow):
                 pass
 
     def load(self, pathname):
+        kernel = self.context.kernel
         try:
-            try:
-                # Reset to standard tool
-                self.context("tool none\n")
-                # wxPython 4.1.+
-                with wx.BusyInfo(
-                    wx.BusyInfoFlags().Title(_("Loading File...")).Label(pathname)
-                ):
-                    n = self.context.elements.note
-                    results = self.context.elements.load(
-                        pathname,
-                        channel=self.context.channel("load"),
-                        svg_ppi=self.context.elements.svg_ppi,
-                    )
-            except AttributeError:
-                # wxPython 4.0
-                with wx.BusyInfo(_("Loading File...")):
-                    n = self.context.elements.note
-                    results = self.context.elements.load(
-                        pathname,
-                        channel=self.context.channel("load"),
-                        svg_ppi=self.context.elements.svg_ppi,
-                    )
+            # Reset to standard tool
+            self.context("tool none\n")
+            info = _("Loading File...") + "\n" + pathname
+            kernel.busyinfo.start(msg=info)
+            n = self.context.elements.note
+            results = self.context.elements.load(
+                pathname,
+                channel=self.context.channel("load"),
+                svg_ppi=self.context.elements.svg_ppi,
+            )
+            kernel.busyinfo.end()
         except BadFileError as e:
             dlg = wx.MessageDialog(
                 None,

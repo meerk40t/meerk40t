@@ -326,6 +326,7 @@ class LaserPanel(wx.Panel):
         self.label_power.SetLabel(msg)
 
     @signal_listener("device;modified")
+    @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
     def spooler_lookup(self, *args):
