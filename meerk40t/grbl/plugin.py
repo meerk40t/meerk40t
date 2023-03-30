@@ -27,7 +27,58 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
 
         kernel.register("provider/device/grbl", GRBLDevice)
-        kernel.register_friendly_name("provider/device/grbl", _("Diode-Laser (GRBL-Controller)"))
+        kernel.register("dev_info/grbl-generic", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("Generic (GRBL-Controller)"),
+            "extended_info": _("Generic GRBL Laser Device."),
+            "priority": 19,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "Grbl",
+                },
+            ]
+        })
+        kernel.register("dev_info/grbl-k40", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("K40 (GRBL-Controller)"),
+            "extended_info": _("K40 laser with a modified GRBL laser controller."),
+            "priority": 18,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "GRBL-K40",
+                },
+                {
+                    "attr": "has_endstops",
+                    "default": True,
+                },
+                {
+                    "attr": "bedwidth",
+                    "default": "235mm",
+                },
+                {
+                    "attr": "bedheight",
+                    "default": "235mm",
+                },
+            ]
+        })
+        kernel.register("dev_info/grbl-diode", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("Diode-Laser (GRBL-Controller)"),
+            "extended_info": _("Any of a variety of inexpensive GRBL based diode lasers."),
+            "priority": 17,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "Grbl-Diode",
+                },
+                {
+                    "attr": "has_endstops",
+                    "default": False,
+                },
+            ]
+        })
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)

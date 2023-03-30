@@ -16,7 +16,18 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/moshi", MoshiDevice)
         _ = kernel.translation
-        kernel.register_friendly_name("provider/device/moshi", _("CO2-Laser (Moshi-Board)"))
+        kernel.register("dev_info/moshi-co2", {
+            "provider": "provider/device/moshi",
+            "friendly_name": _("CO2-Laser (Moshi-Board)"),
+            "extended_info": _("Moshiboards MS10105 (V.4.XX) were popular around 2013, these communicate over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). The boards are usually read and sport two large black heatsinks for their stepper motor chips."),
+            "priority": 0,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "Moshiboard",
+                },
+            ]
+        })
     if lifecycle == "preboot":
         suffix = "moshi"
         for d in kernel.derivable(suffix):
