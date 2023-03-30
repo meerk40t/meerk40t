@@ -161,23 +161,21 @@ class DevicePanel(wx.Panel):
     def refresh_device_tree(self, *args):
         self.devices = []
         names = []
-        for obj, name, sname in self.context.find("provider", "device"):
-            names.append(sname.lower())
+        for obj, name, sname in self.context.find("dev_info"):
+            if obj is not None:
+                try:
+                    names.append(obj.get("friendly_name", sname.lower()))
+                except AttributeError:
+                    names.append(sname.lower())
         self.devices_list.DeleteAllItems()
         # root = self.devices_list.AddRoot("Devices")
         for i, device in enumerate(self.context.kernel.services("device")):
             self.devices.append(device)
             dev_index = len(self.devices) - 1
-            lbl = device.label
-            # dev_name = ""
-            # for sname in names:
-            #     if sname in device.path.lower():
-            #         dev_name = sname
-            #         break
-            # print (vars(device))
-            dev_name = self.context.kernel.friendly_name(device.registered_path)
-            index = self.devices_list.InsertItem(self.devices_list.GetItemCount(), lbl)
-            self.devices_list.SetItem(index, 1, dev_name)
+            label = device.label
+            index = self.devices_list.InsertItem(self.devices_list.GetItemCount(), label)
+            type_info = getattr(device,"name", device.path)
+            self.devices_list.SetItem(index, 1, type_info)
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
@@ -301,13 +299,15 @@ class DevicePanel(wx.Panel):
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         names = []
+        providers = []
         desc = []
-        devices = list(self.context.find("provider", "device"))
-        devices.sort(key=lambda e: getattr(e[0], "priority", 0), reverse=True)
-        for obj, name, sname in devices:
+        dev_infos = list(self.context.find("dev_info"))
+        dev_infos.sort(key=lambda e: e[0].get("priority", 0), reverse=True)
+        for obj, name, sname in dev_infos:
             names.append(sname)
-            description = self.context.kernel.friendly_name(name)
-            desc.append(description)
+            providers.append(obj.get("provider"))
+            desc.append(obj.get("friendly_name"))
+
         with wx.SingleChoiceDialog(
             None, _("What type of driver is being added?"), _("Device Type"), desc
         ) as dlg:
@@ -317,9 +317,10 @@ class DevicePanel(wx.Panel):
                 # Let's establish how many devices of this type
                 # we already have and name it accordingly
                 label = self.get_new_label_for_device(device_type)
-                if label != "":
-                    label = ' -l "' + label + '"'
-                self.context(f"service device start -i {device_type}{label}\n")
+                if label:
+                    self.context(f'device add -i {device_type} -l "{label}"\n')
+                else:
+                    self.context(f"device add -i {device_type}\n")
         self.refresh_device_tree()
         self.context.signal("device;modified")
 
