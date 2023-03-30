@@ -16,9 +16,20 @@ def plugin(kernel, lifecycle=None):
 
         return [gui.plugin]
     if lifecycle == "register":
-        kernel.register("provider/device/ruida", RuidaDevice)
-
         _ = kernel.translation
+        kernel.register("provider/device/ruida", RuidaDevice)
+        kernel.register("dev_info/ruida-beta", {
+            "provider": "provider/device/ruida",
+            "friendly_name": _("K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"),
+            "extended_info": _("This driver is incomplete."),
+            "priority": -1,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "ruida",
+                },
+            ]
+        })
         kernel.register("spoolerjob/ruida", RDJob)
         kernel.register("load/RDLoader", RDLoader)
         kernel.register("emulator/ruida", RuidaEmulator)
