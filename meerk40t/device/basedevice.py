@@ -35,5 +35,66 @@ def plugin(kernel, lifecycle=None):
             )
             # Nothing has yet established a device. Boot this device.
             kernel.root(f"service device start {preferred_device}\n")
+
+        _ = kernel.translation
+
+        @kernel.console_command(
+            "device",
+            help=_("show device providers"),
+            input_type=None,
+            output_type="device",
+        )
+        def device_info(channel, _, **kwargs):
+            """
+            Display device info.
+            """
+            channel(_("----------"))
+            channel(_("Device Entries:"))
+            info_entries = list(kernel.lookup_all("dev_info"))
+            for i, device_info in enumerate(info_entries):
+                parts = [f"[bold]#{i}[normal]"]
+                if "friendly_name" in device_info:
+                    parts.append(f"[blue]{device_info['friendly_name']}[normal]")
+                if "provider" in device_info:
+                    parts.append(f"[red]{device_info['provider']}[normal]")
+                channel(" ".join(parts), ansi=True)
+                if "extended_info" in device_info:
+                    channel(device_info["extended_info"])
+            channel(_("----------"))
+            return "device", info_entries
+
+        @kernel.console_argument("index", type=int)
+        @kernel.console_command(
+            "start",
+            help=_("start a particular device entry"),
+            input_type="device",
+            all_arguments_required=True,
+        )
+        def device_start(channel, _, index, data, **kwargs):
+            """
+            Display device info.
+            """
+            from ..kernel.exceptions import CommandSyntaxError
+
+            try:
+                entry = data[index]
+                provider_path = entry.get("provider")
+                provider = kernel.lookup(provider_path)
+                if provider is None:
+                    raise CommandSyntaxError("Bad provider.")
+                choices = entry.get("choices")
+                path = list(provider_path.split("/"))[-1]
+                service_path = path
+                i = 1
+                while service_path in kernel.contexts:
+                    service_path = path + str(i)
+                    i += 1
+
+                service = provider(kernel, service_path, choices=choices)
+                kernel.add_service("device", service, provider_path)
+                kernel.activate("device", service, assigned=True)
+            except IndexError:
+                raise CommandSyntaxError("Index is not valid.")
+
     if lifecycle == "preshutdown":
         setattr(kernel.root, "activated_device", kernel.device.path)
