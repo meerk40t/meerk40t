@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/dummy", DummyDevice)
         _ = kernel.translation
-        kernel.register("dev_info/grbl-diode", {
+        kernel.register("dev_info/dummy_info", {
             "provider": "provider/device/dummy",
             "friendly_name": _("The device name goes here"),
             "extended_info": _("Extended device info would go here."),
