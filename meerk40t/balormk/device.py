@@ -26,11 +26,17 @@ class BalorDevice(Service, ViewPort):
     to. This class additionally defines commands which exist as console commands while this service is activated.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
         self.extension = "lmc"
         self.job = None
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
 
         _ = kernel.translation
         self.register("frequency", (0, 1000))

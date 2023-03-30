@@ -23,11 +23,17 @@ class LihuiyuDevice(Service, ViewPort):
     """
     priority = 1
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
         choices = [
             {
                 "attr": "bedwidth",

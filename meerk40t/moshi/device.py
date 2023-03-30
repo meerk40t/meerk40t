@@ -19,9 +19,15 @@ class MoshiDevice(Service, ViewPort):
     MoshiDevice is driver for the Moshiboard boards.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
 
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)
