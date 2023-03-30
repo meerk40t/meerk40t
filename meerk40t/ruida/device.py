@@ -7,6 +7,7 @@ ruida files (*.rd) and turn them likewise into cutcode.
 
 
 from meerk40t.kernel import Service
+from .driver import RuidaDriver
 
 from ..core.spoolers import Spooler
 from ..core.units import Length, ViewPort
@@ -134,6 +135,12 @@ class RuidaDevice(Service, ViewPort):
         ]
         self.register_choices("rotary", choices)
 
+
+        self.driver = RuidaDriver(self)
+
+        self.spooler = Spooler(self, driver=self.driver)
+        self.add_service_delegate(self.spooler)
+        self.add_service_delegate(self.driver)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -161,9 +168,6 @@ class RuidaDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
         )
         self.state = 0
-
-        self.spooler = Spooler(self)
-        self.driver = None
 
         self.viewbuffer = ""
 
