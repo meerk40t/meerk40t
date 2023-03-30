@@ -44,45 +44,56 @@ def plugin(kernel, lifecycle=None):
             input_type=None,
             output_type="device",
         )
-        def device_info(channel, _, **kwargs):
+        def device_info(channel, _, remainder=None, **kwargs):
             """
             Display device info.
             """
-            channel(_("----------"))
-            channel(_("Device Entries:"))
-            info_entries = list(kernel.lookup_all("dev_info"))
-            for i, device_info in enumerate(info_entries):
-                parts = [f"[bold]#{i}[normal]"]
-                if "friendly_name" in device_info:
-                    parts.append(f"[blue]{device_info['friendly_name']}[normal]")
-                if "provider" in device_info:
-                    parts.append(f"[red]{device_info['provider']}[normal]")
-                channel(" ".join(parts), ansi=True)
-                if "extended_info" in device_info:
-                    channel(device_info["extended_info"])
-            channel(_("----------"))
+            info_entries = list(kernel.find("dev_info"))
+            if not remainder:
+                channel(_("----------"))
+                channel(_("Device Entries:"))
+                for i, reg_entry in enumerate(info_entries):
+                    device_info, name, sname = reg_entry
+                    parts = [f"[bold]{sname}[normal]"]
+                    if "friendly_name" in device_info:
+                        parts.append(f"[blue]{device_info['friendly_name']}[normal]")
+                    if "provider" in device_info:
+                        parts.append(f"[red]{device_info['provider']}[normal]")
+                    channel(" ".join(parts), ansi=True)
+                    if "extended_info" in device_info:
+                        channel(device_info["extended_info"])
+                channel(_("----------"))
             return "device", info_entries
 
-        @kernel.console_argument("index", type=int)
+        @kernel.console_option(
+            "label", "l", help="optional label for the service to start", type=str,
+        )
+        @kernel.console_argument("name", type=str)
         @kernel.console_command(
-            "start",
+            "add",
             help=_("start a particular device entry"),
             input_type="device",
             all_arguments_required=True,
         )
-        def device_start(channel, _, index, data, **kwargs):
+        def device_start(channel, _, name, data, label=None, **kwargs):
             """
             Display device info.
             """
             from ..kernel.exceptions import CommandSyntaxError
 
             try:
-                entry = data[index]
+                entry = kernel.lookup("dev_info", name)
+                if entry is None:
+                    raise CommandSyntaxError(_("Invalid Device Info"))
                 provider_path = entry.get("provider")
                 provider = kernel.lookup(provider_path)
                 if provider is None:
                     raise CommandSyntaxError("Bad provider.")
                 choices = entry.get("choices")
+                if label:
+                    # There is a label, override the otherwise preferred label.
+                    choices = dict(choices)  # create copy rather than modify original
+                    choices["label"] = label
                 path = list(provider_path.split("/"))[-1]
                 service_path = path
                 i = 1
