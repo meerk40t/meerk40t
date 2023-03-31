@@ -13,11 +13,17 @@ class NewlyDevice(Service, ViewPort):
     Newly Device
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "newly"
         self.extension = "hpgl"
         self.job = None
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
 
         _ = kernel.translation
         choices = [
