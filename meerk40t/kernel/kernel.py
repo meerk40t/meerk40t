@@ -1116,7 +1116,7 @@ class Kernel(Settings):
                     attr = v[0]
                     value = v[1]
                     self.console(f"set {attr} {value}\n")
-                except IndexError:
+                except (IndexError, TypeError):
                     break
 
     def poststart(self):
