@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle=None):
             "friendly_name": _("K40-CO2-Laser (m2nano-Board) (Green)"),
             "extended_info": _("The M2 Nano is the stock card in most K40 machines. Produced by Lihuiyu Studios Labs, the typically small green card is: Designed for Laser Machines. Assembled in China-Hangzhou. The most recent and popular revision version 9, 6C6879-LASER-M2:9."),
             "priority": 100,
+            "family": _("CO2-Laser"),
             "choices": [
                 {
                     "attr": "label",
@@ -36,6 +37,10 @@ def plugin(kernel, lifecycle=None):
                     "attr": "board",
                     "default": "M2",
                 },
+                {
+                    "attr": "source",
+                    "default": "co2",
+                },
             ]
         })
 
@@ -44,6 +49,7 @@ def plugin(kernel, lifecycle=None):
             "friendly_name": _("K40-CO2-Laser (m3nano-Board) (Purple/Blue)"),
             "extended_info": _("The M3 Nano is a newer stock variation of the Lihuiyu Studios Labs board. Designed for Laser Machines. Assembled in China-Hangzhou. The most recent and popular revision version 10, 6C6879-LASER-M3:10. Unlike previous boards the M3 Nano has a hardware pause multi-plexing button and PWM control. The M3Nano Plus variation replaces the A4988 stpper motor chips with TMC stepper motor chips."),
             "priority": 99,
+            "family": _("CO2-Laser"),
             "choices": [
                 {
                     "attr": "board",
@@ -52,6 +58,10 @@ def plugin(kernel, lifecycle=None):
                 {
                     "attr": "label",
                     "default": "M3-Nano",
+                },
+                {
+                    "attr": "source",
+                    "default": "co2",
                 },
             ]
         })

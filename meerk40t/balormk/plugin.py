@@ -27,6 +27,7 @@ def plugin(kernel, lifecycle):
             "friendly_name": _("Fibre-Laser (JCZ-Controller) (Non-MOPA)"),
             "extended_info": _("The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."),
             "priority": 9,
+            "family": _("Fibre-Laser"),
             "choices": [
                 {
                     "attr": "label",
@@ -43,6 +44,7 @@ def plugin(kernel, lifecycle):
             "friendly_name": _("Fibre-Laser (JCZ-Controller) (MOPA)"),
             "extended_info": _("The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With this driver we specifically enable the MOPA feature."),
             "priority": 8,
+            "family": _("Fibre-Laser"),
             "choices": [
                 {
                     "attr": "label",
@@ -64,6 +66,7 @@ def plugin(kernel, lifecycle):
             "extended_info": _(
                 "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With specific settings for the CO2 source. (No specific settings are known)."),
             "priority": 7,
+            "family": _("CO2-Laser"),
             "choices": [
                 {
                     "attr": "label",
@@ -81,6 +84,7 @@ def plugin(kernel, lifecycle):
             "extended_info": _(
                 "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With specific settings for the UV source. (No specific settings are known)."),
             "priority": 6,
+            "family": _("UV-Laser"),
             "choices": [
                 {
                     "attr": "label",

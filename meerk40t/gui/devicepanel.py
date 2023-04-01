@@ -48,7 +48,8 @@ class DevicePanel(wx.Panel):
             | wx.LC_SORT_ASCENDING,
         )
         self.devices_list.InsertColumn(0, _("Device"))
-        self.devices_list.InsertColumn(1, _("Type"))
+        self.devices_list.InsertColumn(1, _("Driver"))
+        self.devices_list.InsertColumn(2, _("Type"))
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -122,8 +123,9 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.45 * size[0]))
-        self.devices_list.SetColumnWidth(1, int(0.45 * size[0]))
+        self.devices_list.SetColumnWidth(0, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(1, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(2, int(0.3 * size[0]))
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
@@ -174,8 +176,25 @@ class DevicePanel(wx.Panel):
             dev_index = len(self.devices) - 1
             label = device.label
             index = self.devices_list.InsertItem(self.devices_list.GetItemCount(), label)
-            type_info = getattr(device,"name", device.path)
+            type_info = getattr(device, "name", device.path)
+            dev_infos = list(self.context.find("dev_info"))
+            dev_infos.sort(key=lambda e: e[0].get("priority", 0), reverse=True)
+            family_default = ""
+            for obj, name, sname in dev_infos:
+                if device.registered_path == obj.get("provider", ""):
+                    if "choices" in obj:
+                        for prop in obj["choices"]:
+                            if "attr" in prop and "default" in prop and prop["attr"] == "source":
+                                family_default = prop["default"]
+                                break
+                if family_default:
+                    break
+
+            family_info = getattr(device, "source", family_default)
+            if family_info:
+                family_info = family_info.capitalize()
             self.devices_list.SetItem(index, 1, type_info)
+            self.devices_list.SetItem(index, 2, family_info)
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
