@@ -39,10 +39,20 @@ class NewlyController:
         self._last_x = x
         self._last_y = y
 
+        self._set_power = None
+        self._set_speed = None
+        self._set_pwm_freq = None
+        self._set_relative_mode = None
+
+        self._cut_dc = None
+        self._move_dc = None
         self._speed = None
         self._power = None
-        self._relative = False
         self._pwm_frequency = None
+        self._selected_pen = None
+        self._speed_mode = None
+        self._relative = None
+
         self._realtime = False
 
         self.raster_bit_depth = 1
@@ -153,8 +163,9 @@ class NewlyController:
         if self.mode != "init":
             return
         self._realtime = True
-        self.mode = "started"
+        self.mode = "realtime"
         self(f"ZZZFile0")
+        self._clear_settings()
 
     def _write_position(self, outline):
         pass
@@ -165,14 +176,16 @@ class NewlyController:
             x, y = self._last_x, self._last_y
             self("DW")
             self._write_dc_information()
-            self("SP2")
-            self("SP2")
-            self._write_vector_speed_info(speed=100, power=0)
-            self("PR")
-            self._relative = True
+            self._write_pen_info(2)
+            self._set_speed = self.service.moving_speed
+            self._set_power = 0
+            self._write_speed_info(vector=True)
+            self._write_power_info(vector=True)
+            self._set_relative()
             for pt in outline:
-                self.goto(*pt)
-            self.goto(x, y)
+                self.mark(*pt)
+            self.mark(x, y)
+            self._clear_settings()
             self("ZED")
 
     def _execute_job(self):
@@ -181,6 +194,7 @@ class NewlyController:
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
         self.command_buffer.clear()
+        self._clear_settings()
 
     def open_job(self, job=None):
         """
@@ -205,6 +219,7 @@ class NewlyController:
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
         self("GZ")
+        self._clear_settings()
 
     def close_job(self, job=None):
         """
@@ -213,7 +228,7 @@ class NewlyController:
         """
         if not self.command_buffer:
             return
-        if self.mode in ("started", "init"):
+        if self.mode in ("realtime", "init"):
             # Job contains no instructions.
             self.mode = "init"
             self.command_buffer.clear()
@@ -251,57 +266,166 @@ class NewlyController:
             return 0
         return int(round(power))
 
-    def _write_dc_information(self):
-        self(f"VP{self.service.cut_dc}")
-        self(f"VK{self.service.move_dc}")
+    def _clear_settings(self):
+        self._set_power = None
+        self._set_speed = None
+        self._set_pwm_freq = None
+        self._set_relative_mode = None
 
-    def _write_vector_speed_info(self, speed=None, power=None):
-        # Calculate speed and lookup factors in chart.
-        speed_at_program_change = self._speed
-        if speed_at_program_change is None:
-            speed_at_program_change = self.service.default_cut_speed
-        if speed is not None:
-            speed_at_program_change = speed
+        self._cut_dc = None
+        self._move_dc = None
+        self._speed = None
+        self._power = None
+        self._pwm_frequency = None
+        self._corner_speed = None
+        self._acceleration_length = None
+        self._selected_pen = None
+        self._speed_mode = None
+        self._relative = None
+
+    def _write_dc_information(self):
+        if self._cut_dc != self.service.cut_dc:
+            self._cut_dc = self.service.cut_dc
+            self(f"VP{self._cut_dc}")
+
+        if self._move_dc != self.service.move_dc:
+            self._move_dc = self.service.move_dc
+            self(f"VK{self._move_dc}")
+
+    def _get_chart_settings_for_speed(self, speed):
+        """
+        Get charted settings for a particular speed. Given a speed this provides other required settings for this
+        same speed.
+
+        @param speed:
+        @return:
+        """
         chart = self.service.speedchart
         smallest_difference = float("inf")
         closest_index = None
         for i, c in enumerate(chart):
             chart_speed = c.get("speed", 0)
-            delta_speed = chart_speed - speed_at_program_change
+            delta_speed = chart_speed - speed
             if (
-                chart_speed > speed_at_program_change
-                and smallest_difference > delta_speed
+                    chart_speed > speed
+                    and smallest_difference > delta_speed
             ):
                 smallest_difference = delta_speed
                 closest_index = i
         if closest_index is not None:
-            settings = chart[closest_index]
-        else:
-            settings = chart[-1]
+            return chart[closest_index]
+        return chart[-1]
 
-        self(f"VQ{int(round(settings['corner_speed']))}")
-        self(f"VJ{int(round(settings['acceleration_length']))}")
-        self(f"SP1")
-        power_at_program_change = (
-            self.service.default_cut_power if self._power is None else self._power
-        )
-        if power is not None:
-            power_at_program_change = power
-        self(f"DA{self._map_power(power_at_program_change)}")
-        self(f"VS{self._map_vector_speed(speed_at_program_change)}")
+    def _write_power_info(self, vector=False):
+        """
+        Write power information. If the _set_power is set then it takes priority. Otherwise, the power remains set to
+        what it was previously set to. If no power is set, then power is set to the default cut power.
+
+        @return:
+        """
+        requested_power = self._set_power
+        self._set_power = None
+        if requested_power is not None:
+            # Requested power is the priority.
+            new_power = requested_power
+        elif self._power is None:
+            # No power is set, use default.
+            if vector:
+                new_power = self.service.default_cut_power
+            else:
+                new_power = self.service.default_raster_power
+        else:
+            # no new power is requested and a power already exists.
+            return
+        if new_power != self._power:
+            # Already set power is not the new_power setting.
+            self._power = new_power
+            self(f"DA{self._map_power(self._power)}")
+
+    def _write_pen_info(self, pen):
+        if self._selected_pen != pen:
+            self._selected_pen = pen
+            self(f"SP{int(pen)}")
+
+    def _write_pwmfreq_info(self):
+        """
+        Write pwm frequency information.
+        @return:
+        """
+        requested_pwmfreq = self._set_pwm_freq
+        self._set_pwm_freq = None
+
+        if requested_pwmfreq is not None:
+            # Priority requested frequency
+            new_freq = requested_pwmfreq
+        elif self._pwm_frequency is None:
+            # Frequency is not set.
+            if self.service.pwm_enabled:
+                # Frequency should be set.
+                new_freq = self.service.pwm_frequency
+            else:
+                # Frequency should not be set. Exit.
+                return
+        else:
+            # no new frequency is requested and one is already set.
+            return
+        if new_freq != self._pwm_frequency:
+            self._pwm_frequency = new_freq
+            # Frequency is needed, and different
+            self(f"PL{self._pwm_frequency}")
+
+    def _write_speed_info(self, vector=True):
+        speed_mode = "vector" if vector else "raster"
+
+        requested_speed = self._set_speed
+        self._set_speed = None
+        if requested_speed is not None:
+            # Priority speed is requested.
+            new_speed = requested_speed
+        elif self._speed is None or self._speed_mode != speed_mode:
+            # Priority speed is not requested but speed is unset or mode is changed.
+            if vector:
+                new_speed = self.service.default_cut_speed
+            else:
+                new_speed = self.service.default_raster_speed
+        else:
+            # No speed is requested, and a speed is already set.
+            return
+
+        if new_speed != self._speed or self._speed_mode != speed_mode:
+            self._speed_mode = speed_mode
+            self._speed = new_speed
+            settings = self._get_chart_settings_for_speed(new_speed)
+            self(f"VQ{int(round(settings['corner_speed']))}")
+            self(f"VJ{int(round(settings['acceleration_length']))}")
+            self._write_pen_info(1)
+            if vector:
+                self(f"VS{self._map_vector_speed(new_speed)}")
+            else:
+                self(f"VS{self._map_raster_speed(new_speed)}")
+
+    def _write_relative_mode(self):
+        if self._relative is None:
+            self._relative = self._set_relative_mode
+            self._set_relative_mode = None
+            if self._relative:
+                self("PR")
+            else:
+                self("PA")
+
+    def _set_relative(self):
+        self._set_relative_mode = True
+
+    def _set_absolute(self):
+        self._set_relative_mode = False
 
     def program_mode(self):
-        if self.mode == "program":
-            return
-        if self.mode == "started":
-            if self._pwm_frequency is not None:
-                self(f"PL{self._pwm_frequency}")
+        self._write_pwmfreq_info()
         self._write_dc_information()
-        self("SP2")
-        self("SP2")
-        self._write_vector_speed_info()
-        self._relative = True
-        self("PR")
+        self._write_pen_info(2)
+        self._write_speed_info(vector=True)
+        self._write_power_info(vector=True)
+        self._set_relative()
 
     def rapid_mode(self):
         pass
@@ -406,39 +530,6 @@ class NewlyController:
                 previous_x, previous_y = x, y
         commit_scanline()
 
-    def _write_raster_speed_info(self, speed=None, power=None):
-        # Calculate speed and lookup factors in chart.
-        speed_at_program_change = self._speed
-        if speed_at_program_change is None:
-            speed_at_program_change = self.service.default_raster_speed
-        if speed is not None:
-            speed_at_program_change = speed
-        chart = self.service.speedchart
-        smallest_difference = float("inf")
-        closest_index = None
-        for i, c in enumerate(chart):
-            chart_speed = c.get("speed", 0)
-            delta_speed = chart_speed - speed_at_program_change
-            if (
-                chart_speed > speed_at_program_change
-                and smallest_difference > delta_speed
-            ):
-                smallest_difference = delta_speed
-                closest_index = i
-        if closest_index is not None:
-            settings = chart[closest_index]
-        else:
-            settings = chart[-1]
-        self(f"VQ{int(round(settings['corner_speed']))}")
-        self(f"VJ{int(round(settings['acceleration_length']))}")
-        power_at_program_change = (
-            self.service.default_raster_power if self._power is None else self._power
-        )
-        if power is not None:
-            power_at_program_change = power
-        self(f"DA{self._map_power(power_at_program_change)}")
-        self(f"VS{self._map_raster_speed(speed_at_program_change)}")
-
     def raster_mode(self, horizontal=True):
         mode = "raster_horizontal" if horizontal else "raster_vertical"
         if self.mode == mode:
@@ -447,21 +538,21 @@ class NewlyController:
         bc = 0
         bd = 1
         self("IN")
-        if self.mode == "started":
-            if self._pwm_frequency is not None:
-                self(f"PL{self._pwm_frequency}")
-            self._write_dc_information()
-        self("SP2")
-        self("SP2")
-        self._write_raster_speed_info()
-        self._relative = True
-        self(f"PR;PR;PR;PR")
+        self._write_pwmfreq_info()
+        self._write_dc_information()
+        self._write_pen_info(2)
+        self._write_speed_info(vector=False)
+        self._write_power_info(vector=False)
+        self._set_relative()
+        # TODO: This section is for the write of the movement to the start of the vector.
+
         # Moves to the start position of the raster.
         self(f"BT{self.raster_bit_depth}")
         self(f"BC{bc}")
         self(f"BD{bd}")
-        self("SP0")
-        self._write_raster_speed_info()
+        self._write_pen_info(0)
+        self._write_speed_info(vector=False)
+        self._write_power_info(vector=False)
         # IN;PL5;VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;PR;PR;PR;PR;PU1000,-394;BT1;DA40;BC0;BD4;PR;PU-4,0;SP0;VQ20;VJ8;VS9;YF
         # IN;PL5;VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;PR;PR;PR;PR;PU1000,-1147;BT8;BC0;BD4;SP0;VQ20;VJ8;VS6;YZ...
 
@@ -477,17 +568,9 @@ class NewlyController:
         @param settings: The current settings dictionary
         @return:
         """
-        new_init = False
-        old = self._power
-        self._power = settings.get("power")
-        if self._power != old:
-            new_init = True
-        old = self._speed
-        self._speed = settings.get("speed")
-        if self._speed != old:
-            new_init = True
-        if new_init:
-            self._write_vector_speed_info()
+        self._set_speed = settings.get("speed")
+        self._set_power = settings.get("power")
+        self._set_pwm_freq = settings.get("pwm_frequency")
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -499,6 +582,7 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=data)
 
     def mark(self, x, y):
+        self._write_relative_mode()
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -514,6 +598,7 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def goto(self, x, y):
+        self._write_relative_mode()
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -528,28 +613,21 @@ class NewlyController:
             self(f"PU{y},{x}")
             self._last_x, self._last_y = x, y
 
-    def set_xy(self, x, y, relative=False):
+    def set_xy(self, x, y, relative=None):
         self.realtime_job()
+        if relative is not None:
+            if relative:
+                self._set_relative()
+            else:
+                self._set_absolute()
         self.mode = "jog"
         self._write_dc_information()
-        self("SP2")
-        self("SP2")
-        self._write_vector_speed_info(speed=self.service.moving_speed, power=0)
-        if relative:
-            dx = int(round(x - self._last_x))
-            dy = int(round(y - self._last_y))
-            self("PR")
-            self._relative = True
-            self(f"PU{dy},{dx}")
-            self._last_x += dx
-            self._last_y += dy
-        else:
-            x = int(round(x))
-            y = int(round(y))
-            self("PA")
-            self._relative = False
-            self(f"PU{y},{x}")
-            self._last_x, self._last_y = x, y
+        self._write_pen_info(2)
+        self._set_speed = self.service.moving_speed
+        self._set_power = 0
+        self._write_speed_info(vector=True)
+        self._write_power_info(vector=True)
+        self.goto(x, y)
         self.close_job()
 
     def get_last_xy(self):
