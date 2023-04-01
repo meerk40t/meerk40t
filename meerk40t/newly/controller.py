@@ -392,6 +392,7 @@ class NewlyController:
                         scanline.clear()
 
         self("IN")
+        self._clear_settings()
 
         previous_x, previous_y = raster_cut.plot.initial_position_in_scene()
 
@@ -400,6 +401,7 @@ class NewlyController:
 
         self._set_raster_mode()
         self.set_settings(raster_cut.settings)
+        self._set_speed_mode = "raster"
 
         self._write_pen_info(0)
         self._commit_settings()
