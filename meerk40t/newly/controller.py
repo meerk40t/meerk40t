@@ -272,14 +272,10 @@ class NewlyController:
 
         outline = None
         try:
-            # print(job.outline)
             outline = job.outline
         except AttributeError:
             pass
-
-        if outline is not None:
-            self.set_xy(*outline[0], relative=False)
-
+        self.set_xy(0, 0, relative=False)
         self._realtime = False
         self._speed = None
         self._power = None
