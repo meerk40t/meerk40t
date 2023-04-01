@@ -308,6 +308,9 @@ class NewlyController:
     def program_mode(self):
         self._set_vector_mode()
 
+    def moving_mode(self):
+        self._set_move_mode()
+
     def rapid_mode(self):
         pass
 
@@ -450,6 +453,7 @@ class NewlyController:
         """
         if "speed" in settings:
             self._set_speed = settings.get("speed")
+            self._set_speed_mode = "vector"
         if "power" in settings:
             self._set_power = settings.get("power")
         if "pwm_frequency" in settings:
@@ -465,11 +469,11 @@ class NewlyController:
         self.connection.write(index=self._machine_index, data=data)
 
     def mark(self, x, y):
-        self._commit_settings()
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
             return
+        self._commit_settings()
         if self._relative:
             self(f"PD{dy},{dx}")
             self._last_x += dx
@@ -481,11 +485,11 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def goto(self, x, y):
-        self._commit_settings()
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
             return
+        self._commit_settings()
         if self._relative:
             self(f"PU{dy},{dx}")
             self._last_x += dx

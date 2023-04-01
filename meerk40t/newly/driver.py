@@ -200,10 +200,10 @@ class NewlyDriver:
                 con.program_mode()
                 con.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
-                con.program_mode()
+                con.moving_mode()
                 con.goto(0, 0)
             elif isinstance(q, GotoCut):
-                con.program_mode()
+                con.moving_mode()
                 con.goto(0, 0)
             elif isinstance(q, SetOriginCut):
                 pass
