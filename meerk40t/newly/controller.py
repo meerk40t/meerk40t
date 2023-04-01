@@ -213,7 +213,7 @@ class NewlyController:
         self._set_speed = self.service.moving_speed
         self._set_power = 0
         self._set_pwm_freq = None
-        self._set_relative = True
+        self._set_relative = False
         self._set_bit_depth = None
         self._set_bit_width = None
         self._set_bit_c = None
@@ -225,7 +225,7 @@ class NewlyController:
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
         self._set_pwm_freq = None
-        self._set_relative = True
+        self._set_relative = False
         self._set_bit_depth = None
         self._set_bit_width = None
         self._set_bit_c = None
