@@ -32,7 +32,9 @@ def register_panel(window, context):
 class SelectDevice(wx.Dialog):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SelectDevice.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        kwds["style"] = (
+            kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
         wx.Dialog.__init__(self, *args, **kwds)
         self.context = context
         self.SetTitle(_("Select Device"))
@@ -100,7 +102,12 @@ class SelectDevice(wx.Dialog):
         tree.DeleteAllItems()
         tree_root = tree.AddRoot(_("Devices"))
         self.dev_infos = list(self.context.find("dev_info"))
-        self.dev_infos.sort(key=lambda e: str(e[0].get("family_priority", 0)) + "_" + str(e[0].get("priority", 0)), reverse=True)
+        self.dev_infos.sort(
+            key=lambda e: str(e[0].get("family_priority", 0))
+            + "_"
+            + str(e[0].get("priority", 0)),
+            reverse=True,
+        )
         last_family = ""
         parent_item = tree_root
         index = -1
@@ -143,8 +150,9 @@ class SelectDevice(wx.Dialog):
         self.Layout()
 
     def on_dclick(self, event):
-       if self.device_type:
-           self.EndModal(self.GetAffirmativeId())
+        if self.device_type:
+            self.EndModal(self.GetAffirmativeId())
+
 
 class DevicePanel(wx.Panel):
     def __init__(self, *args, context=None, pane=False, **kwds):
