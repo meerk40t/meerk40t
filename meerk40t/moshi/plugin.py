@@ -22,6 +22,7 @@ def plugin(kernel, lifecycle=None):
             "extended_info": _("Moshiboards MS10105 (V.4.XX) were popular around 2013, these communicate over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). The boards are usually read and sport two large black heatsinks for their stepper motor chips."),
             "priority": 0,
             "family": _("CO2-Laser"),
+            "family_priority": 99,
             "choices": [
                 {
                     "attr": "label",
