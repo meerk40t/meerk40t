@@ -157,7 +157,6 @@ class HarmonographWidget(Widget):
         super().__init__(scene, x, y, x, y)
         self.tool_pen = wx.Pen()
         self.tool_pen.SetColour(wx.RED)
-        # self.tool_pen.SetWidth(1000)
         self.shape_matrix = None
 
         self.curves = list()
@@ -181,7 +180,7 @@ class HarmonographWidget(Widget):
                 size,
                 size,
                 icons.icons8_delete_50.GetBitmap(use_theme=False),
-                self.confirm,
+                self.cancel,
             )
 
         toolbar.add_widget(-1, remove_widget)
@@ -201,7 +200,7 @@ class HarmonographWidget(Widget):
             0,
             size,
             size,
-            icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
+            icons.icons8_next_page_20.GetBitmap(use_theme=False, resize=50),
             self.set_random_harmonograph,
         )
         toolbar.add_widget(-1, random_widget)
@@ -271,11 +270,25 @@ class HarmonographWidget(Widget):
             t.move((self.series[0][0], self.series[0][1]))
             for m in self.series:
                 t.line((m[0], m[1]))
-            node = elements.elem_branch.add(path=t, type="elem path")
+            self.process_matrix()
+            t *= self.shape_matrix
+            node = elements.elem_branch.add(path=abs(t), type="elem path")
+            node.stroke_width = elements.default_strokewidth
             elements.classify([node])
             self.parent.remove_widget(self)
         except IndexError:
             pass
+        self.series = None
+        self.scene.request_refresh()
+
+    def cancel(self, **kwargs):
+        """
+        Removes the current widget when executed
+        @param kwargs:
+        @return:
+        """
+
+        self.parent.remove_widget(self)
         self.series = None
         self.scene.request_refresh()
 
