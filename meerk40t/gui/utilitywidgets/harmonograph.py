@@ -162,7 +162,7 @@ class HarmonographWidget(Widget):
         self.curves = list()
 
         self.theta = 0
-        self.scale = 1000.0
+        self._scale = 1000.0
         self.rotations = 20.0
 
         size = 10000
@@ -244,6 +244,16 @@ class HarmonographWidget(Widget):
             curvebar.add_widget(-1, CurveWidget(scene, icons.icons8_computer_support_50.GetBitmap(use_theme=False), c))
         self.add_widget(-1, curvebar)
 
+    @property
+    def scale(self):
+        return self._scale / 1000.0
+
+    @scale.setter
+    def scale(self, v):
+        self._scale = 1000.0 * v
+        self.process_matrix()
+        self.scene.request_refresh()
+
     def add_pendulum_x(self, **kwargs):
         x_pen = HShape()
         x_pen.set_x_pendulum()
@@ -319,7 +329,7 @@ class HarmonographWidget(Widget):
     def process_matrix(self):
         self.shape_matrix = Matrix()
         self.shape_matrix.post_rotate(self.theta)
-        self.shape_matrix.post_scale(self.scale, self.scale)
+        self.shape_matrix.post_scale(self._scale, self._scale)
         self.shape_matrix.post_translate(self.left, self.top)
 
     def notify_moved_child(self, child):
