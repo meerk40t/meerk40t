@@ -783,10 +783,14 @@ class TemplatePanel(wx.Panel):
 
             # Make one op for text
             if display_labels or display_values:
-                text_op = RasterOpNode()
-                text_op.color = Color("black")
-                text_op.label = "Descriptions"
-                operation_branch.add_node(text_op)
+                text_op_x = RasterOpNode()
+                text_op_x.color = Color("black")
+                text_op_x.label = "Descriptions X-Axis"
+                text_op_y = RasterOpNode()
+                text_op_y.color = Color("black")
+                text_op_y.label = "Descriptions Y-Axis"
+                operation_branch.add_node(text_op_x)
+                operation_branch.add_node(text_op_y)
             if display_labels:
                 text_x = start_x + expected_width / 2
                 text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
@@ -799,7 +803,7 @@ class TemplatePanel(wx.Panel):
                     fill=Color("black"),
                     type="elem text",
                 )
-                text_op.add_reference(node, 0)
+                text_op_x.add_reference(node, 0)
 
                 text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
                 text_y = start_y + expected_height / 2
@@ -814,7 +818,7 @@ class TemplatePanel(wx.Panel):
                 )
                 node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                 node.modified()
-                text_op.add_reference(node, 0)
+                text_op_y.add_reference(node, 0)
 
             p_value_1 = min_value_1
 
@@ -840,7 +844,7 @@ class TemplatePanel(wx.Panel):
                     )
                     # node.matrix.post_rotate(tau / 4, text_x, text_y)
                     node.modified()
-                    text_op.add_reference(node, 0)
+                    text_op_x.add_reference(node, 0)
 
                 for idx2 in range(count_2):
                     pval2 = shortened(p_value_2, 3)
@@ -859,7 +863,7 @@ class TemplatePanel(wx.Panel):
                             type="elem text",
                         )
                         node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
-                        text_op.add_reference(node, 0)
+                        text_op_y.add_reference(node, 0)
                     if optype == 0:  # Cut
                         this_op = copy(self.default_op[optype])
                         usefill = False

@@ -19,12 +19,13 @@ class Settings:
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename):
+    def __init__(self, directory, filename, ignore_settings = False):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )
         self._config_dict = {}
-        self.read_configuration()
+        if not ignore_settings:
+            self.read_configuration()
 
     def __contains__(self, item):
         return item in self._config_dict

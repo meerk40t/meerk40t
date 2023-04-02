@@ -22,10 +22,17 @@ class GRBLDevice(Service, ViewPort):
     GRBLDevice is driver for the Gcode Controllers
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
+
         # self.redlight_preferred = False
 
         self.setting(str, "label", path)
@@ -252,6 +259,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Label"),
                 "tip": _("What is this device called."),
                 "width": 250,
+                "signals": "device;renamed",
             },
             {
                 "attr": "serial_port",
