@@ -44,6 +44,7 @@ from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
+from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name, is_navigation_key
@@ -308,6 +309,14 @@ class MeerK40tScenePanel(wx.Panel):
                 0, CyclocycloidWidget(self.widget_scene)
             )
             channel(_("Added cyclocycloid widget to scene."))
+
+        @context.console_command("harmonograph", hidden=True)
+        def harmonograph(channel, _, **kwgs):
+            self.widget_scene.widget_root.scene_widget.add_widget(
+                0, HarmonographWidget(self.widget_scene)
+            )
+            self.widget_scene.request_refresh()
+            channel(_("Added harmonograph widget to scene."))
 
         @context.console_command("toast", hidden=True)
         def toast_scene(remainder, **kwgs):
