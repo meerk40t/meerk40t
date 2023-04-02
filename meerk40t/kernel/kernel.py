@@ -31,7 +31,8 @@ KERNEL_VERSION = "0.0.10"
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
 
-class BusyInfo():
+
+class BusyInfo:
     def __init__(self, **kwds):
         self.busy_object = None
         self.shown = False
@@ -55,6 +56,7 @@ class BusyInfo():
         self.shown = True
         return
 
+
 class Kernel(Settings):
     """
     The Kernel serves as the central hub of communication between different objects within the system, stores the
@@ -65,7 +67,14 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str, ansi: bool = True, ignore_settings: bool = False):
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        profile: str,
+        ansi: bool = True,
+        ignore_settings: bool = False,
+    ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -79,10 +88,7 @@ class Kernel(Settings):
 
         # Persistent Settings
         Settings.__init__(
-            self,
-            self.name,
-            f"{profile}.cfg",
-            ignore_settings=ignore_settings
+            self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
         )
         self.settings = self
 

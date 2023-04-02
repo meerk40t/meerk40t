@@ -5,15 +5,22 @@ scale amount. The starting point is 1:1 scaling. And moving further to the left 
 """
 
 import wx
-from meerk40t.gui.scene.sceneconst import  RESPONSE_CONSUME
-from meerk40t.gui.utilitywidgets.handlewidget import HandleWidget
 
 from meerk40t.gui import icons
+from meerk40t.gui.scene.sceneconst import RESPONSE_CONSUME
+from meerk40t.gui.utilitywidgets.handlewidget import HandleWidget
 
 
 class ScaleWidget(HandleWidget):
     def __init__(self, scene, left, top, right, bottom):
-        super().__init__(scene, left, top, right, bottom, icons.icons8_resize_horizontal_50.GetBitmap(use_theme=False))
+        super().__init__(
+            scene,
+            left,
+            top,
+            right,
+            bottom,
+            icons.icons8_resize_horizontal_50.GetBitmap(use_theme=False),
+        )
         self.scale = 1.0
         self.current_scale = 1.0
         self.scale_one_distance = (right - left) * 5
@@ -56,7 +63,12 @@ class ScaleWidget(HandleWidget):
             self.apply_scale(self.current_scale * self.current_scale)
             cx = (self.left + self.right) / 2.0
             cy = (self.top + self.bottom) / 2.0
-            left, top, right, bottom = cx - scale_distance, cy - scale_distance, cx + d, cy + d
+            left, top, right, bottom = (
+                cx - scale_distance,
+                cy - scale_distance,
+                cx + d,
+                cy + d,
+            )
             self.rect = left, top, right - left, bottom - top
         self.scene.toast(f"scale {self.current_scale:02f}")
 

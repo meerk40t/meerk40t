@@ -234,7 +234,7 @@ class RasterOpNode(Node, Parameters):
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node_for_reference(node):
                         addit = False
-                        if node.type in  ("elem image", "elem text"):
+                        if node.type in ("elem image", "elem text"):
                             addit = True
                         if hasattr(node, "fill"):
                             if node.fill is not None and node.fill.argb is not None:

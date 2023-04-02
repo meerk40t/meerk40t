@@ -362,7 +362,7 @@ class PolyBool:
                 self.path.segments[i, :] = segment
 
         for i in range(s, e):
-            self.event_vertex(i-1, i, s, e)
+            self.event_vertex(i - 1, i, s, e)
 
     def sort_events(self):
         def event_sort(e):
@@ -398,12 +398,12 @@ class PolyBool:
     def check_intersections(self, p1, p2):
         print(f"checking for intersections... {p1} {p2}")
         needs_sort = False
-        for t0, t1 in self.path.intersections(
-            p1, p2
-        ):
+        for t0, t1 in self.path.intersections(p1, p2):
             if p1 not in self._actives or p2 not in self._actives:
                 print("bad intersection check.")
-            if (np.isclose(t0,0) or np.isclose(t0, 1)) and (np.isclose(t1, 0) or np.isclose(t1, 1)):
+            if (np.isclose(t0, 0) or np.isclose(t0, 1)) and (
+                np.isclose(t1, 0) or np.isclose(t1, 1)
+            ):
                 # Not a real intersection.
                 continue
             print(f"Intersection at {t0}, {t1}")
@@ -441,7 +441,9 @@ class PolyBool:
 
             self._actives.sort(key=self.x_intercept)
             print(f"New Actives... {self._actives}")
-            self.event_intersection(split0[0][-1], p1, p2, self.path.index-2, self.path.index-1)
+            self.event_intersection(
+                split0[0][-1], p1, p2, self.path.index - 2, self.path.index - 1
+            )
             needs_sort = True
         if needs_sort:
             self.sort_events()
@@ -476,7 +478,7 @@ class PolyBool:
             self._actives.sort(key=self.x_intercept)
             print("checking ALL intersections.")
             for pos in range(1, len(self._actives)):
-                self.check_intersections(self._actives[pos-1], self._actives[pos])
+                self.check_intersections(self._actives[pos - 1], self._actives[pos])
             # print(f"{index} at {pos} deleted in {self._actives}")
 
         assert len(self._actives) == 0
@@ -1526,7 +1528,11 @@ class Geomstr:
         @param t: position(s) to split at (numpy ok)
         @return:
         """
-        if not isinstance(e, (np.ndarray, tuple, list)) or len(e) == 0 or not isinstance(e[0], complex):
+        if (
+            not isinstance(e, (np.ndarray, tuple, list))
+            or len(e) == 0
+            or not isinstance(e[0], complex)
+        ):
             e = self.segments[e]
         start, control, info, control2, end = e
         if info.real == TYPE_LINE:

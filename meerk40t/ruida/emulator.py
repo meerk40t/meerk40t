@@ -8,19 +8,20 @@ the received data into laser commands to be executed by the local driver.
 import os
 from typing import Tuple, Union
 
-from .exceptions import RuidaCommandError
 from meerk40t.kernel import get_safe_path
+
+from ..core.units import UNITS_PER_uM
+from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
-    parse_mem,
-    encode32,
-    decodeu35,
-    parse_filenumber,
     decode14,
+    decodeu35,
+    encode32,
     parse_commands,
+    parse_filenumber,
+    parse_mem,
     swizzles_lut,
 )
-from ..core.units import UNITS_PER_uM
 
 
 class RuidaEmulator:

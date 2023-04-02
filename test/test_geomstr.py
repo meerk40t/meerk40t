@@ -1,19 +1,6 @@
 import random
 import time
 import unittest
-
-from meerk40t.tools.geomstr import (
-    Geomstr,
-    Scanbeam,
-    TYPE_LINE,
-    Pattern,
-    Clip,
-    Polygon,
-    MergeGraph,
-    PolyBool,
-)
-
-import unittest
 from copy import copy
 from math import tau
 
@@ -27,6 +14,7 @@ from meerk40t.tools.geomstr import (
     Geomstr,
     MergeGraph,
     Pattern,
+    PolyBool,
     Polygon,
     Scanbeam,
 )
@@ -44,9 +32,10 @@ def draw(segments, w, h, filename="test.png"):
     for segment in segments:
         f = segment[0]
         t = segment[-1]
-        draw.ellipse((f.real -3, f.imag-3, f.real+3, f.imag+3), fill="#FF0000")
+        draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
         draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
     im.save(filename)
+
 
 def random_point(i=100):
     return complex(random.random() * i, random.random() * i)
@@ -54,6 +43,7 @@ def random_point(i=100):
 
 def random_pointi(i=50):
     return complex(random.randint(0, i), random.randint(0, i))
+
 
 def random_segment(path, i=100, point=True, line=True, quad=True, cubic=True, arc=True):
     t = random.randint(0, 5)
@@ -81,7 +71,9 @@ def random_segment(path, i=100, point=True, line=True, quad=True, cubic=True, ar
         end = random_point(i=i)
         path.arc(start, control, end)
     else:
-        random_segment(path, i=i, point=point, line=line, quad=quad, cubic=cubic, arc=arc)
+        random_segment(
+            path, i=i, point=point, line=line, quad=quad, cubic=cubic, arc=arc
+        )
 
 
 class TestGeomstr(unittest.TestCase):
@@ -1014,7 +1006,9 @@ class TestGeomstr(unittest.TestCase):
             print("\n\n\n\n\n")
             g = Geomstr()
             for i in range(10):
-                random_segment(g, i=1000, arc=False, point=False, quad=False, cubic=False)
+                random_segment(
+                    g, i=1000, arc=False, point=False, quad=False, cubic=False
+                )
             print(g.segments)
             t = time.time()
             pb = PolyBool()

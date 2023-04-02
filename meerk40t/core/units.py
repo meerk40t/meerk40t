@@ -66,6 +66,7 @@ UNITS_MILS = 3
 UNITS_INCH = 4
 UNITS_PERCENT = 100
 
+
 class ViewPort:
     """
     The width and height are of the viewport are stored in MK native units (1/65535) in.
@@ -1031,9 +1032,8 @@ class Angle:
         return (self.angle % (tau / 4.0)) == 0
 
 
-
 def viewbox_transform(
-        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
+    e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
 ):
     """
     SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
@@ -1061,14 +1061,14 @@ def viewbox_transform(
     @return: string of the SVG transform commands to account for the viewbox.
     """
     if (
-            e_x is None
-            or e_y is None
-            or e_width is None
-            or e_height is None
-            or vb_x is None
-            or vb_y is None
-            or vb_width is None
-            or vb_height is None
+        e_x is None
+        or e_y is None
+        or e_width is None
+        or e_height is None
+        or vb_x is None
+        or vb_y is None
+        or vb_width is None
+        or vb_height is None
     ):
         return ""
     if aspect is not None:
