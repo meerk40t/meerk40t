@@ -87,8 +87,8 @@ class ViewMap:
         if not isinstance(x, (int, float)):
             width = self._destination.width
             height = self._destination.height
-            x = Length(x, relative_length=width, unitless=1).units,
-            y = Length(y, relative_length=height, unitless=1).units,
+            x = Length(x, relative_length=width, unitless=1).units
+            y = Length(y, relative_length=height, unitless=1).units
         unit_x, unit_y = x, y
         if vector:
             return self.matrix.transform_vector([unit_x, unit_y])
