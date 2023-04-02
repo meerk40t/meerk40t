@@ -581,6 +581,8 @@ class NewlyController:
         self.realtime_job()
         self.mode = "home"
         self("RS")
+        self._last_x = 0
+        self._last_y = 0
         self.close_job()
 
     def origin(self):
