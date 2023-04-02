@@ -29,6 +29,131 @@ def register_panel(window, context):
     context.register("pane/devices", pane)
 
 
+class SelectDevice(wx.Dialog):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: SelectDevice.__init__
+        kwds["style"] = (
+            kwds.get("style", 0) | wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        )
+        wx.Dialog.__init__(self, *args, **kwds)
+        self.context = context
+        self.SetTitle(_("Select Device"))
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        sizer_3 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Filter")), wx.HORIZONTAL
+        )
+        sizer_main.Add(sizer_3, 0, wx.EXPAND, 0)
+
+        label_filter = wx.StaticText(self, wx.ID_ANY, _("Device:"))
+        sizer_3.Add(label_filter, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.text_filter = wx.TextCtrl(self, wx.ID_ANY, "")
+        sizer_3.Add(self.text_filter, 0, wx.EXPAND, 0)
+
+        self.tree_devices = wx.TreeCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.BORDER_SUNKEN
+            | wx.TR_HAS_BUTTONS
+            | wx.TR_HIDE_ROOT
+            | wx.TR_NO_BUTTONS
+            | wx.TR_SINGLE,
+        )
+        sizer_main.Add(self.tree_devices, 3, wx.EXPAND, 0)
+
+        self.label_info = wx.StaticText(self, wx.ID_ANY, "")
+        sizer_main.Add(self.label_info, 1, wx.EXPAND, 0)
+
+        sizer_2 = wx.StdDialogButtonSizer()
+        sizer_main.Add(sizer_2, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
+
+        self.button_OK = wx.Button(self, wx.ID_OK, "")
+        self.button_OK.SetDefault()
+        sizer_2.AddButton(self.button_OK)
+
+        self.button_CANCEL = wx.Button(self, wx.ID_CANCEL, "")
+        sizer_2.AddButton(self.button_CANCEL)
+
+        sizer_2.Realize()
+
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+
+        self.SetAffirmativeId(self.button_OK.GetId())
+        self.SetEscapeId(self.button_CANCEL.GetId())
+        self.device_type = ""
+        self.device_info = ""
+        self.filter = ""
+
+        self.text_filter.SetToolTip(_("Quicksearch for device-entry"))
+        self.tree_devices.SetToolTip(_("Select a matching entry for your new device"))
+
+        self.text_filter.Bind(wx.EVT_TEXT, self.on_text_filter)
+        self.tree_devices.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_selection)
+        self.tree_devices.Bind(wx.EVT_LEFT_DCLICK, self.on_dclick)
+        self.SetSize(350, 450)
+        self.Layout()
+        self.populate_tree()
+
+    def populate_tree(self):
+        tree = self.tree_devices
+        tree.DeleteAllItems()
+        tree_root = tree.AddRoot(_("Devices"))
+        self.dev_infos = list(self.context.find("dev_info"))
+        self.dev_infos.sort(
+            key=lambda e: str(e[0].get("family_priority", 0))
+            + "_"
+            + str(e[0].get("priority", 0)),
+            reverse=True,
+        )
+        last_family = ""
+        parent_item = tree_root
+        index = -1
+        for obj, name, sname in self.dev_infos:
+            index += 1
+            family = obj.get("family", "")
+            info = obj.get("friendly_name", "")
+            if self.filter and self.filter.lower() not in info.lower():
+                continue
+            if family != last_family:
+                last_family = family
+                parent_item = tree.AppendItem(tree_root, family)
+            device_item = tree.AppendItem(parent_item, info)
+            tree.SetItemData(device_item, index)
+        tree.ExpandAll()
+
+    def on_text_filter(self, event):
+        self.filter = self.text_filter.GetValue()
+        self.populate_tree()
+
+    def on_selection(self, event):
+        tree = self.tree_devices
+        self.device_type = ""
+        self.device_info = ""
+        info = ""
+        item = event.GetItem()
+        if item:
+            try:
+                index = tree.GetItemData(item)
+                if index is not None and index >= 0 and index < len(self.dev_infos):
+                    obj = self.dev_infos[index][0]
+                    info = obj.get("extended_info", "")
+                    self.device_type = obj.get("provider", "")
+                    self.device_info = self.dev_infos[index][2]
+            except RuntimeError:
+                # Dialog has already been destroyed...
+                return
+        self.label_info.SetLabel(info)
+        self.button_OK.Enable(bool(self.device_type != ""))
+        self.Layout()
+
+    def on_dclick(self, event):
+        if self.device_type:
+            self.EndModal(self.GetAffirmativeId())
+
+
 class DevicePanel(wx.Panel):
     def __init__(self, *args, context=None, pane=False, **kwds):
         # begin wxGlade: DevicesPanel.__init__
@@ -48,7 +173,8 @@ class DevicePanel(wx.Panel):
             | wx.LC_SORT_ASCENDING,
         )
         self.devices_list.InsertColumn(0, _("Device"))
-        self.devices_list.InsertColumn(1, _("Type"))
+        self.devices_list.InsertColumn(1, _("Driver"))
+        self.devices_list.InsertColumn(2, _("Type"))
         sizer_1.Add(self.devices_list, 7, wx.EXPAND, 0)
 
         sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -122,8 +248,9 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.45 * size[0]))
-        self.devices_list.SetColumnWidth(1, int(0.45 * size[0]))
+        self.devices_list.SetColumnWidth(0, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(1, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(2, int(0.3 * size[0]))
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
@@ -173,9 +300,32 @@ class DevicePanel(wx.Panel):
             self.devices.append(device)
             dev_index = len(self.devices) - 1
             label = device.label
-            index = self.devices_list.InsertItem(self.devices_list.GetItemCount(), label)
-            type_info = getattr(device,"name", device.path)
+            index = self.devices_list.InsertItem(
+                self.devices_list.GetItemCount(), label
+            )
+            type_info = getattr(device, "name", device.path)
+            dev_infos = list(self.context.find("dev_info"))
+            dev_infos.sort(key=lambda e: e[0].get("priority", 0), reverse=True)
+            family_default = ""
+            for obj, name, sname in dev_infos:
+                if device.registered_path == obj.get("provider", ""):
+                    if "choices" in obj:
+                        for prop in obj["choices"]:
+                            if (
+                                "attr" in prop
+                                and "default" in prop
+                                and prop["attr"] == "source"
+                            ):
+                                family_default = prop["default"]
+                                break
+                if family_default:
+                    break
+
+            family_info = getattr(device, "source", family_default)
+            if family_info:
+                family_info = family_info.capitalize()
             self.devices_list.SetItem(index, 1, type_info)
+            self.devices_list.SetItem(index, 2, family_info)
             self.devices_list.SetItemData(index, dev_index)
             if self.context.device is device:
                 self.devices_list.SetItemTextColour(index, wx.RED)
@@ -298,31 +448,19 @@ class DevicePanel(wx.Panel):
         return activateit
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
-        names = []
-        providers = []
-        desc = []
-        dev_infos = list(self.context.find("dev_info"))
-        dev_infos.sort(key=lambda e: e[0].get("priority", 0), reverse=True)
-        for obj, name, sname in dev_infos:
-            names.append(sname)
-            providers.append(obj.get("provider"))
-            desc.append(obj.get("friendly_name"))
-
-        with wx.SingleChoiceDialog(
-            None, _("What type of driver is being added?"), _("Device Type"), desc
-        ) as dlg:
-            dlg.SetSelection(0)
-            if dlg.ShowModal() == wx.ID_OK:
-                device_type = names[dlg.GetSelection()]
-                # Let's establish how many devices of this type
-                # we already have and name it accordingly
-                label = self.get_new_label_for_device(device_type)
-                if label:
-                    self.context(f'device add -i {device_type} -l "{label}"\n')
-                else:
-                    self.context(f"device add -i {device_type}\n")
-        self.refresh_device_tree()
-        self.context.signal("device;modified")
+        dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
+        result = dlg.ShowModal()
+        if result == wx.ID_OK:
+            device_type = dlg.device_type
+            device_info = dlg.device_info
+            label = self.get_new_label_for_device(device_type)
+            if label:
+                self.context(f'device add -i {device_info} -l "{label}"\n')
+            else:
+                self.context(f"device add -i {device_info}\n")
+            self.refresh_device_tree()
+            self.context.signal("device;modified")
+        dlg.Destroy()
 
     def on_button_remove_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()

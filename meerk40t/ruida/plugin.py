@@ -21,12 +21,18 @@ def plugin(kernel, lifecycle=None):
         kernel.register("dev_info/ruida-beta", {
             "provider": "provider/device/ruida",
             "friendly_name": _("K50/K60-CO2-Laser (Ruida-Controller) (INCOMPLETE)"),
-            "extended_info": _("This driver is incomplete."),
+            "extended_info": _("This driver is incomplete. Use at your own risk."),
             "priority": -1,
+            "family": _("CO2-Laser"),
+            "family_priority": 0,
             "choices": [
                 {
                     "attr": "label",
                     "default": "ruida",
+                },
+                {
+                    "attr": "source",
+                    "default": "co2",
                 },
             ]
         })

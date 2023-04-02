@@ -13,6 +13,7 @@ def plugin(kernel, lifecycle=None):
             "friendly_name": _("The device name goes here"),
             "extended_info": _("Extended device info would go here."),
             "priority": -1,
+            "family": "",
             "choices": [
                 {
                     "attr": "label",
