@@ -14,6 +14,7 @@ from meerk40t.svgelements import Ellipse
 
 _ = wx.GetTranslation
 
+
 class CircleTool(ToolWidget):
     """
     Circle Drawing Tool.
@@ -70,7 +71,10 @@ class CircleTool(ToolWidget):
             if bbox is not None:
 
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
-                if abs(bbox[2] - bbox[0]) > 10 * pixel and abs(bbox[3] - bbox[1]) > 10 * pixel:
+                if (
+                    abs(bbox[2] - bbox[0]) > 10 * pixel
+                    and abs(bbox[3] - bbox[1]) > 10 * pixel
+                ):
                     ccx = (bbox[0] + bbox[2]) / 2
                     ccy = (bbox[1] + bbox[3]) / 2
                     gc.StrokeLine(
@@ -110,7 +114,11 @@ class CircleTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         update_required = False
-        if modifiers is None or (event_type=="key_up" and "alt" in modifiers) or ("alt" not in modifiers):
+        if (
+            modifiers is None
+            or (event_type == "key_up" and "alt" in modifiers)
+            or ("alt" not in modifiers)
+        ):
             if self.creation_mode != 0:
                 self.creation_mode = 0
                 update_required = True

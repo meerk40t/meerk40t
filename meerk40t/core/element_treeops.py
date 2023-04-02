@@ -5,9 +5,9 @@ cues.
 """
 
 
+import math
 import os.path
 from copy import copy
-import math
 
 from meerk40t.kernel import CommandSyntaxError
 
@@ -250,9 +250,7 @@ def init_tree(kernel):
             self.signal("element_property_update", changes)
             self.signal("refresh_scene", "Scene")
 
-    @tree_conditional(
-        lambda node: hasattr(node, "output")
-    )
+    @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_operation(
         _("Enable similar"),
         node_type=op_nodes,
@@ -265,9 +263,7 @@ def init_tree(kernel):
                 oplist.append(n)
         set_op_output(oplist, True)
 
-    @tree_conditional(
-        lambda node: hasattr(node, "output")
-    )
+    @tree_conditional(lambda node: hasattr(node, "output"))
     @tree_separator_after()
     @tree_operation(
         _("Disable similar"),
@@ -280,7 +276,6 @@ def init_tree(kernel):
             if n.type == node.type:
                 oplist.append(n)
         set_op_output(oplist, False)
-
 
     @tree_submenu(_("Convert operation"))
     @tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
@@ -574,7 +569,7 @@ def init_tree(kernel):
     def compile_and_simulate(node, **kwargs):
         self.set_node_emphasis(node, True)
         self("plan0 copy-selected preprocess validate blob preopt optimize\n")
-        self("window open Simulation 0 1 1\n")   # Plan Name, Auto-Clear, Optimise
+        self("window open Simulation 0 1 1\n")  # Plan Name, Auto-Clear, Optimise
 
     # ==========
     # General menu-entries for operation branch
@@ -615,7 +610,11 @@ def init_tree(kernel):
     @tree_submenu(_("Scale speed settings"))
     @tree_radio(radio_match_speed_all)
     @tree_values("speed", (5, 10, 50, 75, 100, 150, 200, 250, 300, 350, 400, 450, 500))
-    @tree_operation(_("Max speed = {speed}mm/s"), node_type="branch ops", help="",)
+    @tree_operation(
+        _("Max speed = {speed}mm/s"),
+        node_type="branch ops",
+        help="",
+    )
     def set_speed_levels(node, speed=150, **kwargs):
         data = list()
         maxspeed = 0
@@ -677,7 +676,6 @@ def init_tree(kernel):
         self.signal("element_property_update", ops)
 
     @tree_separator_before()
-
     @tree_operation(
         _("Enable all operations"),
         node_type="branch ops",

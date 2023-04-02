@@ -9,7 +9,13 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service, signal_listener
+from meerk40t.kernel import (
+    STATE_ACTIVE,
+    STATE_PAUSE,
+    CommandSyntaxError,
+    Service,
+    signal_listener,
+)
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -317,7 +323,9 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Fix rated to actual speed"),
-                "tip":  _("Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"),
+                "tip": _(
+                    "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
+                ),
                 "section": "_40_" + _("Speed"),
             },
         ]
@@ -489,7 +497,12 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
-                self.spooler.laserjob(list(timed_fire()), label=label, helper=True, outline=[self.native] * 4)
+                self.spooler.laserjob(
+                    list(timed_fire()),
+                    label=label,
+                    helper=True,
+                    outline=[self.native] * 4,
+                )
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -515,7 +528,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
-                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil)
+                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil),
                 )
             else:
                 channel(_("Busy"))

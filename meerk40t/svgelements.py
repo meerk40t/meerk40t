@@ -3033,7 +3033,7 @@ class Matrix:
             h = 0
 
         try:
-            g = (k * h + l * i)
+            g = k * h + l * i
         except ZeroDivisionError:
             g = 0
 
@@ -3048,7 +3048,7 @@ class Matrix:
         return matrix * cls(a, d, b, e, c, f)
 
     @classmethod
-    def map(cls, p1, p2, p3, p4,  p5, p6, p7, p8):
+    def map(cls, p1, p2, p3, p4, p5, p6, p7, p8):
         """
         Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
 
@@ -4790,9 +4790,9 @@ class CubicBezier(Curve):
                     local_extremizers.append(r2)
         else:
             c = a[1] - a[0]
-            b = 2 * (a[0] - 2*a[1] + a[2])
+            b = 2 * (a[0] - 2 * a[1] + a[2])
             if b != 0:
-                r0 = -c/b
+                r0 = -c / b
                 if 0 < r0 < 1:
                     local_extremizers.append(r0)
         local_extrema = [self.point(t)[v] for t in local_extremizers]
@@ -9373,8 +9373,8 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
             xml_tree.set(SVG_ATTR_RADIUS, str(node.rx))
     elif isinstance(node, Image):
         xml_tree = subxml(xml_tree, SVG_TAG_IMAGE)
-        from io import BytesIO
         from base64 import b64encode
+        from io import BytesIO
 
         if node.image is not None:
             stream = BytesIO()

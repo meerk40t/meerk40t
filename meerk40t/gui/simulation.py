@@ -837,7 +837,15 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, optimise_at_start=True, **kwds):
+    def __init__(
+        self,
+        *args,
+        context=None,
+        plan_name=None,
+        auto_clear=True,
+        optimise_at_start=True,
+        **kwds,
+    ):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
@@ -1015,7 +1023,9 @@ class SimulationPanel(wx.Panel, Job):
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.widget_scene.add_scenewidget(self.sim_travel)
 
-        self.grid = GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
+        self.grid = GridWidget(
+            self.widget_scene, name="Simulation", suppress_labels=True
+        )
         # Don't let grid resize itself
         self.grid.auto_tick = False
         if self.context.units_name == "mm":
@@ -1254,17 +1264,11 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_grid(self, gridtype):
         if gridtype == "primary":
-            self.grid.draw_grid_primary = (
-                not self.grid.draw_grid_primary
-            )
+            self.grid.draw_grid_primary = not self.grid.draw_grid_primary
         elif gridtype == "secondary":
-            self.grid.draw_grid_secondary = (
-                not self.grid.draw_grid_secondary
-            )
+            self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
         elif gridtype == "circular":
-            self.grid.draw_grid_circular = (
-                not self.grid.draw_grid_circular
-            )
+            self.grid.draw_grid_circular = not self.grid.draw_grid_circular
         self.widget_scene.request_refresh()
 
     def toggle_grid_p(self, event):

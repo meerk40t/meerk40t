@@ -389,7 +389,9 @@ class SpeedPpiPanel(wx.Panel):
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
-        self.power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
+        self.power_sizer = StaticBoxSizer(
+            self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL
+        )
         speed_power_sizer.Add(self.power_sizer, 1, wx.EXPAND, 0)
 
         self.text_power = TextCtrl(

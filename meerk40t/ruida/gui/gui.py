@@ -7,9 +7,9 @@ def plugin(service, lifecycle):
         import wx
 
         from meerk40t.gui.icons import (
-            icons8_info_50,
             icons8_computer_support_50,
             icons8_connected_50,
+            icons8_info_50,
         )
 
         _ = service._

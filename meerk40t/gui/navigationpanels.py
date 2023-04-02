@@ -6,6 +6,7 @@ from wx import aui
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
+    EmptyIcon,
     get_default_icon_size,
     icon_corner1,
     icon_corner2,
@@ -40,7 +41,6 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
-    EmptyIcon,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
@@ -987,8 +987,12 @@ class MovePanel(wx.Panel):
                 y = Length(self.context.elements.length_y("50%"))
             else:
                 y = Length(self.context.elements.length_y("0%"))
-            self.context.root.setting(str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}")
-            label = _("Left click to go to saved position\nRight click to save coordinates")
+            self.context.root.setting(
+                str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
+            )
+            label = _(
+                "Left click to go to saved position\nRight click to save coordinates"
+            )
             label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
             btn.SetToolTip(label)
 
@@ -1032,7 +1036,9 @@ class MovePanel(wx.Panel):
             6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.label_pos.SetFont(smallfont)
-        button_info_sizer.Add(self.button_navigate_move_to, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        button_info_sizer.Add(
+            self.button_navigate_move_to, 0, wx.ALIGN_CENTER_HORIZONTAL, 0
+        )
         button_info_sizer.Add(self.label_pos, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         main_sizer.Add(button_info_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
@@ -1079,6 +1085,7 @@ class MovePanel(wx.Panel):
                 self.text_position_x.SetValue(substr[0])
                 self.text_position_y.SetValue(substr[1])
                 self.on_button_navigate_move_to(None)
+
         return handler
 
     def on_right(self, index):
@@ -1087,8 +1094,14 @@ class MovePanel(wx.Panel):
             try:
                 xlen = Length(self.text_position_x.GetValue())
                 ylen = Length(self.text_position_y.GetValue())
-                setattr(self.context.root, f"MovePos{index}", f"{xlen.length_mm}|{ylen.length_mm}")
-                label = _("Left click to go to saved position\nRight click to save coordinates")
+                setattr(
+                    self.context.root,
+                    f"MovePos{index}",
+                    f"{xlen.length_mm}|{ylen.length_mm}",
+                )
+                label = _(
+                    "Left click to go to saved position\nRight click to save coordinates"
+                )
                 label += "\n" + _("Current: ") + f"{xlen.length_mm}, {ylen.length_mm}"
                 btn.SetToolTip(label)
             except ValueError:
@@ -1096,9 +1109,7 @@ class MovePanel(wx.Panel):
 
         return handler
 
-    def on_button_navigate_move_to_right(
-        self, event=None
-    ):
+    def on_button_navigate_move_to_right(self, event=None):
         self.context("tool relocate\n")
 
     def on_button_navigate_move_to(
@@ -1151,8 +1162,11 @@ class MovePanel(wx.Panel):
         units = p.units_name
         xpos = Length(amount=pos[2], preferred_units=units)
         ypos = Length(amount=pos[3], preferred_units=units)
-        self.label_pos.SetLabel(f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}")
+        self.label_pos.SetLabel(
+            f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
+        )
         self.Layout()
+
 
 class PulsePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

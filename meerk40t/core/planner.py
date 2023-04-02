@@ -18,7 +18,6 @@ from .node.util_output import OutputOperation
 from .node.util_wait import WaitOperation
 from .units import Length
 
-
 """
 The planner module provides cut planning services. This provides a method of going from operations + elements into
 cutcode which is then put inside a laserjob and sent to a spooler. Most of these operations are called on the

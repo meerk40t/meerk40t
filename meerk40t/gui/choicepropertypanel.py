@@ -2,7 +2,13 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import CheckBox, ScrolledPanel, StaticBoxSizer, TextCtrl, EditableListCtrl
+from meerk40t.gui.wxutils import (
+    CheckBox,
+    EditableListCtrl,
+    ScrolledPanel,
+    StaticBoxSizer,
+    TextCtrl,
+)
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
@@ -654,7 +660,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if ctrl_width > 0:
                     control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-                control.Bind(wx.EVT_RADIOBOX, on_radio_select(attr, control, obj, data_type, additional_signal))
+                control.Bind(
+                    wx.EVT_RADIOBOX,
+                    on_radio_select(attr, control, obj, data_type, additional_signal),
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, str) and data_style == "option":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -3,9 +3,9 @@ import time
 
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_uM
-from .exceptions import RuidaCommandError
-
 from meerk40t.svgelements import Color
+
+from .exceptions import RuidaCommandError
 
 
 def signed35(v):
