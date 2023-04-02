@@ -275,7 +275,6 @@ class NewlyController:
             outline = job.outline
         except AttributeError:
             pass
-        self.set_xy(0, 0, relative=False)
         self._realtime = False
         self._speed = None
         self._power = None
