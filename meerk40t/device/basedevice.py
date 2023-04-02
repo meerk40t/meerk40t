@@ -66,7 +66,10 @@ def plugin(kernel, lifecycle=None):
             return "device", info_entries
 
         @kernel.console_option(
-            "label", "l", help="optional label for the service to start", type=str,
+            "label",
+            "l",
+            help="optional label for the service to start",
+            type=str,
         )
         @kernel.console_argument("name", type=str)
         @kernel.console_command(

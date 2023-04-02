@@ -57,9 +57,7 @@ class GRBLControl:
                 root.channel("grbl").watch(console)
                 server.events_channel.watch(console)
 
-            emulator = GRBLEmulator(
-                root.device, root.device.scene_to_device_matrix()
-            )
+            emulator = GRBLEmulator(root.device, root.device.scene_to_device_matrix())
             self.emulator = emulator
 
             # Link emulator and server.

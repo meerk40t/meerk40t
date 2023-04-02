@@ -210,6 +210,7 @@ and a wxpython version <= 4.1.1."""
             @param option_no: input to be interpreted as no (first letter is okay too).
             """
             import wx
+
             if option_yes is None:
                 option_yes = "Yes"
             if option_no is None:
@@ -220,12 +221,16 @@ and a wxpython version <= 4.1.1."""
                 None,
                 message=prompt,
                 caption=caption,
-                style = wx.YES_NO | wx.ICON_QUESTION
+                style=wx.YES_NO | wx.ICON_QUESTION,
             )
             if dlg.SetYesNoLabels(option_yes, option_no):
                 dlg.SetMessage(prompt)
             else:
-                dlg.SetMessage(prompt + "\n" + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no))
+                dlg.SetMessage(
+                    prompt
+                    + "\n"
+                    + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+                )
 
             response = dlg.ShowModal()
             dlg.Destroy()
@@ -234,6 +239,7 @@ and a wxpython version <= 4.1.1."""
         kernel.yesno = yesno_popup
 
         from meerk40t.gui.busy import BusyInfo
+
         kernel.busyinfo = BusyInfo()
 
         @kernel.console_argument("message")

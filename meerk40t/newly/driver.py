@@ -4,7 +4,6 @@ Newly Driver
 """
 import time
 
-from meerk40t.newly.controller import NewlyController
 from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.dwellcut import DwellCut
 from meerk40t.core.cutcode.gotocut import GotoCut
@@ -18,6 +17,7 @@ from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
+from meerk40t.newly.controller import NewlyController
 
 
 class NewlyDriver:

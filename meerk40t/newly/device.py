@@ -3,7 +3,7 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import ViewPort, UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 

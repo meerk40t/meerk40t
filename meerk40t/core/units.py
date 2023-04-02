@@ -129,7 +129,9 @@ class ViewMap:
 
 
 class View:
-    def __init__(self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None):
+    def __init__(
+        self, width, height, dpi=float(UNITS_PER_INCH), dpi_x=None, dpi_y=None
+    ):
         """
         This should init the simple width and height dimensions.
 
@@ -178,9 +180,15 @@ class View:
 
     def length(self, length, axis=0):
         if axis == 0:
-            return Length(length, relative_length=self.width, unitless=1.0).inches * self.dpi_x
+            return (
+                Length(length, relative_length=self.width, unitless=1.0).inches
+                * self.dpi_x
+            )
         else:
-            return Length(length, relative_length=self.height, unitless=1.0).inches * self.dpi_y
+            return (
+                Length(length, relative_length=self.height, unitless=1.0).inches
+                * self.dpi_y
+            )
 
     def physical(self, x, y):
         return self.length(x, axis=0), self.length(y, axis=1)
@@ -199,10 +207,30 @@ class View:
 
     def bbox(self):
         return (
-            min(self.coords[0][0], self.coords[1][0], self.coords[2][0], self.coords[3][0]),
-            min(self.coords[0][1], self.coords[1][1], self.coords[2][1], self.coords[3][1]),
-            max(self.coords[0][0], self.coords[1][0], self.coords[2][0], self.coords[3][0]),
-            max(self.coords[0][1], self.coords[1][1], self.coords[2][1], self.coords[3][1])
+            min(
+                self.coords[0][0],
+                self.coords[1][0],
+                self.coords[2][0],
+                self.coords[3][0],
+            ),
+            min(
+                self.coords[0][1],
+                self.coords[1][1],
+                self.coords[2][1],
+                self.coords[3][1],
+            ),
+            max(
+                self.coords[0][0],
+                self.coords[1][0],
+                self.coords[2][0],
+                self.coords[3][0],
+            ),
+            max(
+                self.coords[0][1],
+                self.coords[1][1],
+                self.coords[2][1],
+                self.coords[3][1],
+            ),
         )
 
     def scale(self, scale_x, scale_y):
@@ -351,7 +379,12 @@ class ViewPort:
         self.show_swap_xy = show_swap_xy
 
         self.scene_view = View(width, height, dpi=NATIVE_UNIT_PER_INCH)
-        self.laser_view = View(width, height, dpi_x=NATIVE_UNIT_PER_INCH / self.native_scale_x, dpi_y=NATIVE_UNIT_PER_INCH / self.native_scale_y)
+        self.laser_view = View(
+            width,
+            height,
+            dpi_x=NATIVE_UNIT_PER_INCH / self.native_scale_x,
+            dpi_y=NATIVE_UNIT_PER_INCH / self.native_scale_y,
+        )
         self.show_view = View(width, height, dpi=NATIVE_UNIT_PER_INCH)
 
         self.scene_to_show = ViewMap(self.scene_view, self.show_view)
@@ -371,10 +404,24 @@ class ViewPort:
         self.laser_view.set_dims(self.width, self.height)
 
         # calculate show view
-        self.show_view.transform(origin_x=self.show_origin_x, origin_y=self.show_origin_y, flip_x=self.show_flip_x, flip_y=self.show_flip_y, swap_xy=self.show_swap_xy)
+        self.show_view.transform(
+            origin_x=self.show_origin_x,
+            origin_y=self.show_origin_y,
+            flip_x=self.show_flip_x,
+            flip_y=self.show_flip_y,
+            swap_xy=self.show_swap_xy,
+        )
 
         # Calculate regular device matrix
-        self.laser_view.transform(origin_x=self.origin_x, origin_y=self.origin_y, user_scale_x=self.user_scale_x, user_scale_y=self.user_scale_y, flip_x=self.flip_x, flip_y=self.flip_y, swap_xy=self.swap_xy)
+        self.laser_view.transform(
+            origin_x=self.origin_x,
+            origin_y=self.origin_y,
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
 
         self.scene_to_show.revalidate()
         self.scene_to_device.revalidate()

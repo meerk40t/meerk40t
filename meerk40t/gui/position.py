@@ -227,8 +227,18 @@ class PositionPanel(wx.Panel):
         if reset:
             x0, y0, x1, y1 = bounds
             # conversion = ViewPort.conversion(self.position_units)
-            conversion_x = float(Length(f"1{self.position_units}", relative_length=self.context.device.unit_width))
-            conversion_y = float(Length(f"1{self.position_units}", relative_length=self.context.device.unit_height))
+            conversion_x = float(
+                Length(
+                    f"1{self.position_units}",
+                    relative_length=self.context.device.unit_width,
+                )
+            )
+            conversion_y = float(
+                Length(
+                    f"1{self.position_units}",
+                    relative_length=self.context.device.unit_height,
+                )
+            )
             # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
             self.position_x = x0 / conversion_x
             self.position_y = y0 / conversion_y
