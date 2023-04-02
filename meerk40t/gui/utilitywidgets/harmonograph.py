@@ -184,6 +184,7 @@ class HarmonographWidget(Widget):
             )
 
         toolbar.add_widget(-1, remove_widget)
+
         accept_widget = ButtonWidget(
                 scene,
                 0,
@@ -194,6 +195,7 @@ class HarmonographWidget(Widget):
                 self.confirm,
             )
         toolbar.add_widget(-1, accept_widget)
+
         random_widget = ButtonWidget(
             scene,
             0,
@@ -204,6 +206,7 @@ class HarmonographWidget(Widget):
             self.set_random_harmonograph,
         )
         toolbar.add_widget(-1, random_widget)
+
         self.add_widget(-1, RelocateWidget(scene, 0, 0))
 
         def delta_theta(delta):
