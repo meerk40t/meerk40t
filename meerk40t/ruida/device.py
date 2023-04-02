@@ -172,7 +172,7 @@ class RuidaDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
-    def realize(self):
+    def realize(self, origin=None):
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
