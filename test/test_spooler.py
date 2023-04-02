@@ -5,7 +5,6 @@ from meerk40t.core.spoolers import SpoolerJob
 
 
 class TestSpooler(unittest.TestCase):
-
     def test_spoolerjob(self):
         """
         Test spooler job
