@@ -3466,6 +3466,9 @@ msgstr "Öffne das Spooler-Fenster automatisch, sobald ein Job ausgeführt wird"
 msgid "Reduce Travel Time"
 msgstr "Verringere Bewegungen"
 
+msgid "Reducing Movements"
+msgstr "Vermeide Bewegungen"
+
 #: meerk40t/core/planner.py:50
 msgid ""
 "Using this option can significantly reduce the time spent moving between "
@@ -3957,7 +3960,7 @@ msgstr "Höhe des Laserbettes."
 #: meerk40t/device/dummydevice.py:53 meerk40t/lihuiyu/device.py:129
 #: meerk40t/ruida/device.py:242
 msgid "X Scale Factor"
-msgstr ""
+msgstr "Faktor X-Achse"
 
 #: meerk40t/device/dummydevice.py:54 meerk40t/grbl/device.py:116
 #: meerk40t/lihuiyu/device.py:130 meerk40t/lihuiyu/gui/lhydrivergui.py:352
@@ -3968,7 +3971,7 @@ msgstr ""
 #: meerk40t/device/dummydevice.py:63 meerk40t/lihuiyu/device.py:139
 #: meerk40t/ruida/device.py:252
 msgid "Y Scale Factor"
-msgstr ""
+msgstr "Faktor Y-Achse"
 
 #: meerk40t/device/dummydevice.py:64 meerk40t/grbl/device.py:127
 #: meerk40t/lihuiyu/device.py:140 meerk40t/lihuiyu/gui/lhydrivergui.py:370
@@ -9546,6 +9549,45 @@ msgstr ""
 msgid "Rotary Enabled"
 msgstr "Verwende Drehachse"
 
+msgid "Rotary-Mode active"
+msgstr "Verwende Drehachse"
+
+msgid "Is the rotary mode active for this device"
+msgstr "Soll der Drehachsen-Modus verwendet werden"
+
+msgid "Ignore Home"
+msgstr "'Home' ignorieren"
+
+msgid "Ignore Home-Command"
+msgstr "Ignoriere 'Home'-Kommandos"
+
+msgid "Mirror Output"
+msgstr "Ausgabe spiegeln"
+
+msgid "Mirror X"
+msgstr "X-Achse spiegeln"
+
+msgid "Mirror Y"
+msgstr "Y-Achse spiegeln"
+
+msgid "Mirror the elements on the X-Axis"
+msgstr "Element in X-Richtung am Nullpunkt spiegeln"
+
+msgid "Mirror the elements on the Y-Axis"
+msgstr "Element in Y-Richtung am Nullpunkt spiegeln"
+
+msgid "X-Scale"
+msgstr "Faktor X-Achse"
+
+msgid "Y-Scale"
+msgstr "Faktor Y-Achse"
+
+msgid "Scale that needs to be applied to the X-Axis"
+msgstr "Korrektufaktor für die X-Achse"
+
+msgid "Scale that needs to be applied to the Y-Axis"
+msgstr "Korrektufaktor für die Y-Achse"
+
 #: meerk40t/rotary/rotary.py:23
 msgid "Turn on rotary"
 msgstr "Verwende Drehachse"
@@ -11125,8 +11167,8 @@ msgid "Toggle strikethrough"
 msgstr "Schalte Durchstreichen-Attribut um"
 
 #: meerk40t/gui/propertypanels/textproperty.py:380
-msgid "Define where to place the origin (i.e. current mouse position"
-msgstr ""
+msgid "Define where to place the origin (i.e. current mouse position)"
+msgstr "Lege die Textorientierung relativ zum Ursprung fest"
 
 #: meerk40t/gui/propertypanels/textproperty.py:474
 msgid "Text-Variables"
@@ -14972,7 +15014,7 @@ msgstr "Bestätigen"
 
 msgid ""
 "You will be led now to a source in the web, where you can download free fonts.\n"
-"Please be respect individual property rights!\nDestination: {url}\n"
+"Please respect individual property rights!\nDestination: {url}\n"
 msgstr ""
 "Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
 "Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
@@ -15316,3 +15358,300 @@ msgstr "Ursprung korrigieren"
 
 msgid "Z-Axis"
 msgstr "Z-Achse"
+
+msgid "You have unassigned elements, that won't be burned"
+msgstr ""
+"Achtung: Nicht alle Elemente sind Arbeitsvorgängen\n"
+"zugeordnet und werden somit nicht gelasert."
+
+msgid "Select unassigned elements"
+msgstr "Selektiere nicht zugeordnete Elemente"
+
+msgid "Select all elements that won't be burned"
+msgstr "Selektiere alle Elemente, die nicht einem Arbeitsvorgang zugeordnet sind"
+
+msgid "Stroke-Width"
+msgstr "Linienbreite"
+
+msgid "Left click to go to saved position\nRight click to save coordinates"
+msgstr ""
+"Linksklick: bewege Laser zur gespeicherten Position"
+"\nRechtsklick: speichere angegebene Koordinaten"
+
+msgid "Select all elements of same type"
+msgstr "Selektiere alle gleichartigen Elemente"
+
+msgid "Speed for Raster-Operation"
+msgstr "Geschwindigkeit für Raster-Operation"
+
+msgid "Simplify group"
+msgstr "Vereinfache Gruppen-Struktur"
+
+msgid "Remove transparent objects"
+msgstr "Lösche alle transparenten Objekte"
+
+msgid ""
+"This is binary data imported or generated\n"
+"that will be sent directly to the laser.\n"
+"Double-click to view."
+msgstr ""
+"Dies sind importierte oder generierte Binär-Daten,\"
+"die unverändert zum Laser gesendet werden.\n"
+"Doppel-Klick um diese anzuzeigen."
+
+msgid ""
+"This will engrave/cut the elements contained,\n"
+"following the vector-paths of the data.\n"
+"(Usually done last)"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Schneiden).\n"
+"(Normalerweise am Ende aller Arbeitsabläufe)"
+
+msgid ""
+"This will engrave the elements contained,\n"
+"following the vector-paths of the data."
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt (Gravieren)."
+
+msgid ""
+"This is an operation that will engrave a vector shape\n"
+"filled with a set of vector-patterns like lines"
+msgstr ""
+"Alle enthaltenen Elemente werden als Vektor-Umrisse\n"
+"gebrannt, die mit Vektor-Schraffuren gefüllt werden."
+
+msgid ""
+"This engraves already created images pixel by pixel,\n"
+"applying the settings to the individual pictures"
+msgstr ""
+"Alle enthaltenen Elemente (zuvor generierte Pixel-Grafiken)\n"
+"werden Bildpunkt pro Bildpunkt graviert, nachdem die\n"
+"Arbeitsablauf-Einstellungen auf die Bilder angewandt wurden."
+
+msgid ""
+"This will render all contained elements\n"
+"into an intermediary image which then will be\n"
+"engraved pixel by pixel."
+msgstr ""
+"Alle enthaltenen Elemente werden in ein temporäres\n"
+"Bild gerendert, welches dann pixelgetreu graviert wird."
+
+msgid ""
+"This will engrave a single point for a given period of time"
+msgstr ""
+"Ein einzelner Punkt wird für eine angegebene Zeitdauer gebrannt"
+
+msgid ""
+"This allows to execute an arbitrary command during the engrave process"
+msgstr ""
+"Die erlaubt die Ausführung eines Meerk40t-eigenen\n"
+"Befehles während des Brennvorgangs"
+
+msgid ""
+"This will send the laser back to its logical start position"
+msgstr ""
+"Dies sendet den Laser an seine relative Startposition zurück"
+
+msgid ""
+"This will send the laser back to its physical start position"
+msgstr ""
+"Dies sendet den Laser an seine physische Startposition zurück"
+
+msgid ""
+"This will wait for active IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies wartet darauf, dass IO-Bits am Laser aktiv werden,\n"
+"z.B. das Fußpedal eines Faserlasers"
+
+msgid ""
+"This will set some IO bits on the laser (mainly fibre laser for now)"
+msgstr ""
+"Dies setzt einzelne IO-Bits am (Faser-)Laser"
+
+msgid ""
+"This will pause the engrave process for a given period"
+msgstr ""
+"Dies hält den Brennvorgang für einen definierten Zeitraum an"
+
+msgid ""
+"The elements under this section will not be engraved,\n"
+"they can serve as a template or registration marks."
+msgstr ""
+"Die Elemente innerhalb dieses Bereiches werden nicht gebrannt\n"
+"sie können als Vorlage oder Positionierungsmarken genutzt werden."
+
+msgid "Node Edit"
+msgstr "Node Editor"
+
+msgid "Node-Editor"
+msgstr "Node-Editor"
+
+msgid "Edit nodes of a polyline/path-object"
+msgstr "Editiert die Knoten eines Polyline/Path-Objektes"
+
+msgid "Insert point before"
+msgstr "Punkt davor einfügen"
+
+msgid "Insert"
+msgstr "Einfügen"
+
+msgid "Append point at end"
+msgstr "Punkt am Ende anhängen"
+
+msgid "Append"
+msgstr "Anhängen"
+
+msgid "Delete point"
+msgstr "Punkt löschen"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Make segment a line"
+msgstr "Wandle Segment in Gerade um"
+
+msgid "> Line"
+msgstr "> Gerade"
+
+msgid "Make segment a curve"
+msgstr "Wandle Segment in Kurve um"
+
+msgid "> Curve"
+msgstr "> Kurve"
+
+msgid "Make segment symmetrical"
+msgstr "Mache Kurvensegment symmetrisch"
+
+msgid "Symmetrical"
+msgstr "Symmetrisch"
+
+msgid "Join two segments"
+msgstr "Verbinde zwei Segmente"
+
+msgid "Join"
+msgstr "Verbinden"
+
+msgid "Break segment apart"
+msgstr "Breche Segment auf"
+
+msgid "Break"
+msgstr "Aufbrechen"
+
+msgid "Smoothen transit to adjacent segments"
+msgstr "Glätte Übergänge zu angrenzenden Segmenten"
+
+msgid "Smooth"
+msgstr "Glätten"
+
+msgid "Convert all lines into curves and smoothen"
+msgstr "Wandle alle Geraden in Kurven um und glätte diese"
+
+msgid "Very smooth"
+msgstr "Glätten²"
+
+msgid "Toggle closed status"
+msgstr "Wechsel von geschlossener zu offener Kurve und umgekehrt"
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Convert polyline to a path element"
+msgstr "Wandle Polyline in Pfad um"
+
+msgid "To path"
+msgstr "Umwandeln"
+
+msgid "Smoothen"
+msgstr "Glätten"
+
+msgid "Smooth all"
+msgstr "Alle glätten"
+
+msgid "Line all"
+msgstr "Zu Geraden"
+
+msgid "Close path"
+msgstr "Path schließen"
+
+msgid "Line"
+msgstr "Gerade"
+
+msgid "Curve"
+msgstr "Kurve"
+
+msgid "Override"
+msgstr "Übersteuern"
+
+msgid "Allow ad-hoc adjustment of speed and power."
+msgstr "Erlaubt die ad-hoc Anpassung von Geschwindigkeit und Laserleistung"
+
+msgid "This affects running jobs, so use with care!"
+msgstr "Das wirkt unmittelbar auf laufende Jobs, bitte mit Bedacht nutzen!"
+
+msgid "Increases/decreases the regular laser power by this amount."
+msgstr "Erhöht/Verringert die eingestellte Laserleistung um diesen Faktor."
+
+msgid "Increases/decreases the regular speed by this amount."
+msgstr "Erhöht/Verringert die eingestellte Geschwindigkeit um diesen Faktor."
+
+msgid "This file contains certain features that might not be fully supported by MeerK40t"
+msgstr "Die Datei enthält SVG-Features, die nicht (vollständig) von MeerK40t unterstützt werden"
+
+msgid "The complete design would be rendered into a single graphic."
+msgstr "Das komplette Design würde in eine einzige Grafik überführt."
+
+msgid "Text elements would be converted into path objects."
+msgstr "Text-Elemente würden in Pfad-Objekte umgewandelt."
+
+msgid "Do you want to convert the file via inkscape or do you want load the unmodified file?"
+msgstr "Soll die Datei mit Hilfe von inkscape umgewandelt oder die Original-Datei geladen werden?"
+
+msgid "Convert"
+msgstr "Umwandeln"
+
+msgid "Load original"
+msgstr "Original"
+
+msgid "SVG-Conversion"
+msgstr "SVG-Umwandlung"
+
+msgid "Meerk40t does not support all svg-features, so you might want"
+msgstr "MeerK40t unterstützt (noch) nicht alle SVG-Features, deswegen kann"
+
+msgid "to preprocess the file to get a proper representation of the design."
+msgstr "MK die Datei vorverarbeiten (lassen), um eine korrekte Darstellung zu erreichen"
+
+msgid " - Certain subvariants of Fonts - single element will be converted to a path"
+msgstr " - Spezielle Text-Designs - die einzelnen Elemente werden in Pfade umgewandelt"
+
+msgid " - Gradient fills / patterns - the whole design will be rendered into a graphic"
+msgstr " - Farbverläufe / Füllungen mit Muster - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid " - Clipping/Mask - the whole design will be rendered into a graphic"
+msgstr " - Clips / Masken - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
+msgstr "Pfad zur Inkscape-Anwendung. Leer lassen, damit MeerK40t die Standard-Verzeichnisse verwendet"
+
+msgid "SVG-Features"
+msgstr "SVG-Features"
+
+msgid "Inkscape"
+msgstr ""
+
+msgid "Unsupported elements"
+msgstr "Unsupportete Funktionen"
+
+msgid "Always load into meerk40t"
+msgstr "Immer direkt laden"
+
+msgid "Convert with inkscape"
+msgstr "Mit Inkscape konvertieren"
+
+msgid "Ask at load time"
+msgstr "Nachfragen"
+
+msgid "Calling inkscape..."
+msgstr "Starte inkscape im Hintergrund..."

@@ -32,9 +32,16 @@ class Stroked(ABC):
         @return:
         """
         if self.stroke_scale:
-            return self.stroke_width * self.stroke_factor
+            factor = self.stroke_factor
         else:
-            return self.stroke_width
+            factor = 1
+        if hasattr(self, "stroke"):
+            # print (f"Have stroke {self.stroke}, {type(self.stroke).__name__}")
+            if self.stroke is None or self.stroke.argb is None:
+                # print ("set to zero")
+                factor = 0
+
+        return self.stroke_width * factor
 
     @property
     def stroke_factor(self):

@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.1007"
+APPLICATION_VERSION = "0.8.2000"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -87,13 +87,20 @@ parser.add_argument(
     default=False,
     help="Disable ANSI colors",
 )
+parser.add_argument(
+    "-X",
+    "--nuke-settings",
+    action="store_true",
+    default=False,
+    help="Don't load config file at startup",
+)
 
 
 def static_plugins(kernel, lifecycle):
     if lifecycle == "plugins":
         plugins = list()
 
-        from . import kernelserver
+        from .network import kernelserver
 
         plugins.append(kernelserver.plugin)
 
@@ -185,6 +192,10 @@ def static_plugins(kernel, lifecycle):
 
         kernel.add_plugin(balorplugin)
 
+        from .newly.plugin import plugin as newlyplugin
+
+        kernel.add_plugin(newlyplugin)
+
         from .gui.plugin import plugin as wxplugin
 
         plugins.append(wxplugin)
@@ -256,6 +267,7 @@ def run():
         APPLICATION_VERSION,
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
+        ignore_settings=args.nuke_settings,
     )
     kernel.args = args
     kernel.add_plugin(static_plugins)

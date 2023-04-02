@@ -29,7 +29,7 @@ class SerialConnection:
             return None
         response = self.read_buffer[:f]
         self.read_buffer = self.read_buffer[f + 1 :]
-        str_response = str(response, "utf-8")
+        str_response = str(response, "raw_unicode_escape")
         str_response = str_response.strip()
         return str_response
 

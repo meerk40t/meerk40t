@@ -16,7 +16,6 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.rawcut import RawCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.node.util_console import ConsoleOperation
@@ -582,7 +581,7 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, OutputCut):
                 res = f"Output: {e.output_value:b} (mask: {e.output_mask:b})"
             elif isinstance(e, PlotCut):
-                res = f"Plot: {len(e.plot)} points"
+                res = f"Plot: {len(e)} points"
             elif isinstance(e, QuadCut):
                 res = f"Quad: {e.start[0]:.0f}, {e.start[1]:.0f} - {e.end[0]:.0f}, {e.end[1]:.0f}"
                 res += f" (c={e.c()[0]:.0f}, {e.c()[1]:.0f})"
@@ -594,8 +593,6 @@ class CutcodePanel(wx.Panel):
                 else:
                     coord = f"({e._start_x:.0f}, {e._start_y:.0f})"
                 res = f"Set Origin: {coord}"
-            elif isinstance(e, RawCut):
-                res = f"Raw: {len(e.plot)} points"
             else:
                 try:
                     res = e.__name__
@@ -840,7 +837,7 @@ class CutcodePanel(wx.Panel):
 
 
 class SimulationPanel(wx.Panel, Job):
-    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, **kwds):
+    def __init__(self, *args, context=None, plan_name=None, auto_clear=True, optimise_at_start=True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.parent = args[0]
@@ -917,7 +914,10 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize.AddPage(self.subpanel_cutcode, _("Cutcode"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(1)
+        if optimise_at_start:
+            self.checkbox_optimize.SetValue(1)
+        else:
+            self.checkbox_optimize.SetValue(0)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -1005,6 +1005,7 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
         # end wxGlade
+        self.on_checkbox_optimize(None)
 
         ##############
         # BUILD SCENE
@@ -1013,20 +1014,19 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.widget_scene.add_scenewidget(self.sim_travel)
+
+        self.grid = GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
         # Don't let grid resize itself
-        self.widget_scene.auto_tick = False
+        self.grid.auto_tick = False
         if self.context.units_name == "mm":
-            self.widget_scene.tick_distance = 10  # mm
+            self.grid.tick_distance = 10  # mm
         elif self.context.units_name == "cm":
-            self.widget_scene.tick_distance = 1
+            self.grid.tick_distance = 1
         elif self.context.units_name == "inch":
-            self.widget_scene.tick_distance = 0.5
+            self.grid.tick_distance = 0.5
         elif self.context.units_name == "mil":
-            self.widget_scene.tick_distance = 500
-        # print (f"{self.widget_scene.tick_distance} {self.context.units_name}")
-        self.widget_scene.add_scenewidget(
-            GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
-        )
+            self.grid.tick_distance = 500
+        self.widget_scene.add_scenewidget(self.grid)
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
         )
@@ -1254,16 +1254,16 @@ class SimulationPanel(wx.Panel, Job):
 
     def toggle_grid(self, gridtype):
         if gridtype == "primary":
-            self.widget_scene.draw_grid_primary = (
-                not self.widget_scene.draw_grid_primary
+            self.grid.draw_grid_primary = (
+                not self.grid.draw_grid_primary
             )
         elif gridtype == "secondary":
-            self.widget_scene.draw_grid_secondary = (
-                not self.widget_scene.draw_grid_secondary
+            self.grid.draw_grid_secondary = (
+                not self.grid.draw_grid_secondary
             )
         elif gridtype == "circular":
-            self.widget_scene.draw_grid_circular = (
-                not self.widget_scene.draw_grid_circular
+            self.grid.draw_grid_circular = (
+                not self.grid.draw_grid_circular
             )
         self.widget_scene.request_refresh()
 
@@ -1375,7 +1375,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_p, id=id2.GetId())
-        menu.Check(id2.GetId(), self.widget_scene.draw_grid_primary)
+        menu.Check(id2.GetId(), self.grid.draw_grid_primary)
         id3 = menu.Append(
             wx.ID_ANY,
             _("Show Secondary Grid"),
@@ -1383,7 +1383,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_s, id=id3.GetId())
-        menu.Check(id3.GetId(), self.widget_scene.draw_grid_secondary)
+        menu.Check(id3.GetId(), self.grid.draw_grid_secondary)
         id4 = menu.Append(
             wx.ID_ANY,
             _("Show Circular Grid"),
@@ -1391,7 +1391,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.ITEM_CHECK,
         )
         self.Bind(wx.EVT_MENU, self.toggle_grid_c, id=id4.GetId())
-        menu.Check(id4.GetId(), self.widget_scene.draw_grid_circular)
+        menu.Check(id4.GetId(), self.grid.draw_grid_circular)
         if self.widget_scene.has_background:
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
@@ -2114,6 +2114,10 @@ class Simulation(MWindow):
             auto_clear = bool(int(args[4]))
         else:
             auto_clear = True
+        if len(args) > 5:
+            optimise = bool(int(args[5]))
+        else:
+            optimise = True
 
         self.panel = SimulationPanel(
             self,
@@ -2121,6 +2125,7 @@ class Simulation(MWindow):
             context=self.context,
             plan_name=plan_name,
             auto_clear=auto_clear,
+            optimise_at_start=optimise,
         )
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())

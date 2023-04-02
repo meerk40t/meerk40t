@@ -80,6 +80,7 @@ class Node:
         self.id = None
         self.label = None
         self.lock = False
+        self._is_visible = True
 
         for k, v in kwargs.items():
             if k.startswith("_"):
@@ -157,6 +158,10 @@ class Node:
         return self._children
 
     @property
+    def references(self):
+        return self._references
+
+    @property
     def targeted(self):
         return self._target
 
@@ -175,11 +180,54 @@ class Node:
         self.notify_highlighted(self)
 
     @property
+    def is_visible(self):
+        result = True
+        # is it an operation?
+        if hasattr(self, "output"):
+            if self.output:
+                return True
+            else:
+                return self._is_visible
+        else:
+            if hasattr(self, "references"):
+                valid = False
+                flag = False
+                for n in self.references:
+                    if hasattr(n.parent, "output"):
+                        valid = True
+                        if n.parent.output is None or n.parent.output:
+                            flag = True
+                            break
+                        if n.parent.is_visible:
+                            flag = True
+                            break
+                # If there aren't any references then it is visible by default
+                if valid:
+                    result = flag
+        return result
+
+    @is_visible.setter
+    def is_visible(self, value):
+        # is it an operation?
+        if hasattr(self, "output"):
+            if self.output:
+                value = True
+        else:
+            value = True
+        self._is_visible = value
+
+    @property
     def emphasized(self):
-        return self._emphasized
+        if self.is_visible:
+            result = self._emphasized
+        else:
+            result = False
+        return result
 
     @emphasized.setter
     def emphasized(self, value):
+        if not self.is_visible:
+            value = False
         if value != self._emphasized:
             self._emphasized = value
             self._emphasized_time = time() if value else None
@@ -294,8 +342,12 @@ class Node:
         if not self._paint_bounds_dirty:
             return self._paint_bounds
 
+        flag = True
+        if hasattr(self, "stroke"):
+            if self.stroke is None or self.stroke.argb is None:
+                flag = False
         try:
-            self._paint_bounds = self.bbox(with_stroke=True)
+            self._paint_bounds = self.bbox(with_stroke=flag)
         except AttributeError:
             self._paint_bounds = None
 
@@ -1025,8 +1077,9 @@ class Node:
         """
         if children:
             self.remove_all_children(fast=fast)
-        self._parent._children.remove(self)
-        self._parent.set_dirty_bounds()
+        if self._parent:
+            self._parent._children.remove(self)
+            self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
             self.notify_destroyed(self)

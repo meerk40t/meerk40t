@@ -15,7 +15,7 @@ from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service, signal_listener, CommandSyntaxError
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -26,11 +26,17 @@ class BalorDevice(Service, ViewPort):
     to. This class additionally defines commands which exist as console commands while this service is activated.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
         self.extension = "lmc"
         self.job = None
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
 
         _ = kernel.translation
         self.register("frequency", (0, 1000))
@@ -88,6 +94,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
                 "section": "_00_General",
                 "priority": "10",
+                "signals": "device;renamed",
             },
             {
                 "attr": "corfile_enabled",
@@ -313,7 +320,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we cut at?"),
+                "tip": _("What power level do we cut at?"),
             },
             {
                 "attr": "default_speed",
@@ -494,7 +501,6 @@ class BalorDevice(Service, ViewPort):
                     "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
                 ),
                 "section": "First Pulse Killer",
-                "hidden": 1,
             },
             {
                 "attr": "pwm_half_period",
@@ -504,7 +510,6 @@ class BalorDevice(Service, ViewPort):
                 "label": _("PWM Half Period"),
                 "tip": _("Pulse Period: the frequency of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
-                "hidden": 1,
             },
             {
                 "attr": "pwm_pulse_width",
@@ -514,7 +519,6 @@ class BalorDevice(Service, ViewPort):
                 "label": _("PWM Pulse Width"),
                 "tip": _("Pulse Width: the pulse width of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
-                "hidden": 1,
             },
             {
                 "attr": "standby_param_1",
@@ -522,9 +526,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 2000,
                 "type": int,
                 "label": _("Parameter 1"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Standby-Parameter",
-                "hidden": 1,
             },
             {
                 "attr": "standby_param_2",
@@ -532,9 +535,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 20,
                 "type": int,
                 "label": _("Parameter 2"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Standby-Parameter",
-                "hidden": 1,
             },
             {
                 "attr": "timing_mode",
@@ -542,9 +544,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Timing Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "delay_mode",
@@ -552,9 +553,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Delay Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "laser_mode",
@@ -562,9 +562,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Laser Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "control_mode",
@@ -572,9 +571,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Control Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p1",
@@ -582,11 +580,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 0xFFB,
                 "type": int,
                 "label": _("Max Voltage"),
-                "tip": _(""),
+                # "tip": _(""),
                 "trailer": "V",
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p2",
@@ -595,10 +592,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Min Voltage"),
                 "trailer": "V",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p3",
@@ -607,10 +603,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("T1"),
                 "trailer": "µs",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p4",
@@ -619,10 +614,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("T2"),
                 "trailer": "µs",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p1",
@@ -630,9 +624,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Param 1"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p2",
@@ -640,9 +633,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 99,
                 "type": int,
                 "label": _("Param 2"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p3",
@@ -650,9 +642,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1000,
                 "type": int,
                 "label": _("Param 3"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p4",
@@ -660,9 +651,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 25,
                 "type": int,
                 "label": _("Param 4"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "input_passes_required",
@@ -670,7 +660,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 3,
                 "type": int,
                 "label": _("Input Signal Hold"),
-                "tip": _("How long does the input operation need to hold for to count as a pass"),
+                "tip": _(
+                    "How long does the input operation need to hold for to count as a pass"
+                ),
             },
             {
                 "attr": "input_operation_hardware",
@@ -682,6 +674,66 @@ class BalorDevice(Service, ViewPort):
             },
         ]
         self.register_choices("balor-extra", choices)
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            {
+                "attr": "rotary_scale_x",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (self, "rotary_active"),
+            },
+            {
+                "attr": "rotary_mirror_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_mirror_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        self.register_choices("rotary", choices)
 
         self.state = 0
 

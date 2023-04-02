@@ -6,6 +6,14 @@ from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 
+"""
+This module defines a set of commands that usually send a single easy command to the spooler. Basic jogging, home, 
+unlock rail commands. And it provides the the spooler class which should be provided by each driver.
+
+Spoolers process different jobs in order. A spooler job can be anything, but usually is a LaserJob which is a simple
+list of commands.
+"""
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -37,7 +45,7 @@ def plugin(kernel, lifecycle):
                 else:
                     if e.loop_enabled:
                         loops = e.loop_n
-                spooler.laserjob(data.plan, loops=loops, label=label)
+                spooler.laserjob(data.plan, loops=loops, label=label, outline=data.outline)
                 channel(_("Spooled Plan."))
                 kernel.root.signal("plan", data.name, 6)
 
@@ -371,27 +379,82 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
 
+class SpoolerJob:
+    """
+    Example of Spooler Job.
+
+    The primary methodology of a spoolerjob is that it has an `execute` function that takes the driver as an argument
+    it should then perform driver-like commands on the given driver to perform whatever actions the job should
+    execute.
+
+    The `priority` attribute is required.
+
+    The job should be permitted to `stop()` and respond to `is_running()`, and other checks as to elapsed_time(),
+    estimate_time(), and status.
+    """
+    def __init__(
+        self,
+        service,
+    ):
+        self.stopped = False
+        self.service = service
+        self.runtime = 0
+        self.priority = 0
+
+    @property
+    def status(self):
+        """
+        Status is simply a status as to the job. This will be relayed by things that check the job status of jobs
+        in the spooler.
+
+        @return:
+        """
+        if self.is_running:
+            return "Running"
+        else:
+            return "Queued"
+
+    def execute(self, driver):
+        """
+        This is the primary method of the SpoolerJob. In this example we call the "home()" function.
+        @param driver:
+        @return:
+        """
+        try:
+            driver.home()
+        except AttributeError:
+            pass
+
+        return True
+
+    def stop(self):
+        self.stopped = True
+
+    def is_running(self):
+        return not self.stopped
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        return result
+
+    def estimate_time(self):
+        return 0
+
+
 class Spooler:
     """
-    Spoolers store spoolable events in a two synchronous queue, and a single idle job that
-    will be executed in a loop, if the synchronous queues are empty. The two queues are the
-    realtime and the regular queue.
+    Spoolers are threaded job processors. A series of jobs is added to the spooler and these jobs are
+    processed in order. The driver is checked for any holds it may have preventing new commands from being
+    executed. If that isn't the case, the highest priority job is executed by calling the job's required
+    `execute()` function passing the relevant driver as the one variable. The job itself is agnostic, and will
+    execute whatever it wants calling the driver-like functions that may or may not exist on the driver.
 
-    Spooler should be registered as a service_delegate of the device service running the driver
-    to process data.
-
-    Spoolers have threads that process and run each set of commands. Ultimately all commands are
-    executed against the given driver. So if the command within the spooled element is "unicorn"
-    then driver.unicorn() is called with the given arguments. This permits arbitrary execution of
-    specifically spooled elements in the correct sequence.
-
-    The two queues are the realtime and the regular queue. The realtime queue tries to execute
-    particular events as soon as possible. And will execute even if there is a hold on the current
-    work.
-
-    When the queues are empty the idle job is repeatedly executed in a loop. If there is no idle job
-    then the spooler is inactive.
-
+    If execute() returns true then it is fully executed and will be removed. Otherwise it will be repeatedly
+    called until whatever work it is doing is finished. This also means the driver itself is checked for holds
+    (usually pausing or busy) each cycle.
     """
 
     def __init__(self, context, driver=None, **kwargs):
@@ -469,11 +532,11 @@ class Spooler:
         """
         Run thread for the spooler.
 
-        Process the real time queue.
-        Hold work queue if driver requires a hold
-        Process work queue.
-        Hold idle if driver requires idle to be held.
-        Process idle work
+        The thread runs while the spooler is not shutdown. This executes in the spooler thread. It waits, while
+        the queue is empty and is notified when items are added to the queue. Each job in the spooler is called
+        with execute(). If the function returns True, the job is finished and removed. We then move on to the next
+        spooler item. If execute() returns False the job is not finished and will be reattempted. Each spooler
+        cycle checks the priority and whether there's a wait/hold for jobs at that priority level.
 
         @return:
         """
@@ -493,6 +556,11 @@ class Spooler:
             if self.driver.hold_work(priority):
                 time.sleep(0.01)
                 continue
+            if program != self._current:
+                # A different job is loaded. If it has a job_start, we call that.
+                if hasattr(self.driver, "job_start"):
+                    function = getattr(self.driver, "job_start")
+                    function(program)
             self._current = program
             try:
                 fully_executed = program.execute(self.driver)
@@ -510,6 +578,11 @@ class Spooler:
                 # all work finished
                 self.remove(program)
 
+                # If we finished this work we call job_finished.
+                if hasattr(self.driver, "job_finish"):
+                    function = getattr(self.driver, "job_finish")
+                    function(program)
+
     @property
     def is_idle(self):
         return len(self._queue) == 0 or self._queue[0].priority < 0
@@ -522,7 +595,7 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1, label=None, helper=False):
+    def laserjob(self, job, priority=0, loops=1, label=None, helper=False, outline=None):
         """
         send a wrapped laser job to the spooler.
         """
@@ -530,7 +603,7 @@ class Spooler:
             label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
         ljob = LaserJob(
-            label, list(job), driver=self.driver, priority=priority, loops=loops
+            label, list(job), driver=self.driver, priority=priority, loops=loops, outline=outline
         )
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
@@ -541,8 +614,8 @@ class Spooler:
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def command(self, *job, priority=0, helper=True):
-        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+    def command(self, *job, priority=0, helper=True, outline=None):
+        ljob = LaserJob(str(job), [job], driver=self.driver, priority=priority, outline=outline)
         ljob.helper = helper
         ljob.uid = self.context.logging.uid("job")
         with self._lock:
@@ -552,15 +625,20 @@ class Spooler:
             self._lock.notify()
         self.context.signal("spooler;queue", len(self._queue))
 
-    def send(self, job):
+    def send(self, job, prevent_duplicate=False):
         """
         Send a job to the spooler queue
 
         @param job: job to send to the spooler.
+        @param prevent_duplicate: prevents the same job from being added again.
         @return:
         """
         job.uid = self.context.logging.uid("job")
         with self._lock:
+            if prevent_duplicate:
+                for q in self._queue:
+                    if q is job:
+                        return
             self._stop_lower_priority_running_jobs(job.priority)
             self._queue.append(job)
             self._queue.sort(key=lambda e: e.priority, reverse=True)

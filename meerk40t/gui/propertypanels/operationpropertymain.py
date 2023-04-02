@@ -120,6 +120,14 @@ class LayerSettingPanel(wx.Panel):
         self.checkbox_output.SetValue(1)
         h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
+        self.checkbox_visible = wx.CheckBox(self, wx.ID_ANY, _("Visible"))
+        self.checkbox_visible.SetToolTip(
+            _("Hide all contained elements on scene if not set.")
+        )
+        self.checkbox_visible.SetValue(1)
+        self.checkbox_visible.Enable(False)
+        h_property_sizer.Add(self.checkbox_visible, 1, 0, 0)
+
         self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
         OPERATION_DEFAULT_TOOLTIP = (
             _(
@@ -142,6 +150,7 @@ class LayerSettingPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_layer, self.button_layer_color)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_type)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_output, self.checkbox_output)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_visible, self.checkbox_visible)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_default, self.checkbox_default)
         # end wxGlade
 
@@ -188,6 +197,14 @@ class LayerSettingPanel(wx.Panel):
         )
         if self.operation.output is not None:
             self.checkbox_output.SetValue(self.operation.output)
+        flag_set = True
+        flag_enabled = False
+        if self.operation.output is not None:
+            if not self.operation.output:
+                flag_enabled = True
+                flag_set = self.operation.is_visible
+        self.checkbox_visible.SetValue(flag_set)
+        self.checkbox_visible.Enable(flag_enabled)
         if self.operation.default is not None:
             self.checkbox_default.SetValue(self.operation.default)
         try:
@@ -258,6 +275,14 @@ class LayerSettingPanel(wx.Panel):
             self.context.elements.signal(
                 "element_property_reload", self.operation, "check_output"
             )
+        self.checkbox_visible.Enable(not bool(self.checkbox_output.GetValue()))
+
+    def on_check_visible(self, event=None):
+        if self.operation.is_visible != bool(self.checkbox_visible.GetValue()):
+            self.operation.is_visible = bool(self.checkbox_visible.GetValue())
+            self.context.elements.validate_selected_area()
+            self.context.elements.signal("element_property_update", self.operation)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def on_check_default(self, event=None):
         if self.operation.default != bool(self.checkbox_default.GetValue()):
@@ -364,8 +389,8 @@ class SpeedPpiPanel(wx.Panel):
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
-        power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
-        speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
+        self.power_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL)
+        speed_power_sizer.Add(self.power_sizer, 1, wx.EXPAND, 0)
 
         self.text_power = TextCtrl(
             self,
@@ -387,7 +412,7 @@ class SpeedPpiPanel(wx.Panel):
             )
         )
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
-        power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
+        self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
         freq = self.context.device.lookup("frequency")
         if freq:
@@ -451,8 +476,8 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.speed is not None:
             set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
-            self.update_power_label()
             set_ctrl_value(self.text_power, str(self.operation.power))
+            self.update_power_label()
         if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
         self.Show()
@@ -484,7 +509,11 @@ class SpeedPpiPanel(wx.Panel):
         #     self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         # else:
         #     self.power_label.SetLabel(_("Power (ppi):"))
-        pass
+        try:
+            value = float(self.text_power.GetValue())
+            self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value/10:.1f}%)")
+        except ValueError:
+            return
 
     def on_text_power(self):
         try:
@@ -870,7 +899,7 @@ class PanelStartPreference(wx.Panel):
         d_start = list()
         d_end = list()
         factor = 3
-        unidirectional = self.operation.raster_swing
+        bidirectional = self.operation.bidirectional
         dpi = self.operation.dpi
         if dpi <= 1:
             dpi = 1
@@ -919,7 +948,7 @@ class PanelStartPreference(wx.Panel):
                 r_start.append((w * 0.9 if right else w * 0.1, pos))
                 r_end.append((w * 0.9 - 2 if right else w * 0.1 + 2, pos - 2))
                 last = r_start[-1]
-                if not unidirectional:
+                if bidirectional:
                     right = not right
                 pos += step
         if direction == 2 or direction == 3 or direction == 4:
@@ -966,7 +995,7 @@ class PanelStartPreference(wx.Panel):
                 r_end.append((pos - 2, (h * 0.9) - 2 if top else (h * 0.1) + 2))
 
                 last = r_start[-1]
-                if not unidirectional:
+                if bidirectional:
                     top = not top
                 pos += step
         self.raster_lines = r_start, r_end
@@ -1177,11 +1206,11 @@ class RasterSettingsPanel(wx.Panel):
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.radio_directional_raster = wx.RadioBox(
+        self.radio_raster_swing = wx.RadioBox(
             self,
             wx.ID_ANY,
             _("Directional Raster:"),
-            choices=[_("Bidirectional"), _("Unidirectional")],
+            choices=[_("Unidirectional"), _("Bidirectional")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
@@ -1196,9 +1225,9 @@ class RasterSettingsPanel(wx.Panel):
                 "It seems doubtful that there will be significant quality benefits from rastering in one direction."
             )
         )
-        self.radio_directional_raster.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
-        self.radio_directional_raster.SetSelection(0)
-        raster_sizer.Add(self.radio_directional_raster, 0, wx.EXPAND, 0)
+        self.radio_raster_swing.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
+        self.radio_raster_swing.SetSelection(0)
+        raster_sizer.Add(self.radio_raster_swing, 0, wx.EXPAND, 0)
 
         self.panel_start = PanelStartPreference(
             self, wx.ID_ANY, context=context, node=node
@@ -1215,14 +1244,7 @@ class RasterSettingsPanel(wx.Panel):
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
-        self.Bind(
-            wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_directional_raster
-        )
-        # end wxGlade
-
-        self.context.setting(bool, "developer_mode", False)
-        if not self.context.developer_mode:
-            self.radio_directional_raster.Enable(False)
+        self.Bind(wx.EVT_RADIOBOX, self.on_radio_directional, self.radio_raster_swing)
 
     def pane_hide(self):
         self.panel_start.pane_hide()
@@ -1247,8 +1269,8 @@ class RasterSettingsPanel(wx.Panel):
             set_ctrl_value(self.text_overscan, str(self.operation.overscan))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
-        if self.operation.raster_swing is not None:
-            self.radio_directional_raster.SetSelection(self.operation.raster_swing)
+        if self.operation.bidirectional is not None:
+            self.radio_raster_swing.SetSelection(self.operation.bidirectional)
         self.Show()
 
     def on_text_dpi(self):
@@ -1296,11 +1318,10 @@ class RasterSettingsPanel(wx.Panel):
         event.Skip()
 
     def on_radio_directional(self, event=None):
-        if self.operation.raster_swing != self.radio_directional_raster.GetSelection():
-            self.operation.raster_swing = self.radio_directional_raster.GetSelection()
-            self.context.elements.signal(
-                "element_property_reload", self.operation, "radio_direct"
-            )
+        self.operation.bidirectional = bool(self.radio_raster_swing.GetSelection())
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "radio_direct"
+        )
         event.Skip()
 
 

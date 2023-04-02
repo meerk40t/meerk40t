@@ -1,3 +1,10 @@
+"""
+The elements module governs all the interactions with the various nodes, as well as dealing with tree information.
+This serves effectively as the datastructure that stores all information about any active project. This includes
+several smaller functional pieces like Penbox and Wordlists.
+"""
+
+
 import contextlib
 import os.path
 from time import time
@@ -382,15 +389,6 @@ OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op
 
 
 class Elemental(Service):
-    """
-    The elemental service is governs all the interactions with the various elements,
-    operations, and filenodes. Handling structure change and selection, emphasis, and
-    highlighting changes. The goal of this module is to make sure that the life cycle
-    of the elements is strictly enforced. For example, every element that is removed
-    must have had the .cache deleted. And anything selecting an element must propagate
-    that information out to inform other interested modules.
-    """
-
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
@@ -441,7 +439,7 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and not self.operation_default_empty:
+        if len(ops) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
@@ -586,6 +584,14 @@ class Elemental(Service):
         #         break
         #     pnode.targeted = True
         #     pnode = pnode.parent
+
+    def have_unassigned_elements(self):
+        emptyset = False
+        for node in self.elems():
+            if len(node._references) == 0 and node.type not in ("file", "group"):
+                emptyset = True
+                break
+        return emptyset
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -871,6 +877,118 @@ class Elemental(Service):
 
         return this_area, this_length
 
+    def condense_elements(self, data):
+        """
+        This routine looks at a given dataset and will condense
+        it in the sense that if all elements of a given hierarchy
+        (ie group or file) are in this set, then they will be
+        replaced and represented by this parent element
+        """
+
+        def remove_children_from_list(list_to_deal, parent_node):
+            for idx, node in enumerate(list_to_deal):
+                if node is None:
+                    continue
+                if node.parent is parent_node:
+                    list_to_deal[idx] = None
+                    if len(node.children) > 0:
+                        remove_children_from_list(list_to_deal, node)
+
+        align_data = [e for e in data]
+        needs_repetition = True
+        while needs_repetition:
+            # Will be set only if we add a parent, as the process needs then to be repeated
+            needs_repetition = False
+
+            data_to_align = []
+            # We need to iterate through all the elements
+            # to establish if they belong to a group,
+            # if all the elements in this group are in
+            # the dataset too, then we just take the group
+            # as a representative.
+            data_len = len(align_data)
+
+            for idx1, node_1 in enumerate(align_data):
+                if node_1 is None:
+                    # Has been dealt with already
+                    # print ("Eliminated node")
+                    continue
+                # Is this a group? Then we just take this node
+                # and remove all children nodes
+                if node_1.type in ("file", "group"):
+                    # print (f"Group node ({node_1.label}), eliminate children")
+                    remove_children_from_list(align_data, node_1)
+                    # No continue, as we still need to
+                    # assess the parent case
+
+                parent = node_1.parent
+                if parent is None:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, no parent")
+                    continue
+                if parent.type not in ("file", "group"):
+                    # That should not happen per se,
+                    # only for root objects which parent
+                    # is elem_branch
+                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    continue
+                # How many children are contained?
+                candidates = len(parent.children)
+                identified = 0
+                if candidates > 0:
+                    # We only need to look to elements not yet dealt with,
+                    # but we start with the current index to include
+                    # node_1 in the count
+                    for idx2 in range(idx1, data_len, 1):
+                        node_2 = align_data[idx2]
+                        if node_2 is not None:
+                            if node_2.parent is parent:
+                                identified += 1
+                if identified == candidates:
+                    # All children of the parent object are contained
+                    # So we add the parent instead...
+                    data_to_align.append(parent)
+                    remove_children_from_list(align_data, parent)
+                    # print (f"Adding parent for {node_1.type}, all children inside")
+                    needs_repetition = True
+
+                else:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
+            if needs_repetition:
+                # We copy the data and do it again....
+                # print ("Repetition required")
+                align_data = [e for e in data_to_align]
+        # One special case though: if we have selected all
+        # elements within a single group then we still deal
+        # with all children
+        while len(data_to_align) == 1:
+            node = data_to_align[0]
+            if node is not None and node.type in ("file", "group"):
+                data_to_align = [e for e in node.children]
+            else:
+                break
+        return data_to_align
+
+    def translate_node(self, node, dx, dy):
+        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            return
+        else:
+            if node.type in ("group", "file"):
+                for c in node.children:
+                    self.translate_node(c, dx, dy)
+                node.translated(dx, dy)
+            else:
+                try:
+                    node.matrix.post_translate(dx, dy)
+                    node.translated(dx, dy)
+                except AttributeError:
+                    pass
+
     def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
 
@@ -906,90 +1024,42 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        if as_group != 0:
-            individually = 2  # all elements as a total
-        else:
-            individually = 0
-            for n in data:
-                if n.type == "group":
-                    individually = 1
-                    break
+        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
-        for node in data:
+        for node in data_to_align:
             if node.bounds is not None:
                 boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        if len(boundary_points) == 0:
             return
         left_edge = min([e[0] for e in boundary_points])
         top_edge = min([e[1] for e in boundary_points])
         right_edge = max([e[2] for e in boundary_points])
         bottom_edge = max([e[3] for e in boundary_points])
         if alignbounds is None:
+            # print ("Alignbounds were not set...")
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually in (0, 1):
-            groupmatrix = ""
+        if as_group == 0:
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
             # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
-            groupmatrix = f"translate({groupdx}, {groupdy})"
 
-        # Looping through all nodes with node.flat can provide
-        # multiple times a single node, as you may loop through
-        # files and groups nested into each other.
-        # To avoid this we create a temporary set which by definition
-        # can only contain unique members
-        if individually == 0:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(n.flat(emphasized=True, types=elem_nodes))
-        else:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(list([n]))
-        for q in s:
+        for q in data_to_align:
             # print(f"Node to be treated: {q.type}")
-            if individually in (0, 1):
+            if as_group == 0:
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
-                matrix = f"translate({dx}, {dy})"
-                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
-                matrix = groupmatrix
-            if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
-                continue
-            else:
-                if q.type in ("group", "file"):
-                    for c in q.flat(emphasized=True, types=elem_nodes):
-                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
-                            continue
-                        try:
-                            c.matrix.post_translate(dx, dy)
-                            # c.modified()
-                            c.translated(dx, dy)
-                        except AttributeError:
-                            pass
-                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
-                else:
-                    try:
-                        # q.matrix *= matrix
-                        q.matrix.post_translate(dx, dy)
-                        # q.modified()
-                        q.translated(dx, dy)
-                    except AttributeError:
-                        pass
-                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
+            self.translate_node(q, dx, dy)
         self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
@@ -1401,6 +1471,8 @@ class Elemental(Service):
         if fast:
             self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
+        self._filename = None
+        self.signal("file;loaded")
 
     def clear_note(self):
         self.note = None
@@ -1409,7 +1481,6 @@ class Elemental(Service):
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
-        special_occasion = False
         to_classify = []
         # if drop_node.type.startswith("op"):
         #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
@@ -1469,17 +1540,22 @@ class Elemental(Service):
         #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
                 if drag_node._parent.type == "branch reg":
-                    to_classify.append(drag_node)
-                if special_occasion:
-                    for ref in list(drag_node._references):
-                        ref.remove_node()
+                    if drag_node.type in ("file", "group"):
+                        for e in drag_node.flat(elem_nodes):
+                            to_classify.append(e)
+                    else:
+                        to_classify.append(drag_node)
                 drop_node.drop(drag_node, modify=True)
                 success = True
+            else:
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                pass
         if self.classify_new and len(to_classify) > 0:
             self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
@@ -1817,7 +1893,7 @@ class Elemental(Service):
         if elements is None:
             return
 
-        if not len(list(self.ops())) and not self.operation_default_empty:
+        if len(list(self.ops())) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
@@ -2893,25 +2969,42 @@ class Elemental(Service):
     def load(self, pathname, **kwargs):
         kernel = self.kernel
         _ = kernel.translation
+        filename_to_process = pathname
+        # Lets check first if we have a preprocessor
+        # Use-case: if we identify functionalities in the file
+        # which aren't supported by mk yet, we could ask a program
+        # to convert these elements into supported artifacts
+        # This may change the fileformat (and filename)
+
+        fn_name, fn_extension = os.path.splitext(filename_to_process)
+        if fn_extension:
+            preproc = self.lookup(f"preprocessor/{fn_extension}")
+            # print (f"Preprocessor routine for preprocessor/{fn_extension}: {preproc}")
+            if preproc is not None:
+                filename_to_process = preproc(pathname)
+                # print (f"Gave: {pathname}, received: {filename_to_process}")
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
-                if str(pathname).lower().endswith(extensions):
+                if str(filename_to_process).lower().endswith(extensions):
                     self.set_start_time("load")
                     self.set_start_time("full_load")
                     with self.static("load elements"):
                         try:
                             # We could stop the attachment to shadowtree for the duration
-                            # of the load to avoid unnecessary actions, will provide
+                            # of the load to avoid unnecessary actions, this will provide
                             # about 8% speed increase, but probably not worth the risk
                             # with attachment: 77.2 sec
                             # without attachm: 72.1 sec
                             # self.unlisten_tree(self)
-                            results = loader.load(self, self, pathname, **kwargs)
+                            results = loader.load(
+                                self, self, filename_to_process, **kwargs
+                            )
                             self.remove_empty_groups()
                             # self.listen_tree(self)
                             end_time = time()
                             self._filename = pathname
                             self.set_end_time("load", display=True)
+                            self.signal("file;loaded")
                             return True
                         except FileNotFoundError:
                             return False

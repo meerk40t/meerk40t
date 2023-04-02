@@ -1,3 +1,7 @@
+"""
+This modeu
+"""
+
 import ast
 import gzip
 import math
@@ -653,7 +657,7 @@ class SVGProcessor:
                         if e.id == ref:
                             op.add_reference(e)
 
-        if self.requires_classification:
+        if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
     def check_for_mk_path_attributes(self, node, element):
@@ -1164,13 +1168,16 @@ class SVGLoader:
             else:
                 width = None
                 height = None
+            # The color attribute of SVG.parse decides which default color
+            # a stroke / fill will get if the attribute "currentColor" is
+            # set - we opt for "black"
             svg = SVG.parse(
                 source=source,
                 reify=False,
                 width=width,
                 height=height,
                 ppi=ppi,
-                color="none",
+                color="black",
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:

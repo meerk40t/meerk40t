@@ -1,5 +1,14 @@
 import time
 
+"""
+A driver is a class which implements a set of various functions that are expected to be called to control a particular
+laser. 
+
+There is no guarantees with regard to what commands should exist other than `hold_work` which is required by the
+spooler. Anything that accesses a driver is expected to call any would-be function as if it may generate an
+AttributeError (because it might).
+"""
+
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_FINISH = 1
 DRIVER_STATE_PROGRAM = 2
@@ -16,23 +25,22 @@ PLOT_DIRECTION = 32
 
 class Driver:
     """
-    A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
-    system. The spooled command consist of a method and some data. These are sent to the driver associated with that
-    spooler in linear within a single spooler thread. If a method does not exist, it will not be called;
-    it will be as if the command didn't exist. Some devices may have other functions which can equally be called through
-    spooling particular lasercode.
+    This driver is mostly an example. Nothing uses this and drivers are not required to implement this set of functions
+    or any functions, except for hold_work(). get(), set(), and status(). If a particular laser implements something
+    no other laser implements. A function should be implemented to access that functionality. If no code calls
+    that function, then it will not execute. But, often these will get called with buttons or device specific
+    implementations.
 
-    Most code however is processed as part of cutcode which is a series of native-coord commands which should be
-    processed in order. These can include curves to cut and places to dwell the laser to be executed as part of a
-    precompiled set of instructions. Cutcode can't do things like pause the laser or leave the rail unlocked, but should
-    be permitted to execute various steps in order, and have that execution manipulated by the most of these remaining
-    commands.
+    However, most of the time the functions in this file will exist regardless of device, so calling these will be
+    effective most of the time. However, sometimes things like unlock rail for a galvo laser (which has no rail) will
+    not be implemented for obvious reasons. The driver will lack that function and any calling code will remain
+    functional.
     """
 
     def __init__(self, context, name=None):
         self.context = context
         self.name = name
-        self.settings = dict()
+        self._settings = dict()
 
         self.native_x = 0
         self.native_y = 0
@@ -48,6 +56,50 @@ class Driver:
         @return: hold?
         """
         return self.hold or self.paused
+
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self._settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        self._settings[key] = value
+
+    def status(self):
+        """
+        Required.
+
+        The first value in the status must be either idle, hold, busy.
+        The secondary values are subclasses of this state. A hold can be a "door", "alarm", "paused", "hardware-paused",
+        etc. depending on the laser. A busy can be the result of a "raster", "raw", "program", "light", or some
+        other laser dependant information.
+
+        The expectation is that the driver may query for this information from the laser if the laser provides this,
+        otherwise you may receive the driver expected state.
+
+        @return: position (2 or more axis), major-state, minor-state
+        """
+        state0 = "idle"
+        state1 = "idle"
+        if self.hold:
+            state0 = "hold"
+            state1 = "paused" if self.paused else "hold"
+        return (self.native_x, self.native_y), state0, state1
 
     def move_ori(self, x, y):
         """
@@ -195,17 +247,6 @@ class Driver:
         @return:
         """
 
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-
-        @param key:
-        @param value:
-        @return:
-        """
-        self.settings[key] = value
-
     def set_origin(self, x, y):
         """
         This should set the origin position for the laser. X, Y refer to the origin position. If these are None then the
@@ -306,17 +347,3 @@ class Driver:
         @param args:
         @return:
         """
-
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.settings.get('speed', 0.0)}")
-        parts.append(f"power={self.settings.get('power', 0)}")
-        status = ";".join(parts)
-        self.context.signal("driver;status", status)

@@ -21,7 +21,6 @@ class SetOriginCut(CutObject):
         )
         self.first = True  # SetOrigin cuts are standalone
         self.last = True
-        self.raster_step = 0
 
     def reversible(self):
         return False

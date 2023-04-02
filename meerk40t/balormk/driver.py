@@ -41,7 +41,7 @@ class BalorDriver:
 
         self.queue = list()
         self.plot_planner = PlotPlanner(
-            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
+            dict(), single=True, ppi=False, shift=False, group=True
         )
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
@@ -87,6 +87,37 @@ class BalorDriver:
         """
         return priority <= 0 and self.paused
 
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return default
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        x, y = self.connection.get_last_xy()
+        state_major, state_minor = self.connection.state
+        return (x, y), state_major, state_minor
+
     def laser_off(self, *values):
         """
         This command expects to stop pulsing the laser in place.
@@ -118,7 +149,9 @@ class BalorDriver:
     def _wait_for_input_protocol(self, input_mask, input_value):
         required_passes = self.service.input_passes_required
         passes = 0
-        while self.connection and not self.connection.is_shutdown and not self._aborting:
+        while (
+            self.connection and not self.connection.is_shutdown and not self._aborting
+        ):
             read_port = self.connection.read_port()
             b = read_port[1]
             all_matched = True
@@ -201,7 +234,7 @@ class BalorDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                for x, y, on in q.plot[1:]:
+                for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -212,6 +245,7 @@ class BalorDriver:
 
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
+                        # No power change.
                         last_on = on
                         if self.value_penbox:
                             # There is an active value_penbox
@@ -227,12 +261,12 @@ class BalorDriver:
                             con.set_settings(settings)
                         else:
                             # We are using traditional power-scaling
-                            settings = self.plot_planner.settings
-                            current_power = (
-                                float(settings.get("power", self.service.default_power))
-                                / 10.0
+                            max_power = float(
+                                q.settings.get("power", self.service.default_power)
                             )
-                            con.power(current_power * on)
+                            percent_power = max_power / 10.0
+                            # Max power is the percent max power, scaled by the pixel power.
+                            con.power(percent_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
@@ -267,6 +301,7 @@ class BalorDriver:
                     self._wait_for_input_protocol(q.input_mask, q.input_value)
                     con.program_mode()
             else:
+                # Rastercut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     # LOOP CHECKS
@@ -320,7 +355,7 @@ class BalorDriver:
                             else:
                                 # We are using traditional power-scaling
                                 settings = self.plot_planner.settings
-                                current_power = (
+                                percent_power = (
                                     float(
                                         settings.get(
                                             "power", self.service.default_power
@@ -328,7 +363,7 @@ class BalorDriver:
                                     )
                                     / 10.0
                                 )
-                                con.power(current_power * on)
+                                con.power(percent_power * on)
                         con.mark(x, y)
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
@@ -406,6 +441,8 @@ class BalorDriver:
 
         @return:
         """
+        if self.service.rotary_active and self.service.rotary_supress_home:
+            return
         self.move_abs("50%", "50%")
 
     def physical_home(self):
@@ -524,13 +561,6 @@ class BalorDriver:
         @return:
         """
         self.connection.abort()
-
-    def status(self):
-        """
-        Wants a status report of what the driver is doing.
-        @return:
-        """
-        pass
 
     def dwell(self, time_in_ms):
         """

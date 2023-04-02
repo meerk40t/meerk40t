@@ -199,7 +199,11 @@ class Channel:
                 return  # This is already being watched by that.
         self.watchers.append(monitor_function)
         if self.greet is not None:
-            monitor_function(self.greet)
+            if isinstance(self.greet, str):
+                monitor_function(self.greet)
+            else:
+                for g in self.greet():
+                    monitor_function(g)
         if self.buffer is not None:
             for line in list(self.buffer):
                 monitor_function(line)

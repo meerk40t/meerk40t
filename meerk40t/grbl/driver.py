@@ -40,7 +40,7 @@ class GRBLDriver(Parameters):
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+            self.settings, single=True, ppi=False, shift=False, group=True
         )
         self.queue = []
         self.plot_data = None
@@ -68,6 +68,8 @@ class GRBLDriver(Parameters):
         self.move_mode = 0
         self.reply = None
         self.elements = None
+        self.power_scale = 1.0
+        self.speed_scale = 1.0
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -89,6 +91,42 @@ class GRBLDriver(Parameters):
         @return: hold?
         """
         return priority <= 0 and (self.paused or self.hold)
+
+    def get(self, key, default=None):
+        """
+        Required.
+
+        @param key: Key to get.
+        @param default: Default value to use.
+        @return:
+        """
+        return self.settings.get(key, default=default)
+
+    def set(self, key, value):
+        """
+        Required.
+
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
+            self.power_dirty = True
+        if key == "speed":
+            self.speed_dirty = True
+        self.settings[key] = value
+
+    def status(self):
+        """
+        Wants a status report of what the driver is doing.
+        @return:
+        """
+        # TODO: To calculate status correctly we need to actually have access to the response
+        self.grbl_realtime("?")
+        return (self.native_x, self.native_y), "idle", "unknown"
 
     def move_ori(self, x, y):
         """
@@ -236,7 +274,6 @@ class GRBLDriver(Parameters):
             qspeed = q.settings.get("speed", self.speed)
             qraster_step_x = q.settings.get("raster_step_x")
             qraster_step_y = q.settings.get("raster_step_y")
-            # print (f"Cut {type(q).__name__}, power={qpower}, speed={qspeed}, rx={qraster_step_x}, ry={qraster_step_y}")
             if qpower != self.power:
                 self.set("power", qpower)
             if (
@@ -281,12 +318,15 @@ class GRBLDriver(Parameters):
                 # GRBL has no core GPIO functionality
                 pass
             else:
+                #  Rastercut, PlotCut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
                     while self.paused:
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
+                        if isinstance(on, float):
+                            on = int(on)
                         if on & PLOT_FINISH:  # Plot planner is ending.
                             break
                         elif on & PLOT_SETTING:  # Plot planner settings have changed.
@@ -363,6 +403,8 @@ class GRBLDriver(Parameters):
         """
         self.native_x = 0
         self.native_y = 0
+        if self.service.rotary_active and self.service.rotary_supress_home:
+            return
         self.grbl(f"G28{self.line_end}")
 
     def rapid_mode(self, *values):
@@ -398,20 +440,6 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-
-    def set(self, key, value):
-        """
-        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
-        yet to be written drivers.
-        @param key:
-        @param value:
-        @return:
-        """
-        if key == "power":
-            self.power_dirty = True
-        if key == "speed":
-            self.speed_dirty = True
-        self.settings[key] = value
 
     def set_origin(self, x, y):
         """
@@ -527,22 +555,6 @@ class GRBLDriver(Parameters):
         """
         self.grbl_realtime("$X\n")
 
-    def status(self):
-        """
-        Asks that this device status be updated.
-
-        @return:
-        """
-        self.grbl_realtime("?")
-
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.settings.get('speed', 0.0)}")
-        parts.append(f"power={self.settings.get('power', 0)}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
-
     ####################
     # PROTECTED DRIVER CODE
     ####################
@@ -642,3 +654,43 @@ class GRBLDriver(Parameters):
         self.units = 21
         self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
         self.units_dirty = True
+
+    def set_power_scale(self, factor):
+        if 0 < factor < 100:
+            self.power_scale = factor
+        else:
+            self.power_scale = 1.0
+        # Grbl can only deal with factors between 10% and 200%
+        ifactor = int(self.power_scale * 10 + 10)
+        ifactor = min(20, max(1, ifactor))
+        self.grbl_realtime("\x99")
+        if ifactor < 10:
+            for idx in range(10 - ifactor):
+                self.grbl_realtime("\x9A")
+        elif ifactor > 10:
+            for idx in range(ifactor - 10):
+                self.grbl_realtime("\x9B")
+
+    def set_speed_scale(self, factor):
+        if 0 < factor < 100:
+            self.speed_scale = factor
+        else:
+            self.speed_scale = 1.0
+        # Grbl can only deal with factors between 10% and 200%
+        ifactor = int(self.speed_scale * 10 + 10)
+        ifactor = min(20, max(1, ifactor))
+        self.grbl_realtime("\x90")
+        if ifactor < 10:
+            for idx in range(10 - ifactor):
+                self.grbl_realtime("\x92")
+        elif ifactor > 10:
+            for idx in range(ifactor - 10):
+                self.grbl_realtime("\x91")
+
+    @staticmethod
+    def has_adjustable_power():
+        return True
+
+    @staticmethod
+    def has_adjustable_speed():
+        return True

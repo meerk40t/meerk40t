@@ -22,10 +22,17 @@ class GRBLDevice(Service, ViewPort):
     GRBLDevice is driver for the Gcode Controllers
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
+
         # self.redlight_preferred = False
 
         self.setting(str, "label", path)
@@ -133,6 +140,66 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            {
+                "attr": "rotary_scale_x",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (self, "rotary_active"),
+            },
+            {
+                "attr": "rotary_mirror_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_mirror_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        self.register_choices("rotary", choices)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -192,6 +259,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Label"),
                 "tip": _("What is this device called."),
                 "width": 250,
+                "signals": "device;renamed",
             },
             {
                 "attr": "serial_port",
@@ -462,7 +530,7 @@ class GRBLDevice(Service, ViewPort):
                 self.driver.move_mode = 0
                 # self.redlight_preferred = False
                 channel("Turning off redlight.")
-                self.signal("grbl_red_dot", True)
+                self.signal("grbl_red_dot", False)
             else:
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
@@ -476,7 +544,7 @@ class GRBLDevice(Service, ViewPort):
                 # An arbitrary move to turn the laser really on!
                 # self.driver.grbl("G1")
                 channel("Turning on redlight.")
-                self.signal("grbl_red_dot", False)
+                self.signal("grbl_red_dot", True)
 
         @self.console_option(
             "idonotlovemyhouse",
@@ -566,20 +634,6 @@ class GRBLDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
-
-    @property
-    def current_x(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[0]
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return self.current[1]
 
     def realize(self):
         self.width = self.bedwidth

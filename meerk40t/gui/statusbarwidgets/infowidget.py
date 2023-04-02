@@ -104,6 +104,7 @@ class SimpleInfoWidget(StatusBarWidget):
             content = self._messages[self._counter]
             msg = "" if content is None else content
         self.info_text.SetLabel(msg)
+        self.info_text.SetToolTip(msg)
 
     def on_button_prev(self, event):
         self._counter -= 1

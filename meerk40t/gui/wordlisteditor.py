@@ -905,4 +905,5 @@ class WordlistEditor(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Editing", "Variables + Wordlists")
+        # Suppress to avoid double menu-appearance
+        return ("Editing", "Variables + Wordlists", True)

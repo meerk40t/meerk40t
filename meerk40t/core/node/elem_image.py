@@ -82,6 +82,7 @@ class ImageNode(Node):
             except ImportError:
                 self.image = None
 
+        # Step_x/y is the step factor of the image, the reciprocal of the DPI.
         self.step_x = None
         self.step_y = None
 

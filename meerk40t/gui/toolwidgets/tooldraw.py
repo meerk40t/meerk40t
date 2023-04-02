@@ -45,7 +45,10 @@ class DrawTool(ToolWidget):
             self.pen = wx.Pen()
             elements = self.scene.context.elements
             self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
-            self.pen.SetWidth(elements.default_strokewidth)
+            try:
+                self.pen.SetWidth(elements.default_strokewidth)
+            except TypeError:
+                self.pen.SetWidth(int(elements.default_strokewidth))
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME
         elif event_type == "move":
@@ -56,8 +59,8 @@ class DrawTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.series = None
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
