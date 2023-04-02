@@ -37,7 +37,7 @@ class TestDriverGRBL(unittest.TestCase):
             kernel.shutdown()
         with open(file1) as f:
             data = f.read()
-        self.assertEqual(data, gcode_rect)
+        self.assertEqual(gcode_rect, data)
 
     def test_driver_basic_rect_cut(self):
         """
@@ -57,7 +57,7 @@ class TestDriverGRBL(unittest.TestCase):
             kernel.shutdown()
         with open(file1) as f:
             data = f.read()
-        self.assertEqual(data, gcode_rect)
+        self.assertEqual(gcode_rect, data)
 
     def test_driver_basic_rect_raster(self):
         """
