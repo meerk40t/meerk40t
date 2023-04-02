@@ -93,7 +93,9 @@ class HShape:
         if self.use_xeqy:
             scale_y = scale_x
 
-        self.matrix.post_scale(self._get_offset() + scale_x, self._get_offset() + scale_y)
+        self.matrix.post_scale(
+            self._get_offset() + scale_x, self._get_offset() + scale_y
+        )
         self.matrix.post_rotate(self.theta)
         self.matrix.post_translate(self.x, self.y)
         return self.matrix
@@ -103,7 +105,7 @@ class HShape:
         self.scale_x = r.random() * 150 + 50
         self.scale_y = r.random() * 150 + 50
         self.speed = r.random() * 5 + 0.1
-        self.damping = r.random() * .1 - 0.01
+        self.damping = r.random() * 0.1 - 0.01
         self.phase = r.random()
         self.offset = r.random() * 10
 
@@ -138,17 +140,16 @@ class HShape:
             y = sin_t * damp
         else:
             y = 0
-        x, y = matrix.point_in_matrix_space((x,y))
+        x, y = matrix.point_in_matrix_space((x, y))
         # apply matrix
         x += self.progression_x * t
         y += self.progression_y * t
 
-        series = np.stack((x,y), axis=1)
+        series = np.stack((x, y), axis=1)
         return series
 
 
 class HarmonographWidget(Widget):
-
     def __init__(self, scene):
         bed_width, bed_height = scene.context.device.physical_to_scene_position(
             "100%", "100%"
@@ -156,7 +157,7 @@ class HarmonographWidget(Widget):
         x, y = bed_width / 2, bed_height / 2
         super().__init__(scene, x, y, x, y)
         self.tool_pen = wx.Pen()
-        self.tool_pen.SetColour(wx.RED)
+        self.tool_pen.SetColour(wx.BLUE)
         self.shape_matrix = None
 
         self.curves = list()
@@ -165,64 +166,85 @@ class HarmonographWidget(Widget):
         self._scale = 1000.0
         self.rotations = 20.0
 
-        size = 10000
+        size = 15000
         self.t_step = 0.015
         self.series = []
         self.add_pendulum_x()
         self.add_pendulum_y()
 
-        toolbar = ToolbarWidget(scene, 3.5 * size, 0)
-        self.add_widget(-1, toolbar)
-        remove_widget = ButtonWidget(
-                scene,
-                0,
-                0,
-                size,
-                size,
-                icons.icons8_delete_50.GetBitmap(use_theme=False),
-                self.cancel,
-            )
-
-        toolbar.add_widget(-1, remove_widget)
-
         accept_widget = ButtonWidget(
-                scene,
-                0,
-                0,
-                size,
-                size,
-                icons.icons8_center_of_gravity_50.GetBitmap(use_theme=False),
-                self.confirm,
-            )
-        toolbar.add_widget(-1, accept_widget)
+            scene,
+            size * -2,
+            size * -0.5,
+            size * -1,
+            size * 0.5,
+            icons.icons8_checkmark_50.GetBitmap(use_theme=False),
+            self.confirm,
+        )
+        accept_widget.background_brush = wx.WHITE_BRUSH
+        self.add_widget(-1, accept_widget)
 
         random_widget = ButtonWidget(
             scene,
-            0,
-            0,
-            size,
-            size,
+            size * -0.5,
+            size * -2,
+            size * 0.5,
+            size * -1,
             icons.icons8_next_page_20.GetBitmap(use_theme=False, resize=50),
             self.set_random_harmonograph,
         )
-        toolbar.add_widget(-1, random_widget)
+        random_widget.background_brush = wx.WHITE_BRUSH
+        self.add_widget(-1, random_widget)
 
-        self.add_widget(-1, RelocateWidget(scene, 0, 0))
+        remove_widget = ButtonWidget(
+            scene,
+            size * 1,
+            size * -0.5,
+            size * 2,
+            size * 0.5,
+            icons.icons8_delete_50.GetBitmap(use_theme=False),
+            self.cancel,
+        )
+        remove_widget.background_brush = wx.WHITE_BRUSH
+        self.add_widget(-1, remove_widget)
+
+        relocate_widget = RelocateWidget(scene, 0, 0)
+        self.add_widget(-1, relocate_widget)
 
         def delta_theta(delta):
             self.theta += delta
             self.shape_matrix = None
             self.scene.toast(f"theta: {self.theta}")
 
-        rotation_widget = RotationWidget(scene, 0, 20000, 10000, 30000, icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_theta)
+        rotation_widget = RotationWidget(
+            scene,
+            size * -1,
+            size * 1,
+            size * 0,
+            size * 2,
+            icons.icons8_rotate_left_50.GetBitmap(use_theme=False),
+            delta_theta,
+        )
+        rotation_widget.background_brush = wx.WHITE_BRUSH
         self.add_widget(-1, rotation_widget)
 
         def delta_step(delta):
-            self.t_step += delta / 100
+            self.t_step += delta / 1000.0
+            if self.t_step <= 0.001:
+                self.t_step = 0.001
             self.scene.toast(f"t_step: {self.t_step}")
             self.series = None
 
-        step_handle = RotationWidget(scene, 0, 50000, 10000, 60000, icons.icons8_fantasy_50.GetBitmap(use_theme=False), delta_step)
+        step_handle = RotationWidget(
+            scene,
+            size * 0,
+            size * 1,
+            size * 1,
+            size * 2,
+            icons.icons8_fantasy_50.GetBitmap(use_theme=False),
+            delta_step,
+        )
+        step_handle.background_brush = wx.WHITE_BRUSH
         self.add_widget(-1, step_handle)
 
         def delta_rotations(delta):
@@ -230,10 +252,20 @@ class HarmonographWidget(Widget):
             self.scene.toast(f"rotations: {self.rotations}")
             self.series = None
 
-        rotate_widget = RotationWidget(scene, 0, 60000, 10000, 70000,  icons.icons8_rotate_left_50.GetBitmap(use_theme=False), delta_rotations)
+        rotate_widget = RotationWidget(
+            scene,
+            size * -1,
+            size * 2,
+            size * 0,
+            size * 3,
+            icons.icons8_roll_50.GetBitmap(use_theme=False),
+            delta_rotations,
+        )
+        rotate_widget.background_brush = wx.WHITE_BRUSH
         self.add_widget(-1, rotate_widget)
 
-        scale_widget = ScaleWidget(scene, 0, 80000, 10000, 90000)
+        scale_widget = ScaleWidget(scene, size * 0, size * 2, size * 1, size * 3)
+        scale_widget.background_brush = wx.WHITE_BRUSH
         self.add_widget(-1, scale_widget)
 
         self.set_random_harmonograph()
@@ -241,7 +273,14 @@ class HarmonographWidget(Widget):
 
         curvebar = ToolbarWidget(scene, 5 * size, 0)
         for c in self.curves:
-            curvebar.add_widget(-1, CurveWidget(scene, icons.icons8_computer_support_50.GetBitmap(use_theme=False), c))
+            curvebar.add_widget(
+                -1,
+                CurveWidget(
+                    scene,
+                    icons.icons8_computer_support_50.GetBitmap(use_theme=False),
+                    c,
+                ),
+            )
         self.add_widget(-1, curvebar)
 
     @property
@@ -321,7 +360,9 @@ class HarmonographWidget(Widget):
             self.process_matrix()
         if self.series is None:
             self.process_shape()
-        gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.shape_matrix)))
+        gc.ConcatTransform(
+            wx.GraphicsContext.CreateMatrix(gc, ZMatrix(self.shape_matrix))
+        )
         gc.SetPen(self.tool_pen)
         gc.StrokeLines(self.series)
         gc.PopState()
@@ -401,4 +442,6 @@ class ControlWidget(Widget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         gc.SetBrush(wx.RED_BRUSH)
-        gc.DrawEllipse(self.left, self.top, self.right - self.left, self.bottom - self.top)
+        gc.DrawEllipse(
+            self.left, self.top, self.right - self.left, self.bottom - self.top
+        )
