@@ -192,6 +192,10 @@ def static_plugins(kernel, lifecycle):
 
         kernel.add_plugin(balorplugin)
 
+        from .newly.plugin import plugin as newlyplugin
+
+        kernel.add_plugin(newlyplugin)
+
         from .gui.plugin import plugin as wxplugin
 
         plugins.append(wxplugin)
