@@ -25,6 +25,7 @@ class HandleWidget(Widget):
         gc.PushState()
         if self.background_brush is not None:
             gc.SetBrush(self.background_brush)
-            gc.DrawRectangle(self.left, self.right, self.width, self.height)
+            gc.SetPen(wx.TRANSPARENT_PEN)
+            gc.DrawRectangle(self.left, self.top, self.width, self.height)
         gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
         gc.PopState()

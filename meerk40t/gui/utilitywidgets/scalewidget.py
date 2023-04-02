@@ -18,7 +18,7 @@ class ScaleWidget(HandleWidget):
         self.current_scale = 1.0
         self.scale_one_distance = (right - left) * 5
         self.tool_pen = wx.Pen()
-        self.tool_pen.SetColour(wx.BLUE)
+        self.tool_pen.SetColour(wx.RED)
         self.tool_pen.SetWidth(1000)
         self.rect = None
 
@@ -28,6 +28,7 @@ class ScaleWidget(HandleWidget):
             return
         gc.SetPen(self.tool_pen)
         if self.rect:
+            gc.SetBrush(wx.TRANSPARENT_BRUSH)
             gc.DrawRectangle(*self.rect)
 
     def apply_scale(self, scale):
