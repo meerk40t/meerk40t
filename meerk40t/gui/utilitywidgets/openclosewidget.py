@@ -2,7 +2,8 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
-    RESPONSE_ABORT, HITCHAIN_HIT,
+    HITCHAIN_HIT,
+    RESPONSE_ABORT,
 )
 from meerk40t.gui.scene.widget import Widget
 
@@ -37,4 +38,3 @@ class OpenCloseWidget(Widget):
         if event_type == "leftdown":
             self._opened = not self._opened
         return RESPONSE_ABORT
-

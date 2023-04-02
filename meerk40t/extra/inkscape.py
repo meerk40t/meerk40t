@@ -3,6 +3,7 @@ import os.path
 import platform
 from subprocess import PIPE, TimeoutExpired, run
 from time import time
+
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel.kernel import get_safe_path
 
@@ -49,6 +50,7 @@ def get_inkscape(context, manual_candidate=None):
         inkscape = ""
     return inkscape
 
+
 def run_command_and_log(command_array, logfile):
     f = None
     timeout_value = None
@@ -71,7 +73,9 @@ def run_command_and_log(command_array, logfile):
         c = run(command_array, timeout=timeout_value, stdout=PIPE)
         end_time = time()
         if f:
-            f.write(f"Executed successfully, result: {c.returncode} (execution time: {end_time-start_time:.1f} sec)\n")
+            f.write(
+                f"Executed successfully, result: {c.returncode} (execution time: {end_time-start_time:.1f} sec)\n"
+            )
             f.write("Output:\n")
             f.write(c.stdout.decode("utf-8") + "\n")
         result = True
@@ -81,6 +85,7 @@ def run_command_and_log(command_array, logfile):
     if f:
         f.close()
     return result, c
+
 
 class MultiLoader:
     """
@@ -139,10 +144,7 @@ class MultiLoader:
         if not inkscape:
             raise BadFileError("Inkscape not found")
 
-        result, c = run_command_and_log(
-            [inkscape, "-V"],
-            logfile
-        )
+        result, c = run_command_and_log([inkscape, "-V"], logfile)
         if not result:
             return pathname
 
@@ -171,10 +173,7 @@ class MultiLoader:
             kernel.busyinfo.change(msg=_("Calling inkscape..."))
             kernel.busyinfo.show()
 
-        result, c = run_command_and_log(
-            cmd,
-            logfile
-        )
+        result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
             return False
         if was_shown:
@@ -184,10 +183,9 @@ class MultiLoader:
         preproc = elements_service.lookup("preprocessor/.svg")
         if preproc is not None:
             filename_to_process = preproc(filename_to_process)
-        results = handler.load(
-            elements_service, elements_service, filename_to_process
-        )
+        results = handler.load(elements_service, elements_service, filename_to_process)
         return results
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -466,10 +464,7 @@ def plugin(kernel, lifecycle):
                 kernel.busyinfo.change(msg=_("Calling inkscape..."))
                 kernel.busyinfo.show()
             log_file = os.path.join(safe_dir, "inkscape.log")
-            result, c = run_command_and_log(
-                [inkscape, "-V"],
-                log_file
-            )
+            result, c = run_command_and_log([inkscape, "-V"], log_file)
             if not result:
                 return pathname
 
@@ -495,11 +490,8 @@ def plugin(kernel, lifecycle):
                         svg_temp_file,
                         pathname,
                     ]
-                result, c = run_command_and_log(
-                    cmd,
-                    log_file
-                )
-                if result and c.returncode==0:
+                result, c = run_command_and_log(cmd, log_file)
+                if result and c.returncode == 0:
                     return svg_temp_file
 
                 return pathname
@@ -533,11 +525,8 @@ def plugin(kernel, lifecycle):
                         png_temp_file,
                         pathname,
                     ]
-                result, c = run_command_and_log(
-                    cmd,
-                    log_file
-                )
-                if result and c.returncode==0:
+                result, c = run_command_and_log(cmd, log_file)
+                if result and c.returncode == 0:
                     return png_temp_file
 
                 return pathname

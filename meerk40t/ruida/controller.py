@@ -9,7 +9,7 @@ import struct
 import time
 
 from meerk40t.ruida.mock_connection import MockConnection
-from meerk40t.ruida.rdjob import encode32, encode14
+from meerk40t.ruida.rdjob import encode14, encode32
 
 INTERFACE_FRAME = b"\xA5\x53\x00"
 INTERFACE_PLUS_X_DOWN = b"\xA5\x50\x02"

@@ -5,14 +5,12 @@ import platform
 from typing import List
 
 import wx
+import wx.lib.mixins.listctrl as listmix
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 
-import wx.lib.mixins.listctrl as listmix
-
 _ = wx.GetTranslation
-
 
 
 def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:

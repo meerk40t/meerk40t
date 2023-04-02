@@ -1,14 +1,10 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_DELEGATE,
-    HITCHAIN_HIT,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_DELEGATE, HITCHAIN_HIT
 from meerk40t.gui.scene.widget import Widget
 
 
 class HandleWidget(Widget):
-
     def __init__(self, scene, left, top, right, bottom, bitmap):
         Widget.__init__(self, scene, left, top, right, bottom)
         self.bitmap = bitmap

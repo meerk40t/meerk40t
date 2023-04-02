@@ -33,7 +33,6 @@ from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
-from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .hersheymanager import (
     HersheyFontManager,
     HersheyFontSelector,
@@ -75,6 +74,7 @@ from .propertypanels.rasterwizardpanels import (
 )
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
+from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
 from .wxmmain import MeerK40t
 

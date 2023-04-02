@@ -12,6 +12,7 @@ from meerk40t.svgelements import Rect
 
 _ = wx.GetTranslation
 
+
 class RectTool(ToolWidget):
     """
     Rectangle Drawing Tool.
@@ -99,7 +100,11 @@ class RectTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         update_required = False
-        if modifiers is None or (event_type=="key_up" and "alt" in modifiers) or ("alt" not in modifiers):
+        if (
+            modifiers is None
+            or (event_type == "key_up" and "alt" in modifiers)
+            or ("alt" not in modifiers)
+        ):
             if self.creation_mode != 0:
                 self.creation_mode = 0
                 update_required = True

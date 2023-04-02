@@ -19,13 +19,13 @@ from os import times
 from time import time
 from typing import Optional
 
-from .node.node import Node
 from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
 from .cutcode.cutobject import CutObject
 from .cutcode.rastercut import RasterCut
+from .node.node import Node
 from .units import Length
 
 

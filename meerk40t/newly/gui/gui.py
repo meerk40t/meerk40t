@@ -7,12 +7,10 @@ def plugin(service, lifecycle):
         # Needed to test wx import.
         import wx  # pylint: disable=unused-import
 
-        from meerk40t.gui.icons import (
-            icons8_computer_support_50,
-            icons8_connected_50,
-        )
-        from .newlycontroller import NewlyController
+        from meerk40t.gui.icons import icons8_computer_support_50, icons8_connected_50
+
         from .newlyconfig import NewlyConfiguration
+        from .newlycontroller import NewlyController
 
         # from .operationproperties import NewlyOperationPanel
 
@@ -52,14 +50,14 @@ def plugin(service, lifecycle):
 
     if lifecycle == "service_attach":
         from meerk40t.gui.icons import (
+            icons8_circled_play_50,
+            icons8_circled_stop_50,
             icons8_computer_support_50,
             icons8_connected_50,
-            icons8_move_50,
             icons8_file_50,
-            icons8_rectangular_50,
+            icons8_move_50,
             icons8_play_50,
-            icons8_circled_stop_50,
-            icons8_circled_play_50,
+            icons8_rectangular_50,
         )
 
         _ = service.kernel.translation

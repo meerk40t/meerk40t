@@ -19,7 +19,7 @@ class Settings:
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename, ignore_settings = False):
+    def __init__(self, directory, filename, ignore_settings=False):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )

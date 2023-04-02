@@ -25,6 +25,7 @@ class PlotterDriver:
     """
     This is a driverlike plotter that produces path and operations.
     """
+
     def __init__(self):
         self.last_x = 0
         self.last_y = 0
@@ -127,7 +128,7 @@ class PlotterDriver:
         elif isinstance(q, WaitCut):
             pass
         elif isinstance(q, HomeCut):
-            self.path.move((0,0))
+            self.path.move((0, 0))
         elif isinstance(q, GotoCut):
             pass
         elif isinstance(q, SetOriginCut):
