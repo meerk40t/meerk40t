@@ -319,6 +319,9 @@ class HarmonographWidget(Widget):
         self.shape_matrix.post_scale(self.scale, self.scale)
         self.shape_matrix.post_translate(self.left, self.top)
 
+    def notify_moved_child(self, child):
+        self.process_matrix()
+
     def process_shape(self):
         if self.series is not None:
             return

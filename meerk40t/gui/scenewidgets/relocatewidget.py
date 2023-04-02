@@ -1,3 +1,10 @@
+"""
+Relocate widget adds a widget relocation widget. Moving the widget will cause the direct parent of this widget to
+move. The expectation is that the parent type of this widget will DELEGATE or DELEGATE and HIT.
+
+This is usually used for a group of widgets which should be moved together.
+"""
+
 import wx
 
 from meerk40t.gui import icons
