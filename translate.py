@@ -29,7 +29,7 @@ def create_mo_files():
                 try:
                     po = polib.pofile(d + po_file)
                     po.save_as_mofile(d + mo_file)
-                except IOError as err:
+                except OSError as err:
                     print(f"Unexpected {err=}")
                     counts[2] += 1
                     continue

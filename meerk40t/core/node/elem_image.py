@@ -34,7 +34,7 @@ class ImageNode(Node):
         self.prevent_crop = False
 
         self.passthrough = False
-        super(ImageNode, self).__init__(type="elem image", **kwargs)
+        super().__init__(type="elem image", **kwargs)
         # kwargs can actually reset quite a lot of the properties to none
         # so we need to revert these changes...
         if self.red is None:
@@ -82,6 +82,7 @@ class ImageNode(Node):
             except ImportError:
                 self.image = None
 
+        # Step_x/y is the step factor of the image, the reciprocal of the DPI.
         self.step_x = None
         self.step_y = None
 
@@ -153,7 +154,7 @@ class ImageNode(Node):
         )
 
     def default_map(self, default_map=None):
-        default_map = super(ImageNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map.update(self.__dict__)
         image = self.active_image
         default_map["width"] = image.width

@@ -98,10 +98,8 @@ class AboutPanel(wx.Panel):
             + _(
                 "* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
             )
-            + _(
-                "* All the MeerKittens, {developer}. \n".format(
-                    developer=", ".join(hall_of_fame)
-                )
+            + _("* All the MeerKittens, {developer}. \n").format(
+                developer=", ".join(hall_of_fame)
             )
             + _(
                 "* Beta testers and anyone who reported issues that helped us improve things.\n"
@@ -198,7 +196,7 @@ class InformationPanel(wx.Panel):
                 ref_prefix = "ref: refs/heads/"
                 ref = ""
                 try:
-                    with open(head_file, "r") as f:
+                    with open(head_file) as f:
                         ref = f.readline()
                 except Exception:
                     pass

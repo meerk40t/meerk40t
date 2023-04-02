@@ -10,6 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Ellipse
 
+_ = wx.GetTranslation
 
 class EllipseTool(ToolWidget):
     """
@@ -23,13 +24,28 @@ class EllipseTool(ToolWidget):
         self.start_position = None
         self.p1 = None
         self.p2 = None
+        # 0 -> from corner, 1 from center
+        self.creation_mode = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
-            x0 = min(self.p1.real, self.p2.real)
-            y0 = min(self.p1.imag, self.p2.imag)
-            x1 = max(self.p1.real, self.p2.real)
-            y1 = max(self.p1.imag, self.p2.imag)
+            matrix = gc.GetTransform().Get()
+            pixel = 1.0 / matrix[0]
+            # print (f"1 Px = {pixel}, sx = {matrix[0]}")
+            if self.creation_mode == 1:
+                # From center (p1 center, p2 one corner)
+                p_x = self.p1.real - (self.p2.real - self.p1.real)
+                p_y = self.p1.imag - (self.p2.imag - self.p1.imag)
+                x0 = min(p_x, self.p2.real)
+                y0 = min(p_y, self.p2.imag)
+                x1 = max(p_x, self.p2.real)
+                y1 = max(p_y, self.p2.imag)
+            else:
+                # From corner (p1 corner, p2 corner)
+                x0 = min(self.p1.real, self.p2.real)
+                y0 = min(self.p1.imag, self.p2.imag)
+                x1 = max(self.p1.real, self.p2.real)
+                y1 = max(self.p1.imag, self.p2.imag)
             if self.scene.context.elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
@@ -49,6 +65,21 @@ class EllipseTool(ToolWidget):
                     )
                 )
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+            if abs(x1 - x0) > 10 * pixel and abs(y1 - y0) > 10 * pixel:
+                ccx = (x0 + x1) / 2
+                ccy = (y0 + y1) / 2
+                gc.StrokeLine(
+                    ccx - 4 * pixel,
+                    ccy - 4 * pixel,
+                    ccx + 4 * pixel,
+                    ccy + 4 * pixel,
+                )
+                gc.StrokeLine(
+                    ccx - 4 * pixel,
+                    ccy + 4 * pixel,
+                    ccx + 4 * pixel,
+                    ccy - 4 * pixel,
+                )
             units = self.scene.context.units_name
             s = "C=({cx}, {cy}), a={a}, b={b}".format(
                 cx=Length(amount=(x1 + x0) / 2, digits=2, preferred_units=units),
@@ -56,6 +87,7 @@ class EllipseTool(ToolWidget):
                 a=Length(amount=(x1 - x0) / 2, digits=2, preferred_units=units),
                 b=Length(amount=(y1 - y0) / 2, digits=2, preferred_units=units),
             )
+            s += _(" (Press Alt-Key to draw from center)")
             self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -65,11 +97,21 @@ class EllipseTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         response = RESPONSE_CHAIN
+        update_required = False
+        if modifiers is None or (event_type=="key_up" and "alt" in modifiers) or ("alt" not in modifiers):
+            if self.creation_mode != 0:
+                self.creation_mode = 0
+                update_required = True
+        else:
+            if self.creation_mode != 1:
+                self.creation_mode = 1
+                update_required = True
         if event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.p1 = complex(space_pos[0], space_pos[1])
             else:
@@ -87,11 +129,11 @@ class EllipseTool(ToolWidget):
             # Dear user: that's too quick for my taste - take your time...
             self.p1 = None
             self.p2 = None
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.request_refresh()
             response = RESPONSE_ABORT
         elif event_type == "leftup":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             try:
                 if self.p1 is None:
                     return
@@ -99,12 +141,24 @@ class EllipseTool(ToolWidget):
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
                     self.p2 = complex(nearest_snap[0], nearest_snap[1])
-                x0 = min(self.p1.real, self.p2.real)
-                y0 = min(self.p1.imag, self.p2.imag)
-                x1 = max(self.p1.real, self.p2.real)
-                y1 = max(self.p1.imag, self.p2.imag)
+                if self.creation_mode == 1:
+                    # From center (p1 center, p2 one corner)
+                    p_x = self.p1.real - (self.p2.real - self.p1.real)
+                    p_y = self.p1.imag - (self.p2.imag - self.p1.imag)
+                    x0 = min(p_x, self.p2.real)
+                    y0 = min(p_y, self.p2.imag)
+                    x1 = max(p_x, self.p2.real)
+                    y1 = max(p_y, self.p2.imag)
+                else:
+                    # From corner (p1 corner, p2 corner)
+                    x0 = min(self.p1.real, self.p2.real)
+                    y0 = min(self.p1.imag, self.p2.imag)
+                    x1 = max(self.p1.real, self.p2.real)
+                    y1 = max(self.p1.imag, self.p2.imag)
+
                 dx = self.p1.real - self.p2.real
                 dy = self.p1.imag - self.p2.imag
+                # Here or is okay, as dx, dy establish the size of the main axes.
                 if abs(dx) < 1e-10 or abs(dy) < 1e-10:
                     # Degenerate? Ignore!
                     self.p1 = None
@@ -124,9 +178,9 @@ class EllipseTool(ToolWidget):
                     node = elements.elem_branch.add(
                         shape=ellipse,
                         type="elem ellipse",
-                        stroke_width=1000.0,
-                        stroke=self.scene.context.elements.default_stroke,
-                        fill=self.scene.context.elements.default_fill,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
                     )
                     if elements.classify_new:
                         elements.classify([node])
@@ -139,8 +193,8 @@ class EllipseTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
@@ -148,4 +202,7 @@ class EllipseTool(ToolWidget):
             self.p1 = None
             self.p2 = None
             self.scene.context.signal("statusmsg", "")
+        elif update_required:
+            self.scene.request_refresh()
+            response = RESPONSE_CONSUME
         return response

@@ -5,11 +5,7 @@ import wx
 from meerk40t.core.units import Length
 from meerk40t.extra.hershey import create_linetext_node, update_linetext
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_ABORT,
-    RESPONSE_CHAIN,
-    RESPONSE_CONSUME,
-)
+from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color
 
@@ -43,6 +39,7 @@ class LineTextTool(ToolWidget):
             offsety = 0
             x0 = self.p1.real + offsetx
             y0 = self.p1.imag - cursorheight
+            elements = self.scene.context.elements
 
             if self.node is None or self.node.bounds is None:
                 # if self.node is not None:
@@ -51,18 +48,14 @@ class LineTextTool(ToolWidget):
                 #         if fname.lower().endswith(".jhf"):
                 #             offsety = 0.5 * cursorheight
 
-                if self.scene.context.elements.default_stroke is None:
+                if elements.default_stroke is None:
                     self.color = Color("black")
                 else:
-                    self.color = self.scene.context.elements.default_stroke
-                if self.scene.context.elements.default_stroke is None:
+                    self.color = elements.default_stroke
+                if elements.default_stroke is None:
                     self.pen.SetColour(wx.BLUE)
                 else:
-                    self.pen.SetColour(
-                        wx.Colour(
-                            swizzlecolor(self.scene.context.elements.default_stroke)
-                        )
-                    )
+                    self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             else:
                 self.color = self.node.stroke
                 offsetx = self.node.bounds[2] - self.node.bounds[0]
@@ -102,7 +95,7 @@ class LineTextTool(ToolWidget):
                 self.node.stroke = self.color
                 self.node.altered()
                 self.node.focus()
-                self.scene.tool_active = False
+                self.scene.pane.tool_active = False
                 self.scene.context.signal("element_property_update", [self.node])
                 self.scene.request_refresh()
             self.node = None
@@ -113,12 +106,13 @@ class LineTextTool(ToolWidget):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             if self.p1 is None:
-                self.scene.tool_active = True
+                self.scene.pane.tool_active = True
                 self.scene.animate(self)
-                if self.scene.context.elements.default_stroke is None:
+                elements = self.scene.context.elements
+                if elements.default_stroke is None:
                     self.color = Color("black")
                 else:
-                    self.color = self.scene.context.elements.default_stroke
+                    self.color = elements.default_stroke
                 if nearest_snap is None:
                     self.p1 = complex(space_pos[0], space_pos[1])
                 else:
@@ -129,12 +123,16 @@ class LineTextTool(ToolWidget):
                 self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
                 if self.node is not None:
                     self.node.stroke = self.color
-                    self.scene.context.elements.elem_branch.add_node(self.node)
+                    self.node.stroke_width = elements.default_strokewidth
+                    elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
                     self.scene.context.signal(
                         "statusmsg",
                         _("Complete text-entry by pressing either Enter or Escape"),
                     )
+                    if elements.classify_new:
+                        elements.classify([self.node])
+                    self.notify_created(self.node)
                     self.node.emphasized = False
 
                 self.scene.context("window open HersheyFontSelector\n")
@@ -149,21 +147,21 @@ class LineTextTool(ToolWidget):
             done()
             response = RESPONSE_CONSUME
         elif event_type == "key_up" and modifiers == "escape":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 done()
                 # print ("Done - escape")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up" and modifiers == "return":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 done()
                 # print ("Done - return")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up":
-            if self.scene.tool_active:
+            if self.scene.pane.tool_active:
                 response = RESPONSE_CONSUME
                 to_add = ""
                 if keycode is not None:

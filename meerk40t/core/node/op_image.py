@@ -36,6 +36,10 @@ class ImageOpNode(Node, Parameters):
         self.dangerous = False
         self.stopop = True
         self.allowed_attributes = []
+        if label is None:
+            self.label = "Image"
+        else:
+            self.label = label
 
     def __repr__(self):
         return "ImageOpNode()"
@@ -52,7 +56,7 @@ class ImageOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(ImageOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Image"
         default_map["dpi"] = str(self.dpi)
         default_map["danger"] = "❌" if self.dangerous else ""
@@ -65,10 +69,10 @@ class ImageOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        if self.raster_swing:
-            raster_swing = "-"
-        else:
+        if self.bidirectional:
             raster_swing = "="
+        else:
+            raster_swing = "-"
         if self.raster_direction == 0:
             raster_dir = "T2B"
         elif self.raster_direction == 1:
@@ -189,7 +193,7 @@ class ImageOpNode(Node, Parameters):
             speed_in_per_s = self.speed / MM_PER_INCH
             if self.raster_direction in (0, 1, 4):
                 scanlines = height_in_inches * dpi
-                if self.raster_swing:
+                if not self.bidirectional:
                     scanlines *= 2
                 estimate += (
                     scanlines * width_in_inches / speed_in_per_s
@@ -200,7 +204,7 @@ class ImageOpNode(Node, Parameters):
                 # print (f"Horizontal scanlines: {scanlines}, Length: {this_len:.1f}")
             if self.raster_direction in (2, 3, 4):
                 scanlines = width_in_inches * dpi
-                if self.raster_swing:
+                if not self.bidirectional:
                     scanlines *= 2
                 this_len = scanlines * height_in_inches + width_in_inches
                 estimate += this_len / speed_in_per_s
@@ -234,8 +238,9 @@ class ImageOpNode(Node, Parameters):
 
             def actual(image_node):
                 def process_images():
-                    image_node._context = context
-                    image_node.process_image()
+                    if hasattr(image_node, "process_image"):
+                        image_node._context = context
+                        image_node.process_image()
 
                 return process_images
 
@@ -279,14 +284,20 @@ class ImageOpNode(Node, Parameters):
             elif direction == 3:
                 horizontal = False
                 start_on_left = True
-            bidirectional = bool(self.raster_swing)
+            bidirectional = self.bidirectional
 
             # Get steps from individual images
             step_x = image_node.step_x
             step_y = image_node.step_y
 
-            settings["raster_step_x"] = step_x
-            settings["raster_step_x"] = step_y
+            if horizontal:
+                # Raster step is only along y for horizontal raster
+                settings["raster_step_x"] = 0
+                settings["raster_step_y"] = step_y
+            else:
+                # Raster step is only along x for vertical raster
+                settings["raster_step_x"] = step_x
+                settings["raster_step_y"] = 0
 
             # Set variables
             matrix = image_node.active_matrix
@@ -329,8 +340,16 @@ class ImageOpNode(Node, Parameters):
             yield cut
             if direction == 4:
                 # Create optional crosshatch cut
-                horizontal = False
-                start_on_left = False
+                horizontal = not horizontal
+                settings = dict(settings)
+                if horizontal:
+                    # Raster step is only along y for horizontal raster
+                    settings["raster_step_x"] = 0
+                    settings["raster_step_y"] = step_y
+                else:
+                    # Raster step is only along x for vertical raster
+                    settings["raster_step_x"] = step_x
+                    settings["raster_step_y"] = 0
                 cut = RasterCut(
                     image=pil_image,
                     offset_x=offset_x,

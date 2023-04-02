@@ -38,17 +38,17 @@ class PointTool(ToolWidget):
                 point=point,
                 matrix=Matrix(),
                 type="elem point",
-                stroke_width=1000.0,
-                stroke=self.scene.context.elements.default_stroke,
-                fill=self.scene.context.elements.default_fill,
+                stroke_width=elements.default_strokewidth,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
             )
             if elements.classify_new:
                 elements.classify([node])
             self.notify_created(node)
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

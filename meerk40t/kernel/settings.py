@@ -19,17 +19,18 @@ class Settings:
     `write_configuration` is called.
     """
 
-    def __init__(self, directory, filename):
+    def __init__(self, directory, filename, ignore_settings = False):
         self._config_file = Path(get_safe_path(directory, create=True)).joinpath(
             filename
         )
         self._config_dict = {}
-        self.read_configuration()
+        if not ignore_settings:
+            self.read_configuration()
 
     def __contains__(self, item):
         return item in self._config_dict
 
-    def read_configuration(self):
+    def read_configuration(self, targetfile=None):
         """
         Read configuration reads the self._config_file to get the parsed config file data.
 
@@ -37,9 +38,11 @@ class Settings:
 
         @return:
         """
+        if targetfile is None:
+            targetfile = self._config_file
         try:
             parser = ConfigParser()
-            parser.read(self._config_file, encoding="utf-8")
+            parser.read(targetfile, encoding="utf-8")
             for section in parser.sections():
                 for option in parser.options(section):
                     try:
@@ -48,16 +51,23 @@ class Settings:
                         config_section = dict()
                         self._config_dict[section] = config_section
                     config_section[option] = parser.get(section, option)
-        except (PermissionError, NoSectionError, MissingSectionHeaderError):
+        except (
+            PermissionError,
+            NoSectionError,
+            MissingSectionHeaderError,
+            FileNotFoundError,
+        ):
             return
 
-    def write_configuration(self):
+    def write_configuration(self, targetfile=None):
         """
         Write configuration writes the config file to disk. This is typically done during the shutdown process.
 
         This uses the python ConfigParser to save data from the _config_dict.
         @return:
         """
+        if targetfile is None:
+            targetfile = self._config_file
         try:
             parser = ConfigParser()
             for section_key in self._config_dict:
@@ -71,9 +81,9 @@ class Settings:
                     except NoSectionError:
                         parser.add_section(section_key)
                         parser.set(section_key, key, value)
-            with open(self._config_file, "w", encoding="utf-8") as fp:
+            with open(targetfile, "w", encoding="utf-8") as fp:
                 parser.write(fp)
-        except PermissionError:
+        except (PermissionError, FileNotFoundError):
             return
 
     def literal_dict(self):
@@ -253,7 +263,7 @@ class Settings:
         """
         try:
             for section_name in list(self._config_dict):
-                if section_name.startswith(section):
+                if section_name == section:
                     del self._config_dict[section_name]
         except KeyError:
             pass
@@ -307,4 +317,4 @@ class Settings:
         Finds all derivable paths within the config from the set path location.
         @return:
         """
-        yield from set([s.split(" ")[0] for s in self._config_dict])
+        yield from {s.split(" ")[0] for s in self._config_dict}

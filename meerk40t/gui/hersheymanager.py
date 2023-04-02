@@ -1,4 +1,5 @@
 import os
+import platform
 from glob import glob
 from math import isinf
 
@@ -16,12 +17,6 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer
 from meerk40t.kernel import get_safe_path
 
-# begin wxGlade: dependencies
-# end wxGlade
-
-# begin wxGlade: extracode
-# end wxGlade
-
 _ = wx.GetTranslation
 
 
@@ -35,8 +30,9 @@ def create_preview_image(context, fontfile):
             context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
         )
     except:
-        # Couldnt create the node...
-        node = None
+        # We my encounter an IndexError, a ValueError or an error thrown by struct
+        # The latter cannot be named? So a global except...
+        return False
     if node is None:
         return False
     if node.bounds is None:
@@ -69,7 +65,7 @@ def create_preview_image(context, fontfile):
         return False
     try:
         bitmap.SaveFile(bmpfile, wx.BITMAP_TYPE_PNG)
-    except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+    except (OSError, RuntimeError, PermissionError, FileNotFoundError):
         return False
     return True
 
@@ -102,11 +98,15 @@ def remove_fontfile(fontfile):
             bmpfile = base + ".png"
             if os.path.exists(bmpfile):
                 os.remove(bmpfile)
-        except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+        except (OSError, RuntimeError, PermissionError, FileNotFoundError):
             pass
 
 
-class LineTextPropertPanel(wx.Panel):
+class LineTextPropertyPanel(wx.Panel):
+    """
+    Panel for post-creation text property editing
+    """
+
     def __init__(
         self,
         *args,
@@ -187,7 +187,7 @@ class LineTextPropertPanel(wx.Panel):
             return
         fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
-        self.text_text.SetValue(node.mktext)
+        self.text_text.SetValue(str(node.mktext))
         self.Show()
 
     def load_directory(self, fontdir):
@@ -257,6 +257,10 @@ class LineTextPropertPanel(wx.Panel):
 
 
 class PanelFontSelect(wx.Panel):
+    """
+    Panel to select font during line text creation
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -265,7 +269,23 @@ class PanelFontSelect(wx.Panel):
 
         mainsizer = wx.BoxSizer(wx.VERTICAL)
 
+        self.all_fonts = []
         self.fonts = []
+        self.font_checks = {}
+
+        fontinfo = fonts_registered()
+        sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
+        for extension in fontinfo:
+
+            info = fontinfo[extension]
+            checker = wx.CheckBox(self, wx.ID_ANY, info[0])
+            checker.SetValue(True)
+            checker.Bind(wx.EVT_CHECKBOX, self.on_checker(extension))
+            checker.SetToolTip(
+                _("Show/Hide all fonts of type {info[0]}").format(info=info)
+            )
+            self.font_checks[extension] = [checker, True]
+            sizer_checker.Add(checker, 0, 0, wx.ALIGN_CENTER_VERTICAL)
 
         sizer_fonts = StaticBoxSizer(
             self, wx.ID_ANY, _("Fonts (double-click to use)"), wx.VERTICAL
@@ -277,6 +297,7 @@ class PanelFontSelect(wx.Panel):
             _("Select to preview the font, double-click to apply it")
         )
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
+        sizer_fonts.Add(sizer_checker, 0, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
         self.bmp_preview.SetMinSize((-1, 70))
@@ -310,7 +331,7 @@ class PanelFontSelect(wx.Panel):
         self.load_directory(fontdir)
 
     def load_directory(self, fontdir):
-        self.fonts = []
+        self.all_fonts = []
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
@@ -319,15 +340,36 @@ class PanelFontSelect(wx.Panel):
                 ext = "*." + extension
                 for p in glob(os.path.join(fontdir, ext.lower())):
                     fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
+                    if fn not in self.all_fonts:
+                        self.all_fonts.append(fn)
                 for p in glob(os.path.join(fontdir, ext.upper())):
                     fn = os.path.basename(p)
-                    if fn not in self.fonts:
-                        self.fonts.append(fn)
-        self.list_fonts.SetItems(self.fonts)
+                    if fn not in self.all_fonts:
+                        self.all_fonts.append(fn)
+        self.populate_list_box()
         # index = -1
         # lookfor = getattr(self.context, "sxh_preferred", "")
+
+    def populate_list_box(self):
+        self.fonts = []
+        for entry in self.all_fonts:
+            parts = os.path.splitext(entry)
+            if len(parts) > 1:
+                extension = parts[1][1:].lower()
+                if extension in self.font_checks:
+                    if not self.font_checks[extension][1]:
+                        entry = None
+            if entry is not None:
+                self.fonts.append(entry)
+        self.list_fonts.SetItems(self.fonts)
+
+    def on_checker(self, extension):
+        def handler(event):
+            self.font_checks[extension][1] = not self.font_checks[extension][1]
+            # Reload List
+            self.populate_list_box()
+
+        return handler
 
     def on_btn_bigger(self, event):
         self.context.signal("linetext", "bigger")
@@ -357,6 +399,10 @@ class PanelFontSelect(wx.Panel):
 
 
 class HersheyFontSelector(MWindow):
+    """
+    Wrapper Window Class for font selection panel
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(450, 550, submenu="", *args, **kwds)
         self.panel = PanelFontSelect(self, wx.ID_ANY, context=self.context)
@@ -382,6 +428,10 @@ class HersheyFontSelector(MWindow):
 
 
 class PanelFontManager(wx.Panel):
+    """
+    Vector Font Manager
+    """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -396,7 +446,7 @@ class PanelFontManager(wx.Panel):
             self,
             wx.ID_ANY,
             _(
-                "MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+                "MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
                 + "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
                 + "See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
             ),
@@ -452,6 +502,10 @@ class PanelFontManager(wx.Panel):
             _("Hershey Fonts - #2"),
             _("Autocad-SHX-Fonts"),
         ]
+        system = platform.system()
+        if system == "Windows":
+            choices.append(_("Windows-Font-Directory"))
+            self.webresources.append(os.path.join(os.environ["WINDIR"], "fonts"))
         self.combo_webget = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -494,6 +548,8 @@ class PanelFontManager(wx.Panel):
                     if fn not in self.fonts:
                         self.fonts.append(fn)
         self.list_fonts.SetItems(self.fonts)
+        # Let the world know we have fonts
+        self.context.signal("icons")
 
     def on_btn_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
@@ -532,10 +588,12 @@ class PanelFontManager(wx.Panel):
                 bmp = wx.NullBitmap
             self.bmp_preview.SetBitmap(bmp)
 
-    def on_btn_import(self, event):
+    def on_btn_import(self, event, defaultdirectory=None, defaultextension=None):
         fontinfo = fonts_registered()
         wildcard = "Vector-Fonts"
         idx = 0
+        filterindex = 0
+        # 1st put all into one wildcard-pattern
         for extension in fontinfo:
             ext = "*." + extension
             if idx == 0:
@@ -544,20 +602,41 @@ class PanelFontManager(wx.Panel):
                 wildcard += ";"
             wildcard += ext.lower() + ";" + ext.upper()
             idx += 1
-        for extension in fontinfo:
+        # 2nd add all individual wildcard-patterns
+        for idx, extension in enumerate(fontinfo):
+            if (
+                defaultextension is not None
+                and defaultextension.lower() == extension.lower()
+            ):
+                filterindex = idx + 1
             ext = "*." + extension
             info = fontinfo[extension]
             wildcard += f"|{info[0]}-Fonts|{ext.lower()};{ext.upper()}"
+        wildcard += "|All files|*.*"
+        if defaultdirectory is None:
+            defdir = ""
+        else:
+            defdir = defaultdirectory
+            # print (os.listdir(os.path.join(os.environ['WINDIR'],'fonts')))
         dlg = wx.FileDialog(
             self,
             message=_(
                 "Select a font-file to be imported into the the font-directory {fontdir}"
             ).format(fontdir=self.context.font_directory),
-            defaultDir="",
+            defaultDir=defdir,
             defaultFile="",
             wildcard=wildcard,
-            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE,
+            style=wx.FD_OPEN
+            | wx.FD_FILE_MUST_EXIST
+            | wx.FD_MULTIPLE
+            | wx.FD_PREVIEW
+            | wx.FD_SHOW_HIDDEN,
         )
+        try:
+            # Might not be present in early wxpython versions
+            dlg.SetFilterIndex(filterindex)
+        except AttributeError:
+            pass
         font_files = None
         paths = None
         if dlg.ShowModal() == wx.ID_OK:
@@ -602,7 +681,7 @@ class PanelFontManager(wx.Panel):
                 )
                 if not keepgoing:
                     break
-            except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
         progress.Destroy()
         wx.MessageBox(
@@ -637,29 +716,97 @@ class PanelFontManager(wx.Panel):
         idx = self.combo_webget.GetSelection() - 1
         if idx >= 0:
             url = self.webresources[idx]
-            if (
-                wx.MessageBox(
-                    _(
-                        "You will be led now to a source in the web, where you can download free fonts.\n"
-                        + "Please be respect individual property rights!\nDestination: {url}\n"
-                    ).format(url=url)
-                    + _(
-                        "Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
-                    ),
-                    _("Confirm"),
-                    wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION,
-                )
-                == wx.YES
-            ):
-                import webbrowser
+            if url.startswith("http"):
+                if (
+                    wx.MessageBox(
+                        _(
+                            "You will be led now to a source in the web, where you can download free fonts.\n"
+                            + "Please respect individual property rights!\nDestination: {url}\n"
+                        ).format(url=url)
+                        + _(
+                            "Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
+                        ),
+                        _("Confirm"),
+                        wx.YES_NO | wx.CANCEL | wx.ICON_INFORMATION,
+                    )
+                    == wx.YES
+                ):
+                    import webbrowser
 
-                webbrowser.open(url, new=0, autoraise=True)
+                    webbrowser.open(url, new=0, autoraise=True)
+            else:
+                # This is a local directory with existing font-files,
+                # eg the Windows-Font-Directory
+                self.import_files(url, "ttf")
+
+    def import_files(self, import_directory, extension):
+        source_files = os.listdir(import_directory)
+        font_files = []
+        for entry in source_files:
+            if entry.lower().endswith(extension):
+                font_files.append(os.path.join(import_directory, entry))
+        stats = [0, 0]  # Successful, errors
+        if len(font_files) == 0:
+            return
+
+        maxidx = len(font_files)
+        progress_string = _("Fonts imported: {count}")
+        progress = wx.ProgressDialog(
+            _("Importing fonts..."),
+            progress_string.format(count=0),
+            maximum=maxidx,
+            parent=None,
+            style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
+        )
+
+        for idx, sourcefile in enumerate(font_files):
+            basename = os.path.basename(sourcefile)
+            destfile = os.path.join(self.context.font_directory, basename)
+            if os.path.exists(destfile):
+                continue
+            # print (f"Source File: {sourcefile}\nTarget: {destfile}")
+            try:
+                with open(sourcefile, "rb") as f, open(destfile, "wb") as g:
+                    while True:
+                        block = f.read(1 * 1024 * 1024)  # work by blocks of 1 MB
+                        if not block:  # end of file
+                            break
+                        g.write(block)
+                isokay = create_preview_image(self.context, destfile)
+                if isokay:
+                    stats[0] += 1
+                else:
+                    # We delete this file again...
+                    remove_fontfile(destfile)
+                    stats[1] += 1
+
+                keepgoing = progress.Update(
+                    idx + 1, progress_string.format(count=idx + 1)
+                )
+                if not keepgoing:
+                    break
+            except (OSError, RuntimeError, PermissionError, FileNotFoundError):
+                stats[1] += 1
+        progress.Destroy()
+        wx.MessageBox(
+            _(
+                "Font-Import completed.\nImported: {ok}\nFailed: {fail}\nTotal: {total}"
+            ).format(ok=stats[0], fail=stats[1], total=stats[0] + stats[1]),
+            _("Import completed"),
+            wx.OK | wx.ICON_INFORMATION,
+        )
+        # Reload....
+        self.on_text_directory(None)
 
 
 # end of class FontManager
 
 
 class HersheyFontManager(MWindow):
+    """
+    Wrapper Window Class for Vector Font Manager
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="", *args, **kwds)
         self.panel = PanelFontManager(self, wx.ID_ANY, context=self.context)
@@ -680,11 +827,12 @@ class HersheyFontManager(MWindow):
 
     @staticmethod
     def submenu():
-        return ("", "Font-Manager")
+        # suppress in tool-menu
+        return ("", "Font-Manager", True)
 
 
 def register_hershey_stuff(kernel):
-    kernel.root.register("path_attributes/linetext", LineTextPropertPanel)
+    kernel.root.register("path_attributes/linetext", LineTextPropertyPanel)
     buttonsize = int(STD_ICON_SIZE)
     kernel.register(
         "button/config/HersheyFontManager",

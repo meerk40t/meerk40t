@@ -6,14 +6,16 @@ Defines how the balor device interacts with the scene, and accepts data via the 
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
-from meerk40t.kernel import Service
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
@@ -24,10 +26,17 @@ class BalorDevice(Service, ViewPort):
     to. This class additionally defines commands which exist as console commands while this service is activated.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
+        self.extension = "lmc"
         self.job = None
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
 
         _ = kernel.translation
         self.register("frequency", (0, 1000))
@@ -85,6 +94,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("What is this device called."),
                 "section": "_00_General",
                 "priority": "10",
+                "signals": "device;renamed",
             },
             {
                 "attr": "corfile_enabled",
@@ -120,6 +130,7 @@ class BalorDevice(Service, ViewPort):
                 "section": "_00_General",
                 "priority": "20",
                 "signals": "bedsize",
+                "nonzero": True,
                 # intentionally not bed_size
             },
             {
@@ -309,7 +320,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Power"),
                 "trailer": "%",
-                "tip": _("How what power level do we cut at?"),
+                "tip": _("What power level do we cut at?"),
             },
             {
                 "attr": "default_speed",
@@ -490,7 +501,6 @@ class BalorDevice(Service, ViewPort):
                     "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
                 ),
                 "section": "First Pulse Killer",
-                "hidden": 1,
             },
             {
                 "attr": "pwm_half_period",
@@ -500,7 +510,6 @@ class BalorDevice(Service, ViewPort):
                 "label": _("PWM Half Period"),
                 "tip": _("Pulse Period: the frequency of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
-                "hidden": 1,
             },
             {
                 "attr": "pwm_pulse_width",
@@ -510,7 +519,6 @@ class BalorDevice(Service, ViewPort):
                 "label": _("PWM Pulse Width"),
                 "tip": _("Pulse Width: the pulse width of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
-                "hidden": 1,
             },
             {
                 "attr": "standby_param_1",
@@ -518,9 +526,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 2000,
                 "type": int,
                 "label": _("Parameter 1"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Standby-Parameter",
-                "hidden": 1,
             },
             {
                 "attr": "standby_param_2",
@@ -528,9 +535,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 20,
                 "type": int,
                 "label": _("Parameter 2"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Standby-Parameter",
-                "hidden": 1,
             },
             {
                 "attr": "timing_mode",
@@ -538,9 +544,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Timing Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "delay_mode",
@@ -548,9 +553,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Delay Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "laser_mode",
@@ -558,9 +562,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Laser Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "control_mode",
@@ -568,9 +571,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Control Mode"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Modes",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p1",
@@ -578,11 +580,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 0xFFB,
                 "type": int,
                 "label": _("Max Voltage"),
-                "tip": _(""),
+                # "tip": _(""),
                 "trailer": "V",
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p2",
@@ -591,10 +592,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Min Voltage"),
                 "trailer": "V",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p3",
@@ -603,10 +603,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("T1"),
                 "trailer": "µs",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fpk2_p4",
@@ -615,10 +614,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("T2"),
                 "trailer": "µs",
-                "tip": _(""),
+                # "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p1",
@@ -626,9 +624,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Param 1"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p2",
@@ -636,9 +633,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 99,
                 "type": int,
                 "label": _("Param 2"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p3",
@@ -646,9 +642,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 1000,
                 "type": int,
                 "label": _("Param 3"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
             },
             {
                 "attr": "fly_res_p4",
@@ -656,12 +651,89 @@ class BalorDevice(Service, ViewPort):
                 "default": 25,
                 "type": int,
                 "label": _("Param 4"),
-                "tip": _(""),
+                # "tip": _(""),
                 "subsection": "Fly Resolution",
-                "hidden": 1,
+            },
+            {
+                "attr": "input_passes_required",
+                "object": self,
+                "default": 3,
+                "type": int,
+                "label": _("Input Signal Hold"),
+                "tip": _(
+                    "How long does the input operation need to hold for to count as a pass"
+                ),
+            },
+            {
+                "attr": "input_operation_hardware",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Input Operation Hardware"),
+                "tip": _("Use hardware based input operation command"),
             },
         ]
         self.register_choices("balor-extra", choices)
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            {
+                "attr": "rotary_scale_x",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (self, "rotary_active"),
+            },
+            {
+                "attr": "rotary_mirror_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_mirror_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        self.register_choices("rotary", choices)
 
         self.state = 0
 
@@ -873,6 +945,41 @@ class BalorDevice(Service, ViewPort):
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.command("abort_retry", priority=1)
 
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def galvo_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    driver = BalorDriver(self, force_mock=True)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    from meerk40t.balormk.controller import (
+                        list_command_lookup,
+                        single_command_lookup,
+                    )
+
+                    def write(index, cmd):
+                        cmds = [
+                            struct.unpack("<6H", cmd[i : i + 12])
+                            for i in range(0, len(cmd), 12)
+                        ]
+                        for v in cmds:
+                            if v[0] >= 0x8000:
+                                f.write(
+                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                                )
+                                if v[0] == 0x8002:
+                                    break
+
+                    driver.connection.connect_if_needed()
+                    driver.connection.connection.write = write
+                    job.execute()
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
         @self.console_option(
             "default",
             "d",
@@ -993,9 +1100,9 @@ class BalorDevice(Service, ViewPort):
                             with open(input, "br") as f:
                                 remainder = f.read().hex()
                         else:
-                            with open(input, "r") as f:
+                            with open(input) as f:
                                 remainder = f.read()
-                    except IOError:
+                    except OSError:
                         channel("File could not be read.")
                 else:
                     channel(f"The file at {os.path.realpath(input)} does not exist.")
@@ -1074,7 +1181,7 @@ class BalorDevice(Service, ViewPort):
                             )
                         with open(output, "w") as f:
                             f.writelines(lines)
-                except IOError:
+                except OSError:
                     channel("File could not be written.")
                 return  # If we output to file, we do not output to device.
 
@@ -1120,7 +1227,7 @@ class BalorDevice(Service, ViewPort):
             "goto",
             help=_("send laser a goto command"),
         )
-        def balor_goto(command, channel, _, x=None, y=None, remainder=None, **kwgs):
+        def galvo_goto(command, channel, _, x=None, y=None, remainder=None, **kwgs):
             if x is not None and y is not None:
                 rx = int(0x8000 + x) & 0xFFFF
                 ry = int(0x8000 + y) & 0xFFFF
@@ -1131,17 +1238,25 @@ class BalorDevice(Service, ViewPort):
             "red",
             help=_("Turns redlight on/off"),
         )
-        def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
-            if off == "off":
-                reply = self.driver.connection.light_off()
-                self.driver.connection.write_port()
-                self.redlight_preferred = False
-                channel("Turning off redlight.")
-            else:
-                reply = self.driver.connection.light_on()
-                self.driver.connection.write_port()
-                channel("Turning on redlight.")
-                self.redlight_preferred = True
+        def galvo_on(command, channel, _, off=None, remainder=None, **kwgs):
+            try:
+                if off == "off":
+                    reply = self.driver.connection.light_off()
+                    self.driver.connection.write_port()
+                    self.redlight_preferred = False
+                    channel("Turning off redlight.")
+                else:
+                    reply = self.driver.connection.light_on()
+                    self.driver.connection.write_port()
+                    channel("Turning on redlight.")
+                    self.redlight_preferred = True
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
+                channel("Could not alter redlight. Connection is aborted.")
 
         @self.console_argument(
             "filename", type=str, default=None, help="filename or none"
@@ -1189,7 +1304,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Turns port on or off, eg. port off 8"),
             all_arguments_required=True,
         )
-        def balor_port(command, channel, _, off, bit=None, duration=None, **kwgs):
+        def galvo_port(command, channel, _, off, bit=None, duration=None, **kwgs):
             off = off == "off"
             if off:
                 self.driver.connection.port_off(bit)
@@ -1209,7 +1324,7 @@ class BalorDevice(Service, ViewPort):
             "status",
             help=_("Sends status check"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def galvo_status(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_version()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1222,7 +1337,7 @@ class BalorDevice(Service, ViewPort):
             "lstatus",
             help=_("Checks the list status."),
         )
-        def balor_liststatus(command, channel, _, remainder=None, **kwgs):
+        def galvo_liststatus(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_list_status()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1235,7 +1350,7 @@ class BalorDevice(Service, ViewPort):
             "mark_time",
             help=_("Checks the Mark Time."),
         )
-        def balor_mark_time(command, channel, _, remainder=None, **kwgs):
+        def galvo_mark_time(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_time()
             if reply is None:
                 channel("Not connected, cannot get mark time.")
@@ -1248,7 +1363,7 @@ class BalorDevice(Service, ViewPort):
             "mark_count",
             help=_("Checks the Mark Count."),
         )
-        def balor_mark_count(command, channel, _, remainder=None, **kwgs):
+        def galvo_mark_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_count()
             if reply is None:
                 channel("Not connected, cannot get mark count.")
@@ -1261,7 +1376,7 @@ class BalorDevice(Service, ViewPort):
             "axis_pos",
             help=_("Checks the Axis Position."),
         )
-        def balor_axis_pos(command, channel, _, remainder=None, **kwgs):
+        def galvo_axis_pos(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_axis_pos()
             if reply is None:
                 channel("Not connected, cannot get axis position.")
@@ -1274,7 +1389,7 @@ class BalorDevice(Service, ViewPort):
             "user_data",
             help=_("Checks the User Data."),
         )
-        def balor_user_data(command, channel, _, remainder=None, **kwgs):
+        def galvo_user_data(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_user_data()
             if reply is None:
                 channel("Not connected, cannot get user data.")
@@ -1287,7 +1402,7 @@ class BalorDevice(Service, ViewPort):
             "position_xy",
             help=_("Checks the Position XY"),
         )
-        def balor_position_xy(command, channel, _, remainder=None, **kwgs):
+        def galvo_position_xy(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_position_xy()
             if reply is None:
                 channel("Not connected, cannot get position xy.")
@@ -1300,7 +1415,7 @@ class BalorDevice(Service, ViewPort):
             "fly_speed",
             help=_("Checks the Fly Speed."),
         )
-        def balor_fly_speed(command, channel, _, remainder=None, **kwgs):
+        def galvo_fly_speed(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_speed()
             if reply is None:
                 channel("Not connected, cannot get fly speed.")
@@ -1313,7 +1428,7 @@ class BalorDevice(Service, ViewPort):
             "fly_wait_count",
             help=_("Checks the fiber config extend"),
         )
-        def balor_fly_wait_count(command, channel, _, remainder=None, **kwgs):
+        def galvo_fly_wait_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_wait_count()
             if reply is None:
                 channel("Not connected, cannot get fly weight count.")
@@ -1326,10 +1441,83 @@ class BalorDevice(Service, ViewPort):
             "fiber_st_mo_ap",
             help=_("Checks the fiber st mo ap"),
         )
-        def balor_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
+        def galvo_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_st_mo_ap()
             if reply is None:
                 channel("Not connected, cannot get fiber_st_mo_ap.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        def from_binary(p: str):
+            if p.startswith("0b"):
+                p = p[2:]
+            for c in p:
+                if c not in ("0", "1", "x", "X"):
+                    raise ValueError("Not valid binary")
+            return p.lower()
+
+        @self.console_argument(
+            "input",
+            help=_("input binary to wait for. Use 'x' for any bit."),
+            type=from_binary,
+            nargs="*",
+        )
+        @self.console_option(
+            "debug", "d", action="store_true", type=bool, help="debug output"
+        )
+        @self.console_command(
+            "wait_for_input", all_arguments_required=True, hidden=True
+        )
+        def wait_for_input(channel, input, debug=False, **kwargs):
+            """
+            Wait for input is intended as a spooler command. It will halt the calling thread (spooler thread) until the
+            matching input is matched. Unimportant bits or bytes can be denoted with `x` for example:
+            `wait_for_input x x x 1xxxx` would wait for a 1 on the 5th bit of the 4th word.
+
+            Omitted values are assumed to be unimportant.
+            """
+            input_unmatched = True
+            while input_unmatched:
+                reply = self.driver.connection.read_port()
+                input_unmatched = False
+                word = 0
+                for a, b in zip(reply, input):
+                    a = bin(a)
+                    if debug:
+                        channel(f"input check: {a} match {b} in word #{word}")
+                    word += 1
+                    for i in range(-1, -len(a), -1):
+                        try:
+                            ac = a[i]
+                            bc = b[i]
+                        except IndexError:
+                            # Assume remaining bits are no-care.
+                            break
+                        if bc in "x":
+                            # This is a no-care bit.
+                            continue
+                        if ac != bc:
+                            if debug:
+                                channel(f"Fail at {~i} because {ac} != {bc}")
+                            # We care, and they weren't equal
+                            time.sleep(0.1)
+                            input_unmatched = True
+                            break
+                if not input_unmatched:
+                    if debug:
+                        channel("Input matched.")
+                    return  # We exited
+
+        @self.console_command(
+            "read_port",
+            help=_("Checks the read_port"),
+        )
+        def galvo_read_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.read_port()
+            if reply is None:
+                channel("Not connected, cannot get read port.")
                 return
             channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
@@ -1339,8 +1527,47 @@ class BalorDevice(Service, ViewPort):
             "input_port",
             help=_("Checks the input_port"),
         )
-        def balor_input_port(command, channel, _, remainder=None, **kwgs):
+        def galvo_input_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "clear_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_clear_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.clear_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "enable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_enable_lock_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.enable_lock_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "disable_lock_input_port",
+            help=_("clear the input_port"),
+        )
+        def galvo_disable_lock_input_port(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.disable_lock_input_port()
             if reply is None:
                 channel("Not connected, cannot get input port.")
                 return
@@ -1352,7 +1579,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
-        def balor_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
+        def galvo_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_config_extend()
             if reply is None:
                 channel("Not connected, cannot get fiber config extend.")
@@ -1365,7 +1592,7 @@ class BalorDevice(Service, ViewPort):
             "serial_number",
             help=_("Checks the serial number."),
         )
-        def balor_serial(command, channel, _, remainder=None, **kwgs):
+        def galvo_serial(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_serial_number()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
@@ -1568,12 +1795,15 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "viewport_update",
             hidden=True,
-            help=_("Update balor flips for movement"),
+            help=_("Update galvo flips for movement"),
         )
         def codes_update(**kwargs):
             self.realize()
 
-    def realize(self):
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self, origin=None, *args):
         self.width = self.lens_size
         self.height = self.lens_size
         super().realize()

@@ -43,10 +43,12 @@ class DrawTool(ToolWidget):
             self.series = []
         if event_type == "leftdown":
             self.pen = wx.Pen()
-            self.pen.SetColour(
-                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-            )
-            self.pen.SetWidth(1000)
+            elements = self.scene.context.elements
+            self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+            try:
+                self.pen.SetWidth(elements.default_strokewidth)
+            except TypeError:
+                self.pen.SetWidth(int(elements.default_strokewidth))
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME
         elif event_type == "move":
@@ -57,8 +59,8 @@ class DrawTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.series = None
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
@@ -73,9 +75,9 @@ class DrawTool(ToolWidget):
                 node = elements.elem_branch.add(
                     path=t,
                     type="elem path",
-                    stroke_width=1000.0,
-                    stroke=self.scene.context.elements.default_stroke,
-                    fill=self.scene.context.elements.default_fill,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
                 if elements.classify_new:
                     elements.classify([node])

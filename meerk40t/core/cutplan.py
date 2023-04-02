@@ -19,7 +19,8 @@ from os import times
 from time import time
 from typing import Optional
 
-from ..svgelements import Group, Matrix, Polygon
+from .node.node import Node
+from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
 from .cutcode.cutgroup import CutGroup
@@ -57,7 +58,7 @@ class CutPlan:
         self.spool_commands = list()
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
-        # self.setting(bool, "opt_rasters_split", True)
+        self.outline = None
 
     def __str__(self):
         parts = list()
@@ -116,12 +117,26 @@ class CutPlan:
         if they need operations. They are also expected to add any relevant commands to the commands list. The commands
         list sequentially in the next stage.
         """
-        context = self.context
+        device = self.context.device
 
         # ==========
         # Preprocess Operations
         # ==========
-        matrix = self.context.device.scene_to_device_matrix()
+        matrix = device.scene_to_device_matrix()
+
+        bounds = Node.union_bounds(self.plan)
+        if bounds is not None:
+            left, top, right, bottom = bounds
+            min_x = min(right, left)
+            min_y = min(top, bottom)
+            max_x = max(right, left)
+            max_y = max(top, bottom)
+            self.outline = (
+                device.device_position(min_x, min_y),
+                device.device_position(max_x, min_y),
+                device.device_position(max_x, max_y),
+                device.device_position(min_x, max_y),
+            )
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary

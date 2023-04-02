@@ -2,7 +2,6 @@ import wx
 
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
-    ORIENTATION_GRID,
     ORIENTATION_HORIZONTAL,
     ORIENTATION_VERTICAL,
     RESPONSE_ABORT,

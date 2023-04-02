@@ -1,8 +1,5 @@
-from math import sqrt
-
 import wx
 
-from meerk40t.core.units import Length
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path
@@ -62,13 +59,15 @@ class VectorTool(ToolWidget):
         response = RESPONSE_CHAIN
 
         if event_type == "leftclick":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
+            elements = self.scene.context.elements
             if self.path is None:
                 self.pen = wx.Pen()
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-                )
-                self.pen.SetWidth(1000)
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
+                try:
+                    self.pen.SetWidth(elements.default_strokewidth)
+                except TypeError:
+                    self.pen.SetWidth(int(elements.default_strokewidth))
                 self.path = Path()
                 if nearest_snap is None:
                     self.path.move((space_pos[0], space_pos[1]))
@@ -86,7 +85,7 @@ class VectorTool(ToolWidget):
                 was_already_empty = True
             else:
                 was_already_empty = False
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.path = None
             self.mouse_position = None
             self.scene.request_refresh()
@@ -95,7 +94,7 @@ class VectorTool(ToolWidget):
                 self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.c0 = (space_pos[0], space_pos[1])
             else:
@@ -110,9 +109,9 @@ class VectorTool(ToolWidget):
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
         elif event_type == "leftup":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             if self.c0 is not None and self.path:
-                self.scene.tool_active = True
+                self.scene.pane.tool_active = True
                 self.path.smooth_cubic(self.c0, self.mouse_position)
                 self.scene.request_refresh()
             self.c0 = None
@@ -127,16 +126,16 @@ class VectorTool(ToolWidget):
             if self.path:
                 self.scene.request_refresh()
         elif event_type == "doubleclick":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             t = self.path
             if len(t) != 0:
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(
                     path=t,
                     type="elem path",
-                    stroke_width=1000.0,
-                    stroke=self.scene.context.elements.default_stroke,
-                    fill=self.scene.context.elements.default_fill,
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
                 if elements.classify_new:
                     elements.classify([node])
@@ -146,8 +145,8 @@ class VectorTool(ToolWidget):
             self.mouse_position = None
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

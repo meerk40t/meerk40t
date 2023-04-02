@@ -66,13 +66,13 @@ class SimpleInfoWidget(StatusBarWidget):
         self.SetActive(self.progress_bar, False)
 
     def SetPercentage(self, newpercentage):
-        self._percentage = newpercentage
+        self._percentage = int(newpercentage)
         if newpercentage < 0:
             self.progress_bar.SetValue(0)
             self.SetActive(self.progress_bar, False)
         else:
             self.SetActive(self.progress_bar, True)
-            self.progress_bar.SetValue(newpercentage)
+            self.progress_bar.SetValue(self._percentage)
         self._percentage = newpercentage
 
     def AppendInformation(self, msg):
@@ -104,6 +104,7 @@ class SimpleInfoWidget(StatusBarWidget):
             content = self._messages[self._counter]
             msg = "" if content is None else content
         self.info_text.SetLabel(msg)
+        self.info_text.SetToolTip(msg)
 
     def on_button_prev(self, event):
         self._counter -= 1
@@ -403,6 +404,7 @@ class BurnProgressPanel(SimpleInfoWidget):
                 self._queue_pos = idx + 1
                 self._job_label = spool_obj.label
                 self._job_active = True
+                self._start_time = spool_obj.time_started
                 self._job_loops = spool_obj.loops
                 self._loops_executed = spool_obj.loops_executed
                 self._job_len = len(spool_obj.items)

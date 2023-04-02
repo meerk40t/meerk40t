@@ -101,6 +101,10 @@ class DXFProcessor:
                 y = bbox[1]
                 w = bbox[2] - bbox[0]
                 h = bbox[3] - bbox[1]
+                if w == 0:
+                    w = 1
+                if h == 0:
+                    h = 1
                 if w > viewport.unit_width or h > viewport.unit_height:
                     # Cannot fit to bed. Scale.
                     bb = Viewbox(f"{x} {y} {w} {h}", preserve_aspect_ratio="xMidyMid")
@@ -119,8 +123,8 @@ class DXFProcessor:
                         node.matrix *= matrix
                         node.modified()
                 # else, is within the bed dimensions correctly, change nothing.
-
-        self.elements.classify(self.elements_list)
+        if self.elements.classify_new:
+            self.elements.classify(self.elements_list)
         return True
 
     def check_for_attributes(self, node, entity):

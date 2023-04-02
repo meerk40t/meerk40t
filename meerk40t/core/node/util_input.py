@@ -25,7 +25,7 @@ class InputOperation(Node):
         return 1
 
     def bitstring(self):
-        mask = -1
+        mask = self.input_mask
         value = self.input_value
         bits = bytearray(b"X" * 16)
         for m in range(16):
@@ -66,7 +66,7 @@ class InputOperation(Node):
         self.input_value = ~((~self.input_value) | (1 << bit))
 
     def default_map(self, default_map=None):
-        default_map = super(InputOperation, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Input"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["mask"] = self.input_mask

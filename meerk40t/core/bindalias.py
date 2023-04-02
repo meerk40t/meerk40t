@@ -1,40 +1,51 @@
 from meerk40t.kernel import CommandMatchRejected, Service
 
-# The following dicts consist of a tuple of values, the first of
-# which is the current default, with any prior defaults following.
-# Prior defaults are used to keep a users keymap / aliases up to date with
-# any changes, unless the user has already changed away from the default.
-# If you want to delete a bind / alias, set the first value to a null string.
+"""
+This core class defines two main services: bind and alias. This is a set defined keybinds and alias commands.
 
-# CHOICE OF BINDALIAS vs. MENU
-# These key bindings are in addition to those specified in the menus
-# (like Ctrl+S for File Save). The choice of which of these to use is debatable.
-# On one hand bindalias is a more flexible approach because the user can
-# change keys mappings to whatever they wish whilst menus are fixed.
-# On the other hand, default menu keys can be set per language because the
-# menu strings are translated, whereas bindalias keys are not.
+If a keybind commands starts with a "+" then the command is triggered on the down-key and the "-" version of
+the same command is triggered on the up-key. If the bind is for any other command, it will execute on key-press.
+If you need this functionality it's best to define these commands as aliases of other commands.
+"""
 
-# RESERVED KEYS
-# Regardless of the platform used by individual developers, bindalias needs
-# to conform to BOTH of the following:
-#
-# 1. Mac - common shortcuts defined in https://support.apple.com/en-us/HT201236
-#    should be followed where appropriate and avoided if not. This is important
-#    for MK to be accepted into the Apple app store.
-#    Where keys defined in other sections on this page make sense for this application,
-#    these should also be used by preference.
-#
-# 2. Windows - alt-single letter should be avoided as these correspond to menu
-#    shortcuts (e.g. in english locale, alt-f should activate the file menu).
-#    Common Windows shortcuts can be found at
-#    https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec
-#
-# In addition where they do not conflict with the above, any synergy with keys commonly used
-# in popular SVG / image editors (e.g. paint.net, inkscape) may be beneficial.
 
-# To change keymaps / alias insert new alias at the beginning of the tuple
-# Later entries in the tuple are used to identify previous defaults and update them to current,
-# so do not delete these until a version change (like 0.8) results in completely new settings anyway.
+"""
+The following dicts consist of a tuple of values, the first of
+which is the current default, with any prior defaults following.
+Prior defaults are used to keep a users keymap / aliases up to date with
+any changes, unless the user has already changed away from the default.
+If you want to delete a bind / alias, set the first value to a null string.
+
+CHOICE OF BINDALIAS vs. MENU
+These key bindings are in addition to those specified in the menus
+(like Ctrl+S for File Save). The choice of which of these to use is debatable.
+On one hand bindalias is a more flexible approach because the user can
+change keys mappings to whatever they wish whilst menus are fixed.
+On the other hand, default menu keys can be set per language because the
+menu strings are translated, whereas bindalias keys are not.
+
+RESERVED KEYS
+Regardless of the platform used by individual developers, bindalias needs
+to conform to BOTH of the following:
+
+1. Mac - common shortcuts defined in https://support.apple.com/en-us/HT201236
+   should be followed where appropriate and avoided if not. This is important
+   for MK to be accepted into the Apple app store.
+   Where keys defined in other sections on this page make sense for this application,
+   these should also be used by preference.
+2. Windows - alt-single letter should be avoided as these correspond to menu
+   shortcuts (e.g. in english locale, alt-f should activate the file menu).
+   Common Windows shortcuts can be found at
+   https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec
+
+In addition where they do not conflict with the above, any synergy with keys commonly used
+in popular SVG / image editors (e.g. paint.net, inkscape) may be beneficial.
+
+To change keymaps / alias insert new alias at the beginning of the tuple
+Later entries in the tuple are used to identify previous defaults and update them to current,
+so do not delete these until a version change (like 0.8) results in completely new settings anyway.
+"""
+
 DEFAULT_KEYMAP = {
     "right": ("translate 1mm 0",),
     "left": ("translate -1mm 0",),
@@ -134,6 +145,7 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+a": ("element* select",),
     "ctrl+c": ("clipboard copy",),
+    "ctrl+shift+c": ("align bed group xy center center",),
     "ctrl+e": (
         "circle 0.5in 0.5in 0.5in stroke red classify",
         "circle 500 500 500",
@@ -144,7 +156,10 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+i": ("element* select^",),
     "ctrl+d": ("element copy",),
-    "ctrl+g": ("planz clear copy preprocess validate blob preopt optimize spool",),
+    "ctrl+g": (
+        "",
+        "planz clear copy preprocess validate blob preopt optimize spool",
+    ),
     "ctrl+o": (
         "",
         "outline",

@@ -31,6 +31,7 @@ class MeasureTool(ToolWidget):
         self.line_pen = wx.Pen()
         self.line_pen.SetColour(self.scene.colors.color_measure_line)
         self.line_pen.SetStyle(wx.PENSTYLE_DOT)
+        self.line_pen.SetWidth(1000)
 
     def process_draw(self, gc):
         matrix = gc.GetTransform().Get()
@@ -164,10 +165,10 @@ class MeasureTool(ToolWidget):
                 self.point_series.append((space_pos[0], space_pos[1]))
             else:
                 self.point_series.append((nearest_snap[0], nearest_snap[1]))
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.mouse_position = space_pos[0], space_pos[1]
             else:
@@ -184,20 +185,20 @@ class MeasureTool(ToolWidget):
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
         elif event_type == "rightdown":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
         elif event_type == "doubleclick":
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:

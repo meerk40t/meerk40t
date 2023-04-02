@@ -1,5 +1,6 @@
-from meerk40t.tools.rasterplotter import RasterPlotter
 from meerk40t.core.cutcode.cutobject import CutObject
+from meerk40t.tools.rasterplotter import RasterPlotter
+
 
 class RasterCut(CutObject):
     """
@@ -34,6 +35,7 @@ class RasterCut(CutObject):
         self.offset_y = offset_y
         self.step_x = step_x
         self.step_y = step_y
+        # if False -> burn in one direction, if True -> burn back and forth
         self.bidirectional = bidirectional
         self.horizontal = horizontal
         self.start_on_top = start_on_top
@@ -97,11 +99,16 @@ class RasterCut(CutObject):
         return self.plot.offset_x
 
     def length(self):
-        # a crosshatch will be translated into two passes,
-        # so we have either a clear horizontal or a clear vertical
-        # orientation
-        # Self.scan_x * width in pixel = real width
-        # Overscan is as well in device units
+        """
+        crosshatch will be translated into two passes, so we have either a clear horizontal or a clear vertical
+
+        self.scan_x * width in pixel = real width
+
+        overscan is in device units
+
+        @return:
+        """
+
         if self.horizontal:
             result = (
                 self.width * self.height
@@ -120,21 +127,10 @@ class RasterCut(CutObject):
             scanlines = self.width
             sd = self.height
             ss = self.step_y
-        # The variable name is misleading, if True -> burn in one direction, if False -> burn back and forth
-        if self.bidirectional:
+        if not self.bidirectional:
+            # Burning in only one direction means we have 2 x scanlines
             scanlines *= 2
-        msc = self.scan
-        myresult = scanlines * (sd * ss + msc)
-        # mm = self.settings.get("native_mm", 39.3701)
-        # iw = self.width * self.step_x / mm
-        # ih = self.height * self.step_y / mm
-        # print (f"Flags: bidir={self.bidirectional}, hor={self.horizontal}")
-        # print (f"Length {'horizontal' if self.horizontal else 'vertical'} Rastercut: Image: {self.width} x {self.height}")
-        # print (f"Supposed dimensions: {iw:.1f}mm x {ih:.1f}mm ({iw/25.4:.1f}in x {ih/25.4:.1f}in)")
-        # print (f"Scanlines: {scanlines}, Step-X: {self.step_x:.2f}, Step-Y: {self.step_y:.2f}")
-        # print (f"Overscan: {self.scan}, Direction: {'back and forth' if self.bidirectional else 'one direction only'}")
-        # print (f"Result in device-units: {result:.1f} ({myresult:.1f}), mm={result/mm:.1f} ({myresult/mm:.1f})")
-        return myresult
+        return scanlines * (sd * ss + self.scan)
 
     def extra(self):
         return self.width * 0.105  # 105ms for the turnaround.

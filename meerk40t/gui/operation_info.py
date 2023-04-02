@@ -1,6 +1,5 @@
 import wx
 
-from meerk40t.core.element_types import op_parent_nodes
 from meerk40t.gui.icons import (
     icons8_computer_support_50,
     icons8_diagonal_20,
@@ -205,8 +204,8 @@ class OpInfoPanel(ScrolledPanel):
 
     def on_tree_popup_empty(self, opnode=None):
         def clear(event=None):
-            opnode.remove_all_children()
-            self.context.signal("tree_changed")
+            with self.context.elements.static("on_tree_pop"):
+                opnode.remove_all_children()
 
         return clear
 
@@ -220,7 +219,8 @@ class OpInfoPanel(ScrolledPanel):
             if reverse:
                 data = reversed(data)
             for node in data:
-                classified, should_break = opnode.classify(
+                # result is a tuple containing classified, should_break, feedback
+                result = opnode.classify(
                     node,
                     fuzzy=fuzzy,
                     fuzzydistance=fuzzydistance,

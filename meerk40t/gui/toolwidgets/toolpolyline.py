@@ -28,28 +28,25 @@ class PolylineTool(ToolWidget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.point_series:
-            if self.scene.context.elements.default_stroke is None:
+            elements = self.scene.context.elements
+            if elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(
-                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
-                )
+                self.pen.SetColour(wx.Colour(swizzlecolor(elements.default_stroke)))
             gc.SetPen(self.pen)
-            if self.scene.context.elements.default_fill is None:
+            if elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(
-                            swizzlecolor(self.scene.context.elements.default_fill)
-                        ),
+                        wx.Colour(swizzlecolor(elements.default_fill)),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
             points = list(self.point_series)
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
-            gc.DrawLines(points)
+            gc.StrokeLines(points)
             x0 = points[-2][0]
             y0 = points[-2][1]
             x1 = points[-1][0]
@@ -78,7 +75,7 @@ class PolylineTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.point_series.append((space_pos[0], space_pos[1]))
             else:
@@ -107,13 +104,13 @@ class PolylineTool(ToolWidget):
             was_already_empty = len(self.point_series) == 0
             self.point_series = []
             self.mouse_position = None
-            self.scene.tool_active = False
+            self.scene.pane.tool_active = False
             self.scene.request_refresh()
             if was_already_empty:
                 self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
-            self.scene.tool_active = True
+            self.scene.pane.tool_active = True
             if nearest_snap is None:
                 self.mouse_position = space_pos[0], space_pos[1]
             else:
@@ -134,8 +131,8 @@ class PolylineTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
-            if self.scene.tool_active:
-                self.scene.tool_active = False
+            if self.scene.pane.tool_active:
+                self.scene.pane.tool_active = False
                 self.scene.request_refresh()
                 response = RESPONSE_CONSUME
             else:
@@ -151,13 +148,13 @@ class PolylineTool(ToolWidget):
         node = elements.elem_branch.add(
             shape=polyline,
             type="elem polyline",
-            stroke_width=1000.0,
-            stroke=self.scene.context.elements.default_stroke,
-            fill=self.scene.context.elements.default_fill,
+            stroke_width=elements.default_strokewidth,
+            stroke=elements.default_stroke,
+            fill=elements.default_fill,
         )
         if elements.classify_new:
             elements.classify([node])
-        self.scene.tool_active = False
+        self.scene.pane.tool_active = False
         self.point_series = []
         self.notify_created(node)
         self.mouse_position = None

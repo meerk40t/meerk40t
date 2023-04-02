@@ -16,14 +16,27 @@ class TestKernel(unittest.TestCase):
                     continue
                 if "grbl" in command:
                     continue
-                if "quit" in command:
+                if "usb_" in command:
                     continue
-                if "shutdown" in command:
-                    continue
-                if "interrupt" in command:
+                if command in (
+                    "quit",
+                    "shutdown",
+                    "interrupt",
+                    "+laser",
+                    "-laser",
+                    "left",
+                    "right",
+                    "top",
+                    "bottom",
+                    "home",
+                    "unlock",
+                    "lock",
+                    "physical_home",
+                    "test_dot_and_home",
+                ):
                     continue
                 if not cmd.regex:
-                    print("Testing command: %s" % command)
+                    print(f"Testing command: {command}")
                     # command should be generated with something like
                     # kernel.console(" ".join(command.split("/")[1:]) + "\n")
                     # if first parameter is not base but this fails so not
@@ -43,7 +56,7 @@ class TestGetSafePath(unittest.TestCase):
         Tests the get_safe_path method for all o/ses
         """
         sep = os.sep
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Darwin")),
             (
                 os.path.expanduser("~")
@@ -55,11 +68,11 @@ class TestGetSafePath(unittest.TestCase):
                 + "test"
             ),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Windows")),
             (os.path.expandvars("%LOCALAPPDATA%") + sep + "test"),
         )
-        self.assertEquals(
+        self.assertEqual(
             str(get_safe_path("test", system="Linux")),
             (os.path.expanduser("~") + sep + ".config" + sep + "test"),
         )
@@ -109,7 +122,7 @@ class TestEchoCommand(unittest.TestCase):
         kernel = bootstrap.bootstrap()
         try:
             for echo in echo_commands:
-                print("Testing echo command: %s" % echo)
+                print(f"Testing echo command: {echo}")
                 kernel.console(echo + "\n")
         finally:
             kernel.shutdown()

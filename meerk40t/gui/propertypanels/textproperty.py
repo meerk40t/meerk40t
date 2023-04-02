@@ -3,13 +3,14 @@ import platform
 import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
+from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel, PositionSizePanel
+from .attributes import ColorPanel, IdPanel, PositionSizePanel, PreventChangePanel
 
 _ = wx.GetTranslation
 
@@ -171,6 +172,7 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
+        self.renderer = LaserRender(self.context)
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
@@ -211,6 +213,9 @@ class TextPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             context=self.context,
             node=self.node,
+        )
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
         )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
@@ -305,6 +310,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_xy.set_widgets(node)
 
         if node is not None:
@@ -380,7 +386,7 @@ class TextPropertyPanel(ScrolledPanel):
             wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
         )
         self.rb_align.SetToolTip(
-            _("Define where to place the origin (i.e. current mouse position")
+            _("Define where to place the origin (i.e. current mouse position)")
         )
 
         # end wxGlade
@@ -433,7 +439,9 @@ class TextPropertyPanel(ScrolledPanel):
 
         page_extended = wx.Panel(self.notebook, wx.ID_ANY)
         sizer_page_extended = wx.BoxSizer(wx.VERTICAL)
+        self.panel_lock.Reparent(page_extended)
         self.panel_xy.Reparent(page_extended)
+        sizer_page_extended.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_page_extended.Add(self.panel_xy, 0, wx.EXPAND, 0)
         page_extended.SetSizer(sizer_page_extended)
 
@@ -490,12 +498,20 @@ class TextPropertyPanel(ScrolledPanel):
         except AttributeError:
             pass
         mystyle = self.label_fonttest.GetWindowStyle()
-        if self.node.anchor == "start":
-            new_anchor = 0
-            # Align the text to the left.
-            mystyle1 = wx.ALIGN_LEFT
-            mystyle2 = wx.ST_ELLIPSIZE_END
-        elif self.node.anchor == "middle":
+        mystyle1 = wx.ALIGN_LEFT
+        mystyle2 = wx.ST_ELLIPSIZE_END
+        if self.node.anchor is None:
+            self.node.anchor = "start"
+        # try:
+        #     size = self.node.wxfont.GetFractionalPointSize()
+        # except AttributeError:
+        #     size = self.node.wxfont.GetPointSize()
+        # print (f"Anchor: {self.node.anchor}, fontsize={size}")
+        new_anchor = 0
+        # Align the text to the left.
+        mystyle1 = wx.ALIGN_LEFT
+        mystyle2 = wx.ST_ELLIPSIZE_END
+        if self.node.anchor == "middle":
             new_anchor = 1
             mystyle1 = wx.ALIGN_CENTER
             mystyle2 = wx.ST_ELLIPSIZE_MIDDLE
@@ -540,6 +556,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
 
     def refresh(self):
+        self.renderer.measure_text(self.node)
+        bb = self.node.bounds
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
 

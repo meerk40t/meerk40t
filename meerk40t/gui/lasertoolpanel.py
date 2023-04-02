@@ -1,7 +1,6 @@
 from math import atan, sqrt, tau
 
 import wx
-from wx import aui
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
@@ -574,6 +573,9 @@ class LaserToolPanel(wx.Panel):
 
     def calculate_frame(self):
         result = False
+        left_top = (0, 0)
+        width = 0
+        height = 0
         if self.coord_a is not None and self.coord_b is not None:
             x0 = self.coord_a[0]
             x1 = self.coord_b[0]

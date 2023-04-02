@@ -3,6 +3,12 @@ GRBL Device Plugin
 
 Registers the required files to run the GRBL device.
 """
+from meerk40t.grbl.control import GRBLControl
+from meerk40t.grbl.device import GRBLDevice, GRBLDriver
+from meerk40t.grbl.gcodejob import GcodeJob
+from meerk40t.grbl.interpreter import GRBLInterpreter
+from meerk40t.grbl.emulator import GRBLEmulator
+from meerk40t.grbl.loader import GCodeLoader
 
 
 def plugin(kernel, lifecycle=None):
@@ -20,25 +26,81 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "register":
         _ = kernel.translation
 
-        from .device import GRBLDevice, GRBLDriver
-
         kernel.register("provider/device/grbl", GRBLDevice)
+        kernel.register("dev_info/grbl-generic", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("Generic (GRBL-Controller)"),
+            "extended_info": _("Generic GRBL Laser Device."),
+            "priority": 19,
+            "family": _("Generic"),
+            "family_priority": 20,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "Grbl",
+                },
+                {
+                    "attr": "source",
+                    "default": "generic",
+                },
+            ]
+        })
+        kernel.register("dev_info/grbl-k40", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("K40 (GRBL-Controller)"),
+            "extended_info": _("K40 laser with a modified GRBL laser controller."),
+            "priority": 70,
+            "family": _("CO2-Laser"),
+            "family_priority": 99,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "GRBL-K40",
+                },
+                {
+                    "attr": "has_endstops",
+                    "default": True,
+                },
+                {
+                    "attr": "bedwidth",
+                    "default": "235mm",
+                },
+                {
+                    "attr": "bedheight",
+                    "default": "235mm",
+                },
+                {
+                    "attr": "source",
+                    "default": "co2",
+                },
+            ]
+        })
+        kernel.register("dev_info/grbl-diode", {
+            "provider": "provider/device/grbl",
+            "friendly_name": _("Diode-Laser (GRBL-Controller)"),
+            "extended_info": _("Any of a variety of inexpensive GRBL based diode lasers."),
+            "priority": 17,
+            "family": _("Diode-Laser"),
+            "family_priority": 50,
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "Grbl-Diode",
+                },
+                {
+                    "attr": "has_endstops",
+                    "default": False,
+                },
+                {
+                    "attr": "source",
+                    "default": "diode",
+                },
+            ]
+        })
         kernel.register("driver/grbl", GRBLDriver)
-
-        from .interpreter import GRBLInterpreter
-
+        kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)
-
-        from .emulator import GRBLEmulator
-
         kernel.register("emulator/grbl", GRBLEmulator)
-
-        from .parser import GRBLParser
-
-        kernel.register("parser/grbl", GRBLParser)
-
-        from .loader import GCodeLoader
-
         kernel.register("load/GCodeLoader", GCodeLoader)
 
         @kernel.console_option(
@@ -49,7 +111,7 @@ def plugin(kernel, lifecycle=None):
             "v",
             type=bool,
             action="store_true",
-            help=_("do not watch server channels"),
+            help=_("watch server channels"),
         )
         @kernel.console_option(
             "quit",
@@ -59,53 +121,32 @@ def plugin(kernel, lifecycle=None):
             help=_("shutdown current grblserver"),
         )
         @kernel.console_command(
-            ("grblcontrol", "grbldesign", "grblemulator"),
+            "grblcontrol",
             help=_("activate the grblserver."),
             hidden=True,
         )
         def grblserver(
-            command,
-            channel,
-            _,
             port=23,
             verbose=False,
             quit=False,
             **kwargs,
         ):
+            """
+            The grblserver emulation methods provide a simulation of a grbl device.
+            this emulates a grbl devices in order to be compatible with software that
+            controls that type of device.
+            """
             root = kernel.root
-            try:
-                server = root.open_as("module/TCPServer", "grbl", port=port)
-                emulator = root.open("emulator/grbl")
+            grblcontrol = root.device.lookup("grblcontrol")
+            if grblcontrol is None:
                 if quit:
-                    root.close("grbl")
-                    root.close("emulator/grbl")
                     return
-                root.channel(
-                    "grbl/send", pure=True
-                ).greet = "Grbl 1.1e ['$' for help]\r"
-                channel(_("GRBL Mode."))
-                if verbose:
-                    console = kernel.channel("console")
-                    root.channel("grbl").watch(console)
-                    server.events_channel.watch(console)
-                # Link emulator and server.
-                root.channel("grbl/recv").watch(emulator.write)
-                emulator.set_reply(root.channel("grbl/send", pure=True))
-
-                channel(
-                    _("TCP Server for GRBL Emulator on port: {port}").format(port=port)
-                )
-
-                if command == "grbldesign":
-                    emulator.design = True
-                elif command == "grblcontrol":
-                    emulator.control = True
-                elif command == "grblemulator":
-                    pass
-            except OSError as e:
-                channel(_("Server failed on port: {port}").format(port=port))
-                channel(str(e.strerror))
-            return
+                grblcontrol = GRBLControl(root)
+                root.device.register("grblcontrol", grblcontrol)
+                grblcontrol.start(port, verbose)
+            if quit:
+                grblcontrol.quit()
+                root.device.unregister("grblcontrol")
 
     elif lifecycle == "preboot":
         suffix = "grbl"

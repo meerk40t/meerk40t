@@ -3,8 +3,8 @@ EGV Loader
 
 Registered loader for egv (engrave) data of lhymicro-gl.
 """
-
-from meerk40t.core.cutcode import CutCode, RawCut
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.lihuiyu.parser import LihuiyuParser
 
 
@@ -22,12 +22,12 @@ class EGVBlob:
     def as_cutobjects(self):
         parser = LihuiyuParser()
         self._cutcode = CutCode()
-        self._cut = RawCut()
+        self._cut = PlotCut()
 
         def new_cut():
             if self._cut is not None and len(self._cut):
                 self._cutcode.append(self._cut)
-            self._cut = RawCut()
+            self._cut = PlotCut()
             self._cut.settings = dict(parser.settings)
 
         def position(p):
@@ -38,8 +38,8 @@ class EGVBlob:
             from_x, from_y, to_x, to_y = p
 
             if parser.program_mode:
-                if len(self._cut.plot) == 0:
-                    self._cut.plot_append(int(from_x), int(from_y), parser.laser)
+                if len(self._cut) == 0:
+                    self._cut.plot_init(parser.x, parser.y)
                 self._cut.plot_append(int(to_x), int(to_y), parser.laser)
             else:
                 new_cut()

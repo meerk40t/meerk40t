@@ -22,7 +22,7 @@ class ConsoleOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(ConsoleOperation, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Console"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map.update(self.__dict__)

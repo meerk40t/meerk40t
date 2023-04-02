@@ -1,3 +1,7 @@
+"""
+This is a giant list of console commands that deal with and often implement the elements system in the program.
+"""
+
 import os.path
 import re
 from copy import copy
@@ -63,13 +67,11 @@ def init_commands(kernel):
             "page": "Laser",
             "section": "General",
             "style": "option",
-            "display": ("Immediate", "User confirmation", "Delay 5 seconds"),
+            "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
             "choices": (0, 1, 2),
         },
     ]
     kernel.register_choices("preferences", choices)
-
-
 
     def classify_new(data):
         """
@@ -85,10 +87,12 @@ def init_commands(kernel):
 
         @return: post classification function.
         """
+
         def post_classify_function(**kwargs):
             if self.classify_new and len(data) > 0:
                 self.classify(data)
                 self.signal("tree_changed")
+
         return post_classify_function
 
     @self.console_argument("filename")
@@ -674,48 +678,57 @@ def init_commands(kernel):
         self.set_emphasis(ops)
         return "ops", ops
 
-    @self.console_argument("start", type=int, help=_("operation start"))
-    @self.console_argument("end", type=int, help=_("operation end"))
-    @self.console_argument("step", type=int, help=_("operation step"))
+    @self.console_argument("start", type=int, help=_("start"))
+    @self.console_argument("end", type=int, help=_("end"))
+    @self.console_option("step", "s", type=int, default=1, help=_("step"))
     @self.console_command(
         "range",
         help=_("Subset existing selection by begin and end indices and step"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subops = list()
+    def opelem_select_range(
+        data=None, data_type=None, start=None, end=None, step=1, **kwargs
+    ):
+        sublist = list()
         for e in range(start, end, step):
             try:
-                subops.append(data[e])
+                sublist.append(data[e])
             except IndexError:
                 pass
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
 
     @self.console_argument("filter", type=str, help=_("Filter to apply"))
     @self.console_command(
         "filter",
         help=_("Filter data by given value"),
-        input_type="ops",
-        output_type="ops",
+        input_type=("ops", "elements"),
+        output_type=("ops", "elements"),
     )
-    def operation_filter(channel=None, data=None, filter=None, **kwargs):
+    def opelem_filter(channel=None, data=None, data_type=None, filter=None, **kwargs):
         """
         Apply a filter string to a filter particular operations from the current data.
-        Operations are evaluated in an infix prioritized stack format without spaces.
-        Qualified values are speed, power, step, acceleration, passes, color, op, overscan, len
+        Operations or elements are evaluated in an infix prioritized stack format without spaces.
+        Qualified values for all node types are: id, label, len, type
+        Qualified element values are stroke, fill, dpi, elem
+        Qualified operation values are speed, power, frequency, dpi, acceleration, op, passes, color, overscan
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
+        Valid string operators are startswith, endswith, contains.
+        String values require single-quotes ', because the console interface requires double-quotes.
         eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
+        eg. operation* filter "type='op image'" list
+        eg. element* filter "id startwith 'p'" list
         """
-        subops = list()
+        sublist = list()
         _filter_parse = [
+            ("STR", r"'([^']*)'"),
             ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
             ("OP20", r"(\*|/)"),
             ("OP15", r"(\+|-)"),
-            ("OP11", r"(<=|>=|==|!=)"),
+            ("OP11", r"(<=|>=|==|!=|startswith|endswith|contains)"),
             ("OP10", r"(<|>|=)"),
             ("OP5", r"(&&)"),
             ("OP4", r"(&)"),
@@ -728,11 +741,11 @@ def init_commands(kernel):
             ),
             (
                 "TYPE",
-                r"(raster|image|cut|engrave|dots|unknown|command|cutcode|lasercode)",
+                r"(raster|image|cut|engrave|dots|blob|rect|path|ellipse|point|image|line|polyline)",
             ),
             (
                 "VAL",
-                r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
+                r"(type|op|speed|power|frequency|dpi|passes|color|overscan|len|elem|stroke|fill|id|label)",
             ),
         ]
         filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
@@ -785,6 +798,12 @@ def init_commands(kernel):
                             operand.append(v1 + v2)
                         elif op == "-":
                             operand.append(v1 - v2)
+                        elif op == "startswith":
+                            operand.append(str(v1).startswith(str(v2)))
+                        elif op == "endswith":
+                            operand.append(str(v1).endswith(str(v2)))
+                        elif op == "contains":
+                            operand.append(str(v2) in (str(v1)))
                     except TypeError:
                         raise CommandSyntaxError("Cannot evaluate expression")
                     except ZeroDivisionError:
@@ -797,34 +816,140 @@ def init_commands(kernel):
                 if kind == "COLOR":
                     operand.append(Color(value))
                 elif kind == "VAL":
-                    if value == "dpi":
-                        operand.append(e.dpi)
-                    elif value == "color":
-                        operand.append(e.color)
-                    elif value == "op":
-                        operand.append(e.type.remove("op").strip())
-                    elif value == "len":
-                        operand.append(len(e.children))
-                    else:
-                        operand.append(e.settings.get(value))
-
+                    try:
+                        if value == "type":
+                            operand.append(e.type)
+                        elif value == "op":
+                            if e.type.startswith("op"):
+                                operand.append(e.type.replace("op", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "speed":
+                            operand.append(e.speed)
+                        elif value == "power":
+                            operand.append(e.power)
+                        elif value == "frequency":
+                            operand.append(e.frequency)
+                        elif value == "dpi":
+                            operand.append(e.dpi)
+                        elif value == "passes":
+                            operand.append(e.passes)
+                        elif value == "color":
+                            operand.append(e.color)
+                        elif value == "len":
+                            try:
+                                operand.append(len(e.children))
+                            except AttributeError:
+                                operand.append(0)
+                        elif value == "elem":
+                            if e.type.startswith("elem"):
+                                operand.append(e.type.replace("elem", "").strip())
+                            else:
+                                operand.append(None)
+                        elif value == "stroke":
+                            operand.append(e.stroke)
+                        elif value == "fill":
+                            operand.append(e.fill)
+                        elif value == "stroke_width":
+                            operand.append(e.stroke_width)
+                        elif value == "id":
+                            operand.append(e.id)
+                        elif value == "label":
+                            operand.append(e.label)
+                        else:
+                            operand.append(e.settings.get(value))
+                    except AttributeError:
+                        operand.append(None)
                 elif kind == "NUM":
                     operand.append(float(value))
                 elif kind == "TYPE":
                     operand.append(value)
+                elif kind == "STR":
+                    operand.append(value[1:-1])
                 elif kind.startswith("OP"):
-                    prec = int(kind[2:])
-                    solve_to(prec)
-                    operator.append((prec, value))
+                    precedence = int(kind[2:])
+                    solve_to(precedence)
+                    operator.append((precedence, value))
             solve_to(0)
             if len(operand) == 1:
                 if operand.pop():
-                    subops.append(e)
+                    sublist.append(e)
             else:
                 raise CommandSyntaxError(_("Filter parse failed"))
 
-        self.set_emphasis(subops)
-        return "ops", subops
+        self.set_emphasis(sublist)
+        return data_type, sublist
+
+    @self.console_argument(
+        "id",
+        type=str,
+        help=_("new id to set values to"),
+    )
+    @self.console_command(
+        "id",
+        help=_("id <id>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_id(command, channel, _, id=None, data=None, data_type=None, **kwargs):
+        if id is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("ID Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - id = {id}").format(index=i, name=name, id=e.id)
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.id = id
+        self.validate_ids()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
+
+    @self.console_argument(
+        "label",
+        type=str,
+        help=_("new label to set values to"),
+    )
+    @self.console_command(
+        "label",
+        help=_("label <label>"),
+        input_type=("ops", "elements"),
+        output_type=("elements", "ops"),
+    )
+    def opelem_label(
+        command, channel, _, label=None, data=None, data_type=None, **kwargs
+    ):
+        if label is None:
+            # Display data about id.
+            channel("----------")
+            channel(_("Label Values:"))
+            for i, e in enumerate(data):
+                name = str(e)
+                channel(
+                    _("{index}: {name} - label = {label}").format(
+                        index=i, name=name, label=e.label
+                    )
+                )
+            channel("----------")
+            return
+
+        if len(data) == 0:
+            channel(_("No selected nodes"))
+            return
+        for e in data:
+            e.label = label
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
+        return data_type, data
 
     @self.console_command(
         "list",
@@ -1574,6 +1699,8 @@ def init_commands(kernel):
                     newnode, "mktext"
                 ):
                     newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, newnode)
             # Newly created! Classification needed?
             post.append(classify_new(add_elem))
             self.signal("refresh_scene", "Scene")
@@ -1584,11 +1711,11 @@ def init_commands(kernel):
     )
     def e_delete(command, channel, _, data=None, data_type=None, **kwargs):
         channel(_("Deleting…"))
-        if data_type == "elements":
-            self.remove_elements(data)
-        else:
-            self.remove_operations(data)
-        self.signal("tree_changed")
+        with self.static("e_delete"):
+            if data_type == "elements":
+                self.remove_elements(data)
+            else:
+                self.remove_operations(data)
 
     # ==========
     # ELEMENT BASE
@@ -1663,34 +1790,34 @@ def init_commands(kernel):
     )
     def regmark(command, channel, _, data, cmd=None, **kwargs):
         # Move regmarks into the regular element tree and vice versa
-        if cmd == "free":
-            target = self.elem_branch
-        else:
-            target = self.reg_branch
-
-        if data is None:
-            data = list()
+        with self.static("regmark"):
             if cmd == "free":
-                for item in list(self.regmarks()):
-                    data.append(item)
+                target = self.elem_branch
             else:
-                for item in list(self.elems(emphasized=True)):
-                    data.append(item)
-        if cmd in ("free", "add"):
-            if len(data) == 0:
-                channel(_("No elements to transfer"))
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd == "free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data) == 0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+                    if cmd == "free" and self.classify_new:
+                        self.classify(data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
             else:
-                move_nodes_to(target, data)
-                if cmd == "free" and self.classify_new:
-                    self.classify(data)
-        elif cmd == "clear":
-            self.clear_regmarks()
-            data = None
-        else:
-            # Unknown command
-            channel(_("Invalid command, use one of add, free, clear"))
-            data = None
-        self.signal("tree_changed")
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
         return "elements", data
 
     # ==========
@@ -1809,25 +1936,6 @@ def init_commands(kernel):
         channel("----------")
         return "elements", data
 
-    @self.console_argument("start", type=int, help=_("elements start"))
-    @self.console_argument("end", type=int, help=_("elements end"))
-    @self.console_argument("step", type=int, help=_("elements step"))
-    @self.console_command(
-        "range",
-        help=_("Subset selection by begin & end indices and step"),
-        input_type="elements",
-        output_type="elements",
-    )
-    def element_select_range(data=None, start=None, end=None, step=1, **kwargs):
-        subelem = list()
-        for e in range(start, end, step):
-            try:
-                subelem.append(data[e])
-            except IndexError:
-                pass
-        self.set_emphasis(subelem)
-        return "elements", subelem
-
     @self.console_command(
         "merge",
         help=_("merge elements"),
@@ -1921,7 +2029,6 @@ def init_commands(kernel):
         align_bounds = None
         align_x = align_x.lower()
         align_y = align_y.lower()
-
         if align_x not in ("min", "max", "center", "none"):
             channel(_("Invalid alignment parameter for x"))
             return
@@ -1941,9 +2048,12 @@ def init_commands(kernel):
             elements.sort(key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of first element, delta was: {delta:.2f}")
+                # print (f"Time 1: {elements[0].type} - {elements[0]._emphasized_time}, Time 2: {elements[-1].type} - {elements[-1]._emphasized_time}")
+                # elements.pop(0)
         elif mode == "last":
             if len(elements) < 2:
                 channel(_("No sense in aligning an element to itself"))
@@ -1951,9 +2061,12 @@ def init_commands(kernel):
             elements.sort(reverse=True, key=lambda n: n.emphasized_time)
             # Is there a noticeable difference?!
             # If not then we fall back to default
-            if elements[0].emphasized_time != elements[1].emphasized_time:
+            # print(f"Mode: {mode}, type={elements[0].type}")
+            delta = abs(elements[0].emphasized_time - elements[-1].emphasized_time)
+            if delta > 0.5:
                 align_bounds = elements[0].bounds
-                elements.pop(0)
+                # print (f"Use bounds of last element, delta was: {delta:.2f}")
+                # elements.pop(0)
         elif mode == "bed":
             align_bounds = bounds
         elif mode == "ref":
@@ -2171,38 +2284,6 @@ def init_commands(kernel):
             return
         if data is None:
             data = list(self.elems(emphasized=True))
-        # Element conversion.
-        # We need to establish, if for a given node within a group
-        # all it's siblings are selected as well, if that's the case
-        # then use the parent instead - unless there are no other elements
-        # selected ie all selected belong to the same group...
-        d = list()
-        elem_branch = self.elem_branch
-        for node in data:
-            snode = node
-            if snode.parent and snode.parent is not elem_branch:
-                # I need all other siblings
-                singular = False
-                for n in list(node.parent.children):
-                    if n not in data:
-                        singular = True
-                        break
-                if not singular:
-                    while (
-                        snode.parent
-                        and snode.parent is not elem_branch
-                        and snode.parent.type != "file"
-                    ):
-                        snode = snode.parent
-            if snode is not None and snode not in d:
-                d.append(snode)
-        if len(d) == 1 and d[0].type == "group":
-            # This is just on single group - expand...
-            data = list(d[0].flat(emphasized=True, types=elem_nodes))
-            for n in data:
-                n._emphasized_time = d[0]._emphasized_time
-        else:
-            data = d
         return "align", (
             self._align_mode,
             self._align_group,
@@ -2312,100 +2393,139 @@ def init_commands(kernel):
         _align_xy(channel, _, mode, bound, elements, "none", "center", group)
         return "align", (mode, group, bound, elements)
 
+    def distribute_elements(elements, in_x: bool = True, distance: bool = True):
+        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
+            return
+        if in_x:
+            elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
+        else:
+            elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
+        boundary_points = []
+        for node in elements:
+            boundary_points.append(node.bounds)
+        if not len(boundary_points):
+            return
+        if in_x:
+            idx = 0
+        else:
+            idx = 1
+        if distance:
+            left_edge = boundary_points[0][idx]
+            right_edge = boundary_points[-1][idx + 2]
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            for node in elements:
+                bounds = node.bounds
+                dim_available -= bounds[idx + 2] - bounds[idx]
+            distributed_distance = dim_available / (len(elements) - 1)
+            dim_pos = left_edge
+        else:
+            left_edge = (boundary_points[0][idx] + boundary_points[0][idx + 2]) / 2
+            right_edge = (boundary_points[-1][idx] + boundary_points[-1][idx + 2]) / 2
+            dim_total = right_edge - left_edge
+            dim_available = dim_total
+            dim_pos = left_edge
+            distributed_distance = dim_available / (len(elements) - 1)
+
+        for node in elements:
+            subbox = node.bounds
+            if distance:
+                delta = subbox[idx] - dim_pos
+                dim_pos += subbox[idx + 2] - subbox[idx] + distributed_distance
+            else:
+                delta = (subbox[idx] + subbox[idx + 2]) / 2 - dim_pos
+                dim_pos += distributed_distance
+            if in_x:
+                dx = -delta
+                dy = 0
+            else:
+                dx = 0
+                dy = -delta
+            if dx != 0 or dy != 0:
+                self.translate_node(node, dx, dy)
+
     @self.console_command(
         "spaceh",
-        help=_("align elements across horizontal space"),
+        help=_("distribute elements across horizontal space"),
         input_type="align",
         output_type="align",
     )
     def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
-        mode, group, bound, elements = data
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
-            return
-        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
-            return "align", (mode, group, bound, elements)
-        left_edge = min([e[0] for e in boundary_points])
-        right_edge = max([e[2] for e in boundary_points])
-        dim_total = right_edge - left_edge
-        dim_available = dim_total
-        for node in elements:
-            bounds = node.bounds
-            dim_available -= bounds[2] - bounds[0]
-        distributed_distance = dim_available / (len(elements) - 1)
-        elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
-        dim_pos = left_edge
-
+        mode, group, bound, raw_elements = data
         haslock = False
-        for node in elements:
+        for node in raw_elements:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 haslock = True
                 break
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
-            return
-        for node in elements:
-            subbox = node.bounds
-            delta = subbox[0] - dim_pos
-            matrix = f"translate({-delta}, 0)"
-            if delta != 0:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            dim_pos += subbox[2] - subbox[0] + distributed_distance
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=True, distance=True)
+        self.signal("refresh_scene", "Scene")
+        return "align", (mode, group, bound, elements)
+
+    @self.console_command(
+        "spaceh2",
+        help=_("distribute elements across horizontal space"),
+        input_type="align",
+        output_type="align",
+    )
+    def subtype_align_spaceh2(command, channel, _, data=None, **kwargs):
+        mode, group, bound, raw_elements = data
+        haslock = False
+        for node in raw_elements:
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                haslock = True
+                break
+        if haslock:
+            channel(_("Your selection contains a locked element, that cannot be moved"))
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=True, distance=False)
+        self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
         "spacev",
-        help=_("align elements down vertical space"),
+        help=_("distribute elements across vertical space"),
         input_type="align",
         output_type="align",
     )
     def subtype_align_spacev(command, channel, _, data=None, **kwargs):
-        mode, group, bound, elements = data
-        boundary_points = []
-        for node in elements:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
-            return
-        if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
-            return "align", (mode, group, bound, elements)
-        top_edge = min([e[1] for e in boundary_points])
-        bottom_edge = max([e[3] for e in boundary_points])
-        dim_total = bottom_edge - top_edge
-        dim_available = dim_total
-        for node in elements:
-            bounds = node.bounds
-            dim_available -= bounds[3] - bounds[1]
-        distributed_distance = dim_available / (len(elements) - 1)
-        elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
-        dim_pos = top_edge
-
+        mode, group, bound, raw_elements = data
         haslock = False
-        for node in elements:
+        for node in raw_elements:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 haslock = True
                 break
         if haslock:
             channel(_("Your selection contains a locked element, that cannot be moved"))
-            return
-        for node in elements:
-            subbox = node.bounds
-            delta = subbox[1] - dim_pos
-            matrix = f"translate(0, {-delta})"
-            if delta != 0:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            dim_pos += subbox[3] - subbox[1] + distributed_distance
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=False, distance=True)
+        self.signal("refresh_scene", "Scene")
+        return "align", (mode, group, bound, elements)
+
+    @self.console_command(
+        "spacev2",
+        help=_("distribute elements across vertical space"),
+        input_type="align",
+        output_type="align",
+    )
+    def subtype_align_spacev2(command, channel, _, data=None, **kwargs):
+        mode, group, bound, raw_elements = data
+        haslock = False
+        for node in raw_elements:
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                haslock = True
+                break
+        if haslock:
+            channel(_("Your selection contains a locked element, that cannot be moved"))
+            return "align", (mode, group, bound, raw_elements)
+        elements = self.condense_elements(raw_elements)
+        distribute_elements(elements, in_x=False, distance=False)
+        self.signal("refresh_scene", "Scene")
         return "align", (mode, group, bound, elements)
 
     @self.console_argument(
@@ -2581,8 +2701,11 @@ def init_commands(kernel):
             x = "100%"
         if y is None:
             y = "100%"
-        x = float(Length(x, relative_length=Length(amount=width).length_mm))
-        y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        try:
+            x = float(Length(x, relative_length=Length(amount=width).length_mm))
+            y = float(Length(y, relative_length=Length(amount=height).length_mm))
+        except ValueError:
+            raise CommandSyntaxError("Length could not be parsed.")
         if origin is None:
             origin = (1, 1)
         cx, cy = origin
@@ -2804,7 +2927,7 @@ def init_commands(kernel):
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
                     e.matrix *= f"translate({x_pos}, {y_pos})"
-                    e.modified()
+                    e.translated(x_pos, y_pos)
                 self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
@@ -3025,6 +3148,7 @@ def init_commands(kernel):
             data = list()
         node = self.elem_branch.add(shape=poly_path, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3326,6 +3450,13 @@ def init_commands(kernel):
         default=1,
         help=_("How many offsetlines (default 1)"),
     )
+    @self.console_option(
+        "debug",
+        "d",
+        type=bool,
+        action="store_true",
+        help=_("Preserve intermediary objects"),
+    )
     @self.console_argument("offset", type=Length, help="Offset distance")
     @self.console_command(
         "outline",
@@ -3349,6 +3480,7 @@ def init_commands(kernel):
         blacklevel=None,
         outer=None,
         steps=None,
+        debug=False,
         data=None,
         post=None,
         **kwargs,
@@ -3377,7 +3509,8 @@ def init_commands(kernel):
         if data is None or len(data) == 0:
             channel(_("No elements to outline."))
             return
-
+        if debug is None:
+            debug = False
         reverse = self.classify_reverse
         if reverse:
             data = list(reversed(data))
@@ -3436,11 +3569,20 @@ def init_commands(kernel):
                 e.fill = Color("black")
                 if hasattr(e, "stroke"):
                     e.stroke = Color("black")
+                if hasattr(e, "stroke_width") and e.stroke_width == 0:
+                    e.stroke_width = UNITS_PER_PIXEL
                 if hasattr(e, "fillrule"):
                     e.fillrule = 0
                 mydata.append(e)
             else:
-                mydata.append(node)
+                e = copy(node)
+                if hasattr(e, "stroke_width") and e.stroke_width == 0:
+                    e.stroke_width = UNITS_PER_PIXEL
+                mydata.append(e)
+        if debug:
+            for node in mydata:
+                node.label = "Phase 0: Initial copy"
+                self.elem_branch.add_node(node)
 
         ###############################################
         # Phase 1: render and vectorize first outline
@@ -3504,9 +3646,9 @@ def init_commands(kernel):
         data_node.fill = None
         # If you want to debug the phases then uncomment the following lines to
         # see the interim path and interim render image
-
-        # self.elem_branch.add_node(data_node)
-        # self.elem_branch.add_node(image_node_1)
+        if debug:
+            self.elem_branch.add_node(data_node)
+            self.elem_branch.add_node(image_node_1)
 
         copy_data = [image_node_1, data_node]
 
@@ -3580,8 +3722,9 @@ def init_commands(kernel):
 
             # If you want to debug the phases then uncomment the following line to
             # see the interim image
-            # self.elem_branch.add_node(image_node_2)
-            # self.elem_branch.add_node(data_node_2)
+            if debug:
+                self.elem_branch.add_node(image_node_2)
+                self.elem_branch.add_node(data_node_2)
             #######################################################
             # Phase 3: render and vectorize last outline for outer
             #######################################################
@@ -3606,7 +3749,9 @@ def init_commands(kernel):
                     copy_data.append(data_node)
                     # If you want to debug the phases then uncomment the following lines to
                     # see the interim path nodes
-                    # self.elem_branch.add_node(data_node)
+                    if debug:
+                        self.elem_branch.add_node(data_node)
+
                 bounds = Node.union_bounds(copy_data, attr="paint_bounds")
                 # bounds_regular = Node.union_bounds(data)
                 # for idx in range(4):
@@ -3694,6 +3839,7 @@ def init_commands(kernel):
             shape=circ,
             type="elem ellipse",
             stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
             fill=self.default_fill,
         )
         self.set_emphasis([node])
@@ -3720,6 +3866,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=circ, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3742,7 +3889,9 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs):
+    def element_ellipse(
+        channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
+    ):
         ellip = Ellipse(
             cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
         )
@@ -3751,6 +3900,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=ellip, type="elem ellipse")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3813,6 +3963,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=rect, type="elem rect")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3842,6 +3993,7 @@ def init_commands(kernel):
         simple_line = SimpleLine(x0, y0, x1, y1)
         node = self.elem_branch.add(shape=simple_line, type="elem line")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -3862,7 +4014,9 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_text(command, channel, _, data=None, text=None, size=None, post=None,  **kwargs):
+    def element_text(
+        command, channel, _, data=None, text=None, size=None, post=None, **kwargs
+    ):
         if text is None:
             channel(_("No text specified"))
             return
@@ -3871,6 +4025,7 @@ def init_commands(kernel):
         )
         node.font_size = size
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -3892,7 +4047,6 @@ def init_commands(kernel):
             None,
             "elements",
         ),
-        hidden=True,
         output_type="elements",
     )
     def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
@@ -3917,8 +4071,267 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
-    @self.console_command("simplify", input_type=("elements", None), output_type="elements")
-    def simplify_path(command, channel, _,  data=None, post=None, **kwargs):
+    @self.console_argument("new_text", type=str, help=_("set new text contents"))
+    @self.console_command(
+        "text-edit",
+        help=_("set text object text to new text"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_text_edit(command, channel, _, data, new_text=None, **kwargs):
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        for e in data:
+            if hasattr(e, "lock") and e.lock:
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                continue
+            if e.type == "elem text":
+                old_text = e.text
+                e.text = new_text
+            elif hasattr(e, "mktext"):
+                old_text = e.mktext
+                e.mktext = new_text
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, e)
+            else:
+                continue
+            channel(f"Node {e} anchor changed from {old_text} to {new_text}")
+            e.altered()
+
+        return "elements", data
+
+    def calculate_text_bounds(data):
+        # A render operation will use the LaserRender class
+        # and will re-calculate the element bounds
+        make_raster = self.lookup("render-op/make_raster")
+        if not make_raster:
+            # No renderer is registered to perform render.
+            return
+        for e in data:
+            e.set_dirty_bounds()
+        # arbitrary bounds...
+        bounds = (0, 0, float(Length("5cm")), float(Length("5cm")))
+        image = make_raster(
+            data,
+            bounds=bounds,
+            width=500,
+            height=500,
+        )
+
+    @self.console_argument("prop", type=str, help=_("property to set"))
+    @self.console_argument("new_value", type=str, help=_("new property value"))
+    @self.console_command(
+        "property-set",
+        help=_("set property to new value"),
+        input_type=(
+            None,
+            "elements",
+        ),
+        output_type="elements",
+        all_arguments_required=True,
+    )
+    def element_property_set(
+        command, channel, _, data, post=None, prop=None, new_value=None, **kwargs
+    ):
+        """
+        Generic node manipulation routine, use with care
+        """
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No selected elements."))
+            return
+        if prop is None:
+            channel(_("You need to provide the property to set."))
+            return
+        classify_required = False
+        prop = prop.lower()
+        if len(new_value) == 0:
+            new_value = None
+        if prop in ("fill", "stroke") and self.classify_on_color:
+            classify_required = True
+        # Let's distinguish a couple of special cases...
+        prevalidated = False
+        if prop in ("fill", "stroke", "color"):
+            if new_value is not None:
+                if new_value.lower() == "none":
+                    # The text...
+                    new_value = None
+                try:
+                    new_value = Color(new_value)
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid color value: {value}").format(value=new_value))
+                    return
+        elif prop in ("x", "y", "width", "height", "stroke_width"):
+            if new_value is None:
+                channel(_("Invalid length: {value}").format(value=new_value))
+                return
+            else:
+                try:
+                    new_value = float(Length(new_value))
+                    prevalidated = True
+                except ValueError:
+                    channel(_("Invalid length: {value}").format(value=new_value))
+                    return
+
+        changed = []
+        text_elems = []
+
+        if prop == "lock":
+            if new_value.lower() in ("1", "true"):
+                setval = True
+            elif new_value.lower() in ("0", "false"):
+                setval = False
+            else:
+                try:
+                    setval = bool(new_value)
+                except ValueError:
+                    channel(
+                        _("Can't set '{val}' for {field}.").format(
+                            val=new_value, field=prop
+                        )
+                    )
+                    return
+            # print (f"Will set lock to {setval} ({new_value})")
+            for e in data:
+                if hasattr(e, "lock"):
+                    e.lock = setval
+                    changed.append(e)
+        else:
+            for e in data:
+                if prop in ("x", "y"):
+                    # We need to adjust the matrix
+                    if hasattr(e, "matrix"):
+                        dx = 0
+                        dy = 0
+                        otx = e.matrix.value_trans_x()
+                        oty = e.matrix.value_trans_y()
+                        if prop == "x":
+                            dx = new_value - otx
+                        else:
+                            dy = new_value - oty
+                        e.matrix.post_translate(dx, dy)
+                    else:
+                        channel(
+                            _("Element has no matrix to modify: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                elif prop in ("width", "height"):
+                    if new_value == 0:
+                        channel(_("Can't set {field} to zero").format(field=prop))
+                        continue
+                    if hasattr(e, "matrix") and hasattr(e, "bounds"):
+                        bb = e.bounds
+                        sx = 1.0
+                        sy = 1.0
+                        wd = bb[2] - bb[0]
+                        ht = bb[3] - bb[1]
+                        if prop == "width":
+                            sx = new_value / wd
+                        else:
+                            sy = new_value / ht
+                        e.matrix.post_scale(sx, sy)
+                    else:
+                        channel(
+                            _("Element has no matrix to modify: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                elif hasattr(e, prop):
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
+                        )
+                        continue
+                    try:
+                        oldval = getattr(e, prop)
+                        if prevalidated:
+                            setval = new_value
+                        else:
+                            if oldval is not None:
+                                proptype = type(oldval)
+                                setval = proptype(new_value)
+                                if isinstance(oldval, bool):
+                                    if new_value.lower() in ("1", "true"):
+                                        setval = True
+                                    elif new_value.lower() in ("0", "false"):
+                                        setval = False
+                            else:
+                                setval = new_value
+                        setattr(e, prop, setval)
+                    except TypeError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid type, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
+                    except ValueError:
+                        channel(
+                            _(
+                                "Can't set '{val}' for {field} (invalid value, old={oldval})."
+                            ).format(val=new_value, field=prop, oldval=oldval)
+                        )
+
+                    if "font" in prop:
+                        # We need to force a recalculation of the underlying wxfont property
+                        if hasattr(e, "wxfont"):
+                            delattr(e, "wxfont")
+                            text_elems.append(e)
+                    if prop in ("mktext", "mkfont"):
+                        for property_op in self.kernel.lookup_all("path_updater/.*"):
+                            property_op(self.kernel.root, e)
+                else:
+                    channel(
+                        _("Element {name} has no property {field}").format(
+                            name=str(e), field=prop
+                        )
+                    )
+                    continue
+                e.altered()
+                changed.append(e)
+        if len(changed) > 0:
+            if len(text_elems) > 0:
+                # Recalculate bounds
+                calculate_text_bounds(text_elems)
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_update", changed)
+            self.validate_selected_area()
+            if classify_required:
+                post.append(classify_new(changed))
+
+        return "elements", data
+
+    @self.console_command(
+        "recalc", input_type=("elements", None), output_type="elements"
+    )
+    def recalc(command, channel, _, data=None, post=None, **kwargs):
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return
+        for e in data:
+            e.set_dirty_bounds()
+        self.signal("refresh_scene", "Scene")
+        self.validate_selected_area()
+
+    @self.console_command(
+        "simplify", input_type=("elements", None), output_type="elements"
+    )
+    def simplify_path(command, channel, _, data=None, post=None, **kwargs):
 
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -3927,19 +4340,34 @@ def init_commands(kernel):
             channel("Requires a selected polygon")
             return None
         for node in data:
+            try:
+                sub_before = len(list(node.as_path().as_subpaths()))
+            except AttributeError:
+                sub_before = 0
+
             changed, before, after = self.simplify_node(node)
             if changed:
-                s = node.type
-                channel(f"Simplified {s} ({node.label}): from {before} to {after}")
                 node.altered()
+                try:
+                    sub_after = len(list(node.as_path().as_subpaths()))
+                except AttributeError:
+                    sub_after = 0
+                channel(
+                    f"Simplified {node.type} ({node.label}): from {before} to {after}"
+                )
+                channel(f"Subpaths before: {sub_before} to {sub_after}")
                 data_changed.append(node)
-        if len(data_changed)>0:
+            else:
+                channel(f"Could not simplify {node.type} ({node.label})")
+        if len(data_changed) > 0:
             self.signal("element_property_update", data_changed)
             self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_command("polycut", input_type=("elements", None), output_type="elements")
-    def create_pattern(command, channel, _,  data=None, post=None, **kwargs):
+    @self.console_command(
+        "polycut", input_type=("elements", None), output_type="elements"
+    )
+    def create_pattern(command, channel, _, data=None, post=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) <= 1:
@@ -3951,6 +4379,7 @@ def init_commands(kernel):
         data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
+
         vm = VectorMontonizer()
         outer_path = Polygon(
             [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
@@ -3960,7 +4389,7 @@ def init_commands(kernel):
         for sub_inner in inner_path.as_subpaths():
             sub_inner = Path(sub_inner)
             pts_sub = [sub_inner.point(i / 1000.0, error=1e4) for i in range(1001)]
-            for i in range(len(pts_sub)-1, -1, -1):
+            for i in range(len(pts_sub) - 1, -1, -1):
                 pt = pts_sub[i]
                 if not vm.is_point_inside(pt[0], pt[1]):
                     del pts_sub[i]
@@ -3968,6 +4397,7 @@ def init_commands(kernel):
         node = self.elem_branch.add(path=path, type="elem path")
         data.append(node)
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         node.focus()
@@ -3998,6 +4428,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4034,6 +4465,7 @@ def init_commands(kernel):
             return "elements", data
 
         from meerk40t.tools.geomstr import Geomstr
+
         geomstr = Geomstr()
         for node in data:
             try:
@@ -4145,6 +4577,7 @@ def init_commands(kernel):
 
         node = self.elem_branch.add(path=path, type="elem path")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
@@ -4191,47 +4624,53 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if stroke_width is None:
+            # Display data about stroke widths.
             channel("----------")
             channel(_("Stroke-Width Values:"))
-            i = 0
-            for e in self.elems():
+            for i, e in enumerate(self.elems()):
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
-                if not hasattr(e, "stroke_width"):
-                    pass
-                elif not hasattr(e, "stroke_scaled"):
+                try:
+                    stroke_width = e.stroke_width
+                except AttributeError:
+                    # Has no stroke width.
+                    continue
+                if not hasattr(e, "stroke_scaled"):
+                    # Can't have a scaled stroke.
                     channel(
                         _(
                             "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
                         ).format(
                             index=i,
                             typename="scaled-stroke",
-                            stroke_width=width_string(e.stroke_width),
+                            stroke_width=width_string(stroke_width),
                             scaled_stroke_width=width_string(None),
                             name=name,
                         )
                     )
+                    continue
+                factor = 1.0
+                if e.stroke_scaled:
+                    typename = "scaled-stroke"
+                    try:
+                        factor = e.stroke_factor
+                    except AttributeError:
+                        pass
                 else:
-                    if e.stroke_scaled:
-                        typename = "scaled-stroke"
-                        factor = sqrt(e.matrix.determinant)
-                    else:
-                        typename = "non-scaling-stroke"
-                        factor = 1.0
-                    implied_value = factor * e.stroke_width
-                    channel(
-                        _(
-                            "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
-                        ).format(
-                            index=i,
-                            typename=typename,
-                            stroke_width=width_string(e.stroke_width),
-                            scaled_stroke_width=width_string(implied_value),
-                            name=name,
-                        )
+                    typename = "non-scaling-stroke"
+                implied_value = factor * stroke_width
+                channel(
+                    _(
+                        "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+                    ).format(
+                        index=i,
+                        typename=typename,
+                        stroke_width=width_string(stroke_width),
+                        scaled_stroke_width=width_string(implied_value),
+                        name=name,
                     )
-                i += 1
+                )
             channel("----------")
             return
 
@@ -4242,9 +4681,16 @@ def init_commands(kernel):
             if hasattr(e, "lock") and e.lock:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
-            stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
-            e.stroke_width = stroke_width / stroke_scale
-            e.altered()
+            e.stroke_width = stroke_width
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
+            # No full modified required, we are effectively only adjusting
+            # the painted_bounds
+            e.translated(0, 0)
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -4269,6 +4715,8 @@ def init_commands(kernel):
                 continue
             e.stroke_scaled = command == "enable_stroke_scale"
             e.altered()
+        self.signal("element_property_update", data)
+        self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option("filter", "f", type=str, help="Filter indexes")
@@ -4559,7 +5007,9 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        elif color == "none":
+        self.set_start_time("full_load")
+        if color == "none":
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4567,8 +5017,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         else:
+            self.set_start_time("stroke")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4576,10 +5029,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.stroke = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("stroke")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4591,8 +5047,12 @@ def init_commands(kernel):
                 self.first_emphasized = old_first
             else:
                 self.first_emphasized = None
+            self.set_end_time("classify")
             # self.signal("rebuild_tree")
             self.signal("refresh_tree", apply)
+        else:
+            self.signal("element_property_update", apply)
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_option(
@@ -4655,6 +5115,7 @@ def init_commands(kernel):
             channel("----------")
             return "elements", data
         elif color == "none":
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4662,8 +5123,11 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = None
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         else:
+            self.set_start_time("fill")
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
@@ -4671,10 +5135,13 @@ def init_commands(kernel):
                     )
                     continue
                 e.fill = Color(color)
-                e.altered()
+                e.translated(0, 0)
+                # e.altered()
+            self.set_end_time("fill")
         if classify is None:
             classify = False
         if classify:
+            self.set_start_time("classify")
             self.remove_elements_from_operations(apply)
             self.classify(apply)
             if was_emphasized:
@@ -4687,7 +5154,11 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
             self.signal("refresh_tree", apply)
-        #                self.signal("rebuild_tree")
+            #                self.signal("rebuild_tree")
+            self.set_end_time("classify")
+        else:
+            self.signal("element_property_update", apply)
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument(
@@ -4799,30 +5270,27 @@ def init_commands(kernel):
         if bounds is None:
             channel(_("No selected elements."))
             return
-        rot = angle.as_degrees
 
         if cx is None:
             cx = (bounds[2] + bounds[0]) / 2.0
         if cy is None:
             cy = (bounds[3] + bounds[1]) / 2.0
-        matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
         images = []
         try:
             if not absolute:
                 for node in data:
                     if hasattr(node, "lock") and node.lock:
                         continue
-
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
             else:
                 for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     start_angle = node.matrix.rotation
-                    amount = rot - start_angle
-                    matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
-                    node.matrix *= matrix
+                    node.matrix.post_rotate(angle - start_angle, cx, cy)
                     node.modified()
                     if hasattr(node, "update"):
                         images.append(node)
@@ -4919,7 +5387,7 @@ def init_commands(kernel):
                     if hasattr(node, "lock") and node.lock:
                         continue
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=scale_x, sy=scale_y, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
             else:
@@ -4932,7 +5400,7 @@ def init_commands(kernel):
                     nsy = scale_y / osy
                     matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                     node.matrix *= matrix
-                    node.modified()
+                    node.scaled(sx=nsx, sy=nsy, ox=px, oy=py)
                     if hasattr(node, "update"):
                         images.append(node)
         except ValueError:
@@ -5060,6 +5528,7 @@ def init_commands(kernel):
             tx = 0
         if ty is None:
             ty = 0
+        changes = False
         matrix = Matrix.translate(tx, ty)
         try:
             if not absolute:
@@ -5072,7 +5541,8 @@ def init_commands(kernel):
                         continue
 
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(tx, ty)
+                    changes = True
             else:
                 for node in data:
                     if (
@@ -5087,9 +5557,12 @@ def init_commands(kernel):
                     nty = ty - oty
                     matrix = Matrix.translate(ntx, nty)
                     node.matrix *= matrix
-                    node.modified()
+                    node.translated(ntx, nty)
+                    changes = True
         except ValueError:
             raise CommandSyntaxError
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_argument("tx", type=self.length_x, help=_("New x value"))
@@ -5111,7 +5584,7 @@ def init_commands(kernel):
         if tx is None or ty is None:
             channel(_("You need to provide a new position."))
             return
-
+        changes = False
         dbounds = Node.union_bounds(data)
         for node in data:
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
@@ -5121,7 +5594,11 @@ def init_commands(kernel):
             dy = ty - dbounds[1]
             if dx != 0 or dy != 0:
                 node.matrix.post_translate(dx, dy)
-            node.modified()
+                # node.modified()
+                node.translated(dx, dy)
+                changes = True
+        if changes:
+            self.signal("refresh_scene", "Scene")
         return "elements", data
 
     @self.console_command(
@@ -5147,7 +5624,8 @@ def init_commands(kernel):
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     continue
                 node.matrix.post_translate(ntx, nty)
-                node.modified()
+                # node.modified()
+                node.translated(ntx, nty)
         except ValueError:
             raise CommandSyntaxError
         return "elements", data
@@ -5233,11 +5711,13 @@ def init_commands(kernel):
     def element_matrix(
         command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
     ):
+        if data is None:
+            data = list(self.elems(emphasized=True))
         if ty is None:
             channel("----------")
             channel(_("Matrix Values:"))
             i = 0
-            for node in self.elems():
+            for node in data:
                 name = str(node)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -5245,8 +5725,6 @@ def init_commands(kernel):
                 i += 1
             channel("----------")
             return
-        if data is None:
-            data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No selected elements."))
             return
@@ -5323,6 +5801,11 @@ def init_commands(kernel):
             if len(name) > 50:
                 name = name[:50] + "…"
             try:
+                e.stroke_reify()
+            except AttributeError:
+                pass
+
+            try:
                 e.shape.reify()
             except AttributeError as err:
                 try:
@@ -5330,6 +5813,10 @@ def init_commands(kernel):
                 except AttributeError:
                     channel(_("Couldn't reify - %s - %s") % (name, err))
                     return "elements", data
+            try:
+                e.stroke_width_zero()
+            except AttributeError:
+                pass
             e.altered()
             channel(_("reified - %s") % name)
         return "elements", data
@@ -5498,17 +5985,17 @@ def init_commands(kernel):
             data = [self._tree]
         if drop is None:
             raise CommandSyntaxError
-        try:
-            drag_node = self._tree
-            for n in drag.split("."):
-                drag_node = drag_node.children[int(n)]
-            drop_node = self._tree
-            for n in drop.split("."):
-                drop_node = drop_node.children[int(n)]
-            drop_node.drop(drag_node)
-        except (IndexError, AttributeError, ValueError):
-            raise CommandSyntaxError
-        self.signal("tree_changed")
+        with self.static("tree_dnd"):
+            try:
+                drag_node = self._tree
+                for n in drag.split("."):
+                    drag_node = drag_node.children[int(n)]
+                drop_node = self._tree
+                for n in drop.split("."):
+                    drop_node = drop_node.children[int(n)]
+                drop_node.drop(drag_node)
+            except (IndexError, AttributeError, ValueError):
+                raise CommandSyntaxError
         return "tree", data
 
     @self.console_argument("node", help="Node address for menu")
@@ -5762,9 +6249,9 @@ def init_commands(kernel):
         # print ("Want to delete %d" % entry)
         # for n in todelete[entry]:
         #     print ("Node to delete: %s" % n.type)
-        self.remove_nodes(todelete[entry])
-        self.validate_selected_area()
-        self.signal("tree_changed")
+        with self.static("delete"):
+            self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -5781,8 +6268,8 @@ def init_commands(kernel):
         """
         # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
-        self.remove_nodes(data)
-        self.signal("tree_changed")
+        with self.static("remove"):
+            self.remove_nodes(data)
         self.signal("refresh_scene", "Scene")
         return "tree", [self._tree]
 
@@ -5821,7 +6308,7 @@ def init_commands(kernel):
             return
         self.validate_selected_area()
         channel(f"Undo: {self.undo}")
-        self.signal("refresh_scene")
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5832,7 +6319,8 @@ def init_commands(kernel):
             channel("No redo available.")
             return
         channel(f"Redo: {self.undo}")
-        self.signal("refresh_scene")
+        self.validate_selected_area()
+        self.signal("refresh_scene", "Scene")
         self.signal("rebuild_tree")
 
     @self.console_command(
@@ -5878,10 +6366,19 @@ def init_commands(kernel):
         self._clipboard[destination] = []
         for e in data:
             copy_node = copy(e)
+            # Need to add stroke and fill, as copy will take the
+            # default values for these attributes
+            for optional in ("fill", "stroke"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+            hadoptional = False
             for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                 if hasattr(e, optional):
                     setattr(copy_node, optional, getattr(e, optional))
+                    hadoptional = True
             self._clipboard[destination].append(copy_node)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
@@ -5892,21 +6389,65 @@ def init_commands(kernel):
         input_type="clipboard",
         output_type="elements",
     )
-    def clipboard_paste(command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs):
+    def clipboard_paste(
+        command, channel, _, data=None, post=None, dx=None, dy=None, **kwargs
+    ):
         destination = self._clipboard_default
+        pasted = []
         try:
-            pasted = [copy(e) for e in self._clipboard[destination]]
+            for e in self._clipboard[destination]:
+                copy_node = copy(e)
+                # Need to add stroke and fill, as copy will take the
+                # default values for these attributes
+                for optional in ("fill", "stroke"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                hadoptional = False
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                        hadoptional = True
+                if hadoptional:
+                    for property_op in self.kernel.lookup_all("path_updater/.*"):
+                        property_op(self.kernel.root, copy_node)
+
+                pasted.append(copy_node)
         except (TypeError, KeyError):
             channel(_("Error: Clipboard Empty"))
             return
+        if len(pasted) == 0:
+            channel(_("Error: Clipboard Empty"))
+            return
+
+        if dx is not None:
+            dx = float(dx)
+        else:
+            dx = 0
+        if dy is not None:
+            dy = float(dy)
+        else:
+            dy = 0
         if dx != 0 or dy != 0:
-            matrix = Matrix.translate(float(dx), float(dy))
+            matrix = Matrix.translate(dx, dy)
             for node in pasted:
                 node.matrix *= matrix
-        group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        if len(pasted) > 1:
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
+        else:
+            group = self.elem_branch
+        target = []
         for p in pasted:
-            group.add_node(copy(p))
-        self.set_emphasis([group])
+            if hasattr(p, "label"):
+                s = "Copy" if p.label is None else f"{p.label} (copy)"
+                p.label = s
+            group.add_node(p)
+            target.append(p)
+        # Make sure we are selecting the right thing...
+        if len(pasted) > 1:
+            self.set_emphasis([group])
+        else:
+            self.set_emphasis(target)
+
         self.signal("refresh_tree", group)
         # Newly created! Classification needed?
         post.append(classify_new(pasted))
@@ -5928,6 +6469,8 @@ def init_commands(kernel):
                     setattr(copy_node, optional, getattr(e, optional))
             self._clipboard[destination].append(copy_node)
         self.remove_elements(data)
+        # Let the world know we have filled the clipboard
+        self.signal("icons")
         return "elements", self._clipboard[destination]
 
     @self.console_command(
@@ -6121,98 +6664,152 @@ def init_commands(kernel):
         center, radius = welzl_helper(P_copy, [], len(P_copy))
         return center, radius
 
-    def generate_hull_shape(method, data, resolution=None):
-        if resolution is None:
-            DETAIL = 500  # How coarse / fine shall a subpath be split
-        else:
-            DETAIL = int(resolution)
+    def generate_hull_shape_segment(data):
         pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    p = segment.end
+                    pts.append(p)
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                            (bounds[0], bounds[1]),
+                        ]
+                    )
+        return pts
+
+    def generate_hull_shape_quick(data):
+        if not data:
+            return []
         min_val = [float("inf"), float("inf")]
         max_val = [-float("inf"), -float("inf")]
         for node in data:
-            if method in ("hull", "segment", "circle"):
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
-                if path is not None:
-                    p = path.first_point
-                    pts += [(p.x, p.y)]
-                    for segment in path:
-                        p = segment.end
-                        pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            elif method == "complex":
-                try:
-                    path = node.as_path()
-                except AttributeError:
-                    path = None
-
-                if path is not None:
-
-                    from numpy import linspace
-
-                    for subpath in path.as_subpaths():
-                        psp = Path(subpath)
-                        p = psp.first_point
-                        pts += [(p.x, p.y)]
-                        positions = linspace(0, 1, num=DETAIL, endpoint=True)
-                        subj = psp.npoint(positions)
-                        # Not sure why we need to do that, its already rows x 2
-                        # subj.reshape((2, DETAIL))
-                        s = list(map(Point, subj))
-                        for p in s:
-                            pts += [(p.x, p.y)]
-                else:
-                    bounds = node.bounds
-                    pts += [
-                        (bounds[0], bounds[1]),
-                        (bounds[0], bounds[3]),
-                        (bounds[2], bounds[1]),
-                        (bounds[2], bounds[3]),
-                    ]
-            elif method == "quick":
-                bounds = node.bounds
+            bounds = node.bounds
+            if bounds:
                 min_val[0] = min(min_val[0], bounds[0])
                 min_val[1] = min(min_val[1], bounds[1])
                 max_val[0] = max(max_val[0], bounds[2])
                 max_val[1] = max(max_val[1], bounds[3])
-        if method == "quick":
-            if (
-                not isinf(min_val[0])
-                and not isinf(min_val[1])
-                and not isinf(max_val[0])
-                and not isinf(max_val[0])
-            ):
-                pts += [
-                    (min_val[0], min_val[1]),
-                    (min_val[0], max_val[1]),
-                    (max_val[0], min_val[1]),
-                    (max_val[0], max_val[1]),
-                ]
-        if method == "segment":
-            hull = [p for p in pts]
-        elif method == "circle":
-            mec_center, mec_radius = welzl(pts)
-            # So now we have a circle with (mec[0], mec[1]), and mec_radius
-            hull = []
-            RES = 100
-            for i in range(RES):
-                hull += [
-                    (
-                        mec_center[0] + mec_radius * cos(i / RES * tau),
-                        mec_center[1] + mec_radius * sin(i / RES * tau),
+        if isinf(min_val[0]):
+            return []
+        return [
+            (min_val[0], min_val[1]),
+            (max_val[0], min_val[1]),
+            (max_val[0], max_val[1]),
+            (min_val[0], max_val[1]),
+            (min_val[0], min_val[1]),
+        ]
+
+    def generate_hull_shape_hull(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+                p = path.first_point
+                pts.append(p)
+                for segment in path:
+                    pts.append(segment.end)
+                pts.append(p)
+            except AttributeError:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
                     )
-                ]
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_complex(data, resolution=None):
+        if resolution is None:
+            resolution = 500  # How coarse / fine shall a subpath be split
         else:
-            hull = [p for p in Point.convex_hull(pts)]
+            resolution = int(resolution)
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+
+                from numpy import linspace
+
+                for subpath in path.as_subpaths():
+                    psp = Path(subpath)
+                    p = psp.first_point
+                    pts.append(p)
+                    positions = linspace(0, 1, num=resolution, endpoint=True)
+                    subj = psp.npoint(positions)
+                    s = list(map(Point, subj))
+                    pts.extend(s)
+            except AttributeError:
+                bounds = node.bounds
+                if bounds:
+                    pts.extend(
+                        [
+                            (bounds[0], bounds[1]),
+                            (bounds[0], bounds[3]),
+                            (bounds[2], bounds[1]),
+                            (bounds[2], bounds[3]),
+                        ]
+                    )
+        hull = list(Point.convex_hull(pts))
+        if len(hull) != 0:
+            hull.append(hull[0])  # loop
+        return hull
+
+    def generate_hull_shape_circle(data):
+        pts = []
+        for node in data:
+            try:
+                path = node.as_path()
+            except AttributeError:
+                path = None
+            if path is not None:
+                p = path.first_point
+                pts += [p]
+                for segment in path:
+                    p = segment.end
+                    pts += [p]
+            else:
+                bounds = node.bounds
+                if bounds:
+                    pts += [
+                        (bounds[0], bounds[1]),
+                        (bounds[0], bounds[3]),
+                        (bounds[2], bounds[1]),
+                        (bounds[2], bounds[3]),
+                    ]
+
+        mec_center, mec_radius = welzl(pts)
+
+        # So now we have a circle with (mec[0], mec[1]), and mec_radius
+        hull = []
+        RES = 100
+        for i in range(RES):
+            hull += [
+                (
+                    mec_center[0] + mec_radius * cos(i / RES * tau),
+                    mec_center[1] + mec_radius * sin(i / RES * tau),
+                )
+            ]
         if len(hull) != 0:
             hull.append(hull[0])  # loop
         return hull
@@ -6222,14 +6819,26 @@ def init_commands(kernel):
         help=_("Method to use (one of quick, hull, complex, segment, circle)"),
     )
     @self.console_argument("resolution")
-    @self.console_option("start", "s", type=int, help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"))
+    @self.console_option(
+        "start",
+        "s",
+        type=int,
+        help=_("0=immediate, 1=User interaction, 2=wait for 5 seconds"),
+    )
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
         input_type=("elements", "shapes", None),
     )
     def trace_trace_spooler(
-        command, channel, _, method=None, resolution=None, start=None, data=None, **kwargs
+        command,
+        channel,
+        _,
+        method=None,
+        resolution=None,
+        start=None,
+        data=None,
+        **kwargs,
     ):
         if method is None:
             method = "quick"
@@ -6248,7 +6857,18 @@ def init_commands(kernel):
         if len(data) == 0:
             channel(_("No elements bounds to trace"))
             return
-        hull = generate_hull_shape(method, data, resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if start is None:
             # Lets take system default
             start = self.trace_start_method
@@ -6265,10 +6885,10 @@ def init_commands(kernel):
                     pass
                 elif startmethod == 1:
                     # Dialog
-                    yield ('console', 'interrupt "Trace is about to start"')
+                    yield ("console", 'interrupt "Trace is about to start"')
                 elif startmethod == 2:
                     # Wait for some seconds
-                    yield ('wait', 5000)
+                    yield ("wait", 5000)
 
                 yield "wait_finish"
                 yield "rapid_mode"
@@ -6301,7 +6921,14 @@ def init_commands(kernel):
         output_type="elements",
     )
     def trace_trace_generator(
-        command, channel, _, method=None, resolution=None, data=None, post=None, **kwargs
+        command,
+        channel,
+        _,
+        method=None,
+        resolution=None,
+        data=None,
+        post=None,
+        **kwargs,
     ):
         if method is None:
             method = "quick"
@@ -6316,7 +6943,18 @@ def init_commands(kernel):
 
         if data is None:
             data = list(self.elems(emphasized=True))
-        hull = generate_hull_shape(method, data, resolution=resolution)
+        if method == "segment":
+            hull = generate_hull_shape_segment(data)
+        elif method == "quick":
+            hull = generate_hull_shape_quick(data)
+        elif method == "hull":
+            hull = generate_hull_shape_hull(data)
+        elif method == "complex":
+            hull = generate_hull_shape_complex(data, resolution)
+        elif method == "circle":
+            hull = generate_hull_shape_circle(data)
+        else:
+            raise ValueError
         if len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return
@@ -6326,6 +6964,7 @@ def init_commands(kernel):
             return "elements", data
         node = self.elem_branch.add(shape=shape, type="elem polyline")
         node.stroke = self.default_stroke
+        node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])

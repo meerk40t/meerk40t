@@ -2,11 +2,12 @@ from glob import glob
 from os.path import exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.units import Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
 from meerk40t.tools.jhfparser import JhfFont
 from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
+from meerk40t.tools.ttfparser import TrueTypeFont
 
 
 class FontPath:
@@ -22,6 +23,15 @@ class FontPath:
     def line(self, x0, y0, x1, y1):
         self.path.line((x1, -y1))
 
+    def quad(self, x0, y0, x1, y1, x2, y2):
+        self.path.quad((x1, -y1), (x2, -y2))
+
+    def cubic(self, x0, y0, x1, y1, x2, y2, x3, y3):
+        self.path.cubic((x1, -y1), (x2, -y2), (x3, -y3))
+
+    def close(self):
+        self.path.closed()
+
     def arc(self, x0, y0, cx, cy, x1, y1):
         arc = Arc(start=(x0, -y0), control=(cx, -cy), end=(x1, -y1))
         self.path += arc
@@ -31,6 +41,7 @@ def fonts_registered():
     registered_fonts = {
         "shx": ("Autocad", ShxFont),
         "jhf": ("Hershey", JhfFont),
+        "ttf": ("TrueType", TrueTypeFont),
     }
     return registered_fonts
 
@@ -119,7 +130,19 @@ def update_linetext(context, node, newtext):
     horizontal = True
     mytext = context.elements.wordlist_translate(newtext)
     cfont.render(path, mytext, horizontal, float(fontsize))
+    olda = node.path.transform.a
+    oldb = node.path.transform.b
+    oldc = node.path.transform.c
+    oldd = node.path.transform.d
+    olde = node.path.transform.e
+    oldf = node.path.transform.f
     node.path = path.path
+    node.path.transform.a = olda
+    node.path.transform.b = oldb
+    node.path.transform.c = oldc
+    node.path.transform.d = oldd
+    node.path.transform.e = olde
+    node.path.transform.f = oldf
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
 
@@ -191,14 +214,15 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
 
     path_node = PathNode(
         path=path.path,
-        matrix=Matrix.translate(x, y),
         stroke=Color("black"),
     )
+    path_node.matrix.post_translate(x, y)
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mktext = text
     path_node.mkcoordx = x
     path_node.mkcoordy = y
+    path_node.stroke_width = UNITS_PER_PIXEL
 
     return path_node
 

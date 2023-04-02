@@ -17,7 +17,7 @@ class PointNode(Node):
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        super(PointNode, self).__init__(type="elem point", **kwargs)
+        super().__init__(type="elem point", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
 
     def __copy__(self):
@@ -40,6 +40,9 @@ class PointNode(Node):
     def preprocess(self, context, matrix, plan):
         self.matrix *= matrix
         self.set_dirty_bounds()
+        if not self.matrix.is_identity():
+            self.point = matrix.point_in_matrix_space(self.point)
+            self.matrix.reset()
 
     def bbox(self, transformed=True, with_stroke=False):
         if self.point is None:
@@ -48,7 +51,7 @@ class PointNode(Node):
         return p[0], p[1], p[0], p[1]
 
     def default_map(self, default_map=None):
-        default_map = super(PointNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Point"
         if self.point is not None:
             default_map["x"] = self.point[0]

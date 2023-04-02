@@ -1,3 +1,7 @@
+"""
+This modeu
+"""
+
 import ast
 import gzip
 import math
@@ -21,7 +25,6 @@ from ..svgelements import (
     SVG_ATTR_FONT_STRETCH,
     SVG_ATTR_FONT_STYLE,
     SVG_ATTR_FONT_VARIANT,
-    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_POINTS,
@@ -70,21 +73,18 @@ from ..svgelements import (
     Color,
     Ellipse,
     Group,
-    Line,
     Matrix,
-    Move,
     Path,
     Point,
     Polygon,
     Polyline,
     Rect,
-    Shape,
     SimpleLine,
     SVGImage,
     SVGText,
     Use,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -158,19 +158,22 @@ class SVGWriter:
     @staticmethod
     def save_types():
         yield "Scalable Vector Graphics", "svg", "image/svg+xml", "default"
+        yield "SVG-Plain (no extensions)", "svg", "image/svg+xml", "plain"
         yield "SVG-Compressed", "svgz", "image/svg+xml", "compressed"
 
     @staticmethod
     def save(context, f, version="default"):
+        # print (f"Version was set to '{version}'")
         root = Element(SVG_NAME_TAG)
         root.set(SVG_ATTR_VERSION, SVG_VALUE_VERSION)
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
-        root.set(
-            "xmlns:" + MEERK40T_XMLS_ID,
-            MEERK40T_NAMESPACE,
-        )
+        if version != "plain":
+            root.set(
+                "xmlns:" + MEERK40T_XMLS_ID,
+                MEERK40T_NAMESPACE,
+            )
         scene_width = context.device.length_width
         scene_height = context.device.length_height
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
@@ -198,13 +201,13 @@ class SVGWriter:
                 "xmlns:inkscape",
                 "http://www.inkscape.org/namespaces/inkscape",
             )
+        if version != "plain":
+            # If there is a note set then we save the note with the project.
+            if elements.note is not None:
+                subelement = SubElement(root, "note")
+                subelement.set(SVG_TAG_TEXT, elements.note)
 
-        # If there is a note set then we save the note with the project.
-        if elements.note is not None:
-            subelement = SubElement(root, "note")
-            subelement.set(SVG_TAG_TEXT, elements.note)
-
-        SVGWriter._write_tree(root, elements._tree)
+        SVGWriter._write_tree(root, elements._tree, version)
 
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
@@ -213,17 +216,18 @@ class SVGWriter:
         tree.write(f)
 
     @staticmethod
-    def _write_tree(xml_tree, node_tree):
+    def _write_tree(xml_tree, node_tree, version):
+        # print (f"Write_tree with {version}")
         for node in node_tree.children:
-            if node.type == "branch ops":
-                SVGWriter._write_operations(xml_tree, node)
-            elif node.type == "branch elems":
-                SVGWriter._write_elements(xml_tree, node)
+            if version != "plain" and node.type == "branch ops":
+                SVGWriter._write_operations(xml_tree, node, version)
+            if node.type == "branch elems":
+                SVGWriter._write_elements(xml_tree, node, version)
             elif node.type == "branch reg":
-                SVGWriter._write_regmarks(xml_tree, node)
+                SVGWriter._write_regmarks(xml_tree, node, version)
 
     @staticmethod
-    def _write_elements(xml_tree, elem_tree):
+    def _write_elements(xml_tree, elem_tree, version):
         """
         Write the elements branch part of the tree to disk.
 
@@ -231,6 +235,7 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
+
         def single_file_node():
             # do we have more than one element on the top level hierarchy?
             # If no then return True
@@ -389,24 +394,25 @@ class SVGWriter:
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                 if hasattr(c, "label") and c.label is not None and c.label != "":
                     group_element.set("inkscape:label", c.label)
-                SVGWriter._write_elements(group_element, c)
+                SVGWriter._write_elements(group_element, c, version)
                 continue
             elif c.type == "file":
                 # This is a structural group node of elements. Recurse call to write values.
                 # is this the only file node? If yes then no need to generate an additional group
                 if single_file_node():
-                    SVGWriter._write_elements(xml_tree, c)
+                    SVGWriter._write_elements(xml_tree, c, version)
                 else:
                     group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                     if hasattr(c, "name") and c.name is not None and c.name != "":
                         group_element.set("inkscape:label", c.name)
-                    SVGWriter._write_elements(group_element, c)
+                    SVGWriter._write_elements(group_element, c, version)
                 continue
             else:
-                # This is a non-standard element. Save custom.
-                subelement = SubElement(xml_tree, "element")
-                SVGWriter._write_custom(subelement, c)
-                continue
+                if version != "plain":
+                    # This is a non-standard element. Save custom.
+                    subelement = SubElement(xml_tree, "element")
+                    SVGWriter._write_custom(subelement, c)
+                    continue
 
             ###############
             # GENERIC SAVING STANDARD ELEMENT
@@ -468,24 +474,19 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = str(c.stroke_width)  # Natively sized
-
-                    # Note this is the reversed scaling in `implied_stroke_width`
-                    # stroke_scale = (
-                    #     math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
-                    # )
-                    # stroke_width = (
-                    #     Length(
-                    #         amount=c.stroke_width * stroke_scale,
-                    #         digits=6,
-                    #         preferred_units="px",
-                    #     ).preferred_length
-                    #     if c.stroke_width is not None
-                    #     else SVG_VALUE_NONE
-                    # )
+                    factor = 1.0
+                    try:
+                        if c.stroke_scaled:
+                            factor = c.stroke_factor
+                    except AttributeError:
+                        pass
+                    if c.matrix.determinant == 0:
+                        c_m_d = 1
+                    else:
+                        c_m_d = math.sqrt(abs(c.matrix.determinant))
+                    stroke_width = str(factor * c.stroke_width / c_m_d)
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-                except AttributeError as Err:
-                    # print (f"Shit happened when trying to set stroke_width: {Err}")
+                except AttributeError:
                     pass
 
             ###############
@@ -510,7 +511,7 @@ class SVGWriter:
             subelement.set(SVG_ATTR_ID, str(c.id))
 
     @staticmethod
-    def _write_operations(xml_tree, op_tree):
+    def _write_operations(xml_tree, op_tree, version):
         """
         Write the operations branch part of the tree to disk.
 
@@ -519,15 +520,19 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            SVGWriter._write_operation(xml_tree, c)
+            if c.type.startswith("util"):
+                subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
+                SVGWriter._write_custom(subelement, c)
+            else:
+                SVGWriter._write_operation(xml_tree, c)
 
     @staticmethod
-    def _write_regmarks(xml_tree, reg_tree):
+    def _write_regmarks(xml_tree, reg_tree, version):
         if len(reg_tree.children):
             regmark = SubElement(xml_tree, SVG_TAG_GROUP)
             regmark.set("id", "regmarks")
             regmark.set("visibility", "hidden")
-            SVGWriter._write_elements(regmark, reg_tree)
+            SVGWriter._write_elements(regmark, reg_tree, version)
 
     @staticmethod
     def _write_operation(xml_tree, node):
@@ -548,6 +553,10 @@ class SVGWriter:
             for key, value in node.settings.items():
                 if not key:
                     # If key is None, do not save.
+                    continue
+                if key.startswith("_"):
+                    continue
+                if value is None:
                     continue
                 if key in ("references", "tag", "type"):
                     # References key from previous loaded version (filter out, rebuild)
@@ -614,6 +623,18 @@ class SVGProcessor:
         self.pathname = None
         self.regmark = None
 
+        # Setting this is bringing as much benefit as anticipated
+        # Both the time to load the file (unexpectedly) as well as the time
+        # for the first emphasis when all the nonpopulated bounding
+        # boxes will be calculated are benefitting from this precalculation:
+        # (All values as average over three consecutive loads)
+        #                    |           Load             |       First Select
+        # File               |   Old  | Precalc | Speedup |  Old   | Precalc | Speedup
+        # Star Wars Calendar |  10,3  |   4,8   |  115%   |  3,4   |   1,0   | 243%
+        # Element Classific  |   1,7  |   1,1   |   59%   |  0,6   |   0,4   |  54%
+        # Egyptian Bark      |  72,1  |  43,9   |   64%   | 34,6   |  20,1   |  72%
+        self.precalc_bbox = True
+
     def process(self, svg, pathname):
         self.pathname = pathname
         context_node = self.elements.get(type="branch elems")
@@ -636,7 +657,7 @@ class SVGProcessor:
                         if e.id == ref:
                             op.add_reference(e)
 
-        if self.requires_classification:
+        if self.requires_classification and self.elements.classify_new:
             self.elements.classify(self.element_list)
 
     def check_for_mk_path_attributes(self, node, element):
@@ -711,8 +732,20 @@ class SVGProcessor:
         return False, None
 
     def parse(self, element, context_node, e_list, uselabel=None):
+        def is_child(candidate, parent_node):
+            if candidate is None:
+                return False
+            if candidate is parent_node:
+                return True
+            if candidate.parent is None:
+                return False
+            return is_child(candidate.parent, parent_node)
+
         if element.values.get("visibility") == "hidden":
-            context_node = self.regmark
+            # This does not allow substructures...
+            # Are we already underneath regmark?
+            if not is_child(context_node, self.regmark):
+                context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
@@ -818,6 +851,27 @@ class SVGProcessor:
             )
             self.check_for_line_attributes(node, element)
             self.check_for_fill_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                if element.transform.is_identity():
+                    points = element.points
+                else:
+                    points = list(
+                        map(element.transform.point_in_matrix_space, element.points)
+                    )
+                xmin = min(p.x for p in points if p is not None)
+                ymin = min(p.y for p in points if p is not None)
+                xmax = max(p.x for p in points if p is not None)
+                ymax = max(p.y for p in points if p is not None)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, (Circle, Ellipse)):
             if element.is_degenerate():
@@ -837,6 +891,29 @@ class SVGProcessor:
                 shape=element, type="elem rect", id=ident, label=_label, lock=_lock
             )
             self.check_for_line_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                points = (
+                    Point(element.x, element.y),
+                    Point(element.x + element.width, element.y),
+                    Point(element.x + element.width, element.y + element.height),
+                    Point(element.x, element.y + element.height),
+                )
+                if not element.transform.is_identity():
+                    points = list(map(element.transform.point_in_matrix_space, points))
+                xmin = min(p.x for p in points)
+                ymin = min(p.y for p in points)
+                xmax = max(p.x for p in points)
+                ymax = max(p.y for p in points)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SimpleLine):
             if element.is_degenerate():
@@ -845,6 +922,27 @@ class SVGProcessor:
                 shape=element, type="elem line", id=ident, label=_label, lock=_lock
             )
             self.check_for_line_attributes(node, element)
+            if self.precalc_bbox:
+                # bounds will be done here, paintbounds wont...
+                points = (
+                    Point(element.x1, element.y1),
+                    Point(element.x2, element.y2),
+                )
+                if not element.transform.is_identity():
+                    points = list(map(element.transform.point_in_matrix_space, points))
+                xmin = min(p.x for p in points)
+                ymin = min(p.y for p in points)
+                xmax = max(p.x for p in points)
+                ymax = max(p.y for p in points)
+                node._bounds = [
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                ]
+                node._bounds_dirty = False
+                node.revalidate_points()
+                node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
@@ -943,10 +1041,12 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, Group):
-            if _label == "regmarks":
+            if _label == "regmarks" or ident == "regmarks":
+                # We don't need a top-level group here, the regmarks node is a kind of a group...
                 context_node = self.regmark
                 e_list = self.regmark_list
-            context_node = context_node.add(type="group", id=ident, label=_label)
+            else:
+                context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
@@ -1068,13 +1168,16 @@ class SVGLoader:
             else:
                 width = None
                 height = None
+            # The color attribute of SVG.parse decides which default color
+            # a stroke / fill will get if the attribute "currentColor" is
+            # set - we opt for "black"
             svg = SVG.parse(
                 source=source,
                 reify=False,
                 width=width,
                 height=height,
                 ppi=ppi,
-                color="none",
+                color="black",
                 transform=f"scale({scale_factor})",
             )
         except ParseError as e:

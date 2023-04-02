@@ -6,11 +6,7 @@ from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import (
-    Color,
-    Path,
-    Polygon,
-)
+from meerk40t.svgelements import Color, Path, Polygon
 
 
 class CutOpNode(Node, Parameters):
@@ -53,6 +49,10 @@ class CutOpNode(Node, Parameters):
         ]
         # Is this op out of useful bounds?
         self.dangerous = False
+        if label is None:
+            self.label = "Cut"
+        else:
+            self.label = label
 
     def __repr__(self):
         return "CutOpNode()"
@@ -69,7 +69,7 @@ class CutOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(CutOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Cut"
         default_map["speed"] = "default"
         default_map["power"] = "default"
@@ -280,8 +280,7 @@ class CutOpNode(Node, Parameters):
             if node.type == "reference":
                 node = node.node
             if node.type == "elem image":
-                object_path = node.image
-                box = object_path.bbox()
+                box = node.bbox()
                 path = Path(
                     Polygon(
                         (box[0], box[1]),

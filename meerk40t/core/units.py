@@ -1,3 +1,18 @@
+"""
+Device Specific Unit Conversion Objects
+
+This defines a Viewport which all .device services are expected to implement. This provides the core functionality for
+establishing the scene and mapping points from scene locations to device locations. This also provides functionality
+for converting different length or angle units into other length or angle units.
+
+The fundamental unit used for all the elements objects is that 1 inch is equal to 65535 native units called a Tat for
+Tiger and Tatarize. This is basically a solid middle ground for providing significant rendering detail while not
+overflowing the buffer in linux which starts react poorly for values greater than 16,777,216 (2^24). This should provide
+enough detail for even the smallest lensed galvo laser while also allowing us to define objects as large as a football
+stadium.
+"""
+
+
 import re
 from copy import copy
 from math import tau
@@ -51,15 +66,6 @@ UNITS_MILS = 3
 UNITS_INCH = 4
 UNITS_PERCENT = 100
 
-"""
-Device Specific Unit Conversion Objects
-
-This should exist on any device located at .length accepting coordinate and axis. This is callable with any str length
-and should convert the given length relative to the viewport provided by the native values of the device into
-nanometers.
-"""
-
-
 class ViewPort:
     """
     The width and height are of the viewport are stored in MK native units (1/65535) in.
@@ -89,6 +95,11 @@ class ViewPort:
         show_origin_y=None,
         show_flip_x=None,
         show_flip_y=None,
+        rotary_active=False,
+        rotary_scale_x=1.0,
+        rotary_scale_y=1.0,
+        rotary_flip_x=False,
+        rotary_flip_y=False,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -107,6 +118,11 @@ class ViewPort:
         self.native_scale_y = native_scale_y
         self.flip_x = flip_x
         self.flip_y = flip_y
+        self.rotary_active = rotary_active
+        self.rotary_flip_x = rotary_flip_x
+        self.rotary_flip_y = rotary_flip_y
+        self.rotary_scale_x = rotary_scale_x
+        self.rotary_scale_y = rotary_scale_y
         self.swap_xy = swap_xy
         if show_origin_x is None:
             show_origin_x = origin_x
@@ -282,6 +298,10 @@ class ViewPort:
             point = self.show_to_scene_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
+    def device_position(self, x, y):
+        m = self.scene_to_device_matrix()
+        return m.point_in_matrix_space((x, y))
+
     def _calculate_matrices(self):
         """
         Calculate the matrices between the scene and device units.
@@ -355,14 +375,25 @@ class ViewPort:
         """
         sx = self.user_scale_x * self.native_scale_x
         sy = self.user_scale_y * self.native_scale_y
+        if self.rotary_active:
+            sx *= self.rotary_scale_x
+            sy *= self.rotary_scale_y
         dx = self.unit_width * self.origin_x
         dy = self.unit_height * self.origin_y
         ops = []
         if sx != 1.0 or sy != 1.0:
-            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+            try:
+                ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+            except ZeroDivisionError:
+                pass
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
+        if self.rotary_active and self.rotary_flip_y:
+            ops.append("scale(1.0, -1.0)")
+
         if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self.rotary_active and self.rotary_flip_x:
             ops.append("scale(-1.0, 1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
@@ -521,105 +552,6 @@ class ViewPort:
         return float(Length(self.height))
 
     @staticmethod
-    def viewbox_transform(
-        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
-    ):
-        """
-        SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
-        With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
-
-        It creates transform commands equal to that viewport expected.
-
-        Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
-        Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
-        respectively.
-
-        Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
-        Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
-        or if meetOrSlice is missing from this value.
-
-        @param e_x: element_x value
-        @param e_y: element_y value
-        @param e_width: element_width value
-        @param e_height: element_height value
-        @param vb_x: viewbox_x value
-        @param vb_y: viewbox_y value
-        @param vb_width: viewbox_width value
-        @param vb_height: viewbox_height value
-        @param aspect: preserve aspect ratio value
-        @return: string of the SVG transform commands to account for the viewbox.
-        """
-        if (
-            e_x is None
-            or e_y is None
-            or e_width is None
-            or e_height is None
-            or vb_x is None
-            or vb_y is None
-            or vb_width is None
-            or vb_height is None
-        ):
-            return ""
-        if aspect is not None:
-            aspect_slice = aspect.split(" ")
-            try:
-                align = aspect_slice[0]
-            except IndexError:
-                align = "xMidyMid"
-            try:
-                meet_or_slice = aspect_slice[1]
-            except IndexError:
-                meet_or_slice = "meet"
-        else:
-            align = "xMidyMid"
-            meet_or_slice = "meet"
-        # Initialize scale-x to e-width/vb-width.
-        scale_x = e_width / vb_width
-        # Initialize scale-y to e-height/vb-height.
-        scale_y = e_height / vb_height
-
-        # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
-        if align != "none" and meet_or_slice == "meet":
-            scale_x = scale_y = min(scale_x, scale_y)
-        # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
-        elif align != "none" and meet_or_slice == "slice":
-            scale_x = scale_y = max(scale_x, scale_y)
-        # Initialize translate-x to e-x - (vb-x * scale-x).
-        translate_x = e_x - (vb_x * scale_x)
-        # Initialize translate-y to e-y - (vb-y * scale-y)
-        translate_y = e_y - (vb_y * scale_y)
-        # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
-        align = align.lower()
-        if "xmid" in align:
-            translate_x += (e_width - vb_width * scale_x) / 2.0
-        # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
-        if "xmax" in align:
-            translate_x += e_width - vb_width * scale_x
-        # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
-        if "ymid" in align:
-            translate_y += (e_height - vb_height * scale_y) / 2.0
-        # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
-        if "ymax" in align:
-            translate_y += e_height - vb_height * scale_y
-        # The transform applied to content contained by the element is given by:
-        # translate(translate-x, translate-y) scale(scale-x, scale-y)
-        if isinstance(scale_x, Length) or isinstance(scale_y, Length):
-            raise ValueError
-        if translate_x == 0 and translate_y == 0:
-            if scale_x == 1 and scale_y == 1:
-                return ""  # Nothing happens.
-            else:
-                return f"scale({scale_x:.12f}, {scale_y:.12f})"
-        else:
-            if scale_x == 1 and scale_y == 1:
-                return f"translate({translate_x:.12f}, {translate_y:.12f})"
-            else:
-                return (
-                    f"translate({translate_x:.12f}, {translate_y:.12f}) "
-                    f"scale({scale_x:.12f}, {scale_y:.12f})"
-                )
-
-    @staticmethod
     def conversion(units, amount=1):
         return Length(f"{amount}{units}").preferred
 
@@ -640,7 +572,7 @@ ACCEPTED_UNITS = (
 )
 
 
-class Length(object):
+class Length:
     """
     Amounts are converted to UNITS.
     Initial unit is saved as preferred units.
@@ -987,7 +919,7 @@ class Length(object):
         return 100.00 * self._amount / Length(relative_length).units
 
 
-class Angle(object):
+class Angle:
     """
     Angle conversion and math, stores angle as a float in radians and
     converts to other forms of angle. Failures to parse raise ValueError.
@@ -1097,6 +1029,106 @@ class Angle(object):
 
     def is_orthogonal(self):
         return (self.angle % (tau / 4.0)) == 0
+
+
+
+def viewbox_transform(
+        e_x, e_y, e_width, e_height, vb_x, vb_y, vb_width, vb_height, aspect
+):
+    """
+    SVG 1.1 7.2, SVG 2.0 8.2 equivalent transform of an SVG viewport.
+    With regards to https://github.com/w3c/svgwg/issues/215 use 8.2 version.
+
+    It creates transform commands equal to that viewport expected.
+
+    Let e-x, e-y, e-width, e-height be the position and size of the element respectively.
+    Let vb-x, vb-y, vb-width, vb-height be the min-x, min-y, width and height values of the viewBox attribute
+    respectively.
+
+    Let align be align value of preserveAspectRatio, or 'xMidYMid' if preserveAspectRatio is not defined.
+    Let meetOrSlice be the meetOrSlice value of preserveAspectRatio, or 'meet' if preserveAspectRatio is not defined
+    or if meetOrSlice is missing from this value.
+
+    @param e_x: element_x value
+    @param e_y: element_y value
+    @param e_width: element_width value
+    @param e_height: element_height value
+    @param vb_x: viewbox_x value
+    @param vb_y: viewbox_y value
+    @param vb_width: viewbox_width value
+    @param vb_height: viewbox_height value
+    @param aspect: preserve aspect ratio value
+    @return: string of the SVG transform commands to account for the viewbox.
+    """
+    if (
+            e_x is None
+            or e_y is None
+            or e_width is None
+            or e_height is None
+            or vb_x is None
+            or vb_y is None
+            or vb_width is None
+            or vb_height is None
+    ):
+        return ""
+    if aspect is not None:
+        aspect_slice = aspect.split(" ")
+        try:
+            align = aspect_slice[0]
+        except IndexError:
+            align = "xMidyMid"
+        try:
+            meet_or_slice = aspect_slice[1]
+        except IndexError:
+            meet_or_slice = "meet"
+    else:
+        align = "xMidyMid"
+        meet_or_slice = "meet"
+    # Initialize scale-x to e-width/vb-width.
+    scale_x = e_width / vb_width
+    # Initialize scale-y to e-height/vb-height.
+    scale_y = e_height / vb_height
+
+    # If align is not 'none' and meetOrSlice is 'meet', set the larger of scale-x and scale-y to the smaller.
+    if align != "none" and meet_or_slice == "meet":
+        scale_x = scale_y = min(scale_x, scale_y)
+    # Otherwise, if align is not 'none' and meetOrSlice is 'slice', set the smaller of scale-x and scale-y to the larger
+    elif align != "none" and meet_or_slice == "slice":
+        scale_x = scale_y = max(scale_x, scale_y)
+    # Initialize translate-x to e-x - (vb-x * scale-x).
+    translate_x = e_x - (vb_x * scale_x)
+    # Initialize translate-y to e-y - (vb-y * scale-y)
+    translate_y = e_y - (vb_y * scale_y)
+    # If align contains 'xMid', add (e-width - vb-width * scale-x) / 2 to translate-x.
+    align = align.lower()
+    if "xmid" in align:
+        translate_x += (e_width - vb_width * scale_x) / 2.0
+    # If align contains 'xMax', add (e-width - vb-width * scale-x) to translate-x.
+    if "xmax" in align:
+        translate_x += e_width - vb_width * scale_x
+    # If align contains 'yMid', add (e-height - vb-height * scale-y) / 2 to translate-y.
+    if "ymid" in align:
+        translate_y += (e_height - vb_height * scale_y) / 2.0
+    # If align contains 'yMax', add (e-height - vb-height * scale-y) to translate-y.
+    if "ymax" in align:
+        translate_y += e_height - vb_height * scale_y
+    # The transform applied to content contained by the element is given by:
+    # translate(translate-x, translate-y) scale(scale-x, scale-y)
+    if isinstance(scale_x, Length) or isinstance(scale_y, Length):
+        raise ValueError
+    if translate_x == 0 and translate_y == 0:
+        if scale_x == 1 and scale_y == 1:
+            return ""  # Nothing happens.
+        else:
+            return f"scale({scale_x:.12f}, {scale_y:.12f})"
+    else:
+        if scale_x == 1 and scale_y == 1:
+            return f"translate({translate_x:.12f}, {translate_y:.12f})"
+        else:
+            return (
+                f"translate({translate_x:.12f}, {translate_y:.12f}) "
+                f"scale({scale_x:.12f}, {scale_y:.12f})"
+            )
 
 
 # TODO: Add in speed for units. mm/s in/s mm/minute.

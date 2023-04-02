@@ -7,8 +7,12 @@ from meerk40t.core.units import UNITS_PER_INCH
 
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, StaticBoxSizer
+from meerk40t.gui.propertypanels.attributes import (
+    IdPanel,
+    PositionSizePanel,
+    PreventChangePanel,
+)
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
@@ -239,7 +243,7 @@ class CropPanel(wx.Panel):
             self.slider_left.SetMin(0)
             self.slider_left.SetMax(value - 1 if constraint else self._width)
             if self._bounds[0] != self.slider_left.GetValue():
-                self.slider_left.SetValue(self._bounds[0])
+                self.slider_left.SetValue(int(self._bounds[0]))
                 dvalue = self._bounds[0]
                 if dvalue == 0:
                     self.text_left.SetValue("---")
@@ -250,7 +254,7 @@ class CropPanel(wx.Panel):
             self.slider_right.SetMin(value + 1 if constraint else 0)
             self.slider_right.SetMax(self._width)
             if self._bounds[2] != self.slider_right.GetValue():
-                self.slider_right.SetValue(self._bounds[2])
+                self.slider_right.SetValue(int(self._bounds[2]))
                 dvalue = self._width - self._bounds[2]
                 if dvalue == 0:
                     self.text_right.SetValue("---")
@@ -261,7 +265,7 @@ class CropPanel(wx.Panel):
             self.slider_top.SetMin(0)
             self.slider_top.SetMax(value - 1 if constraint else self._height)
             if self._bounds[1] != self.slider_top.GetValue():
-                self.slider_top.SetValue(self._bounds[1])
+                self.slider_top.SetValue(int(self._bounds[1]))
                 dvalue = self._bounds[1]
                 if dvalue == 0:
                     self.text_top.SetValue("---")
@@ -272,7 +276,7 @@ class CropPanel(wx.Panel):
             self.slider_bottom.SetMin(value + 1 if constraint else 0)
             self.slider_bottom.SetMax(self._height)
             if self._bounds[3] != self.slider_bottom.GetValue():
-                self.slider_bottom.SetValue(self._bounds[3])
+                self.slider_bottom.SetValue(int(self._bounds[3]))
                 dvalue = self._height - self._bounds[3]
                 if dvalue == 0:
                     self.text_bottom.SetValue("---")
@@ -291,7 +295,7 @@ class CropPanel(wx.Panel):
         # print(f"Set left to: {value}")
         self._bounds[0] = value
         if self.slider_left.GetValue() != value:
-            self.slider_left.SetValue(value)
+            self.slider_left.SetValue(int(value))
         if value == 0:
             self.text_left.SetValue("---")
         else:
@@ -315,7 +319,7 @@ class CropPanel(wx.Panel):
         # print(f"Set right to: {value}")
         self._bounds[2] = value
         if self.slider_right.GetValue() != value:
-            self.slider_right.SetValue(value)
+            self.slider_right.SetValue(int(value))
         dvalue = self._width - value
         if dvalue == 0:
             self.text_right.SetValue("---")
@@ -340,7 +344,7 @@ class CropPanel(wx.Panel):
         # print(f"Set top to: {value}")
         self._bounds[1] = value
         if self.slider_top.GetValue() != value:
-            self.slider_top.SetValue(value)
+            self.slider_top.SetValue(int(value))
         if value == 0:
             self.text_top.SetValue("---")
         else:
@@ -363,7 +367,7 @@ class CropPanel(wx.Panel):
     def cropbottom(self, value):
         self._bounds[3] = value
         if self.slider_bottom.GetValue() != value:
-            self.slider_bottom.SetValue(value)
+            self.slider_bottom.SetValue(int(value))
         # We need to adjust the boundaries of the top slider.
         self.set_slider_limits("t")
         if self.op is not None:
@@ -1022,9 +1026,13 @@ class ImagePropertyPanel(ScrolledPanel):
             style=wx.TE_PROCESS_ENTER,
             check="float",
             limited=True,
+            nonzero=True,
         )
         self.check_prevent_crop = wx.CheckBox(self, wx.ID_ANY, _("No final crop"))
 
+        self.panel_lock = PreventChangePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_xy = PositionSizePanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
@@ -1151,6 +1159,7 @@ class ImagePropertyPanel(ScrolledPanel):
             node = self.node
         self.panel_id.set_widgets(node)
         self.panel_xy.set_widgets(node)
+        self.panel_lock.set_widgets(node)
         self.panel_crop.set_widgets(node)
         self.node = node
         if node is None:
@@ -1242,6 +1251,7 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
 
+        sizer_main.Add(self.panel_lock, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)

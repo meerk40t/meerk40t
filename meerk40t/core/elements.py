@@ -1,10 +1,18 @@
+"""
+The elements module governs all the interactions with the various nodes, as well as dealing with tree information.
+This serves effectively as the datastructure that stores all information about any active project. This includes
+several smaller functional pieces like Penbox and Wordlists.
+"""
+
+
+import contextlib
 import os.path
-from os.path import realpath
+from time import time
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
+from meerk40t.kernel import ConsoleFunction, Service, Settings
 
-from ..svgelements import Color, SVGElement
+from ..svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -13,7 +21,7 @@ from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
 from .undos import Undo
-from .units import Length
+from .units import UNITS_PER_MIL, Length
 from .wordlist import Wordlist
 
 
@@ -222,30 +230,30 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "_90_Auto-Generation",
             },
-            {
-                "attr": "classify_auto_inherit",
-                "object": elements,
-                "default": True,
-                "type": bool,
-                "label": _("Autoinherit for empty operation"),
-                "tip": _(
-                    "If you drag and drop an element into an operation to assign it there,"
-                )
-                + "\n"
-                + _(
-                    "then the op can (if this option is ticked) inherit the color from the element"
-                )
-                + "\n"
-                + _(
-                    "and adopt not only the dragged element but all elements with the same color"
-                )
-                + "\n"
-                + _(
-                    "- provided no elements are assigned to it yet (ie works only for an empty op)!"
-                ),
-                "page": "Classification",
-                "section": "_30_GUI-Behaviour",
-            },
+            # {
+            #     "attr": "classify_auto_inherit",
+            #     "object": elements,
+            #     "default": True,
+            #     "type": bool,
+            #     "label": _("Autoinherit for empty operation"),
+            #     "tip": _(
+            #         "If you drag and drop an element into an operation to assign it there,"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "then the op can (if this option is ticked) inherit the color from the element"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "and adopt not only the dragged element but all elements with the same color"
+            #     )
+            #     + "\n"
+            #     + _(
+            #         "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+            #     ),
+            #     "page": "Classification",
+            #     "section": "_30_GUI-Behaviour",
+            # },
             {
                 "attr": "classify_on_color",
                 "object": elements,
@@ -331,7 +339,7 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.elements
 
             try:
-                elements.load(realpath(kernel.args.input.name))
+                elements.load(os.path.realpath(kernel.args.input.name))
             except BadFileError as e:
                 kernel._console_channel(_("File is Malformed") + ": " + str(e))
     elif lifecycle == "poststart":
@@ -339,7 +347,7 @@ def plugin(kernel, lifecycle=None):
             # output the file you have at this point.
             elements = kernel.elements
 
-            elements.save(realpath(kernel.args.output.name))
+            elements.save(os.path.realpath(kernel.args.output.name))
 
 
 def reversed_enumerate(collection: list):
@@ -381,15 +389,6 @@ OP_PRIORITIES = ["op dots", "op image", "op raster", "op engrave", "op cut", "op
 
 
 class Elemental(Service):
-    """
-    The elemental service is governs all the interactions with the various elements,
-    operations, and filenodes. Handling structure change and selection, emphasis, and
-    highlighting changes. The goal of this module is to make sure that the life cycle
-    of the elements is strictly enforced. For example, every element that is removed
-    must have had the .cache deleted. And anything selecting an element must propagate
-    that information out to inform other interested modules.
-    """
-
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
@@ -406,6 +405,8 @@ class Elemental(Service):
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
+        self.do_undo = True
+        self.suppress_updates = False
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -416,7 +417,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
-        self.setting(bool, "classify_auto_inherit", False)
+        # self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
@@ -438,18 +439,76 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and not self.operation_default_empty:
+        if len(ops) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
             self.undo.mark("op-loaded")  # Mark defaulted
         self._default_stroke = None
+        self._default_strokewidth = None
         self._default_fill = None
         self._first_emphasized = None
         self._align_mode = "default"
         self._align_boundaries = None
         self._align_group = False
         self._align_stack = []
+
+        self._timing_stack = {}
+
+    def set_start_time(self, key):
+        if key in self._timing_stack:
+            self._timing_stack[key][0] = time()
+        else:
+            self._timing_stack[key] = [time(), 0, 0]
+
+    def set_end_time(self, key, display=True, delete=False, message=None):
+        if key in self._timing_stack:
+            stime = self._timing_stack[key]
+            etime = time()
+            duration = etime - stime[0]
+            stime[0] = etime
+            stime[1] += duration
+            stime[2] += 1
+            if display:
+                if message is None:
+                    msg = ""
+                else:
+                    msg = " (" + message + ")"
+                output = self.kernel.channel("profiler", timestamp=True)
+                # print (f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, average={stime[1] / stime[2]:.2f} sec")
+                output(
+                    f"Duration for {key}: {duration:.2f} sec - calls: {stime[2]}, avg={stime[1] / stime[2]:.2f} sec{msg}"
+                )
+            if delete:
+                del self._timing_stack[key]
+
+    @contextlib.contextmanager
+    def static(self, source):
+        try:
+            self.stop_updates(source)
+            yield self
+        finally:
+            self.resume_updates(source)
+
+    @contextlib.contextmanager
+    def undofree(self):
+        try:
+            self.do_undo = False
+            yield self
+        finally:
+            self.do_undo = True
+
+    def stop_updates(self, source):
+        # print (f"Stop update called from {source}")
+        self.suppress_updates = True
+        self.signal("freeze_tree", True)
+
+    def resume_updates(self, source, force_an_update=True):
+        # print (f"Resume update called from {source}")
+        self.suppress_updates = False
+        self.signal("freeze_tree", False)
+        if force_an_update:
+            self.signal("tree_changed")
 
     @property
     def filename(self):
@@ -466,6 +525,18 @@ class Elemental(Service):
         return result
 
     @property
+    def default_strokewidth(self):
+        if self._default_strokewidth is not None:
+            return self._default_strokewidth
+        return 1000.0
+
+    @default_strokewidth.setter
+    def default_strokewidth(self, width):
+        if isinstance(width, str):
+            width = float(Length(width))
+        self._default_strokewidth = width
+
+    @property
     def default_stroke(self):
         # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
         if self._default_stroke is not None:
@@ -475,7 +546,7 @@ class Elemental(Service):
     @default_stroke.setter
     def default_stroke(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_stroke = color
 
     @property
@@ -485,7 +556,7 @@ class Elemental(Service):
     @default_fill.setter
     def default_fill(self, color):
         if isinstance(color, str):
-            color = Color(str)
+            color = Color(color)
         self._default_fill = color
 
     @property
@@ -513,6 +584,14 @@ class Elemental(Service):
         #         break
         #     pnode.targeted = True
         #     pnode = pnode.parent
+
+    def have_unassigned_elements(self):
+        emptyset = False
+        for node in self.elems():
+            if len(node._references) == 0 and node.type not in ("file", "group"):
+                emptyset = True
+                break
+        return emptyset
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -798,6 +877,118 @@ class Elemental(Service):
 
         return this_area, this_length
 
+    def condense_elements(self, data):
+        """
+        This routine looks at a given dataset and will condense
+        it in the sense that if all elements of a given hierarchy
+        (ie group or file) are in this set, then they will be
+        replaced and represented by this parent element
+        """
+
+        def remove_children_from_list(list_to_deal, parent_node):
+            for idx, node in enumerate(list_to_deal):
+                if node is None:
+                    continue
+                if node.parent is parent_node:
+                    list_to_deal[idx] = None
+                    if len(node.children) > 0:
+                        remove_children_from_list(list_to_deal, node)
+
+        align_data = [e for e in data]
+        needs_repetition = True
+        while needs_repetition:
+            # Will be set only if we add a parent, as the process needs then to be repeated
+            needs_repetition = False
+
+            data_to_align = []
+            # We need to iterate through all the elements
+            # to establish if they belong to a group,
+            # if all the elements in this group are in
+            # the dataset too, then we just take the group
+            # as a representative.
+            data_len = len(align_data)
+
+            for idx1, node_1 in enumerate(align_data):
+                if node_1 is None:
+                    # Has been dealt with already
+                    # print ("Eliminated node")
+                    continue
+                # Is this a group? Then we just take this node
+                # and remove all children nodes
+                if node_1.type in ("file", "group"):
+                    # print (f"Group node ({node_1.label}), eliminate children")
+                    remove_children_from_list(align_data, node_1)
+                    # No continue, as we still need to
+                    # assess the parent case
+
+                parent = node_1.parent
+                if parent is None:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, no parent")
+                    continue
+                if parent.type not in ("file", "group"):
+                    # That should not happen per se,
+                    # only for root objects which parent
+                    # is elem_branch
+                    # print (f"Adding {node_1.type}, parent was: {parent.type}")
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    continue
+                # How many children are contained?
+                candidates = len(parent.children)
+                identified = 0
+                if candidates > 0:
+                    # We only need to look to elements not yet dealt with,
+                    # but we start with the current index to include
+                    # node_1 in the count
+                    for idx2 in range(idx1, data_len, 1):
+                        node_2 = align_data[idx2]
+                        if node_2 is not None:
+                            if node_2.parent is parent:
+                                identified += 1
+                if identified == candidates:
+                    # All children of the parent object are contained
+                    # So we add the parent instead...
+                    data_to_align.append(parent)
+                    remove_children_from_list(align_data, parent)
+                    # print (f"Adding parent for {node_1.type}, all children inside")
+                    needs_repetition = True
+
+                else:
+                    data_to_align.append(node_1)
+                    align_data[idx1] = None
+                    # print (f"Adding {node_1.type}, not all children of parent {identified} vs {candidates}")
+            if needs_repetition:
+                # We copy the data and do it again....
+                # print ("Repetition required")
+                align_data = [e for e in data_to_align]
+        # One special case though: if we have selected all
+        # elements within a single group then we still deal
+        # with all children
+        while len(data_to_align) == 1:
+            node = data_to_align[0]
+            if node is not None and node.type in ("file", "group"):
+                data_to_align = [e for e in node.children]
+            else:
+                break
+        return data_to_align
+
+    def translate_node(self, node, dx, dy):
+        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            return
+        else:
+            if node.type in ("group", "file"):
+                for c in node.children:
+                    self.translate_node(c, dx, dy)
+                node.translated(dx, dy)
+            else:
+                try:
+                    node.matrix.post_translate(dx, dy)
+                    node.translated(dx, dy)
+                except AttributeError:
+                    pass
+
     def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
 
@@ -833,88 +1024,43 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
-        if as_group != 0:
-            individually = 2  # all elements as a total
-        else:
-            individually = 0
-            for n in data:
-                if n.type == "group":
-                    individually = 1
-                    break
+        data_to_align = self.condense_elements(data)
         # Selection boundaries
         boundary_points = []
-        for node in data:
-            boundary_points.append(node.bounds)
-        if not len(boundary_points):
+        for node in data_to_align:
+            if node.bounds is not None:
+                boundary_points.append(node.bounds)
+        if len(boundary_points) == 0:
             return
         left_edge = min([e[0] for e in boundary_points])
         top_edge = min([e[1] for e in boundary_points])
         right_edge = max([e[2] for e in boundary_points])
         bottom_edge = max([e[3] for e in boundary_points])
         if alignbounds is None:
+            # print ("Alignbounds were not set...")
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually in (0, 1):
-            groupmatrix = ""
+        if as_group == 0:
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
             # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
-            groupmatrix = f"translate({groupdx}, {groupdy})"
 
-        # Looping through all nodes with node.flat can provide
-        # multiple times a single node, as you may loop through
-        # files and groups nested into each other.
-        # To avoid this we create a temporary set which by definition
-        # can only contain unique members
-        if individually == 0:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(n.flat(emphasized=True, types=elem_nodes))
-        else:
-            s = set()
-            for n in data:
-                # print(f"Node to be resolved: {node.type}")
-                s = s.union(list([n]))
-        for q in s:
+        for q in data_to_align:
             # print(f"Node to be treated: {q.type}")
-            if individually in (0, 1):
+            if as_group == 0:
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
-                matrix = f"translate({dx}, {dy})"
-                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
-                matrix = groupmatrix
-            if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
-                continue
-            else:
-                if q.type in ("group", "file"):
-                    for c in q.flat(emphasized=True, types=elem_nodes):
-                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
-                            continue
-                        try:
-                            c.matrix.post_translate(dx, dy)
-                            c.modified()
-                        except AttributeError:
-                            pass
-                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
-                else:
-                    try:
-                        # q.matrix *= matrix
-                        q.matrix.post_translate(dx, dy)
-                        q.modified()
-                    except AttributeError:
-                        pass
-                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
-        self.signal("tree_changed")
+            self.translate_node(q, dx, dy)
+        self.signal("refresh_scene", "Scene")
 
     def wordlist_delta(self, orgtext, increase):
         newtext = self.mywordlist.wordlist_delta(orgtext, increase)
@@ -1005,7 +1151,10 @@ class Elemental(Service):
 
     def save_persistent_operations(self, name):
         settings = self.op_data
-        settings.clear_persistent(name)
+        subitems = list(settings.derivable(name))
+        for section in subitems:
+            settings.clear_persistent(section)
+        # settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
@@ -1041,6 +1190,10 @@ class Elemental(Service):
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
 
+    def prepare_undo(self):
+        if self.do_undo:
+            self.schedule(self._save_restore_job)
+
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
@@ -1050,19 +1203,37 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
+
+    def translated(self, node=None, dx=0, dy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.prepare_undo()
+
+    def scaled(self, node=None, sx=1, sy=1, ox=0, oy=0, *args):
+        # It's safer to just recompute the selection area
+        # as these listener routines will be called for every
+        # element that faces a .translated(dx, dy)
+        self._emphasized_bounds_dirty = True
+        self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
+        self.prepare_undo()
 
     def node_attached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def node_detached(self, node, **kwargs):
-        self.schedule(self._save_restore_job)
+        self.prepare_undo()
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -1071,41 +1242,41 @@ class Elemental(Service):
         self._tree.unlisten(listener)
 
     def load_default(self, performclassify=True):
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        with self.static("load default"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def load_default2(self, performclassify=True):
-        self.clear_operations()
-        self.op_branch.add(
-            type="op image",
-            color="black",
-            speed=140.0,
-            power=1000.0,
-            raster_step=3,
-        )
-        self.op_branch.add(type="op raster")
-        self.op_branch.add(type="op engrave")
-        self.op_branch.add(type="op engrave", color="blue")
-        self.op_branch.add(type="op engrave", color="green")
-        self.op_branch.add(type="op engrave", color="magenta")
-        self.op_branch.add(type="op engrave", color="cyan")
-        self.op_branch.add(type="op engrave", color="yellow")
-        self.op_branch.add(type="op cut")
-        if performclassify:
-            self.classify(list(self.elems()))
-        self.signal("tree_changed")
+        with self.static("load default 2"):
+            self.clear_operations()
+            self.op_branch.add(
+                type="op image",
+                color="black",
+                speed=140.0,
+                power=1000.0,
+                raster_step=3,
+            )
+            self.op_branch.add(type="op raster")
+            self.op_branch.add(type="op engrave")
+            self.op_branch.add(type="op engrave", color="blue")
+            self.op_branch.add(type="op engrave", color="green")
+            self.op_branch.add(type="op engrave", color="magenta")
+            self.op_branch.add(type="op engrave", color="cyan")
+            self.op_branch.add(type="op engrave", color="yellow")
+            self.op_branch.add(type="op cut")
+            if performclassify:
+                self.classify(list(self.elems()))
 
     def flat(self, **kwargs):
         yield from self._tree.flat(**kwargs)
@@ -1151,23 +1322,19 @@ class Elemental(Service):
 
     def elems(self, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=elem_nodes, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_nodes, **kwargs)
 
     def elems_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch elems")
-        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def regmarks(self, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(types=elem_nodes, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_nodes, **kwargs)
 
     def regmarks_nodes(self, depth=None, **kwargs):
         elements = self._tree.get(type="branch reg")
-        for item in elements.flat(types=elem_group_nodes, depth=depth, **kwargs):
-            yield item
+        yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
     def top_element(self, **kwargs):
         """
@@ -1263,9 +1430,9 @@ class Elemental(Service):
             self.classify(adding_elements)
         return items
 
-    def clear_operations(self):
+    def clear_operations(self, fast=False):
         operations = self._tree.get(type="branch ops")
-        operations.remove_all_children()
+        operations.remove_all_children(fast=fast)
         if hasattr(operations, "loop_continuous"):
             operations.loop_continuous = False
             operations.loop_enabled = False
@@ -1273,133 +1440,122 @@ class Elemental(Service):
             self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
-    def clear_elements(self):
+    def clear_elements(self, fast=False):
         elements = self._tree.get(type="branch elems")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
-    def clear_regmarks(self):
+    def clear_regmarks(self, fast=False):
         elements = self._tree.get(type="branch reg")
-        elements.remove_all_children()
+        elements.remove_all_children(fast=fast)
 
     def clear_files(self):
         pass
 
     def clear_elements_and_operations(self):
-        self.clear_elements()
-        self.clear_operations()
+        fast = True
+        self.clear_elements(fast=fast)
+        self.clear_operations(fast=fast)
+        if fast:
+            self.signal("rebuild_tree")
 
     def clear_all(self):
-        self.clear_elements()
-        self.clear_operations()
-        self.clear_files()
-        self.clear_note()
-        self.validate_selected_area()
+        fast = True
+        self.set_start_time("clear_all")
+        with self.static("clear_all"):
+            self.clear_elements(fast=fast)
+            self.clear_operations(fast=fast)
+            self.clear_files()
+            self.clear_note()
+            self.clear_regmarks(fast=fast)
+            self.validate_selected_area()
+        if fast:
+            self.signal("rebuild_tree")
+        self.set_end_time("clear_all", display=True)
+        self._filename = None
+        self.signal("file;loaded")
 
     def clear_note(self):
         self.note = None
         self.signal("note", self.note)
 
-    # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
-
-    #     print ("elements d+d called")
-    #     if inheritance_mode.lower() == "auto":
-    #     elif inheritance_mode.lower() =
-    #     if inherit_stroke is None:
-    #         inh_stroke = False
-    #     else:
-    #         inh_stroke = inherit_stroke
-    #     if inherit_fill is None:
-    #         inh_fill = False
-    #     else:
-    #         inh_fill = inherit_fill
-
-    #     data = dragging_nodes
-    #     success = False
-    #     special_occasion = False
-    #     if drop_node.type.startswith("op"):
-    #         if len(drop_node.children) == 0 and self.classify_auto_inherit:
-    #             # only for empty operations!
-    #             # Let's establish the colors first
-    #             first_color_stroke = None
-    #             first_color_fill = None
-    #             # Look for the first element that has stroke/fill
-    #             for n in data:
-    #                 if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     first_color_stroke = n.stroke
-    #                 if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     first_color_fill = n.fill
-    #                 canbreak = first_color_fill is not None or first_color_stroke is not None
-    #                 if canbreak:
-    #                     break
-    #             if hasattr(drop_node, "color") and (first_color_fill is not None or first_color_stroke is not None):
-    #                 # Well if you have both options, then you get that
-    #                 # color that is present, precedence for fill
-    #                 if first_color_fill is not None:
-    #                     col = first_color_fill
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("fill")
-    #                         drop_node.remove_color_attribute("stroke")
-    #                 else:
-    #                     col = first_color_stroke
-    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
-    #                         drop_node.add_color_attribute("stroke")
-    #                         drop_node.remove_color_attribute("fill")
-    #                 drop_node.color = col
-
-    #             # Now that we have the colors lets iterate through all elements
-    #             fuzzy = self.classify_fuzzy
-    #             fuzzydistance = self.classify_fuzzydistance
-    #             for n in self.flat(types=elem_nodes):
-    #                 addit = False
-    #                 if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.stroke == first_color_stroke:
-    #                             addit = True
-    #                 if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-    #                     if fuzzy:
-    #                         if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
-    #                             addit = True
-    #                     else:
-    #                         if n.fill == first_color_fill:
-    #                             addit = True
-    #                 # print ("Checked %s and will addit=%s" % (n.type, addit))
-    #                 if addit and n not in data:
-    #                     data.append(n)
-    #     for drag_node in data:
-    #         if drop_node is drag_node:
-    #             continue
-    #         if drop_node.drop(drag_node, modify=False):
-    #             if special_occasion:
-    #                 for ref in list(drag_node._references):
-    #                     ref.remove_node()
-    #             drop_node.drop(drag_node, modify=True)
-    #             success = True
-
-    #     # Refresh the target node so any changes like color materialize...
-    #     self.signal("element_property_reload", drop_node)
-    #     return success
-
     def drag_and_drop(self, dragging_nodes, drop_node):
         data = dragging_nodes
         success = False
-        special_occasion = False
         to_classify = []
+        # if drop_node.type.startswith("op"):
+        #     if len(drop_node.children) == 0 and self.classify_auto_inherit:
+        #         # only for empty operations!
+        #         # Let's establish the colors first
+        #         first_color_stroke = None
+        #         first_color_fill = None
+        #         inh_stroke = False
+        #         inh_fill = False
+        #         # Look for the first element that has stroke/fill
+        #         for n in data:
+        #             if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 first_color_stroke = n.stroke
+        #                 inh_stroke = True
+        #             if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 first_color_fill = n.fill
+        #                 inh_fill = True
+        #             canbreak = inh_fill or inh_stroke
+        #             if canbreak:
+        #                 break
+        #         if hasattr(drop_node, "color") and (inh_fill or inh_stroke):
+        #             # Well if you have both options, then you get that
+        #             # color that is present, precedence for fill
+        #             if inh_fill:
+        #                 col = first_color_fill
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("fill")
+        #                     drop_node.remove_color_attribute("stroke")
+        #             else:
+        #                 col = first_color_stroke
+        #                 if hasattr(drop_node, "add_color_attribute"): # not true for image
+        #                     drop_node.add_color_attribute("stroke")
+        #                     drop_node.remove_color_attribute("fill")
+        #             drop_node.color = col
+
+        #         # Now that we have the colors lets iterate through all elements
+        #         fuzzy = self.classify_fuzzy
+        #         fuzzydistance = self.classify_fuzzydistance
+        #         for n in self.flat(types=elem_nodes):
+        #             addit = False
+        #             if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.stroke == first_color_stroke:
+        #                         addit = True
+        #             if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+        #                 if fuzzy:
+        #                     if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+        #                         addit = True
+        #                 else:
+        #                     if n.fill == first_color_fill:
+        #                         addit = True
+        #             # print ("Checked %s and will addit=%s" % (n.type, addit))
+        #             if addit and n not in data:
+        #                 data.append(n)
         for drag_node in data:
             if drop_node is drag_node:
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node was drag node")
                 continue
             if drop_node.drop(drag_node, modify=False):
                 # Is the drag node coming from the regmarks branch?
                 # If yes then we might need to classify.
                 if drag_node._parent.type == "branch reg":
-                    to_classify.append(drag_node)
-                if special_occasion:
-                    for ref in list(drag_node._references):
-                        ref.remove_node()
+                    if drag_node.type in ("file", "group"):
+                        for e in drag_node.flat(elem_nodes):
+                            to_classify.append(e)
+                    else:
+                        to_classify.append(drag_node)
                 drop_node.drop(drag_node, modify=True)
                 success = True
+            else:
+                # print(f"Drag {drag_node.type} to {drop_node.type} - Drop node vetoed")
+                pass
         if self.classify_new and len(to_classify) > 0:
             self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
@@ -1614,6 +1770,7 @@ class Elemental(Service):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
         # We dont know it better...
         self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
+        self._emphasized_bounds_dirty = False
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
@@ -1621,7 +1778,8 @@ class Elemental(Service):
             if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                 continue
             node.matrix.post_translate(dx, dy)
-            node.modified()
+            # node.modified()
+            node.translated(dx, dy)
 
     def set_emphasized_by_position(
         self,
@@ -1655,6 +1813,10 @@ class Elemental(Service):
                 bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
+            # Empty group / files may cause problems
+            if node.type in ("file", "group"):
+                if not node._children:
+                    bounds = None
             if bounds is None:
                 continue
             if contains(bounds, position):
@@ -1687,7 +1849,6 @@ class Elemental(Service):
                     e.set_dirty_bounds()
                     bounds = e.bounds
                     bounds_painted = e.paint_bounds
-
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
@@ -1732,7 +1893,7 @@ class Elemental(Service):
         if elements is None:
             return
 
-        if not len(list(self.ops())) and not self.operation_default_empty:
+        if len(list(self.ops())) == 0 and not self.operation_default_empty:
             self.load_default(performclassify=False)
         reverse = self.classify_reverse
         fuzzy = self.classify_fuzzy
@@ -2808,25 +2969,53 @@ class Elemental(Service):
     def load(self, pathname, **kwargs):
         kernel = self.kernel
         _ = kernel.translation
+        filename_to_process = pathname
+        # Lets check first if we have a preprocessor
+        # Use-case: if we identify functionalities in the file
+        # which aren't supported by mk yet, we could ask a program
+        # to convert these elements into supported artifacts
+        # This may change the fileformat (and filename)
+
+        fn_name, fn_extension = os.path.splitext(filename_to_process)
+        if fn_extension:
+            preproc = self.lookup(f"preprocessor/{fn_extension}")
+            # print (f"Preprocessor routine for preprocessor/{fn_extension}: {preproc}")
+            if preproc is not None:
+                filename_to_process = preproc(pathname)
+                # print (f"Gave: {pathname}, received: {filename_to_process}")
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
-                if str(pathname).lower().endswith(extensions):
-                    try:
-                        self.signal("freeze_tree", True)
-                        results = loader.load(self, self, pathname, **kwargs)
-                        self.remove_empty_groups()
-                        self.signal("freeze_tree", False)
-                        self._filename = pathname
-                    except FileNotFoundError:
-                        return False
-                    except BadFileError as e:
-                        kernel._console_channel(_("File is Malformed") + ": " + str(e))
-                    except OSError:
-                        return False
-                    else:
-                        if results:
-                            self.signal("tree_changed")
+                if str(filename_to_process).lower().endswith(extensions):
+                    self.set_start_time("load")
+                    self.set_start_time("full_load")
+                    with self.static("load elements"):
+                        try:
+                            # We could stop the attachment to shadowtree for the duration
+                            # of the load to avoid unnecessary actions, this will provide
+                            # about 8% speed increase, but probably not worth the risk
+                            # with attachment: 77.2 sec
+                            # without attachm: 72.1 sec
+                            # self.unlisten_tree(self)
+                            results = loader.load(
+                                self, self, filename_to_process, **kwargs
+                            )
+                            self.remove_empty_groups()
+                            # self.listen_tree(self)
+                            end_time = time()
+                            self._filename = pathname
+                            self.set_end_time("load", display=True)
+                            self.signal("file;loaded")
                             return True
+                        except FileNotFoundError:
+                            return False
+                        except BadFileError as e:
+                            kernel._console_channel(
+                                _("File is Malformed") + ": " + str(e)
+                            )
+                            self.signal("warning", str(e), _("File is Malformed"))
+                        except OSError:
+                            return False
+
         return False
 
     def load_types(self, all=True):
@@ -2870,19 +3059,55 @@ class Elemental(Service):
         return "|".join(filetypes)
 
     def simplify_node(self, node):
+        basically_zero = 1.0e-6
+        tolerance = UNITS_PER_MIL * 1
+
         def my_sign(x):
             # Returns +1 for positive figures, -1 for negative and 0 for Zero
             return bool(x > 0) - bool(x < 0)
 
-        from meerk40t.svgelements import Line
+        def remove_zero_length_lines(obj):
+            # We remove degenerate line segments ie those of zero length
+            # could be intentional in some cases, but that should be dealt
+            # with in dwell cuts...
+            removed = 0
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if (
+                    isinstance(seg, Line)
+                    and seg.start.x == seg.end.x
+                    and seg.start.y == seg.end.y
+                ):
+                    obj._segments.pop(idx)
+                    removed += 1
+            return removed
 
-        changed = False
-        before = 0
-        after = 0
-        if node.type == "elem path" and len(node.path._segments) > 1:
-            obj = node.path
+        def remove_superfluous_moves(obj):
+            # Two or more consecutive moves are processed
+            # as well as a move at the very end
+            lastseg = None
+            removed = 0
+            for idx in range(len(obj._segments) - 1, -1, -1):
+                seg = obj._segments[idx]
+                if isinstance(seg, Move):
+                    if lastseg is None:
+                        # Move as the very last segment -> Delete
+                        obj._segments.pop(idx)
+                        removed += 1
+                    else:
+                        if isinstance(lastseg, Move):
+                            # Two consecutive moves? Delete
+                            obj._segments.pop(idx)
+                            removed += 1
+                        else:
+                            lastseg = seg
+                else:
+                    lastseg = seg
+            return removed
+
+        def remove_interim_points_on_line(obj):
+            removed = 0
             last = None
-            before = len(obj._segments)
             for idx in range(len(obj._segments) - 1, -1, -1):
                 seg = obj._segments[idx]
                 if isinstance(seg, Line):
@@ -2900,9 +3125,9 @@ class Elemental(Service):
                         denom = thisdx * lastdy - thisdy * lastdx
 
                         same = (
-                            abs(denom) < 1.0e-6 and
-                            my_sign(lastdx) == my_sign(thisdx) and
-                            my_sign(lastdy) == my_sign(thisdy)
+                            abs(denom) < basically_zero
+                            and my_sign(lastdx) == my_sign(thisdx)
+                            and my_sign(lastdy) == my_sign(thisdy)
                         )
                         # if thisdx == 0 or lastdx == 0:
                         #     channel(f"One Vertical line, {thisdx:.1f}, {thisdy:1f} vs {lastdx:1f},{lastdy:.1f}")
@@ -2913,23 +3138,219 @@ class Elemental(Service):
                             # Vertical line - same direction?
                             if thisdx == lastdx and my_sign(thisdy) == my_sign(lastdy):
                                 same = True
-                        elif abs(thisdy / thisdx - lastdy / lastdx) < 1.0e-6:
+                        elif abs(thisdy / thisdx - lastdy / lastdx) < basically_zero:
                             same = True
 
                         if same:
                             # We can just merge the two segments
                             seg.end = last.end
                             obj._segments.pop(idx + 1)
-                            changed = True
+                            removed += 1
                     last = seg
                 else:
                     last = None
-            after = len(obj._segments)
-        elif node.type == "elem polyline" and len(node.shape.points) > 2:
-            obj = node.shape
+            return removed
+
+        def combine_overlapping_chains(obj):
+            def list_subpath_bounds(obj):
+                # Return a sorted list of subpaths in the given path (from left to right):
+                # tuples with first index, last index, x-coordinate of first segment
+                result = []
+                start = -1
+                for current, seg in enumerate(obj._segments):
+                    if isinstance(seg, Move):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    elif isinstance(seg, Close):
+                        if start >= 0:
+                            result.append(
+                                (start, current - 1, obj._segments[start].start.x)
+                            )
+                            start = -1
+                    else:
+                        if start < 0:
+                            start = current
+                if start >= 0:
+                    result.append((start, len(obj) - 1, obj._segments[start].start.x))
+                # Now let's sort the list according to the X-start position
+                result.sort(key=lambda a: a[2])
+                return result
+
+            joined = 0
+            redo = True
+            while redo:
+                # Dont do it again unless indicated...
+                redo = False
+                reason = ""
+                results = list_subpath_bounds(obj)
+                if len(results) <= 1:
+                    # only one chain, exit
+                    break
+
+                for idx, entry in enumerate(results):
+                    this_start = entry[0]
+                    this_end = entry[1]
+                    this_endseg = obj._segments[this_end]
+                    this_endline = bool(isinstance(this_endseg, Line))
+
+                    # Look at all subsequent chains, as they are sorted we know we can just look at
+                    # a) the last point and the first point or the two chains, if they are identical
+                    #    the two chains can be joined (regardless of the type of the two path
+                    #    segments at the end / start)
+                    # b) if the last segment of the first chain and the first segment of the second chain
+                    #    are lines the we establish whether they overlap
+                    for idx2 in range(idx + 1, len(results)):
+                        other_entry = results[idx2]
+                        other_start = other_entry[0]
+                        other_end = other_entry[1]
+                        other_startseg = obj._segments[other_start]
+                        other_startline = bool(isinstance(other_startseg, Line))
+                        # Do the lines overlap or have a common end / startpoint together?
+                        if (
+                            abs(this_endseg.end.x - other_startseg.start.x) < tolerance
+                            and abs(this_endseg.end.y - other_startseg.start.y)
+                            < tolerance
+                        ):
+                            for idx3 in range(other_end - other_start + 1):
+                                obj._segments.insert(
+                                    this_end + 1, obj._segments.pop(other_end)
+                                )
+                            joined += 1
+                            redo = True
+                            reason = f"Join segments at endpoints {idx} - {idx2}"
+                            break
+                        else:
+                            if not other_startline or not this_endline:
+                                # incompatible types, need two lines
+                                continue
+                            thisdx = this_endseg.start.x - this_endseg.end.x
+                            thisdy = this_endseg.start.y - this_endseg.end.y
+                            lastdx = other_startseg.start.x - other_startseg.end.x
+                            lastdy = other_startseg.start.y - other_startseg.end.y
+                            denom = thisdx * lastdy - thisdy * lastdx
+
+                            # We have a couple of base cases
+                            # a) end point of first line identical to start point of second line
+                            # -> already covered elsewhere
+
+                            # b) Lines are not parallel -> ignore
+                            if abs(denom) > basically_zero:
+                                continue
+
+                            if abs(thisdx) > basically_zero:
+                                # Non-vertical lines
+                                # c) second segment starts left of the first -> ignore
+                                if other_startseg.start.x < this_endseg.start.x:
+                                    continue
+
+                                # d) second segment fully to the right of the first -> ignore
+                                if other_startseg.start.x > this_endseg.end.x:
+                                    continue
+
+                                # e) They could still be just parallel, so let's establish this...
+                                if (
+                                    abs(lastdx) < basically_zero
+                                    or abs(thisdx) < basically_zero
+                                ):
+                                    # Was coming from zero length lines, now removed earlier
+                                    continue
+                                b1 = (
+                                    this_endseg.start.y
+                                    - thisdy / thisdx * this_endseg.start.x
+                                )
+                                b2 = (
+                                    other_startseg.start.y
+                                    - lastdy / lastdx * other_startseg.start.x
+                                )
+                                if abs(b1 - b2) > tolerance:
+                                    continue
+
+                                # f) Lying completely inside, only if the second chain is a single line we can remove it...
+                                if other_startseg.end.x <= this_endseg.end.x:
+                                    if other_start == other_end:
+                                        # Can be eliminated....
+                                        obj._segments.pop(other_start)
+                                        joined += 1
+                                        redo = True
+                                        reason = (
+                                            f"Removed segment {idx2} fully inside {idx}"
+                                        )
+                                        break
+                                    else:
+                                        continue
+                                # g) the remaining case is an overlap on x, so we can adjust the start to the end and join
+                                other_startseg.start.x = this_endseg.end.x
+                                other_startseg.start.y = this_endseg.end.y
+                                # Now copy the segments together:
+                                # We know that the to be copied segments, ie the source segments, lie behind the target segments
+                                # print (f"We copy [{other_start}:{other_end}] to the end after {this_end}")
+                                for idx3 in range(other_end - other_start + 1):
+                                    # print(f"copy #{idx3}: {obj._segments[this_end + 1]} <- {obj._segments[other_end]}")
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
+                                joined += 1
+                                redo = True
+                                reason = f"Added overlapping segment {idx2} to {idx}"
+                                break
+                            else:
+                                # vertical lines but still the same logic applies...
+                                # c) second segment starts on top of the first -> ignore
+                                if other_startseg.start.y < this_endseg.start.y:
+                                    continue
+
+                                # d) second segment fully below the first -> ignore
+                                if other_startseg.start.y > this_endseg.end.y:
+                                    continue
+
+                                # e) They could still be just parallel, so let's establish this...
+                                if (
+                                    abs(other_startseg.start.x - this_endseg.start.x)
+                                    > tolerance
+                                ):
+                                    continue
+
+                                # f) Lying completely inside, only if the second chain is a single line we can remove it...
+                                if other_startseg.end.y <= this_endseg.end.y:
+                                    if other_start == other_end:
+                                        # Can be eliminated....
+                                        obj._segments.pop(other_start)
+                                        joined += 1
+                                        redo = True
+                                        reason = f"Removed vertical segment {idx2} fully inside {idx}"
+                                        break
+                                    else:
+                                        continue
+                                # g) the remaining case is an overlap on y, so we can adjust the start to the end and join
+                                other_startseg.start.x = this_endseg.end.x
+                                other_startseg.start.y = this_endseg.end.y
+                                # Now copy the segments together:
+                                # We know that the to be copied segments, ie the source segments,
+                                # lie behind the target segments
+                                for idx3 in range(other_end - other_start + 1):
+                                    obj._segments.insert(
+                                        this_end + 1, obj._segments.pop(other_end)
+                                    )
+                                joined += 1
+                                reason = f"Added overlapping vertical segment {idx2} to {idx}"
+                                redo = True
+                                break
+                    # end of inner loop
+
+                    if redo:
+                        # print(f"Redo required inner loop: {reason}")
+                        changed = True
+                        break
+                # end of outer loop
+            return joined
+
+        def simplify_polyline(obj):
+            removed = 0
             pt_older = None
             pt_old = None
-            before = len(obj.points)
             for idx in range(len(obj.points) - 1, -1, -1):
                 pt = obj.points[idx]
                 if pt_older is not None and pt_old is not None:
@@ -2945,23 +3366,84 @@ class Elemental(Service):
                     thisdy = pt[1] - pt_old[1]
                     denom = thisdx * lastdy - thisdy * lastdx
                     same = (
-                        abs(denom) < 1.0e-6 and
-                        my_sign(lastdx) == my_sign(thisdx) and
-                        my_sign(lastdy) == my_sign(thisdy)
+                        abs(denom) < basically_zero
+                        and my_sign(lastdx) == my_sign(thisdx)
+                        and my_sign(lastdy) == my_sign(thisdy)
                     )
                     # Opposing directions may not happen
-
 
                     if same:
                         # We can just merge the two segments by
                         # elminating the middle point
                         obj.points.pop(idx + 1)
-                        changed = True
+                        removed += 1
                         # just set the middle point to the last point,
                         # so that the last point remains
                         pt_old = pt_older
 
                 pt_older = pt_old
                 pt_old = pt
+            return removed
+
+        changed = False
+        before = 0
+        after = 0
+
+        if node.type == "elem path" and len(node.path._segments) > 1:
+            obj = node.path
+            before = len(obj._segments)
+
+            # Pass 1: Dropping zero length line segments
+            eliminated = remove_zero_length_lines(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 2: look inside the nodes and bring small line segments back together...
+            eliminated = remove_interim_points_on_line(obj)
+            if eliminated > 0:
+                changed = True
+
+            # Pass 3: look at the subpaths....
+            eliminated = combine_overlapping_chains(obj)
+            if eliminated > 0:
+                changed = True
+
+            # pass 4: remove superfluous moves
+            eliminated = remove_superfluous_moves(obj)
+            if eliminated > 0:
+                changed = True
+
+            after = len(obj._segments)
+        elif node.type == "elem polyline" and len(node.shape.points) > 2:
+            obj = node.shape
+            before = len(obj.points)
+            eliminated = simplify_polyline(obj)
+            if eliminated > 0:
+                changed = True
             after = len(obj.points)
+
+        # print (f"Before: {before}, After: {after}")
         return changed, before, after
+
+
+def linearize_path(path, interp=50, point=False):
+    import numpy as np
+
+    current_polygon = []
+    for subpath in path.as_subpaths():
+        p = Path(subpath)
+        s = []
+        for segment in p:
+            t = type(segment).__name__
+            if t == "Move":
+                s.append((segment.end[0], segment.end[1]))
+            elif t in ("Line", "Close"):
+                s.append((segment.end[0], segment.end[1]))
+            else:
+                s.extend(
+                    (s[0], s[1]) for s in segment.npoint(np.linspace(0, 1, interp))
+                )
+        if point:
+            s = list(map(Point, s))
+        current_polygon.append(s)
+    return current_polygon

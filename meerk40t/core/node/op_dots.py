@@ -33,6 +33,10 @@ class DotsOpNode(Node, Parameters):
         # Is this op out of useful bounds?
         self.dangerous = False
         self.stopop = True
+        if label is None:
+            self.label = "Dots"
+        else:
+            self.label = label
 
     def __repr__(self):
         return "DotsOpNode()"
@@ -49,7 +53,7 @@ class DotsOpNode(Node, Parameters):
     #     self.dangerous = result
 
     def default_map(self, default_map=None):
-        default_map = super(DotsOpNode, self).default_map(default_map=default_map)
+        default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Dots"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
@@ -248,6 +252,8 @@ class DotsOpNode(Node, Parameters):
         settings = self.derive()
         for point_node in self.children:
             if point_node.type != "elem point":
+                continue
+            if point_node.point is None:
                 continue
             yield DwellCut(
                 (point_node.point[0], point_node.point[1]),

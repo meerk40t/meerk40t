@@ -31,6 +31,29 @@ KERNEL_VERSION = "0.0.10"
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
 
+class BusyInfo():
+    def __init__(self, **kwds):
+        self.busy_object = None
+        self.shown = False
+
+    def start(self, **kwds):
+        self.shown = True
+        return
+
+    def end(self):
+        self.shown = False
+        return
+
+    def change(self, **kwds):
+        return
+
+    def hide(self):
+        self.shown = False
+        return
+
+    def show(self):
+        self.shown = True
+        return
 
 class Kernel(Settings):
     """
@@ -42,7 +65,7 @@ class Kernel(Settings):
     jobs for the scheduler, listeners for signals, channel information, a list of devices, registered commands.
     """
 
-    def __init__(self, name: str, version: str, profile: str, ansi: bool = True):
+    def __init__(self, name: str, version: str, profile: str, ansi: bool = True, ignore_settings: bool = False):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
 
@@ -59,6 +82,7 @@ class Kernel(Settings):
             self,
             self.name,
             f"{profile}.cfg",
+            ignore_settings=ignore_settings
         )
         self.settings = self
 
@@ -166,7 +190,7 @@ class Kernel(Settings):
             def wrapper_debug(*args, **kwargs):
                 args_repr = [repr(a) for a in args]
 
-                kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
+                kwargs_repr = [f"{k}={v}" for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
                 start = f"Calling {str(obj)}.{func.__name__}({signature})"
                 debug_file.write(start + "\n")
@@ -359,6 +383,27 @@ class Kernel(Settings):
                 # Do not set to self
                 return
         self.activate(domain, service, assigned)
+
+    def destroy_service_index(self, domain: str, index: int):
+        """
+        Destroy the service at the given domain and index.
+
+        This cannot be done for the current service.
+
+        @param domain: service domain name
+        @param index: index of the service to destroy.
+        @return:
+        """
+        services = self.services(domain)
+        service = services[index]
+        active = self.services(domain, True)
+        if service == active:
+            raise PermissionError("Cannot destroy the active service.")
+
+        try:
+            service.destroy()
+        except AttributeError:
+            raise PermissionError("Service could not be destroyed.")
 
     def activate(self, domain, service, assigned: bool = False):
         """
@@ -1071,7 +1116,7 @@ class Kernel(Settings):
                     attr = v[0]
                     value = v[1]
                     self.console(f"set {attr} {value}\n")
-                except IndexError:
+                except (IndexError, TypeError):
                     break
 
     def poststart(self):
@@ -1132,7 +1177,10 @@ class Kernel(Settings):
             if context is None:
                 continue
             for opened_name in list(context.opened):
-                obj = context.opened[opened_name]
+                try:
+                    obj = context.opened[opened_name]
+                except KeyError:
+                    continue
                 if channel:
                     channel(
                         _("{context}: Finalizing Module {path}: {object}").format(
@@ -2832,6 +2880,23 @@ class Kernel(Settings):
                 raise CommandSyntaxError
             self.activate_service_index(domain, index)
 
+        @self.console_argument("index", type=int, help="Index of service to destroy.")
+        @self.console_command(
+            "destroy",
+            input_type="service",
+            help=_("Destroy the service at the given index"),
+        )
+        def service_destroy(channel, _, data=None, index=None, **kwargs):
+            domain, available, active = data
+            if index is None:
+                raise CommandSyntaxError
+            try:
+                self.destroy_service_index(domain, index)
+            except PermissionError:
+                channel("Could not destroy active service.")
+            except IndexError:
+                channel("Service index did not exist.")
+
         @self.console_argument("name", help="Name of service to start")
         @self.console_option(
             "label", "l", help="optional label for the service to start"
@@ -3172,6 +3237,48 @@ class Kernel(Settings):
             self.write_configuration()
             channel(_("Persistent settings force saved."))
 
+        @self.console_command(
+            "setting_export", help=_("Save a copy of the current configuration")
+        )
+        def setting_export(channel, _, remainder=None, **kwargs):
+            exportdir = remainder
+            if exportdir is None:
+                channel(
+                    _(
+                        "You need to provide a target directory: setting_export <targetdir>"
+                    )
+                )
+                return
+            # Persist the settings first
+            for context_name in list(self.contexts):
+                context = self.contexts[context_name]
+                context.flush()
+            newfile = os.path.join(
+                exportdir, f"meerk40t_{datetime.now():%Y-%m-%d_%H_%M_%S}.cfg"
+            )
+            self.write_configuration(newfile)
+            channel(_("Persistent settings exported to {file}.").format(file=newfile))
+
+        @self.console_command(
+            "setting_import", help=_("Restore a previously saved configuration file")
+        )
+        def setting_import(channel, _, remainder=None, **kwargs):
+            filename = remainder
+            if filename is None:
+                channel(
+                    _(
+                        "You need to provide a valid config-file to restore: setting_import <filename>"
+                    )
+                )
+                return
+            if not os.path.exists(filename):
+                channel(_("The file does not exist"))
+                return
+            self.read_configuration(filename)
+            channel(
+                _("Persistent settings imported from {file}.").format(file=filename)
+            )
+
         # ==========
         # LIFECYCLE
         # ==========
@@ -3306,6 +3413,33 @@ class Kernel(Settings):
 
     # Prompt should be replaced with higher level versions of this depending on the user interface.
     prompt = _text_prompt
+
+    def _yes_no_prompt(self, prompt, option_yes=None, option_no=None, caption=None):
+        """
+        Kernel yesno should be replaced with higher level versions of this depending on the user interface.
+
+        Default this is purely text based input() yes_no_prompt.
+
+        @param prompt: question asked of the user.
+        @param option_yes: input to be interpreted as yes (first letter is okay too).
+        @param option_no: input to be interpreted as no (first letter is okay too).
+        @param caption: Ignored in the cli
+        @return:
+        """
+        if option_yes is None:
+            option_yes = "Yes"
+        if option_no is None:
+            option_yes = "No"
+        value = input(
+            prompt + "\n?" + f"({option_yes} / {option_no}, default={option_yes})\n"
+        )
+        if value is None or value == "":
+            value = option_yes
+        value = value.lower()
+        return bool(value == option_yes or value[0] == option_yes.lower()[0])
+
+    yesno = _yes_no_prompt
+    busyinfo = BusyInfo()
 
     # ==========
     # CONSOLE DECORATORS

@@ -113,11 +113,14 @@ class CyclocycloidWidget(Widget):
         @return:
         """
         try:
-            t = Path(stroke="blue", stroke_width=1000)
+            elements = self.scene.context.elements
+            t = Path(
+                stroke=elements.default_stroke,
+                stroke_width=elements.default_strokewidth,
+            )
             t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
             for m in self.series:
                 t.line((m[0] + self.x, m[1] + self.y))
-            elements = self.scene.context.elements
             node = elements.elem_branch.add(path=t, type="elem path")
             elements.classify([node])
             self.parent.remove_widget(self)
@@ -224,8 +227,10 @@ class MajorHandleWidget(Widget):
         if self._current_x is None or self._current_y is None:
             return False
         diff = self._current_x - self._start_x
-        self._start_value += diff * 0.01
+        factor = math.sqrt(abs(self._current_y - self._start_y))
+        self._start_value += diff * 0.00001 * factor
         self.widget.r_major = self._start_value
+        # self.scene.toast(f"R-Major: {self.widget.r_major}", id(self))
         self.widget.update_shape()
         return True
 
@@ -247,8 +252,8 @@ class MajorHandleWidget(Widget):
             self.scene.animate(
                 self
             )  # Starts the animation. This will stop when tick() returns false.
-            self._start_x = self.left
-            self._start_y = self.top
+            self._start_x = space_pos[0]
+            self._start_y = space_pos[1]
             self._current_x = space_pos[0]
             self._current_y = space_pos[1]
             self._start_value = self.widget.r_major
@@ -293,8 +298,10 @@ class MinorHandleWidget(Widget):
         if self._current_x is None or self._current_y is None:
             return False
         diff = self._current_x - self._start_x
-        self._start_value += diff * 0.01
+        factor = math.sqrt(abs(self._current_y - self._start_y))
+        self._start_value += diff * 0.00001 * factor
         self.widget.r_minor = self._start_value
+        # self.scene.toast(f"R-Minor: {self.widget.r_minor}", id(self))
         self.widget.update_shape()
         return True
 
@@ -314,8 +321,8 @@ class MinorHandleWidget(Widget):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.animate(self)
-            self._start_x = self.left
-            self._start_y = self.top
+            self._start_x = space_pos[0]
+            self._start_y = space_pos[1]
             self._current_x = space_pos[0]
             self._current_y = space_pos[1]
             self._start_value = self.widget.r_minor
