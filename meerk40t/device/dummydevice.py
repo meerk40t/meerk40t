@@ -7,6 +7,20 @@ from ..core.units import UNITS_PER_MIL, ViewPort
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/dummy", DummyDevice)
+        _ = kernel.translation
+        kernel.register("dev_info/dummy_info", {
+            "provider": "provider/device/dummy",
+            "friendly_name": _("The device name goes here"),
+            "extended_info": _("Extended device info would go here."),
+            "priority": -1,
+            "family": "",
+            "choices": [
+                {
+                    "attr": "label",
+                    "default": "dummy",
+                },
+            ]
+        })
 
 
 class DummyDevice(Service, ViewPort):
@@ -16,9 +30,15 @@ class DummyDevice(Service, ViewPort):
     This is mostly for testing.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "Dummy Device"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
         self.native_x = 0.0
         self.native_y = 0.0
         self.settings = dict()

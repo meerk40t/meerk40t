@@ -87,6 +87,13 @@ parser.add_argument(
     default=False,
     help="Disable ANSI colors",
 )
+parser.add_argument(
+    "-X",
+    "--nuke-settings",
+    action="store_true",
+    default=False,
+    help="Don't load config file at startup",
+)
 
 
 def static_plugins(kernel, lifecycle):
@@ -185,6 +192,10 @@ def static_plugins(kernel, lifecycle):
 
         kernel.add_plugin(balorplugin)
 
+        from .newly.plugin import plugin as newlyplugin
+
+        kernel.add_plugin(newlyplugin)
+
         from .gui.plugin import plugin as wxplugin
 
         plugins.append(wxplugin)
@@ -256,6 +267,7 @@ def run():
         APPLICATION_VERSION,
         APPLICATION_NAME,
         ansi=not args.disable_ansi,
+        ignore_settings=args.nuke_settings,
     )
     kernel.args = args
     kernel.add_plugin(static_plugins)

@@ -3466,6 +3466,9 @@ msgstr "Öffne das Spooler-Fenster automatisch, sobald ein Job ausgeführt wird"
 msgid "Reduce Travel Time"
 msgstr "Verringere Bewegungen"
 
+msgid "Reducing Movements"
+msgstr "Vermeide Bewegungen"
+
 #: meerk40t/core/planner.py:50
 msgid ""
 "Using this option can significantly reduce the time spent moving between "
@@ -3957,7 +3960,7 @@ msgstr "Höhe des Laserbettes."
 #: meerk40t/device/dummydevice.py:53 meerk40t/lihuiyu/device.py:129
 #: meerk40t/ruida/device.py:242
 msgid "X Scale Factor"
-msgstr ""
+msgstr "Faktor X-Achse"
 
 #: meerk40t/device/dummydevice.py:54 meerk40t/grbl/device.py:116
 #: meerk40t/lihuiyu/device.py:130 meerk40t/lihuiyu/gui/lhydrivergui.py:352
@@ -3968,7 +3971,7 @@ msgstr ""
 #: meerk40t/device/dummydevice.py:63 meerk40t/lihuiyu/device.py:139
 #: meerk40t/ruida/device.py:252
 msgid "Y Scale Factor"
-msgstr ""
+msgstr "Faktor Y-Achse"
 
 #: meerk40t/device/dummydevice.py:64 meerk40t/grbl/device.py:127
 #: meerk40t/lihuiyu/device.py:140 meerk40t/lihuiyu/gui/lhydrivergui.py:370
@@ -9545,6 +9548,45 @@ msgstr ""
 #: meerk40t/rotary/rotary.py:22
 msgid "Rotary Enabled"
 msgstr "Verwende Drehachse"
+
+msgid "Rotary-Mode active"
+msgstr "Verwende Drehachse"
+
+msgid "Is the rotary mode active for this device"
+msgstr "Soll der Drehachsen-Modus verwendet werden"
+
+msgid "Ignore Home"
+msgstr "'Home' ignorieren"
+
+msgid "Ignore Home-Command"
+msgstr "Ignoriere 'Home'-Kommandos"
+
+msgid "Mirror Output"
+msgstr "Ausgabe spiegeln"
+
+msgid "Mirror X"
+msgstr "X-Achse spiegeln"
+
+msgid "Mirror Y"
+msgstr "Y-Achse spiegeln"
+
+msgid "Mirror the elements on the X-Axis"
+msgstr "Element in X-Richtung am Nullpunkt spiegeln"
+
+msgid "Mirror the elements on the Y-Axis"
+msgstr "Element in Y-Richtung am Nullpunkt spiegeln"
+
+msgid "X-Scale"
+msgstr "Faktor X-Achse"
+
+msgid "Y-Scale"
+msgstr "Faktor Y-Achse"
+
+msgid "Scale that needs to be applied to the X-Axis"
+msgstr "Korrektufaktor für die X-Achse"
+
+msgid "Scale that needs to be applied to the Y-Axis"
+msgstr "Korrektufaktor für die Y-Achse"
 
 #: meerk40t/rotary/rotary.py:23
 msgid "Turn on rotary"
@@ -15538,3 +15580,78 @@ msgstr "Gerade"
 
 msgid "Curve"
 msgstr "Kurve"
+
+msgid "Override"
+msgstr "Übersteuern"
+
+msgid "Allow ad-hoc adjustment of speed and power."
+msgstr "Erlaubt die ad-hoc Anpassung von Geschwindigkeit und Laserleistung"
+
+msgid "This affects running jobs, so use with care!"
+msgstr "Das wirkt unmittelbar auf laufende Jobs, bitte mit Bedacht nutzen!"
+
+msgid "Increases/decreases the regular laser power by this amount."
+msgstr "Erhöht/Verringert die eingestellte Laserleistung um diesen Faktor."
+
+msgid "Increases/decreases the regular speed by this amount."
+msgstr "Erhöht/Verringert die eingestellte Geschwindigkeit um diesen Faktor."
+
+msgid "This file contains certain features that might not be fully supported by MeerK40t"
+msgstr "Die Datei enthält SVG-Features, die nicht (vollständig) von MeerK40t unterstützt werden"
+
+msgid "The complete design would be rendered into a single graphic."
+msgstr "Das komplette Design würde in eine einzige Grafik überführt."
+
+msgid "Text elements would be converted into path objects."
+msgstr "Text-Elemente würden in Pfad-Objekte umgewandelt."
+
+msgid "Do you want to convert the file via inkscape or do you want load the unmodified file?"
+msgstr "Soll die Datei mit Hilfe von inkscape umgewandelt oder die Original-Datei geladen werden?"
+
+msgid "Convert"
+msgstr "Umwandeln"
+
+msgid "Load original"
+msgstr "Original"
+
+msgid "SVG-Conversion"
+msgstr "SVG-Umwandlung"
+
+msgid "Meerk40t does not support all svg-features, so you might want"
+msgstr "MeerK40t unterstützt (noch) nicht alle SVG-Features, deswegen kann"
+
+msgid "to preprocess the file to get a proper representation of the design."
+msgstr "MK die Datei vorverarbeiten (lassen), um eine korrekte Darstellung zu erreichen"
+
+msgid " - Certain subvariants of Fonts - single element will be converted to a path"
+msgstr " - Spezielle Text-Designs - die einzelnen Elemente werden in Pfade umgewandelt"
+
+msgid " - Gradient fills / patterns - the whole design will be rendered into a graphic"
+msgstr " - Farbverläufe / Füllungen mit Muster - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid " - Clipping/Mask - the whole design will be rendered into a graphic"
+msgstr " - Clips / Masken - die gesamte Grafik wird in eine einzige Grafik überführt"
+
+msgid "Path to inkscape-executable. Leave empty to let Meerk40t establish standard locations"
+msgstr "Pfad zur Inkscape-Anwendung. Leer lassen, damit MeerK40t die Standard-Verzeichnisse verwendet"
+
+msgid "SVG-Features"
+msgstr "SVG-Features"
+
+msgid "Inkscape"
+msgstr ""
+
+msgid "Unsupported elements"
+msgstr "Unsupportete Funktionen"
+
+msgid "Always load into meerk40t"
+msgstr "Immer direkt laden"
+
+msgid "Convert with inkscape"
+msgstr "Mit Inkscape konvertieren"
+
+msgid "Ask at load time"
+msgstr "Nachfragen"
+
+msgid "Calling inkscape..."
+msgstr "Starte inkscape im Hintergrund..."

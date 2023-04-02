@@ -234,7 +234,7 @@ class RasterOpNode(Node, Parameters):
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node_for_reference(node):
                         addit = False
-                        if node.type == "elem image":
+                        if node.type in  ("elem image", "elem text"):
                             addit = True
                         if hasattr(node, "fill"):
                             if node.fill is not None and node.fill.argb is not None:
@@ -356,6 +356,8 @@ class RasterOpNode(Node, Parameters):
             @return:
             """
             # Calculate raster steps from DPI device context
+            self.set_dirty_bounds()
+
             step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
             bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)

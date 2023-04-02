@@ -22,11 +22,17 @@ class LihuiyuDevice(Service, ViewPort):
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
-    def __init__(self, kernel, path, *args, **kwargs):
+    def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
         self.extension = "egv"
+        if choices is not None:
+            for c in choices:
+                attr = c.get("attr")
+                default = c.get("default")
+                if attr is not None and default is not None:
+                    setattr(self, attr, default)
         choices = [
             {
                 "attr": "bedwidth",
@@ -317,6 +323,67 @@ class LihuiyuDevice(Service, ViewPort):
         ]
         self.register_choices("lhy-speed", choices)
 
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            {
+                "attr": "rotary_scale_x",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": self,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (self, "rotary_active"),
+            },
+            {
+                "attr": "rotary_mirror_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_mirror_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        self.register_choices("rotary", choices)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
@@ -422,7 +489,7 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
-                self.spooler.laserjob(list(timed_fire()), label=label, helper=True)
+                self.spooler.laserjob(list(timed_fire()), label=label, helper=True, outline=[self.native] * 4)
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -448,6 +515,7 @@ class LihuiyuDevice(Service, ViewPort):
                     list(move_at_speed()),
                     label=f"move {dx} {dy} at {speed}",
                     helper=True,
+                    outline=self.outline_move_relative(dx.length_mil, dy.length_mil)
                 )
             else:
                 channel(_("Busy"))
@@ -883,6 +951,15 @@ class LihuiyuDevice(Service, ViewPort):
         self.height = self.bedheight
         super().realize()
 
+    def outline_move_relative(self, dx, dy):
+        x, y = self.native
+        new_x = x + dx
+        new_y = y + dy
+        min_x = min(x, new_x)
+        min_y = min(y, new_y)
+        max_x = max(x, new_x)
+        max_y = max(y, new_y)
+        return (min_x, min_y), (max_x, min_y), (max_x, max_y), (min_x, max_y)
 
     @property
     def viewbuffer(self):

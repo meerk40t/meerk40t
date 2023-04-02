@@ -114,6 +114,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.context = context
         self.listeners = list()
         self.entries_per_column = entries_per_column
+        self._detached = False
         if choices is None:
             return
         if isinstance(choices, str):
@@ -247,7 +248,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_main_sizer = sizer_main
         current_sec_sizer = sizer_main
         current_sizer = sizer_main
-        # By default 0 as we are stacking up stuff
+        # By default, 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
         for i, c in enumerate(self.choices):
@@ -445,12 +446,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
                 control_sizer = StaticBoxSizer(self, wx.ID_ANY, label, wx.HORIZONTAL)
-                control = wx.Button(self, -1)
+                control = TextCtrl(
+                    self,
+                    wx.ID_ANY,
+                    style=wx.TE_PROCESS_ENTER,
+                )
+                control_btn = wx.Button(self, wx.ID_ANY, "...")
 
                 def set_file(filename: str):
-                    if not filename:
-                        filename = _("No File")
-                    control.SetLabel(filename)
+                    # if not filename:
+                    #     filename = _("No File")
+                    control.SetValue(filename)
 
                 def on_button_filename(param, ctrl, obj, wildcard, addsig):
                     def click(event=None):
@@ -463,7 +469,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if fileDialog.ShowModal() == wx.ID_CANCEL:
                                 return  # the user changed their mind
                             pathname = str(fileDialog.GetPath())
-                            ctrl.SetLabel(pathname)
+                            ctrl.SetValue(pathname)
                             self.Layout()
                             current_value = getattr(obj, param)
                             if current_value != pathname:
@@ -478,11 +484,38 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return click
 
-                set_file(data)
+                def on_file_text(param, ctrl, obj, dtype, addsig):
+                    def filetext():
+                        v = ctrl.GetValue()
+                        try:
+                            dtype_v = dtype(v)
+                            current_value = getattr(obj, param)
+                            if current_value != dtype_v:
+                                setattr(obj, param, dtype_v)
+                                self.context.signal(param, dtype_v, obj)
+                                for _sig in addsig:
+                                    self.context.signal(_sig)
+                        except ValueError:
+                            # cannot cast to data_type, pass
+                            pass
+
+                    return filetext
+
+                control.SetActionRoutine(
+                    on_file_text(attr, control, obj, data_type, additional_signal)
+                )
+
+                ctrl_width = c.get("width", 0)
                 if ctrl_width > 0:
                     control.SetMaxSize(wx.Size(ctrl_width, -1))
-                control_sizer.Add(control, 0, wx.EXPAND, 0)
-                control.Bind(
+                control.SetValue(str(data))
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
+                control_sizer.Add(control, 1, wx.EXPAND, 0)
+                control_sizer.Add(control_btn, 0, wx.EXPAND, 0)
+                control_btn.Bind(
                     wx.EVT_BUTTON,
                     on_button_filename(
                         attr, control, obj, c.get("wildcard", "*"), additional_signal
@@ -1207,8 +1240,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
                     elif dtype == str and dstyle == "file":
-                        if ctrl.GetLabel() != data:
-                            ctrl.SetLabel(data)
+                        if ctrl.GetValue() != data:
+                            ctrl.SetValue(data)
                     elif dtype in (int, float) and dstyle == "slider":
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
@@ -1297,7 +1330,6 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
-        self._detached = False
 
     @staticmethod
     def unsorted_label(original):
