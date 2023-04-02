@@ -360,7 +360,6 @@ class ConsolePanel(wx.ScrolledWindow):
             webbrowser.open_new_tab(url)
 
     def on_key_down_main(self, event):
-
         def isrealchar(keycode):
             if keycode in (wx.WXK_LEFT, wx.WXK_RIGHT):
                 # There are much more, but I am lazy...
@@ -373,18 +372,22 @@ class ConsolePanel(wx.ScrolledWindow):
             self.text_entry.SetFocus()
 
         key = event.GetKeyCode()
-        if (key != wx.WXK_CONTROL and (key != ord("C")) and not event.ControlDown()):
+        if key != wx.WXK_CONTROL and (key != ord("C")) and not event.ControlDown():
             if self.FindFocus() is not self.text_entry:
                 try:
                     if key == wx.WXK_DOWN:
-                        self.text_entry.SetValue(self.command_log[self.command_position + 1])
+                        self.text_entry.SetValue(
+                            self.command_log[self.command_position + 1]
+                        )
                         if not wx.IsMainThread():
                             wx.CallAfter(refocus)
                         else:
                             refocus()
                         self.command_position += 1
                     elif key == wx.WXK_UP:
-                        self.text_entry.SetValue(self.command_log[self.command_position - 1])
+                        self.text_entry.SetValue(
+                            self.command_log[self.command_position - 1]
+                        )
                         if not wx.IsMainThread():
                             wx.CallAfter(refocus)
                         else:

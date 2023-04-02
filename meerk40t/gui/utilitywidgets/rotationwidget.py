@@ -8,7 +8,6 @@ from meerk40t.tools.geomstr import Geomstr
 
 
 class RotationWidget(HandleWidget):
-
     def __init__(self, scene, left, top, right, bottom, bitmap, apply_delta):
         super().__init__(scene, left, top, right, bottom, bitmap)
         self.tool = None
@@ -23,10 +22,14 @@ class RotationWidget(HandleWidget):
         if event_type == "move":
             cx = (self.left + self.right) / 2.0
             cy = (self.top + self.bottom) / 2.0
-            angle_previous = Geomstr.angle(None, complex(cx, cy), complex(*space_pos[2:4]))
+            angle_previous = Geomstr.angle(
+                None, complex(cx, cy), complex(*space_pos[2:4])
+            )
             if math.isnan(angle_previous):
                 return RESPONSE_CONSUME
-            angle_current = Geomstr.angle(None, complex(cx, cy), complex(*space_pos[:2]))
+            angle_current = Geomstr.angle(
+                None, complex(cx, cy), complex(*space_pos[:2])
+            )
 
             delta_theta = angle_current - angle_previous
             if delta_theta > math.tau / 2:
@@ -43,6 +46,9 @@ class RotationWidget(HandleWidget):
         if not self.tool:
             return
         gc.SetPen(self.tool_pen)
-        gc.StrokeLine((self.left + self.right) / 2.0, (self.top + self.bottom) / 2.0, self.tool[0], self.tool[1])
-
-
+        gc.StrokeLine(
+            (self.left + self.right) / 2.0,
+            (self.top + self.bottom) / 2.0,
+            self.tool[0],
+            self.tool[1],
+        )

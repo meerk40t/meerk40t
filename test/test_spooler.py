@@ -1,11 +1,10 @@
 import unittest
+from test import bootstrap
 
 from meerk40t.core.spoolers import SpoolerJob
-from test import bootstrap
 
 
 class TestSpooler(unittest.TestCase):
-
     def test_spoolerjob(self):
         """
         Test spooler job

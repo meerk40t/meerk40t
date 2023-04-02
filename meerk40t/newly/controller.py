@@ -771,13 +771,19 @@ class NewlyController:
     #######################
 
     def _commit_speed(self):
-        if self._set_speed is None and self._set_speed_mode is None and self._speed is not None:
+        if (
+            self._set_speed is None
+            and self._set_speed_mode is None
+            and self._speed is not None
+        ):
             return
         new_speed = self._set_speed
         new_speed_mode = self._set_speed_mode
         self._set_speed_mode = None
         self._set_speed = None
-        if new_speed is not None and (new_speed != self._speed or new_speed_mode != self._speed_mode):
+        if new_speed is not None and (
+            new_speed != self._speed or new_speed_mode != self._speed_mode
+        ):
             self._speed_mode = new_speed_mode
             self._speed = new_speed
             settings = self._get_chart_settings_for_speed(new_speed)
@@ -903,4 +909,3 @@ class NewlyController:
         self._commit_raster_bitdepth()
         self._commit_raster_bitc()
         self._commit_raster_bitwidth()
-
