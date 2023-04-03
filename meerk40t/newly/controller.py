@@ -357,10 +357,10 @@ class NewlyController:
             outline = job.outline
         except AttributeError:
             pass
-        self._realtime = False
         if outline is not None:
             self.set_xy(*outline[0])
             self._job_x, self._job_y = outline[0]
+        self._realtime = False
         self._clear_settings()
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
