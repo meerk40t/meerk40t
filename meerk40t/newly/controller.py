@@ -167,6 +167,15 @@ class NewlyController:
         self._is_opening = False
         self._abort_open = False
 
+    def sync(self):
+        self._last_updated_x, self._last_updated_y = self._last_x, self._last_y
+
+    def update(self):
+        last_x, last_y = self.service.device.device_to_scene_position(self._last_updated_x, self._last_updated_y)
+        x, y = self.service.device.device_to_scene_position(self._last_x, self._last_y)
+        self.sync()
+        self.service.signal("driver;position", (last_x, last_y, x, y))
+
     #######################
     # MODE SHIFTS
     #######################
