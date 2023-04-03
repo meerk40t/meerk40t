@@ -15655,3 +15655,82 @@ msgstr "Nachfragen"
 
 msgid "Calling inkscape..."
 msgstr "Starte inkscape im Hintergrund..."
+
+msgid "Device:"
+msgstr "Gerät:"
+
+msgid "Select Device"
+msgstr "Gerät auswählen"
+
+msgid "Quicksearch for device-entry"
+msgstr "Schnellsuche nach Gerätetyp"
+
+msgid "Filter"
+msgstr "Filter"
+
+msgid ""
+"The M2 Nano is the stock card in most K40 machines. "
+"Produced by Lihuiyu Studios Labs, the typically small green card states: "
+"Designed for Laser Machines. Assembled in China-Hangzhou. "
+"The most recent and popular revision version is 6C6879-LASER-M2:9."
+msgstr ""
+"Der M2Nano ist der Standard-Controller in den meisten K40-Geräten. "
+"Auf der meist grünen Platine steht:\n"
+"Lihuiyu Studios Labs. Designed for Laser Machines. Assembled in China-Hangzhou.\n"
+"Die am meist verbreitete Version ist die 6C6879-LASER-M2:9."
+
+msgid ""
+"The M3 Nano is a newer stock variation of the Lihuiyu Studios Labs board. The board is mostly purple. "
+"The most recent and popular revision version 10, 6C6879-LASER-M3:10. "
+"Unlike previous boards the M3 Nano has a hardware pause multi-plexing button and PWM control. "
+"The M3Nano Plus variation replaces the A4988 stepper motor chips with TMC stepper motor chips."
+msgstr ""
+"Die Nachfolgeversion des M2 Nano bietet PWM-Support zum Regulieren der Laserstärke. "
+"Die neueste Version der zumeist violetten Platine ist die 6C6879-LASER-M3:10. "
+"Die M3 Nano Plus-Variante hat TMC Stepper-Treiber anstelle der A4988 verbaut."
+
+msgid ""
+"The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
+msgstr ""
+"Das JCZ Board ist ein Faserlaser-Controller, der mit der EZCad2™ Software angesteuert wird."
+
+msgid "With specific settings for the UV source. (No specific settings are known)."
+msgstr "Mit spezifischen Einstellungen für die UV-Laser-Quelle (noch keine genutzt bislang)."
+
+msgid "With specific settings for the CO2 source. (No specific settings are known)."
+msgstr "Mit spezifischen Einstellungen für die CO2-Laser-Quelle (noch keine genutzt bislang)."
+
+msgid "With this driver we specifically enable the MOPA feature."
+msgstr "Mit diesem Treiber wird das MOPA Feature (variable Pulslänge) aktiviert."
+
+msgid "CO2-Laser"
+msgstr "CO2-Laser"
+
+msgid "Fibre-Laser"
+msgstr "Faser-Laser"
+
+msgid "Diode-Laser"
+msgstr "Dioden-Laser"
+
+msgid "Older CO2 Laser running the NewlyDraw software"
+msgstr "Älterer CO2 Laser, der mit der NewlyDraw Software angesteuert wird."
+
+msgid "Generic GRBL Laser Device."
+msgstr "Laser mit einem generischen GRBL Controller."
+
+msgid "K40 laser with a modified GRBL laser controller."
+msgstr "K40 Laser mit einem modifizierten GRBL Laser Controller."
+
+msgid "Any of a variety of inexpensive GRBL based diode lasers."
+msgstr "Diodenlaser mit einem gängigen GRBL-kompatiblen Controller."
+
+msgid "This driver is incomplete. Use at your own risk."
+msgstr "Dieser Treiber ist einem frühen Entwicklungsstadium. Verwendung auf eigene Gefahr."
+
+msgid ""
+"Moshiboards MS10105 (V.4.XX) were popular around 2013, "
+"these communicate over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). "
+"The boards are usually red and sport two large black heatsinks for their stepper motor chips."
+msgstr ""
+"Die Moshiboard MS10105 (V.4.XX) waren um 2013 populär. Die Platinen sind meist rot und "
+"haben zwei große Kühlkörper über den Stepper-Treibern verbaut."
