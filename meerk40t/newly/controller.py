@@ -86,14 +86,14 @@ class NewlyController:
 
         self.mode = "init"
         self.paused = False
-        self.command_buffer = []
+        self._command_buffer = []
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
             # Any string data sent is latin-1 encoded.
-            self.command_buffer.append(cmd.encode("latin-1"))
+            self._command_buffer.append(cmd.encode("latin-1"))
         else:
-            self.command_buffer.append(cmd)
+            self._command_buffer.append(cmd)
 
     def set_disable_connect(self, status):
         self._disable_connect = status
@@ -339,10 +339,10 @@ class NewlyController:
 
     def _execute_job(self):
         self("ZED")
-        cmd = b";".join(self.command_buffer) + b";"
+        cmd = b";".join(self._command_buffer) + b";"
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
-        self.command_buffer.clear()
+        self._command_buffer.clear()
         self._clear_settings()
 
     def open_job(self, job=None):
@@ -372,12 +372,12 @@ class NewlyController:
         Closes the file and sends.
         @return:
         """
-        if not self.command_buffer:
+        if not self._command_buffer:
             return
         if self.mode in ("realtime", "init"):
             # Job contains no instructions.
             self.mode = "init"
-            self.command_buffer.clear()
+            self._command_buffer.clear()
             return
         if not self._realtime and self._job_x is not None and self._job_y is not None:
             self.goto_rel(self._job_x, self._job_y)
