@@ -223,21 +223,14 @@ class NewlyDriver:
         if self.service.swap_xy:
             x, y = y, x
         old_current = self.service.current
-        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
 
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
+        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         try:
             self.connection.set_xy(self.native_x, self.native_y, relative=False)
         except ConnectionError:
             # If this triggered the laser movement it might have been force aborted, and crash here in error.
             pass
+
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -259,15 +252,6 @@ class NewlyDriver:
         self.native_x += unit_dx
         self.native_y += unit_dy
 
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
-
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
         try:
             self.connection.set_xy(self.native_x, self.native_y, relative=True)
         except ConnectionError:
