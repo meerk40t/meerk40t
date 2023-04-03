@@ -910,12 +910,12 @@ class NewlyController:
         ):
             self._speed_mode = new_speed_mode
             self._speed = new_speed
-            settings = self._get_chart_settings_for_speed(new_speed)
-            self(f"VQ{int(round(settings['corner_speed']))}")
-            self(f"VJ{int(round(settings['acceleration_length']))}")
             if self._speed_mode == "vector":
                 self(f"VS{self._map_vector_speed(new_speed)}")
             else:
+                settings = self._get_chart_settings_for_speed(new_speed)
+                self(f"VQ{int(round(settings['corner_speed']))}")
+                self(f"VJ{int(round(settings['acceleration_length']))}")
                 self(f"VS{self._map_raster_speed(new_speed)}")
 
     def _get_chart_settings_for_speed(self, speed):
