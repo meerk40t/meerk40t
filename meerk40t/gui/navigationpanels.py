@@ -1178,6 +1178,7 @@ class MovePanel(wx.Panel):
         self.context.unlisten("driver;position", self.update_position_info)
         self.context.unlisten("emulator;position", self.update_position_info)
 
+
 class PulsePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PulsePanel.__init__
