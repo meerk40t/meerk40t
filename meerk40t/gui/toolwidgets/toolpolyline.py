@@ -102,10 +102,7 @@ class PolylineTool(ToolWidget):
                 response = RESPONSE_ABORT
         elif event_type == "rightdown":
             was_already_empty = len(self.point_series) == 0
-            self.point_series = []
-            self.mouse_position = None
-            self.scene.pane.tool_active = False
-            self.scene.request_refresh()
+            self.end_tool()
             if was_already_empty:
                 self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
@@ -128,7 +125,6 @@ class PolylineTool(ToolWidget):
                 response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.end_tool()
-            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.pane.tool_active:
@@ -143,18 +139,19 @@ class PolylineTool(ToolWidget):
         return response
 
     def end_tool(self):
-        polyline = Polyline(*self.point_series)
-        elements = self.scene.context.elements
-        node = elements.elem_branch.add(
-            shape=polyline,
-            type="elem polyline",
-            stroke_width=elements.default_strokewidth,
-            stroke=elements.default_stroke,
-            fill=elements.default_fill,
-        )
-        if elements.classify_new:
-            elements.classify([node])
+        if len(self.point_series) > 1:
+            polyline = Polyline(*self.point_series)
+            elements = self.scene.context.elements
+            node = elements.elem_branch.add(
+                shape=polyline,
+                type="elem polyline",
+                stroke_width=elements.default_strokewidth,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
+            )
+            if elements.classify_new:
+                elements.classify([node])
+            self.notify_created(node)
         self.scene.pane.tool_active = False
         self.point_series = []
-        self.notify_created(node)
         self.mouse_position = None
