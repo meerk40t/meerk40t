@@ -243,7 +243,6 @@ class NewlyController:
         self._set_move_dc = self.service.move_dc
         self._set_speed_mode = "raster"
         self._set_speed = self.service.moving_speed
-        self._set_power = 0
         self._set_pwm_freq = None
         self._set_relative = True
         self._set_bit_depth = None
@@ -768,10 +767,11 @@ class NewlyController:
         self._commit_pwmfreq()
         self._commit_dc()
         self._commit_pen()
-        self._commit_speed()
         self._commit_power()
-        self._commit_relative_mode()
         self._commit_raster()
+        self._commit_speed()
+        self._commit_relative_mode()
+
 
     #######################
     # Commit DC Info
@@ -861,11 +861,7 @@ class NewlyController:
         self._set_power = None
 
         if new_power is None:
-            # No power is set, use default.
-            if self._speed_mode == "vector":
-                new_power = self.service.default_cut_power
-            else:
-                new_power = self.service.default_raster_power
+            return
 
         if new_power != self._power:
             # Already set power is not the new_power setting.
