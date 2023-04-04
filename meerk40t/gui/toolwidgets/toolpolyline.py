@@ -10,7 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Polyline, Point
+from meerk40t.svgelements import Point, Polyline
 
 
 class PolylineTool(ToolWidget):
@@ -173,7 +173,6 @@ class PolylineTool(ToolWidget):
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
         return response
-
 
     def end_tool(self):
         if len(self.point_series) > 1:
