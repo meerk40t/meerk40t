@@ -2451,7 +2451,7 @@ class MeerK40t(MWindow):
             self.context("window open Preferences\n")
 
         def on_click_delete():
-            self.context("element delete\n")
+            self.context("tree selected delete\n")
 
         def clipboard_filled():
             res = False
@@ -2553,7 +2553,7 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("Delete\tDel"),
+                "label": _("Delete"),
                 "help": _("Delete the selected elements"),
                 "action": on_click_delete,
                 "enabled": self.context.elements.has_emphasis,

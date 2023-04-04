@@ -51,8 +51,10 @@ def plugin(kernel, lifecycle):
                 "provider": "provider/device/balor",
                 "friendly_name": _("Fibre-Laser (JCZ-Controller) (MOPA)"),
                 "extended_info": _(
-                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With this driver we specifically enable the MOPA feature."
-                ),
+                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
+                )
+                + "\n"
+                + _("With this driver we specifically enable the MOPA feature."),
                 "priority": 8,
                 "family": _("Fibre-Laser"),
                 "family_priority": 30,
@@ -78,7 +80,11 @@ def plugin(kernel, lifecycle):
                 "provider": "provider/device/balor",
                 "friendly_name": _("CO2 (JCZ-Controller)"),
                 "extended_info": _(
-                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With specific settings for the CO2 source. (No specific settings are known)."
+                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
+                )
+                + "\n"
+                + _(
+                    "With specific settings for the CO2 source. (No specific settings are known)."
                 ),
                 "priority": 7,
                 "family": _("CO2-Laser"),
@@ -101,7 +107,11 @@ def plugin(kernel, lifecycle):
                 "provider": "provider/device/balor",
                 "friendly_name": _("UV (JCZ-Controller)"),
                 "extended_info": _(
-                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software. With specific settings for the UV source. (No specific settings are known)."
+                    "The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
+                )
+                + "\n"
+                + _(
+                    "With specific settings for the UV source. (No specific settings are known)."
                 ),
                 "priority": 6,
                 "family": _("UV-Laser"),

@@ -33,7 +33,7 @@ def plugin(kernel, lifecycle=None):
                 "provider": "provider/device/grbl",
                 "friendly_name": _("Generic (GRBL-Controller)"),
                 "extended_info": _("Generic GRBL Laser Device."),
-                "priority": 19,
+                "priority": 17,
                 "family": _("Generic"),
                 "family_priority": 20,
                 "choices": [
@@ -54,7 +54,7 @@ def plugin(kernel, lifecycle=None):
                 "provider": "provider/device/grbl",
                 "friendly_name": _("K40 (GRBL-Controller)"),
                 "extended_info": _("K40 laser with a modified GRBL laser controller."),
-                "priority": 70,
+                "priority": 18,
                 "family": _("CO2-Laser"),
                 "family_priority": 99,
                 "choices": [
@@ -89,7 +89,7 @@ def plugin(kernel, lifecycle=None):
                 "extended_info": _(
                     "Any of a variety of inexpensive GRBL based diode lasers."
                 ),
-                "priority": 17,
+                "priority": 19,
                 "family": _("Diode-Laser"),
                 "family_priority": 50,
                 "choices": [
