@@ -15734,3 +15734,90 @@ msgid ""
 msgstr ""
 "Die Moshiboard MS10105 (V.4.XX) waren um 2013 populär. Die Platinen sind meist rot und "
 "haben zwei große Kühlkörper über den Stepper-Treibern verbaut."
+
+msgid "&Undo\tCtrl-Z"
+msgstr "Rückgängig\tCtrl-Z"
+
+msgid "Undo last action"
+msgstr "Letzte Aktion rückgängig machen"
+
+msgid "&Redo\tCtrl-Shift-Z"
+msgstr "Wiederherstellen\tCtrl-Shift-Z"
+
+msgid "Revert last undo"
+msgstr "Letzte rückgängig gemachte Aktion erneut durchführen"
+
+msgid "C&ut\tCtrl-X"
+msgstr "Ausschneiden\tCtrl-X"
+
+msgid "Cut selected elements"
+msgstr "Verschiebe selektierte Elemente in die Zwischenablage"
+
+msgid "&Copy\tCtrl-C"
+msgstr "Kopieren\tCtrl-C"
+
+msgid "Copy selected elements to clipboard"
+msgstr "Kopiere selektierte Elemente in die Zwischenablage"
+
+msgid "&Paste\tCtrl-V"
+msgstr "Einfügen\tCtrl-V"
+
+msgid "Paste elements from clipboard"
+msgstr "Füge Elemente aus Zwischenablage ein"
+
+msgid "&Select all\tCtrl-A"
+msgstr "&Alles auswählen\tCtrl-A"
+
+msgid "Select all elements on scene"
+msgstr "Alle Elemente im Arbeitsbereich auswählen"
+
+msgid "&Select None"
+msgstr "Auswahl aufheben"
+
+msgid "Deselect all elements on scene"
+msgstr "Jede Auswahl von Elementen aufheben"
+
+msgid "&Invert selection\tCtrl-I"
+msgstr "Auswahl umkehren\tCtrl-I"
+
+msgid "Invert the selection status of all elements"
+msgstr "Auswahl invertieren (alle ausgewählten Elemente deselektieren, alle nicht ausgewählten selektieren)"
+
+msgid "Select all non-assigned"
+msgstr "Nicht zugeordnete auswählen"
+
+msgid "Select all elements that are not assigned to an operation"
+msgstr "Alle Elemente auswählen, die keinem Arbeitsablauf zugeordnet sind"
+
+msgid "Delete the selected elements"
+msgstr "Lösche die ausgewählten Elemente"
+
+msgid "Edit the elements properties"
+msgstr "Bearbeite die Eigenschaften des Elements"
+
+msgid "Device-Manager"
+msgstr "Geräte-Manager"
+
+msgid "Manage the Laser devices"
+msgstr "Hinzufügen, Ändern, Löschen con Geräten"
+
+msgid "Device-Configuration"
+msgstr "Geräte-Konfiguration"
+
+msgid "Manage the device settings"
+msgstr "Bearbeite die Einstellungen des Gerätes"
+
+msgid "Wordlist-Editor"
+msgstr "Variablen + Wortlisten Editor"
+
+msgid "Manages Wordlist-Entries"
+msgstr "Verwaltet Wortlisten(Einträge)"
+
+msgid "Key-Bindings"
+msgstr "Tastaturbelegung"
+
+msgid "Preferences\tCtrl-,"
+msgstr "Einstellungen\tCtrl-,"
+
+msgid "Edit the general preferences"
+msgstr "Allgemeine Einstellungen festlegen"
