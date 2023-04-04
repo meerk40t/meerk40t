@@ -861,11 +861,7 @@ class NewlyController:
         self._set_power = None
 
         if new_power is None:
-            # No power is set, use default.
-            if self._speed_mode == "vector":
-                new_power = self.service.default_cut_power
-            else:
-                new_power = self.service.default_raster_power
+            return
 
         if new_power != self._power:
             # Already set power is not the new_power setting.
