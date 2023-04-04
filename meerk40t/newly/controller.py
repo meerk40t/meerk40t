@@ -768,10 +768,11 @@ class NewlyController:
         self._commit_pwmfreq()
         self._commit_dc()
         self._commit_pen()
-        self._commit_speed()
         self._commit_power()
-        self._commit_relative_mode()
         self._commit_raster()
+        self._commit_speed()
+        self._commit_relative_mode()
+
 
     #######################
     # Commit DC Info
