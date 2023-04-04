@@ -5846,6 +5846,12 @@ msgstr "Laser nach unten bewegen"
 msgid "Move laser diagonally in the down and right direction"
 msgstr "Laser diagonal nach rechts-unten bewegen"
 
+msgid "Send laser to home position"
+msgstr "Laser in Home-Position fahren"
+
+msgid "Send laser to home position (right click: to physical home)"
+msgstr "Laser in Home-Position fahren (Rechts-Click: zu Geräte Home)"
+
 #: meerk40t/gui/navigationpanels.py:776
 msgid "Unlock the laser rail"
 msgstr "Laserachsen entriegeln"
@@ -5865,6 +5871,15 @@ msgstr "Achtung: erlaube Laserbewegungen außerhalb der Bettabmessungen"
 #: meerk40t/gui/navigationpanels.py:948
 msgid "Move to the set position"
 msgstr "Zu eingestellter Position bewegen"
+
+msgid "Right click to activate mouse-click mode to set position"
+msgstr "Mit Rechts-Click wird 'Position setzen' Modus aktiviert"
+
+msgid "Current laserhead position. Double-click to use."
+msgstr "Aktuelle Position des Lasers. Mit Doppel-Klick übernehmen."
+
+msgid "Current: "
+msgstr "Aktuell: "
 
 #: meerk40t/gui/navigationpanels.py:950
 msgid "Set X value for the Move To"
@@ -7620,7 +7635,7 @@ msgstr "&Neu\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:1991
 msgid "Clear Operations, Elements and Notes"
-msgstr ""
+msgstr "Setze Arbeitsabläufe, Elemente und Notizen zurück"
 
 #: meerk40t/gui/wxmmain.py:1997
 msgid "&Open Project\tCtrl-O"
@@ -7628,7 +7643,7 @@ msgstr "&Öffne Pr&ojekt\tCtrl-O"
 
 #: meerk40t/gui/wxmmain.py:1998
 msgid "Clear existing elements and notes and open a new file"
-msgstr ""
+msgstr "Setze Elemente und Notizen zurück und öffne eine neue Datei"
 
 #: meerk40t/gui/wxmmain.py:2004
 msgid "&Recent"
@@ -7640,7 +7655,7 @@ msgstr "&Importiere Datei"
 
 #: meerk40t/gui/wxmmain.py:2008
 msgid "Import another file into the same project"
-msgstr ""
+msgstr "Importiere eine weitere Datei in das aktuelle Projekt"
 
 #: meerk40t/gui/wxmmain.py:2014
 msgid "&Save\tCtrl-S"
@@ -8053,7 +8068,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmmain.py:2920
 msgid "Load {file}..."
-msgstr ""
+msgstr "Lade Datei {file}..."
 
 #: meerk40t/gui/wxmmain.py:2934
 msgid "Clear Recent"
@@ -8061,7 +8076,7 @@ msgstr "Letzte löschen"
 
 #: meerk40t/gui/wxmmain.py:2935
 msgid "Delete the list of recent projects"
-msgstr ""
+msgstr "Lösche die Merkliste der zuletzt geladenen Projekte"
 
 #: meerk40t/gui/wxmmain.py:2987 meerk40t/gui/wxmmain.py:2999
 msgid "Loading File..."
@@ -15821,3 +15836,6 @@ msgstr "Einstellungen\tCtrl-,"
 
 msgid "Edit the general preferences"
 msgstr "Allgemeine Einstellungen festlegen"
+
+msgid "Home position"
+msgstr "Home-Position"
