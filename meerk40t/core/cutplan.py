@@ -126,7 +126,7 @@ class CutPlan:
         # ==========
         matrix = device.scene_to_device_matrix()
 
-        bounds = Node.union_bounds([p for p in self.plan if hasattr(p, "bounds")], bounds=self._previous_bounds)
+        bounds = Node.union_bounds(self.plan, bounds=self._previous_bounds)
         self._previous_bounds = bounds
         if bounds is not None:
             left, top, right, bottom = bounds
