@@ -332,6 +332,11 @@ class SpoolerPanel(wx.Panel):
         else:
             to_remove = list(self.context.logging.matching_events("job"))
         for key, event in to_remove:
+            if older_than is not None:
+                if not "start_time" in event:
+                    continue
+                if event["start_time"] >= older_than:
+                    continue
             del self.context.logging.logs[key]
         self.refresh_history()
 
@@ -357,8 +362,10 @@ class SpoolerPanel(wx.Panel):
 
         def on_menu_time(cutoff):
             def check(event):
-                self.clear_history(cutoff)
+                self.clear_history(dcutoff)
 
+            # Store value locally
+            dcutoff = cutoff
             return check
 
         def toggle_1(event):
