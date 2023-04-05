@@ -23,8 +23,6 @@ from meerk40t.newly.controller import NewlyController
 class NewlyDriver:
     def __init__(self, service, force_mock=False):
         self.service = service
-        self.native_x = 0
-        self.native_y = 0
         self.name = str(self.service)
 
         self.connection = NewlyController(service, force_mock=force_mock)
@@ -46,6 +44,14 @@ class NewlyDriver:
 
     def __repr__(self):
         return f"NewlyDriver({self.name})"
+
+    @property
+    def native_x(self):
+        return self.connection._last_x
+
+    @property
+    def native_y(self):
+        return self.connection._last_y
 
     @property
     def connected(self):
@@ -141,12 +147,15 @@ class NewlyDriver:
                 self._aborting = False
                 return
             if isinstance(q, LineCut):
+                con.sync()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 con.mark(*q.end)
+                con.update()
             elif isinstance(q, (QuadCut, CubicCut)):
+                con.sync()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -166,7 +175,9 @@ class NewlyDriver:
                     p = q.point(t)
                     con.mark(*p)
                     t += step_size
+                con.update()
             elif isinstance(q, PlotCut):
+                con.sync()
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -191,15 +202,14 @@ class NewlyDriver:
                         # Max power is the percent max power, scaled by the pixel power.
                         con.power(percent_power * on)
                     con.mark(x, y)
+                    con.update()
             elif isinstance(q, DwellCut):
                 con.dwell(q.dwell_time)
             elif isinstance(q, WaitCut):
                 con.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
-                con.moving_mode()
                 con.goto(0, 0)
             elif isinstance(q, GotoCut):
-                con.moving_mode()
                 con.goto(0, 0)
             elif isinstance(q, SetOriginCut):
                 pass
@@ -209,7 +219,9 @@ class NewlyDriver:
                 pass
             else:
                 # Rastercut
+                con.sync()
                 con.raster(q)
+                con.update()
         con.rapid_mode()
 
     def move_abs(self, x, y):
@@ -222,27 +234,14 @@ class NewlyDriver:
         """
         if self.service.swap_xy:
             x, y = y, x
-        old_current = self.service.current
-        self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
 
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
+        self.connection.sync()
         try:
-            self.connection.set_xy(self.native_x, self.native_y, relative=False)
+            self.connection.set_xy(*self.service.physical_to_device_position(x, y))
         except ConnectionError:
             # If this triggered the laser movement it might have been force aborted, and crash here in error.
             pass
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        self.connection.update()
 
     def move_rel(self, dx, dy):
         """
@@ -254,31 +253,17 @@ class NewlyDriver:
         """
         if self.service.swap_xy:
             dx, dy = dy, dx
-        old_current = self.service.current
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
-        self.native_x += unit_dx
-        self.native_y += unit_dy
 
-        if self.native_x > 0xFFFF:
-            self.native_x = 0xFFFF
-        if self.native_x < 0:
-            self.native_x = 0
-
-        if self.native_y > 0xFFFF:
-            self.native_y = 0xFFFF
-        if self.native_y < 0:
-            self.native_y = 0
+        self.connection.sync()
         try:
-            self.connection.set_xy(self.native_x, self.native_y, relative=True)
+            self.connection.set_xy(
+                self.connection._last_x + unit_dx, self.connection._last_y + unit_dy
+            )
         except ConnectionError:
             # If this triggered the laser movement it might have been force aborted, and crash here in error.
             pass
-
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
+        self.connection.update()
 
     def home(self):
         """
@@ -286,7 +271,9 @@ class NewlyDriver:
 
         @return:
         """
+        self.connection.sync()
         self.connection.home()
+        self.connection.update()
 
     def origin(self):
         self.move_abs("0", "0")
@@ -295,7 +282,9 @@ class NewlyDriver:
         """ "
         This would be the command to go to a real physical home position (ie hitting endstops)
         """
+        self.connection.sync()
         self.connection.home()
+        self.connection.update()
 
     def rapid_mode(self):
         """

@@ -996,7 +996,7 @@ class MovePanel(wx.Panel):
             label += "\n" + _("Current: ") + f"{x.length_mm}, {y.length_mm}"
             btn.SetToolTip(label)
 
-        self.label_pos = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_pos = wx.StaticText(self, wx.ID_ANY, "---")
         self.__set_properties()
         self.__do_layout()
 
@@ -1144,15 +1144,12 @@ class MovePanel(wx.Panel):
         except ValueError:
             return
 
-    @signal_listener("driver;position")
-    @signal_listener("emulator;position")
     def update_position_info(self, origin, pos):
         # origin, pos
 
         if pos is None:
             return
         service = self.context.device
-        # print (f"origin={origin}, pos={pos}, driver={service.path}")
         # Might not come from the right device...
         if origin not in (service.path, "lhystudios"):
             # wrong device...
@@ -1165,7 +1162,21 @@ class MovePanel(wx.Panel):
         self.label_pos.SetLabel(
             f"{round(xpos.preferred, 6):.1f}{units}\n{round(ypos.preferred, 6):.1f}{units}"
         )
+        self.label_pos.Refresh()
+        # button_info_sizer.Layout()
+        # self.GetSizer().Layout()
         self.Layout()
+        self.Refresh()
+
+    def pane_show(self, *args):
+        self.context.listen("driver;position", self.update_position_info)
+        self.context.listen("emulator;position", self.update_position_info)
+
+    # Not sure whether this is the right thing to do, if it's still locked and then
+    # the pane gets hidden?! Let's call it a feature for now...
+    def pane_hide(self, *args):
+        self.context.unlisten("driver;position", self.update_position_info)
+        self.context.unlisten("emulator;position", self.update_position_info)
 
 
 class PulsePanel(wx.Panel):
