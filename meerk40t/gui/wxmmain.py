@@ -355,19 +355,6 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "mini_icon",
-                "object": self.context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Mini icon in tree"),
-                "tip": _(
-                    "Active: Display a miniature representation of the element in the tree\n"
-                    + "Inactive: Use a standard icon for the element type instead"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -376,7 +363,20 @@ class MeerK40t(MWindow):
                 "choices": ["large", "big", "default", "small", "tiny"],
                 "label": _("Icon size:"),
                 "tip": _(
-                    "Appearance of all icons in the GUI (requires a restart to take effect))"
+                    "Appearance of all icons in the GUI (requires a restart to take effect)"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n"
+                    + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
