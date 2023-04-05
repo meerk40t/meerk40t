@@ -761,10 +761,16 @@ class SpoolerPanel(wx.Panel):
                 HC_RUNTIME,
                 self.timestr(duration, False),
             )
+            nr_loop = info.get("loop")
+            nr_total = info.get("total")
+            if isinf(nr_total):
+                s = f"{nr_loop}/∞"
+            else:
+                s = f"{nr_loop}/{nr_total}"
             self.list_job_history.SetItem(
                 list_id,
                 HC_PASSES,
-                str(info.get("loops_total")),
+                s,
             )
             self.list_job_history.SetItem(list_id, HC_DEVICE, str(info.get("device")))
             self.list_job_history.SetItem(
