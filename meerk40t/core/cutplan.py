@@ -15,6 +15,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
+from math import isinf
 from os import times
 from time import time
 from typing import Optional
@@ -59,6 +60,7 @@ class CutPlan:
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
         self.outline = None
+        self._previous_bounds = None
 
     def __str__(self):
         parts = list()
@@ -124,19 +126,24 @@ class CutPlan:
         # ==========
         matrix = device.scene_to_device_matrix()
 
-        bounds = Node.union_bounds(self.plan)
+        bounds = Node.union_bounds([p for p in self.plan if hasattr(p, "bounds")], bounds=self._previous_bounds)
+        self._previous_bounds = bounds
         if bounds is not None:
             left, top, right, bottom = bounds
             min_x = min(right, left)
             min_y = min(top, bottom)
             max_x = max(right, left)
             max_y = max(top, bottom)
-            self.outline = (
-                device.device_position(min_x, min_y),
-                device.device_position(max_x, min_y),
-                device.device_position(max_x, max_y),
-                device.device_position(min_x, max_y),
-            )
+            if isinf(min_x) or isinf(min_y) or isinf(max_x) or isinf(max_y):
+                # Infinite bounds are invalid.
+                self.outline = None
+            else:
+                self.outline = (
+                    device.device_position(min_x, min_y),
+                    device.device_position(max_x, min_y),
+                    device.device_position(max_x, max_y),
+                    device.device_position(min_x, max_y),
+                )
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary
@@ -534,6 +541,7 @@ class CutPlan:
                 del self.plan[i]
 
     def clear(self):
+        self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
 
