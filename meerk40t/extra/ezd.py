@@ -197,6 +197,25 @@ class Pen:
         self.unknown21 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
         self.unknown21 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
 
+class EZObject:
+    pass
+    # 01-02 : Item type. 0001 Curve. 0003 Rect, 0004 Circle, 0005 Ellipse, 0006 Polygon, 3000 Input, 2000 Timer, 4000 Output, 8000 Text.
+    # 0c-0d : Pen Used.
+    # 1a-1b : Selected 0x02, Hidden 0x01, Locked 0x10
+    # 1C-1D : Length of title. - Extends Title. 02 00 is min, 1E 1F are 00 in that case.
+    # 40-21 : 02 00 if right array, 03 00 if up array 0x01 - Up, 0x02 - Bidirectional
+    # 46-47 : X-array
+    # 4E-4F : Y-array
+    # 6E- of header for shape.
+
+    # Polygon
+    # F2-F3 : Number of sides.
+    # 92-93 : Star Shaped bool. (also changed 6E from 0D to 0C)
+
+    # Image
+    # 8E-8F : Original Path
+
+    # Units 24 40 = 10mm, 34 40 = 20mm, 3E 40 = 30mm (maybe 08 00 after)
 
 
 class EZCFile:
