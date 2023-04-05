@@ -772,7 +772,6 @@ class NewlyController:
         self._commit_speed()
         self._commit_relative_mode()
 
-
     #######################
     # Commit DC Info
     #######################
