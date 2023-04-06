@@ -353,30 +353,30 @@ class EZObject:
             self.parse_rect(file)
         elif self.type == "text":
             self.parse_text(file)
-        elif self.type == "polygon":
-            self.parse_polygon(file)
+        else:
+            parsed = list(self._general_parse(file))
+            print(parsed)
 
         data = file.read()
         print(data)
         return data
 
     def _general_parse(self, file):
-        while file:
-            length = struct.unpack("<I", file.read(4))[0]
-            if length == 2:
-                yield struct.unpack("<I", file.read(2))[0]
-            elif length == 4:
-                yield struct.unpack("<I", file.read(4))[0]
-            elif length == 8:
-                yield struct.unpack("d", file.read(8))[0]
-            else:
-                yield file.read(length)
-
-
-    def parse_polygon(self, file):
-        parsed = list(self._general_parse(file))
-        print(parsed)
-        print(parsed)
+        try:
+            while file:
+                length = struct.unpack("<I", file.read(4))[0]
+                if length == 2:
+                    yield struct.unpack("<I", file.read(2))[0]
+                elif length == 4:
+                    yield struct.unpack("<I", file.read(4))[0]
+                elif length == 8:
+                    yield struct.unpack("d", file.read(8))[0]
+                elif length == 0:
+                    return
+                else:
+                    yield file.read(length)
+        except struct.error:
+            pass
 
     def parse_text(self, file):
         self.font_angle = struct.unpack("d", file.read(8))  # Font angle in Text.
@@ -572,7 +572,6 @@ class EZCFile:
                 return
             except ValueError:
                 a = a[:-1]
-
 
 class EZDLoader:
     @staticmethod
