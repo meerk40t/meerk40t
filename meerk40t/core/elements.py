@@ -877,7 +877,7 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def condense_elements(self, data):
+    def condense_elements(self, data, expand_at_end=True):
         """
         This routine looks at a given dataset and will condense
         it in the sense that if all elements of a given hierarchy
@@ -966,12 +966,13 @@ class Elemental(Service):
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
-        while len(data_to_align) == 1:
-            node = data_to_align[0]
-            if node is not None and node.type in ("file", "group"):
-                data_to_align = [e for e in node.children]
-            else:
-                break
+        if expand_at_end:
+            while len(data_to_align) == 1:
+                node = data_to_align[0]
+                if node is not None and node.type in ("file", "group"):
+                    data_to_align = [e for e in node.children]
+                else:
+                    break
         return data_to_align
 
     def translate_node(self, node, dx, dy):
