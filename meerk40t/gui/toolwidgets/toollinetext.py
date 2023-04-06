@@ -104,6 +104,8 @@ class LineTextTool(ToolWidget):
             self.scene.context.signal("statusmsg", "")
 
         response = RESPONSE_CHAIN
+        # if event_type == "key_up":
+        #     print (f"Event {event_type}, Key: {keycode}, Modifiers: {modifiers}")
         if event_type == "leftdown":
             if self.p1 is None:
                 self.scene.pane.tool_active = True
@@ -134,10 +136,12 @@ class LineTextTool(ToolWidget):
                         elements.classify([self.node])
                     self.notify_created(self.node)
                     self.node.emphasized = False
-
-                self.scene.context("window open HersheyFontSelector\n")
-                # Refocus, to allow typing...
-                self.scene.gui.scene_panel.SetFocus()
+                    self.scene.context("window open HersheyFontSelector\n")
+                    # Refocus, to allow typing...
+                    self.scene.gui.scene_panel.SetFocus()
+                else:
+                    # Node creation failed!
+                    done()
 
             response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
@@ -149,14 +153,12 @@ class LineTextTool(ToolWidget):
         elif event_type == "key_up" and modifiers == "escape":
             if self.scene.pane.tool_active:
                 done()
-                # print ("Done - escape")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up" and modifiers == "return":
             if self.scene.pane.tool_active:
                 done()
-                # print ("Done - return")
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
@@ -179,7 +181,7 @@ class LineTextTool(ToolWidget):
                         self.vtext = self.vtext[:-1]
                 if len(to_add) > 0:
                     self.vtext += to_add
-                # print(self.vtext)
+                # print(f"Keyup: {keycode} - {modifiers}: '{self.vtext}'")
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
