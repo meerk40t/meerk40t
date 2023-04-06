@@ -610,6 +610,11 @@ class SpoolerPanel(wx.Panel):
                     try:
                         loop = spool_obj.loops_executed
                         total = spool_obj.loops
+                        # No invalid values please
+                        if loop is None:
+                            loop = 0
+                        if total is None:
+                            total = 1
 
                         if isinf(total):
                             total = "∞"
