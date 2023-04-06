@@ -201,7 +201,7 @@ class Pen:
 
 
 class EZObject:
-    def __init__(self, file):
+    def __init__(self):
         """
         Parse uncompressed object.
         # 01-02 : Item type. 0001 Curve. 0003 Rect, 0004 Circle, 0005 Ellipse, 0006 Polygon, 3000 Input, 2000 Timer, 4000 Output, 8000 Text.
@@ -221,9 +221,15 @@ class EZObject:
         # 8E-8F : Original Path
 
         # Units 24 40 = 10mm, 34 40 = 20mm, 3E 40 = 30mm (maybe 08 00 after)
-
-        @param file:
         """
+        pass
+
+    def parse(self, data):
+        file = BytesIO(data)
+        data_len = struct.unpack("<I", file.read(4))[0]  # 15
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        self.pen = struct.unpack("<I", file.read(4))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
         object_type = struct.unpack("<H", file.read(2))[0]
         self.type = None
         if object_type == 1:
@@ -242,39 +248,27 @@ class EZObject:
             self.type = "timer"
         elif object_type == 0x800:
             self.type = "text"
-        self.unknown1 = struct.unpack("<H", file.read(2))[0]
-        self.unknown2 = struct.unpack("<H", file.read(2))[0]
-        self.unknown3 = struct.unpack("<H", file.read(2))[0]
-        self.unknown4 = struct.unpack("<H", file.read(2))[0]
-        self.unknown5 = struct.unpack("<H", file.read(2))[0]
-        self.pen = struct.unpack("<H", file.read(2))[0]
-        self.unknown7 = struct.unpack("<H", file.read(2))[0]
-        self.unknown8 = struct.unpack("<H", file.read(2))[0]
-        self.unknown9 = struct.unpack("<H", file.read(2))[0]
-        self.object_type_2 = struct.unpack("<H", file.read(2))[0]
-        self.unknown11 = struct.unpack("<H", file.read(2))[0]
-        self.unknown12 = struct.unpack("<H", file.read(2))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
         self.state = struct.unpack("<H", file.read(2))[0]
         # Selected 0x02, Hidden 0x01, Locked 0x10
         self.selected = bool(self.state & 0x02)
         self.hidden = bool(self.state & 0x01)
         self.locked = bool(self.state & 0x10)
-
-        self.unknown14 = struct.unpack("<H", file.read(2))[0]
-        self.unknown15 = struct.unpack("<H", file.read(2))[0]
-        self.unknown16 = struct.unpack("<H", file.read(2))[0]
-        self.unknown17 = struct.unpack("<H", file.read(2))[0]
-        self.unknown18 = struct.unpack("<H", file.read(2))[0]
-        self.unknown19 = struct.unpack("<H", file.read(2))[0]
-        self.unknown20 = struct.unpack("<H", file.read(2))[0]
-        self.unknown21 = struct.unpack("<H", file.read(2))[0]
-        self.unknown22 = struct.unpack("<H", file.read(2))[0]
-        self.unknown23 = struct.unpack("<H", file.read(2))[0]
-        self.unknown24 = struct.unpack("<H", file.read(2))[0]
-        self.unknown25 = struct.unpack("<H", file.read(2))[0]
-        self.unknown26 = struct.unpack("<H", file.read(2))[0]
-        self.unknown27 = struct.unpack("<H", file.read(2))[0]
-        self.unknown28 = struct.unpack("<H", file.read(2))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        self.unknown14 = struct.unpack("<H", file.read(2))[0]  # 2
+        self.unknown15 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown16 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown17 = struct.unpack("<H", file.read(2))[0]  # 4
+        self.unknown18 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown19 = struct.unpack("<H", file.read(2))[0]  # 2
+        self.unknown20 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown21 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown22 = struct.unpack("<H", file.read(2))[0]  # 2
+        self.unknown23 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown24 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown25 = struct.unpack("<H", file.read(2))[0]  # 2
+        self.unknown26 = struct.unpack("<H", file.read(2))[0]  # 0
+        self.unknown27 = struct.unpack("<H", file.read(2))[0]  # 0 # 2
         self.input_port_bits = struct.unpack("<H", file.read(2))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 2
         array_state = struct.unpack("<H", file.read(2))[0]
@@ -294,24 +288,26 @@ class EZObject:
         self.y_pos = struct.unpack("d", file.read(8))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
         self.z_pos = struct.unpack("d", file.read(8))[0]
-        data_len = struct.unpack("<I", file.read(4))[0]  # 8
-        # self.unknownzz = struct.unpack("<I", file.read(4))[0]
-        self.unknownzz = struct.unpack("d", file.read(8))[0]
+        end_structure = struct.unpack("<I", file.read(4))[0]  # 8
+        if self.type == "rect":
+            self.parse_rect(file)
+        elif self.type == "text":
+            self.parse_text(file)
+
+        data = file.read()
+        print(data)
+        return data
+
+    def parse_text(self, file):
+        self.font_angle = struct.unpack("d", file.read(8))  # Font angle in Text.
+
+    def parse_rect(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 16
         self.min_x = struct.unpack("d", file.read(8))[0]
         self.max_x = struct.unpack("d", file.read(8))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 16
         self.max_y = struct.unpack("d", file.read(8))[0]
         self.min_y = struct.unpack("d", file.read(8))[0]
-        if self.type == "rect":
-            self.parse_rect(file)
-        elif self.type == "text":
-            self.parse_text(file)
-
-    def parse_text(self, file):
-        self.font_angle = struct.unpack("d", file.read(8))  # Font angle in Text.
-
-    def parse_rect(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
         self.corner_bottom_left = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
@@ -333,8 +329,6 @@ class EZObject:
         self.matrix_8 = struct.unpack("d", file.read(8))
         self.matrix_9 = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 0
-        data = file.read()
-        print(data)
 
 
 class EZCFile:
@@ -479,9 +473,16 @@ class EZCFile:
         a.frombytes(file.read())
         while True:
             try:
-                q = bytes(a.decode(huffman_dict))
-                byte_io = BytesIO(q)
-                self._objects.append(EZObject(byte_io))
+                q = bytearray(a.decode(huffman_dict))
+                object_type = struct.unpack("<I", q[:4])[0]
+                q = q[4:]
+                try:
+                    while True:
+                        obj = EZObject()
+                        q = obj.parse(q)
+                        self._objects.append(obj)
+                except ValueError:
+                    pass
                 return
             except ValueError:
                 a = a[:-1]
