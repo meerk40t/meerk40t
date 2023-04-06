@@ -38,165 +38,193 @@ class Pen:
         @param file:
         """
         self.unknown0 = struct.unpack("<I", file.read(4))[0]  # 61
-        self.unknown1 = struct.unpack("<I", file.read(4))[0]  # 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.color = struct.unpack("<I", file.read(4))[0]
         label_length = struct.unpack("<I", file.read(4))[0]
         label = file.read(label_length)
         self.label = label.decode("utf_16")
 
-        self.unknown3 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown4 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00, 0
-        self.unknown5 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown6 = struct.unpack("<I", file.read(4))[0]  # 01 00 00 00, 1
-        self.unknown7 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown8 = struct.unpack("<I", file.read(4))[0]  # 01 00 00 00, 1
-        self.unknown9 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00, 8
-        self.unknown10 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00, 0
-
-        self.unknown11 = struct.unpack("<I", file.read(4))[0]  # 00 40 7F 40,
-        self.unknown12 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00, 8
-        self.unknown13 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00, 0
-        self.unknown14 = struct.unpack("<I", file.read(4))[0]  # 00 00 49 40,
-        self.unknown15 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown10 = struct.unpack("d", file.read(8))[0]  # 500.0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown13 = struct.unpack("d", file.read(8))[0]  # 50.0, 0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown16 = struct.unpack("<I", file.read(4))[0]  # 20 4E 00 00, 20000
-        self.unknown17 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown18 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
-        self.unknown19 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown20 = struct.unpack("<I", file.read(4))[0]  # 2C 01 00 00, 300
 
-        self.unknown21 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown22 = struct.unpack("<I", file.read(4))[0]  # 2C 01 00 00, 300
-        self.unknown23 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown24 = struct.unpack("<I", file.read(4))[0]  # 64 00 00 00, 100
-        self.unknown25 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00, 8
-        self.unknown26 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00, 0
-        self.unknown27 = struct.unpack("<I", file.read(4))[0]  # 00 40 AF 40,
-        self.unknown28 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
-        self.unknown29 = struct.unpack("<I", file.read(4))[0]  # F4 01 00 00, 500
-        self.unknown30 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00, 4
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown26 = struct.unpack("d", file.read(8))[0]  # 4000.0
 
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
+        self.unknown29 = struct.unpack("<I", file.read(4))[0]  # F4 01 00 00, 500
+
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown31 = struct.unpack("<I", file.read(4))[0]  # 64 00 00 00
-        self.unknown32 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown33 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown34 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown35 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown36 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown37 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown38 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown39 = struct.unpack("<I", file.read(4))[0]  # 9A 99 99 99
-        self.unknown40 = struct.unpack("<I", file.read(4))[0]  # 99 99 B9 3F
-        self.unknown41 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown42 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown43 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown44 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown45 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown46 = struct.unpack("<I", file.read(4))[0]  # 00 00 F0 3F
-        self.unknown47 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown33 = struct.unpack("d", file.read(8))[0]  # 0.0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown36 = struct.unpack("d", file.read(8))[0]  # 0.0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown39 = struct.unpack("d", file.read(8))[0]  # 0.1
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown42 = struct.unpack("<2I", file.read(8))
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown45 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown48 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown49 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown50 = struct.unpack("<I", file.read(4))[0]  # 01 00 00 00
-        self.unknown51 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown52 = struct.unpack("<I", file.read(4))[0]  # 30 00 00 00
-        self.unknown53 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown54 = struct.unpack("<I", file.read(4))[0]  # 96 00 00 00
-        self.unknown55 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
-        self.unknown56 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown57 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown58 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown59 = struct.unpack("<I", file.read(4))[0]  # 00 00 10 40
-        self.unknown60 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
+        self.unknown56 = struct.unpack("<I", file.read(4))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown58 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown61 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown62 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown63 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown64 = struct.unpack("<I", file.read(4))[0]  # 00 00 F0 3F
-        self.unknown65 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown66 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown67 = struct.unpack("<I", file.read(4))[0]  # 00 00 E0 3F
-        self.unknown68 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown63 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown66 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown69 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown70 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown71 = struct.unpack("<I", file.read(4))[0]  # 01 00 00 00
-        self.unknown72 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown73 = struct.unpack("<I", file.read(4))[0]  # 7B 14 AE 47
-        self.unknown74 = struct.unpack("<I", file.read(4))[0]  # E1 7A 84 3F
-        self.unknown75 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown76 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown77 = struct.unpack("<I", file.read(4))[0]  # 00 00 F0 3F
-        self.unknown78 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown73 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown76 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown79 = struct.unpack("<I", file.read(4))[0]  # 01 00 00 00
-        self.unknown80 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown81 = struct.unpack("<I", file.read(4))[0]  # 7B 14 AE 47
-        self.unknown82 = struct.unpack("<I", file.read(4))[0]  # E1 7A 94 3F
-        self.unknown83 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown81 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown84 = struct.unpack("<I", file.read(4))[0]  # 64 00 00 00
-        self.unknown85 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown86 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown87 = struct.unpack("<I", file.read(4))[0]  # 00 00 E0 3F
-        self.unknown88 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown86 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown89 = struct.unpack("<I", file.read(4))[0]  # 96 00 00 00
-        self.unknown90 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown91 = struct.unpack("<I", file.read(4))[0]  # FA 00 00 00
-        self.unknown92 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown93 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown94 = struct.unpack("<I", file.read(4))[0]  # 00 00 24 40
-        self.unknown95 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown93 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown96 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown97 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown98 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown99 = struct.unpack("<I", file.read(4))[0]  # 00 40 56 40
-        self.unknown100 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown98 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown101 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown102 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown103 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown104 = struct.unpack("<I", file.read(4))[0]  # 00 00 59 40
-        self.unknown105 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown106 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown107 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown108 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown109 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown110 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown111 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown112 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown113 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown114 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown115 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown116 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown117 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown118 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown119 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown120 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown121 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown122 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown123 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown124 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown125 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown126 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown127 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown128 = struct.unpack("<I", file.read(4))[0]  # 00 00 24 40
-        self.unknown129 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown130 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown131 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown132 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown133 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown134 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown135 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown136 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown137 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown138 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown139 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown140 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown141 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown142 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown143 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown144 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown145 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown146 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown147 = struct.unpack("<I", file.read(4))[0]  # 08 00 00 00
-        self.unknown148 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown149 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown151 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown103 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown106 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown109 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown112 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown115 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown118 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown121 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown124 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown127 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown130 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown133 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown136 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown139 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown142 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown145 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
+        self.unknown148 = struct.unpack("d", file.read(8))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown152 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
-        self.unknown153 = struct.unpack("<I", file.read(4))[0]  # 04 00 00 00
+        data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown154 = struct.unpack("<I", file.read(4))[0]  # 00 00 00 00
 
 
@@ -224,12 +252,14 @@ class EZObject:
         """
         pass
 
-    def parse(self, data):
-        file = BytesIO(data)
-        data_len = struct.unpack("<I", file.read(4))[0]  # 15
+    def _parse_pen(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.pen = struct.unpack("<I", file.read(4))[0]
+
+    def _parse_type(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
         object_type = struct.unpack("<H", file.read(2))[0]
         self.type = None
         if object_type == 1:
@@ -248,73 +278,136 @@ class EZObject:
             self.type = "timer"
         elif object_type == 0x800:
             self.type = "text"
+
+    def _parse_state(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
         self.state = struct.unpack("<H", file.read(2))[0]
         # Selected 0x02, Hidden 0x01, Locked 0x10
         self.selected = bool(self.state & 0x02)
         self.hidden = bool(self.state & 0x01)
         self.locked = bool(self.state & 0x10)
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        self.unknown14 = struct.unpack("<H", file.read(2))[0]  # 2
-        self.unknown15 = struct.unpack("<H", file.read(2))[0]  # 0
-        self.unknown16 = struct.unpack("<H", file.read(2))[0]  # 0
-        self.unknown17 = struct.unpack("<H", file.read(2))[0]  # 4
-        self.unknown18 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        self.unknown21 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        self.unknown24 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        self.input_port_bits = struct.unpack("<H", file.read(2))[0]
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+
+    def _parse_array(self, file):
         array_state = struct.unpack("<H", file.read(2))[0]
         self.array_bidirectional = bool(array_state & 0x2)
         self.array_vertical = bool(array_state & 0x1)
 
         data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.array_count_x = struct.unpack("<I", file.read(4))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.array_count_y = struct.unpack("<I", file.read(4))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.array_step_x = struct.unpack("d", file.read(8))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.array_step_y = struct.unpack("d", file.read(8))[0]
+
+    def _parse_position(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 16
+        assert (data_len == 16)
         self.x_pos = struct.unpack("d", file.read(8))[0]
         self.y_pos = struct.unpack("d", file.read(8))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.z_pos = struct.unpack("d", file.read(8))[0]
+
+    def _parse_input_port(self, file):
+        self.input_port_bits = struct.unpack("<H", file.read(2))[0]
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
+
+    def parse(self, data):
+        file = BytesIO(data)
+        obj_type = struct.unpack("<I", file.read(4))[0]  # 0
+        self.unknown1 = struct.unpack("<I", file.read(4))[0]  # 15
+        self._parse_pen(file)
+        self._parse_type(file)
+        self._parse_state(file)
+
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
+        self.unknown14 = struct.unpack("<H", file.read(2))[0]  # 0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 4)
+        self.unknown17 = struct.unpack("<I", file.read(4))[0]  # 1
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
+        self.unknown21 = struct.unpack("<H", file.read(2))[0]  # 0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
+        self.unknown24 = struct.unpack("<H", file.read(2))[0]  # 0
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
+
+        self._parse_input_port(file)
+
+        self._parse_array(file)
+        self._parse_position(file)
+
         end_structure = struct.unpack("<I", file.read(4))[0]  # 8
         if self.type == "rect":
             self.parse_rect(file)
         elif self.type == "text":
             self.parse_text(file)
+        elif self.type == "polygon":
+            self.parse_polygon(file)
 
         data = file.read()
         print(data)
         return data
+
+    def _general_parse(self, file):
+        while file:
+            length = struct.unpack("<I", file.read(4))[0]
+            if length == 2:
+                yield struct.unpack("<I", file.read(2))[0]
+            elif length == 4:
+                yield struct.unpack("<I", file.read(4))[0]
+            elif length == 8:
+                yield struct.unpack("d", file.read(8))[0]
+            else:
+                yield file.read(length)
+
+
+    def parse_polygon(self, file):
+        parsed = list(self._general_parse(file))
+        print(parsed)
+        print(parsed)
 
     def parse_text(self, file):
         self.font_angle = struct.unpack("d", file.read(8))  # Font angle in Text.
 
     def parse_rect(self, file):
         data_len = struct.unpack("<I", file.read(4))[0]  # 16
+        assert (data_len == 16)
         self.min_x = struct.unpack("d", file.read(8))[0]
         self.max_x = struct.unpack("d", file.read(8))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 16
+        assert (data_len == 16)
         self.max_y = struct.unpack("d", file.read(8))[0]
         self.min_y = struct.unpack("d", file.read(8))[0]
+
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.corner_bottom_left = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.corner_bottom_right = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.corner_upper_right = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 8
+        assert (data_len == 8)
         self.corner_upper_left = struct.unpack("d", file.read(8))
         data_len = struct.unpack("<I", file.read(4))[0]  # 4
+        assert (data_len == 4)
         self.unknown106 = struct.unpack("<I", file.read(4))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 72
+        assert (data_len == 72)
         self.matrix_0 = struct.unpack("d", file.read(8))
         self.matrix_1 = struct.unpack("d", file.read(8))
         self.matrix_2 = struct.unpack("d", file.read(8))
@@ -324,7 +417,6 @@ class EZObject:
         self.matrix_7 = struct.unpack("d", file.read(8))
         self.matrix_8 = struct.unpack("d", file.read(8))
         self.matrix_9 = struct.unpack("d", file.read(8))
-        data_len = struct.unpack("<I", file.read(4))[0]  # 0
 
 
 class EZCFile:
@@ -470,14 +562,12 @@ class EZCFile:
         while True:
             try:
                 q = bytearray(a.decode(huffman_dict))
-                object_type = struct.unpack("<I", q[:4])[0]
-                q = q[4:]
                 try:
                     while True:
                         obj = EZObject()
                         q = obj.parse(q)
                         self._objects.append(obj)
-                except ValueError:
+                except struct.error:
                     pass
                 return
             except ValueError:
