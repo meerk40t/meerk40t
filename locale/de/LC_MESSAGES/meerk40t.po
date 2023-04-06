@@ -14995,22 +14995,25 @@ msgid "Goto a font-source..."
 msgstr "Gehe zu Zeichensatz-Quelle..."
 
 msgid "Hershey Fonts - #1"
-msgstr ""
+msgstr "Hershey-Zeichensätze #1"
 
 msgid "Hershey Fonts - #2"
-msgstr ""
+msgstr "Hershey-Zeichensätze #2"
 
 msgid "Autocad-SHX-Fonts"
-msgstr ""
+msgstr "Autocad-SHX-Zeichensätze"
+
+msgid "Windows-Font-Directory"
+msgstr "Windows-Font-Verzeichnis"
 
 msgid ""
-"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
 "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
-"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts "
 msgstr ""
-"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"MeerK40t kann True-Type-, Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
 "Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
-"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts "
 
 msgid "Choose font directory"
 msgstr "Zeichensatz-Verzeichnis auswählen"
