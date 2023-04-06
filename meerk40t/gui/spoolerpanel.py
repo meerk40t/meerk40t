@@ -770,7 +770,7 @@ class SpoolerPanel(wx.Panel):
             )
             nr_loop = info.get("loop")
             nr_total = info.get("total")
-            if isinf(nr_total):
+            if nr_total and isinf(nr_total):
                 s = f"{nr_loop}/∞"
             else:
                 s = f"{nr_loop}/{nr_total}"
