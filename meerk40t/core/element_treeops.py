@@ -383,35 +383,18 @@ def init_tree(kernel):
             data.append(n)
         self.signal("element_property_reload", data)
 
-    @tree_submenu(_("Speed for Engrave-Operation"))
+    @tree_submenu(_("Speed for Vector-Operation"))
     @tree_radio(radio_match_speed)
-    @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
+    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op engrave", "op hatch"),
-        help="",
-    )
-    def set_speed_vector(node, speed=35, **kwargs):
-        data = list()
-        for n in list(self.ops(selected=True)):
-            if n.type not in ("op engrave", "op hatch"):
-                continue
-            n.speed = float(speed)
-            data.append(n)
-        self.signal("element_property_reload", data)
-
-    @tree_submenu(_("Speed for Cut-Operation"))
-    @tree_radio(radio_match_speed)
-    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
-    @tree_operation(
-        _("{speed}mm/s"),
-        node_type="op cut",
+        node_type=("op cut", "op engrave", "op hatch"),
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type != "op cut":
+            if n.type not in ("op cut", "op engrave", "op hatch"):
                 continue
             n.speed = float(speed)
             data.append(n)

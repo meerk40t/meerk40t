@@ -10607,6 +10607,12 @@ msgstr ""
 msgid "Enable this operation for inclusion in Execute Job."
 msgstr "Aktiviere diesen Arbeitsgang, damit er im Jobablauf ausgeführt wird."
 
+msgid "Visible"
+msgstr "Sichtbar"
+
+msgid "Hide all contained elements on scene if not set."
+msgstr "Deaktiviert: Blende alle enthaltenen Element im Arbeitsbereich aus"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:32
 msgid "Speed at which the head moves in mm/s."
 msgstr "Geschwindigkeit des Kopfes in mm/s."
@@ -15399,6 +15405,9 @@ msgstr "Selektiere alle gleichartigen Elemente"
 msgid "Speed for Raster-Operation"
 msgstr "Geschwindigkeit für Raster-Operation"
 
+msgid "Speed for Vector-Operation"
+msgstr "Geschwindigkeit für Vektor-Operation"
+
 msgid "Simplify group"
 msgstr "Vereinfache Gruppen-Struktur"
 
@@ -15839,3 +15848,15 @@ msgstr "Allgemeine Einstellungen festlegen"
 
 msgid "Home position"
 msgstr "Home-Position"
+
+msgid "Enable similar"
+msgstr "Aktiviere gleichen Typ"
+
+msgid "Disable similar"
+msgstr "Dektiviere gleichen Typ"
+
+msgid "Enable all operations of this type"
+msgstr "Aktiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Disable all operations of this type"
+msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
