@@ -214,7 +214,7 @@ and a wxpython version <= 4.1.1."""
             if option_yes is None:
                 option_yes = "Yes"
             if option_no is None:
-                option_yes = "No"
+                option_no = "No"
             if caption is None:
                 caption = _("Question")
             dlg = wx.MessageDialog(
