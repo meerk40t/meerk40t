@@ -357,7 +357,7 @@ def plugin(kernel, lifecycle=None):
         )
         def egv(command, channel, _, data=None, remainder=None, **kwargs):
             spooler, driver, output = data
-            if len(remainder) == 0:
+            if remainder is None or len(remainder) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 output.write(
