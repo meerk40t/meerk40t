@@ -3121,6 +3121,18 @@ class MeerK40t(MWindow):
         )
         self.help_menu.AppendSeparator()
         menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Check for Updates"),
+            _(
+                "Check whether a newer version of Meerk40t is available"
+            ),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("check_for_updates -popup\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),
             _(
