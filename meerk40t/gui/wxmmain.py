@@ -3124,7 +3124,7 @@ class MeerK40t(MWindow):
             wx.ID_ANY,
             _("Check for Updates"),
             _(
-                "Have a look whether there is a newer version of MeerK40t available"
+                "Check whether a newer version of Meerk40t is available"
             ),
         )
         self.Bind(

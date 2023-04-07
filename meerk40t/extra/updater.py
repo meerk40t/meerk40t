@@ -37,7 +37,7 @@ def plugin(kernel, lifecycle):
         )
         @context.console_option("popup", "p", type=bool, action="store_true")
         @kernel.console_command(
-            "check_for_updates", help=_("Check whether a newer version is available")
+            "check_for_updates", help=_("Check whether a newer version of Meerk40t is available")
         )
         def check_for_updates(channel, _, beta=None, popup=False, **kwargs):
             """

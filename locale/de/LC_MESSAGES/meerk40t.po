@@ -15863,3 +15863,37 @@ msgstr "Aktiviere alle Arbeitsabläufe des gleichen Typs"
 
 msgid "Disable all operations of this type"
 msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Check for Updates"
+msgstr "Prüfe auf Updates"
+
+msgid ""
+"A new {type} release is available:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Es ist eine {type} Version verfügbar:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid ""
+"You seem to have the latest version.\n"
+"Latest version on github: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Dies scheint die aktuelle Version von {name} zu sein.\n"
+"Neueste Version auf github: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid "Could not find any release information on github"
+msgstr "Konnte keine Versionsinformationen von Github abrufen"
+
+msgid "Check whether a newer version of Meerk40t is available"
+msgstr "Überprüfe, ob eine neuere Version von MeerK40t verfügbar ist"
+
+msgid "Do you want to go the download page?"
+msgstr "Soll die Download-Seite geöffnet werden?"
+
+msgid "Do you want to look for yourself?"
+msgstr "Soll diese Seite geöffnet werden?"
+
