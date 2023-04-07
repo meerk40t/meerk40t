@@ -152,6 +152,8 @@ class InformationPanel(wx.Panel):
         )
         self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
+        self.update_btn = wx.Button(self, wx.ID_ANY, _("Check for Updates"))
+        self.Bind(wx.EVT_BUTTON, self.check_for_updates, self.update_btn)
         self.__set_properties()
         self.__do_layout()
 
@@ -235,10 +237,16 @@ class InformationPanel(wx.Panel):
         sizer_os.Add(self.os_version, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_os, 1, wx.EXPAND, 0)  # This one may grow
 
-        sizer_main.Add(self.info_btn, 0, wx.EXPAND, 0)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(self.info_btn, 2, wx.EXPAND, 0)
+        button_sizer.Add(self.update_btn, 1, wx.EXPAND, 0)
+        sizer_main.Add(button_sizer, 0, wx.EXPAND, 0)
 
         sizer_main.Layout()
         self.SetSizer(sizer_main)
+
+    def check_for_updates(self, event):
+        self.context("check_for_updates -popup\n")
 
     def copy_debug_info(self, event):
         if wx.TheClipboard.Open():
