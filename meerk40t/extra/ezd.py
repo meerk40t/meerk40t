@@ -231,8 +231,10 @@ class EZCFile:
 
     def parse_object(self, data):
         file = BytesIO(data)
-        while True:
+        while file:
             object_type = struct.unpack("<I", file.read(4))[0]  # 0
+            if object_type == 0:
+                return
             primary = self._parse_table(file)
             secondary = self._parse_table(file)
             if object_type == 1:
@@ -261,7 +263,6 @@ class EZCFile:
                 self._objects.append(EZText(*primary, *secondary))
             else:
                 self._objects.append(EZObject(*primary, *secondary))
-            return file.read()
 
 
 class EZObject:
@@ -321,10 +322,12 @@ class EZRect(EZObject):
         super().__init__(*args)
         self.min_pos = args[15]
         self.max_pos = args[16]
-        self.corner_bottom_left = args[17]
-        self.corner_bottom_right = args[18]
-        self.corner_upper_right = args[19]
-        self.corner_upper_left = args[10]
+        self.corner_upper_left = args[15]
+        self.corner_bottom_right = args[16]
+        self.round_c1 = args[17]
+        self.round_c2 = args[18]
+        self.round_c3 = args[19]
+        self.round_c4 = args[20]
         self.unknown5 = args[21]
         self.matrix = args[22]
         print(args)
