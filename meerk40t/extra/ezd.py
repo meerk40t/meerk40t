@@ -7,6 +7,8 @@ from io import BytesIO
 import PIL.Image
 from bitarray import bitarray
 
+from meerk40t.svgelements import Color
+
 
 def plugin(kernel, lifecycle):
     if lifecycle == "boot":
@@ -30,14 +32,96 @@ class BitList(list):
 
 
 class Pen:
-    def __init__(self, *args):
+    def __init__(
+        self,
+        color,  # 0
+        label,  # 1
+        mark_enable,  # 2, 1
+        unk2,  # 3, 0
+        loop_count,  # 4
+        speed,  # 5
+        power,  # 6
+        frequency_hz,  # 7
+        four,  # 8
+        start_tc,  # 9
+        end_tc,  # 10
+        polygon_tc,  # 11
+        jump_speed,  # 12
+        jump_min_delay,  # 13
+        jump_max_delay,  # 14
+        opt_end_length,  # 15
+        opt_start_length,  # 16
+        time_per_point,  # 17
+        unk3,  # 18, 0.0
+        unk4,  # 19, 1.0
+        prob_vector_point_mode,  # 20
+        pulse_per_point,  # 21
+        unk5,  # 22
+        laser_off_tc,  # 23
+        unk6,  # 24
+        unk7,  # 25
+        wobble_enable,  # 26
+        wobble_diameter,  # 27
+        wobble_distance,  # 28
+        add_endpoints,  # 29
+        add_endpoint_distance,  # 30
+        add_endpoint_point_distance,  # 31
+        add_endpoint_time_per_point,  # 32
+        add_endpoints_point_cycles,  # 33
+        unk8,  # 34, 0.02
+        unk9,  # 35, 100
+        unk10,  # 36, 0.5
+        jump_min_jump_delay2,  # 37
+        jump_max_delay2,  # 38
+        jump_speed_max_limit,  # 39
+        opt_enable,  # 40
+        break_angle,  # 41
+        *args,
+    ):
         """
         Parse pen with given file.
 
         159 * 4, 636,0x027C bytes total
         """
-        print(args)
-        print(self.__dict__)
+        self.color = Color(rgb=color)
+        self.label = label
+        self.loop_count = loop_count
+        self.speed = speed
+        self.power = power
+        self.frequency = frequency_hz / 1000.0
+        self.start_tc = start_tc
+        self.end_tc = end_tc
+        self.polygon_tc = polygon_tc
+        self.jump_speed = jump_speed
+        self.jump_min_delay = jump_min_delay
+        self.jump_max_delay = jump_max_delay
+        self.opt_start_length = opt_start_length
+        self.opt_end_length = opt_end_length
+        self.time_per_point = time_per_point
+        # unk3
+        # unk4
+        self.pulse_per_point = pulse_per_point
+        self.laser_off_tc = laser_off_tc
+        # unk6
+        # unk7
+        self.wobble_enable = wobble_enable
+        self.wobble_diameter = wobble_diameter
+        self.wobble_distance = wobble_distance
+
+        self.add_endpoints = add_endpoints
+        self.add_endpoint_distance = add_endpoint_distance
+        self.add_endpoint_time_per_point = add_endpoint_time_per_point
+        self.add_endpoint_point_distance = add_endpoint_point_distance
+        self.add_endpoints_point_cycles = add_endpoints_point_cycles
+        #unk8
+        #unk9
+        #unk10
+
+        unk8,  # 34, 0.02
+        unk9,  # 35, 100
+        unk10,  # 36, 0.5
+        self.opt_enable = opt_enable
+        self.break_angle = break_angle
 
 
 class EZCFile:
