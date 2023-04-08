@@ -289,6 +289,8 @@ class EZObject:
         self.locked = bool(self.state & 0x10)
 
     def _parse_array(self, file):
+        data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        assert (data_len == 2)
         array_state = struct.unpack("<H", file.read(2))[0]
         self.array_bidirectional = bool(array_state & 0x2)
         self.array_vertical = bool(array_state & 0x1)
@@ -316,67 +318,81 @@ class EZObject:
         self.z_pos = struct.unpack("d", file.read(8))[0]
 
     def _parse_input_port(self, file):
-        self.input_port_bits = struct.unpack("<H", file.read(2))[0]
         data_len = struct.unpack("<I", file.read(4))[0]  # 2
         assert (data_len == 2)
+        self.input_port_bits = struct.unpack("<H", file.read(2))[0]
+
 
     def parse(self, data):
         file = BytesIO(data)
         obj_type = struct.unpack("<I", file.read(4))[0]  # 0
-        self.unknown1 = struct.unpack("<I", file.read(4))[0]  # 15
-        self._parse_pen(file)
-        self._parse_type(file)
-        self._parse_state(file)
+        primary = self._parse_table(file)
+        secondary = self._parse_table(file)
+        print(primary)
+        print(secondary)
+        return file.read()
 
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        assert (data_len == 2)
-        self.unknown14 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        assert (data_len == 4)
-        self.unknown17 = struct.unpack("<I", file.read(4))[0]  # 1
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        assert (data_len == 2)
-        self.unknown21 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        assert (data_len == 2)
-        self.unknown24 = struct.unpack("<H", file.read(2))[0]  # 0
-        data_len = struct.unpack("<I", file.read(4))[0]  # 2
-        assert (data_len == 2)
+        # self._parse_pen(file)
+        # self._parse_type(file)
+        # self._parse_state(file)
+        #
+        # data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        # assert (data_len == 2)
+        # self.unknown14 = struct.unpack("<H", file.read(2))[0]  # 0
+        # data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        # assert (data_len == 4)
+        # self.unknown17 = struct.unpack("<I", file.read(4))[0]  # 1
+        # data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        # assert (data_len == 2)
+        # self.unknown21 = struct.unpack("<H", file.read(2))[0]  # 0
+        # data_len = struct.unpack("<I", file.read(4))[0]  # 2
+        # assert (data_len == 2)
+        # self.unknown24 = struct.unpack("<H", file.read(2))[0]  # 0
+        #
+        # self._parse_input_port(file)
+        #
+        # self._parse_array(file)
+        # self._parse_position(file)
+        #
+        # end_structure = struct.unpack("<I", file.read(4))[0]  # 8
+        # if self.type == "rect":
+        #     self.parse_rect(file)
+        # elif self.type == "text":
+        #     self.parse_text(file)
+        # else:
+        #     parsed = list(self._parse_table(file))
+        #     print(parsed)
+        #
+        # data = file.read()
+        # print(data)
+        # return data
 
-        self._parse_input_port(file)
-
-        self._parse_array(file)
-        self._parse_position(file)
-
-        end_structure = struct.unpack("<I", file.read(4))[0]  # 8
-        if self.type == "rect":
-            self.parse_rect(file)
-        elif self.type == "text":
-            self.parse_text(file)
-        else:
-            parsed = list(self._general_parse(file))
-            print(parsed)
-
-        data = file.read()
-        print(data)
-        return data
-
-    def _general_parse(self, file):
-        try:
-            while file:
-                length = struct.unpack("<I", file.read(4))[0]
-                if length == 2:
-                    yield struct.unpack("<I", file.read(2))[0]
-                elif length == 4:
-                    yield struct.unpack("<I", file.read(4))[0]
-                elif length == 8:
-                    yield struct.unpack("d", file.read(8))[0]
-                elif length == 0:
-                    return
-                else:
-                    yield file.read(length)
-        except struct.error:
-            pass
+    def _parse_table(self, file):
+        p = list()
+        count = struct.unpack("<I", file.read(4))[0]
+        for i in range(count):
+            b = file.read(4)
+            if len(b) != 4:
+                return p
+            length, = struct.unpack("<I", b)
+            b = file.read(length)
+            if len(b) != length:
+                return p
+            if length == 2:
+                p.extend(struct.unpack("<H", b))
+            elif length == 4:
+                p.extend(struct.unpack("<I", b))
+            elif length == 8:
+                p.extend(struct.unpack("d", b))
+            elif length == 16:
+                p.append(struct.unpack("2d", b))
+            elif length == 72:
+                p.append(struct.unpack("9d", b))
+            elif length == 0:
+                return p
+            else:
+                p.append(b)
+        return p
 
     def parse_text(self, file):
         self.font_angle = struct.unpack("d", file.read(8))  # Font angle in Text.
