@@ -49,6 +49,7 @@ non_structural_nodes = (
     "util origin",
     "util output",
     "util input",
+    "place point",
     "reference",
     "lasercode",
     "cutcode",
@@ -86,6 +87,7 @@ op_nodes = (
     "util origin",
     "util output",
     "util input",
+    "place point",
 )
 elem_nodes = (
     "elem ellipse",
