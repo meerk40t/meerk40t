@@ -1,7 +1,7 @@
 import wx
 from wx import aui
 
-from meerk40t.core.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.gui.icons import (
     icons8_diagonal_20,
     icons8_direction_20,

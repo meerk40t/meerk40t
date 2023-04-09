@@ -4,7 +4,7 @@ from math import isinf
 
 import wx
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length

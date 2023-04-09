@@ -2,7 +2,7 @@ from math import sqrt
 
 import wx
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_HIT,

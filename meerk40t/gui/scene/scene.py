@@ -4,8 +4,6 @@ import time
 
 import wx
 
-from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import (
     DRAW_MODE_ANIMATE,
     DRAW_MODE_FLIPXY,

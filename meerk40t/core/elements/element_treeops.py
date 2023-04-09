@@ -11,12 +11,12 @@ from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import Matrix, Point
-from .cutcode.cutcode import CutCode
+from meerk40t.svgelements import Matrix, Point
+from meerk40t.core.cutcode.cutcode import CutCode
 from .element_types import *
-from .node.elem_image import ImageNode
-from .node.node import Node
-from .treeop import (
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.node import Node
+from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
     tree_check,
@@ -30,7 +30,7 @@ from .treeop import (
     tree_submenu,
     tree_values,
 )
-from .units import UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH
 
 
 def plugin(kernel, lifecycle=None):

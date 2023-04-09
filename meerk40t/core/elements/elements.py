@@ -12,23 +12,24 @@ from time import time
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
 
-from ..svgelements import Close, Color, Line, Move, SVGElement
+from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
-from .node.rootnode import RootNode
-from .undos import Undo
-from .units import UNITS_PER_MIL, Length
-from .wordlist import Wordlist
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.rootnode import RootNode
+from meerk40t.core.undos import Undo
+from meerk40t.core.units import UNITS_PER_MIL, Length
+from meerk40t.core.wordlist import Wordlist
 
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
-        from meerk40t.core import element_commands, element_treeops
+        from . import element_treeops
+        from . import element_commands
 
         return [element_commands.plugin, element_treeops.plugin]
     elif lifecycle == "preregister":

@@ -10,7 +10,7 @@ from random import randint, shuffle
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import (
+from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
     Angle,
@@ -23,20 +23,20 @@ from ..svgelements import (
     Viewbox,
 )
 from .element_types import *
-from .node.elem_image import ImageNode
-from .node.elem_path import PathNode
-from .node.node import Fillrule, Linecap, Linejoin, Node
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_hatch import HatchOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
-from .node.util_console import ConsoleOperation
-from .node.util_input import InputOperation
-from .node.util_output import OutputOperation
-from .node.util_wait import WaitOperation
-from .units import (
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_hatch import HatchOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.util_console import ConsoleOperation
+from meerk40t.core.node.util_input import InputOperation
+from meerk40t.core.node.util_output import OutputOperation
+from meerk40t.core.node.util_wait import WaitOperation
+from meerk40t.core.units import (
     UNITS_PER_INCH,
     UNITS_PER_MM,
     UNITS_PER_PIXEL,
