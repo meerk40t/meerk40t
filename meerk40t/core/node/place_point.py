@@ -50,7 +50,19 @@ class PlacePointNode(Node):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Placement"
         default_map.update(self.__dict__)
-        default_map["position"] = str((self.x, self.y))
+        try:
+            xlen = Length(self.x)
+            # print (f"{float(xlen):.2f} = {xlen.length_cm}")
+        except ValueError:
+            xlen = Length(0)
+        try:
+            ylen = Length(self.y)
+        except ValueError:
+            ylen = Length(0)
+        # print (self.x, self.y, type(self.x).__name__, type(self.y).__name__,)
+        default_map["position"] = f"{xlen.length_cm}, {ylen.length_cm}"
+        default_map["x"] = f"{xlen.length_cm}"
+        default_map["y"] = f"{ylen.length_cm}"
         default_map["rotation"] = f"{Angle(self.rotation, digits=2).degrees}°"
         if self.corner == 0:
             default_map["corner"] = "`+ "
