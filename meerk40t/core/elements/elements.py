@@ -41,6 +41,7 @@ def plugin(kernel, lifecycle=None):
         from . import clipboard
         from . import grid
         from . import render
+        from . import notes
 
         return [
             element_commands.plugin,
@@ -56,6 +57,7 @@ def plugin(kernel, lifecycle=None):
             clipboard.plugin,
             grid.plugin,
             render.plugin,
+            notes.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
