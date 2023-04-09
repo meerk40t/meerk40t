@@ -151,7 +151,7 @@ class CutPlan:
         #     axis = rotary.axis
 
         for op in self.plan:
-            if not hasattr(op, "type"):
+            if not hasattr(op, "type") or op.type is None:
                 continue
             if op.type.startswith("op"):
                 if hasattr(op, "preprocess"):
