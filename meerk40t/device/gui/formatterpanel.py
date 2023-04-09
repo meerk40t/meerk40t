@@ -23,6 +23,7 @@ from meerk40t.gui.icons import (
     icons8_text_50,
     icons8_timer_20,
     icons8_vector_50,
+    icons8_home_location_20,
 )
 
 _ = wx.GetTranslation
@@ -66,6 +67,8 @@ class FormatterPanel(wx.Panel):
             "elem rect": icons8_rectangular_50,
             "elem line": icons8_polyline_50,
             "elem text": icons8_text_50,
+            "place current": icons8_home_location_20,
+            "place point": icons8_home_location_20,
         }
         omit = ("elem geomstr", "elem line")
         self.node_list = list(elem_group_nodes + op_nodes)

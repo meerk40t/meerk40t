@@ -116,6 +116,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/branch ops", "{element_type} {loops}")
         kernel.register("format/branch elems", "{element_type}")
         kernel.register("format/branch reg", "{element_type}")
+        kernel.register("format/place current", "{enabled}{element_type}")
+        kernel.register("format/place point", "{enabled}{element_type}: {corner} {x} {y} {rotation}")
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
