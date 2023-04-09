@@ -1,8 +1,7 @@
-from copy import copy
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix
 
 
 class PlacePointNode(Node):
