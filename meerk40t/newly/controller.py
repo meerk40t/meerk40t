@@ -517,7 +517,7 @@ class NewlyController:
                     self.goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
-                    scanline.extend([int(on)] * abs(dx))
+                    scanline.extend([int(on)] * abs(dy))
                 previous_x, previous_y = x, y
         commit_scanline()
 
