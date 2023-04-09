@@ -520,7 +520,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util"):
+            if c.type.startswith("util") or c.type.startswith("place"):
                 subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
                 SVGWriter._write_custom(subelement, c)
             else:
@@ -1085,6 +1085,13 @@ class SVGProcessor:
                 if op_type is None:
                     return
                 node_type = f"op {op_type.lower()}"
+                element.values["attributes"]["type"] = node_type
+            if node_type == "place":
+                # Meerk40t 0.7.x fallback node types.
+                op_type = element.values.get("operation")
+                if op_type is None:
+                    return
+                node_type = f"place {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
 
             if node_type is None:
