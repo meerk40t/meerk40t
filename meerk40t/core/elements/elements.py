@@ -29,7 +29,7 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
         from . import element_treeops
-        from . import element_commands
+        from . import branches
         from . import trace
         from . import align
         from . import wordlist
@@ -44,8 +44,8 @@ def plugin(kernel, lifecycle=None):
         from . import notes
 
         return [
-            element_commands.plugin,
             element_treeops.plugin,
+            branches.plugin,
             trace.plugin,
             align.plugin,
             wordlist.plugin,
