@@ -13,7 +13,7 @@ class PlacePointNode(Node):
         self.x = x
         self.y = y
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{element_type} {id} {x} {y}"
+        self._formatter = "{element_type} {x} {y}"
 
     def __copy__(self):
         nd = self.node_dict
