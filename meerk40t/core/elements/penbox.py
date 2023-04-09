@@ -180,4 +180,72 @@ def init_commands(kernel):
                 d += s
         return "penbox", data
 
+    # ==========
+    # PENBOX OPERATION COMMANDS
+    # ==========
+
+    @self.console_argument("key", help=_("Penbox key"))
+    @self.console_command(
+        "penbox_pass",
+        help=_("Set the penbox_pass for the given operation"),
+        input_type="ops",
+        output_type="ops",
+    )
+    def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        if data is not None:
+            if key is not None:
+                for op in data:
+                    try:
+                        op.settings["penbox_pass"] = key
+                        channel(f"{str(op)} penbox_pass changed to {key}.")
+                    except AttributeError:
+                        pass
+            else:
+                if key is None:
+                    channel("----------")
+                    for op in data:
+                        try:
+                            key = op.settings.get("penbox_pass")
+                            if key is None:
+                                channel(f"{str(op)} penbox_pass is not set.")
+                            else:
+                                channel(f"{str(op)} penbox_pass is set to {key}.")
+                        except AttributeError:
+                            pass  # No op.settings.
+                    channel("----------")
+        return "ops", data
+
+    @self.console_argument("key", help=_("Penbox key"))
+    @self.console_command(
+        "penbox_value",
+        help=_("Set the penbox_value for the given operation"),
+        input_type="ops",
+        output_type="ops",
+    )
+    def penbox_value(
+        command, channel, _, key=None, remainder=None, data=None, **kwargs
+    ):
+        if data is not None:
+            if key is not None:
+                for op in data:
+                    try:
+                        op.settings["penbox_value"] = key
+                        channel(f"{str(op)} penbox_value changed to {key}.")
+                    except AttributeError:
+                        pass
+            else:
+                if key is None:
+                    channel("----------")
+                    for op in data:
+                        try:
+                            key = op.settings.get("penbox_value")
+                            if key is None:
+                                channel(f"{str(op)} penbox_value is not set.")
+                            else:
+                                channel(f"{str(op)} penbox_value is set to {key}.")
+                        except AttributeError:
+                            pass  # No op.settings.
+                    channel("----------")
+        return "ops", data
+
     # --------------------------- END COMMANDS ------------------------------
