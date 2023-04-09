@@ -342,11 +342,11 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
-            operations = data # unused.
+            operations = data  # unused.
             if command == "copy-selected":
                 operations = list(self.elements.ops(emphasized=True))
             else:
-                operations = self.elements.get(type="branch ops")
+                operations = list(self.elements.ops())
 
             def init_settings():
                 for prefix in ("prepend", "append"):
