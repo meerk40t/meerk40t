@@ -19,7 +19,6 @@ def plugin(kernel, lifecycle=None):
         init_commands(kernel)
 
 
-
 def dist(a, b):
     """
     Function to return the Euclidean distance between two points
@@ -44,6 +43,7 @@ def is_inside(center, radius, p):
 # The following two functions are used
 # To find the equation of the circle when
 # three points are given.
+
 
 def get_circle_center(bx, by, cx, cy):
     """
