@@ -34,8 +34,17 @@ def plugin(kernel, lifecycle=None):
         from . import align
         from . import wordlist
         from . import penbox
+        from . import materials
 
-        return [element_commands.plugin, element_treeops.plugin, trace.plugin, align.plugin, wordlist.plugin, penbox.plugin]
+        return [
+            element_commands.plugin,
+            element_treeops.plugin,
+            trace.plugin,
+            align.plugin,
+            wordlist.plugin,
+            penbox.plugin,
+            materials.plugin,
+        ]
     elif lifecycle == "preregister":
         kernel.register(
             "format/op cut",
@@ -1880,7 +1889,6 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
-
 
     def post_classify(self, data):
         """
