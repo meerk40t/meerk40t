@@ -1319,7 +1319,10 @@ class ShadowTree:
 
         def my_create_label(node, text=None):
             if text is None:
-                text = "{element_type}:{id}"
+                try:
+                    text = node._formatter
+                except AttributeError:
+                    text = "{element_type}:{id}"
             # Just for the optical impression (who understands what a "Rect: None" means),
             # lets replace some of the more obvious ones...
             mymap = node.default_map()
