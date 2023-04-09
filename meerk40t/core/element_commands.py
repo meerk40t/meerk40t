@@ -4459,8 +4459,8 @@ def init_commands(kernel):
         for i in range(1, len(placements), 2):
             x = mlist[i - 1]
             y = mlist[i]
-            node = self.ops_branch.add(
-                matrix=Matrix.translate(x, y), type="place points"
+            node = self.op_branch.add(
+                x=x, y=y, type="place point"
             )
             added.append(node)
         self.set_emphasis(added)
