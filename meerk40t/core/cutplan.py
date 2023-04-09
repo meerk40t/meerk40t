@@ -169,11 +169,12 @@ class CutPlan:
         for placement in placements:
             for original_op in original_ops:
                 op = copy(original_op)
-                self.plan.append(op)
                 if not hasattr(op, "type") or op.type is None:
+                    self.plan.append(op)
                     continue
                 if op.type.startswith("place "):
                     continue
+                self.plan.append(op)
                 if op.type.startswith("op"):
                     for child in original_op.children:
                         op.add_node(copy(child))
