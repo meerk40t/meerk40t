@@ -22,6 +22,7 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.place_point import PlacePointNode
 from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.core.node.rootnode import RootNode
 from meerk40t.core.node.util_console import ConsoleOperation
@@ -83,6 +84,7 @@ bootstrap = {
     "util goto": GotoOperation,
     "util input": InputOperation,
     "util output": OutputOperation,
+    "place point": PlacePointNode,
     "lasercode": LaserCodeNode,
     "blob": BlobNode,
     "group": GroupNode,
