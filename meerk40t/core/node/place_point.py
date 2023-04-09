@@ -9,8 +9,8 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, **kwargs):
-        self.matrix = None
+    def __init__(self, matrix=None, **kwargs):
+        self.matrix = matrix
         super().__init__(type="place point", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
 
