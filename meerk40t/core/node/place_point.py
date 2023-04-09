@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.core.units import Length
 from meerk40t.svgelements import Matrix, Point
 
 
@@ -22,8 +23,16 @@ class PlacePointNode(Node):
         return PlacePointNode(**nd)
 
     def placements(self, context, outline, matrix, plan):
-        shift_matrix = Matrix.translate(self.x, self.y)
-        yield matrix * shift_matrix
+        scene_width = context.device.unit_width
+        scene_height = context.device.unit_height
+        unit_x = Length(self.x, relative_length=scene_width).units
+        unit_y = Length(self.y, relative_length=scene_height).units
+        x, y = matrix.point_in_matrix_space((unit_x, unit_y))
+        if outline is not None:
+            x -= outline[0][0]
+            y -= outline[0][1]
+            shift_matrix = Matrix.translate(x, y)
+            yield matrix * shift_matrix
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
