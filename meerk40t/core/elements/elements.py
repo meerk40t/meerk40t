@@ -30,8 +30,9 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from . import element_treeops
         from . import element_commands
+        from . import trace
 
-        return [element_commands.plugin, element_treeops.plugin]
+        return [element_commands.plugin, element_treeops.plugin, trace.plugin]
     elif lifecycle == "preregister":
         kernel.register(
             "format/op cut",
@@ -1876,6 +1877,31 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
+
+
+    def post_classify(self, data):
+        """
+        Provides a post_classification algorithm.
+
+        Why are we doing it here? An immediate classification
+        at the end of the element creation might not provide
+        the right assignment as additional commands might be
+        chained to it:
+
+        e.g. "circle 1cm 1cm 1cm" will classify differently than
+        "circle 1cm 1cm 1cm stroke red"
+
+        So we apply the classify_new to the post commands.
+
+        @return: post classification function.
+        """
+
+        def post_classify_function(**kwargs):
+            if self.classify_new and len(data) > 0:
+                self.classify(data)
+                self.signal("tree_changed")
+
+        return post_classify_function
 
     def classify(self, elements, operations=None, add_op_function=None):
         """

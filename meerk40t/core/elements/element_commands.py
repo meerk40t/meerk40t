@@ -73,27 +73,7 @@ def init_commands(kernel):
     ]
     kernel.register_choices("preferences", choices)
 
-    def classify_new(data):
-        """
-        Why are we doing it here? An immediate classification
-        at the end of the element creation might not provide
-        the right assignment as additional commands might be
-        chained to it:
-
-        e.g. "circle 1cm 1cm 1cm" will classify differently than
-        "circle 1cm 1cm 1cm stroke red"
-
-        So we apply the classify_new to the post commands.
-
-        @return: post classification function.
-        """
-
-        def post_classify_function(**kwargs):
-            if self.classify_new and len(data) > 0:
-                self.classify(data)
-                self.signal("tree_changed")
-
-        return post_classify_function
+    classify_new = self.post_classify
 
     @self.console_argument("filename")
     @self.console_command(
