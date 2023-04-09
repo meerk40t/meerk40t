@@ -43,6 +43,7 @@ from .units import (
     UNITS_PER_POINT,
     Length,
 )
+from .units import Angle as UAngle
 
 
 def plugin(kernel, lifecycle=None):
@@ -4440,7 +4441,9 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
+    @self.console_option("rotation", "r", type=UAngle, help=_("placement rotation"), default=0)
+    @self.console_argument("x", type=Length, help=_("x coord"))
+    @self.console_argument("y", type=Length, help=_("y coord"))
     @self.console_command(
         "placement",
         help=_("points *"),
@@ -4448,13 +4451,10 @@ def init_commands(kernel):
         output_type="ops",
         all_arguments_required=True,
     )
-    def place_points(command, channel, _, mlist, **kwargs):
+    def place_points(command, channel, _, x, y, rotation, **kwargs):
         added = []
-        for i in range(1, len(mlist), 2):
-            x = mlist[i - 1]
-            y = mlist[i]
-            node = self.op_branch.add(x=str(x), y=str(y), type="place point")
-            added.append(node)
+        node = self.op_branch.add(x=str(x), y=str(y), rotation=rotation.radians, type="place point")
+        added.append(node)
         self.set_emphasis(added)
         return "ops", added
 

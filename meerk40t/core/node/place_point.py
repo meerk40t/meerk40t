@@ -9,16 +9,15 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, x=0, y=0, **kwargs):
+    def __init__(self, x=0, y=0, rotation=0, **kwargs):
         self.x = x
         self.y = y
+        self.rotation = rotation
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{element_type} {x} {y}"
+        self._formatter = "{element_type} {x} {y} {rotation}"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["x"] = self.x
-        nd["y"] = self.y
         return PlacePointNode(**nd)
 
     def placements(self, context, outline, matrix, plan):
@@ -31,12 +30,15 @@ class PlacePointNode(Node):
             x -= outline[0][0]
             y -= outline[0][1]
             shift_matrix = Matrix.translate(x, y)
+            if self.rotation != 0:
+                shift_matrix.post_rotate(self.rotation, x, y)
             yield matrix * shift_matrix
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Placement"
         default_map["position"] = str((self.x, self.y))
+        default_map["rotation"] = str(self.rotation)
         default_map.update(self.__dict__)
         return default_map
 
