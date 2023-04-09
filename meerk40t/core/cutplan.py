@@ -170,7 +170,7 @@ class CutPlan:
             for original_op in original_ops:
                 op = copy(original_op)
                 self.plan.append(op)
-                if not hasattr(op, "type"):
+                if not hasattr(op, "type") or op.type is None:
                     continue
                 if op.type.startswith("place "):
                     continue
@@ -198,7 +198,7 @@ class CutPlan:
         last_type = None
         group = list()
         for c in plan:
-            c_type = c.type if hasattr(c, "type") else type(c).__name__
+            c_type = c.type if hasattr(c, "type") and c.type is not None else type(c).__name__
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
@@ -258,7 +258,7 @@ class CutPlan:
         context = self.context
         for plan in grouped_plan:
             for op in plan:
-                if not hasattr(op, "type"):
+                if not hasattr(op, "type") or op.type is None:
                     yield op
                     continue
                 if (
