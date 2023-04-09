@@ -37,6 +37,7 @@ def plugin(kernel, lifecycle=None):
         from . import materials
         from . import shapes
         from . import tree_commands
+        from . import undo_redo
 
         return [
             element_commands.plugin,
@@ -48,6 +49,7 @@ def plugin(kernel, lifecycle=None):
             materials.plugin,
             shapes.plugin,
             tree_commands.plugin,
+            undo_redo.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
