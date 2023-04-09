@@ -4459,6 +4459,20 @@ def init_commands(kernel):
         return "ops", added
 
     @self.console_command(
+        "current_position",
+        help=_("adds a current position placement"),
+        input_type=None,
+        output_type="ops",
+        all_arguments_required=True,
+    )
+    def place_points(command, channel, _, **kwargs):
+        node = self.op_branch.add(type="place current")
+        added = [node]
+        self.set_emphasis(added)
+        return "ops", added
+
+
+    @self.console_command(
         "path",
         help=_("Convert any shapes to paths"),
         input_type="shapes",
