@@ -56,23 +56,6 @@ def init_commands(kernel):
 
     _ = kernel.translation
 
-    choices = [
-        {
-            "attr": "trace_start_method",
-            "object": self,
-            "default": 0,
-            "type": int,
-            "label": _("Delay hull trace"),
-            "tip": _("Establish if and how an element hull trace should wait"),
-            "page": "Laser",
-            "section": "General",
-            "style": "option",
-            "display": (_("Immediate"), _("User confirmation"), _("Delay 5 seconds")),
-            "choices": (0, 1, 2),
-        },
-    ]
-    kernel.register_choices("preferences", choices)
-
     classify_new = self.post_classify
 
     @self.console_argument("filename")
