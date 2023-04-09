@@ -77,7 +77,7 @@ class Penbox(Service):
     def __init__(self, kernel, *args, **kwargs):
         Service.__init__(self, kernel, "penbox")
         self.pen_data = Settings(self.kernel.name, "penbox.cfg")
-        self.penbox = {}
+        self.pens = {}
         self.load_persistent_penbox()
 
         _ = kernel.translation
@@ -97,11 +97,11 @@ class Penbox(Service):
             if remainder is None or key is None:
                 channel("----------")
                 if key is None:
-                    for key in self.penbox:
+                    for key in self.pens:
                         channel(str(key))
                 else:
                     try:
-                        for i, value in enumerate(self.penbox[key]):
+                        for i, value in enumerate(self.pens[key]):
                             channel(f"{i}: {str(value)}")
                     except KeyError:
                         channel(_("penbox does not exist"))
@@ -120,10 +120,10 @@ class Penbox(Service):
         ):
             if count is None:
                 raise CommandSyntaxError
-            current = self.penbox.get(data)
+            current = self.pens.get(data)
             if current is None:
                 current = list()
-                self.penbox[data] = current
+                self.pens[data] = current
             current.extend([dict() for _ in range(count)])
             return "penbox", data
 
@@ -139,10 +139,10 @@ class Penbox(Service):
         ):
             if count is None:
                 raise CommandSyntaxError
-            current = self.penbox.get(data)
+            current = self.pens.get(data)
             if current is None:
                 current = list()
-                self.penbox[data] = current
+                self.pens[data] = current
             for _ in range(count):
                 try:
                     del current[-1]
@@ -172,10 +172,10 @@ class Penbox(Service):
         ):
             if not value:
                 raise CommandSyntaxError
-            current = self.penbox.get(data)
+            current = self.pens.get(data)
             if current is None:
                 current = list()
-                self.penbox[data] = current
+                self.pens[data] = current
             rex = re.compile(r"([+-]?[0-9]+)(?:[,-]([+-]?[0-9]+))?")
             m = rex.match(value)
             if not m:
@@ -286,15 +286,15 @@ class Penbox(Service):
                 penbox = dict()
                 settings.read_persistent_string_dict(f"{pen} {i}", penbox, suffix=True)
                 box.append(penbox)
-            self.penbox[pen] = box
+            self.pens[pen] = box
 
     def save_persistent_penbox(self):
         sections = {}
-        for section in self.penbox:
-            sections[section] = len(self.penbox[section])
+        for section in self.pens:
+            sections[section] = len(self.pens[section])
         self.pen_data.write_persistent_dict("pens", sections)
-        for section in self.penbox:
-            for i, p in enumerate(self.penbox[section]):
+        for section in self.pens:
+            for i, p in enumerate(self.pens[section]):
                 self.pen_data.write_persistent_dict(f"{section} {i}", p)
 
     def shutdown(self, *args, **kwargs):

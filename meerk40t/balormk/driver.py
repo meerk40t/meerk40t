@@ -193,7 +193,7 @@ class BalorDriver:
             penbox = settings.get("penbox_value")
             if penbox is not None:
                 try:
-                    self.value_penbox = self.service.penbox.penbox[penbox]
+                    self.value_penbox = self.service.penbox.pens[penbox]
                 except KeyError:
                     self.value_penbox = None
             con.set_settings(settings)
@@ -321,7 +321,7 @@ class BalorDriver:
                             penbox = settings.get("penbox_value")
                             if penbox is not None:
                                 try:
-                                    self.value_penbox = self.service.penbox.penbox[
+                                    self.value_penbox = self.service.penbox.pens[
                                         penbox
                                     ]
                                 except KeyError:

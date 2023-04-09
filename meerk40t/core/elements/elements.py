@@ -33,7 +33,6 @@ def plugin(kernel, lifecycle=None):
         from . import trace
         from . import align
         from . import wordlist
-        from . import penbox
         from . import materials
         from . import shapes
         from . import tree_commands
@@ -49,7 +48,6 @@ def plugin(kernel, lifecycle=None):
             trace.plugin,
             align.plugin,
             wordlist.plugin,
-            penbox.plugin,
             materials.plugin,
             shapes.plugin,
             tree_commands.plugin,
