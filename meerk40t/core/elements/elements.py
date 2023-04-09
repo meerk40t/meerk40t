@@ -42,6 +42,7 @@ def plugin(kernel, lifecycle=None):
         from . import grid
         from . import render
         from . import notes
+        from . import placements
 
         return [
             element_treeops.plugin,
@@ -58,6 +59,7 @@ def plugin(kernel, lifecycle=None):
             grid.plugin,
             render.plugin,
             notes.plugin,
+            placements.plugin
         ]
     elif lifecycle == "preregister":
         kernel.register(
