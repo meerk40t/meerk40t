@@ -35,6 +35,7 @@ def plugin(kernel, lifecycle=None):
         from . import wordlist
         from . import penbox
         from . import materials
+        from . import shapes
 
         return [
             element_commands.plugin,
@@ -44,6 +45,7 @@ def plugin(kernel, lifecycle=None):
             wordlist.plugin,
             penbox.plugin,
             materials.plugin,
+            shapes.plugin
         ]
     elif lifecycle == "preregister":
         kernel.register(
