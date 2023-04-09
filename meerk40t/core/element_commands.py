@@ -4440,6 +4440,32 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
+    @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
+    @self.console_command(
+        "placement",
+        help=_("points *"),
+        input_type=None,
+        output_type="ops",
+        all_arguments_required=True,
+    )
+    def place_points(command, channel, _, mlist, **kwargs):
+        try:
+            placements = [float(Length(p)) for p in mlist]
+        except ValueError:
+            raise CommandSyntaxError(
+                _("Must be a list of spaced delimited length pairs.")
+            )
+        added = []
+        for i in range(1, len(placements), 2):
+            x = mlist[i - 1]
+            y = mlist[i]
+            node = self.ops_branch.add(
+                matrix=Matrix.translate(x, y), type="place points"
+            )
+            added.append(node)
+        self.set_emphasis(added)
+        return "ops", added
+
     @self.console_command(
         "path",
         help=_("Convert any shapes to paths"),
