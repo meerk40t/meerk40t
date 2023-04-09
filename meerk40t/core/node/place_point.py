@@ -1,6 +1,6 @@
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, Angle
 from meerk40t.svgelements import Matrix
 
 
@@ -15,7 +15,7 @@ class PlacePointNode(Node):
         self.rotation = rotation
         self.corner = corner
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{element_type} {x} {y} {rotation}"
+        self._formatter = "{element_type}: {corner} {x} {y} {rotation}"
 
     def __copy__(self):
         nd = self.node_dict
@@ -47,9 +47,20 @@ class PlacePointNode(Node):
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Placement"
-        default_map["position"] = str((self.x, self.y))
-        default_map["rotation"] = str(self.rotation)
         default_map.update(self.__dict__)
+        default_map["position"] = str((self.x, self.y))
+        default_map["rotation"] = f"{Angle(self.rotation, digits=2).angle_degrees}°"
+        if self.corner == 0:
+            default_map["corner"] = "`+ "
+        elif self.corner == 1:
+            default_map["corner"] = " +'"
+        elif self.corner == 2:
+            default_map["corner"] = " +."
+        elif self.corner == 3:
+            default_map["corner"] = ".+ "
+        else:
+            default_map["corner"] = " + "
+
         return default_map
 
     def drop(self, drag_node, modify=True):
