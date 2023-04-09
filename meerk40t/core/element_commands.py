@@ -4449,19 +4449,11 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def place_points(command, channel, _, mlist, **kwargs):
-        try:
-            placements = [float(Length(p)) for p in mlist]
-        except ValueError:
-            raise CommandSyntaxError(
-                _("Must be a list of spaced delimited length pairs.")
-            )
         added = []
-        for i in range(1, len(placements), 2):
+        for i in range(1, len(mlist), 2):
             x = mlist[i - 1]
             y = mlist[i]
-            node = self.op_branch.add(
-                x=x, y=y, type="place point"
-            )
+            node = self.op_branch.add(x=str(x), y=str(y), type="place point")
             added.append(node)
         self.set_emphasis(added)
         return "ops", added
