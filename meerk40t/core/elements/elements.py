@@ -40,6 +40,7 @@ def plugin(kernel, lifecycle=None):
         from . import undo_redo
         from . import clipboard
         from . import grid
+        from . import render
 
         return [
             element_commands.plugin,
@@ -53,7 +54,8 @@ def plugin(kernel, lifecycle=None):
             tree_commands.plugin,
             undo_redo.plugin,
             clipboard.plugin,
-            grid.plugin
+            grid.plugin,
+            render.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
