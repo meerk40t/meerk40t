@@ -73,6 +73,8 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
+from .propertypanels.placementproperty import PlacementParameterPanel
+
 from .simulation import Simulation
 from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor
@@ -625,6 +627,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
         kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
+        kernel.register("property/PlaceCurrentNode/OpMain", PlacementParameterPanel)
+        kernel.register("property/PlacePointNode/OpMain", PlacementParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/FileNode/Property", FilePropertiesPanel)
