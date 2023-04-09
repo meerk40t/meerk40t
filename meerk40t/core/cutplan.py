@@ -121,11 +121,11 @@ class CutPlan:
         """
         device = self.context.device
 
-        # ==========
-        # Preprocess Operations
-        # ==========
-        matrix = device.scene_to_device_matrix()
+        scene_to_device_matrix = device.scene_to_device_matrix()
 
+        # ==========
+        # Determine the jobs bounds.
+        # ==========
         bounds = Node.union_bounds(self.plan, bounds=self._previous_bounds)
         self._previous_bounds = bounds
         if bounds is not None:
@@ -145,22 +145,45 @@ class CutPlan:
                     device.device_position(min_x, max_y),
                 )
 
+        # ==========
+        # Query Placements
+        # ==========
+        placements = []
+        for place in self.plan:
+            if not hasattr(place, "type"):
+                continue
+            if place.type.startswith("place "):
+                placements.extend(place.placements(self.context, self.outline, scene_to_device_matrix, self))
+        if not placements:
+            # Absolute coordinates.
+            placements.append(scene_to_device_matrix)
+
         # TODO: Correct rotary.
         # rotary = self.context.rotary
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
 
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type.startswith("op"):
-                if hasattr(op, "preprocess"):
-                    op.preprocess(self.context, matrix, self)
-                for node in op.flat():
-                    if node is op:
-                        continue
-                    if hasattr(node, "preprocess"):
-                        node.preprocess(self.context, matrix, self)
+        original_ops = copy(self.plan)
+        self.plan.clear()
+
+        for placement in placements:
+            for original_op in original_ops:
+                op = copy(original_op)
+                self.plan.append(op)
+                if not hasattr(op, "type"):
+                    continue
+                if op.type.startswith("place "):
+                    continue
+                if op.type.startswith("op"):
+                    for child in original_op.children:
+                        op.add_node(copy(child))
+                    if hasattr(op, "preprocess"):
+                        op.preprocess(self.context, placement, self)
+                    for node in op.flat():
+                        if node is op:
+                            continue
+                        if hasattr(node, "preprocess"):
+                            node.preprocess(self.context, placement, self)
 
     def _to_grouped_plan(self, plan):
         """
