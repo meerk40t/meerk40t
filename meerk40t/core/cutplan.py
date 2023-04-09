@@ -166,8 +166,14 @@ class CutPlan:
 
         original_ops = copy(self.plan)
         self.plan.clear()
+        idx = 0
+        wordlist = copy(self.context.elements.mywordlist)
 
         for placement in placements:
+            # Adjust wordlist
+            if idx > 0:
+                self.context.elements.mywordlist.move_all_indices(1)
+
             for original_op in original_ops:
                 op = copy(original_op)
                 if not hasattr(op, "type") or op.type is None:
@@ -186,6 +192,8 @@ class CutPlan:
                             continue
                         if hasattr(node, "preprocess"):
                             node.preprocess(self.context, placement, self)
+            idx += 1
+        self.context.elements.mywordlist = wordlist
 
     def _to_grouped_plan(self, plan):
         """
