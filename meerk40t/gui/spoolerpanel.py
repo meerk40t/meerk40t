@@ -617,6 +617,11 @@ class SpoolerPanel(wx.Panel):
                     try:
                         loop = spool_obj.loops_executed
                         total = spool_obj.loops
+                        # No invalid values please
+                        if loop is None:
+                            loop = 0
+                        if total is None:
+                            total = 1
 
                         if isinf(total):
                             total = "∞"
@@ -770,14 +775,19 @@ class SpoolerPanel(wx.Panel):
             )
             nr_loop = info.get("loop")
             nr_total = info.get("total")
-            if nr_total and isinf(nr_total):
-                s = f"{nr_loop}/∞"
+            if nr_total is None:
+                if nr_loop is None:
+                    passes_str = "n/a"
+                else:
+                    passes_str = f"{nr_loop}"
+            elif isinf(nr_total):
+                passes_str = f"{nr_loop}/∞"
             else:
-                s = f"{nr_loop}/{nr_total}"
+                passes_str = f"{nr_loop}/{nr_total}"
             self.list_job_history.SetItem(
                 list_id,
                 HC_PASSES,
-                s,
+                passes_str,
             )
             self.list_job_history.SetItem(list_id, HC_DEVICE, str(info.get("device")))
             self.list_job_history.SetItem(

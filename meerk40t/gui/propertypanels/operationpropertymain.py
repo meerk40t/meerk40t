@@ -246,6 +246,37 @@ class LayerSettingPanel(wx.Panel):
             self.button_layer_color.SetBackgroundColour(
                 wx.Colour(swizzlecolor(self.operation.color))
             )
+            # Ask the user if she/he wants to assign the color of the contained objects
+            candidate_stroke = bool(self.checkbox_stroke.GetValue())
+            candidate_fill = bool(self.checkbox_fill.GetValue())
+            if self.operation.type  in ("op engrave", "op cut", "op hatch") and len(self.operation.children) > 0 and (candidate_fill or candidate_stroke):
+                dlg = wx.MessageDialog(
+                    None,
+                    message=_("Do you want to change the color of the contained elements too?"),
+                    caption=_("Update Colors?"),
+                    style=wx.YES_NO | wx.ICON_QUESTION,
+                )
+                response = dlg.ShowModal()
+                dlg.Destroy()
+                if response == wx.ID_YES:
+                    changed = []
+                    for refnode in self.operation.children:
+                        cnode = refnode.node
+                        add_to_change = False
+                        if candidate_stroke and hasattr(cnode, "stroke"):
+                            cnode.stroke = self.operation.color
+                            add_to_change = True
+
+                        if candidate_fill and hasattr(cnode, "fill"):
+                            cnode.fill = self.operation.color
+                            add_to_change = True
+
+                        if add_to_change:
+                            changed.append(cnode)
+                    if len(changed) > 0:
+                        self.context.elements.signal("element_property_update", changed)
+                        self.context.elements.signal("refresh_scene", "Scene")
+
         self.context.elements.signal(
             "element_property_reload", self.operation, "button_layer"
         )

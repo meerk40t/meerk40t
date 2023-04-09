@@ -1,5 +1,8 @@
+"""
+The code inside this module provides routines to look for newer versions of meerk40t on github
+"""
 import json
-import sys
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
@@ -15,32 +18,36 @@ def plugin(kernel, lifecycle):
         )
         GITHUB_HEADER = ("Accept", "application/vnd.github.v3+json")
 
-        RESET_VERSION = [0, 0, 0, 0]
-
         UPDATE_MESSAGE = _(
-            "A new {type} release of {name} v{version} is available from\n" + "{url}"
+            "A new {type} release is available:\n"
+            + "Version: {name} v{version} ({label})\n"
+            + "Url: {url}"
         )
+        NO_UPDATE_MESSAGE = _(
+            "You seem to have the latest version.\n"
+            "Latest version on github: {name} v{version} ({label})\n" + "Url: {url}"
+        )
+        ERROR_MESSAGE = _("Could not find any release information on github")
 
         context = kernel.root
         context.setting(bool, "check_for_betas", False)
 
-        @kernel.console_command(
-            "check_for_updates", help=_("Check whether a newer version is available")
+        @context.console_option(
+            "beta", "b", type=bool, action="store_true", help=_("Check for betas")
         )
-        def check_for_updates(channel, _, **kwargs):
+        @context.console_option("popup", "p", type=bool, action="store_true")
+        @kernel.console_command(
+            "check_for_updates", help=_("Check whether a newer version of Meerk40t is available")
+        )
+        def check_for_updates(channel, _, beta=None, popup=False, **kwargs):
             """
             This command checks for updates and outputs the results to the console.
 
-            If check_for_betas setting is true
+            If check_for_betas setting is true OR we run a beta
             then we get the release list and iterate through
             to find the latest full and beta releases that are > currently running
 
-            If check_for_betas is false,
-            but we are currently running a beta
-            then we check for a full release > currently running
-            and if not then the latest beta > currently running
-
-            If check_for_betas is false,
+            If check_for_betas is false
             and we are not currently running a beta
             then we check only for a full release > currently running
             """
@@ -56,111 +63,219 @@ def plugin(kernel, lifecycle):
             def comparable_version(version):
                 """
                 Return a comparable sequence from a version string
+                Major, Minor, Release, Beta
+                Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
-                src = beta = ""
-                if version.startswith("v"):
-                    version = version[1:]
-                if " " in version:
-                    version, src = version.split(" ", 1)
-                if "-" in version:
-                    version, beta = version.split("-", 1)
-                if beta.startswith("beta"):
-                    beta = beta[4:]
-                if not beta:
-                    beta = 9999  # indicates a full version
-                else:
-                    beta = int(beta)
-                version = list(map(int, version.split(".")))
-                version.append(beta)
-                return version
+                src = beta = False
+                orgversion = version
+                ending = ""
+                result = list()
+                if version is not None:
+                    if version.startswith("v"):
+                        version = version[1:]
+                    if " " in version:
+                        version, ending = version.split(" ", 1)
+                    if ending == "git":
+                        src = True
+                    elif ending == "src":
+                        src = True
+
+                    result = list(map(int, version.split(".")))
+                    if len(result) > 3:
+                        result = result[0:2]
+                while len(result) < 3:
+                    result.append(0)
+                if result[2] > 100:
+                    subrelease = result[2] % 100
+                    beta = bool(subrelease != 0)
+                result.append(beta)
+                result.append(src)
+                # print (f"Looking at {orgversion}: {result}")
+                return result
 
             def extract_from_json(response):
+                # print (response)
                 tag = response["tag_name"]
                 version = comparable_version(tag)
+                if response["prerelease"]:
+                    version[3] = True
                 url = response["html_url"]
                 assets = response["assets"]
-                return tag, version, url, assets
+                label = response["name"]
+                return tag, version, label, url, assets
 
-            def update_check():
+            def newer_version(candidate_version, reference_version):
+                """
+                Checks whether the given candidate_version is newer than
+                the provided reference_version
+                Args:
+                    candidate_version: tuple (major, minor, release, is_a_beta, is_source)
+                    reference_version: tuple (major, minor, release, is_a_beta, is_source)
+                """
+                is_newer = False
+                sub_ref = [0, 0, 0]
+                sub_cand = [0, 0, 0]
+                # python can compare lists
+                if candidate_version is not None:
+                    sub_cand = candidate_version[0:3]
+                if reference_version is not None:
+                    sub_ref = reference_version[0:3]
+                # print (sub_cand, sub_ref, bool(sub_cand > sub_ref))
+                if sub_cand > sub_ref:
+                    is_newer = True
+                # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
+                return is_newer
+
+            def update_check(*args):
                 version_current = comparable_version(kernel.version)
-
-                check_for_betas = context.check_for_betas or version_current[3] < 9999
+                is_a_beta = version_current[3]
+                if beta is None:
+                    check_for_betas = context.check_for_betas or is_a_beta
+                else:
+                    check_for_betas = beta
                 if check_for_betas:
                     url = GITHUB_RELEASES
                 else:
                     url = GITHUB_LATEST
-
+                channel(
+                    f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version} (include betas: {'yes' if check_for_betas else 'no'})"
+                )
                 req = Request(url)
                 req.add_header(*GITHUB_HEADER)
-                req = urlopen(req)
-
-                running_executable = getattr(sys, "frozen", False)
+                try:
+                    req = urlopen(req)
+                except (HTTPError, URLError):
+                    channel(ERROR_MESSAGE)
+                    return
 
                 tag_full = tag_beta = None
-                version_full = version_beta = RESET_VERSION
+                label_full = label_beta = None
+                version_full = version_beta = version_newest = None
                 url_full = url_beta = None
                 assets_full = assets_beta = None
 
                 response = json.loads(req.read())
-
+                # print ("Response:")
+                # print (response)
+                something = False
                 if check_for_betas:
                     for resp in response:
                         if resp["draft"]:
                             continue
-                        tag, version, url, assets = extract_from_json(resp)
-                        if resp["prerelease"]:  # beta
-                            if version > version_beta and (
-                                context.check_for_betas
-                                or (
-                                    # If on a temp beta, then only interested in minor beta updates
-                                    version[0:2] == version_current[0:2]
-                                    and version[3] > version_current[3]
-                                )
-                            ):
-                                tag_beta, version_beta, url_beta, assets_beta = (
+                        tag, version, label, url, assets = extract_from_json(resp)
+                        # What is the newest beta
+                        if resp["prerelease"] and check_for_betas:
+                            if newer_version(version, version_beta) and check_for_betas:
+                                (
+                                    tag_beta,
+                                    version_beta,
+                                    label_beta,
+                                    url_beta,
+                                    assets_beta,
+                                ) = (
                                     tag,
                                     version,
+                                    label,
                                     url,
                                     assets,
                                 )
-                        elif version > version_full:
-                            tag_full, version_full, url_full, assets_full = (
+                        # What is the newest release
+                        elif newer_version(version, version_full):
+                            (
+                                tag_full,
+                                version_full,
+                                label_full,
+                                url_full,
+                                assets_full,
+                            ) = (
                                 tag,
                                 version,
+                                label,
                                 url,
                                 assets,
                             )
                     # If full version is latest, disregard betas
-                    if version_full > version_beta:
-                        tag_beta, version_beta, url_beta, assets_beta = (
+                    if newer_version(version_full, version_beta):
+                        tag_beta, version_beta, label_beta, url_beta, assets_beta = (
                             None,
-                            RESET_VERSION,
+                            None,
+                            None,
                             None,
                             None,
                         )
                 else:
-                    tag_full, version_full, url_full, assets_full = extract_from_json(
-                        response
+                    resp = response
+                    (
+                        tag_full,
+                        version_full,
+                        label_full,
+                        url_full,
+                        assets_full,
+                    ) = extract_from_json(resp)
+                # print (f"Newest release: {version_full}, newest beta: {version_beta}, current: {version_current}")
+                version_newest = version_full
+                tag_newest = tag_full
+                url_newest = url_full
+                label_newest = label_full
+                type_newest = ""
+                if newer_version(version_beta, version_full):
+                    version_newest = version_beta
+                    tag_newest = tag_beta
+                    label_newest = label_beta
+                    url_newest = url_beta
+                    type_newest = " (beta)"
+                newest_message = ""
+                if newer_version(version_full, version_current):
+                    something = True
+                    message = UPDATE_MESSAGE.format(
+                        type="full",
+                        name=kernel.name,
+                        version=tag_full,
+                        label=label_full,
+                        url=url_full,
                     )
+                    channel(message)
+                    newest_message = message
 
-                if version_full > version_current:
-                    channel(
-                        UPDATE_MESSAGE.format(
-                            type="full",
-                            name=kernel.name,
-                            version=tag_full,
-                            url=url_full,
-                        )
+                if newer_version(version_beta, version_current):
+                    something = True
+                    message = UPDATE_MESSAGE.format(
+                        type="beta",
+                        name=kernel.name,
+                        version=tag_beta,
+                        label=label_beta,
+                        url=url_beta,
                     )
+                    channel(message)
+                    newest_message = message
+                if something:
+                    if popup:
+                        if kernel.yesno(
+                            newest_message
+                            + "\n"
+                            + _("Do you want to go the download page?")
+                        ):
+                            import webbrowser
 
-                if version_beta > version_current:
-                    channel(
-                        UPDATE_MESSAGE.format(
-                            type="beta",
+                            webbrowser.open(url_newest, new=0, autoraise=True)
+                else:
+                    if version_newest is not None:
+                        message = NO_UPDATE_MESSAGE.format(
                             name=kernel.name,
-                            version=tag_beta,
-                            url=url_beta,
+                            version=tag_newest,
+                            type=type_newest,
+                            label=label_newest,
+                            url=url_newest,
                         )
-                    )
+                        channel(message)
+                        if popup:
+                            if kernel.yesno(
+                                message + "\n" + _("Do you want to look for yourself?")
+                            ):
+                                import webbrowser
+
+                                webbrowser.open(url_newest, new=0, autoraise=True)
+                    else:
+                        channel(ERROR_MESSAGE)
 
             kernel.threaded(update_check, "update_check")

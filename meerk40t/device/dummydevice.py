@@ -119,35 +119,6 @@ class DummyDevice(Service, ViewPort):
             origin_y=0.0,
         )
 
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                label = None
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.laserjob(data.plan, label=label)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel(f"{d}: {d_name}")
-                channel(_("----------"))
-                channel(_("Spooler on device {name}:").format(name=str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel(f"{s}: {op_name}")
-                channel(_("----------"))
-
-            return "spooler", spooler
-
     @property
     def current(self):
         """
