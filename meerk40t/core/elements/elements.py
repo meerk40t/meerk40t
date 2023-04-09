@@ -12,25 +12,53 @@ from time import time
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
 
-from ..svgelements import Close, Color, Line, Move, SVGElement
+from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
-from .node.rootnode import RootNode
-from .undos import Undo
-from .units import UNITS_PER_MIL, Length
-from .wordlist import Wordlist
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.rootnode import RootNode
+from meerk40t.core.undos import Undo
+from meerk40t.core.units import UNITS_PER_MIL, Length
+from meerk40t.core.wordlist import Wordlist
 
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
-        from meerk40t.core import element_commands, element_treeops
+        from . import element_treeops
+        from . import branches
+        from . import trace
+        from . import align
+        from . import wordlist
+        from . import penbox
+        from . import materials
+        from . import shapes
+        from . import tree_commands
+        from . import undo_redo
+        from . import clipboard
+        from . import grid
+        from . import render
+        from . import notes
 
-        return [element_commands.plugin, element_treeops.plugin]
+        return [
+            element_treeops.plugin,
+            branches.plugin,
+            trace.plugin,
+            align.plugin,
+            wordlist.plugin,
+            penbox.plugin,
+            materials.plugin,
+            shapes.plugin,
+            tree_commands.plugin,
+            undo_redo.plugin,
+            clipboard.plugin,
+            grid.plugin,
+            render.plugin,
+            notes.plugin,
+        ]
     elif lifecycle == "preregister":
         kernel.register(
             "format/op cut",
@@ -1875,6 +1903,30 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
+
+    def post_classify(self, data):
+        """
+        Provides a post_classification algorithm.
+
+        Why are we doing it here? An immediate classification
+        at the end of the element creation might not provide
+        the right assignment as additional commands might be
+        chained to it:
+
+        e.g. "circle 1cm 1cm 1cm" will classify differently than
+        "circle 1cm 1cm 1cm stroke red"
+
+        So we apply the classify_new to the post commands.
+
+        @return: post classification function.
+        """
+
+        def post_classify_function(**kwargs):
+            if self.classify_new and len(data) > 0:
+                self.classify(data)
+                self.signal("tree_changed")
+
+        return post_classify_function
 
     def classify(self, elements, operations=None, add_op_function=None):
         """

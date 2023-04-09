@@ -29,7 +29,7 @@ from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from ..core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50

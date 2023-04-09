@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     elif lifecycle == "register":
-        from ..core.elements import linearize_path
+        from ..core.elements.elements import linearize_path
         from ..tools import polybool as pb
 
         _ = kernel.translation
