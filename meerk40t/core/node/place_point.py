@@ -9,10 +9,11 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, x=0, y=0, rotation=0, **kwargs):
+    def __init__(self, x=0, y=0, rotation=0, corner=0, **kwargs):
         self.x = x
         self.y = y
         self.rotation = rotation
+        self.corner = corner
         super().__init__(type="place point", **kwargs)
         self._formatter = "{element_type} {x} {y} {rotation}"
 
@@ -21,18 +22,27 @@ class PlacePointNode(Node):
         return PlacePointNode(**nd)
 
     def placements(self, context, outline, matrix, plan):
+        if outline is None:
+            # This job can't be placed.
+            return
         scene_width = context.device.unit_width
         scene_height = context.device.unit_height
         unit_x = Length(self.x, relative_length=scene_width).units
         unit_y = Length(self.y, relative_length=scene_height).units
         x, y = matrix.point_in_matrix_space((unit_x, unit_y))
-        if outline is not None:
-            x -= outline[0][0]
-            y -= outline[0][1]
-            shift_matrix = Matrix.translate(x, y)
-            if self.rotation != 0:
-                shift_matrix.post_rotate(self.rotation, x, y)
-            yield matrix * shift_matrix
+        if 0 <= self.corner <= 3:
+            cx, cy = outline[self.corner]
+        else:
+            cx = sum([c[0] for c in outline]) / len(outline)
+            cy = sum([c[1] for c in outline]) / len(outline)
+        x -= cx
+        y -= cy
+        shift_matrix = Matrix()
+        if self.rotation != 0:
+            shift_matrix.post_rotate(self.rotation, cx, cy)
+        shift_matrix.post_translate(x, y)
+
+        yield matrix * shift_matrix
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
