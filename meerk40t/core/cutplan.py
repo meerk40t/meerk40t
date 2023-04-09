@@ -153,7 +153,8 @@ class CutPlan:
             if not hasattr(place, "type"):
                 continue
             if place.type.startswith("place "):
-                placements.extend(place.placements(self.context, self.outline, scene_to_device_matrix, self))
+                if hasattr(place, "output") and place.output:
+                    placements.extend(place.placements(self.context, self.outline, scene_to_device_matrix, self))
         if not placements:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)

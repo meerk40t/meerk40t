@@ -14,8 +14,10 @@ class PlacePointNode(Node):
         self.y = y
         self.rotation = rotation
         self.corner = corner
+        # Active?
+        self.output = True
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{element_type}: {corner} {x} {y} {rotation}"
+        self._formatter = "{enabled}{element_type}: {corner} {x} {y} {rotation}"
 
     def __copy__(self):
         nd = self.node_dict
@@ -49,7 +51,7 @@ class PlacePointNode(Node):
         default_map["element_type"] = "Placement"
         default_map.update(self.__dict__)
         default_map["position"] = str((self.x, self.y))
-        default_map["rotation"] = f"{Angle(self.rotation, digits=2).angle_degrees}°"
+        default_map["rotation"] = f"{Angle(self.rotation, digits=2).degrees}°"
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
@@ -60,6 +62,7 @@ class PlacePointNode(Node):
             default_map["corner"] = ".+ "
         else:
             default_map["corner"] = " + "
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
 
         return default_map
 

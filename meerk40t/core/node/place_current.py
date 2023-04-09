@@ -10,7 +10,9 @@ class PlaceCurrentNode(Node):
 
     def __init__(self, **kwargs):
         super().__init__(type="place current", **kwargs)
-        self._formatter = "{element_type}"
+        # Active?
+        self.output = True
+        self._formatter = "{enabled}{element_type}"
 
     def __copy__(self):
         nd = self.node_dict
@@ -28,6 +30,7 @@ class PlaceCurrentNode(Node):
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Placement: Current Position"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map.update(self.__dict__)
         return default_map
 
