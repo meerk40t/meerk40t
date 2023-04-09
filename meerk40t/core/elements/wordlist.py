@@ -56,7 +56,6 @@ def init_commands(kernel):
 
     _ = kernel.translation
 
-    classify_new = self.post_classify
     # ==========
     # WORDLISTS COMMANDS
     # ==========
