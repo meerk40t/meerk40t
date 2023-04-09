@@ -32,8 +32,9 @@ def plugin(kernel, lifecycle=None):
         from . import element_commands
         from . import trace
         from . import align
+        from . import wordlist
 
-        return [element_commands.plugin, element_treeops.plugin, trace.plugin, align.plugin]
+        return [element_commands.plugin, element_treeops.plugin, trace.plugin, align.plugin, wordlist.plugin]
     elif lifecycle == "preregister":
         kernel.register(
             "format/op cut",
