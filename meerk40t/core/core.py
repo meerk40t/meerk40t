@@ -16,6 +16,10 @@ def plugin(kernel, lifecycle=None):
 
         plugins.append(elements.plugin)
 
+        from .elements import penbox
+
+        plugins.append(penbox.plugin)
+
         from . import logging
 
         plugins.append(logging.plugin)
