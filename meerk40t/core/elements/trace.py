@@ -19,15 +19,25 @@ def plugin(kernel, lifecycle=None):
         init_commands(kernel)
 
 
-# Function to return the euclidean distance
-# between two points
+
 def dist(a, b):
+    """
+    Function to return the Euclidean distance between two points
+    @param a:
+    @param b:
+    @return:
+    """
     return sqrt(pow(a[0] - b[0], 2) + pow(a[1] - b[1], 2))
 
 
-# Function to check whether a point lies inside
-# or on the boundaries of the circle
 def is_inside(center, radius, p):
+    """
+    Function to check whether a point lies inside or on the boundaries of the circle
+    @param center:
+    @param radius:
+    @param p:
+    @return:
+    """
     return dist(center, p) <= radius
 
 
@@ -35,17 +45,29 @@ def is_inside(center, radius, p):
 # To find the equation of the circle when
 # three points are given.
 
-# Helper method to get a circle defined by 3 points
 def get_circle_center(bx, by, cx, cy):
+    """
+    Helper method to get a circle defined by 3 points
+    @param bx:
+    @param by:
+    @param cx:
+    @param cy:
+    @return:
+    """
+
     B = bx * bx + by * by
     C = cx * cx + cy * cy
     D = bx * cy - by * cx
     return [(cy * B - by * C) / (2 * D), (bx * C - cx * B) / (2 * D)]
 
 
-# Function to return the smallest circle
-# that intersects 2 points
 def circle_from1(A, B):
+    """
+    Function to return the smallest circle that intersects 2 points
+    @param A:
+    @param B:
+    @return:
+    """
     # Set the center to be the midpoint of A and B
     C = [(A[0] + B[0]) / 2.0, (A[1] + B[1]) / 2.0]
 
@@ -53,9 +75,14 @@ def circle_from1(A, B):
     return C, dist(A, B) / 2.0
 
 
-# Function to return a unique circle that
-# intersects three points
 def circle_from2(A, B, C):
+    """
+    Function to return a unique circle that intersects three points
+    @param A:
+    @param B:
+    @param C:
+    @return:
+    """
     if A == B:
         I, radius = circle_from1(A, C)
         return I, radius
@@ -73,9 +100,15 @@ def circle_from2(A, B, C):
         return I, radius
 
 
-# Function to check whether a circle
-# encloses the given points
 def is_valid_circle(center, radius, P):
+    """
+    Function to check whether a circle encloses the given points
+
+    @param center:
+    @param radius:
+    @param P:
+    @return:
+    """
 
     # Iterating through all the points
     # to check  whether the points
@@ -86,9 +119,12 @@ def is_valid_circle(center, radius, P):
     return True
 
 
-# Function to return the minimum enclosing
-# circle for N <= 3
 def min_circle_trivial(P):
+    """
+    Function to return the minimum enclosing circle for N <= 3
+    @param P:
+    @return:
+    """
     assert len(P) <= 3
 
     if not P:
@@ -114,12 +150,16 @@ def min_circle_trivial(P):
     return center, radius
 
 
-# Returns the MEC using Welzl's algorithm
-# Takes a set of input points P and a set R
-# points on the circle boundary.
-# n represents the number of points in P
-# that are not yet processed.
 def welzl_helper(P, R, n):
+    """
+    Returns the MEC using Welzl's algorithm takes a set of input points P and a set R points on the circle boundary.
+    n represents the number of points in P that are not yet processed.
+
+    @param P:
+    @param R:
+    @param n:
+    @return:
+    """
     # Base case when all points processed or |R| = 3
     if n == 0 or len(R) == 3:
         center, radius = min_circle_trivial(R)
