@@ -29,7 +29,7 @@ from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, place_nodes
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
@@ -206,6 +206,7 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
                 nodes = [e for e in nodes if e._parent.type != "branch reg"]
+                nodes = [e for e in nodes if not e.type in placement_nodes]
         _nodes = list(nodes)
         variable_translation = draw_mode & DRAW_MODE_VARIABLES
         nodecopy = [e for e in _nodes]
@@ -235,6 +236,8 @@ class LaserRender:
                     node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
+                elif node.type in place_nodes:
+                    node.draw = self.draw_placement_node
                 elif node.type in (
                     "elem rect",
                     "elem line",
@@ -633,6 +636,64 @@ class LaserRender:
             gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node._cache)
+        gc.PopState()
+
+    def draw_placement_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the placement operation."""
+        if node.type == "place current":
+            # no idea how to draw yet...
+            return
+        gc.PushState()
+        if node.rotation is not None and node.rotation != 0:
+            matrix = Matrix()
+            matrix.post_rotate(node.rotation, node.x, node.y)
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        # First x
+        dif = 20 * zoomscale
+        x_from = node.x
+        y_from = node.y
+        if node.corner == 0:
+            # Top Left
+            x_to = x_from + dif
+            y_to = y_from + dif
+            x_sign = 1
+            y_sign = 1
+        elif node.corner == 1:
+            # Top Right
+            x_to = x_from - dif
+            y_to = y_from + dif
+            x_sign = -1
+            y_sign = 1
+        elif node.corner == 2:
+            # Bottom Right
+            x_to = x_from - dif
+            y_to = y_from - dif
+            x_sign = -1
+            y_sign = -1
+        elif node.corner == 3:
+            # Bottom Left
+            x_to = x_from + dif
+            y_to = y_from - dif
+            x_sign = 1
+            y_sign = -1
+        else:
+            # Center
+            x_from -= dif
+            y_from -= dif
+            x_to = x_from + 2 * dif
+            y_to = y_from + 2 * dif
+            x_sign = 1
+            y_sign = 1
+
+        gc.SetPen(wx.RED_PEN)
+        dif = 5 * zoomscale
+        gc.StrokeLine(x_from, node.y, x_to, node.y)
+        gc.StrokeLine(x_to - x_sign * dif, node.y - y_sign * dif, x_to, node.y)
+        gc.StrokeLine(x_to - x_sign * dif, node.y + y_sign * dif, x_to, node.y)
+        gc.SetPen(wx.GREEN_PEN)
+        gc.StrokeLine(node.x, y_from, node.x, y_to)
+        gc.StrokeLine(node.x - x_sign * dif, y_to - y_sign * dif, node.x, y_to)
+        gc.StrokeLine(node.x + x_sign * dif, y_to - y_sign * dif, node.x, y_to)
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):

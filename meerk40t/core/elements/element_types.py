@@ -91,6 +91,10 @@ op_nodes = (
     "place point",
     "place current",
 )
+place_nodes = (
+    "place point",
+    "place current",
+)
 elem_nodes = (
     "elem ellipse",
     "elem image",

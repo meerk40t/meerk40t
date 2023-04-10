@@ -195,6 +195,7 @@ class PlacementPanel(wx.Panel):
             return
         try:
             self.operation.rotation = Angle(self.text_rot.GetValue()).angle
+            self.updated()
         except ValueError:
             return
         myang = Angle(self.operation.rotation)
@@ -234,7 +235,7 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.corner != corner:
             self.operation.corner = corner
-            self.context.elements.signal("element_property_update", self.operation)
+            self.updated()
 
     def on_text_x(self):
         if self.operation is None or not hasattr(self.operation, "x"):
@@ -245,7 +246,7 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.x != x:
             self.operation.x = x
-            self.context.elements.signal("element_property_update", self.operation)
+            self.updated()
 
     def on_text_y(self):
         if self.operation is None or not hasattr(self.operation, "y"):
@@ -256,7 +257,11 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.y != y:
             self.operation.y = y
-            self.context.elements.signal("element_property_update", self.operation)
+            self.updated()
+
+    def updated(self):
+        self.context.elements.signal("element_property_update", self.operation)
+        self.context.elements.signal("refresh_scene", "Scene")
 
 
 class PlacementParameterPanel(ScrolledPanel):

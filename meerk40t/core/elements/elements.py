@@ -1370,6 +1370,10 @@ class Elemental(Service):
         elements = self._tree.get(type="branch reg")
         yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
+    def placement_nodes(self, depth=None, **kwargs):
+        elements = self.op_branch
+        yield from elements.flat(types=place_nodes, depth=depth, **kwargs)
+
     def top_element(self, **kwargs):
         """
         Returns the first matching node via a depth first search.
