@@ -184,7 +184,7 @@ class PlacementPanel(wx.Panel):
                 self.slider_angle.SetValue(int(h_angle))
             except ValueError:
                 pass
-            corner = max(min(self.operation.corner, 0), 4)  # between 0 and 4
+            corner = max(min(self.operation.corner, 4), 0)  # between 0 and 4
             self.combo_corner.SetSelection(corner)
 
         self.Layout()
