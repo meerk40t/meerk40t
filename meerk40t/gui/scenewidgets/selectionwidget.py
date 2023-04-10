@@ -1462,7 +1462,7 @@ class MoveWidget(Widget):
             if dx != 0 or dy != 0:
                 with elements.undofree():
                     for e in elements.flat(types=elem_nodes, emphasized=True):
-                        if hasattr(e, "lock") and e.lock and not allowlockmove:
+                        if not e.can_move(allowlockmove):
                             continue
                         e.matrix.post_translate(dx, dy)
                         # We would normally not adjust the node properties,
@@ -1491,7 +1491,7 @@ class MoveWidget(Widget):
             allowlockmove = elements.lock_allows_move
             with elements.undofree():
                 for e in elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "lock") and e.lock and not allowlockmove:
+                    if not e.can_move(allowlockmove):
                         continue
                     e.matrix.post_translate(dx, dy)
                     # We would normally not adjust the node properties,
@@ -2626,11 +2626,19 @@ class SelectionWidget(Widget):
             self.is_ref = False
             self.single_element = True
             is_locked = True
+            no_scale = True
+            no_skew = True
+            no_move = True
+            no_rotate = True
             for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
                 if e is self.scene.pane.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?
                 is_locked = is_locked and e.lock
+                no_scale = no_scale and not e.can_scale
+                no_skew = no_skew and not e.can_skew
+                no_move = no_move and not e.can_move()
+                no_rotate = no_rotate and not e.can_rotate
                 if idx > 0:
                     self.single_element = False
 
@@ -2673,21 +2681,21 @@ class SelectionWidget(Widget):
                         master=self, scene=self.scene, size=rotsize, drawsize=msize
                     ),
                 )
-            if show_skew_y and not is_locked:
+            if show_skew_y and not no_skew:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
                     ),
                 )
-            if show_skew_x and not is_locked:
+            if show_skew_x and not no_skew:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
                     ),
                 )
-            if self.use_handle_rotate and not is_locked:
+            if self.use_handle_rotate and not no_rotate:
                 for i in range(4):
                     self.add_widget(
                         -1,
@@ -2703,7 +2711,7 @@ class SelectionWidget(Widget):
                     -1,
                     MoveRotationOriginWidget(master=self, scene=self.scene, size=msize),
                 )
-            if self.use_handle_size and not is_locked:
+            if self.use_handle_size and not no_scale:
                 for i in range(4):
                     self.add_widget(
                         -1,

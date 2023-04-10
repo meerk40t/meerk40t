@@ -1008,19 +1008,18 @@ class Elemental(Service):
         return data_to_align
 
     def translate_node(self, node, dx, dy):
-        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+        if not node.can_move(self.lock_allows_move):
             return
+        if node.type in ("group", "file"):
+            for c in node.children:
+                self.translate_node(c, dx, dy)
+            node.translated(dx, dy)
         else:
-            if node.type in ("group", "file"):
-                for c in node.children:
-                    self.translate_node(c, dx, dy)
+            try:
+                node.matrix.post_translate(dx, dy)
                 node.translated(dx, dy)
-            else:
-                try:
-                    node.matrix.post_translate(dx, dy)
-                    node.translated(dx, dy)
-                except AttributeError:
-                    pass
+            except AttributeError:
+                pass
 
     def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
@@ -1610,11 +1609,8 @@ class Elemental(Service):
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
-            try:
-                if hasattr(elem, "lock") and elem.lock:
-                    continue
-            except AttributeError:
-                pass
+            if hasattr(elem, "can_remove") and not elem.can_remove:
+                continue
             elem.remove_node(references=True)
         self.validate_selected_area()
 
@@ -1808,7 +1804,7 @@ class Elemental(Service):
 
     def move_emphasized(self, dx, dy):
         for node in self.elems(emphasized=True):
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 continue
             node.matrix.post_translate(dx, dy)
             # node.modified()

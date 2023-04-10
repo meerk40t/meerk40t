@@ -795,7 +795,7 @@ def init_tree(kernel):
     # ==========
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: node.can_remove)
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=elem_nodes))
@@ -808,7 +808,7 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_elem(node, **kwargs):
-        if hasattr(node, "lock") and node.lock:
+        if hasattr(node, "can_remove") and not node.can_remove:
             pass
         else:
             node.remove_node()
@@ -862,15 +862,15 @@ def init_tree(kernel):
         self.set_emphasis(None)
         self.signal("operation_removed")
 
-    def contains_no_locked_items():
+    def contains_no_unremovable_items():
         nolock = True
         for e in list(self.flat(selected=True, cascade=True)):
-            if hasattr(e, "lock") and e.lock:
+            if hasattr(e, "can_remove") and not e.can_remove:
                 nolock = False
                 break
         return nolock
 
-    @tree_conditional(lambda cond: contains_no_locked_items())
+    @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -886,7 +886,7 @@ def init_tree(kernel):
         node.remove_node()
         self.set_emphasis(None)
 
-    @tree_conditional(lambda cond: contains_no_locked_items())
+    @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -1497,6 +1497,21 @@ def init_tree(kernel):
         )
         self.signal("updateop_tree")
 
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate for placement to append?"))
+    @tree_prompt("x", _("X-Coordinate for placement to append?"))
+    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
+    def append_operation_placement(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="place point",
+            pos=pos,
+            x=x,
+            y=y,
+            rotation=0,
+            corner=0,
+        )
+        self.signal("updateop_tree")
+
     @tree_operation(_("Reclassify operations"), node_type="branch elems", help="")
     def reclassify_operations(node, **kwargs):
         elems = list(self.elems())
@@ -2079,7 +2094,7 @@ def init_tree(kernel):
     @tree_submenu(_("Flip"))
     @tree_separator_before()
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_operation(
         _("Horizontally"),
         node_type=elem_group_nodes,
@@ -2095,7 +2110,7 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Flip"))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_operation(
         _("Vertically"),
         node_type=elem_group_nodes,
@@ -2110,7 +2125,7 @@ def init_tree(kernel):
         self(f"scale 1 -1 {center_x} {center_y}\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_submenu(_("Scale"))
     @tree_iterate("scale", 25, 1, -1)
     @tree_calc("scale_percent", lambda i: f"{(600.0 / float(i)):.2f}")
@@ -2130,7 +2145,7 @@ def init_tree(kernel):
 
     # @tree_conditional(lambda node: isinstance(node.object, SVGElement))
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_rotate)
     @tree_submenu(_("Rotate"))
     @tree_values(
         "angle",
@@ -2176,21 +2191,21 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: has_changes(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Reify User Changes"), node_type=elem_group_nodes, help="")
     def reify_elem_changes(node, **kwargs):
         self("reify\n")
         self.signal("ext-modified")
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Break Subpaths"), node_type="elem path", help="")
     def break_subpath_elem(node, **kwargs):
         self("element subpath\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: has_changes(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Reset user changes"), node_type=elem_group_nodes, help="")
     def reset_user_changes(node, copies=1, **kwargs):
         self("reset\n")

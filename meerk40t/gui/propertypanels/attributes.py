@@ -726,11 +726,8 @@ class PositionSizePanel(wx.Panel):
             self._set_widgets_hidden()
             return
 
-        en_xy = (
-            not getattr(self.node, "lock", False)
-            or self.context.elements.lock_allows_move
-        )
-        en_wh = not getattr(self.node, "lock", False)
+        en_xy = self.node.can_move(self.context.elements.lock_allows_move)
+        en_wh = self.node.can_scale
         x = bb[0]
         y = bb[1]
         w = bb[2] - bb[0]
@@ -759,10 +756,7 @@ class PositionSizePanel(wx.Panel):
         self.Show()
 
     def translate_it(self):
-        if (
-            getattr(self.node, "lock", False)
-            and not self.context.elements.lock_allows_move
-        ):
+        if not self.node.can_move(self.context.elements.lock_allows_move):
             return
         bb = self.node.bounds
         try:
@@ -779,7 +773,7 @@ class PositionSizePanel(wx.Panel):
             self.context.elements.signal("element_property_update", self.node)
 
     def scale_it(self, was_width):
-        if getattr(self.node, "lock", False):
+        if not self.node.can_scale:
             return
         bb = self.node.bounds
         keep_ratio = self.btn_lock_ratio.GetValue()
