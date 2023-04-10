@@ -42,6 +42,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
@@ -178,6 +179,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/ribbon", RibbonTool)
         context.register("tool/linetext", LineTextTool)
         context.register("tool/edit", EditTool)
+        context.register("tool/placement", PlacementTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
 
