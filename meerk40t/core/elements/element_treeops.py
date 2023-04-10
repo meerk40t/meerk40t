@@ -989,7 +989,7 @@ def init_tree(kernel):
         ntype = node.type
         changes = False
         for e in self.elems():
-            if e.type == ntype and not e.emphasized:
+            if e.type == ntype and not e.emphasized and e.can_emphasize:
                 e.emphasized = True
                 e.selected = True
                 changes = True
@@ -1269,7 +1269,7 @@ def init_tree(kernel):
         changes = False
         for node in self.elems():
             emphasis = bool(len(node.references) == 0)
-            if node.emphasized != emphasis:
+            if node.emphasized != emphasis and node.can_emphasize:
                 changes = True
                 node.emphasized = emphasis
         if changes:

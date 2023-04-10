@@ -602,6 +602,8 @@ class Elemental(Service):
         self._first_emphasized = node
 
     def set_node_emphasis(self, node, flag):
+        if not node.can_emphasize:
+            return
         node.emphasized = flag
         if flag:
             if self._first_emphasized is None:
@@ -1739,7 +1741,8 @@ class Elemental(Service):
                 s.targeted = False
             if s.selected:
                 s.selected = False
-
+            if not s.can_emphasize:
+                continue
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
                 if not in_list:
