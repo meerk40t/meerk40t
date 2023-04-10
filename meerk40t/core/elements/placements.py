@@ -2,8 +2,8 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from meerk40t.core.units import Length
 from meerk40t.core.units import Angle as UAngle
+from meerk40t.core.units import Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -46,7 +46,7 @@ def init_commands(kernel):
         output_type="ops",
         all_arguments_required=True,
     )
-    def place_points(command, channel, _, **kwargs):
+    def place_current(command, channel, _, **kwargs):
         node = self.op_branch.add(type="place current")
         added = [node]
         self.set_emphasis(added)

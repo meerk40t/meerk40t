@@ -1,24 +1,20 @@
+"""
+Display and Editing of the properties of 'place current', 'place point'
+"""
+
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
+from meerk40t.core.units import Angle, Length
+from meerk40t.gui.propertypanels.attributes import IdPanel
+from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer, TextCtrl, set_ctrl_value
 from meerk40t.kernel import signal_listener
-
-from ...core.units import UNITS_PER_MM, Length, Angle
-from ..wxutils import TextCtrl, set_ctrl_value
-from .attributes import IdPanel
 
 _ = wx.GetTranslation
 
-# OPERATION_TYPE_TOOLTIP = _(
-#     """Operation Type
-
-# Cut & Engrave are vector operations, Raster and Image are raster operations.
-
-# Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."""
-# )
-
-
 class PlacementPanel(wx.Panel):
+    """
+    Display and Editing of the properties of 'place current', 'place point'
+    """
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)

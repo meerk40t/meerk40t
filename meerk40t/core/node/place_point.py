@@ -1,6 +1,12 @@
+"""
+Placements are representations of a laserjob origin.
+A project may contain multiple such placements, for every placement
+a copy of the plan will be executed with the placement indicating
+the relative position
+"""
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length, Angle
+from meerk40t.core.units import Angle, Length
 from meerk40t.svgelements import Matrix
 
 
