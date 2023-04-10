@@ -17,9 +17,37 @@ class PlacePointNode(Node):
 
     def __init__(self, x=0, y=0, rotation=0, corner=0, **kwargs):
         self.x = x
-        self.y = y
-        self.rotation = rotation
-        self.corner = corner
+        try:
+            if isinstance(x, str):
+                self.x = float(Length(x))
+            elif isinstance(x, Length):
+                self.x = float(x)
+            else:
+                self.x = x
+        except ValueError:
+            self.x = 0
+        try:
+            if isinstance(y, str):
+                self.y = float(Length(x))
+            elif isinstance(y, Length):
+                self.y = float(y)
+            else:
+                self.y = y
+        except ValueError:
+            self.y = 0
+        try:
+            if isinstance(rotation, str):
+                self.rotation = Angle(rotation).radians
+            elif isinstance(rotation, Angle):
+                self.rotation = rotation.radians
+            else:
+                self.rotation = rotation
+        except ValueError:
+            self.rotation = 0
+        try:
+            self.corner = min(4, max(0, int(corner)))
+        except ValueError:
+            self.corner = 0
         # Active?
         self.output = True
         super().__init__(type="place point", **kwargs)

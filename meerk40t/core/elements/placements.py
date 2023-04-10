@@ -22,7 +22,7 @@ def init_commands(kernel):
     # ==========
 
     @self.console_option("rotation", "r", type=UAngle, help=_("placement rotation"), default=0)
-    @self.console_option("corner", "c", type=int, help=_("placement corner (4 for center)"), default=-1)
+    @self.console_option("corner", "c", type=int, help=_("placement corner (0=TL, 1=TR, 2=BR, 3=BL, 4=center)"), default=-1)
     @self.console_argument("x", type=Length, help=_("x coord"))
     @self.console_argument("y", type=Length, help=_("y coord"))
     @self.console_command(
@@ -34,7 +34,7 @@ def init_commands(kernel):
     )
     def place_points(command, channel, _, x, y, rotation, corner, **kwargs):
         added = []
-        node = self.op_branch.add(x=str(x), y=str(y), rotation=rotation.radians, corner=corner, type="place point")
+        node = self.op_branch.add(x=x, y=y, rotation=rotation.radians, corner=corner, type="place point")
         added.append(node)
         self.set_emphasis(added)
         return "ops", added
