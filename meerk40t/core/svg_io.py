@@ -1130,7 +1130,11 @@ class SVGProcessor:
                     ]
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
-                            setattr(op, overlooked, element.values.get(overlooked))
+                            try:
+                                over_value = getattr(op, overlooked).type(element.values.get(overlooked))
+                                setattr(op, overlooked, over_value)
+                            except ValueError:
+                                pass
                     op.validate()
                     op.id = node_id
                 except AttributeError:
