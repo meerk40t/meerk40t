@@ -2,6 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
+
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color

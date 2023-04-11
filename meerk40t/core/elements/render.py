@@ -5,19 +5,13 @@ This is a giant list of console commands that deal with and often implement the 
 from copy import copy
 from math import isinf
 
-from meerk40t.svgelements import (
-    Color,
-    Matrix,
-)
-from .element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
-from meerk40t.core.units import (
-    UNITS_PER_INCH,
-    UNITS_PER_PIXEL,
-    Length,
-)
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from meerk40t.svgelements import Color, Matrix
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):

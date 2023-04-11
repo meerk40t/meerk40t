@@ -8,21 +8,6 @@ from copy import copy
 from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from random import randint, shuffle
 
-from meerk40t.kernel import CommandSyntaxError, Service, Settings
-
-from meerk40t.svgelements import (
-    SVG_RULE_EVENODD,
-    SVG_RULE_NONZERO,
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    QuadraticBezier,
-    Viewbox,
-)
-from .element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
@@ -43,6 +28,21 @@ from meerk40t.core.units import (
     UNITS_PER_POINT,
     Length,
 )
+from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from meerk40t.svgelements import (
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
+    Angle,
+    Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    QuadraticBezier,
+    Viewbox,
+)
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
@@ -72,6 +72,7 @@ def index_range(index_string):
                 for q in range(start, end + 1):
                     indexes.append(q)
     return indexes
+
 
 class Penbox(Service):
     def __init__(self, kernel, *args, **kwargs):
@@ -116,7 +117,7 @@ class Penbox(Service):
             output_type="penbox",
         )
         def penbox_add(
-                command, channel, _, count=None, data=None, remainder=None, **kwargs
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
         ):
             if count is None:
                 raise CommandSyntaxError
@@ -135,7 +136,7 @@ class Penbox(Service):
             output_type="penbox",
         )
         def penbox_del(
-                command, channel, _, count=None, data=None, remainder=None, **kwargs
+            command, channel, _, count=None, data=None, remainder=None, **kwargs
         ):
             if count is None:
                 raise CommandSyntaxError
@@ -160,15 +161,15 @@ class Penbox(Service):
             output_type="penbox",
         )
         def penbox_set(
-                command,
-                channel,
-                _,
-                index=None,
-                key=None,
-                value=None,
-                data=None,
-                remainder=None,
-                **kwargs,
+            command,
+            channel,
+            _,
+            index=None,
+            key=None,
+            value=None,
+            data=None,
+            remainder=None,
+            **kwargs,
         ):
             if not value:
                 raise CommandSyntaxError
@@ -217,7 +218,9 @@ class Penbox(Service):
             input_type="ops",
             output_type="ops",
         )
-        def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        def penbox_pass(
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        ):
             if data is not None:
                 if key is not None:
                     for op in data:
@@ -249,7 +252,7 @@ class Penbox(Service):
             output_type="ops",
         )
         def penbox_value(
-                command, channel, _, key=None, remainder=None, data=None, **kwargs
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
         ):
             if data is not None:
                 if key is not None:

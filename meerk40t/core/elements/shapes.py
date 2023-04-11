@@ -4,9 +4,9 @@ This is a giant list of console commands that deal with and often implement the 
 
 from math import sqrt
 
-
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
 from meerk40t.kernel import CommandSyntaxError
-
 from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
@@ -18,14 +18,8 @@ from meerk40t.svgelements import (
     Matrix,
     QuadraticBezier,
 )
+
 from .element_types import *
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import (
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    UNITS_PER_POINT,
-    Length,
-)
 
 
 def plugin(kernel, lifecycle=None):

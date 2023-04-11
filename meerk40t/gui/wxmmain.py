@@ -3123,9 +3123,7 @@ class MeerK40t(MWindow):
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("Check for Updates"),
-            _(
-                "Check whether a newer version of Meerk40t is available"
-            ),
+            _("Check whether a newer version of Meerk40t is available"),
         )
         self.Bind(
             wx.EVT_MENU,

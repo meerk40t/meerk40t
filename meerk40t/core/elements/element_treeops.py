@@ -9,11 +9,7 @@ import math
 import os.path
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
-
-from meerk40t.svgelements import Matrix, Point
 from meerk40t.core.cutcode.cutcode import CutCode
-from .element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.treeop import (
@@ -31,6 +27,10 @@ from meerk40t.core.treeop import (
     tree_values,
 )
 from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Matrix, Point
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
@@ -1890,7 +1890,6 @@ def init_tree(kernel):
     @tree_iterate("copies", 2, 10)
     @tree_operation(_("Make {copies} copies"), node_type=elem_group_nodes, help="")
     def duplicate_element_n(node, copies, **kwargs):
-
         def copy_single_node(orgnode, orgparent, times, dx, dy):
             delta_wordlist = 0
             for n in range(times):
@@ -1923,7 +1922,9 @@ def init_tree(kernel):
                 if orgnode.type in ("file", "group"):
                     newparent = copy_node
                     for cnode in orgnode.children:
-                        copy_single_node(cnode, newparent, 1, (n + 1) * dx, (n + 1) * dy)
+                        copy_single_node(
+                            cnode, newparent, 1, (n + 1) * dx, (n + 1) * dy
+                        )
 
         copy_nodes = list()
         dx = self.length_x("3mm")

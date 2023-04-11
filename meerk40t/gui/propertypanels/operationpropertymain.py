@@ -249,10 +249,16 @@ class LayerSettingPanel(wx.Panel):
             # Ask the user if she/he wants to assign the color of the contained objects
             candidate_stroke = bool(self.checkbox_stroke.GetValue())
             candidate_fill = bool(self.checkbox_fill.GetValue())
-            if self.operation.type  in ("op engrave", "op cut", "op hatch") and len(self.operation.children) > 0 and (candidate_fill or candidate_stroke):
+            if (
+                self.operation.type in ("op engrave", "op cut", "op hatch")
+                and len(self.operation.children) > 0
+                and (candidate_fill or candidate_stroke)
+            ):
                 dlg = wx.MessageDialog(
                     None,
-                    message=_("Do you want to change the color of the contained elements too?"),
+                    message=_(
+                        "Do you want to change the color of the contained elements too?"
+                    ),
                     caption=_("Update Colors?"),
                     style=wx.YES_NO | wx.ICON_QUESTION,
                 )

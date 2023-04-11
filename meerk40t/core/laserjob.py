@@ -248,7 +248,9 @@ class LaserJob:
             result = self._estimate
         else:
             # Acknowledge previous + future passes
-            result = time_for_current_pass + time_for_past_passes + time_for_future_passes
+            result = (
+                time_for_current_pass + time_for_past_passes + time_for_future_passes
+            )
         # print (f"Passes: {self.loops_executed} / {self.loops}")
         # print (f"Past: {time_for_past_passes:.1f}, Current: {time_for_current_pass:.1f}, Future: {time_for_future_passes:.1f}")
         # print (f"Steps: {self.steps_done} / {self.steps_total}, Pass-Estimate: {self._estimate:.1f}")

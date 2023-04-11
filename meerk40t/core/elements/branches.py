@@ -5,14 +5,6 @@ This is a giant list of console commands that deal with and often implement the 
 import re
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
-
-from meerk40t.svgelements import (
-    Angle,
-    Color,
-    Matrix,
-)
-from .element_types import *
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -23,6 +15,10 @@ from meerk40t.core.node.util_input import InputOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 from meerk40t.core.units import Length
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Angle, Color, Matrix
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
