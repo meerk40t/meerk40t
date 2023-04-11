@@ -329,6 +329,11 @@ class RasterOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        if isinstance(self.speed, str):
+            try:
+                self.speed = float(self.speed)
+            except ValueError:
+                pass
         commands = plan.commands
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm

@@ -268,6 +268,11 @@ class CutOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+        if isinstance(self.speed, str):
+            try:
+                self.speed = float(self.speed)
+            except ValueError:
+                pass
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
