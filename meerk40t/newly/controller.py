@@ -420,10 +420,10 @@ class NewlyController:
             bits = bits[::-1]
         elif top:
             cmd = bytearray(b"XF")
-            bits = bits[::-1]
+            # bits = bits[::-1]
         elif bottom:
             cmd = bytearray(b"XZ")
-            bits = bits[::-1]
+            # bits = bits[::-1]
         if cmd is None:
             return  # 0,0 goes nowhere.
         count = len(bits)
