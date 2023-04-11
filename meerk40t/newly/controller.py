@@ -419,11 +419,11 @@ class NewlyController:
             cmd = bytearray(b"YZ")
             bits = bits[::-1]
         elif top:
-            cmd = bytearray(b"XZ")
-            # bits = bits[::-1]
-        elif bottom:
             cmd = bytearray(b"XF")
-            # bits = bits[::-1]
+            bits = bits[::-1]
+        elif bottom:
+            cmd = bytearray(b"XZ")
+            bits = bits[::-1]
         if cmd is None:
             return  # 0,0 goes nowhere.
         count = len(bits)
@@ -438,7 +438,7 @@ class NewlyController:
             self._last_x += count
         elif top:
             self._last_y -= count
-        elif right:
+        elif bottom:
             self._last_y += count
 
     def raster(self, raster_cut: RasterCut):
