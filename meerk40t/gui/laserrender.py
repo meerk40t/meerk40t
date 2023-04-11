@@ -206,7 +206,7 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
                 nodes = [e for e in nodes if e._parent.type != "branch reg"]
-                nodes = [e for e in nodes if not e.type in placement_nodes]
+                nodes = [e for e in nodes if not e.type in place_nodes]
         _nodes = list(nodes)
         variable_translation = draw_mode & DRAW_MODE_VARIABLES
         nodecopy = [e for e in _nodes]
