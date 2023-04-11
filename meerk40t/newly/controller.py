@@ -438,7 +438,7 @@ class NewlyController:
             self._last_x += count
         elif top:
             self._last_y -= count
-        elif right:
+        elif bottom:
             self._last_y += count
 
     def raster(self, raster_cut: RasterCut):
