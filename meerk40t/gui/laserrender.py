@@ -596,6 +596,16 @@ class LaserRender:
         Vector objects are expected to have a make_cache routine which attaches a `_cache_matrix` and a `_cache`
         attribute to them which can be drawn as a GraphicsPath.
         """
+        if hasattr(node, "mktext"):
+            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node)
+            oldtext = getattr(node, "_translated_text", "")
+            if newtext != oldtext:
+                node._translated_text = newtext
+                kernel = self.context.elements.kernel
+                for property_op in kernel.lookup_all("path_updater/.*"):
+                    property_op(kernel.root, node)
+                if hasattr(node, "_cache"):
+                    node._cache = None
         matrix = node.matrix
         gc.PushState()
         try:

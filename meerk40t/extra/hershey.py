@@ -98,12 +98,17 @@ def update(context, node):
 
 
 def update_linetext(context, node, newtext):
+    # print ("Update Linetext")
     if node is None:
+        # print ("node is none, exit")
         return
     if not hasattr(node, "mkfont"):
+        # print ("no font attr, exit")
         return
     if not hasattr(node, "mkfontsize"):
+        # print ("no fontsize attr, exit")
         return
+    oldtext = getattr(node, "_translated_text", "")
     registered_fonts = fonts_registered()
     fontname = node.mkfont
     fontsize = node.mkfontsize
@@ -113,7 +118,11 @@ def update_linetext(context, node, newtext):
     font_dir = getattr(context, "font_directory", "")
     font_path = join(font_dir, fontname)
     if not exists(font_path):
-        return
+        # Fallback to meerk40t directory...
+        safe_dir = realpath(get_safe_path(context.kernel.name))
+        font_path = join(safe_dir, fontname)
+        if not exists(font_path):
+            return
     try:
         filename, file_extension = splitext(font_path)
         if len(file_extension) > 0:
@@ -123,7 +132,9 @@ def update_linetext(context, node, newtext):
         fontclass = item[1]
     except (KeyError, IndexError):
         # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
+        # print ("unknown fonttype, exit")
         return
+    # print("Nearly there, all fonts checked...")
     cfont = fontclass(font_path)
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
@@ -145,8 +156,9 @@ def update_linetext(context, node, newtext):
     node.path.transform.f = oldf
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
-
+    # print (f"Updated: from {oldtext} -> {mytext}")
     node.mktext = newtext
+    node._translated_text = mytext
     node.altered()
 
 
@@ -248,6 +260,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mktext = text
+    path_node._translated_text = mytext
     path_node.mkcoordx = x
     path_node.mkcoordy = y
     path_node.stroke_width = UNITS_PER_PIXEL
