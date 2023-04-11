@@ -1021,11 +1021,11 @@ class LaserRender:
 
         for item in _nodes:
 
-            bb = item.bounds
-            # bb = item.paint_bounds
-            # if bb is None:
-            #     # Fall back to bounds
-            #     bb = item.bounds
+            # bb = item.bounds
+            bb = item.paint_bounds
+            if bb is None:
+                # Fall back to bounds
+                bb = item.bounds
             if bb is None:
                 continue
             if bb[0] < x_min:
