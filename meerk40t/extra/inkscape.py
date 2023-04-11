@@ -516,7 +516,7 @@ def plugin(kernel, lifecycle):
                         inkscape,
                         "--export-area-drawing",
                         "--export-dpi",
-                        dpi,
+                        str(dpi),
                         "--export-background",
                         "rgb(255, 255, 255)",
                         "--export-background-opacity",
