@@ -190,6 +190,17 @@ class CutPlan:
                     for node in op.flat():
                         if node is op:
                             continue
+                        if hasattr(node, "mktext") and hasattr(node, "_cache"):
+                            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node, increment=False)
+                            oldtext = getattr(node, "_translated_text", "")
+                            # print (f"Was called inside preprocess for {node.type} with {node.mktext}, old: {oldtext}, new:{newtext}")
+                            if newtext != oldtext:
+                                node._translated_text = newtext
+                                kernel = self.context.elements.kernel
+                                for property_op in kernel.lookup_all("path_updater/.*"):
+                                    property_op(kernel.root, node)
+                                if hasattr(node, "_cache"):
+                                    node._cache = None
                         if hasattr(node, "preprocess"):
                             node.preprocess(self.context, placement, self)
             idx += 1
