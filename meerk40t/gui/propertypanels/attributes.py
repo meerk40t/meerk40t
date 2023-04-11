@@ -289,17 +289,26 @@ class IdPanel(wx.Panel):
         # print(f"set_widget for {self.attribute} to {str(node)}")
         vis1 = False
         vis2 = False
-        if hasattr(self.node, "id") and self.showid:
-            vis1 = True
-            self.text_id.SetValue(mklabel(node.id))
-        self.text_id.Show(vis1)
-        self.sizer_id.Show(vis1)
-
-        if hasattr(self.node, "label") and self.showlabel:
-            vis2 = True
-            self.text_label.SetValue(mklabel(node.label))
-        self.text_label.Show(vis2)
-        self.sizer_label.Show(vis2)
+        try:
+            if hasattr(self.node, "id") and self.showid:
+                vis1 = True
+                self.text_id.SetValue(mklabel(node.id))
+            self.text_id.Show(vis1)
+            self.sizer_id.Show(vis1)
+        except RuntimeWarning:
+            # Could happen if the propertypanel
+            # would have been destroyed already
+            pass
+        try:
+            if hasattr(self.node, "label") and self.showlabel:
+                vis2 = True
+                self.text_label.SetValue(mklabel(node.label))
+            self.text_label.Show(vis2)
+            self.sizer_label.Show(vis2)
+        except RuntimeWarning:
+            # Could happen if the propertypanel
+            # would have been destroyed already
+            pass
 
         if vis1 or vis2:
             self.Show()
