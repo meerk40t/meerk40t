@@ -1013,6 +1013,7 @@ class MovePanel(wx.Panel):
         self.button_navigate_move_to.Bind(
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_move_to_right
         )
+        self.Bind(wx.EVT_SIZE, self.on_size, self)
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -1052,14 +1053,22 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        btn_sizer = wx.GridSizer(3, 3, 2, 2)
+        self.btn_sizer = wx.GridSizer(3, 3, 2, 2)
         for idx in range(9):
-            btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
-        main_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            self.btn_sizer.Add(self.small_buttons[idx], 0, 0, 0)
+        main_sizer.Add(self.btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_size(self, event):
+        # Resize event - only display numpad buttons if enough horizontal space
+        winsize = self.GetSize()
+        display_it = bool(winsize[0] > 175)
+        self.btn_sizer.Show(display_it)
+        self.btn_sizer.ShowItems(display_it)
+        self.Layout()
 
     def on_label_dclick(self, event):
         p = self.context
