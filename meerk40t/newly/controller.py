@@ -419,10 +419,10 @@ class NewlyController:
             cmd = bytearray(b"YZ")
             bits = bits[::-1]
         elif top:
-            cmd = bytearray(b"XF")
+            cmd = bytearray(b"XZ")
             # bits = bits[::-1]
         elif bottom:
-            cmd = bytearray(b"XZ")
+            cmd = bytearray(b"XF")
             # bits = bits[::-1]
         if cmd is None:
             return  # 0,0 goes nowhere.
