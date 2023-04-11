@@ -167,7 +167,7 @@ class CutPlan:
         original_ops = copy(self.plan)
         self.plan.clear()
         idx = 0
-        wordlist = copy(self.context.elements.mywordlist)
+        self.context.elements.mywordlist.push()
 
         for placement in placements:
             # Adjust wordlist
@@ -193,7 +193,7 @@ class CutPlan:
                         if hasattr(node, "preprocess"):
                             node.preprocess(self.context, placement, self)
             idx += 1
-        self.context.elements.mywordlist = wordlist
+        self.context.elements.mywordlist.pop()
 
     def _to_grouped_plan(self, plan):
         """

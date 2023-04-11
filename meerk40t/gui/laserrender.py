@@ -597,7 +597,7 @@ class LaserRender:
         attribute to them which can be drawn as a GraphicsPath.
         """
         if hasattr(node, "mktext"):
-            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node)
+            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node, increment=False)
             oldtext = getattr(node, "_translated_text", "")
             if newtext != oldtext:
                 node._translated_text = newtext
@@ -764,7 +764,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, elemnode=node)
+            text = self.context.elements.wordlist_translate(text, elemnode=node, increment=False)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
