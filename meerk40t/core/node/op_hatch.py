@@ -321,7 +321,7 @@ class HatchOpNode(Node, Parameters):
             penbox_pass = self.settings.get("penbox_pass")
             if penbox_pass is not None:
                 try:
-                    penbox_pass = context.elements.penbox[penbox_pass]
+                    penbox_pass = context.penbox.pens[penbox_pass]
                 except KeyError:
                     penbox_pass = None
             hatch_cache = dict()

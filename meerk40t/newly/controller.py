@@ -295,6 +295,7 @@ class NewlyController:
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
         self._set_speed_mode = "vector"
+        self._power = None
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
         if self.service.pwm_enabled:
@@ -437,7 +438,7 @@ class NewlyController:
             self._last_x += count
         elif top:
             self._last_y -= count
-        elif right:
+        elif bottom:
             self._last_y += count
 
     def raster(self, raster_cut: RasterCut):
@@ -516,7 +517,7 @@ class NewlyController:
                     self.goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
-                    scanline.extend([int(on)] * abs(dx))
+                    scanline.extend([int(on)] * abs(dy))
                 previous_x, previous_y = x, y
         commit_scanline()
 

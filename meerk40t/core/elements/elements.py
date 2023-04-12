@@ -36,7 +36,6 @@ def plugin(kernel, lifecycle=None):
             grid,
             materials,
             notes,
-            penbox,
             placements,
             render,
             shapes,
@@ -52,7 +51,6 @@ def plugin(kernel, lifecycle=None):
             trace.plugin,
             align.plugin,
             wordlist.plugin,
-            penbox.plugin,
             materials.plugin,
             shapes.plugin,
             tree_commands.plugin,
@@ -463,10 +461,6 @@ class Elemental(Service):
         self.setting(bool, "operation_default_empty", True)
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
-        self.pen_data = Settings(self.kernel.name, "penbox.cfg")
-
-        self.penbox = {}
-        self.load_persistent_penbox()
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -630,49 +624,6 @@ class Elemental(Service):
                 emptyset = True
                 break
         return emptyset
-
-    def load_persistent_penbox(self):
-        settings = self.pen_data
-        pens = settings.read_persistent_string_dict("pens", suffix=True)
-        for pen in pens:
-            length = int(pens[pen])
-            box = list()
-            for i in range(length):
-                penbox = dict()
-                settings.read_persistent_string_dict(f"{pen} {i}", penbox, suffix=True)
-                box.append(penbox)
-            self.penbox[pen] = box
-
-    def save_persistent_penbox(self):
-        sections = {}
-        for section in self.penbox:
-            sections[section] = len(self.penbox[section])
-        self.pen_data.write_persistent_dict("pens", sections)
-        for section in self.penbox:
-            for i, p in enumerate(self.penbox[section]):
-                self.pen_data.write_persistent_dict(f"{section} {i}", p)
-
-    def index_range(self, index_string):
-        """
-        Parses index ranges in the form <idx>,<idx>-<idx>,<idx>
-        @param index_string:
-        @return:
-        """
-        indexes = list()
-        for s in index_string.split(","):
-            q = list(s.split("-"))
-            if len(q) == 1:
-                indexes.append(int(q[0]))
-            else:
-                start = int(q[0])
-                end = int(q[1])
-                if start > end:
-                    for q in range(end, start + 1):
-                        indexes.append(q)
-                else:
-                    for q in range(start, end + 1):
-                        indexes.append(q)
-        return indexes
 
     def length(self, v):
         return float(Length(v))
@@ -1181,8 +1132,6 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
-        self.save_persistent_penbox()
-        self.pen_data.write_configuration()
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
