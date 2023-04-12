@@ -1117,24 +1117,6 @@ class SVGProcessor:
             if "stroke" in attrs:
                 attrs["stroke"] = Color(attrs["stroke"])
 
-            # These routines are an ugly patch to remediate a nasty bug during load
-            # Float
-            for candidate in ("speed", "power", "dpi", "x", "y"):
-                if candidate in attrs:
-                    try:
-                        attr_value = float(attrs[candidate])
-                        attrs[candidate] = attr_value
-                    except ValueError:
-                        pass
-            # int
-            for candidate in ("passes", "corner", "output"):
-                if candidate in attrs:
-                    try:
-                        attr_value = int(attrs[candidate])
-                        attrs[candidate] = attr_value
-                    except ValueError:
-                        pass
-
             if tag == "operation":
                 # Check if SVGElement: operation
                 if not self.operations_cleared:
