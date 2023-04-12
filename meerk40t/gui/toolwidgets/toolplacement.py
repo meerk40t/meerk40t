@@ -6,6 +6,7 @@ from meerk40t.svgelements import Point
 
 _ = wx.GetTranslation
 
+
 class PlacementTool(ToolWidget):
     """
     Placement Tool.
@@ -66,23 +67,25 @@ class PlacementTool(ToolWidget):
             self.has_shift = True
 
         if event_type == "leftclick":
-            print (f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}")
+            print(
+                f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}"
+            )
             if nearest_snap is None:
                 point = Point(space_pos[0], space_pos[1])
             else:
                 point = Point(nearest_snap[0], nearest_snap[1])
             if self.has_ctrl:
-                corner = 2 # Bottom Right
+                corner = 2  # Bottom Right
             elif self.has_shift:
-                corner = 4 # Center
+                corner = 4  # Center
             else:
-                corner = 0 # Top Left
+                corner = 0  # Top Left
             elements = self.scene.context.elements
             node = elements.op_branch.add(
                 type="place point",
                 x=point.x,
                 y=point.y,
-                rotation = 0,
+                rotation=0,
                 corner=corner,
             )
             self.notify_created(node)
@@ -92,7 +95,7 @@ class PlacementTool(ToolWidget):
             if self.message_displayed == "":
                 self.message_displayed = _(
                     "Click to set the TL-corner of the job (Ctrl for BR, Shift for Center)"
-                    )
+                )
                 self.scene.context.signal("statusmsg", self.message_displayed)
             self.scene.pane.tool_active = True
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):

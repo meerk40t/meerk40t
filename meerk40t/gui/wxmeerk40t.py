@@ -61,6 +61,7 @@ from .propertypanels.imageproperty import (
 )
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
+from .propertypanels.placementproperty import PlacementParameterPanel
 from .propertypanels.pointproperty import PointPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.rasterwizardpanels import (
@@ -73,8 +74,6 @@ from .propertypanels.rasterwizardpanels import (
     ToneCurvePanel,
 )
 from .propertypanels.textproperty import TextPropertyPanel
-from .propertypanels.placementproperty import PlacementParameterPanel
-
 from .simulation import Simulation
 from .toolwidgets.toolnodeedit import NodeEditToolbar
 from .wordlisteditor import WordlistEditor

@@ -485,7 +485,7 @@ class Wordlist:
         return newtext
 
     def push(self):
-        """ Stores the current content on the stack """
+        """Stores the current content on the stack"""
         copied_content = {}
         for key, entry in self.content.items():
             copied_content[key] = copy(entry)
@@ -493,7 +493,7 @@ class Wordlist:
         # print (f"push was called, when name was: '{self.content['name']}'")
 
     def pop(self):
-        """ Restores the last added stack entry """
+        """Restores the last added stack entry"""
         if len(self._stack) > 0:
             copied_content = self._stack[-1]
             self._stack.pop(-1)

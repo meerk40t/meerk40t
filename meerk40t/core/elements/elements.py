@@ -10,10 +10,6 @@ import os.path
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import ConsoleFunction, Service, Settings
-
-from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
-from .element_types import *
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -23,26 +19,32 @@ from meerk40t.core.node.rootnode import RootNode
 from meerk40t.core.undos import Undo
 from meerk40t.core.units import UNITS_PER_MIL, Length
 from meerk40t.core.wordlist import Wordlist
+from meerk40t.kernel import ConsoleFunction, Service, Settings
+from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
-        from . import element_treeops
-        from . import branches
-        from . import trace
-        from . import align
-        from . import wordlist
-        from . import penbox
-        from . import materials
-        from . import shapes
-        from . import tree_commands
-        from . import undo_redo
-        from . import clipboard
-        from . import grid
-        from . import render
-        from . import notes
-        from . import placements
+        from . import (
+            align,
+            branches,
+            clipboard,
+            element_treeops,
+            grid,
+            materials,
+            notes,
+            penbox,
+            placements,
+            render,
+            shapes,
+            trace,
+            tree_commands,
+            undo_redo,
+            wordlist,
+        )
 
         return [
             element_treeops.plugin,
@@ -59,7 +61,7 @@ def plugin(kernel, lifecycle=None):
             grid.plugin,
             render.plugin,
             notes.plugin,
-            placements.plugin
+            placements.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -117,7 +119,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/branch elems", "{element_type}")
         kernel.register("format/branch reg", "{element_type}")
         kernel.register("format/place current", "{enabled}{element_type}")
-        kernel.register("format/place point", "{enabled}{element_type}: {corner} {x} {y} {rotation}")
+        kernel.register(
+            "format/place point", "{enabled}{element_type}: {corner} {x} {y} {rotation}"
+        )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))

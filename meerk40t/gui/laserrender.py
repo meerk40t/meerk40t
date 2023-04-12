@@ -4,6 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
+from meerk40t.core.elements.element_types import elem_nodes, place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -29,7 +30,6 @@ from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from meerk40t.core.elements.element_types import elem_nodes, place_nodes
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
@@ -597,7 +597,9 @@ class LaserRender:
         attribute to them which can be drawn as a GraphicsPath.
         """
         if hasattr(node, "mktext"):
-            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node, increment=False)
+            newtext = self.context.elements.wordlist_translate(
+                node.mktext, elemnode=node, increment=False
+            )
             oldtext = getattr(node, "_translated_text", "")
             if newtext != oldtext:
                 node._translated_text = newtext
@@ -764,7 +766,9 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, elemnode=node, increment=False)
+            text = self.context.elements.wordlist_translate(
+                text, elemnode=node, increment=False
+            )
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":

@@ -186,7 +186,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         context.shx_preferred = font
     else:
         if context.shx_preferred is not None:
-        #  print (f"Fallback to {context.shx_preferred}")
+            #  print (f"Fallback to {context.shx_preferred}")
             font = context.shx_preferred
     # Still not valid?
     if font is None or font == "":

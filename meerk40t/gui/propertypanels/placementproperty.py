@@ -11,10 +11,12 @@ from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
+
 class PlacementPanel(wx.Panel):
     """
     Display and Editing of the properties of 'place current', 'place point'
     """
+
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)

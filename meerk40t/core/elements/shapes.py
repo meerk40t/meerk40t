@@ -4,9 +4,9 @@ This is a giant list of console commands that deal with and often implement the 
 
 from math import sqrt
 
-
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
 from meerk40t.kernel import CommandSyntaxError
-
 from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
@@ -18,14 +18,8 @@ from meerk40t.svgelements import (
     Matrix,
     QuadraticBezier,
 )
+
 from .element_types import *
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import (
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    UNITS_PER_POINT,
-    Length,
-)
 
 
 def plugin(kernel, lifecycle=None):
@@ -434,9 +428,7 @@ def init_commands(kernel):
                 if prop in ("x", "y"):
                     if hasattr(e, "can_move") and not e.can_move(self.lock_allows_move):
                         channel(
-                            _("Element can not be moved: {name}").format(
-                                name=str(e)
-                            )
+                            _("Element can not be moved: {name}").format(name=str(e))
                         )
                         continue
                     # We need to adjust the matrix
@@ -463,9 +455,7 @@ def init_commands(kernel):
                         continue
                     if hasattr(e, "can_scale") and not e.can_scale:
                         channel(
-                            _("Element can not be scaled: {name}").format(
-                                name=str(e)
-                            )
+                            _("Element can not be scaled: {name}").format(name=str(e))
                         )
                         continue
                     if hasattr(e, "matrix") and hasattr(e, "bounds"):

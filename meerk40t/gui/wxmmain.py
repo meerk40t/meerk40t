@@ -70,10 +70,10 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_user_location_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -3138,9 +3138,7 @@ class MeerK40t(MWindow):
         menuitem = self.help_menu.Append(
             wx.ID_ANY,
             _("Check for Updates"),
-            _(
-                "Check whether a newer version of Meerk40t is available"
-            ),
+            _("Check whether a newer version of Meerk40t is available"),
         )
         self.Bind(
             wx.EVT_MENU,

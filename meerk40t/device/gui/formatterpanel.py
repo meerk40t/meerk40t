@@ -8,6 +8,7 @@ from meerk40t.gui.icons import (
     icons8_file_20,
     icons8_group_objects_20,
     icons8_home_20,
+    icons8_home_location_20,
     icons8_image_20,
     icons8_image_50,
     icons8_input_20,
@@ -23,7 +24,6 @@ from meerk40t.gui.icons import (
     icons8_text_50,
     icons8_timer_20,
     icons8_vector_50,
-    icons8_home_location_20,
 )
 
 _ = wx.GetTranslation

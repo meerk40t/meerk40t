@@ -154,7 +154,11 @@ class CutPlan:
                 continue
             if place.type.startswith("place "):
                 if hasattr(place, "output") and place.output:
-                    placements.extend(place.placements(self.context, self.outline, scene_to_device_matrix, self))
+                    placements.extend(
+                        place.placements(
+                            self.context, self.outline, scene_to_device_matrix, self
+                        )
+                    )
         if not placements:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)
@@ -191,7 +195,9 @@ class CutPlan:
                         if node is op:
                             continue
                         if hasattr(node, "mktext") and hasattr(node, "_cache"):
-                            newtext = self.context.elements.wordlist_translate(node.mktext, elemnode=node, increment=False)
+                            newtext = self.context.elements.wordlist_translate(
+                                node.mktext, elemnode=node, increment=False
+                            )
                             oldtext = getattr(node, "_translated_text", "")
                             # print (f"Was called inside preprocess for {node.type} with {node.mktext}, old: {oldtext}, new:{newtext}")
                             if newtext != oldtext:
@@ -219,7 +225,11 @@ class CutPlan:
         last_type = None
         group = list()
         for c in plan:
-            c_type = c.type if hasattr(c, "type") and c.type is not None else type(c).__name__
+            c_type = (
+                c.type
+                if hasattr(c, "type") and c.type is not None
+                else type(c).__name__
+            )
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged

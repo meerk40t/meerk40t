@@ -8,21 +8,6 @@ from copy import copy
 from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from random import randint, shuffle
 
-from meerk40t.kernel import CommandSyntaxError
-
-from meerk40t.svgelements import (
-    SVG_RULE_EVENODD,
-    SVG_RULE_NONZERO,
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    QuadraticBezier,
-    Viewbox,
-)
-from .element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
@@ -43,6 +28,21 @@ from meerk40t.core.units import (
     UNITS_PER_POINT,
     Length,
 )
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import (
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
+    Angle,
+    Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    QuadraticBezier,
+    Viewbox,
+)
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):

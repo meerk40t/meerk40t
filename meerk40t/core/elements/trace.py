@@ -5,12 +5,9 @@ This is a giant list of console commands that deal with and often implement the 
 from math import cos, isinf, sin, sqrt, tau
 from random import randint, shuffle
 
+from meerk40t.core.units import Length
 
 from .element_types import *
-
-from meerk40t.core.units import (
-    Length,
-)
 
 
 def plugin(kernel, lifecycle=None):

@@ -2,6 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.elements.element_types import op_nodes
+
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
@@ -17,6 +18,7 @@ from .icons import (
     icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
+    icons8_home_location_20,
     icons8_image_20,
     icons8_input_20,
     icons8_journey_20,
@@ -39,7 +41,6 @@ from .icons import (
     icons8_type_50,
     icons8_visit_20,
     icons8_warning_shield_20,
-    icons8_home_location_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
