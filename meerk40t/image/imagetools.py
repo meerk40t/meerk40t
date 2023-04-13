@@ -1782,6 +1782,7 @@ class ImageLoader:
             return False
         try:
             from PIL import Image as PILImage
+            from PIL.Image import DecompressionBombError
         except ImportError:
             return False
         try:
@@ -1789,6 +1790,10 @@ class ImageLoader:
             image.copy()  # Throws error for .eps without ghostscript
         except OSError:
             return False
+        except DecompressionBombError as e:
+            raise BadFileError(
+                "Image is larger than 178 megapixels."
+            ) from e
         except subprocess.CalledProcessError as e:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
