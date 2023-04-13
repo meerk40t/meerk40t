@@ -1122,26 +1122,44 @@ class SVGProcessor:
                 if not self.operations_cleared:
                     self.elements.clear_operations()
                     self.operations_cleared = True
-
                 try:
                     op = self.elements.op_branch.add(type=node_type, **attrs)
+                except AttributeError:
+                    # We don't have this operation type? Maybe a future version?
+                    # Intentional console output to alert about it.
+                    print(f"There was an unrecognized operation: '{node_type}', that has been ignored")
+                    op = None
+                if op is None:
+                    # We delete this created node-stub
+                    op_branch = self.elements.op_branch
+                    for idx in range(len(op_branch.children) - 1, -1, -1):
+                        test_op = op_branch.children[idx]
+                        if test_op is None:
+                            op_branch.children.pop(idx)
+                        elif not hasattr(test_op, "type") or test_op.type is None:
+                            # This is plain wrong...
+                            test_op.remove_node()
+                if op is not None:
+                    # Sometimes certain attributes weren't assigned properly / missed
+                    # This piece of code tries to reapply them. If things were fine
+                    # then this is an unneeded attempt. But better safe than sorry
                     overlooked_attributes = [
                         "output",
                     ]
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             try:
-                                over_value = getattr(op, overlooked).type(
-                                    element.values.get(overlooked)
-                                )  # This is gibberish.
+                                over_value = element.values.get(overlooked)
                                 setattr(op, overlooked, over_value)
                             except (ValueError, AttributeError):
+                                # This operation does not have this attribute?!
                                 pass
-                    op.validate()
+                    try:
+                        op.validate()
+                    except AttributeError:
+                        # This operation is invalid.
+                        pass
                     op.id = node_id
-                except AttributeError:
-                    # This operation is invalid.
-                    pass
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:
