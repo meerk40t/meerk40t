@@ -507,6 +507,8 @@ class NewlyController:
                 if dy != 0:
                     # We are moving in the Y direction.
                     commit_scanline()
+                    self._relative = True
+                    self("PR")
                     self._goto(x, y)  # remain standard rastermode
                 if dx != 0:
                     # Normal move, extend bytes.
@@ -524,6 +526,8 @@ class NewlyController:
                 if dx != 0:
                     # We are moving in the X direction.
                     commit_scanline()
+                    self._relative = True
+                    self("PR")
                     self._goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
