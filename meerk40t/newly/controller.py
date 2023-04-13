@@ -296,6 +296,7 @@ class NewlyController:
         self._set_move_dc = self.service.move_dc
         self._set_speed_mode = "vector"
         self._power = None
+        self._speed = None
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
         if self.service.pwm_enabled:
@@ -318,6 +319,8 @@ class NewlyController:
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
         self._set_speed_mode = "raster"
+        self._power = None
+        self._speed = None
         if self.service.pwm_enabled:
             self._set_pwm_freq = self.service.pwm_frequency
         self._set_relative = True
