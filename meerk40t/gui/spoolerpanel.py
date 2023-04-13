@@ -454,7 +454,11 @@ class SpoolerPanel(wx.Panel):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
-        index = self.list_job_spool.GetItemData(listindex)
+        try:
+            index = self.list_job_spool.GetItemData(listindex)
+        except AssertionError:
+            # Size of list_job_spool changed or is updating.
+            return
         try:
             spooler = self.queue_entries[index][0]
             qindex = self.queue_entries[index][1]
