@@ -64,7 +64,7 @@ class NewlyController:
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
         #######################
         # Current Set Modes.
@@ -80,7 +80,7 @@ class NewlyController:
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
+        self._backlash = None
 
         self._realtime = False
 
@@ -216,7 +216,7 @@ class NewlyController:
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
         self._pen = None
         self._cut_dc = None
@@ -228,7 +228,7 @@ class NewlyController:
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
+        self._backlash = None
 
     def _set_move_mode(self):
         """
@@ -247,7 +247,7 @@ class NewlyController:
         self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
     def _set_goto_mode(self):
         """
@@ -304,7 +304,7 @@ class NewlyController:
         self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
     def _set_raster_mode(self):
         """
@@ -326,7 +326,7 @@ class NewlyController:
         self._set_relative = True
         self._set_bit_depth = 1
         self._set_bit_width = 1
-        self._set_bit_c = 0
+        self._set_backlash = 0
         self._set_speed = self.service.default_raster_speed
         self._set_power = self.service.default_raster_power
 
@@ -1013,23 +1013,23 @@ class NewlyController:
             self._bit_width = new_bitwidth
             self(f"BD{self._bit_width}")
 
-    def _commit_raster_bitc(self):
-        if self._set_bit_c is None and self._bit_c is not None:
+    def _commit_raster_backlash(self):
+        if self._set_backlash is None and self._backlash is not None:
             # Quick Fail.
             return
 
         # Fetch Requested.
-        new_bitc = self._set_bit_c
-        self._set_bit_c = None
-        if new_bitc is None:
+        new_backlash = self._set_backlash
+        self._set_backlash = None
+        if new_backlash is None:
             # Nothing set, set default.
             return
-        if new_bitc != self._bit_c:
-            # Bitc is different
-            self._bit_c = new_bitc
-            self(f"BC{self._bit_c}")
+        if new_backlash != self._backlash:
+            # backlash is different
+            self._backlash = new_backlash
+            self(f"BC{self._backlash}")
 
     def _commit_raster(self):
         self._commit_raster_bitdepth()
-        self._commit_raster_bitc()
+        self._commit_raster_backlash()
         self._commit_raster_bitwidth()
