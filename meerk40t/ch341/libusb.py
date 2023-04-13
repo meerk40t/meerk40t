@@ -152,6 +152,13 @@ class Ch341LibusbDriver:
                 )
             )
             # raise ConnectionRefusedError
+        except NotImplementedError as e:
+            self.channel(
+                _(
+                    "Config Set: Fail\nSet Configuration is not implemented on this platform. Pass."
+                )
+            )
+
 
     def claim_interface(self, device, interface):
         _ = self.channel._
