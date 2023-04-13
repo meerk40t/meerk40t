@@ -1117,18 +1117,19 @@ class SVGProcessor:
                     self.operations_cleared = True
 
                 try:
-                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    node = self.elements.op_branch.create(type=node_type, **attrs)
+                    node.validate()
+                    node.id = node_id
+                    op = self.elements.op_branch.add_node(node)
                     overlooked_attributes = [
                         "output",
                     ]
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             setattr(op, overlooked, element.values.get(overlooked))
-                    op.validate()
-                    op.id = node_id
                 except AttributeError:
                     # This operation is invalid.
-                    pass
+                    return
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:
