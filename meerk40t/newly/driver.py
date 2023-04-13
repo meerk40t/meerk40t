@@ -138,9 +138,7 @@ class NewlyDriver:
         queue = self.queue
         self.queue = list()
         for q in queue:
-            settings = q.settings
             con.program_mode()
-            con.set_settings(settings)
             # LOOP CHECKS
             if self._aborting:
                 con.abort()
@@ -152,7 +150,8 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                con.mark(*q.end)
+                con.set_settings(q.settings)
+                con._mark(*q.end)
                 con.update()
             elif isinstance(q, (QuadCut, CubicCut)):
                 con.sync()
@@ -173,7 +172,8 @@ class NewlyDriver:
                         time.sleep(0.05)
 
                     p = q.point(t)
-                    con.mark(*p)
+                    con.set_settings(q.settings)
+                    con._mark(*p)
                     t += step_size
                 con.update()
             elif isinstance(q, PlotCut):
@@ -182,6 +182,7 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
+                con.set_settings(q.settings)
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._aborting:
@@ -201,7 +202,7 @@ class NewlyDriver:
                         percent_power = max_power / 10.0
                         # Max power is the percent max power, scaled by the pixel power.
                         con.power(percent_power * on)
-                    con.mark(x, y)
+                    con._mark(x, y)
                     con.update()
             elif isinstance(q, DwellCut):
                 con.dwell(q.dwell_time)
