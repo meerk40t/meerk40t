@@ -15,6 +15,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
+from math import isinf
 from os import times
 from time import time
 from typing import Optional
@@ -59,6 +60,7 @@ class CutPlan:
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
         self.outline = None
+        self._previous_bounds = None
 
     def __str__(self):
         parts = list()
@@ -124,19 +126,24 @@ class CutPlan:
         # ==========
         matrix = device.scene_to_device_matrix()
 
-        bounds = Node.union_bounds(self.plan)
+        bounds = Node.union_bounds(self.plan, bounds=self._previous_bounds)
+        self._previous_bounds = bounds
         if bounds is not None:
             left, top, right, bottom = bounds
             min_x = min(right, left)
             min_y = min(top, bottom)
             max_x = max(right, left)
             max_y = max(top, bottom)
-            self.outline = (
-                device.device_position(min_x, min_y),
-                device.device_position(max_x, min_y),
-                device.device_position(max_x, max_y),
-                device.device_position(min_x, max_y),
-            )
+            if isinf(min_x) or isinf(min_y) or isinf(max_x) or isinf(max_y):
+                # Infinite bounds are invalid.
+                self.outline = None
+            else:
+                self.outline = (
+                    device.device_position(min_x, min_y),
+                    device.device_position(max_x, min_y),
+                    device.device_position(max_x, max_y),
+                    device.device_position(min_x, max_y),
+                )
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary
@@ -144,7 +151,7 @@ class CutPlan:
         #     axis = rotary.axis
 
         for op in self.plan:
-            if not hasattr(op, "type"):
+            if not hasattr(op, "type") or op.type is None:
                 continue
             if op.type.startswith("op"):
                 if hasattr(op, "preprocess"):
@@ -168,7 +175,11 @@ class CutPlan:
         last_type = None
         group = list()
         for c in plan:
-            c_type = c.type if hasattr(c, "type") else type(c).__name__
+            c_type = (
+                c.type
+                if hasattr(c, "type") and c.type is not None
+                else type(c).__name__
+            )
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
@@ -228,7 +239,7 @@ class CutPlan:
         context = self.context
         for plan in grouped_plan:
             for op in plan:
-                if not hasattr(op, "type"):
+                if not hasattr(op, "type") or op.type is None:
                     yield op
                     continue
                 if (
@@ -534,6 +545,7 @@ class CutPlan:
                 del self.plan[i]
 
     def clear(self):
+        self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
 

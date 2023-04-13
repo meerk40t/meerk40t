@@ -10,27 +10,55 @@ import os.path
 from time import time
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_dots import DotsOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
+from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.rootnode import RootNode
+from meerk40t.core.undos import Undo
+from meerk40t.core.units import UNITS_PER_MIL, Length
+from meerk40t.core.wordlist import Wordlist
 from meerk40t.kernel import ConsoleFunction, Service, Settings
+from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
 
-from ..svgelements import Close, Color, Line, Move, SVGElement
 from .element_types import *
-from .node.op_cut import CutOpNode
-from .node.op_dots import DotsOpNode
-from .node.op_engrave import EngraveOpNode
-from .node.op_image import ImageOpNode
-from .node.op_raster import RasterOpNode
-from .node.rootnode import RootNode
-from .undos import Undo
-from .units import UNITS_PER_MIL, Length
-from .wordlist import Wordlist
 
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
-        from meerk40t.core import element_commands, element_treeops
+        from . import (
+            align,
+            branches,
+            clipboard,
+            element_treeops,
+            grid,
+            materials,
+            notes,
+            render,
+            shapes,
+            trace,
+            tree_commands,
+            undo_redo,
+            wordlist,
+        )
 
-        return [element_commands.plugin, element_treeops.plugin]
+        return [
+            element_treeops.plugin,
+            branches.plugin,
+            trace.plugin,
+            align.plugin,
+            wordlist.plugin,
+            materials.plugin,
+            shapes.plugin,
+            tree_commands.plugin,
+            undo_redo.plugin,
+            clipboard.plugin,
+            grid.plugin,
+            render.plugin,
+            notes.plugin,
+        ]
     elif lifecycle == "preregister":
         kernel.register(
             "format/op cut",
@@ -427,10 +455,6 @@ class Elemental(Service):
         self.setting(bool, "operation_default_empty", True)
 
         self.op_data = Settings(self.kernel.name, "operations.cfg")
-        self.pen_data = Settings(self.kernel.name, "penbox.cfg")
-
-        self.penbox = {}
-        self.load_persistent_penbox()
 
         self.wordlists = {"version": [1, self.kernel.version]}
 
@@ -592,49 +616,6 @@ class Elemental(Service):
                 emptyset = True
                 break
         return emptyset
-
-    def load_persistent_penbox(self):
-        settings = self.pen_data
-        pens = settings.read_persistent_string_dict("pens", suffix=True)
-        for pen in pens:
-            length = int(pens[pen])
-            box = list()
-            for i in range(length):
-                penbox = dict()
-                settings.read_persistent_string_dict(f"{pen} {i}", penbox, suffix=True)
-                box.append(penbox)
-            self.penbox[pen] = box
-
-    def save_persistent_penbox(self):
-        sections = {}
-        for section in self.penbox:
-            sections[section] = len(self.penbox[section])
-        self.pen_data.write_persistent_dict("pens", sections)
-        for section in self.penbox:
-            for i, p in enumerate(self.penbox[section]):
-                self.pen_data.write_persistent_dict(f"{section} {i}", p)
-
-    def index_range(self, index_string):
-        """
-        Parses index ranges in the form <idx>,<idx>-<idx>,<idx>
-        @param index_string:
-        @return:
-        """
-        indexes = list()
-        for s in index_string.split(","):
-            q = list(s.split("-"))
-            if len(q) == 1:
-                indexes.append(int(q[0]))
-            else:
-                start = int(q[0])
-                end = int(q[1])
-                if start > end:
-                    for q in range(end, start + 1):
-                        indexes.append(q)
-                else:
-                    for q in range(start, end + 1):
-                        indexes.append(q)
-        return indexes
 
     def length(self, v):
         return float(Length(v))
@@ -877,7 +858,7 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def condense_elements(self, data):
+    def condense_elements(self, data, expand_at_end=True):
         """
         This routine looks at a given dataset and will condense
         it in the sense that if all elements of a given hierarchy
@@ -966,12 +947,13 @@ class Elemental(Service):
         # One special case though: if we have selected all
         # elements within a single group then we still deal
         # with all children
-        while len(data_to_align) == 1:
-            node = data_to_align[0]
-            if node is not None and node.type in ("file", "group"):
-                data_to_align = [e for e in node.children]
-            else:
-                break
+        if expand_at_end:
+            while len(data_to_align) == 1:
+                node = data_to_align[0]
+                if node is not None and node.type in ("file", "group"):
+                    data_to_align = [e for e in node.children]
+                else:
+                    break
         return data_to_align
 
     def translate_node(self, node, dx, dy):
@@ -1143,8 +1125,6 @@ class Elemental(Service):
 
     def shutdown(self, *args, **kwargs):
         self.save_persistent_operations("previous")
-        self.save_persistent_penbox()
-        self.pen_data.write_configuration()
         self.op_data.write_configuration()
         for e in self.flat():
             e.unregister()
@@ -1874,6 +1854,30 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
+
+    def post_classify(self, data):
+        """
+        Provides a post_classification algorithm.
+
+        Why are we doing it here? An immediate classification
+        at the end of the element creation might not provide
+        the right assignment as additional commands might be
+        chained to it:
+
+        e.g. "circle 1cm 1cm 1cm" will classify differently than
+        "circle 1cm 1cm 1cm stroke red"
+
+        So we apply the classify_new to the post commands.
+
+        @return: post classification function.
+        """
+
+        def post_classify_function(**kwargs):
+            if self.classify_new and len(data) > 0:
+                self.classify(data)
+                self.signal("tree_changed")
+
+        return post_classify_function
 
     def classify(self, elements, operations=None, add_op_function=None):
         """

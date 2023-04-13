@@ -107,17 +107,15 @@ class Ch341LibusbDriver:
         _ = self.channel._
         try:
             if device.is_kernel_driver_active(interface.bInterfaceNumber):
-                # TODO: This can raise USBError on entity not found.
-                try:
-                    self.channel(_("Attempting to detach kernel."))
-                    device.detach_kernel_driver(interface.bInterfaceNumber)
-                    self.channel(_("Kernel detach: Success."))
-                except usb.core.USBError as e:
-                    self.backend_error_code = e.backend_error_code
+                self.channel(_("Attempting to detach kernel."))
+                device.detach_kernel_driver(interface.bInterfaceNumber)
+                self.channel(_("Kernel detach: Success."))
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
 
-                    self.channel(str(e))
-                    self.channel(_("Kernel detach: Failed."))
-                    raise ConnectionRefusedError
+            self.channel(str(e))
+            self.channel(_("Kernel detach: Failed."))
+            raise ConnectionRefusedError
         except NotImplementedError:
             self.channel(
                 _("Kernel detach: Not Implemented.")
@@ -154,6 +152,12 @@ class Ch341LibusbDriver:
                 )
             )
             # raise ConnectionRefusedError
+        except NotImplementedError as e:
+            self.channel(
+                _(
+                    "Config Set: Fail\nSet Configuration is not implemented on this platform. Pass."
+                )
+            )
 
     def claim_interface(self, device, interface):
         _ = self.channel._

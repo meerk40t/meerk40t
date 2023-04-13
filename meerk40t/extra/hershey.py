@@ -1,5 +1,5 @@
 from glob import glob
-from os.path import exists, join, realpath, splitext
+from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -160,22 +160,32 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     safe_dir = realpath(get_safe_path(context.kernel.name))
     context.setting(str, "font_directory", safe_dir)
     font_dir = context.font_directory
-    if font is not None:
-        context.shx_preferred = font
-    font = context.shx_preferred
+    # Check whether the default is still valid
+    if context.shx_preferred is not None and context.shx_preferred != "":
+        font_path = join(font_dir, context.shx_preferred)
+        if not exists(font_path):
+            context.shx_preferred = None
+    # Valid font?
     if font is not None and font != "":
         font_path = join(font_dir, font)
         if not exists(font_path):
-            # print (f"Font {font} could'nt be found, fallback to candidates")
             font = None
-
+    if font is not None:
+        context.shx_preferred = font
+    else:
+        if context.shx_preferred is not None:
+            #  print (f"Fallback to {context.shx_preferred}")
+            font = context.shx_preferred
+    # Still not valid?
     if font is None or font == "":
+        font = ""
         # No preferred font set, let's try a couple of candidates...
         candidates = (
             "timesr.jhf",
             "romant.shx",
             "rowmans.jhf",
             "FUTURA.SHX",
+            "arial.ttf",
         )
         for fname in candidates:
             fullfname = join(font_dir, fname)
@@ -184,7 +194,25 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
                 font = fname
                 context.shx_preferred = font
                 break
+        if font == "":
+            # You know, I take anything at this point...
+            for extension in registered_fonts:
+                ext = "*." + extension
+                if font == "":
+                    for p in glob(join(font_dir, ext.lower())):
+                        font = basename(p)
+                        # print (f"Fallback to first file found: {font}")
+                        context.shx_preferred = font
+                        break
+                if font == "":
+                    for p in glob(join(font_dir, ext.upper())):
+                        font = basename(p)
+                        # print (f"Fallback to first file found: {font}")
+                        context.shx_preferred = font
+                        break
+
     if font is None or font == "":
+        # print ("Font was empty")
         return None
     font_path = join(font_dir, font)
     try:
@@ -195,7 +223,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         item = registered_fonts[file_extension]
         fontclass = item[1]
     except (KeyError, IndexError):
-        # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
+        # print(f"Unknown fonttype {file_extension}")
         return None
     horizontal = True
     try:
@@ -205,7 +233,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         mytext = context.elements.wordlist_translate(text)
         cfont.render(path, mytext, horizontal, float(font_size))
     except ShxFontParseError as e:
-        # channel(f"{e.args}")
+        # print(f"FontParseError {e.args}")
         return
     #  print (f"Pathlen={len(path.path)}")
     # if len(path.path) == 0:

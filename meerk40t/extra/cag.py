@@ -8,7 +8,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     elif lifecycle == "register":
-        from ..core.elements import linearize_path
+        from ..core.elements.elements import linearize_path
         from ..tools import polybool as pb
 
         _ = kernel.translation
@@ -51,9 +51,12 @@ def plugin(kernel, lifecycle):
                 except AttributeError:
                     return "elements", data
                 c = linearize_path(path)
-                c = pb.Polygon(c)
-                c = pb.segments(c)
-                segment_list.append(c)
+                try:
+                    c = pb.Polygon(c)
+                    c = pb.segments(c)
+                    segment_list.append(c)
+                except pb.PolyBoolException:
+                    channel(_("Polybool could not solve."))
             if len(segment_list) == 0:
                 return "elements", data
             if not keep:

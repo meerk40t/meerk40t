@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import DRAW_MODE_SELECTION
 from meerk40t.gui.scene.scene import (
@@ -777,6 +777,8 @@ class CornerWidget(Widget):
                 return
 
             b = elements._emphasized_bounds
+            if b is None:
+                return
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
@@ -1455,6 +1457,8 @@ class MoveWidget(Widget):
         ):  # if Shift-Key pressed then ignore Magnets...
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
+            if b is None:
+                return
             allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.pane.revised_magnet_bound(b)
             self.total_dx += dx

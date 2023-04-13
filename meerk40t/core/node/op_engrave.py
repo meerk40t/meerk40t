@@ -1,7 +1,7 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
@@ -296,11 +296,16 @@ class EngraveOpNode(Node, Parameters):
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
+            try:
+                stroke = node.stroke
+            except AttributeError:
+                # ImageNode does not have a stroke.
+                stroke = None
             yield from path_to_cutobjects(
                 path,
                 settings=settings,
                 closed_distance=closed_distance,
                 passes=passes,
                 original_op=self.type,
-                color=node.stroke,
+                color=stroke,
             )

@@ -1,6 +1,7 @@
 import wx
 
-from ...core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
+
 from ...core.units import Length
 from .statusbarwidget import StatusBarWidget
 

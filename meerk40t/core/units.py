@@ -764,7 +764,11 @@ class Length:
         if isinstance(other, (int, float)):
             return self._amount == other
         if not isinstance(other, Length):
-            other = Length(other)
+            try:
+                other = Length(other)
+            except ValueError:
+                # Not a length, we do not equal this.
+                return False
         return abs(self._amount - other._amount) <= ERROR
 
     @property

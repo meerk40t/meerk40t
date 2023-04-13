@@ -2,7 +2,7 @@ from copy import copy
 from math import isnan
 
 from meerk40t.core.cutcode.plotcut import PlotCut
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -316,7 +316,7 @@ class HatchOpNode(Node, Parameters):
             penbox_pass = self.settings.get("penbox_pass")
             if penbox_pass is not None:
                 try:
-                    penbox_pass = context.elements.penbox[penbox_pass]
+                    penbox_pass = context.penbox.pens[penbox_pass]
                 except KeyError:
                     penbox_pass = None
             hatch_cache = dict()
@@ -377,7 +377,7 @@ class HatchOpNode(Node, Parameters):
             plot = PlotCut(settings=settings, color=node.stroke)
             for p in node.shape:
                 x, y = p
-                if plot:
+                if not plot:
                     plot.plot_init(int(round(x)), int(round(y)))
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot

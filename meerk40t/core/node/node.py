@@ -1133,7 +1133,7 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = getattr(e, attr)
+            box = getattr(e, attr, None)
             if box is None:
                 continue
             if box[0] < xmin:

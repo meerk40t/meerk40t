@@ -1,4 +1,4 @@
-from meerk40t.core.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes
 from meerk40t.core.node.node import Node
 
 

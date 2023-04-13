@@ -4,6 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -29,7 +30,6 @@ from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
-from ..core.element_types import elem_nodes
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
@@ -950,11 +950,11 @@ class LaserRender:
 
         for item in _nodes:
 
-            bb = item.bounds
-            # bb = item.paint_bounds
-            # if bb is None:
-            #     # Fall back to bounds
-            #     bb = item.bounds
+            # bb = item.bounds
+            bb = item.paint_bounds
+            if bb is None:
+                # Fall back to bounds
+                bb = item.bounds
             if bb is None:
                 continue
             if bb[0] < x_min:

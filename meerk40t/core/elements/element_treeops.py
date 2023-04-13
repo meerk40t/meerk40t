@@ -9,14 +9,10 @@ import math
 import os.path
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError
-
-from ..svgelements import Matrix, Point
-from .cutcode.cutcode import CutCode
-from .element_types import *
-from .node.elem_image import ImageNode
-from .node.node import Node
-from .treeop import (
+from meerk40t.core.cutcode.cutcode import CutCode
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.node.node import Node
+from meerk40t.core.treeop import (
     get_tree_operation,
     tree_calc,
     tree_check,
@@ -30,7 +26,11 @@ from .treeop import (
     tree_submenu,
     tree_values,
 )
-from .units import UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.kernel import CommandSyntaxError
+from meerk40t.svgelements import Matrix, Point
+
+from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
@@ -383,35 +383,18 @@ def init_tree(kernel):
             data.append(n)
         self.signal("element_property_reload", data)
 
-    @tree_submenu(_("Speed for Engrave-Operation"))
+    @tree_submenu(_("Speed for Vector-Operation"))
     @tree_radio(radio_match_speed)
-    @tree_values("speed", (5, 7, 10, 15, 20, 25, 30, 35, 40, 50))
+    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35, 40, 50))
     @tree_operation(
         _("{speed}mm/s"),
-        node_type=("op engrave", "op hatch"),
-        help="",
-    )
-    def set_speed_vector(node, speed=35, **kwargs):
-        data = list()
-        for n in list(self.ops(selected=True)):
-            if n.type not in ("op engrave", "op hatch"):
-                continue
-            n.speed = float(speed)
-            data.append(n)
-        self.signal("element_property_reload", data)
-
-    @tree_submenu(_("Speed for Cut-Operation"))
-    @tree_radio(radio_match_speed)
-    @tree_values("speed", (2, 3, 4, 5, 6, 7, 10, 15, 20, 25, 30, 35))
-    @tree_operation(
-        _("{speed}mm/s"),
-        node_type="op cut",
+        node_type=("op cut", "op engrave", "op hatch"),
         help="",
     )
     def set_speed_vector_cut(node, speed=20, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
-            if n.type != "op cut":
+            if n.type not in ("op cut", "op engrave", "op hatch"):
                 continue
             n.speed = float(speed)
             data.append(n)
@@ -1898,45 +1881,59 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Duplicate element(s)"))
-    @tree_operation(_("Make 1 copy"), node_type=elem_nodes, help="")
+    @tree_operation(_("Make 1 copy"), node_type=elem_group_nodes, help="")
     def duplicate_element_1(node, **kwargs):
         duplicate_element_n(node, copies=1, **kwargs)
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Duplicate element(s)"))
     @tree_iterate("copies", 2, 10)
-    @tree_operation(_("Make {copies} copies"), node_type=elem_nodes, help="")
+    @tree_operation(_("Make {copies} copies"), node_type=elem_group_nodes, help="")
     def duplicate_element_n(node, copies, **kwargs):
-        copy_nodes = list()
-        dx = self.length_x("3mm")
-        dy = self.length_y("3mm")
-        delta_wordlist = 1
-        for e in list(self.elems(emphasized=True)):
+        def copy_single_node(orgnode, orgparent, times, dx, dy):
             delta_wordlist = 0
-            for n in range(copies):
+            for n in range(times):
                 delta_wordlist += 1
-                copy_node = copy(e)
-                copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
+
+                copy_node = copy(orgnode)
+                if hasattr(copy_node, "matrix"):
+                    copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                 had_optional = False
                 # Need to add stroke and fill, as copy will take the
                 # default values for these attributes
                 for optional in ("fill", "stroke"):
-                    if hasattr(e, optional):
-                        setattr(copy_node, optional, getattr(e, optional))
+                    if hasattr(orgnode, optional):
+                        setattr(copy_node, optional, getattr(orgnode, optional))
                 for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                    if hasattr(e, optional):
+                    if hasattr(orgnode, optional):
                         had_optional = True
-                        setattr(copy_node, optional, getattr(e, optional))
-                if self.copy_increases_wordlist_references and hasattr(e, "text"):
-                    copy_node.text = self.wordlist_delta(e.text, delta_wordlist)
+                        setattr(copy_node, optional, getattr(orgnode, optional))
+                if self.copy_increases_wordlist_references and hasattr(orgnode, "text"):
+                    copy_node.text = self.wordlist_delta(orgnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
                     copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
-                node.parent.add_node(copy_node)
+                orgparent.add_node(copy_node)
                 if had_optional:
                     for property_op in self.kernel.lookup_all("path_updater/.*"):
                         property_op(self.kernel.root, copy_node)
 
                 copy_nodes.append(copy_node)
+
+                if orgnode.type in ("file", "group"):
+                    newparent = copy_node
+                    for cnode in orgnode.children:
+                        copy_single_node(
+                            cnode, newparent, 1, (n + 1) * dx, (n + 1) * dy
+                        )
+
+        copy_nodes = list()
+        dx = self.length_x("3mm")
+        dy = self.length_y("3mm")
+        alldata = list(self.elems(emphasized=True))
+        minimaldata = self.condense_elements(alldata, expand_at_end=False)
+        for e in minimaldata:
+            parent = e.parent
+            copy_single_node(e, parent, copies, dx, dy)
 
         if self.classify_new:
             self.classify(copy_nodes)

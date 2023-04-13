@@ -514,6 +514,8 @@ class LihuiyuDriver(Parameters):
         self._raster_step_float = (
             self.raster_step_y if horizontal else self.raster_step_x
         )
+        if self._raster_step_float is None:
+            self._raster_step_float = 1
         self._raster_step_g_value = int(math.floor(self._raster_step_float))
 
         if self._request_leftward is not None:

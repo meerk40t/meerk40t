@@ -299,8 +299,8 @@ class SpoolerPanel(wx.Panel):
                     line_items = []
                     if info["start_time"] is None:
                         continue
-                    line_items.append(info.get("device", "''"))
-                    line_items.append(info.get("label", "''"))
+                    line_items.append(str(info.get("device", "''")))
+                    line_items.append(str(info.get("label", "''")))
                     line_items.append(
                         f"{self.datestr(info.get('start_time',0))} {self.timestr(info.get('start_time',0), True)}"
                     )
@@ -332,6 +332,11 @@ class SpoolerPanel(wx.Panel):
         else:
             to_remove = list(self.context.logging.matching_events("job"))
         for key, event in to_remove:
+            if older_than is not None:
+                if not "start_time" in event:
+                    continue
+                if event["start_time"] >= older_than:
+                    continue
             del self.context.logging.logs[key]
         self.refresh_history()
 
@@ -357,8 +362,10 @@ class SpoolerPanel(wx.Panel):
 
         def on_menu_time(cutoff):
             def check(event):
-                self.clear_history(cutoff)
+                self.clear_history(dcutoff)
 
+            # Store value locally
+            dcutoff = cutoff
             return check
 
         def toggle_1(event):
@@ -447,7 +454,11 @@ class SpoolerPanel(wx.Panel):
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         listindex = event.Index
-        index = self.list_job_spool.GetItemData(listindex)
+        try:
+            index = self.list_job_spool.GetItemData(listindex)
+        except AssertionError:
+            # Size of list_job_spool changed or is updating.
+            return
         try:
             spooler = self.queue_entries[index][0]
             qindex = self.queue_entries[index][1]
@@ -610,6 +621,11 @@ class SpoolerPanel(wx.Panel):
                     try:
                         loop = spool_obj.loops_executed
                         total = spool_obj.loops
+                        # No invalid values please
+                        if loop is None:
+                            loop = 0
+                        if total is None:
+                            total = 1
 
                         if isinf(total):
                             total = "∞"
@@ -761,10 +777,21 @@ class SpoolerPanel(wx.Panel):
                 HC_RUNTIME,
                 self.timestr(duration, False),
             )
+            nr_loop = info.get("loop")
+            nr_total = info.get("total")
+            if nr_total is None:
+                if nr_loop is None:
+                    passes_str = "n/a"
+                else:
+                    passes_str = f"{nr_loop}"
+            elif isinf(nr_total):
+                passes_str = f"{nr_loop}/∞"
+            else:
+                passes_str = f"{nr_loop}/{nr_total}"
             self.list_job_history.SetItem(
                 list_id,
                 HC_PASSES,
-                str(info.get("loops_total")),
+                passes_str,
             )
             self.list_job_history.SetItem(list_id, HC_DEVICE, str(info.get("device")))
             self.list_job_history.SetItem(

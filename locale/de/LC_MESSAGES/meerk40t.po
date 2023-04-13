@@ -10607,6 +10607,12 @@ msgstr ""
 msgid "Enable this operation for inclusion in Execute Job."
 msgstr "Aktiviere diesen Arbeitsgang, damit er im Jobablauf ausgeführt wird."
 
+msgid "Visible"
+msgstr "Sichtbar"
+
+msgid "Hide all contained elements on scene if not set."
+msgstr "Deaktiviert: Blende alle enthaltenen Element im Arbeitsbereich aus"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:32
 msgid "Speed at which the head moves in mm/s."
 msgstr "Geschwindigkeit des Kopfes in mm/s."
@@ -14989,22 +14995,25 @@ msgid "Goto a font-source..."
 msgstr "Gehe zu Zeichensatz-Quelle..."
 
 msgid "Hershey Fonts - #1"
-msgstr ""
+msgstr "Hershey-Zeichensätze #1"
 
 msgid "Hershey Fonts - #2"
-msgstr ""
+msgstr "Hershey-Zeichensätze #2"
 
 msgid "Autocad-SHX-Fonts"
-msgstr ""
+msgstr "Autocad-SHX-Zeichensätze"
+
+msgid "Windows-Font-Directory"
+msgstr "Windows-Font-Verzeichnis"
 
 msgid ""
-"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
 "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
-"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts "
 msgstr ""
-"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"MeerK40t kann True-Type-, Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
 "Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
-"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts "
 
 msgid "Choose font directory"
 msgstr "Zeichensatz-Verzeichnis auswählen"
@@ -15398,6 +15407,9 @@ msgstr "Selektiere alle gleichartigen Elemente"
 
 msgid "Speed for Raster-Operation"
 msgstr "Geschwindigkeit für Raster-Operation"
+
+msgid "Speed for Vector-Operation"
+msgstr "Geschwindigkeit für Vektor-Operation"
 
 msgid "Simplify group"
 msgstr "Vereinfache Gruppen-Struktur"
@@ -15839,3 +15851,55 @@ msgstr "Allgemeine Einstellungen festlegen"
 
 msgid "Home position"
 msgstr "Home-Position"
+
+msgid "Enable similar"
+msgstr "Aktiviere gleichen Typ"
+
+msgid "Disable similar"
+msgstr "Dektiviere gleichen Typ"
+
+msgid "Enable all operations of this type"
+msgstr "Aktiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Disable all operations of this type"
+msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Check for Updates"
+msgstr "Prüfe auf Updates"
+
+msgid ""
+"A new {type} release is available:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Es ist eine {type} Version verfügbar:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid ""
+"You seem to have the latest version.\n"
+"Latest version on github: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Dies scheint die aktuelle Version von {name} zu sein.\n"
+"Neueste Version auf github: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid "Could not find any release information on github"
+msgstr "Konnte keine Versionsinformationen von Github abrufen"
+
+msgid "Check whether a newer version of Meerk40t is available"
+msgstr "Überprüfe, ob eine neuere Version von MeerK40t verfügbar ist"
+
+msgid "Do you want to go the download page?"
+msgstr "Soll die Download-Seite geöffnet werden?"
+
+msgid "Do you want to look for yourself?"
+msgstr "Soll diese Seite geöffnet werden?"
+
+msgid "Do you want to change the color of the contained elements too?"
+msgstr "Soll die Farbe der zugeordneten Element ebenfalls geändert werden?"
+
+msgid "Update Colors?"
+msgstr "Farben ändern?"
+

@@ -355,19 +355,6 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "mini_icon",
-                "object": self.context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Mini icon in tree"),
-                "tip": _(
-                    "Active: Display a miniature representation of the element in the tree\n"
-                    + "Inactive: Use a standard icon for the element type instead"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -376,7 +363,20 @@ class MeerK40t(MWindow):
                 "choices": ["large", "big", "default", "small", "tiny"],
                 "label": _("Icon size:"),
                 "tip": _(
-                    "Appearance of all icons in the GUI (requires a restart to take effect))"
+                    "Appearance of all icons in the GUI (requires a restart to take effect)"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n"
+                    + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
@@ -1113,8 +1113,9 @@ class MeerK40t(MWindow):
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
                     node.emphasized = True
-                group_node.emphasized = True
-                kernel.signal("element_property_reload", "Scene", group_node)
+                if group_node is not None:
+                    group_node.emphasized = True
+                    kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         buttonsize = STD_ICON_SIZE
@@ -3120,6 +3121,16 @@ class MeerK40t(MWindow):
             id=menuitem.GetId(),
         )
         self.help_menu.AppendSeparator()
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Check for Updates"),
+            _("Check whether a newer version of Meerk40t is available"),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("check_for_updates -popup\n"),
+            id=menuitem.GetId(),
+        )
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),

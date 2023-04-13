@@ -1,7 +1,8 @@
 import wx
 from wx import aui
 
-from ..core.element_types import op_nodes
+from meerk40t.core.elements.element_types import op_nodes
+
 from ..core.units import Length
 from ..kernel import signal_listener
 from ..svgelements import Color
@@ -37,7 +38,6 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_type_50,
-    icons8_vector_20,
     icons8_visit_20,
     icons8_warning_shield_20,
 )

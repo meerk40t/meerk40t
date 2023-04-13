@@ -546,7 +546,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetValue(self.node.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
-        self.combo_font.SetValue(self.node.wxfont.GetFaceName())
+        try:
+            self.combo_font.SetValue(self.node.wxfont.GetFaceName())
+        except AttributeError:
+            pass
 
     def font_callback(self, forecolor, newfont):
         self.node.wxfont = newfont

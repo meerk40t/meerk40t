@@ -203,6 +203,7 @@ class LaserJob:
             return float("inf")
         result = 0
         time_for_past_passes = 0
+        time_for_current_pass = 0
         time_for_future_passes = self.loops * self._estimate
         if self.is_running and self.time_started is not None:
             # We fall back on elapsed and some info from the driver...
@@ -220,19 +221,18 @@ class LaserJob:
                 time_for_future_passes = self.avg_time_per_pass * max(
                     self.loops - self.loops_executed - 1, 0
                 )
-
-            if self.time_pass_started is not None:
+            still_running = False
+            if isinf(self.loops) or self.loops_executed < self.loops:
+                still_running = True
+            if self.time_pass_started is not None and still_running:
                 this_pass_seconds = time.time() - self.time_pass_started
                 if this_pass_seconds >= 5:
-                    result = max(
+                    time_for_current_pass = max(
                         self._estimate,
                         this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
                     )
                 else:
-                    result = self._estimate
-            # print (f"Passes: {self.loops_executed} / {self.loops}")
-            # print (f"Past: {time_for_past_passes:.1f}, Current: {result:.1f}, Future: {time_for_future_passes:.1f}")
-            # print (f"Steps: {self.steps_done} / {self.steps_total}, Pass-Estimate: {self._estimate:.1f}")
+                    time_for_current_pass = self._estimate
             # if hasattr(self._driver, "total_steps"):
             #     total = self._driver.total_steps
             #     current = self._driver.current_steps
@@ -243,11 +243,17 @@ class LaserJob:
             #         # Arbitrary minimum steps (if too low, value is erratic)
             #         ratio = total / current
             # result = elapsed * ratio
-        if result == 0:
+        if time_for_current_pass == time_for_past_passes == time_for_future_passes == 0:
             # Nothing useful came out, so we fall back on the initial value
             result = self._estimate
         else:
             # Acknowledge previous + future passes
-            result += time_for_past_passes + time_for_future_passes
+            result = (
+                time_for_current_pass + time_for_past_passes + time_for_future_passes
+            )
+        # print (f"Passes: {self.loops_executed} / {self.loops}")
+        # print (f"Past: {time_for_past_passes:.1f}, Current: {time_for_current_pass:.1f}, Future: {time_for_future_passes:.1f}")
+        # print (f"Steps: {self.steps_done} / {self.steps_total}, Pass-Estimate: {self._estimate:.1f}")
+        # print (f"Result={result:.1f}")
 
         return result

@@ -12,9 +12,13 @@ def plugin(kernel, lifecycle=None):
 
         plugins.append(spoolers.plugin)
 
-        from . import elements
+        from .elements import elements
 
         plugins.append(elements.plugin)
+
+        from .elements import penbox
+
+        plugins.append(penbox.plugin)
 
         from . import logging
 

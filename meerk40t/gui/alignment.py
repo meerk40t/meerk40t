@@ -3,7 +3,7 @@ from math import atan, sqrt, tau
 import numpy as np
 import wx
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import (
     Arc,
@@ -66,7 +66,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def mklabel(label):
