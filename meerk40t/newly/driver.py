@@ -150,8 +150,7 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                con.set_settings(q.settings)
-                con._mark(*q.end)
+                con.mark(*q.end, settings=q.settings)
                 con.update()
             elif isinstance(q, (QuadCut, CubicCut)):
                 con.sync()
@@ -172,8 +171,7 @@ class NewlyDriver:
                         time.sleep(0.05)
 
                     p = q.point(t)
-                    con.set_settings(q.settings)
-                    con._mark(*p)
+                    con.mark(*p, settings=q.settings)
                     t += step_size
                 con.update()
             elif isinstance(q, PlotCut):
@@ -182,7 +180,12 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                con.set_settings(q.settings)
+
+                max_power = float(
+                    q.settings.get("power", self.service.default_power)
+                )
+                percent_power = max_power / 10.0
+
                 for ox, oy, on, x, y in q.plot:
                     # LOOP CHECKS
                     if self._aborting:
@@ -193,16 +196,8 @@ class NewlyDriver:
                         time.sleep(0.05)
 
                     # q.plot can have different on values, these are parsed
-                    if last_on is None or on != last_on:
-                        # No power change.
-                        last_on = on
-                        max_power = float(
-                            q.settings.get("power", self.service.default_power)
-                        )
-                        percent_power = max_power / 10.0
-                        # Max power is the percent max power, scaled by the pixel power.
-                        con.power(percent_power * on)
-                    con._mark(x, y)
+                    # Max power is the percent max power, scaled by the pixel power.
+                    con.mark(x, y, settings=q.settings, power=percent_power * on)
                     con.update()
             elif isinstance(q, DwellCut):
                 con.dwell(q.dwell_time)

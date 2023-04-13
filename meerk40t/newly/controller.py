@@ -548,7 +548,6 @@ class NewlyController:
         """
         if "speed" in settings:
             self._set_speed = settings.get("speed")
-            self._set_mode = "vector"
         if "power" in settings:
             self._set_power = settings.get("power")
         if "pwm_frequency" in settings:
@@ -567,8 +566,21 @@ class NewlyController:
         self._set_frame_mode()
         self._mark(x, y)
 
-    def mark(self, x, y):
+    def mark(self, x, y, settings=None, power=None, speed=None):
+        """
+        Mark either sets default vector settings or sets the settings based on the settings object provided.
+        @param x:
+        @param y:
+        @param settings:
+        @return:
+        """
         self._set_vector_mode()
+        if settings is not None:
+            self.set_settings(settings)
+        if power is not None:
+            self._set_power = power
+        if speed is not None:
+            self._set_speed = speed
         self._mark(x, y)
 
     def _mark(self, x, y):
