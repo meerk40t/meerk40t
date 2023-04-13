@@ -250,7 +250,8 @@ class LihuiyuController:
                         return  # Opened successfully.
                     except ConnectionRefusedError as e:
                         self.usb_log(str(e))
-                        self.connection.close()
+                        if self.connection is not None:
+                            self.connection.close()
                     except IndexError:
                         self.usb_log(_("Connection failed."))
                         self.connection = None
