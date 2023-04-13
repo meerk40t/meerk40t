@@ -250,7 +250,8 @@ class LihuiyuController:
                         return  # Opened successfully.
                     except ConnectionRefusedError as e:
                         self.usb_log(str(e))
-                        self.connection.close()
+                        if self.connection is not None:
+                            self.connection.close()
                     except IndexError:
                         self.usb_log(_("Connection failed."))
                         self.connection = None
@@ -288,7 +289,7 @@ class LihuiyuController:
                         "K40 devices were found but they were rejected due to chip version."
                     )
                 )
-        if self.context.serial_enable:
+        if self.context.serial_enable and self.context.serial is not None:
             if self.serial_confirmed:
                 return  # already passed.
             self.usb_log(_("Requires serial number confirmation."))
@@ -472,6 +473,9 @@ class LihuiyuController:
             raise ConnectionError
 
     def challenge(self, serial):
+        if serial is None:
+            return
+
         from hashlib import md5
 
         challenge = bytearray.fromhex(md5(bytes(serial.upper(), "utf8")).hexdigest())

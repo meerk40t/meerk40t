@@ -205,7 +205,7 @@ class SVGWriter:
             # If there is a note set then we save the note with the project.
             if elements.note is not None:
                 subelement = SubElement(root, "note")
-                subelement.set(SVG_TAG_TEXT, elements.note)
+                subelement.set(SVG_TAG_TEXT, str(elements.note))
 
         SVGWriter._write_tree(root, elements._tree, version)
 
@@ -363,21 +363,21 @@ class SVGWriter:
                     )
                 # Font features are covered by the `font` value shorthand
                 if c.font_family:
-                    subelement.set(SVG_ATTR_FONT_FAMILY, c.font_family)
+                    subelement.set(SVG_ATTR_FONT_FAMILY, str(c.font_family))
                 if c.font_style:
-                    subelement.set(SVG_ATTR_FONT_STYLE, c.font_style)
+                    subelement.set(SVG_ATTR_FONT_STYLE, str(c.font_style))
                 if c.font_variant:
-                    subelement.set(SVG_ATTR_FONT_VARIANT, c.font_variant)
+                    subelement.set(SVG_ATTR_FONT_VARIANT, str(c.font_variant))
                 if c.font_stretch:
-                    subelement.set(SVG_ATTR_FONT_STRETCH, c.font_stretch)
+                    subelement.set(SVG_ATTR_FONT_STRETCH, str(c.font_stretch))
                 if c.font_size:
                     subelement.set(SVG_ATTR_FONT_SIZE, str(c.font_size))
                 if c.line_height:
                     subelement.set("line_height", str(c.line_height))
                 if c.anchor:
-                    subelement.set(SVG_ATTR_TEXT_ANCHOR, c.anchor)
+                    subelement.set(SVG_ATTR_TEXT_ANCHOR, str(c.anchor))
                 if c.baseline:
-                    subelement.set(SVG_ATTR_TEXT_DOMINANT_BASELINE, c.baseline)
+                    subelement.set(SVG_ATTR_TEXT_DOMINANT_BASELINE, str(c.baseline))
                 decor = ""
                 if c.underline:
                     decor += " underline"
@@ -393,7 +393,7 @@ class SVGWriter:
                 # This is a structural group node of elements. Recurse call to write values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                 if hasattr(c, "label") and c.label is not None and c.label != "":
-                    group_element.set("inkscape:label", c.label)
+                    group_element.set("inkscape:label", str(c.label))
                 SVGWriter._write_elements(group_element, c, version)
                 continue
             elif c.type == "file":
@@ -404,7 +404,7 @@ class SVGWriter:
                 else:
                     group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                     if hasattr(c, "name") and c.name is not None and c.name != "":
-                        group_element.set("inkscape:label", c.name)
+                        group_element.set("inkscape:label", str(c.name))
                     SVGWriter._write_elements(group_element, c, version)
                 continue
             else:
@@ -1118,18 +1118,19 @@ class SVGProcessor:
                     self.operations_cleared = True
 
                 try:
-                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    node = self.elements.op_branch.create(type=node_type, **attrs)
+                    node.validate()
+                    node.id = node_id
+                    op = self.elements.op_branch.add_node(node)
                     overlooked_attributes = [
                         "output",
                     ]
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             setattr(op, overlooked, element.values.get(overlooked))
-                    op.validate()
-                    op.id = node_id
                 except AttributeError:
                     # This operation is invalid.
-                    pass
+                    return
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:

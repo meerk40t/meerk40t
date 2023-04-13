@@ -9434,11 +9434,11 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
         xml_tree = subxml(xml_tree, SVG_TAG_TEXT)
         xml_tree.text = node.text
         if node.font_family:
-            xml_tree.set(SVG_ATTR_FONT_FAMILY, node.font_family)
+            xml_tree.set(SVG_ATTR_FONT_FAMILY, str(node.font_family))
         if node.font_style:
-            xml_tree.set(SVG_ATTR_FONT_STYLE, node.font_style)
+            xml_tree.set(SVG_ATTR_FONT_STYLE, str(node.font_style))
         if node.font_variant:
-            xml_tree.set(SVG_ATTR_FONT_VARIANT, node.font_variant)
+            xml_tree.set(SVG_ATTR_FONT_VARIANT, str(node.font_variant))
         if node.font_stretch:
             xml_tree.set(SVG_ATTR_FONT_STRETCH, node.font_stretch)
         if node.font_size:
@@ -9504,13 +9504,13 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
                 if stroke is not None and stroke.value is not None
                 else SVG_VALUE_NONE
             )
-            xml_tree.set(SVG_ATTR_STROKE, stroke)
+            xml_tree.set(SVG_ATTR_STROKE, str(stroke))
             if stroke_opacity != 1.0 and stroke_opacity is not None:
                 xml_tree.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
 
             try:
                 stroke_width = str(node.stroke_width)
-                xml_tree.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+                xml_tree.set(SVG_ATTR_STROKE_WIDTH, str(stroke_width))
             except AttributeError:
                 pass
 
@@ -9524,7 +9524,7 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
                 if fill is not None and fill.value is not None
                 else SVG_VALUE_NONE
             )
-            xml_tree.set(SVG_ATTR_FILL, fill)
+            xml_tree.set(SVG_ATTR_FILL, str(fill))
             if fill_opacity != 1.0 and fill_opacity is not None:
                 xml_tree.set(SVG_ATTR_FILL_OPACITY, str(fill_opacity))
 

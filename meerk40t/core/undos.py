@@ -61,6 +61,9 @@ class Undo:
         if self._undo_index == 0:
             # At bottom of stack.
             return False
+        if len(self._undo_stack) == 0:
+            # Stack is entirely empty.
+            return False
         self._undo_index -= 1
         undo = self._undo_stack[self._undo_index]
         self.tree.restore_tree(undo.state)

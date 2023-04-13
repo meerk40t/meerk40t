@@ -38,6 +38,8 @@ class PointNode(Node):
             self.point = Point(0, 0)
 
     def preprocess(self, context, matrix, plan):
+        if self.point is None:
+            self.validate()
         self.matrix *= matrix
         self.set_dirty_bounds()
         if not self.matrix.is_identity():
