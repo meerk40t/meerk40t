@@ -22,6 +22,9 @@ def init_commands(kernel):
     # ==========
 
     @self.console_option(
+        "loops", "l", type=int, help=_("placement repetitions"), default=0
+    )
+    @self.console_option(
         "rotation", "r", type=UAngle, help=_("placement rotation"), default=0
     )
     @self.console_option(
@@ -40,10 +43,20 @@ def init_commands(kernel):
         output_type="ops",
         all_arguments_required=True,
     )
-    def place_points(command, channel, _, x, y, rotation, corner, **kwargs):
+    def place_points(command, channel, _, x, y, rotation, corner, loops, **kwargs):
         added = []
+        if loops is None:
+            loops = 1
+        if corner is None:
+            corner = 0
+        if rotation is None:
+            rotation = 0
+        if x is None:
+            x = 0
+        if y is None:
+            y = x
         node = self.op_branch.add(
-            x=x, y=y, rotation=rotation.radians, corner=corner, type="place point"
+            x=x, y=y, rotation=rotation.radians, corner=corner, loops=loops, type="place point"
         )
         added.append(node)
         self.set_emphasis(added)

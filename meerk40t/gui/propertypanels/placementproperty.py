@@ -25,12 +25,32 @@ class PlacementPanel(wx.Panel):
         self.operation = node
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
+        prop_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        first_sizer = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
         self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.checkbox_output.SetToolTip(
             _("Enable this operation for inclusion in Execute Job.")
         )
         self.checkbox_output.SetValue(1)
-        main_sizer.Add(self.checkbox_output, 1, 0, 0)
+        first_sizer.Add(self.checkbox_output, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        info_loops = wx.StaticText(self, wx.ID_ANY, _("Loops:"))
+        self.text_loops = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_loops.lower_limit = 1
+        self.loop_sizer = StaticBoxSizer(self, wx.ID_ANY, "", wx.HORIZONTAL)
+        self.loop_sizer.Add(info_loops, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.loop_sizer.Add(self.text_loops, 1, wx.EXPAND, 0)
+        self.text_loops.SetToolTip(_("Define how often this placement will be used"))
+
+        prop_sizer.Add(first_sizer, 1, wx.EXPAND, 0)
+        prop_sizer.Add(self.loop_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(prop_sizer, 1, 0, 0)
 
         # X and Y
         self.pos_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Placement:"), wx.HORIZONTAL)
@@ -117,6 +137,7 @@ class PlacementPanel(wx.Panel):
         self.text_rot.SetActionRoutine(self.on_text_rot)
         self.text_x.SetActionRoutine(self.on_text_x)
         self.text_y.SetActionRoutine(self.on_text_y)
+        self.text_loops.SetActionRoutine(self.on_text_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
 
     def pane_hide(self):
@@ -147,12 +168,15 @@ class PlacementPanel(wx.Panel):
         self.text_rot.Enable(flag_enabled)
         self.text_x.Enable(flag_enabled)
         self.text_y.Enable(flag_enabled)
+        self.text_loops.Enable(flag_enabled)
         self.slider_angle.Enable(flag_enabled)
         if is_current:
             self.pos_sizer.Show(False)
             self.rot_sizer.Show(False)
             self.corner_sizer.Show(False)
+            self.loop_sizer.Show(False)
         else:
+            self.loop_sizer.Show(True)
             self.pos_sizer.Show(True)
             self.rot_sizer.Show(True)
             self.corner_sizer.Show(True)
@@ -174,6 +198,10 @@ class PlacementPanel(wx.Panel):
             myang = Angle(ang, digits=2)
             if ang is None:
                 ang = 0
+            loops = self.operation.loops
+            if loops is None:
+                loops = 1
+            set_ctrl_value(self.text_loops, str(loops))
             set_ctrl_value(
                 self.text_x,
                 f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}",
@@ -265,6 +293,19 @@ class PlacementPanel(wx.Panel):
             return
         if self.operation.y != y:
             self.operation.y = y
+            self.updated()
+
+    def on_text_loops(self):
+        if self.operation is None or not hasattr(self.operation, "loops"):
+            return
+        try:
+            loops = int(self.text_loops.GetValue())
+            if loops < 1:
+                loops = 1
+        except ValueError:
+            return
+        if self.operation.loops != loops:
+            self.operation.loops = loops
             self.updated()
 
     def updated(self):

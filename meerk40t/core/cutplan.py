@@ -154,11 +154,15 @@ class CutPlan:
                 continue
             if place.type.startswith("place "):
                 if hasattr(place, "output") and place.output:
-                    placements.extend(
-                        place.placements(
-                            self.context, self.outline, scene_to_device_matrix, self
+                    loops = 1
+                    if hasattr(place, "loops") and place.loops > 1:
+                        loops = place.loops
+                    for idx in range(loops):
+                        placements.extend(
+                            place.placements(
+                                self.context, self.outline, scene_to_device_matrix, self
+                            )
                         )
-                    )
         if not placements:
             # Absolute coordinates.
             placements.append(scene_to_device_matrix)

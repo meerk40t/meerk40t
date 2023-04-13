@@ -15,7 +15,7 @@ class PlacePointNode(Node):
     PlacePointNode is the bootstrapped node type for the 'place point' type.
     """
 
-    def __init__(self, x=0, y=0, rotation=0, corner=0, **kwargs):
+    def __init__(self, x=0, y=0, rotation=0, corner=0, loops=1, **kwargs):
         self.x = x
         try:
             if isinstance(x, str):
@@ -48,10 +48,17 @@ class PlacePointNode(Node):
             self.corner = min(4, max(0, int(corner)))
         except ValueError:
             self.corner = 0
+        # repetitions at the same point
+        self.loops = 1
+        if loops is not None:
+            try:
+                self.loops = int(loops)
+            except ValueError:
+                pass
         # Active?
         self.output = True
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{enabled}{element_type}: {corner} {x} {y} {rotation}"
+        self._formatter = "{enabled}{element_type}: {loops}{corner} {x} {y} {rotation}"
 
     def __copy__(self):
         nd = self.node_dict
@@ -98,6 +105,7 @@ class PlacePointNode(Node):
         default_map["x"] = f"{xlen.length_cm}"
         default_map["y"] = f"{ylen.length_cm}"
         default_map["rotation"] = f"{Angle(self.rotation, digits=2).degrees}°"
+        default_map["loops"] = f"{str(self.loops) + 'x' if self.loops > 0 else ''}"
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
