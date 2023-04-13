@@ -749,26 +749,35 @@ class SVGProcessor:
                 context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
+
+        tag_label = None
         # Let's see whether we can get the label from an inkscape save
-        _label = None
-        if uselabel is not None and uselabel != "":
+        # We only want the 'label' attribute from the current tag, so
+        # we look at element.values["attributes"]
+        if "attributes" in element.values:
+            local_dict = element.values["attributes"]
+        else:
+            local_dict = element.values
+        ink_tag = "inkscape:label"
+        try:
+            inkscape = element.values.get("inkscape")
+            if inkscape is not None and inkscape != "":
+                ink_tag = "{" + inkscape + "}label"
+        except (AttributeError, KeyError):
+            pass
+        try:
+            tag_label = local_dict.get(ink_tag)
+            if tag_label == "":
+                tag_label = None
+            # print ("Found label: %s" %_label)
+        except (AttributeError, KeyError):
+            # Label might simply be "label"
+            tag_label = local_dict.get("label")
+        if uselabel:
             _label = uselabel
-        if _label is None:
-            ink_tag = "inkscape:label"
-            try:
-                inkscape = element.values.get("inkscape")
-                if inkscape is not None and inkscape != "":
-                    ink_tag = "{" + inkscape + "}label"
-            except (AttributeError, KeyError):
-                pass
-            try:
-                _label = element.values.get(ink_tag)
-                if _label == "":
-                    _label = None
-                # print ("Found label: %s" % my_label)
-            except (AttributeError, KeyError):
-                # Label might simply be "label"
-                _label = element.values.get("label")
+        else:
+            _label = tag_label
+
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
