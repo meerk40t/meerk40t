@@ -1455,6 +1455,8 @@ class MoveWidget(Widget):
         ):  # if Shift-Key pressed then ignore Magnets...
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
+            if b is None:
+                return
             allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.pane.revised_magnet_bound(b)
             self.total_dx += dx
