@@ -74,6 +74,12 @@ class PlacementPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         self.rot_sizer.Add(self.slider_angle, 3, wx.EXPAND, 0)
         main_sizer.Add(self.rot_sizer, 0, wx.EXPAND, 0)
+        ttip = _(
+            "The to be plotted elements can be rotated around the defined coordinate"
+        )
+        self.text_rot.SetToolTip(ttip)
+        self.slider_angle.SetToolTip(ttip)
+
         # Corner
 
         self.corner_sizer = StaticBoxSizer(
