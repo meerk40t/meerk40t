@@ -56,6 +56,8 @@ class ImageNode(Node):
         if hasattr(self, "href"):
             try:
                 from PIL import Image as PILImage
+                if not isinstance(self.href, str):
+                    raise ImportError
 
                 self.image = PILImage.open(self.href)
                 if hasattr(self, "x"):
