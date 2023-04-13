@@ -1850,7 +1850,11 @@ class EditTool(ToolWidget):
             modified = True
         else:
             # path
-            valididx = len(self.element.path) - 1
+            try:
+                valididx = len(self.element.path) - 1
+            except AttributeError:
+                # Shape
+                return
             while valididx >= 0 and isinstance(
                 self.element.path[valididx], (Close, Move)
             ):
