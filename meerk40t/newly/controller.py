@@ -246,6 +246,8 @@ class NewlyController:
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
+        self._corner_speed = None
+        self._acceleration_length = None
         self._set_pen = self.sp2
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
