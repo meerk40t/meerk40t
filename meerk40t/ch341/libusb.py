@@ -159,7 +159,6 @@ class Ch341LibusbDriver:
                 )
             )
 
-
     def claim_interface(self, device, interface):
         _ = self.channel._
         try:

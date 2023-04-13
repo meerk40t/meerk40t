@@ -1,15 +1,14 @@
 import unittest
+from test import bootstrap
 
 from meerk40t.core.cutcode.cutcode import CutCode
 from meerk40t.core.cutplan import CutPlan
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.svgelements import Matrix, Path
-from test import bootstrap
 
 
 class TestHatch(unittest.TestCase):
-
     def test_operation_hatch(self):
         """
         Test code to ensure op hatch hasn't been broken.
@@ -32,5 +31,3 @@ class TestHatch(unittest.TestCase):
             self.assertEqual(len(path), 1)
         finally:
             kernel.shutdown()
-
-

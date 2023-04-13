@@ -1791,9 +1791,7 @@ class ImageLoader:
         except OSError:
             return False
         except DecompressionBombError as e:
-            raise BadFileError(
-                "Image is larger than 178 megapixels."
-            ) from e
+            raise BadFileError("Image is larger than 178 megapixels.") from e
         except subprocess.CalledProcessError as e:
             raise BadFileError(
                 "Cannot load an .eps file without GhostScript installed"
