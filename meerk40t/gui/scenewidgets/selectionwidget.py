@@ -777,6 +777,8 @@ class CornerWidget(Widget):
                 return
 
             b = elements._emphasized_bounds
+            if b is None:
+                return
             if "n" in self.method:
                 orgy = self.master.bottom
             else:
