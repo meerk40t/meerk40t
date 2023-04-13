@@ -1133,9 +1133,9 @@ class SVGProcessor:
                             try:
                                 over_value = getattr(op, overlooked).type(
                                     element.values.get(overlooked)
-                                )
+                                )  # This is gibberish.
                                 setattr(op, overlooked, over_value)
-                            except ValueError:
+                            except (ValueError, AttributeError):
                                 pass
                     op.validate()
                     op.id = node_id
