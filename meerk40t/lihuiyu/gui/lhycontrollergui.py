@@ -282,7 +282,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             pass
 
     def set_widgets(self):
-        self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
+        try:
+            show_log = self.context.show_usb_log
+        except AttributeError:
+            show_log = True
+        self.checkbox_show_usb_log.SetValue(show_log)
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
