@@ -484,8 +484,9 @@ class SVGWriter:
                         c_m_d = 1
                     else:
                         c_m_d = math.sqrt(abs(c.matrix.determinant))
-                    stroke_width = str(factor * c.stroke_width / c_m_d)
-                    subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+                    if c.stroke_width is not None:
+                        stroke_width = str(factor * c.stroke_width / c_m_d)
+                        subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
                     pass
 
