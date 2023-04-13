@@ -57,6 +57,7 @@ class ImageNode(Node):
             try:
                 from PIL import Image as PILImage
                 if not isinstance(self.href, str):
+                    # Error caused by href being int value
                     raise ImportError
 
                 self.image = PILImage.open(self.href)
