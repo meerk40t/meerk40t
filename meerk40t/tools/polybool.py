@@ -1,4 +1,3 @@
-
 """
 https://github.com/KaivnD/pypolybool
 MIT License
@@ -10,6 +9,7 @@ tolerance = 1e-10
 
 T = typing.TypeVar("T")
 TPoint = typing.TypeVar("TPoint", bound="Point")
+
 
 class PolyBoolException(Exception):
     pass
