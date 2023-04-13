@@ -305,8 +305,6 @@ class NewlyController:
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
         self._set_mode = "vector"
-        self._power = None
-        self._speed = None
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
         if self.service.pwm_enabled:
@@ -329,8 +327,6 @@ class NewlyController:
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
         self._set_mode = "raster"
-        self._power = None
-        self._speed = None
         self._corner_speed = None
         self._acceleration_length = None
         if self.service.pwm_enabled:
@@ -511,7 +507,9 @@ class NewlyController:
                 if dy != 0:
                     # We are moving in the Y direction.
                     commit_scanline()
-                    self.goto(x, y)  # remain standard rastermode
+                    self._relative = True
+                    self("PR")
+                    self._goto(x, y)  # remain standard rastermode
                 if dx != 0:
                     # Normal move, extend bytes.
                     scanline.extend([int(on)] * abs(dx))
@@ -528,7 +526,9 @@ class NewlyController:
                 if dx != 0:
                     # We are moving in the X direction.
                     commit_scanline()
-                    self.goto(x, y)  # remain standard rastermode
+                    self._relative = True
+                    self("PR")
+                    self._goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
                     scanline.extend([int(on)] * abs(dy))
@@ -802,11 +802,7 @@ class NewlyController:
         self._commit_relative_mode()
 
     def commit_mode(self):
-        if (
-            self._set_speed is None
-            and self._set_mode is None
-            and self._speed is not None
-        ):
+        if self._set_mode is None:
             # Quick fail.
             return
         new_mode = self._set_mode
@@ -814,8 +810,9 @@ class NewlyController:
         if new_mode != self._mode:
             self._mode = new_mode
 
-            # Old speed is no longer valid.
+            # Old speed and power are void on mode change.
             self._speed = None
+            self._power = None
 
     #######################
     # Commit DC Info
@@ -936,20 +933,11 @@ class NewlyController:
     #######################
 
     def _commit_speed(self):
-        if (
-            self._set_speed is None
-            and self._set_mode is None
-            and self._speed is not None
-        ):
+        if self._set_speed is None and self._speed is not None:
             return
         new_speed = self._set_speed
-        new_speed_mode = self._set_mode
-        self._set_mode = None
         self._set_speed = None
-        if new_speed is not None and (
-            new_speed != self._speed or new_speed_mode != self._mode
-        ):
-            self._mode = new_speed_mode
+        if new_speed is not None and new_speed != self._speed:
             self._speed = new_speed
             if self._mode == "vector":
                 self(f"VS{self._map_vector_speed(new_speed)}")
