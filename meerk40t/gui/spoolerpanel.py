@@ -299,8 +299,8 @@ class SpoolerPanel(wx.Panel):
                     line_items = []
                     if info["start_time"] is None:
                         continue
-                    line_items.append(info.get("device", "''"))
-                    line_items.append(info.get("label", "''"))
+                    line_items.append(str(info.get("device", "''")))
+                    line_items.append(str(info.get("label", "''")))
                     line_items.append(
                         f"{self.datestr(info.get('start_time',0))} {self.timestr(info.get('start_time',0), True)}"
                     )
