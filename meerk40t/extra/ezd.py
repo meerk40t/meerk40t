@@ -127,8 +127,8 @@ class Pen:
 class EZCFile:
     def __init__(self, file):
         self._locations = {}
-        self._pens = []
-        self._objects = []
+        self.pens = []
+        self.objects = []
         self._preview_bitmap = list()
         self._prevector = None
         self.parse_header(file)
@@ -258,7 +258,7 @@ class EZCFile:
         file.seek(seek, 0)
         for c in range(parameter_count):
             p = self._parse_table(file)
-            self._pens.append(Pen(*p))
+            self.pens.append(Pen(*p))
 
     def parse_prevectors(self, file):
         """
@@ -323,30 +323,36 @@ class EZCFile:
             secondary = self._parse_table(file)
             if object_type == 1:
                 # curve
-                self._objects.append(EZCurve(*primary, *secondary))
+                self.objects.append(EZCurve(*primary, *secondary))
             elif object_type == 3:
                 # rect
-                self._objects.append(EZRect(*primary, *secondary))
+                self.objects.append(EZRect(*primary, *secondary))
             elif object_type == 4:
                 # circle
-                self._objects.append(EZCircle(*primary, *secondary))
+                self.objects.append(EZCircle(*primary, *secondary))
             elif object_type == 5:
                 # ellipse
-                self._objects.append(EZEllipse(*primary, *secondary))
+                self.objects.append(EZEllipse(*primary, *secondary))
             elif object_type == 6:
                 # polygon
-                self._objects.append(EZPolygon(*primary, *secondary))
+                self.objects.append(EZPolygon(*primary, *secondary))
+            elif object_type == 0x20:
+                # bitmap
+                self.objects.append(EZHatch(*primary, *secondary))
+            elif object_type == 0x40:
+                # bitmap
+                self.objects.append(EZImage(*primary, *secondary))
             elif object_type == 0x3000:
                 # input
-                self._objects.append(EZInput(*primary, *secondary))
+                self.objects.append(EZInput(*primary, *secondary))
             elif object_type == 0x2000:
                 # timer
-                self._objects.append(EZTimer(*primary, *secondary))
+                self.objects.append(EZTimer(*primary, *secondary))
             elif object_type == 0x800:
                 # text
-                self._objects.append(EZText(*primary, *secondary))
+                self.objects.append(EZText(*primary, *secondary))
             else:
-                self._objects.append(EZObject(*primary, *secondary))
+                self.objects.append(EZObject(*primary, *secondary))
 
 
 class EZObject:
@@ -468,6 +474,14 @@ class EZImage(EZObject):
         print(self.__dict__)
 
 
+class EZHatch(EZObject):
+    def __init__(self, *args):
+        super().__init__(*args)
+        print(args)
+        print(self.__dict__)
+
+
+
 class EZDLoader:
     @staticmethod
     def load_types():
@@ -477,4 +491,10 @@ class EZDLoader:
     def load(context, elements_service, pathname, **kwargs):
         with open(pathname, "br") as file:
             file = EZCFile(file)
+            op_branch = elements_service.op_branch
+            op_branch.remove_all_children()
+            for p in file.pens:
+                op_branch.add(type="op engrave", **p.__dict__)
+
+
         return True
