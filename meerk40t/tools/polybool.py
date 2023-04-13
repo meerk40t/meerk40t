@@ -1,3 +1,9 @@
+
+"""
+https://github.com/KaivnD/pypolybool
+MIT License
+"""
+
 import typing
 
 tolerance = 1e-10
@@ -5,10 +11,8 @@ tolerance = 1e-10
 T = typing.TypeVar("T")
 TPoint = typing.TypeVar("TPoint", bound="Point")
 
-"""
-https://github.com/KaivnD/pypolybool
-MIT License
-"""
+class PolyBoolException(Exception):
+    pass
 
 
 class Point:
@@ -543,7 +547,7 @@ class Intersecter:
             else:
                 st = ev.status
                 if st is None:
-                    raise Exception(
+                    raise PolyBoolException(
                         "PolyBool: Zero-length segment detected; your epsilon is probably too small or too large"
                     )
                 if statusRoot.exists(st.previous) and statusRoot.exists(st.next):
