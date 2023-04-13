@@ -1814,10 +1814,19 @@ class ImageLoader:
         image = SVGImage(
             {"href": pathname, "width": "100%", "height": "100%", "id": basename}
         )
-        image.load()
-        if image.image is None:
+        try:
+            from PIL.Image import DecompressionBombError
+        except ImportError:
             return False
-        image.image.copy()  # Throws error for .eps without ghostscript
+        try:
+            image.load()
+            if image.image is None:
+                return False
+            image.image.copy()  # Throws error for .eps without ghostscript
+        except OSError:
+            return False
+        except DecompressionBombError:
+            return False
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
