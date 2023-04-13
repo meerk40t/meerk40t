@@ -1967,6 +1967,8 @@ class EditTool(ToolWidget):
                     # Have we clicked outside the bbox? Then we call it a day...
                     outside = False
                     bb = self.element.bbox()
+                    if bb is None:
+                        return RESPONSE_CONSUME
                     if space_pos[0] < bb[0] or space_pos[0] > bb[2]:
                         outside = True
                     if space_pos[1] < bb[1] or space_pos[1] > bb[3]:
