@@ -368,6 +368,8 @@ class Ch341LibusbDriver:
 
             self.channel(str(e))
             raise ConnectionError
+        except ValueError as e:
+            raise ConnectionError("This hardware device is unrecognized. Required endpoint does not exist..") from e
         return status[0]
         # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
 
