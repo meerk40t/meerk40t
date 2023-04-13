@@ -849,7 +849,8 @@ class LihuiyuDevice(Service, ViewPort):
             try:
                 self.controller.open()
                 channel(_("Usb Connection Opened."))
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, ConnectionError):
+                # Refused is typical but inability to confirm serial would result in connection error.
                 channel(_("Usb Connection Refused"))
 
         @self.console_command("usb_disconnect", help=_("Disconnects USB"))
