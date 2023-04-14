@@ -4,7 +4,6 @@ Parser for .ezd files.
 import struct
 from io import BytesIO
 
-import PIL.Image
 from bitarray import bitarray
 
 from meerk40t.svgelements import Color
@@ -136,9 +135,9 @@ class EZCFile:
         self.parse_unknown_nontable(file)
         self.parse_tables(file)
 
-    def _parse_table(self, file):
+    def _parse_struct(self, file):
         """
-        Parses a generic table form for ezd files. These are a count of objects. Then for each data entry int32le:length
+        Parses a generic structure for ezd files. These are a count of objects. Then for each data entry int32le:length
         followed by data of that length.
 
         @param file:
@@ -154,27 +153,30 @@ class EZCFile:
             b = file.read(length)
             if len(b) != length:
                 return p
-            if length == 2:
-                p.extend(struct.unpack("<H", b))
-            elif length == 4:
-                p.extend(struct.unpack("<I", b))
-            elif length == 8:
-                p.extend(struct.unpack("d", b))
-            elif length == 16:
-                t = struct.unpack("2d", b)
-                if 0 < abs(t[0]) < 1e-300:
-                    p.append(b.decode("utf_16"))
-                else:
-                    p.append(t)
-            elif length == 60:
-                p.append(b.decode("utf_16"))
-            elif length == 72:
-                p.append(struct.unpack("9d", b))
-            elif length == 0:
-                return p
-            else:
-                p.append(b)
+            p.append(b)
         return p
+
+    def _construct(self, data):
+        for i in range(len(data)):
+            b = data[i]
+            length = len(b)
+            if not isinstance(b, (bytes, bytearray)):
+                continue
+            if length == 2:
+                data[i], = struct.unpack("<H", b)
+            elif length == 4:
+                data[i], = struct.unpack("<I", b)
+            elif length == 8:
+                data[i], = struct.unpack("d", b)
+            elif length == 16:
+                data[i] = struct.unpack("2d", b)
+            elif length == 60:
+                data[i] = b.decode("utf_16")
+            elif length == 72:
+                data[i] = struct.unpack("9d", b)
+            elif length == 0:
+                pass
+        return data
 
     def parse_header(self, file):
         magic_number = file.read(16)
@@ -261,7 +263,10 @@ class EZCFile:
         seek = struct.unpack("<I", file.read(4))[0]
         file.seek(seek, 0)
         for c in range(parameter_count):
-            p = self._parse_table(file)
+            data = self._parse_struct(file)
+            data[1] = data[1].decode("utf_16").strip("\x00")
+            data = self._construct(data)
+            p = data
             self.pens.append(Pen(*p))
 
     def parse_prevectors(self, file):
@@ -328,24 +333,48 @@ class EZCFile:
         elif object_type in (1, 3, 4, 5, 6, 0x2000, 0x3000, 0x800):
             self.parse_shape(file)
             return True
+        elif object_type == 0x50:
+            # Vector File
+            data = self._parse_struct(file)
+            data = self._construct(data)
+            header = data
+            info = struct.unpack("<2I", file.read(8))
+            data1 = self._parse_struct(file)
+            data1 = self._construct(data1)
+            table2 = data1
+            info2 = struct.unpack("<2I", file.read(8))
+            data2 = self._parse_struct(file)
+            data2 = self._construct(data2)
+            table3 = data2
+            # return True
+
         elif object_type == 32:
-            header = self._parse_table(file)
+            data3 = self._parse_struct(file)
+            data3 = self._construct(data3)
+            header = data3
             hatch_info = struct.unpack("<I", file.read(4))[0]
             self.parse_object(file)
-            hatch_table = self._parse_table(file)
-            hatch_table2 = self._parse_table(file)
+            data4 = self._parse_struct(file)
+            data4 = self._construct(data4)
+            hatch_table = data4
+            data5 = self._parse_struct(file)
+            data5 = self._construct(data5)
+            hatch_table2 = data5
             hatch_info2 = struct.unpack("<H", file.read(2))[0]
             return True
-        else:
-            print(object_type)
-            d = file.read()
-            print(d)
-            return False
+        print(object_type)
+        d = file.read()
+        print(d)
+        return False
 
     def parse_shape(self, file):
-        primary = self._parse_table(file)
+        data = self._parse_struct(file)
+        data = self._construct(data)
+        primary = data
         object_type = primary[1]
-        secondary = self._parse_table(file)
+        data1 = self._parse_struct(file)
+        data1 = self._construct(data1)
+        secondary = data1
         # [0, 3, 2, 0, 1, 0, 0, 0, 0, 1, 1, 10.0, 10.0, (-4.291917494955726, -12.326742310926193), 0.0]
         # [(-30.25517369212605, 5.734653304496646), (21.671338702214598, -30.38813792634903), 0.0, 0.0, 0.0, 0.0, 0, (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)]
 
