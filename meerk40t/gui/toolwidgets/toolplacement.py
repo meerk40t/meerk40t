@@ -67,9 +67,9 @@ class PlacementTool(ToolWidget):
             self.has_shift = True
 
         if event_type == "leftclick":
-            print(
-                f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}"
-            )
+            # print(
+            #     f"Ctrl={self.has_ctrl}, alt={self.has_alt}, shift={self.has_shift}, point={space_pos}, snap={nearest_snap}"
+            # )
             if nearest_snap is None:
                 point = Point(space_pos[0], space_pos[1])
             else:
