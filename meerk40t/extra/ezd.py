@@ -384,6 +384,28 @@ class EZCFile:
             self._construct(secondary)
             objects.append(EZImage(*header, *secondary))
             return True
+        elif object_type == 0x60:
+            # Spiral
+            object = EZSpiral(*header)
+            (count,) = struct.unpack("<I", file.read(4))
+            items = list()
+            for c in range(count):
+                self.parse_object(file, items)
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            object.secondary(*secondary)
+            object.applied = items
+
+            third = self._parse_struct(file)
+            self._construct(third)
+
+            group = EZGroup(*third)
+            (count,) = struct.unpack("<I", file.read(4))
+            for c in range(count):
+                self.parse_object(file, group)
+            object.group = group
+
+            return True
         elif object_type == 0x3000:
             # input
             secondary = self._parse_struct(file)
@@ -492,7 +514,7 @@ class EZGroup(list):
         pen,
         type,
         state,
-        v1,
+        label,
         v2,
         v3,
         v4,
@@ -516,7 +538,7 @@ class EZGroup(list):
         self.hidden = bool(self.state & 0x01)
         self.locked = bool(self.state & 0x10)
 
-        self.unknown1 = v1
+        self.label = label
         self.unknown2 = v2
         self.unknown3 = v3
         self.unknown4 = v4
@@ -642,6 +664,17 @@ class EZEllipse(EZObject):
         print(self.__dict__)
 
 
+class EZSpiral(EZObject):
+    def __init__(self, *args):
+        super().__init__(*args)
+        print(args)
+        print(self.__dict__)
+
+    def secondary(self, *args):
+        print(args)
+        print(self.__dict__)
+
+
 class EZPolygon(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
@@ -652,6 +685,7 @@ class EZPolygon(EZObject):
 class EZTimer(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
+        self.wait_time = args[16]
         print(args)
         print(self.__dict__)
 
@@ -755,7 +789,15 @@ class EZProcessor:
             node = context_node.add(type="elem rect", shape=rect)
             e_list.append(node)
         elif isinstance(element, EZTimer):
-            node = context_node.add(type="util wait")
+            node = context_node.add(type="util wait", wait=element.wait_time / 1000.0)
+            e_list.append(node)
+        elif isinstance(element, EZInput):
+            node = context_node.add(
+                type="util input",
+                input_message=element.message,
+                input_value=element.input_port_bits,
+                input_mask=element.input_port_bits,
+            )
             e_list.append(node)
         elif isinstance(element, EZImage):
             node = context_node.add(type="elem image")
