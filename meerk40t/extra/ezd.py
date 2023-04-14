@@ -344,26 +344,76 @@ class EZCFile:
         object_type = struct.unpack("<I", file.read(4))[0]  # 0
         if object_type == 0:
             return False
-        elif object_type in (1, 3, 4, 5, 6, 0x2000, 0x3000, 0x800):
-            self.parse_shape(file, objects)
+        header = self._parse_struct(file)
+        self._interpret(header, 3, str)
+        self._construct(header)
+
+        if object_type == 1:
+            # curve
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZCurve(*header, *secondary))
+            return True
+        elif object_type == 3:
+            # rect
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZRect(*header, *secondary))
+            return True
+        elif object_type == 4:
+            # circle
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZCircle(*header, *secondary))
+            return True
+        elif object_type == 5:
+            # ellipse
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZEllipse(*header, *secondary))
+            return True
+        elif object_type == 6:
+            # polygon
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZPolygon(*header, *secondary))
+            return True
+        elif object_type == 0x40:
+            # bitmap
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZImage(*header, *secondary))
+            return True
+        elif object_type == 0x3000:
+            # input
+            secondary = self._parse_struct(file)
+            self._interpret(secondary, 1, str)
+            self._construct(secondary)
+            objects.append(EZInput(*header, *secondary))
+            return True
+        elif object_type == 0x2000:
+            # timer
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZTimer(*header, *secondary))
+            return True
+        elif object_type == 0x800:
+            # text
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZText(*header, *secondary))
             return True
         elif object_type == 0x10:
-            data = self._parse_struct(file)
-            self._interpret(data, 3, str)
-            self._construct(data)
             (count,) = struct.unpack("<I", file.read(4))
-            group = EZGroup(*data)
+            group = EZGroup(*header)
             objects.append(group)
             for c in range(count):
                 self.parse_object(file, group)
             return True
         elif object_type == 0x50:
             # Vector File
-            data = self._parse_struct(file)
-            self._interpret(data, 3, str)
-            self._construct(data)
             (count,) = struct.unpack("<I", file.read(4))
-            group = EZVFile(*data)
+            group = EZVFile(*header)
             objects.append(group)
             for c in range(count):
                 self.parse_object(file, group)
@@ -373,70 +423,22 @@ class EZCFile:
             group.secondary(*data1)
             print(data1)
             return True
-
-        elif object_type == 32:
-            data3 = self._parse_struct(file)
-            data3 = self._construct(data3)
-            header = data3
-            hatch_info = struct.unpack("<I", file.read(4))[0]
-            self.parse_object(file, objects)
-            data4 = self._parse_struct(file)
-            data4 = self._construct(data4)
-            hatch_table = data4
-            data5 = self._parse_struct(file)
-            data5 = self._construct(data5)
-            hatch_table2 = data5
-            hatch_info2 = struct.unpack("<H", file.read(2))[0]
-            return True
-        print(object_type)
-        d = file.read()
-        print(d)
-        return False
-
-    def parse_shape(self, file, objects):
-        primary = self._parse_struct(file)
-        self._construct(primary)
-
-        object_type = primary[1]
-
-        secondary = self._parse_struct(file)
-        self._construct(secondary)
-
-        if object_type == 1:
-            # curve
-            objects.append(EZCurve(*primary, *secondary))
-        elif object_type == 3:
-            # rect
-            objects.append(EZRect(*primary, *secondary))
-        elif object_type == 4:
-            # circle
-            objects.append(EZCircle(*primary, *secondary))
-        elif object_type == 5:
-            # ellipse
-            objects.append(EZEllipse(*primary, *secondary))
-        elif object_type == 6:
-            # polygon
-            objects.append(EZPolygon(*primary, *secondary))
         elif object_type == 0x20:
             # hatch-rect / hatch-curve
-            objects.append(EZHatch(*primary, *secondary))
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZHatch(*header, *secondary))
+            return True
         elif object_type == 0x400:
             # hatch-curve
-            objects.append(EZHatch(*primary, *secondary))
-        elif object_type == 0x40:
-            # bitmap
-            objects.append(EZImage(*primary, *secondary))
-        elif object_type == 0x3000:
-            # input
-            objects.append(EZInput(*primary, *secondary))
-        elif object_type == 0x2000:
-            # timer
-            objects.append(EZTimer(*primary, *secondary))
-        elif object_type == 0x800:
-            # text
-            objects.append(EZText(*primary, *secondary))
-        else:
-            objects.append(EZObject(*primary, *secondary))
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZHatch(*header, *secondary))
+            return True
+        # print(object_type)
+        # d = file.read()
+        # print(d)
+        return False
 
 
 class EZObject:
@@ -624,8 +626,6 @@ class EZRect(EZObject):
         self.round_c4 = args[20]
         self.unknown5 = args[21]
         self.matrix = args[22]
-        print(args)
-        print(self.__dict__)
 
 
 class EZCircle(EZObject):
@@ -659,8 +659,8 @@ class EZTimer(EZObject):
 class EZInput(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.message_enabled = bool(args[15])
+        self.message = args[16]
 
 
 class EZText(EZObject):
