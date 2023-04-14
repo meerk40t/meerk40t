@@ -656,8 +656,8 @@ class LaserRender:
             # no idea how to draw yet...
             return
         gc.PushState()
+        matrix = Matrix()
         if node.rotation is not None and node.rotation != 0:
-            matrix = Matrix()
             matrix.post_rotate(node.rotation, node.x, node.y)
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         # First x
@@ -696,16 +696,56 @@ class LaserRender:
             y_to = y_from + 2 * dif
             x_sign = 1
             y_sign = 1
-
-        gc.SetPen(wx.RED_PEN)
+        rpen = wx.Pen(wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+        gpen = wx.Pen(wx.Colour(red=0, green=255, blue=0, alpha=alpha))
+        gc.SetPen(rpen)
         dif = 5 * zoomscale
         gc.StrokeLine(x_from, node.y, x_to, node.y)
         gc.StrokeLine(x_to - x_sign * dif, node.y - y_sign * dif, x_to, node.y)
         gc.StrokeLine(x_to - x_sign * dif, node.y + y_sign * dif, x_to, node.y)
-        gc.SetPen(wx.GREEN_PEN)
+        gc.SetPen(gpen)
         gc.StrokeLine(node.x, y_from, node.x, y_to)
         gc.StrokeLine(node.x - x_sign * dif, y_to - y_sign * dif, node.x, y_to)
         gc.StrokeLine(node.x + x_sign * dif, y_to - y_sign * dif, node.x, y_to)
+
+        loops = 1
+        if hasattr(node, "loops") and node.loops is not None:
+            # No zero or negative values please
+            loops = max(1, node.loops)
+        if loops > 1:
+            symbol = f"{loops}x"
+            matrix = gc.GetTransform().Get()
+            try:
+                font_size = 10.0 / matrix[0]
+            except ZeroDivisionError:
+                font_size = 5000
+            # print (font_size)
+            if font_size < 1.0:
+                font_size = 1.0
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            x = (x_from + x_to) / 2 - t_width / 2
+            y = (y_from + y_to) / 2 - t_height / 2
+            # is corner center then shift it a bit more
+            if node.corner == 4:
+                x += 0.25 * (x_to - x_from)
+                y += 0.25 * (y_to - y_from)
+            gc.DrawText(symbol, x, y)
+
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
