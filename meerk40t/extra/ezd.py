@@ -7,7 +7,7 @@ from io import BytesIO
 from bitarray import bitarray
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.svgelements import Color, Rect, Matrix
+from meerk40t.svgelements import Color, Rect, Matrix, Path
 
 
 def plugin(kernel, lifecycle):
@@ -350,9 +350,13 @@ class EZCFile:
 
         if object_type == 1:
             # curve
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
-            objects.append(EZCurve(*header, *secondary))
+            pts = []
+            (count, unknown) = struct.unpack("<2I", file.read(8))
+            for i in range(count):
+                (unk1, unk2, unk3) = struct.unpack("<3H", file.read(6))
+                (pt_count,) = struct.unpack("<I", file.read(4))
+                pts.append(struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)))
+            objects.append(EZCurve(*header, pts))
             return True
         elif object_type == 3:
             # rect
@@ -377,6 +381,14 @@ class EZCFile:
             secondary = self._parse_struct(file)
             self._construct(secondary)
             objects.append(EZPolygon(*header, *secondary))
+            return True
+        elif object_type == 0x30:
+            # Combine
+            (count,) = struct.unpack("<I", file.read(4))
+            group = EZGroup(*header)
+            objects.append(group)
+            for c in range(count):
+                self.parse_object(file, group)
             return True
         elif object_type == 0x40:
             # bitmap
@@ -631,8 +643,7 @@ class EZVFile(list):
 class EZCurve(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.points = args[15]
 
 
 class EZRect(EZObject):
@@ -750,6 +761,18 @@ class EZProcessor:
         self.regmark_list = list()
         self.pathname = None
         self.regmark = None
+        self.width = elements.device.unit_width
+        self.height = elements.device.unit_height
+        self.matrix = Matrix.map(
+            (-50, 50),
+            (50, 50),
+            (50, -50),
+            (-50, -50),
+            (0, 0),
+            (self.width, 0),
+            (self.width, self.height),
+            (0, self.height),
+        )
 
     def process(self, ez, pathname):
         self.pathname = pathname
@@ -766,7 +789,19 @@ class EZProcessor:
             node = context_node.add(type="elem text")
             e_list.append(node)
         elif isinstance(element, EZCurve):
-            node = context_node.add(type="elem path")
+            points = element.points
+
+            path = Path(stroke="black", transform=self.matrix)
+            for pt in points:
+                if len(path) == 0:
+                    path.move(pt[0:2])
+                if len(pt) == 4:
+                    path.line(pt[2:4])
+                elif len(pt) == 6:
+                    path.quad(pt[2:4], pt[4:6])
+                elif len(pt) == 8:
+                    path.cubic(pt[2:4], pt[4:6], pt[6:8])
+            node = context_node.add(type="elem path", path=path)
             e_list.append(node)
         elif isinstance(element, EZPolygon):
             node = context_node.add(
@@ -779,7 +814,6 @@ class EZProcessor:
             )
             e_list.append(node)
         elif isinstance(element, EZRect):
-            e = element.pen
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
             mx.post_scale_y(-1)
