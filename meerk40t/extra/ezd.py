@@ -434,6 +434,9 @@ class EZCFile:
         elif object_type == 0x800:
             # text
             secondary = self._parse_struct(file)
+            self._interpret(secondary, 10, str)
+            self._interpret(secondary, 18, str)
+            self._interpret(secondary, 44, str)
             self._construct(secondary)
             objects.append(EZText(*header, *secondary))
             return True
@@ -712,8 +715,7 @@ class EZText(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
         self.font_angle = args[15]  # Font angle in Text.
-        print(args)
-        print(self.__dict__)
+        self.text = args[25]
 
 
 class EZImage(EZObject):
@@ -786,7 +788,7 @@ class EZProcessor:
     def parse(self, element, context_node, e_list):
         node = None
         if isinstance(element, EZText):
-            node = context_node.add(type="elem text")
+            node = context_node.add(type="elem text", text=element.text)
             e_list.append(node)
         elif isinstance(element, EZCurve):
             points = element.points
