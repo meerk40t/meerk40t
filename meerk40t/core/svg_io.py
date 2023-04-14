@@ -1086,13 +1086,6 @@ class SVGProcessor:
                     return
                 node_type = f"op {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
-            if node_type == "place":
-                # Meerk40t 0.7.x fallback node types.
-                op_type = element.values.get("operation")
-                if op_type is None:
-                    return
-                node_type = f"place {op_type.lower()}"
-                element.values["attributes"]["type"] = node_type
 
             if node_type is None:
                 # Type is not given. Abort.
@@ -1123,43 +1116,22 @@ class SVGProcessor:
                     self.elements.clear_operations()
                     self.operations_cleared = True
                 try:
-                    op = self.elements.op_branch.add(type=node_type, **attrs)
-                except AttributeError:
-                    # We don't have this operation type? Maybe a future version?
-                    # Intentional console output to alert about it.
-                    print(f"There was an unrecognized operation: '{node_type}', that has been ignored")
-                    op = None
-                if op is None:
-                    # We delete this created node-stub
-                    op_branch = self.elements.op_branch
-                    for idx in range(len(op_branch.children) - 1, -1, -1):
-                        test_op = op_branch.children[idx]
-                        if test_op is None:
-                            op_branch.children.pop(idx)
-                        elif not hasattr(test_op, "type") or test_op.type is None:
-                            # This is plain wrong...
-                            test_op.remove_node()
-                if op is not None:
-                    # Sometimes certain attributes weren't assigned properly / missed
-                    # This piece of code tries to reapply them. If things were fine
-                    # then this is an unneeded attempt. But better safe than sorry
+                    node = self.elements.op_branch.create(type=node_type, **attrs)
+                    node.validate()
+                    node.id = node_id
+                    op = self.elements.op_branch.add_node(node)
                     overlooked_attributes = [
                         "output",
                     ]
+                    # Sometimes certain attributes weren't assigned properly / missed
+                    # This piece of code tries to reapply them. If things were fine
+                    # then this is an unneeded attempt. But better safe than sorry
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
-                            try:
-                                over_value = element.values.get(overlooked)
-                                setattr(op, overlooked, over_value)
-                            except (ValueError, AttributeError):
-                                # This operation does not have this attribute?!
-                                pass
-                    try:
-                        op.validate()
-                    except AttributeError:
-                        # This operation is invalid.
-                        pass
-                    op.id = node_id
+                            setattr(op, overlooked, element.values.get(overlooked))
+                except AttributeError:
+                    # This operation is invalid.
+                    return
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:
