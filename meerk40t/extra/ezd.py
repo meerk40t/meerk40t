@@ -161,7 +161,11 @@ class EZCFile:
             elif length == 8:
                 p.extend(struct.unpack("d", b))
             elif length == 16:
-                p.append(struct.unpack("2d", b))
+                t = struct.unpack("2d", b)
+                if 0 < abs(t[0]) < 1e-300:
+                    p.append(b.decode("utf_16"))
+                else:
+                    p.append(t)
             elif length == 60:
                 p.append(b.decode("utf_16"))
             elif length == 72:
@@ -308,51 +312,78 @@ class EZCFile:
         while True:
             try:
                 q = bytearray(a.decode(huffman_dict))
-                self.parse_object(q)
+                self.parse_objects(BytesIO(q))
                 return
             except ValueError:
                 a = a[:-1]
 
-    def parse_object(self, data):
-        file = BytesIO(data)
-        while file:
-            object_type = struct.unpack("<I", file.read(4))[0]  # 0
-            if object_type == 0:
-                return
-            primary = self._parse_table(file)
-            secondary = self._parse_table(file)
-            if object_type == 1:
-                # curve
-                self.objects.append(EZCurve(*primary, *secondary))
-            elif object_type == 3:
-                # rect
-                self.objects.append(EZRect(*primary, *secondary))
-            elif object_type == 4:
-                # circle
-                self.objects.append(EZCircle(*primary, *secondary))
-            elif object_type == 5:
-                # ellipse
-                self.objects.append(EZEllipse(*primary, *secondary))
-            elif object_type == 6:
-                # polygon
-                self.objects.append(EZPolygon(*primary, *secondary))
-            elif object_type == 0x20:
-                # bitmap
-                self.objects.append(EZHatch(*primary, *secondary))
-            elif object_type == 0x40:
-                # bitmap
-                self.objects.append(EZImage(*primary, *secondary))
-            elif object_type == 0x3000:
-                # input
-                self.objects.append(EZInput(*primary, *secondary))
-            elif object_type == 0x2000:
-                # timer
-                self.objects.append(EZTimer(*primary, *secondary))
-            elif object_type == 0x800:
-                # text
-                self.objects.append(EZText(*primary, *secondary))
-            else:
-                self.objects.append(EZObject(*primary, *secondary))
+    def parse_objects(self, file):
+        while self.parse_object(file):
+            pass
+
+    def parse_object(self, file):
+        object_type = struct.unpack("<I", file.read(4))[0]  # 0
+        if object_type == 0:
+            return False
+        elif object_type in (1, 3, 4, 5, 6, 0x2000, 0x3000, 0x800):
+            self.parse_shape(file)
+            return True
+        elif object_type == 32:
+            header = self._parse_table(file)
+            hatch_info = struct.unpack("<I", file.read(4))[0]
+            self.parse_object(file)
+            hatch_table = self._parse_table(file)
+            hatch_table2 = self._parse_table(file)
+            hatch_info2 = struct.unpack("<H", file.read(2))[0]
+            return True
+        else:
+            print(object_type)
+            d = file.read()
+            print(d)
+            return False
+
+    def parse_shape(self, file):
+        primary = self._parse_table(file)
+        object_type = primary[1]
+        secondary = self._parse_table(file)
+        # [0, 3, 2, 0, 1, 0, 0, 0, 0, 1, 1, 10.0, 10.0, (-4.291917494955726, -12.326742310926193), 0.0]
+        # [(-30.25517369212605, 5.734653304496646), (21.671338702214598, -30.38813792634903), 0.0, 0.0, 0.0, 0.0, 0, (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)]
+
+        if object_type == 1:
+            # curve
+            self.objects.append(EZCurve(*primary, *secondary))
+        elif object_type == 3:
+            # rect
+            self.objects.append(EZRect(*primary, *secondary))
+        elif object_type == 4:
+            # circle
+            self.objects.append(EZCircle(*primary, *secondary))
+        elif object_type == 5:
+            # ellipse
+            self.objects.append(EZEllipse(*primary, *secondary))
+        elif object_type == 6:
+            # polygon
+            self.objects.append(EZPolygon(*primary, *secondary))
+        elif object_type == 0x20:
+            # hatch-rect / hatch-curve
+            self.objects.append(EZHatch(*primary, *secondary))
+        elif object_type == 0x400:
+            # hatch-curve
+            self.objects.append(EZHatch(*primary, *secondary))
+        elif object_type == 0x40:
+            # bitmap
+            self.objects.append(EZImage(*primary, *secondary))
+        elif object_type == 0x3000:
+            # input
+            self.objects.append(EZInput(*primary, *secondary))
+        elif object_type == 0x2000:
+            # timer
+            self.objects.append(EZTimer(*primary, *secondary))
+        elif object_type == 0x800:
+            # text
+            self.objects.append(EZText(*primary, *secondary))
+        else:
+            self.objects.append(EZObject(*primary, *secondary))
 
 
 class EZObject:
