@@ -105,7 +105,7 @@ class PlacePointNode(Node):
         default_map["x"] = f"{xlen.length_cm}"
         default_map["y"] = f"{ylen.length_cm}"
         default_map["rotation"] = f"{Angle(self.rotation, digits=2).degrees}°"
-        default_map["loops"] = f"{str(self.loops) + 'x' if self.loops > 0 else ''}"
+        default_map["loops"] = f"{str(self.loops) + 'x' if self.loops > 1 else ''}"
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
