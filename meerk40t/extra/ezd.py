@@ -816,7 +816,7 @@ class EZProcessor:
         elif isinstance(element, EZRect):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
-            mx.post_scale_y(-1)
+            mx *= self.matrix
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
             rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
