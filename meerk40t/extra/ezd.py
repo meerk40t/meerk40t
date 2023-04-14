@@ -6,7 +6,8 @@ from io import BytesIO
 
 from bitarray import bitarray
 
-from meerk40t.svgelements import Color
+from meerk40t.core.exceptions import BadFileError
+from meerk40t.svgelements import Color, Rect, Matrix
 
 
 def plugin(kernel, lifecycle):
@@ -112,9 +113,9 @@ class Pen:
         self.add_endpoint_time_per_point = add_endpoint_time_per_point
         self.add_endpoint_point_distance = add_endpoint_point_distance
         self.add_endpoints_point_cycles = add_endpoints_point_cycles
-        #unk8
-        #unk9
-        #unk10
+        # unk8
+        # unk9
+        # unk10
 
         unk8,  # 34, 0.02
         unk9,  # 35, 100
@@ -156,6 +157,20 @@ class EZCFile:
             p.append(b)
         return p
 
+    def _interpret(self, data, index, type):
+        if type == str:
+            data[index] = data[index].decode("utf_16").strip("\x00")
+        elif type == "point":
+            data[index] = struct.unpack("2d", data[index])
+        elif type == "short":
+            (data[index],) = struct.unpack("<H", data[index])
+        elif type == int:
+            (data[index],) = struct.unpack("<I", data[index])
+        elif type == float:
+            (data[index],) = struct.unpack("d", data[index])
+        elif type == "matrix":
+            data[index] = struct.unpack("9d", data[index])
+
     def _construct(self, data):
         for i in range(len(data)):
             b = data[i]
@@ -163,19 +178,19 @@ class EZCFile:
             if not isinstance(b, (bytes, bytearray)):
                 continue
             if length == 2:
-                data[i], = struct.unpack("<H", b)
+                self._interpret(data, i, "short")
             elif length == 4:
-                data[i], = struct.unpack("<I", b)
+                self._interpret(data, i, int)
             elif length == 8:
-                data[i], = struct.unpack("d", b)
+                self._interpret(data, i, float)
             elif length == 16:
-                data[i] = struct.unpack("2d", b)
+                self._interpret(data, i, "point")
             elif length == 60:
-                data[i] = b.decode("utf_16")
+                self._interpret(data, i, str)
             elif length == 72:
-                data[i] = struct.unpack("9d", b)
+                self._interpret(data, i, "matrix")
             elif length == 0:
-                pass
+                data[i] = None
         return data
 
     def parse_header(self, file):
@@ -263,10 +278,9 @@ class EZCFile:
         seek = struct.unpack("<I", file.read(4))[0]
         file.seek(seek, 0)
         for c in range(parameter_count):
-            data = self._parse_struct(file)
-            data[1] = data[1].decode("utf_16").strip("\x00")
-            data = self._construct(data)
-            p = data
+            p = self._parse_struct(file)
+            self._interpret(p, 1, str)
+            self._construct(p)
             self.pens.append(Pen(*p))
 
     def parse_prevectors(self, file):
@@ -323,37 +337,49 @@ class EZCFile:
                 a = a[:-1]
 
     def parse_objects(self, file):
-        while self.parse_object(file):
+        while self.parse_object(file, self.objects):
             pass
 
-    def parse_object(self, file):
+    def parse_object(self, file, objects):
         object_type = struct.unpack("<I", file.read(4))[0]  # 0
         if object_type == 0:
             return False
         elif object_type in (1, 3, 4, 5, 6, 0x2000, 0x3000, 0x800):
-            self.parse_shape(file)
+            self.parse_shape(file, objects)
+            return True
+        elif object_type == 0x10:
+            data = self._parse_struct(file)
+            self._interpret(data, 3, str)
+            self._construct(data)
+            (count,) = struct.unpack("<I", file.read(4))
+            group = EZGroup(*data)
+            objects.append(group)
+            for c in range(count):
+                self.parse_object(file, group)
             return True
         elif object_type == 0x50:
             # Vector File
             data = self._parse_struct(file)
-            data = self._construct(data)
-            header = data
-            info = struct.unpack("<2I", file.read(8))
+            self._interpret(data, 3, str)
+            self._construct(data)
+            (count,) = struct.unpack("<I", file.read(4))
+            group = EZVFile(*data)
+            objects.append(group)
+            for c in range(count):
+                self.parse_object(file, group)
             data1 = self._parse_struct(file)
-            data1 = self._construct(data1)
-            table2 = data1
-            info2 = struct.unpack("<2I", file.read(8))
-            data2 = self._parse_struct(file)
-            data2 = self._construct(data2)
-            table3 = data2
-            # return True
+            self._interpret(data1, 0, str)
+            self._construct(data1)
+            group.secondary(*data1)
+            print(data1)
+            return True
 
         elif object_type == 32:
             data3 = self._parse_struct(file)
             data3 = self._construct(data3)
             header = data3
             hatch_info = struct.unpack("<I", file.read(4))[0]
-            self.parse_object(file)
+            self.parse_object(file, objects)
             data4 = self._parse_struct(file)
             data4 = self._construct(data4)
             hatch_table = data4
@@ -367,52 +393,50 @@ class EZCFile:
         print(d)
         return False
 
-    def parse_shape(self, file):
-        data = self._parse_struct(file)
-        data = self._construct(data)
-        primary = data
+    def parse_shape(self, file, objects):
+        primary = self._parse_struct(file)
+        self._construct(primary)
+
         object_type = primary[1]
-        data1 = self._parse_struct(file)
-        data1 = self._construct(data1)
-        secondary = data1
-        # [0, 3, 2, 0, 1, 0, 0, 0, 0, 1, 1, 10.0, 10.0, (-4.291917494955726, -12.326742310926193), 0.0]
-        # [(-30.25517369212605, 5.734653304496646), (21.671338702214598, -30.38813792634903), 0.0, 0.0, 0.0, 0.0, 0, (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)]
+
+        secondary = self._parse_struct(file)
+        self._construct(secondary)
 
         if object_type == 1:
             # curve
-            self.objects.append(EZCurve(*primary, *secondary))
+            objects.append(EZCurve(*primary, *secondary))
         elif object_type == 3:
             # rect
-            self.objects.append(EZRect(*primary, *secondary))
+            objects.append(EZRect(*primary, *secondary))
         elif object_type == 4:
             # circle
-            self.objects.append(EZCircle(*primary, *secondary))
+            objects.append(EZCircle(*primary, *secondary))
         elif object_type == 5:
             # ellipse
-            self.objects.append(EZEllipse(*primary, *secondary))
+            objects.append(EZEllipse(*primary, *secondary))
         elif object_type == 6:
             # polygon
-            self.objects.append(EZPolygon(*primary, *secondary))
+            objects.append(EZPolygon(*primary, *secondary))
         elif object_type == 0x20:
             # hatch-rect / hatch-curve
-            self.objects.append(EZHatch(*primary, *secondary))
+            objects.append(EZHatch(*primary, *secondary))
         elif object_type == 0x400:
             # hatch-curve
-            self.objects.append(EZHatch(*primary, *secondary))
+            objects.append(EZHatch(*primary, *secondary))
         elif object_type == 0x40:
             # bitmap
-            self.objects.append(EZImage(*primary, *secondary))
+            objects.append(EZImage(*primary, *secondary))
         elif object_type == 0x3000:
             # input
-            self.objects.append(EZInput(*primary, *secondary))
+            objects.append(EZInput(*primary, *secondary))
         elif object_type == 0x2000:
             # timer
-            self.objects.append(EZTimer(*primary, *secondary))
+            objects.append(EZTimer(*primary, *secondary))
         elif object_type == 0x800:
             # text
-            self.objects.append(EZText(*primary, *secondary))
+            objects.append(EZText(*primary, *secondary))
         else:
-            self.objects.append(EZObject(*primary, *secondary))
+            objects.append(EZObject(*primary, *secondary))
 
 
 class EZObject:
@@ -458,6 +482,126 @@ class EZObject:
         self.array_step_y = array_step_y
         self.position = position
         self.z_pos = z_pos
+
+
+class EZGroup(list):
+    def __init__(
+        self,
+        pen,
+        type,
+        state,
+        v1,
+        v2,
+        v3,
+        v4,
+        input_bits,
+        array_state,
+        array_count_x,
+        array_count_y,
+        array_step_x,
+        array_step_y,
+        position,
+        z_pos=None,
+        *args,
+    ):
+        super().__init__()
+        self.pen = pen
+        self.type = type
+        self.state = state
+
+        # Selected 0x02, Hidden 0x01, Locked 0x10
+        self.selected = bool(self.state & 0x02)
+        self.hidden = bool(self.state & 0x01)
+        self.locked = bool(self.state & 0x10)
+
+        self.unknown1 = v1
+        self.unknown2 = v2
+        self.unknown3 = v3
+        self.unknown4 = v4
+        self.input_port_bits = input_bits
+        self.array_state = array_state
+        self.array_bidirectional = bool(array_state & 0x2)
+        self.array_vertical = bool(array_state & 0x1)
+        self.array_count_x = array_count_x
+        self.array_count_y = array_count_y
+        self.array_step_x = array_step_x
+        self.array_step_y = array_step_y
+        self.position = position
+        self.z_pos = z_pos
+        print(args)
+        print(self.__dict__)
+
+
+class EZVFile(list):
+    def __init__(
+        self,
+        pen,
+        type,
+        state,
+        v1,
+        v2,
+        v3,
+        v4,
+        input_bits,
+        array_state,
+        array_count_x,
+        array_count_y,
+        array_step_x,
+        array_step_y,
+        position,
+        z_pos=None,
+        *args,
+    ):
+        super().__init__()
+        self.pen = pen
+        self.type = type
+        self.state = state
+
+        # Selected 0x02, Hidden 0x01, Locked 0x10
+        self.selected = bool(self.state & 0x02)
+        self.hidden = bool(self.state & 0x01)
+        self.locked = bool(self.state & 0x10)
+
+        self.unknown1 = v1
+        self.unknown2 = v2
+        self.unknown3 = v3
+        self.unknown4 = v4
+        self.input_port_bits = input_bits
+        self.array_state = array_state
+        self.array_bidirectional = bool(array_state & 0x2)
+        self.array_vertical = bool(array_state & 0x1)
+        self.array_count_x = array_count_x
+        self.array_count_y = array_count_y
+        self.array_step_x = array_step_x
+        self.array_step_y = array_step_y
+        self.position = position
+        self.z_pos = z_pos
+        self.path = None
+        self.args = None
+        print(args)
+        print(self.__dict__)
+
+    def secondary(
+        self,
+        path,
+        unknown,
+        unknown2,
+        unknown_f,
+        unknown_f2,
+        unknown3,
+        unknown_f3,
+        unknown_f4,
+    ):
+        self.path = path
+        self.args = (
+            unknown,
+            unknown2,
+            unknown_f,
+            unknown_f2,
+            unknown3,
+            unknown_f3,
+            unknown_f4,
+        )
 
 
 class EZCurve(EZObject):
@@ -541,7 +685,6 @@ class EZHatch(EZObject):
         print(self.__dict__)
 
 
-
 class EZDLoader:
     @staticmethod
     def load_types():
@@ -549,12 +692,88 @@ class EZDLoader:
 
     @staticmethod
     def load(context, elements_service, pathname, **kwargs):
-        with open(pathname, "br") as file:
-            file = EZCFile(file)
-            op_branch = elements_service.op_branch
-            op_branch.remove_all_children()
-            for p in file.pens:
-                op_branch.add(type="op engrave", **p.__dict__)
+        try:
+            with open(pathname, "br") as file:
+                ezfile = EZCFile(file)
+        except IOError as e:
+            raise BadFileError(str(e)) from e
 
-
+        op_branch = elements_service.op_branch
+        op_branch.remove_all_children()
+        for p in ezfile.pens:
+            op_branch.add(type="op engrave", **p.__dict__)
+        context_node = elements_service.elem_branch
+        context_node.remove_all_children()
+        ez_processor = EZProcessor(elements_service)
+        ez_processor.process(ezfile, pathname)
         return True
+
+
+class EZProcessor:
+    def __init__(self, elements):
+        self.elements = elements
+        self.element_list = list()
+        self.regmark_list = list()
+        self.pathname = None
+        self.regmark = None
+
+    def process(self, ez, pathname):
+        self.pathname = pathname
+        context_node = self.elements.get(type="branch elems")
+        file_node = context_node.add(type="file", filepath=pathname)
+        self.regmark = self.elements.reg_branch
+        file_node.focus()
+        for f in ez.objects:
+            self.parse(f, file_node, self.element_list)
+
+    def parse(self, element, context_node, e_list):
+        node = None
+        if isinstance(element, EZText):
+            node = context_node.add(type="elem text")
+            e_list.append(node)
+        elif isinstance(element, EZCurve):
+            node = context_node.add(type="elem path")
+            e_list.append(node)
+        elif isinstance(element, EZPolygon):
+            node = context_node.add(
+                type="elem polyline",
+            )
+            e_list.append(node)
+        elif isinstance(element, (EZCircle, EZEllipse)):
+            node = context_node.add(
+                type="elem ellipse",
+            )
+            e_list.append(node)
+        elif isinstance(element, EZRect):
+            e = element.pen
+            m = element.matrix
+            mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
+            mx.post_scale_y(-1)
+            x0, y0 = element.corner_upper_left
+            x1, y1 = element.corner_bottom_right
+            rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
+            node = context_node.add(type="elem rect", shape=rect)
+            e_list.append(node)
+        elif isinstance(element, EZTimer):
+            node = context_node.add(type="util wait")
+            e_list.append(node)
+        elif isinstance(element, EZImage):
+            node = context_node.add(type="elem image")
+            e_list.append(node)
+        elif isinstance(element, EZVFile):
+            for child in element:
+                self.parse(child, context_node, e_list)
+        elif isinstance(element, EZGroup):
+            context_node = context_node.add(type="group")
+            # recurse to children
+            for child in element:
+                self.parse(child, context_node, e_list)
+        else:
+            return
+        if node is None:
+            return
+        try:
+            op_add = self.elements.op_branch.children[element.pen]
+            op_add.add_reference(node)
+        except IndexError:
+            pass
