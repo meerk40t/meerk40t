@@ -752,12 +752,6 @@ class EZDLoader:
         except IOError as e:
             raise BadFileError(str(e)) from e
 
-        op_branch = elements_service.op_branch
-        op_branch.remove_all_children()
-        for p in ezfile.pens:
-            op_branch.add(type="op engrave", **p.__dict__)
-        context_node = elements_service.elem_branch
-        context_node.remove_all_children()
         ez_processor = EZProcessor(elements_service)
         ez_processor.process(ezfile, pathname)
         return True
@@ -769,7 +763,10 @@ class EZProcessor:
         self.element_list = list()
         self.regmark_list = list()
         self.pathname = None
-        self.regmark = None
+        self.regmark = self.elements.reg_branch
+        self.op_branch = elements.op_branch
+        self.elem_branch = elements.elem_branch
+
         self.width = elements.device.unit_width
         self.height = elements.device.unit_height
         self.matrix = Matrix.map(
@@ -784,19 +781,25 @@ class EZProcessor:
         )
 
     def process(self, ez, pathname):
+
+        self.op_branch.remove_all_children()
+        self.elem_branch.remove_all_children()
+        # for p in ez.pens:
+        #     self.op_branch.add(type="op engrave", **p.__dict__)
         self.pathname = pathname
-        context_node = self.elements.get(type="branch elems")
-        file_node = context_node.add(type="file", filepath=pathname)
-        self.regmark = self.elements.reg_branch
+        file_node = self.elem_branch.add(type="file", filepath=pathname)
         file_node.focus()
         for f in ez.objects:
-            self.parse(f, file_node, self.element_list)
+            self.parse(ez, f, file_node, self.op_branch)
 
-    def parse(self, element, context_node, e_list):
+    def parse(self, ez, element, elem, op):
         node = None
         if isinstance(element, EZText):
-            node = context_node.add(type="elem text", text=element.text)
-            e_list.append(node)
+            node = elem.add(type="elem text", text=element.text, transform=self.matrix)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZCurve):
             points = element.points
 
@@ -810,8 +813,11 @@ class EZProcessor:
                     path.quad(pt[2:4], pt[4:6])
                 elif len(pt) == 8:
                     path.cubic(pt[2:4], pt[4:6], pt[6:8])
-            node = context_node.add(type="elem path", path=path)
-            e_list.append(node)
+            node = elem.add(type="elem path", path=path)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZPolygon):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -827,43 +833,42 @@ class EZProcessor:
             for i in range(element.sides):
                 pts.append((cx + math.cos(theta) * rx, cy + math.sin(theta) * ry))
                 theta += step
-            polyline = Polygon(
-                points=pts, transform=mx, stroke="black"
-            )
-            node = context_node.add(
-                type="elem polyline", shape=polyline
-            )
-            e_list.append(node)
+            polyline = Polygon(points=pts, transform=mx, stroke="black")
+            node = elem.add(type="elem polyline", shape=polyline)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZCircle):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
             mx *= self.matrix
-            round_shape = Circle(
+            shape = Circle(
                 center=element.center, r=element.radius, transform=mx, stroke="black"
             )
-            node = context_node.add(
-                type="elem ellipse",
-                shape=round_shape,
-            )
-            e_list.append(node)
+            node = elem.add(type="elem ellipse", shape=shape)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZEllipse):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
             mx *= self.matrix
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
-            round_shape = Ellipse(
+            shape = Ellipse(
                 center=((x0 + x1) / 2.0, (y0 + y1) / 2.0),
                 rx=(x1 - x0) / 2.0,
                 ry=(y1 - y0) / 2.0,
                 transform=mx,
                 stroke="black",
             )
-            node = context_node.add(
-                type="elem ellipse",
-                shape=round_shape,
-            )
-            e_list.append(node)
+            node = elem.add(type="elem ellipse", shape=shape)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZRect):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -871,36 +876,31 @@ class EZProcessor:
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
             rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
-            node = context_node.add(type="elem rect", shape=rect)
-            e_list.append(node)
+            node = elem.add(type="elem rect", shape=rect)
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
+
         elif isinstance(element, EZTimer):
-            node = context_node.add(type="util wait", wait=element.wait_time / 1000.0)
-            e_list.append(node)
+            node = op.add(type="util wait", wait=element.wait_time / 1000.0)
         elif isinstance(element, EZInput):
-            node = context_node.add(
+            node = op.add(
                 type="util input",
                 input_message=element.message,
                 input_value=element.input_port_bits,
                 input_mask=element.input_port_bits,
             )
-            e_list.append(node)
         elif isinstance(element, EZImage):
-            node = context_node.add(type="elem image")
-            e_list.append(node)
+            node = elem.add(type="elem image")
+            p = ez.pens[element.pen]
+            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add.add_reference(node)
         elif isinstance(element, EZVFile):
             for child in element:
-                self.parse(child, context_node, e_list)
+                # (self, ez, element, elem, op)
+                self.parse(ez, child, elem, op)
         elif isinstance(element, EZGroup):
-            context_node = context_node.add(type="group")
+            elem = elem.add(type="group")
             # recurse to children
             for child in element:
-                self.parse(child, context_node, e_list)
-        else:
-            return
-        if node is None:
-            return
-        try:
-            op_add = self.elements.op_branch.children[element.pen]
-            op_add.add_reference(node)
-        except IndexError:
-            pass
+                self.parse(ez, child, elem, op)
