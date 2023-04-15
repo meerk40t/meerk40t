@@ -90,6 +90,72 @@ def _construct(data):
     return data
 
 
+def parse_object(file, objects):
+    object_type = struct.unpack("<I", file.read(4))[0]  # 0
+    if object_type == 0:
+        return False
+    if object_type == 1:
+        # curve
+        objects.append(EZCurve(file))
+        return True
+    elif object_type == 3:
+        # rect
+        objects.append(EZRect(file))
+        return True
+    elif object_type == 4:
+        # circle
+        objects.append(EZCircle(file))
+        return True
+    elif object_type == 5:
+        # ellipse
+        objects.append(EZEllipse(file))
+        return True
+    elif object_type == 6:
+        # polygon
+        objects.append(EZPolygon(file))
+        return True
+    elif object_type == 0x30:
+        # Combine
+        objects.append(EZGroup(file))
+        return True
+    elif object_type == 0x40:
+        # bitmap
+        objects.append(EZImage(file))
+        return True
+    elif object_type == 0x60:
+        # Spiral
+        objects.append(EZSpiral(file))
+        return True
+    elif object_type == 0x4000:
+        # output
+        objects.append(EZOutput(file))
+        return True
+    elif object_type == 0x3000:
+        # input
+        objects.append(EZInput(file))
+        return True
+    elif object_type == 0x2000:
+        # timer
+        objects.append(EZTimer(file))
+        return True
+    elif object_type == 0x800:
+        # text
+        objects.append(EZText(file))
+        return True
+    elif object_type == 0x10:
+        objects.append(EZGroup(file))
+        return True
+    elif object_type == 0x50:
+        # Vector File
+        objects.append(EZVFile(file))
+        return True
+    elif object_type == 0x20:
+        # hatch
+        objects.append(EZHatch(file))
+        return True
+    return False
+
+
 class BitList(list):
     def frombytes(self, v):
         for b in v:
@@ -353,446 +419,228 @@ class EZCFile:
         self.parse_objects(BytesIO(q))
 
     def parse_objects(self, file):
-        while self.parse_object(file, self.objects):
+        while parse_object(file, self.objects):
             pass
 
-    def parse_object(self, file, objects):
-        object_type = struct.unpack("<I", file.read(4))[0]  # 0
-        if object_type == 0:
-            return False
+
+class EZObject:
+    def __init__(self, file):
         header = _parse_struct(file)
         _interpret(header, 3, str)
         _construct(header)
 
-        if object_type == 1:
-            # curve
-            pts = []
-            (count, unknown) = struct.unpack("<2I", file.read(8))
-            for i in range(count):
-                (unk1, unk2, unk3) = struct.unpack("<3H", file.read(6))
-                (pt_count,) = struct.unpack("<I", file.read(4))
-                pts.append(struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)))
-            objects.append(EZCurve(*header, pts))
-            return True
-        elif object_type == 3:
-            # rect
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZRect(*header, *secondary))
-            return True
-        elif object_type == 4:
-            # circle
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZCircle(*header, *secondary))
-            return True
-        elif object_type == 5:
-            # ellipse
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZEllipse(*header, *secondary))
-            return True
-        elif object_type == 6:
-            # polygon
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZPolygon(*header, *secondary))
-            return True
-        elif object_type == 0x30:
-            # Combine
-            (count,) = struct.unpack("<I", file.read(4))
-            group = EZGroup(*header)
-            objects.append(group)
-            for c in range(count):
-                self.parse_object(file, group)
-            return True
-        elif object_type == 0x40:
-            # bitmap
-            secondary = _parse_struct(file)
-            _interpret(secondary, 0, str)
-            _construct(secondary)
-            image_bytes = bytearray(file.read(2))  # BM
-            image_length = file.read(4)  # int32le
-            (size,) = struct.unpack("<I", image_length)
-            image_bytes += image_length
-            image_bytes += file.read(size - 6)
-
-            from PIL import Image
-
-            image = Image.open(BytesIO(image_bytes))
-
-            objects.append(EZImage(*header, *secondary, image))
-            return True
-        elif object_type == 0x60:
-            # Spiral
-            object = EZSpiral(*header)
-            (count,) = struct.unpack("<I", file.read(4))
-            items = list()
-            for c in range(count):
-                self.parse_object(file, items)
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            object.secondary(*secondary)
-            object.applied = items
-
-            third = _parse_struct(file)
-            _construct(third)
-
-            group = EZGroup(*third)
-            (count,) = struct.unpack("<I", file.read(4))
-            for c in range(count):
-                self.parse_object(file, group)
-            object.group = group
-
-            return True
-        elif object_type == 0x4000:
-            # output
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZOutput(*header, *secondary))
-            return True
-        elif object_type == 0x3000:
-            # input
-            secondary = _parse_struct(file)
-            _interpret(secondary, 1, str)
-            _construct(secondary)
-            objects.append(EZInput(*header, *secondary))
-            return True
-        elif object_type == 0x2000:
-            # timer
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZTimer(*header, *secondary))
-            return True
-        elif object_type == 0x800:
-            # text
-            secondary = _parse_struct(file)
-            _interpret(secondary, 10, str)
-            _interpret(secondary, 18, str)
-            _interpret(secondary, 44, str)
-            _construct(secondary)
-            objects.append(EZText(*header, *secondary))
-            return True
-        elif object_type == 0x10:
-            (count,) = struct.unpack("<I", file.read(4))
-            group = EZGroup(*header)
-            objects.append(group)
-            for c in range(count):
-                self.parse_object(file, group)
-            return True
-        elif object_type == 0x50:
-            # Vector File
-            (count,) = struct.unpack("<I", file.read(4))
-            group = EZVFile(*header)
-            objects.append(group)
-            for c in range(count):
-                self.parse_object(file, group)
-            data1 = _parse_struct(file)
-            _interpret(data1, 0, str)
-            _construct(data1)
-            group.secondary(*data1)
-            return True
-        elif object_type == 0x20:
-            # hatch-rect / hatch-curve
-            (count,) = struct.unpack("<I", file.read(4))
-            objects.append(EZHatch(*header))
-            for c in range(count):
-                self.parse_object(file, objects)
-            secondary = _parse_struct(file)
-            _construct(secondary)
-
-            return True
-        elif object_type == 0x400:
-            # hatch-curve
-            secondary = _parse_struct(file)
-            _construct(secondary)
-            objects.append(EZHatch(*header, *secondary))
-            return True
-        return False
-
-
-class EZObject:
-    def __init__(
-        self,
-        pen,
-        type,
-        state,
-        v1,
-        v2,
-        v3,
-        v4,
-        input_bits,
-        array_state,
-        array_count_x,
-        array_count_y,
-        array_step_x,
-        array_step_y,
-        position,
-        z_pos,
-        *args,
-    ):
-        self.pen = pen
-        self.type = type
-        self.state = state
+        self.pen = header[0]
+        self.type = header[1]
+        self.state = header[2]
 
         # Selected 0x02, Hidden 0x01, Locked 0x10
         self.selected = bool(self.state & 0x02)
         self.hidden = bool(self.state & 0x01)
         self.locked = bool(self.state & 0x10)
 
-        self.unknown1 = v1
-        self.unknown2 = v2
-        self.unknown3 = v3
-        self.unknown4 = v4
-        self.input_port_bits = input_bits
-        self.array_state = array_state
-        self.array_bidirectional = bool(array_state & 0x2)
-        self.array_vertical = bool(array_state & 0x1)
-        self.array_count_x = array_count_x
-        self.array_count_y = array_count_y
-        self.array_step_x = array_step_x
-        self.array_step_y = array_step_y
-        self.position = position
-        self.z_pos = z_pos
+        self.unknown1 = header[3]
+        self.unknown2 = header[4]
+        self.unknown3 = header[5]
+        self.unknown4 = header[6]
+        self.input_port_bits = header[7]
+        self.array_state = header[8]
+        self.array_bidirectional = bool(self.array_state & 0x2)
+        self.array_vertical = bool(self.array_state & 0x1)
+        self.array_count_x = header[9]
+        self.array_count_y = header[10]
+        self.array_step_x = header[11]
+        self.array_step_y = header[12]
+        self.position = header[13]
+        self.z_pos = header[14]
+        if isinstance(self, list):
+            (count,) = struct.unpack("<I", file.read(4))
+            for c in range(count):
+                parse_object(file, self)
 
 
-class EZGroup(list):
-    def __init__(
-        self,
-        pen,
-        type,
-        state,
-        label,
-        v2,
-        v3,
-        v4,
-        input_bits,
-        array_state,
-        array_count_x,
-        array_count_y,
-        array_step_x,
-        array_step_y,
-        position,
-        z_pos=None,
-        *args,
-    ):
-        super().__init__()
-        self.pen = pen
-        self.type = type
-        self.state = state
-
-        # Selected 0x02, Hidden 0x01, Locked 0x10
-        self.selected = bool(self.state & 0x02)
-        self.hidden = bool(self.state & 0x01)
-        self.locked = bool(self.state & 0x10)
-
-        self.label = label
-        self.unknown2 = v2
-        self.unknown3 = v3
-        self.unknown4 = v4
-        self.input_port_bits = input_bits
-        self.array_state = array_state
-        self.array_bidirectional = bool(array_state & 0x2)
-        self.array_vertical = bool(array_state & 0x1)
-        self.array_count_x = array_count_x
-        self.array_count_y = array_count_y
-        self.array_step_x = array_step_x
-        self.array_step_y = array_step_y
-        self.position = position
-        self.z_pos = z_pos
+class EZGroup(list, EZObject):
+    def __init__(self, file):
+        list.__init__(self)
+        EZObject.__init__(self, file)
+        # args = _parse_struct(file)
+        # _construct(args)
 
 
-class EZVFile(list):
-    def __init__(
-        self,
-        pen,
-        type,
-        state,
-        v1,
-        v2,
-        v3,
-        v4,
-        input_bits,
-        array_state,
-        array_count_x,
-        array_count_y,
-        array_step_x,
-        array_step_y,
-        position,
-        z_pos=None,
-        *args,
-    ):
-        super().__init__()
-        self.pen = pen
-        self.type = type
-        self.state = state
+class EZVFile(list, EZObject):
+    def __init__(self, file):
+        list.__init__(self)
+        EZObject.__init__(self, file)
+        data1 = _parse_struct(file)
+        _interpret(data1, 0, str)
+        _construct(data1)
 
-        # Selected 0x02, Hidden 0x01, Locked 0x10
-        self.selected = bool(self.state & 0x02)
-        self.hidden = bool(self.state & 0x01)
-        self.locked = bool(self.state & 0x10)
-
-        self.unknown1 = v1
-        self.unknown2 = v2
-        self.unknown3 = v3
-        self.unknown4 = v4
-        self.input_port_bits = input_bits
-        self.array_state = array_state
-        self.array_bidirectional = bool(array_state & 0x2)
-        self.array_vertical = bool(array_state & 0x1)
-        self.array_count_x = array_count_x
-        self.array_count_y = array_count_y
-        self.array_step_x = array_step_x
-        self.array_step_y = array_step_y
-        self.position = position
-        self.z_pos = z_pos
-        self.path = None
-        self.args = None
-
-    def secondary(
-        self,
-        path,
-        unknown,
-        unknown2,
-        unknown_f,
-        unknown_f2,
-        unknown3,
-        unknown_f3,
-        unknown_f4,
-    ):
-        self.path = path
-        self.args = (
-            unknown,
-            unknown2,
-            unknown_f,
-            unknown_f2,
-            unknown3,
-            unknown_f3,
-            unknown_f4,
-        )
+        self.path = data1[0]
+        self.args = data1
 
 
 class EZCurve(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.points = args[15]
+    def __init__(self, file):
+        super().__init__(file)
+        pts = []
+        (count, unknown) = struct.unpack("<2I", file.read(8))
+        for i in range(count):
+            (unk1, unk2, unk3) = struct.unpack("<3H", file.read(6))
+            (pt_count,) = struct.unpack("<I", file.read(4))
+            pts.append(struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)))
+        self.points = pts
 
 
 class EZRect(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.min_pos = args[15]
-        self.max_pos = args[16]
-        self.corner_upper_left = args[15]
-        self.corner_bottom_right = args[16]
-        self.round_c1 = args[17]
-        self.round_c2 = args[18]
-        self.round_c3 = args[19]
-        self.round_c4 = args[20]
-        self.unknown5 = args[21]
-        self.matrix = args[22]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.min_pos = args[0]
+        self.max_pos = args[1]
+        self.corner_upper_left = args[0]
+        self.corner_bottom_right = args[1]
+        self.round_c1 = args[2]
+        self.round_c2 = args[3]
+        self.round_c3 = args[4]
+        self.round_c4 = args[5]
+        self.unknown5 = args[6]
+        self.matrix = args[7]
 
 
 class EZCircle(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.center = args[15]
-        self.radius = args[16]
-        self.start_angle = args[17]
-        self.cw = args[18]
-        self.circle_prop0 = args[19]
-        self.matrix = args[20]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.center = args[0]
+        self.radius = args[1]
+        self.start_angle = args[2]
+        self.cw = args[3]
+        self.circle_prop0 = args[4]
+        self.matrix = args[5]
 
 
 class EZEllipse(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.corner_upper_left = args[16]
-        self.corner_bottom_right = args[17]
-        self.start_angle = args[18]
-        self.end_angle = args[19]
-        self.matrix = args[21]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.corner_upper_left = args[1]
+        self.corner_bottom_right = args[2]
+        self.start_angle = args[3]
+        self.end_angle = args[4]
+        self.matrix = args[6]
 
 
-class EZSpiral(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        print(args)
-        print(self.__dict__)
-
-    def secondary(self, *args):
+class EZSpiral(list, EZObject):
+    def __init__(self, file):
+        list.__init__(self)
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
         print(args)
         print(self.__dict__)
 
 
 class EZPolygon(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.corner_upper_left = args[16]
-        self.corner_bottom_right = args[17]
-        self.sides = args[22]
-        self.matrix = args[24]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.corner_upper_left = args[1]
+        self.corner_bottom_right = args[2]
+        self.sides = args[7]
+        self.matrix = args[9]
 
 
 class EZTimer(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.wait_time = args[16]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.wait_time = args[1]
 
 
 class EZInput(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.message_enabled = bool(args[15])
-        self.message = args[16]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _interpret(args, 1, str)
+        _construct(args)
+        self.message_enabled = bool(args[0])
+        self.message = args[1]
 
 
 class EZOutput(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.output_bit = args[15]
-        self.low_to_high = bool(args[16])  # 1
-        self.timed_high = bool(args[17])  # 0
-        self.wait_time = args[19]  # args[18] is int value
-        self.all_out_mode = bool(args[20])
-        self.all_out_bits = args[21]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.output_bit = args[0]
+        self.low_to_high = bool(args[1])  # 1
+        self.timed_high = bool(args[2])  # 0
+        self.wait_time = args[4]  # args[18] is int value
+        self.all_out_mode = bool(args[5])
+        self.all_out_bits = args[6]
 
 
 class EZText(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.font_angle = args[15]  # Font angle in Text.
-        self.text = args[25]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _interpret(args, 10, str)
+        _interpret(args, 18, str)
+        _interpret(args, 44, str)
+        _construct(args)
+        self.font_angle = args[0]  # Font angle in Text.
+        self.text = args[10]
 
 
 class EZImage(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.image_path = args[15]
-        self.width = args[20]
-        self.height = args[19]
-        self.fixed_dpi_x = args[24]
-        self.fixed_dpi_y = args[333]
-        self.image = args[-1]
-        self.powermap = args[74:330]
-        self.scan_line_increment = args[29]
-        self.scan_line_increment_value = args[30]
-        self.disable_mark_low_gray_point = args[31]
-        self.disable_mark_low_gray_point_value = args[32]
-        self.acc_distance_mm = args[331]
-        self.dec_distance_mm = args[332]
-        self.all_offset_mm = args[334]
-        self.bidirectional_offset = args[330]
-        self.status_bits = args[25]
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+
+        image_bytes = bytearray(file.read(2))  # BM
+        image_length = file.read(4)  # int32le
+        (size,) = struct.unpack("<I", image_length)
+        image_bytes += image_length
+        image_bytes += file.read(size - 6)
+
+        from PIL import Image
+
+        image = Image.open(BytesIO(image_bytes))
+
+        self.image_path = args[0]
+        self.width = args[5]
+        self.height = args[4]
+        self.fixed_dpi_x = args[9]
+        self.fixed_dpi_y = args[333-15]
+        self.image = image
+        self.powermap = args[74-15:330-15]
+        self.scan_line_increment = args[29-15]
+        self.scan_line_increment_value = args[30-15]
+        self.disable_mark_low_gray_point = args[31-15]
+        self.disable_mark_low_gray_point_value = args[32-15]
+        self.acc_distance_mm = args[331-15]
+        self.dec_distance_mm = args[332-15]
+        self.all_offset_mm = args[334-15]
+        self.bidirectional_offset = args[330-15]
+        self.status_bits = args[25-15]
         self.mirror_x = bool(self.status_bits & 0x20)
         self.mirror_y = bool(self.status_bits & 0x40)
 
 
-class EZHatch(EZObject):
-    def __init__(self, *args):
-        super().__init__(*args)
+class EZHatch(list, EZObject):
+    def __init__(self, file):
+        list.__init__(self)
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
         print(args)
-        print(self.__dict__)
+        self.group = EZGroup(file)
+        print(self.group)
 
 
 class EZDLoader:
