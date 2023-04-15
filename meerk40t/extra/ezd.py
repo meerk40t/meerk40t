@@ -30,6 +30,66 @@ def plugin(kernel, lifecycle):
         pass
 
 
+def _parse_struct(file):
+    """
+    Parses a generic structure for ezd files. These are a count of objects. Then for each data entry int32le:length
+    followed by data of that length.
+
+    @param file:
+    @return:
+    """
+    p = list()
+    count = struct.unpack("<I", file.read(4))[0]
+    for i in range(count):
+        b = file.read(4)
+        if len(b) != 4:
+            return p
+        (length,) = struct.unpack("<I", b)
+        b = file.read(length)
+        if len(b) != length:
+            return p
+        p.append(b)
+    return p
+
+
+def _interpret(data, index, type):
+    if type == str:
+        data[index] = data[index].decode("utf_16").strip("\x00")
+    elif type == "point":
+        data[index] = struct.unpack("2d", data[index])
+    elif type == "short":
+        (data[index],) = struct.unpack("<H", data[index])
+    elif type == int:
+        (data[index],) = struct.unpack("<I", data[index])
+    elif type == float:
+        (data[index],) = struct.unpack("d", data[index])
+    elif type == "matrix":
+        data[index] = struct.unpack("9d", data[index])
+
+
+def _construct(data):
+    for i in range(len(data)):
+        b = data[i]
+        length = len(b)
+        if not isinstance(b, (bytes, bytearray)):
+            continue
+        if length == 2:
+            _interpret(data, i, "short")
+        elif length == 4:
+            _interpret(data, i, int)
+        elif length == 8:
+            _interpret(data, i, float)
+        elif length == 16:
+            _interpret(data, i, "point")
+        elif length == 60:
+            _interpret(data, i, str)
+        elif length == 72:
+            _interpret(data, i, "matrix")
+        elif length == 0:
+            data[i] = None
+    return data
+
+
 class BitList(list):
     def frombytes(self, v):
         for b in v:
@@ -147,63 +207,6 @@ class EZCFile:
         self.parse_unknown_nontable(file)
         self.parse_tables(file)
 
-    def _parse_struct(self, file):
-        """
-        Parses a generic structure for ezd files. These are a count of objects. Then for each data entry int32le:length
-        followed by data of that length.
-
-        @param file:
-        @return:
-        """
-        p = list()
-        count = struct.unpack("<I", file.read(4))[0]
-        for i in range(count):
-            b = file.read(4)
-            if len(b) != 4:
-                return p
-            (length,) = struct.unpack("<I", b)
-            b = file.read(length)
-            if len(b) != length:
-                return p
-            p.append(b)
-        return p
-
-    def _interpret(self, data, index, type):
-        if type == str:
-            data[index] = data[index].decode("utf_16").strip("\x00")
-        elif type == "point":
-            data[index] = struct.unpack("2d", data[index])
-        elif type == "short":
-            (data[index],) = struct.unpack("<H", data[index])
-        elif type == int:
-            (data[index],) = struct.unpack("<I", data[index])
-        elif type == float:
-            (data[index],) = struct.unpack("d", data[index])
-        elif type == "matrix":
-            data[index] = struct.unpack("9d", data[index])
-
-    def _construct(self, data):
-        for i in range(len(data)):
-            b = data[i]
-            length = len(b)
-            if not isinstance(b, (bytes, bytearray)):
-                continue
-            if length == 2:
-                self._interpret(data, i, "short")
-            elif length == 4:
-                self._interpret(data, i, int)
-            elif length == 8:
-                self._interpret(data, i, float)
-            elif length == 16:
-                self._interpret(data, i, "point")
-            elif length == 60:
-                self._interpret(data, i, str)
-            elif length == 72:
-                self._interpret(data, i, "matrix")
-            elif length == 0:
-                data[i] = None
-        return data
-
     def parse_header(self, file):
         magic_number = file.read(16)
         header = magic_number.decode("utf_16")
@@ -291,9 +294,9 @@ class EZCFile:
         seek = struct.unpack("<I", file.read(4))[0]
         file.seek(seek, 0)
         for c in range(parameter_count):
-            p = self._parse_struct(file)
-            self._interpret(p, 1, str)
-            self._construct(p)
+            p = _parse_struct(file)
+            _interpret(p, 1, str)
+            _construct(p)
             self.pens.append(Pen(*p))
 
     def parse_prevectors(self, file):
@@ -357,9 +360,9 @@ class EZCFile:
         object_type = struct.unpack("<I", file.read(4))[0]  # 0
         if object_type == 0:
             return False
-        header = self._parse_struct(file)
-        self._interpret(header, 3, str)
-        self._construct(header)
+        header = _parse_struct(file)
+        _interpret(header, 3, str)
+        _construct(header)
 
         if object_type == 1:
             # curve
@@ -373,26 +376,26 @@ class EZCFile:
             return True
         elif object_type == 3:
             # rect
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZRect(*header, *secondary))
             return True
         elif object_type == 4:
             # circle
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZCircle(*header, *secondary))
             return True
         elif object_type == 5:
             # ellipse
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZEllipse(*header, *secondary))
             return True
         elif object_type == 6:
             # polygon
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZPolygon(*header, *secondary))
             return True
         elif object_type == 0x30:
@@ -405,9 +408,9 @@ class EZCFile:
             return True
         elif object_type == 0x40:
             # bitmap
-            secondary = self._parse_struct(file)
-            self._interpret(secondary, 0, str)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _interpret(secondary, 0, str)
+            _construct(secondary)
             image_bytes = bytearray(file.read(2))  # BM
             image_length = file.read(4)  # int32le
             (size,) = struct.unpack("<I", image_length)
@@ -427,13 +430,13 @@ class EZCFile:
             items = list()
             for c in range(count):
                 self.parse_object(file, items)
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             object.secondary(*secondary)
             object.applied = items
 
-            third = self._parse_struct(file)
-            self._construct(third)
+            third = _parse_struct(file)
+            _construct(third)
 
             group = EZGroup(*third)
             (count,) = struct.unpack("<I", file.read(4))
@@ -444,30 +447,30 @@ class EZCFile:
             return True
         elif object_type == 0x4000:
             # output
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZOutput(*header, *secondary))
             return True
         elif object_type == 0x3000:
             # input
-            secondary = self._parse_struct(file)
-            self._interpret(secondary, 1, str)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _interpret(secondary, 1, str)
+            _construct(secondary)
             objects.append(EZInput(*header, *secondary))
             return True
         elif object_type == 0x2000:
             # timer
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZTimer(*header, *secondary))
             return True
         elif object_type == 0x800:
             # text
-            secondary = self._parse_struct(file)
-            self._interpret(secondary, 10, str)
-            self._interpret(secondary, 18, str)
-            self._interpret(secondary, 44, str)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _interpret(secondary, 10, str)
+            _interpret(secondary, 18, str)
+            _interpret(secondary, 44, str)
+            _construct(secondary)
             objects.append(EZText(*header, *secondary))
             return True
         elif object_type == 0x10:
@@ -484,21 +487,25 @@ class EZCFile:
             objects.append(group)
             for c in range(count):
                 self.parse_object(file, group)
-            data1 = self._parse_struct(file)
-            self._interpret(data1, 0, str)
-            self._construct(data1)
+            data1 = _parse_struct(file)
+            _interpret(data1, 0, str)
+            _construct(data1)
             group.secondary(*data1)
             return True
         elif object_type == 0x20:
             # hatch-rect / hatch-curve
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
-            objects.append(EZHatch(*header, *secondary))
+            (count,) = struct.unpack("<I", file.read(4))
+            objects.append(EZHatch(*header))
+            for c in range(count):
+                self.parse_object(file, objects)
+            secondary = _parse_struct(file)
+            _construct(secondary)
+
             return True
         elif object_type == 0x400:
             # hatch-curve
-            secondary = self._parse_struct(file)
-            self._construct(secondary)
+            secondary = _parse_struct(file)
+            _construct(secondary)
             objects.append(EZHatch(*header, *secondary))
             return True
         return False
@@ -745,7 +752,7 @@ class EZOutput(EZObject):
         super().__init__(*args)
         self.output_bit = args[15]
         self.low_to_high = bool(args[16])  # 1
-        self.timed_high = bool(args[17]) # 0
+        self.timed_high = bool(args[17])  # 0
         self.wait_time = args[19]  # args[18] is int value
         self.all_out_mode = bool(args[20])
         self.all_out_bits = args[21]
