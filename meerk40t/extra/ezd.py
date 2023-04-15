@@ -394,6 +394,7 @@ class EZCFile:
         elif object_type == 0x40:
             # bitmap
             secondary = self._parse_struct(file)
+            self._interpret(secondary, 0, str)
             self._construct(secondary)
             objects.append(EZImage(*header, *secondary))
             return True
