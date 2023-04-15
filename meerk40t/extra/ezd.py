@@ -442,6 +442,12 @@ class EZCFile:
             object.group = group
 
             return True
+        elif object_type == 0x4000:
+            # output
+            secondary = self._parse_struct(file)
+            self._construct(secondary)
+            objects.append(EZOutput(*header, *secondary))
+            return True
         elif object_type == 0x3000:
             # input
             secondary = self._parse_struct(file)
@@ -482,7 +488,6 @@ class EZCFile:
             self._interpret(data1, 0, str)
             self._construct(data1)
             group.secondary(*data1)
-            print(data1)
             return True
         elif object_type == 0x20:
             # hatch-rect / hatch-curve
@@ -588,8 +593,6 @@ class EZGroup(list):
         self.array_step_y = array_step_y
         self.position = position
         self.z_pos = z_pos
-        print(args)
-        print(self.__dict__)
 
 
 class EZVFile(list):
@@ -638,8 +641,6 @@ class EZVFile(list):
         self.z_pos = z_pos
         self.path = None
         self.args = None
-        print(args)
-        print(self.__dict__)
 
     def secondary(
         self,
@@ -730,8 +731,6 @@ class EZTimer(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
         self.wait_time = args[16]
-        print(args)
-        print(self.__dict__)
 
 
 class EZInput(EZObject):
@@ -739,6 +738,17 @@ class EZInput(EZObject):
         super().__init__(*args)
         self.message_enabled = bool(args[15])
         self.message = args[16]
+
+
+class EZOutput(EZObject):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.output_bit = args[15]
+        self.low_to_high = bool(args[16])  # 1
+        self.timed_high = bool(args[17]) # 0
+        self.wait_time = args[19]  # args[18] is int value
+        self.all_out_mode = bool(args[20])
+        self.all_out_bits = args[21]
 
 
 class EZText(EZObject):
