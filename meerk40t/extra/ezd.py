@@ -8,7 +8,16 @@ from io import BytesIO
 from bitarray import bitarray
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.svgelements import Color, Rect, Matrix, Path, Circle, Ellipse, Polygon
+from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_INCH
+from meerk40t.svgelements import (
+    Color,
+    Rect,
+    Matrix,
+    Path,
+    Circle,
+    Ellipse,
+    Polygon,
+)
 
 
 def plugin(kernel, lifecycle):
@@ -403,6 +412,7 @@ class EZCFile:
             image_bytes += file.read(size - 6)
 
             from PIL import Image
+
             image = Image.open(BytesIO(image_bytes))
 
             objects.append(EZImage(*header, *secondary, image))
@@ -738,8 +748,24 @@ class EZText(EZObject):
 class EZImage(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.image_path = args[15]
+        self.width = args[20]
+        self.height = args[19]
+        self.fixed_dpi_x = args[24]
+        self.fixed_dpi_y = args[333]
+        self.image = args[-1]
+        self.powermap = args[74:330]
+        self.scan_line_increment = args[29]
+        self.scan_line_increment_value = args[30]
+        self.disable_mark_low_gray_point = args[31]
+        self.disable_mark_low_gray_point_value = args[32]
+        self.acc_distance_mm = args[331]
+        self.dec_distance_mm = args[332]
+        self.all_offset_mm = args[334]
+        self.bidirectional_offset = args[330]
+        self.status_bits = args[25]
+        self.mirror_x = bool(self.status_bits & 0x20)
+        self.mirror_y = bool(self.status_bits & 0x40)
 
 
 class EZHatch(EZObject):
@@ -803,11 +829,10 @@ class EZProcessor:
             self.parse(ez, f, file_node, self.op_branch)
 
     def parse(self, ez, element, elem, op):
-        node = None
         if isinstance(element, EZText):
             node = elem.add(type="elem text", text=element.text, transform=self.matrix)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZCurve):
@@ -825,7 +850,7 @@ class EZProcessor:
                     path.cubic(pt[2:4], pt[4:6], pt[6:8])
             node = elem.add(type="elem path", path=path)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZPolygon):
@@ -846,7 +871,7 @@ class EZProcessor:
             polyline = Polygon(points=pts, transform=mx, stroke="black")
             node = elem.add(type="elem polyline", shape=polyline)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZCircle):
@@ -858,7 +883,7 @@ class EZProcessor:
             )
             node = elem.add(type="elem ellipse", shape=shape)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZEllipse):
@@ -876,7 +901,7 @@ class EZProcessor:
             )
             node = elem.add(type="elem ellipse", shape=shape)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZRect):
@@ -888,7 +913,7 @@ class EZProcessor:
             rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
             node = elem.add(type="elem rect", shape=rect)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
 
         elif isinstance(element, EZTimer):
@@ -901,9 +926,33 @@ class EZProcessor:
                 input_mask=element.input_port_bits,
             )
         elif isinstance(element, EZImage):
-            node = elem.add(type="elem image")
+            image = element.image
+            left, top = self.matrix.point_in_matrix_space(
+                (
+                    element.position[0] - (element.width / 2.0),
+                    element.position[1] + element.height / 2.0,
+                )
+            )
+            w, h = image.size
+            unit_width = element.width * UNITS_PER_MM
+            unit_height = element.height * UNITS_PER_MM
+            matrix = Matrix.scale(
+                (unit_width / w),
+                (unit_height / h),
+            )
+            _dpi = int(
+                round(
+                    (
+                        float((w * UNITS_PER_INCH) / unit_width)
+                        + float((h * UNITS_PER_INCH) / unit_height)
+                    )
+                    / 2.0,
+                )
+            )
+            matrix.post_translate(left, top)
+            node = elem.add(type="elem image", image=image, matrix=matrix, dpi=_dpi)
             p = ez.pens[element.pen]
-            op_add = self.op_branch.add(type="op engrave", **p.__dict__)
+            op_add = op.add(type="op image", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZVFile):
             for child in element:
