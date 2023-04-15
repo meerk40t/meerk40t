@@ -1,13 +1,14 @@
 """
 Parser for .ezd files.
 """
+import math
 import struct
 from io import BytesIO
 
 from bitarray import bitarray
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.svgelements import Color, Rect, Matrix, Path
+from meerk40t.svgelements import Color, Rect, Matrix, Path, Circle, Ellipse, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -472,9 +473,6 @@ class EZCFile:
             self._construct(secondary)
             objects.append(EZHatch(*header, *secondary))
             return True
-        # print(object_type)
-        # d = file.read()
-        # print(d)
         return False
 
 
@@ -667,15 +665,22 @@ class EZRect(EZObject):
 class EZCircle(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.center = args[15]
+        self.radius = args[16]
+        self.start_angle = args[17]
+        self.cw = args[18]
+        self.circle_prop0 = args[19]
+        self.matrix = args[20]
 
 
 class EZEllipse(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.corner_upper_left = args[16]
+        self.corner_bottom_right = args[17]
+        self.start_angle = args[18]
+        self.end_angle = args[19]
+        self.matrix = args[21]
 
 
 class EZSpiral(EZObject):
@@ -692,8 +697,10 @@ class EZSpiral(EZObject):
 class EZPolygon(EZObject):
     def __init__(self, *args):
         super().__init__(*args)
-        print(args)
-        print(self.__dict__)
+        self.corner_upper_left = args[16]
+        self.corner_bottom_right = args[17]
+        self.sides = args[22]
+        self.matrix = args[24]
 
 
 class EZTimer(EZObject):
@@ -806,13 +813,55 @@ class EZProcessor:
             node = context_node.add(type="elem path", path=path)
             e_list.append(node)
         elif isinstance(element, EZPolygon):
+            m = element.matrix
+            mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
+            mx *= self.matrix
+            x0, y0 = element.corner_upper_left
+            x1, y1 = element.corner_bottom_right
+            step = math.tau / element.sides
+            cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+            rx = (x1 - x0) / 2.0
+            ry = (y1 - y0) / 2.0
+            pts = []
+            theta = step / 2.0
+            for i in range(element.sides):
+                pts.append((cx + math.cos(theta) * rx, cy + math.sin(theta) * ry))
+                theta += step
+            polyline = Polygon(
+                points=pts, transform=mx, stroke="black"
+            )
             node = context_node.add(
-                type="elem polyline",
+                type="elem polyline", shape=polyline
             )
             e_list.append(node)
-        elif isinstance(element, (EZCircle, EZEllipse)):
+        elif isinstance(element, EZCircle):
+            m = element.matrix
+            mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
+            mx *= self.matrix
+            round_shape = Circle(
+                center=element.center, r=element.radius, transform=mx, stroke="black"
+            )
             node = context_node.add(
                 type="elem ellipse",
+                shape=round_shape,
+            )
+            e_list.append(node)
+        elif isinstance(element, EZEllipse):
+            m = element.matrix
+            mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
+            mx *= self.matrix
+            x0, y0 = element.corner_upper_left
+            x1, y1 = element.corner_bottom_right
+            round_shape = Ellipse(
+                center=((x0 + x1) / 2.0, (y0 + y1) / 2.0),
+                rx=(x1 - x0) / 2.0,
+                ry=(y1 - y0) / 2.0,
+                transform=mx,
+                stroke="black",
+            )
+            node = context_node.add(
+                type="elem ellipse",
+                shape=round_shape,
             )
             e_list.append(node)
         elif isinstance(element, EZRect):
