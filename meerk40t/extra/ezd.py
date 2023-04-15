@@ -332,10 +332,10 @@ class EZCFile:
         while True:
             try:
                 q = bytearray(a.decode(huffman_dict))
-                self.parse_objects(BytesIO(q))
-                return
+                break
             except ValueError:
                 a = a[:-1]
+        self.parse_objects(BytesIO(q))
 
     def parse_objects(self, file):
         while self.parse_object(file, self.objects):
