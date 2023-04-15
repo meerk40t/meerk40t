@@ -90,72 +90,6 @@ def _construct(data):
     return data
 
 
-def parse_object(file, objects):
-    object_type = struct.unpack("<I", file.read(4))[0]  # 0
-    if object_type == 0:
-        return False
-    if object_type == 1:
-        # curve
-        objects.append(EZCurve(file))
-        return True
-    elif object_type == 3:
-        # rect
-        objects.append(EZRect(file))
-        return True
-    elif object_type == 4:
-        # circle
-        objects.append(EZCircle(file))
-        return True
-    elif object_type == 5:
-        # ellipse
-        objects.append(EZEllipse(file))
-        return True
-    elif object_type == 6:
-        # polygon
-        objects.append(EZPolygon(file))
-        return True
-    elif object_type == 0x30:
-        # Combine
-        objects.append(EZGroup(file))
-        return True
-    elif object_type == 0x40:
-        # bitmap
-        objects.append(EZImage(file))
-        return True
-    elif object_type == 0x60:
-        # Spiral
-        objects.append(EZSpiral(file))
-        return True
-    elif object_type == 0x4000:
-        # output
-        objects.append(EZOutput(file))
-        return True
-    elif object_type == 0x3000:
-        # input
-        objects.append(EZInput(file))
-        return True
-    elif object_type == 0x2000:
-        # timer
-        objects.append(EZTimer(file))
-        return True
-    elif object_type == 0x800:
-        # text
-        objects.append(EZText(file))
-        return True
-    elif object_type == 0x10:
-        objects.append(EZGroup(file))
-        return True
-    elif object_type == 0x50:
-        # Vector File
-        objects.append(EZVFile(file))
-        return True
-    elif object_type == 0x20:
-        # hatch
-        objects.append(EZHatch(file))
-        return True
-    return False
-
-
 class BitList(list):
     def frombytes(self, v):
         for b in v:
@@ -616,18 +550,18 @@ class EZImage(EZObject):
         self.width = args[5]
         self.height = args[4]
         self.fixed_dpi_x = args[9]
-        self.fixed_dpi_y = args[333-15]
+        self.fixed_dpi_y = args[333 - 15]
         self.image = image
-        self.powermap = args[74-15:330-15]
-        self.scan_line_increment = args[29-15]
-        self.scan_line_increment_value = args[30-15]
-        self.disable_mark_low_gray_point = args[31-15]
-        self.disable_mark_low_gray_point_value = args[32-15]
-        self.acc_distance_mm = args[331-15]
-        self.dec_distance_mm = args[332-15]
-        self.all_offset_mm = args[334-15]
-        self.bidirectional_offset = args[330-15]
-        self.status_bits = args[25-15]
+        self.powermap = args[74 - 15 : 330 - 15]
+        self.scan_line_increment = args[29 - 15]
+        self.scan_line_increment_value = args[30 - 15]
+        self.disable_mark_low_gray_point = args[31 - 15]
+        self.disable_mark_low_gray_point_value = args[32 - 15]
+        self.acc_distance_mm = args[331 - 15]
+        self.dec_distance_mm = args[332 - 15]
+        self.all_offset_mm = args[334 - 15]
+        self.bidirectional_offset = args[330 - 15]
+        self.status_bits = args[25 - 15]
         self.mirror_x = bool(self.status_bits & 0x20)
         self.mirror_y = bool(self.status_bits & 0x40)
 
@@ -641,6 +575,35 @@ class EZHatch(list, EZObject):
         print(args)
         self.group = EZGroup(file)
         print(self.group)
+
+
+object_map = {
+    1: EZCurve,
+    3: EZRect,
+    4: EZCircle,
+    5: EZEllipse,
+    6: EZPolygon,
+    0x30: EZGroup,  # Combine
+    0x40: EZImage,
+    0x60: EZSpiral,
+    0x4000: EZOutput,
+    0x3000: EZInput,
+    0x2000: EZTimer,
+    0x800: EZText,
+    0x10: EZGroup,
+    0x50: EZVFile,
+    0x20: EZHatch,
+}
+
+
+def parse_object(file, objects):
+    object_type = struct.unpack("<I", file.read(4))[0]  # 0
+    if object_type == 0:
+        return False
+    ez_class = object_map.get(object_type)
+    assert ez_class
+    objects.append(ez_class(file))
+    return True
 
 
 class EZDLoader:
