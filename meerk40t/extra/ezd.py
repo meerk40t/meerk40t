@@ -400,7 +400,7 @@ class EZGroup(list, EZObject):
         # _construct(args)
 
 
-class EZVFile(list, EZObject):
+class EZVectorFile(list, EZObject):
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -591,7 +591,7 @@ object_map = {
     0x2000: EZTimer,
     0x800: EZText,
     0x10: EZGroup,
-    0x50: EZVFile,
+    0x50: EZVectorFile,
     0x20: EZHatch,
 }
 
@@ -802,7 +802,7 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op image", **p.__dict__)
             op_add.add_reference(node)
-        elif isinstance(element, EZVFile):
+        elif isinstance(element, EZVectorFile):
             for child in element:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op)
