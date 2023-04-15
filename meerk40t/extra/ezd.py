@@ -396,7 +396,16 @@ class EZCFile:
             secondary = self._parse_struct(file)
             self._interpret(secondary, 0, str)
             self._construct(secondary)
-            objects.append(EZImage(*header, *secondary))
+            image_header = file.read(2)  # BM
+            image_length = file.read(4)  # int32le
+            (size,) = struct.unpack("<I", image_length)
+            remainder = file.read(size - 6)
+            image_bytes = image_header + image_length + remainder
+
+            from PIL import Image
+            image = Image.open(BytesIO(image_bytes))
+
+            objects.append(EZImage(*header, *secondary, image))
             return True
         elif object_type == 0x60:
             # Spiral
