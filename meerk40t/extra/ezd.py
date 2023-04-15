@@ -396,11 +396,11 @@ class EZCFile:
             secondary = self._parse_struct(file)
             self._interpret(secondary, 0, str)
             self._construct(secondary)
-            image_header = file.read(2)  # BM
+            image_bytes = bytearray(file.read(2))  # BM
             image_length = file.read(4)  # int32le
             (size,) = struct.unpack("<I", image_length)
-            remainder = file.read(size - 6)
-            image_bytes = image_header + image_length + remainder
+            image_bytes += image_length
+            image_bytes += file.read(size - 6)
 
             from PIL import Image
             image = Image.open(BytesIO(image_bytes))
