@@ -930,9 +930,26 @@ class EZProcessor:
             op_add.add_reference(node)
 
         elif isinstance(element, EZTimer):
-            node = op.add(type="util wait", wait=element.wait_time / 1000.0)
+            op.add(type="util wait", wait=element.wait_time / 1000.0)
+        elif isinstance(element, EZOutput):
+            mask = 1 << element.output_bit
+            bits = mask if element.low_to_high else 0
+
+            op.add(
+                type="util output",
+                output_value=bits,
+                output_mask=mask,
+            )
+            if element.timed_high:
+                op.add(type="util wait", wait=element.wait_time / 1000.0)
+                op.add(
+                    type="util output",
+                    output_value=~bits,
+                    output_mask=mask,
+                )
+
         elif isinstance(element, EZInput):
-            node = op.add(
+            op.add(
                 type="util input",
                 input_message=element.message,
                 input_value=element.input_port_bits,
