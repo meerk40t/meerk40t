@@ -139,6 +139,7 @@ class EZCFile:
         self._locations = {}
         self.pens = []
         self.objects = []
+        self.fonts = []
         self._preview_bitmap = list()
         self._prevector = None
         self.parse_header(file)
@@ -274,9 +275,11 @@ class EZCFile:
         if seek == 0:
             return
         file.seek(seek, 0)
-        print(file.tell())
-        unknown = struct.unpack("<I", file.read(4))[0]
-        print(file.tell())
+        font_count = struct.unpack("<I", file.read(4))[0]
+
+        for i in range(font_count):
+            f = file.read(100)
+            self.fonts.append(f.decode("utf_16").strip("\x00"))
 
     def parse_pens(self, file):
         seek = self._locations.get("pens", 0)
