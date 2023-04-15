@@ -84,7 +84,7 @@ class Pen:
 
         159 * 4, 636,0x027C bytes total
         """
-        self.color = Color(rgb=color)
+        self.color = Color(bgr=color)
         self.label = label
         self.loop_count = loop_count
         self.speed = speed
