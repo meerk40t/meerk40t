@@ -408,7 +408,8 @@ class EZCFile:
             q = _huffman_decode_bitarray(file, uncompressed_length)
         except ImportError:
             q = _huffman_decode_python(file, uncompressed_length)
-        while parse_object(BytesIO(q), self.objects):
+        data = BytesIO(q)
+        while parse_object(data, self.objects):
             pass
 
 
