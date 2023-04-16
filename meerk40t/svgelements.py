@@ -4775,7 +4775,7 @@ class CubicBezier(Curve):
         local_extremizers = [0, 1]
         a = [c[v] for c in self]
         denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
-        if abs(denom) >= 1e-12:
+        if abs(denom) >= 1e-8:
             delta = (
                 a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
             )
