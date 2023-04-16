@@ -418,9 +418,9 @@ class EZCurve(EZObject):
         pts = []
         (count, unknown) = struct.unpack("<2I", file.read(8))
         for i in range(count):
-            (unk1, unk2, unk3) = struct.unpack("<3H", file.read(6))
+            (curve_type, unk2, unk3) = struct.unpack("<3H", file.read(6))
             (pt_count,) = struct.unpack("<I", file.read(4))
-            pts.append(struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)))
+            pts.append((curve_type, struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count))))
         self.points = pts
 
 
