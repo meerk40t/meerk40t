@@ -770,7 +770,11 @@ class EZProcessor:
             if points[-1][1]:
                 # Path is closed.
                 path.closed()
-            node = elem.add(type="elem path", path=path)
+            node = elem.add(
+                type="elem path",
+                path=path,
+                stroke_width=self.elements.default_strokewidth,
+            )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
@@ -791,7 +795,11 @@ class EZProcessor:
                 pts.append((cx + math.cos(theta) * rx, cy + math.sin(theta) * ry))
                 theta += step
             polyline = Polygon(points=pts, transform=mx, stroke="black")
-            node = elem.add(type="elem polyline", shape=polyline)
+            node = elem.add(
+                type="elem polyline",
+                shape=polyline,
+                stroke_width=self.elements.default_strokewidth,
+            )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
@@ -803,7 +811,11 @@ class EZProcessor:
             shape = Circle(
                 center=element.center, r=element.radius, transform=mx, stroke="black"
             )
-            node = elem.add(type="elem ellipse", shape=shape)
+            node = elem.add(
+                type="elem ellipse",
+                shape=shape,
+                stroke_width=self.elements.default_strokewidth,
+            )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
@@ -820,6 +832,7 @@ class EZProcessor:
                 ry=(y1 - y0) / 2.0,
                 transform=mx,
                 stroke="black",
+                stroke_width=self.elements.default_strokewidth,
             )
             node = elem.add(type="elem ellipse", shape=shape)
             p = ez.pens[element.pen]
@@ -833,7 +846,11 @@ class EZProcessor:
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
             rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
-            node = elem.add(type="elem rect", shape=rect)
+            node = elem.add(
+                type="elem rect",
+                shape=rect,
+                stroke_width=self.elements.default_strokewidth,
+            )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
