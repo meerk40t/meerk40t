@@ -58,7 +58,7 @@ class PlacePointNode(Node):
         # Active?
         self.output = True
         super().__init__(type="place point", **kwargs)
-        self._formatter = "{enabled}{element_type}: {loops}{corner} {x} {y} {rotation}"
+        self._formatter = "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
 
     def __copy__(self):
         nd = self.node_dict
@@ -92,20 +92,20 @@ class PlacePointNode(Node):
         default_map["element_type"] = "Placement"
         default_map.update(self.__dict__)
         try:
-            xlen = Length(self.x)
+            xlen = Length(self.x, digits=2)
             # print (f"{float(xlen):.2f} = {xlen.length_cm}")
         except ValueError:
-            xlen = Length(0)
+            xlen = Length(0, digits=2)
         try:
-            ylen = Length(self.y)
+            ylen = Length(self.y, digits=2)
         except ValueError:
-            ylen = Length(0)
+            ylen = Length(0, digits=2)
         # print (self.x, self.y, type(self.x).__name__, type(self.y).__name__,)
         default_map["position"] = f"{xlen.length_cm}, {ylen.length_cm}"
         default_map["x"] = f"{xlen.length_cm}"
         default_map["y"] = f"{ylen.length_cm}"
-        default_map["rotation"] = f"{Angle(self.rotation, digits=2).degrees}°"
-        default_map["loops"] = f"{str(self.loops) + 'x' if self.loops > 1 else ''}"
+        default_map["rotation"] = f"{Angle(self.rotation, digits=1).degrees}°"
+        default_map["loops"] = f"{str(self.loops) + 'X ' if self.loops > 1 else ''}"
         if self.corner == 0:
             default_map["corner"] = "`+ "
         elif self.corner == 1:
