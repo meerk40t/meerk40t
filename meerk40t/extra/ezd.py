@@ -818,7 +818,7 @@ class EZProcessor:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op)
         elif isinstance(element, (EZGroup, EZCombine)):
-            elem = elem.add(type="group")
+            elem = elem.add(type="group", label=element.label)
             # recurse to children
             for child in element:
                 self.parse(ez, child, elem, op)
