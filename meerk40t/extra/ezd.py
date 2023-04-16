@@ -632,7 +632,10 @@ class EZHatch(list, EZObject):
         self.hatch3_number_of_loops = args[34]
         self.hatch3_loop_distance = args[37]
         self.hatch3_angle_inc = args[28]
-        if self.hatch1_enabled or self.hatch2_enabled or self.hatch3_enabled:
+        tell = file.tell()
+        (check,) = struct.unpack("<I", file.read(4))
+        file.seek(tell, 0)
+        if check == 15:
             self.group = EZGroup(file)
         else:
             self.group = None
@@ -884,6 +887,10 @@ class EZProcessor:
             op_add = op.add(type="op hatch", **p.__dict__)
             for e in elem.flat():
                 op_add.add_reference(e)
+
+            if element.group:
+                for child in element.group:
+                    self.parse(ez, child, elem, op)
 
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
