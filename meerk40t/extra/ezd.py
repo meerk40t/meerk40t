@@ -392,12 +392,16 @@ class EZObject:
                 parse_object(file, self)
 
 
+class EZCombine(list, EZObject):
+    def __init__(self, file):
+        list.__init__(self)
+        EZObject.__init__(self, file)
+
+
 class EZGroup(list, EZObject):
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
-        # args = _parse_struct(file)
-        # _construct(args)
 
 
 class EZVectorFile(list, EZObject):
@@ -583,7 +587,7 @@ object_map = {
     4: EZCircle,
     5: EZEllipse,
     6: EZPolygon,
-    0x30: EZGroup,  # Combine
+    0x30: EZCombine,
     0x40: EZImage,
     0x60: EZSpiral,
     0x4000: EZOutput,
