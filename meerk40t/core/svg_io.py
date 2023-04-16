@@ -620,9 +620,10 @@ class SVGProcessor:
         self.regmark_list = list()
         self.reverse = False
         self.requires_classification = True
-        self.operations_cleared = False
+        self.operations_replaced = False
         self.pathname = None
         self.regmark = None
+        self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) as well as the time
@@ -644,7 +645,11 @@ class SVGProcessor:
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
-        if self.operations_cleared:
+        if self.operations_replaced:
+            self.elements.undo.mark("op-replaced")
+            self.elements.clear_operations()
+            for node in self.operation_list:
+                op = self.elements.op_branch.add_node(node)
             for op in self.elements.ops():
                 if not hasattr(op, "settings"):
                     # Some special nodes might lack settings these can't have references.
@@ -1122,15 +1127,14 @@ class SVGProcessor:
 
             if tag == "operation":
                 # Check if SVGElement: operation
-                if not self.operations_cleared:
-                    self.elements.clear_operations()
-                    self.operations_cleared = True
+                if not self.operations_replaced:
+                    self.operations_replaced = True
 
                 try:
-                    node = self.elements.op_branch.create(type=node_type, **attrs)
-                    node.validate()
-                    node.id = node_id
-                    op = self.elements.op_branch.add_node(node)
+                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    op.validate()
+                    op.id = node_id
+                    self.operation_list.append(op)
                     overlooked_attributes = [
                         "output",
                     ]
