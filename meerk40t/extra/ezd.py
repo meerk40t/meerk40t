@@ -499,6 +499,7 @@ class EZPolygon(EZObject):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
         _construct(args)
+        self.polygon_type = args[0]
         self.corner_upper_left = args[1]
         self.corner_bottom_right = args[2]
         self.sides = args[7]
