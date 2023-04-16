@@ -422,9 +422,15 @@ class EZCurve(EZObject):
         pts = []
         (count, closed) = struct.unpack("<2I", file.read(8))
         for i in range(count):
-            (unk1, curve_type,  unk2, unk3) = struct.unpack("<BB2H", file.read(6))
+            (unk1, curve_type, unk2, unk3) = struct.unpack("<BB2H", file.read(6))
             (pt_count,) = struct.unpack("<I", file.read(4))
-            pts.append((curve_type, closed, struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count))))
+            pts.append(
+                (
+                    curve_type,
+                    closed,
+                    struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)),
+                )
+            )
         self.points = pts
 
 
@@ -530,6 +536,14 @@ class EZOutput(EZObject):
         self.all_out_bits = args[6]
 
 
+class EZEncoderDistance(EZObject):
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.distance = args[0]
+
+
 class EZText(EZObject):
     def __init__(self, file):
         EZObject.__init__(self, file)
@@ -588,7 +602,8 @@ class EZHatch(list, EZObject):
         self.mark_contours_type = args[41]
 
         self.hatch1_enabled = args[1]
-        self.hatch1_type = args[3]  # Includes average distribute line, allcalc, follow edge, crosshatch
+        self.hatch1_type = args[3]
+        # Includes average distribute line, allcalc, follow edge, crosshatch
         # spiral = 0x50
         self.hatch1_type_all_calc = self.hatch1_type & 0x1
         self.hatch1_type_follow_edge = self.hatch1_type & 0x2
@@ -650,6 +665,7 @@ object_map = {
     0x30: EZCombine,
     0x40: EZImage,
     0x60: EZSpiral,
+    0x6000: EZEncoderDistance,
     0x4000: EZOutput,
     0x3000: EZInput,
     0x2000: EZTimer,
@@ -737,7 +753,10 @@ class EZProcessor:
             path = Path(stroke="black", transform=self.matrix)
             last_end = None
             for t, closed, contour in points:
-                cpt = [complex(contour[i], contour[i+1]) for i in range(0, len(contour), 2)]
+                cpt = [
+                    complex(contour[i], contour[i + 1])
+                    for i in range(0, len(contour), 2)
+                ]
                 if last_end != cpt[0]:
                     path.move(cpt[0])
                 if t == 1:
@@ -891,7 +910,6 @@ class EZProcessor:
             if element.group:
                 for child in element.group:
                     self.parse(ez, child, elem, op)
-
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
