@@ -133,96 +133,51 @@ def _huffman_decode_bitarray(file, uncompressed_length):
 
 
 class Pen:
-    def __init__(
-        self,
-        color,  # 0
-        label,  # 1
-        mark_enable,  # 2, 1
-        unk2,  # 3, 0
-        loop_count,  # 4
-        speed,  # 5
-        power,  # 6
-        frequency_hz,  # 7
-        four,  # 8
-        start_tc,  # 9
-        end_tc,  # 10
-        polygon_tc,  # 11
-        jump_speed,  # 12
-        jump_min_delay,  # 13
-        jump_max_delay,  # 14
-        opt_end_length,  # 15
-        opt_start_length,  # 16
-        time_per_point,  # 17
-        unk3,  # 18, 0.0
-        unk4,  # 19, 1.0
-        prob_vector_point_mode,  # 20
-        pulse_per_point,  # 21
-        unk5,  # 22
-        laser_off_tc,  # 23
-        unk6,  # 24
-        unk7,  # 25
-        wobble_enable,  # 26
-        wobble_diameter,  # 27
-        wobble_distance,  # 28
-        add_endpoints,  # 29
-        add_endpoint_distance,  # 30
-        add_endpoint_point_distance,  # 31
-        add_endpoint_time_per_point,  # 32
-        add_endpoints_point_cycles,  # 33
-        unk8,  # 34, 0.02
-        unk9,  # 35, 100
-        unk10,  # 36, 0.5
-        jump_min_jump_delay2,  # 37
-        jump_max_delay2,  # 38
-        jump_speed_max_limit,  # 39
-        opt_enable,  # 40
-        break_angle,  # 41
-        *args,
-    ):
+    def __init__(self, file):
         """
         Parse pen with given file.
 
         159 * 4, 636,0x027C bytes total
         """
-        self.color = Color(bgr=color)
-        self.label = label
-        self.loop_count = loop_count
-        self.speed = speed
-        self.power = power
-        self.frequency = frequency_hz / 1000.0
-        self.start_tc = start_tc
-        self.end_tc = end_tc
-        self.polygon_tc = polygon_tc
-        self.jump_speed = jump_speed
-        self.jump_min_delay = jump_min_delay
-        self.jump_max_delay = jump_max_delay
-        self.opt_start_length = opt_start_length
-        self.opt_end_length = opt_end_length
-        self.time_per_point = time_per_point
-        # unk3
-        # unk4
-        self.pulse_per_point = pulse_per_point
-        self.laser_off_tc = laser_off_tc
-        # unk6
-        # unk7
-        self.wobble_enable = wobble_enable
-        self.wobble_diameter = wobble_diameter
-        self.wobble_distance = wobble_distance
+        args = _parse_struct(file)
+        _interpret(args, 1, str)
+        _construct(args)
 
-        self.add_endpoints = add_endpoints
-        self.add_endpoint_distance = add_endpoint_distance
-        self.add_endpoint_time_per_point = add_endpoint_time_per_point
-        self.add_endpoint_point_distance = add_endpoint_point_distance
-        self.add_endpoints_point_cycles = add_endpoints_point_cycles
-        # unk8
-        # unk9
-        # unk10
+        self.color = Color(bgr=args[0])
+        self.label = args[1]
+        self.mark_enable = args[2]
+        self.passes = args[4]  # Loop Count
+        if self.passes >= 1:
+            self.passes_custom = True
+        self.speed = args[5]
+        self.power = args[6] * 10.0
+        self.frequency = args[7] / 1000.0
+        self.start_tc = args[9]
+        self.end_tc = args[10]
+        self.polygon_tc = args[11]
+        self.jump_speed = args[12]
+        self.jump_min_delay = args[13]
+        self.jump_max_delay = args[14]
+        self.opt_start_length = args[16]
+        self.opt_end_length = args[15]
+        self.time_per_point = args[17]
+        self.pulse_per_point = args[21]
+        self.laser_off_tc = args[23]
+        self.wobble_enable = args[26]
+        self.wobble_diameter = args[27]
+        self.wobble_distance = args[28]
 
-        unk8,  # 34, 0.02
-        unk9,  # 35, 100
-        unk10,  # 36, 0.5
-        self.opt_enable = opt_enable
-        self.break_angle = break_angle
+        self.add_endpoints = args[29]
+        self.add_endpoint_distance = args[30]
+        self.add_endpoint_time_per_point = args[32]
+        self.add_endpoint_point_distance = args[31]
+        self.add_endpoints_point_cycles = args[33]
+        self.opt_enable = args[40]
+        self.break_angle = args[41]
+
+        self.jump_min_jump_delay2 = args[37]
+        self.jump_max_delay2 = args[38]
+        self.jump_speed_max_limit = args[39]
 
 
 class EZCFile:
@@ -325,10 +280,7 @@ class EZCFile:
         seek = struct.unpack("<I", file.read(4))[0]
         file.seek(seek, 0)
         for c in range(parameter_count):
-            p = _parse_struct(file)
-            _interpret(p, 1, str)
-            _construct(p)
-            self.pens.append(Pen(*p))
+            self.pens.append(Pen(file))
 
     def parse_prevectors(self, file):
         """
