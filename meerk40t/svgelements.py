@@ -6069,17 +6069,19 @@ class Path(Shape, MutableSequence):
         return self
 
     def line(self, *points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        end_pos = points[0]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = Line(start_pos, end_pos)
-        segment.relative = relative
-        self.append(segment)
-        if len(points) > 1:
-            self.line(*points[1:])
-        return self
+        index = 0
+        while True:
+            relative = kwargs["relative"] if "relative" in kwargs else False
+            start_pos = self.current_point
+            end_pos = points[index]
+            index += 1
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            segment = Line(start_pos, end_pos)
+            segment.relative = relative
+            self.append(segment)
+            if index >= len(points):
+                return self
 
     def vertical(self, *y_points, **kwargs):
         relative = kwargs["relative"] if "relative" in kwargs else False

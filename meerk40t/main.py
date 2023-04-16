@@ -164,6 +164,10 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(embroider.plugin)
 
+        from .extra import ezd
+
+        plugins.append(ezd.plugin)
+
         from .extra import pathoptimize
 
         plugins.append(pathoptimize.plugin)
