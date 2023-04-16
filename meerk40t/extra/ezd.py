@@ -424,7 +424,7 @@ class EZCurve(EZObject):
         for i in range(count):
             (unk1, curve_type,  unk2, unk3) = struct.unpack("<BB2H", file.read(6))
             (pt_count,) = struct.unpack("<I", file.read(4))
-            pts.append((curve_type, struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count))))
+            pts.append((curve_type, closed, struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count))))
         self.points = pts
 
 
@@ -672,11 +672,13 @@ class EZProcessor:
 
         elif isinstance(element, EZCurve):
             points = element.points
-
+            if len(points) == 0:
+                return
             path = Path(stroke="black", transform=self.matrix)
-            for t, pt in points:
-                cpt = [complex(pt[i], pt[i+1]) for i in range(0, len(pt), 2)]
-                if len(path) == 0:
+            last_end = None
+            for t, closed, contour in points:
+                cpt = [complex(contour[i], contour[i+1]) for i in range(0, len(contour), 2)]
+                if last_end != cpt[0]:
                     path.move(cpt[0])
                 if t == 1:
                     path.line(*cpt[1:])
@@ -684,6 +686,10 @@ class EZProcessor:
                     path.quad(*cpt[1:])
                 elif t == 3:
                     path.cubic(*cpt[1:])
+                last_end = cpt[-1]
+            if points[-1][1]:
+                # Path is closed.
+                path.closed()
             node = elem.add(type="elem path", path=path)
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
