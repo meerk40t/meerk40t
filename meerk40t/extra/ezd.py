@@ -476,8 +476,12 @@ class EZSpiral(list, EZObject):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
         _construct(args)
-        print(args)
-        print(self.__dict__)
+        self.spiral_pen = args[0]
+        self.min_radius = args[5]
+        self.min_spiral_pitch = args[2]
+        self.outer_edge_loops = args[6]
+        self.inner_edge_loops = args[7]
+        self.group = EZGroup(file)
 
 
 class EZPolygon(EZObject):
@@ -881,4 +885,11 @@ class EZProcessor:
             elem = elem.add(type="group", label=element.label)
             # recurse to children
             for child in element:
+                self.parse(ez, child, elem, op)
+        elif isinstance(element, EZSpiral):
+            elem = elem.add(type="group", label=element.label)
+            # recurse to children
+            for child in element:
+                self.parse(ez, child, elem, op)
+            for child in element.group:
                 self.parse(ez, child, elem, op)
