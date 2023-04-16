@@ -576,9 +576,58 @@ class EZHatch(list, EZObject):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
         _construct(args)
-        print(args)
-        self.group = EZGroup(file)
-        print(self.group)
+        self.mark_contours = args[0]
+        self.mark_contours_type = args[41]
+
+        self.hatch1_enabled = args[1]
+        self.hatch1_type = args[3]  # Includes average distribute line, allcalc, follow edge, crosshatch
+        # spiral = 0x50
+        self.hatch1_type_all_calc = self.hatch1_type & 0x1
+        self.hatch1_type_follow_edge = self.hatch1_type & 0x2
+        self.hatch1_type_crosshatch = self.hatch1_type & 0x400
+        self.hatch1_angle = args[8]
+        self.hatch1_pen = args[2]
+        self.hatch1_count = args[42]
+        self.hatch1_line_space = args[5]
+        self.hatch1_edge_offset = args[4]
+        self.hatch1_start_offset = args[6]
+        self.hatch1_end_offset = args[7]
+        self.hatch1_line_reduction = args[29]
+        self.hatch1_number_of_loops = args[32]
+        self.hatch1_loop_distance = args[35]
+        self.hatch1_angle_inc = args[18]
+
+        self.hatch2_enabled = args[9]
+        self.hatch2_type = args[11]
+        self.hatch2_angle = args[16]
+        self.hatch2_pen = args[10]
+        self.hatch2_count = args[43]
+        self.hatch2_line_space = args[13]
+        self.hatch2_edge_offset = args[12]
+        self.hatch2_start_offset = args[14]
+        self.hatch2_end_offset = args[15]
+        self.hatch2_line_reduction = args[30]
+        self.hatch2_number_of_loops = args[33]
+        self.hatch2_loop_distance = args[36]
+        self.hatch2_angle_inc = args[19]
+
+        self.hatch3_enabled = args[20]
+        self.hatch3_type = args[22]
+        self.hatch3_angle = args[27]
+        self.hatch3_pen = args[21]
+        self.hatch3_count = args[44]
+        self.hatch3_line_space = args[24]
+        self.hatch3_edge_offset = args[23]
+        self.hatch3_start_offset = args[25]
+        self.hatch3_end_offset = args[26]
+        self.hatch3_line_reduction = args[31]
+        self.hatch3_number_of_loops = args[34]
+        self.hatch3_loop_distance = args[37]
+        self.hatch3_angle_inc = args[28]
+        if self.hatch1_enabled or self.hatch2_enabled or self.hatch3_enabled:
+            self.group = EZGroup(file)
+        else:
+            self.group = None
 
 
 object_map = {
@@ -814,9 +863,20 @@ class EZProcessor:
             op_add = op.add(type="op image", **p.__dict__)
             op_add.add_reference(node)
         elif isinstance(element, EZVectorFile):
+            elem = elem.add(type="group", label=element.label)
             for child in element:
                 # (self, ez, element, elem, op)
                 self.parse(ez, child, elem, op)
+        elif isinstance(element, EZHatch):
+            elem = elem.add(type="group", label=element.label)
+            for child in element:
+                self.parse(ez, child, elem, op)
+
+            p = ez.pens[element.pen]
+            op_add = op.add(type="op hatch", **p.__dict__)
+            for e in elem.flat():
+                op_add.add_reference(e)
+
         elif isinstance(element, (EZGroup, EZCombine)):
             elem = elem.add(type="group", label=element.label)
             # recurse to children
