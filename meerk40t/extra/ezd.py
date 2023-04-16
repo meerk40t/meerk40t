@@ -372,7 +372,7 @@ class EZObject:
         self.hidden = bool(self.state & 0x01)
         self.locked = bool(self.state & 0x10)
 
-        self.unknown1 = header[3]
+        self.label = header[3]
         self.unknown2 = header[4]
         self.unknown3 = header[5]
         self.unknown4 = header[6]
