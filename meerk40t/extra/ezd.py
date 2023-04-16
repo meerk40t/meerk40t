@@ -477,10 +477,14 @@ class EZSpiral(list, EZObject):
         args = _parse_struct(file)
         _construct(args)
         self.spiral_pen = args[0]
+        self.spiral_type = args[1]
         self.min_radius = args[5]
         self.min_spiral_pitch = args[2]
+        self.max_spiral_pitch = args[3]
+        self.max_spiral_increment = args[4]
         self.outer_edge_loops = args[6]
         self.inner_edge_loops = args[7]
+        self.spiral_out = args[8]
         self.group = EZGroup(file)
 
 
