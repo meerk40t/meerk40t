@@ -1,5 +1,13 @@
 """
 Parser for .ezd files.
+
+These are a working type file produced by EZCad2™. They contain several pens and different settings that were used by
+the program when the file was saved. The vector objects consist of a series of laser-ready commands/shapes which refer
+to the required pen. Some modification objects like hatch and spiral work like a group containing other sub-elements
+and also contain the cached curve/path data. The image objects contain a standard 24 bit bitmap image. All elements
+are coordinated relative to the center of the working area and it is much more common to be given the center point than
+a specific edge.
+
 """
 import math
 import struct
@@ -51,6 +59,16 @@ def _parse_struct(file):
 
 
 def _interpret(data, index, type):
+    """
+    Provide a specific hint for how to interpret a chunk of bytes. There are cases where 16 bytes could be a point,
+    consisting of two floating points, but could also be a string. This is used to force the typing to use the correct
+    method.
+
+    @param data:
+    @param index:
+    @param type:
+    @return:
+    """
     if type == str:
         data[index] = data[index].decode("utf_16").strip("\x00")
     elif type == "point":
@@ -66,6 +84,12 @@ def _interpret(data, index, type):
 
 
 def _construct(data):
+    """
+    For each element of data (that is a bytes object), interpret them as their most common type.
+
+    @param data:
+    @return:
+    """
     for i in range(len(data)):
         b = data[i]
         length = len(b)
@@ -89,6 +113,13 @@ def _construct(data):
 
 
 def _huffman_decode_python(file, uncompressed_length):
+    """
+    Python fallback for huffman decoding of the vector table.
+
+    @param file:
+    @param uncompressed_length:
+    @return:
+    """
     huffman_dict = {}
     table_length = struct.unpack("<H", file.read(2))[0]
     for i in range(table_length):
@@ -115,6 +146,13 @@ def _huffman_decode_python(file, uncompressed_length):
 
 
 def _huffman_decode_bitarray(file, uncompressed_length):
+    """
+    Bitarray decoding of huffman table found in the vector table section.
+
+    @param file:
+    @param uncompressed_length:
+    @return:
+    """
     from bitarray import bitarray
 
     huffman_dict = {}
@@ -135,9 +173,7 @@ def _huffman_decode_bitarray(file, uncompressed_length):
 class Pen:
     def __init__(self, file):
         """
-        Parse pen with given file.
-
-        159 * 4, 636,0x027C bytes total
+        Parse pen with the given file.
         """
         args = _parse_struct(file)
         _interpret(args, 1, str)
@@ -181,6 +217,9 @@ class Pen:
 
 
 class EZCFile:
+    """
+    Parse the EZCFile given file as a stream.
+    """
     def __init__(self, file):
         self._locations = {}
         self.pens = []
@@ -194,6 +233,12 @@ class EZCFile:
         self.parse_tables(file)
 
     def parse_header(self, file):
+        """
+        Parse file header.
+
+        @param file:
+        @return:
+        """
         magic_number = file.read(16)
         header = magic_number.decode("utf_16")
         if header != "EZCADUNI":
@@ -209,7 +254,12 @@ class EZCFile:
         s4 = file.read(140)
 
     def parse_seektable(self, file):
-        # Seek Table
+        """
+        The second item in the file after the header is the seek table lookup. This provides the location in absolute
+        position in the file of the table locations.
+        @param file:
+        @return:
+        """
         self._locations["preview"] = struct.unpack("<I", file.read(4))[0]
         self._locations["v1"] = struct.unpack("<I", file.read(4))[0]
         self._locations["pens"] = struct.unpack("<I", file.read(4))[0]
@@ -219,9 +269,21 @@ class EZCFile:
         self._locations["prevectors"] = struct.unpack("<I", file.read(4))[0]
 
     def parse_unknown_nontable(self, file):
+        """
+        This is a non-table section. It could be padding for future seek tables entries or have some unknown meaning.
+
+        @param file:
+        @return:
+        """
         unknown_table = struct.unpack("<24I", file.read(96))
 
     def parse_tables(self, file):
+        """
+        Parses all the different tables found in the file.
+
+        @param file:
+        @return:
+        """
         self.parse_preview(file)
         self.parse_v1(file)
         self.parse_pens(file)
@@ -231,12 +293,24 @@ class EZCFile:
         self.parse_prevectors(file)
 
     def parse_v1(self, file):
+        """
+        Unknown table location. Usually absent.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("v1", 0)
         if seek == 0:
             return
         file.seek(seek, 0)
 
     def parse_v4(self, file):
+        """
+        Unknown table location usually contains 96 bytes.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("v4", 0)
         if seek == 0:
             return
@@ -244,6 +318,12 @@ class EZCFile:
         unknown_table = struct.unpack("<24I", file.read(96))
 
     def parse_preview(self, file):
+        """
+        Contains a preview image of the file.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("preview", 0)
         if seek == 0:
             return
@@ -260,6 +340,12 @@ class EZCFile:
         )
 
     def parse_font(self, file):
+        """
+        Font table. This usually consists of "Arial" with no other data and only exists if a font is used.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("font", 0)
         if seek == 0:
             return
@@ -271,6 +357,12 @@ class EZCFile:
             self.fonts.append(f.decode("utf_16").strip("\x00"))
 
     def parse_pens(self, file):
+        """
+        Contains all the pens used at the time of the saving of the file. This is 256 pens.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("pens", 0)
         if seek == 0:
             return
@@ -298,6 +390,13 @@ class EZCFile:
         self._prevector = struct.unpack("<400B", file.read(400))
 
     def parse_vectors(self, file):
+        """
+        Vectors contain the bulk of the files. This is a compressed file of huffman encoded data. The first section
+        contains the huffman table, followed by the compressed data.
+
+        @param file:
+        @return:
+        """
         seek = self._locations.get("vectors", 0)
         if seek == 0:
             return
@@ -309,14 +408,16 @@ class EZCFile:
             q = _huffman_decode_bitarray(file, uncompressed_length)
         except ImportError:
             q = _huffman_decode_python(file, uncompressed_length)
-        self.parse_objects(BytesIO(q))
-
-    def parse_objects(self, file):
-        while parse_object(file, self.objects):
+        while parse_object(BytesIO(q), self.objects):
             pass
 
 
 class EZObject:
+    """
+    Every object contains the same 15 pieces of data.
+    If this object type contains children, the count of children and the children are given exactly following the
+    header. Any information specific to the class of object is read after the header and children.
+    """
     def __init__(self, file):
         header = _parse_struct(file)
         _interpret(header, 3, str)
@@ -352,18 +453,27 @@ class EZObject:
 
 
 class EZCombine(list, EZObject):
+    """
+    This is a series of related contours.
+    """
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
 
 
 class EZGroup(list, EZObject):
+    """
+    Grouped data appears both when objects are grouped but also in groups within vector file objects like svgs.
+    """
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
 
 
 class EZVectorFile(list, EZObject):
+    """
+    Vector file object.
+    """
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -376,6 +486,9 @@ class EZVectorFile(list, EZObject):
 
 
 class EZCurve(EZObject):
+    """
+    Curves are some number of curve-type (usually 1 or 3) contours.
+    """
     def __init__(self, file):
         super().__init__(file)
         pts = []
@@ -394,6 +507,9 @@ class EZCurve(EZObject):
 
 
 class EZRect(EZObject):
+    """
+    Rectangles have optional each corner curved edges.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -411,6 +527,9 @@ class EZRect(EZObject):
 
 
 class EZCircle(EZObject):
+    """
+    Circles are center followed by their radius. The angles are given in radians.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -424,6 +543,10 @@ class EZCircle(EZObject):
 
 
 class EZEllipse(EZObject):
+    """
+    Ellipses are a rectangle like structures, the start and end angles create a pie-slice like geometric shape when
+    these are set.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -436,6 +559,10 @@ class EZEllipse(EZObject):
 
 
 class EZSpiral(list, EZObject):
+    """
+    Spirals are a modification group of the items contained by the spiral. These also contain a cached-group of the
+    output produced by the spiral.
+    """
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -454,6 +581,9 @@ class EZSpiral(list, EZObject):
 
 
 class EZPolygon(EZObject):
+    """
+    Polygons are either regular or star-like. No control is given over the minor or major phase.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -466,6 +596,9 @@ class EZPolygon(EZObject):
 
 
 class EZTimer(EZObject):
+    """
+    Timers are wait commands. These are given a time and simply send the wait command to the laser.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -474,6 +607,9 @@ class EZTimer(EZObject):
 
 
 class EZInput(EZObject):
+    """
+    Input commands wait on the IO of the laser to trigger to the next item within the operations list.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -484,6 +620,9 @@ class EZInput(EZObject):
 
 
 class EZOutput(EZObject):
+    """
+    Output list sends IO out to the laser, this is used to trigger things like rotary, GPIO, or light.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -497,6 +636,9 @@ class EZOutput(EZObject):
 
 
 class EZEncoderDistance(EZObject):
+    """
+    This is for testing on-the-fly movement.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -505,6 +647,9 @@ class EZEncoderDistance(EZObject):
 
 
 class EZText(EZObject):
+    """
+    Text objects.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -517,6 +662,9 @@ class EZText(EZObject):
 
 
 class EZImage(EZObject):
+    """
+    Image objects consist of a lot of properties to control the encoding of the image and a 24-bit bitmap.
+    """
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -553,6 +701,11 @@ class EZImage(EZObject):
 
 
 class EZHatch(list, EZObject):
+    """
+    Hatch is a modification group. All three hatch elements are given properties for each hatch. The hatch contains
+    the actual elements that were to be given a hatch. As well as a cache-group of curve items that actually are the
+    given hatch properly rendered.
+    """
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -688,11 +841,8 @@ class EZProcessor:
         )
 
     def process(self, ez, pathname):
-
         self.op_branch.remove_all_children()
         self.elem_branch.remove_all_children()
-        # for p in ez.pens:
-        #     self.op_branch.add(type="op engrave", **p.__dict__)
         self.pathname = pathname
         file_node = self.elem_branch.add(type="file", filepath=pathname)
         file_node.focus()
