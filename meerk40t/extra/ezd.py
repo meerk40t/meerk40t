@@ -420,9 +420,9 @@ class EZCurve(EZObject):
     def __init__(self, file):
         super().__init__(file)
         pts = []
-        (count, unknown) = struct.unpack("<2I", file.read(8))
+        (count, closed) = struct.unpack("<2I", file.read(8))
         for i in range(count):
-            (curve_type, unk2, unk3) = struct.unpack("<3H", file.read(6))
+            (unk1, curve_type,  unk2, unk3) = struct.unpack("<BB2H", file.read(6))
             (pt_count,) = struct.unpack("<I", file.read(4))
             pts.append((curve_type, struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count))))
         self.points = pts
@@ -674,15 +674,16 @@ class EZProcessor:
             points = element.points
 
             path = Path(stroke="black", transform=self.matrix)
-            for pt in points:
+            for t, pt in points:
+                cpt = [complex(pt[i], pt[i+1]) for i in range(0, len(pt), 2)]
                 if len(path) == 0:
-                    path.move(pt[0:2])
-                if len(pt) == 4:
-                    path.line(pt[2:4])
-                elif len(pt) == 6:
-                    path.quad(pt[2:4], pt[4:6])
-                elif len(pt) == 8:
-                    path.cubic(pt[2:4], pt[4:6], pt[6:8])
+                    path.move(cpt[0])
+                if t == 1:
+                    path.line(*cpt[1:])
+                elif t == 2:
+                    path.quad(*cpt[1:])
+                elif t == 3:
+                    path.cubic(*cpt[1:])
             node = elem.add(type="elem path", path=path)
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
