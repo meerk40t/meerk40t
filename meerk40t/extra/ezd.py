@@ -5,8 +5,6 @@ import math
 import struct
 from io import BytesIO
 
-from bitarray import bitarray
-
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_INCH
 from meerk40t.svgelements import (
@@ -90,15 +88,48 @@ def _construct(data):
     return data
 
 
-class BitList(list):
-    def frombytes(self, v):
-        for b in v:
-            for bit in range(8):
-                b >>= 1
-                self.append(b & 1)
+def _huffman_decode_python(file, uncompressed_length):
+    huffman_dict = {}
+    table_length = struct.unpack("<H", file.read(2))[0]
+    for i in range(table_length):
+        character, bb, length = struct.unpack("<BIH", file.read(7))
+        bits = "{:032b}".format(bb)[-length:]
+        huffman_dict[bits] = character
+    data = file.read()
 
-    def decode(self, huffman):
-        pass
+    def bit_generator():
+        for d in data:
+            yield from "{:08b}".format(d)
+
+    q = bytearray()
+    c = ""
+    for b in bit_generator():
+        c += b
+        m = huffman_dict.get(c)
+        if m is not None:
+            q.append(m)
+            c = ""
+        if len(q) >= uncompressed_length:
+            return q
+    return q
+
+
+def _huffman_decode_bitarray(file, uncompressed_length):
+    from bitarray import bitarray
+
+    huffman_dict = {}
+    table_length = struct.unpack("<H", file.read(2))[0]
+    for i in range(table_length):
+        character, bb, length = struct.unpack("<BIH", file.read(7))
+        bits = bitarray("{:032b}".format(bb)[-length:])
+        huffman_dict[character] = bits
+    a = bitarray()
+    a.frombytes(file.read())
+    while True:
+        try:
+            return bytearray(a.decode(huffman_dict))
+        except ValueError:
+            a = a[:-1]
 
 
 class Pen:
@@ -319,37 +350,13 @@ class EZCFile:
         if seek == 0:
             return
         file.seek(seek, 0)
-
-        huffman_dict = {}
-
-        uncompressed_length = struct.unpack("<I", file.read(4))[
-            0
-        ]  # 9C 2E 0B 00, 732828
-        unknown2 = struct.unpack("<I", file.read(4))[0]  # DA E8 00 00, 59610
-        unknown3 = struct.unpack("<I", file.read(4))[0]  # 23 08 02 00, 133338
-        data_start = struct.unpack("<I", file.read(4))[0]  # 9C F0 04 00, 323740
-        unknown5 = struct.unpack("<I", file.read(4))[0]  # AD 07 00 00, 1965
-
-        table_length = struct.unpack("<H", file.read(2))[0]  # 00 01, 256
-        for i in range(table_length):
-            char = file.read(1)
-            char = char[0]
-            bb = file.read(4)
-            bits = bitarray()
-            bits.frombytes(bytes(reversed(bb)))
-            cc = file.read(2)
-            length = struct.unpack("<H", cc)[0]
-
-            bits = bits[-length:]
-            huffman_dict[char] = bitarray(bits)
-        a = bitarray()
-        a.frombytes(file.read())
-        while True:
-            try:
-                q = bytearray(a.decode(huffman_dict))
-                break
-            except ValueError:
-                a = a[:-1]
+        uncompressed_length, unknown2, unknown3, data_start, unknown5 = struct.unpack(
+            "<IIIII", file.read(20)
+        )
+        try:
+            q = _huffman_decode_bitarray(file, uncompressed_length)
+        except ImportError:
+            q = _huffman_decode_python(file, uncompressed_length)
         self.parse_objects(BytesIO(q))
 
     def parse_objects(self, file):
