@@ -2278,6 +2278,34 @@ def init_tree(kernel):
                     item.lock = False
                 drop_node.drop(item)
 
+    @tree_conditional(lambda node: is_regmark(node))
+    @tree_separator_before()
+    @tree_operation(_("Create placement"), node_type=elem_nodes, help="")
+    def regmark_as_placement(node, **kwargs):
+        if node is None:
+            return
+        if hasattr(node, "path"):
+            bb = node.path.bbox(transformed=False)
+        elif hasattr(node, "shape"):
+            bb = node.shape.bbox(transformed=False)
+        else:
+            return
+        if bb is None:
+            return
+        x = bb[0]
+        y = bb[1]
+        corner = 0
+        try:
+            rotation = node.matrix.rotation.as_radians
+        except AttributeError:
+            rotation = 0
+        pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
+        x = pt.x
+        y = pt.y
+        place_node = self.op_branch.add(type="place point", x=x, y=y, corner=corner, rotation=rotation)
+        self.signal("refresh_scene", "Scene")
+
+
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)
     # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
