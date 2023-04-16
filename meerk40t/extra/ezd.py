@@ -6,7 +6,7 @@ the program when the file was saved. The vector objects consist of a series of l
 to the required pen. Some modification objects like hatch and spiral work like a group containing other sub-elements
 and also contain the cached curve/path data. The image objects contain a standard 24 bit bitmap image. All elements
 are coordinated relative to the center of the working area and it is much more common to be given the center point than
-a specific edge.
+a specific corner. Nearly all coordinates are in mm, and denote the deviation from the center point.
 
 """
 import math
@@ -220,6 +220,7 @@ class EZCFile:
     """
     Parse the EZCFile given file as a stream.
     """
+
     def __init__(self, file):
         self._locations = {}
         self.pens = []
@@ -419,6 +420,7 @@ class EZObject:
     If this object type contains children, the count of children and the children are given exactly following the
     header. Any information specific to the class of object is read after the header and children.
     """
+
     def __init__(self, file):
         header = _parse_struct(file)
         _interpret(header, 3, str)
@@ -457,6 +459,7 @@ class EZCombine(list, EZObject):
     """
     This is a series of related contours.
     """
+
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -466,6 +469,7 @@ class EZGroup(list, EZObject):
     """
     Grouped data appears both when objects are grouped but also in groups within vector file objects like svgs.
     """
+
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -475,6 +479,7 @@ class EZVectorFile(list, EZObject):
     """
     Vector file object.
     """
+
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -490,6 +495,7 @@ class EZCurve(EZObject):
     """
     Curves are some number of curve-type (usually 1 or 3) contours.
     """
+
     def __init__(self, file):
         super().__init__(file)
         pts = []
@@ -511,6 +517,7 @@ class EZRect(EZObject):
     """
     Rectangles have optional each corner curved edges.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -531,6 +538,7 @@ class EZCircle(EZObject):
     """
     Circles are center followed by their radius. The angles are given in radians.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -548,6 +556,7 @@ class EZEllipse(EZObject):
     Ellipses are a rectangle like structures, the start and end angles create a pie-slice like geometric shape when
     these are set.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -564,6 +573,7 @@ class EZSpiral(list, EZObject):
     Spirals are a modification group of the items contained by the spiral. These also contain a cached-group of the
     output produced by the spiral.
     """
+
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -585,6 +595,7 @@ class EZPolygon(EZObject):
     """
     Polygons are either regular or star-like. No control is given over the minor or major phase.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -600,6 +611,7 @@ class EZTimer(EZObject):
     """
     Timers are wait commands. These are given a time and simply send the wait command to the laser.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -611,6 +623,7 @@ class EZInput(EZObject):
     """
     Input commands wait on the IO of the laser to trigger to the next item within the operations list.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -624,6 +637,7 @@ class EZOutput(EZObject):
     """
     Output list sends IO out to the laser, this is used to trigger things like rotary, GPIO, or light.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -640,6 +654,7 @@ class EZEncoderDistance(EZObject):
     """
     This is for testing on-the-fly movement.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -651,6 +666,7 @@ class EZText(EZObject):
     """
     Text objects.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -666,6 +682,7 @@ class EZImage(EZObject):
     """
     Image objects consist of a lot of properties to control the encoding of the image and a 24-bit bitmap.
     """
+
     def __init__(self, file):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
@@ -707,6 +724,7 @@ class EZHatch(list, EZObject):
     the actual elements that were to be given a hatch. As well as a cache-group of curve items that actually are the
     given hatch properly rendered.
     """
+
     def __init__(self, file):
         list.__init__(self)
         EZObject.__init__(self, file)
@@ -830,16 +848,10 @@ class EZProcessor:
 
         self.width = elements.device.unit_width
         self.height = elements.device.unit_height
-        self.matrix = Matrix.map(
-            (-50, 50),
-            (50, 50),
-            (50, -50),
-            (-50, -50),
-            (0, 0),
-            (self.width, 0),
-            (self.width, self.height),
-            (0, self.height),
-        )
+        self.cx = self.width / 2.0
+        self.cy = self.height / 2.0
+        self.matrix = Matrix.scale(UNITS_PER_MM, -UNITS_PER_MM)
+        self.matrix.post_translate(self.cx, self.cy)
 
     def process(self, ez, pathname):
         self.op_branch.remove_all_children()
@@ -856,7 +868,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZCurve):
             points = element.points
             if len(points) == 0:
@@ -888,7 +899,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZPolygon):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -913,7 +923,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZCircle):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -929,7 +938,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZEllipse):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -948,7 +956,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZRect):
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
@@ -964,7 +971,6 @@ class EZProcessor:
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
-
         elif isinstance(element, EZTimer):
             op.add(type="util wait", wait=element.wait_time / 1000.0)
         elif isinstance(element, EZOutput):
@@ -983,7 +989,6 @@ class EZProcessor:
                     output_value=~bits,
                     output_mask=mask,
                 )
-
         elif isinstance(element, EZInput):
             op.add(
                 type="util input",
