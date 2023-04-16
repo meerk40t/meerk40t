@@ -14756,6 +14756,9 @@ msgstr "Signalton"
 msgid "_TREE_Wait"
 msgstr "Warte"
 
+msgid "_TREE_Placement"
+msgstr "Job-Start"
+
 msgid "Speed Code Features:"
 msgstr "Speed-Code Feature:"
 
@@ -15910,7 +15913,10 @@ msgid "Add a job starting point to the scene"
 msgstr "Definiere einen Startpunkt für den Laserjob"
 
 msgid "Placement:"
-msgstr "Job-Ursprung:"
+msgstr "Job-Start:"
+
+msgid "Placement"
+msgstr "Job-Start"
 
 msgid "X-Coordinate of placement"
 msgstr "X-Koordinate des Job-Starts"
