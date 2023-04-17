@@ -415,9 +415,12 @@ def init_tree(kernel):
     def set_power(node, power=1000, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "power"):
+                continue
             n.power = float(power)
             data.append(n)
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("element_property_reload", data)
 
     def radio_match(node, dpi=100, **kwargs):
         return node.dpi == dpi
@@ -433,6 +436,8 @@ def init_tree(kernel):
     def set_step_n(node, dpi=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "dpi"):
+                continue
             n.dpi = dpi
             data.append(n)
         for n in list(self.elems(emphasized=True)):
@@ -440,8 +445,9 @@ def init_tree(kernel):
                 n.dpi = dpi
                 n.update(None)
                 data.append(n)
-        self.signal("refresh_scene", "Scene")
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_reload", data)
 
     def radio_match_passes(node, passvalue=1, **kwargs):
         return (node.passes_custom and passvalue == node.passes) or (
@@ -455,10 +461,31 @@ def init_tree(kernel):
     def set_n_passes(node, passvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "passes"):
+                continue
             n.passes = passvalue
             n.passes_custom = passvalue != 1
             data.append(n)
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("element_property_reload", data)
+
+    def radio_match_loops(node, loopvalue=1, **kwargs):
+        return node.loops == loopvalue
+
+    @tree_submenu(_("Set placement loops"))
+    @tree_radio(radio_match_loops)
+    @tree_iterate("loopvalue", 1, 10)
+    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    def set_n_loops(node, loopvalue=1, **kwargs):
+        data = list()
+        for n in list(self.ops(selected=True)):
+            if not hasattr(n, "loops"):
+                continue
+            n.loops = loopvalue
+            data.append(n)
+        if len(data) > 0:
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -586,6 +613,8 @@ def init_tree(kernel):
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
         for n in list(self.ops()):
+            if not hasattr(n, "speed"):
+                continue
             if n.speed is not None:
                 maxspeed = max(maxspeed, n.speed)
         return bool(abs(maxspeed - float(speed)) < 0.5)
@@ -602,11 +631,14 @@ def init_tree(kernel):
         data = list()
         maxspeed = 0
         for n in list(self.ops()):
-            if n.speed is not None:
-                maxspeed = max(maxspeed, n.speed)
+            if hasattr(node, "speed"):
+                if n.speed is not None:
+                    maxspeed = max(maxspeed, n.speed)
         if maxspeed == 0:
             return
         for n in list(self.ops()):
+            if not hasattr(node, "speed"):
+                continue
             if n.speed is not None:
                 oldspeed = float(n.speed)
                 newspeed = oldspeed / maxspeed * speed
@@ -617,6 +649,8 @@ def init_tree(kernel):
     def radio_match_power_all(node, power=0, **kwargs):
         maxpower = 0
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 maxpower = max(maxpower, n.power)
         return bool(abs(maxpower - float(power)) < 0.5)
@@ -634,11 +668,15 @@ def init_tree(kernel):
         data = list()
         maxpower = 0
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 maxpower = max(maxpower, n.power)
         if maxpower == 0:
             return
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 oldpower = float(n.power)
                 newpower = oldpower / maxpower * power
@@ -2302,9 +2340,10 @@ def init_tree(kernel):
         pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
         x = pt.x
         y = pt.y
-        place_node = self.op_branch.add(type="place point", x=x, y=y, corner=corner, rotation=rotation)
+        place_node = self.op_branch.add(
+            type="place point", x=x, y=y, corner=corner, rotation=rotation
+        )
         self.signal("refresh_scene", "Scene")
-
 
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)
