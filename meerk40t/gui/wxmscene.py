@@ -780,8 +780,8 @@ class MeerK40tScenePanel(wx.Panel):
         dx = 0
         dy = 0
         if self.has_magnets() and self.magnet_attraction > 0:
-            if self.tick_distance > 0:
-                s = f"{self.tick_distance}{self.context.units_name}"
+            if self.scene.pane.grid.tick_distance > 0:
+                s = f"{self.scene.pane.grid.tick_distance}{self.context.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off
