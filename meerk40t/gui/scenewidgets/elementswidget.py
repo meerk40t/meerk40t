@@ -36,6 +36,8 @@ class ElementsWidget(Widget):
             zoom_scale = 1
         draw_mode = self.renderer.context.draw_mode
         if (draw_mode & DRAW_MODE_REGMARKS) == 0:
+
+            # Very faint in the background as orientation - alpha 64
             self.renderer.render(
                 context.elements.regmarks_nodes(),
                 gc,
@@ -43,12 +45,13 @@ class ElementsWidget(Widget):
                 zoomscale=zoom_scale,
                 alpha=64,
             )
+            # Slightly more prominent - alpha 96
             self.renderer.render(
                 context.elements.placement_nodes(),
                 gc,
                 draw_mode,
                 zoomscale=zoom_scale,
-                alpha=64,
+                alpha=96,
             )
         self.renderer.render(
             context.elements.elems_nodes(),
