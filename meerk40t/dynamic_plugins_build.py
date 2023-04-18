@@ -9,6 +9,10 @@ If you have written such a plugin, raise an issue to have it reviewed and includ
 
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
+        if kernel.args.no_plugins:
+            # If no plugins was requested, we do not load these plugins.
+            return
+
         plugins = list()
 
         """
