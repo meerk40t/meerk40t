@@ -1117,6 +1117,9 @@ class SVGProcessor:
                     self.operations_cleared = True
                 try:
                     node = self.elements.op_branch.create(type=node_type, **attrs)
+                    if node is None or not hasattr(node, "type") or node.type is None:
+                        # This operation is invalid.
+                        return
                     if hasattr(node, "validate"):
                         node.validate()
                     node.id = node_id
@@ -1132,7 +1135,6 @@ class SVGProcessor:
                             setattr(op, overlooked, element.values.get(overlooked))
                 except AttributeError:
                     # This operation is invalid.
-                    print (f"Error happened for {node_type}")
                     return
             elif tag == "element":
                 # Check if SVGElement: element
