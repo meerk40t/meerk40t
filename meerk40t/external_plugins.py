@@ -1,10 +1,13 @@
+"""
+These are external plugins. They are dynamically found by entry points. This file is replaced with the build file during
+builds, since compiled versions do not have access to entry points. External plugins therefore must be hard-coded for
+builds. See the external_plugin_build.py file for regular built plugins.
+"""
+
 import sys
 
 
 def plugin(kernel, lifecycle):
-    """
-    These are dynamic plugins. They are dynamically found by entry points.
-    """
     if lifecycle == "plugins":
         if getattr(sys, "frozen", False):
             return

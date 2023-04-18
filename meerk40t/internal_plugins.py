@@ -1,3 +1,17 @@
+"""
+Internal plugins are a list of plugins which are included internally with MeerK40t, usually additional features
+are written like regular plugins and obey the rules for the meerk40t/kernel plugin system. Plugins can contain
+additional plugin references (this is itself a plugin).
+
+For example,
+        from .core import core
+
+        plugins.append(core.plugin)
+
+Provides all the core plugins for meerk40t to run which are sub-references from that plugin file.
+"""
+
+
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         plugins = list()
