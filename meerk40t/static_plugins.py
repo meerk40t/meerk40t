@@ -1,4 +1,4 @@
-def plugins(kernel, lifecycle):
+def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         plugins = list()
 

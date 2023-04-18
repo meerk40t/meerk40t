@@ -1,7 +1,7 @@
 import sys
 
 
-def plugins(kernel, lifecycle):
+def plugin(kernel, lifecycle):
     """
     These are dynamic plugins. They are dynamically found by entry points.
     """

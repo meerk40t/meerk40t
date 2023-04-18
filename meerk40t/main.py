@@ -10,8 +10,8 @@ import os.path
 import sys
 
 
-from meerk40t.static_plugins import plugins as static_plugins
-from meerk40t.dynamic_plugins import plugins as dynamic_plugins
+from meerk40t.static_plugins import plugin as static_plugins
+from meerk40t.dynamic_plugins import plugin as dynamic_plugins
 from meerk40t.kernel import Kernel
 
 
