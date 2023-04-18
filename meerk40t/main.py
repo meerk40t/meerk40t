@@ -10,8 +10,8 @@ import os.path
 import sys
 
 
-from meerk40t.static_plugins import plugin as static_plugins
-from meerk40t.dynamic_plugins import plugin as dynamic_plugins
+from meerk40t.internal_plugins import plugin as internal_plugins
+from meerk40t.external_plugins import plugin as external_plugins
 from meerk40t.kernel import Kernel
 
 
@@ -137,6 +137,6 @@ def run():
         ignore_settings=args.nuke_settings,
     )
     kernel.args = args
-    kernel.add_plugin(static_plugins)
-    kernel.add_plugin(dynamic_plugins)
+    kernel.add_plugin(internal_plugins)
+    kernel.add_plugin(external_plugins)
     kernel()
