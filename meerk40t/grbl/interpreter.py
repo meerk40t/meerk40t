@@ -24,9 +24,6 @@ class GRBLInterpreter(Module):
     def move_rel(self, x, y):
         self.context.signal("emulator;position", (x, y, x, y))
 
-    def move_ori(self, x, y):
-        self.context.signal("emulator;position", (x, y, x, y))
-
     def plot(self, cutobject):
         try:
             start = cutobject.start

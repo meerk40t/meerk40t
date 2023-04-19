@@ -128,25 +128,6 @@ class GRBLDriver(Parameters):
         self.grbl_realtime("?")
         return (self.native_x, self.native_y), "idle", "unknown"
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self._g91_absolute()
-        self._clean()
-        old_current = self.service.current
-        x, y = self.service.physical_to_device_position(x, y)
-        self._move(self.origin_x + x, self.origin_y + y)
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units

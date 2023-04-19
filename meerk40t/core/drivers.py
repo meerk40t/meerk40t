@@ -101,15 +101,6 @@ class Driver:
             state1 = "paused" if self.paused else "hold"
         return (self.native_x, self.native_y), state0, state1
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
