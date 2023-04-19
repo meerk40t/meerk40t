@@ -211,16 +211,8 @@ class MoshiDevice(Service):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.view = View(self.bedwidth,self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-        )
+        self.view = None
+        self.realize()
 
         self.state = 0
 

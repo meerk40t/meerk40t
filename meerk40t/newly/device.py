@@ -467,19 +467,9 @@ class NewlyDevice(Service):
 
         self.state = 0
 
-        self.view = View(
-            self.bedwidth,
-            self.bedheight,
-            dpi_x=UNITS_PER_INCH / self.h_dpi,
-            dpi_y=UNITS_PER_INCH / self.v_dpi,
-        )
-        self.view.transform(
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
+        self.view = None
+        self.realize()
+
         self.spooler = Spooler(self)
         self.driver = NewlyDriver(self)
         self.spooler.driver = self.driver
