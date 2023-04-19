@@ -8,6 +8,10 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         plugins = []
 
+        from .coords import coords
+
+        plugins.append(coords.plugin)
+
         from . import spoolers
 
         plugins.append(spoolers.plugin)

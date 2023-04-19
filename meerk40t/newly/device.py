@@ -3,12 +3,13 @@ Newly Device
 """
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import UNITS_PER_INCH, ViewPort
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.newly.driver import NewlyDriver
 
 
-class NewlyDevice(Service, ViewPort):
+class NewlyDevice(Service):
     """
     Newly Device
     """
@@ -466,12 +467,13 @@ class NewlyDevice(Service, ViewPort):
 
         self.state = 0
 
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.bedwidth,
             self.bedheight,
-            native_scale_x=UNITS_PER_INCH / self.h_dpi,
-            native_scale_y=UNITS_PER_INCH / self.v_dpi,
+            dpi_x=UNITS_PER_INCH / self.h_dpi,
+            dpi_y=UNITS_PER_INCH / self.v_dpi,
+        )
+        self.view.transform(
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
             flip_x=self.flip_x,
@@ -657,11 +659,21 @@ class NewlyDevice(Service, ViewPort):
     @signal_listener("v_dpi")
     @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.native_scale_x = UNITS_PER_INCH / self.h_dpi
-        self.native_scale_y = UNITS_PER_INCH / self.v_dpi
-        super().realize()
+        self.view = View(
+            self,
+            self.bedwidth,
+            self.bedheight,
+            dpi_x=UNITS_PER_INCH / self.h_dpi,
+            dpi_y=UNITS_PER_INCH / self.v_dpi,
+        )
+        self.view.transform(
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        self.coord.update_dim(self.bedwidth, self.bedheight)
 
     @property
     def current(self):

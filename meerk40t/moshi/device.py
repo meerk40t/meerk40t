@@ -9,12 +9,13 @@ Registers relevant commands and options.
 from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
 
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import MoshiController
 from .driver import MoshiDriver
+from ..core.view import View
 
 
-class MoshiDevice(Service, ViewPort):
+class MoshiDevice(Service):
     """
     MoshiDevice is driver for the Moshiboard boards.
     """
@@ -270,14 +271,10 @@ class MoshiDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
+        self.view = View(self.bedwidth,self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -415,8 +412,14 @@ class MoshiDevice(Service, ViewPort):
         return self.driver.native_x, self.driver.native_y
 
     def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        self.origin_x = 1.0 if self.home_right else 0.0
-        self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()
+        self.view = View(self.bedwidth, self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
+        )
+        self.coords.update_dims(self.bedwidth, self.bedheight)

@@ -14,12 +14,13 @@ from meerk40t.balormk.livefulllightjob import LiveFullLightJob
 from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import Angle, Length
+from meerk40t.core.view import View
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
 
 
-class BalorDevice(Service, ViewPort):
+class BalorDevice(Service):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
     the rest of meerk40t. It defines how the scene should look and contains a spooler which meerk40t will give jobs
@@ -741,16 +742,15 @@ class BalorDevice(Service, ViewPort):
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
-        ViewPort.__init__(
-            self,
+        self.view = View(
             self.lens_size,
             self.lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
+            dpi_x=units_per_galvo,
+            dpi_y=units_per_galvo,
+        )
+        self.view.transform(
             origin_x=1.0 if self.flip_x else 0.0,
             origin_y=1.0 if self.flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -1810,16 +1810,14 @@ class BalorDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.width = self.lens_size
-        self.height = self.lens_size
-        super().realize()
+        self.coord.update(self.lens_size, self.lens_size)
 
     @property
     def current(self):
         """
         @return: the location in nm for the current known x value.
         """
-        return self.device_to_scene_position(
+        return self.coord.device_to_scene_position(
             self.driver.native_x,
             self.driver.native_y,
         )

@@ -27,7 +27,7 @@ class View:
         self.user_width = None
         self.user_height = None
         self.coords = None
-        self.reset()
+        # self.reset()
 
     def __str__(self):
         return f"View('{self.width}', '{self.height}', @{self.dpi})"

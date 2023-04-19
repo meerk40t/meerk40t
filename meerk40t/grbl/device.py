@@ -12,12 +12,13 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
+from ..core.view import View
 from .controller import GrblController
 from .driver import GRBLDriver
 
 
-class GRBLDevice(Service, ViewPort):
+class GRBLDevice(Service):
     """
     GRBLDevice is driver for the Gcode Controllers
     """
@@ -219,14 +220,10 @@ class GRBLDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
+        self.view = View(self.bedwidth, self.bedheight,dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -496,11 +493,23 @@ class GRBLDevice(Service, ViewPort):
             help=_("Update grbl codes for movement"),
         )
         def codes_update(**kwargs):
+            self.width = self.bedwidth
+            self.height = self.bedheight
             self.origin_x = 1.0 if self.home_right else 0.0
             self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
             self.show_origin_y = self.origin_y
-            self.realize()
+            self.view = View(self.bedwidth, self.bedheight, native_scale_x=UNITS_PER_MIL, native_scale_y=UNITS_PER_MIL)
+            self.view.transform(
+                user_scale_x=self.scale_x,
+                user_scale_y=self.scale_y,
+                flip_x=self.flip_x,
+                flip_y=self.flip_y,
+                swap_xy=self.swap_xy,
+                origin_x=0,
+                origin_y=0,
+            )
+            self.coord.update_dims(self.bedwidth, self.bedheight)
 
         @self.console_option(
             "strength", "s", type=int, help="Set the dot laser strength."
@@ -634,10 +643,3 @@ class GRBLDevice(Service, ViewPort):
         @return: the location in device native units for the current known position.
         """
         return self.driver.native_x, self.driver.native_y
-
-    def realize(self, origin=None):
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        # self.origin_x = 1.0 if self.home_right else 0.0
-        # self.origin_y = 1.0 if self.home_bottom else 0.0
-        super().realize()

@@ -17,13 +17,14 @@ from meerk40t.kernel import (
     signal_listener,
 )
 
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
+from ..core.units import UNITS_PER_MIL, Length
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
+from ..core.view import View
 
 
-class LihuiyuDevice(Service, ViewPort):
+class LihuiyuDevice(Service):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
@@ -411,21 +412,15 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        ViewPort.__init__(
-            self,
-            self.bedwidth,
-            self.bedheight,
+        self.view = View(width=self.bedwidth, height=self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
-            native_scale_x=UNITS_PER_MIL,
-            native_scale_y=UNITS_PER_MIL,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
         )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
@@ -961,6 +956,17 @@ class LihuiyuDevice(Service, ViewPort):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
+        self.coord.update_dims(self.bedwidth, self.bedheight)
+        self.view = View(width=self.bedwidth, height=self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
@@ -984,7 +990,7 @@ class LihuiyuDevice(Service, ViewPort):
         """
         @return: the location in scene units for the current known position.
         """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+        return self.coord.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
     @property
     def speed(self):
