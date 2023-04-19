@@ -520,7 +520,11 @@ class RibbonPanel(wx.Panel):
         base_button.action = alt.get("action", base_button.action)
         base_button.action_right = alt.get("action_right", base_button.action_right)
         base_button.label = alt.get("label", base_button.label)
-        base_button.help_string = alt.get("help_string", base_button.help_string)
+
+        helps = alt.get("help_string", "")
+        if helps == "":
+            helps = alt.get("tip", base_button.help_string)
+        base_button.help_string = helps
         base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
         base_button.bitmap_large_disabled = alt.get(
             "bitmap_large_disabled", base_button.bitmap_large_disabled
@@ -618,6 +622,12 @@ class RibbonPanel(wx.Panel):
                 bkind = RB.RIBBON_BUTTON_TOGGLE
             else:
                 bkind = RB.RIBBON_BUTTON_NORMAL
+            helps = ""
+            if show_tip:
+                if helps == "" and "help_string" in button:
+                    helps = button["help_string"]
+                if helps == "" and "tip" in button:
+                    helps = button["tip"]
             b = button_bar.AddButton(
                 button_id=new_id,
                 label=button["label"],
@@ -625,7 +635,7 @@ class RibbonPanel(wx.Panel):
                 bitmap_disabled=button["icon"].GetBitmap(
                     resize=resize_param, color=Color("grey")
                 ),
-                help_string=button["tip"] if show_tip else "",
+                help_string=helps,
                 kind=bkind,
             )
 
