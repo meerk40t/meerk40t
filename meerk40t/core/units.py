@@ -154,11 +154,6 @@ class ViewPort:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
-        show_origin_x=None,
-        show_origin_y=None,
-        show_flip_x=None,
-        show_flip_y=None,
-        show_swap_xy=None,
         rotary_active=False,
         rotary_scale_x=1.0,
         rotary_scale_y=1.0,
@@ -181,21 +176,6 @@ class ViewPort:
         self.rotary_scale_x = rotary_scale_x
         self.rotary_scale_y = rotary_scale_y
         self.swap_xy = swap_xy
-        if show_origin_x is None:
-            show_origin_x = origin_x
-        if show_origin_y is None:
-            show_origin_y = origin_y
-        if show_flip_x is None:
-            show_flip_x = flip_x
-        if show_flip_y is None:
-            show_flip_y = flip_y
-        if show_swap_xy is None:
-            show_swap_xy = swap_xy
-        self.show_origin_x = show_origin_x
-        self.show_origin_y = show_origin_y
-        self.show_flip_x = show_flip_x
-        self.show_flip_y = show_flip_y
-        self.show_swap_xy = show_swap_xy
 
         self.scene_view = View(width, height, dpi=NATIVE_UNIT_PER_INCH)
         self.laser_view = View(
@@ -204,32 +184,13 @@ class ViewPort:
             dpi_x=NATIVE_UNIT_PER_INCH / self.native_scale_x,
             dpi_y=NATIVE_UNIT_PER_INCH / self.native_scale_y,
         )
-        self.show_view = View(width, height, dpi=NATIVE_UNIT_PER_INCH)
-
-        self.scene_to_show = ViewMap(self.scene_view, self.show_view)
         self.scene_to_device = ViewMap(self.scene_view, self.laser_view)
-
-        self.show_to_scene = ViewMap(self.show_view, self.scene_view)
-        self.show_to_device = ViewMap(self.show_view, self.laser_view)
-
         self.device_to_scene = ViewMap(self.laser_view, self.scene_view)
-        self.device_to_show = ViewMap(self.laser_view, self.show_view)
-
         self.realize()
 
     def realize(self):
         self.scene_view.set_dims(self.width, self.height)
-        self.show_view.set_dims(self.width, self.height)
         self.laser_view.set_dims(self.width, self.height)
-
-        # calculate show view
-        self.show_view.transform(
-            origin_x=self.show_origin_x,
-            origin_y=self.show_origin_y,
-            flip_x=self.show_flip_x,
-            flip_y=self.show_flip_y,
-            swap_xy=self.show_swap_xy,
-        )
 
         # Calculate regular device matrix
         self.laser_view.transform(
@@ -241,68 +202,8 @@ class ViewPort:
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-
-        self.scene_to_show.revalidate()
         self.scene_to_device.revalidate()
-        self.show_to_scene.revalidate()
-        self.show_to_device.revalidate()
         self.device_to_scene.revalidate()
-        self.device_to_show.revalidate()
-
-    def physical_to_device_position(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y position into device units.
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        px, py = self.scene_view.physical(x, y)
-        return self.scene_to_device_position(px, py)
-
-    def physical_to_scene_position(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y position into viewport units.
-
-        This does not depend on the device except for the width/height for converting percent values.
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        return self.scene_view.physical(x, y)
-
-    def physical_to_show_position(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y position into show units.
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        px, py = self.scene_view.physical(x, y)
-        return self.scene_to_show_position(px, py)
-
-    def physical_to_device_length(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y vector into device vector (dx, dy).
-
-        This natively assumes device coordinate systems are affine. If we convert (0, 1in) as a vector into
-        machine units we are converting the length of 1in into the equal length in machine units. Positionally this
-        could be flipped or moved anywhere in the machine. But, the distance should be the same. However, in some cases
-        due to belt stretching etc. we can have scaled x vs y coord systems so (1in, 0) could be a different length
-        than (0, 1in).
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        px, py = self.scene_view.physical(x, y)
-        return self.scene_to_device_position(px, py, vector=True)
 
     def device_to_scene_position(self, x, y, vector=False):
         """
@@ -317,20 +218,6 @@ class ViewPort:
             return point.x, point.y
         else:
             point = self.device_to_scene.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def device_to_show_position(self, x, y, vector=False):
-        """
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.device_to_show.matrix.transform_vector((x, y))
-            return point.x, point.y
-        else:
-            point = self.device_to_show.matrix.point_in_matrix_space((x, y))
             return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
@@ -350,48 +237,6 @@ class ViewPort:
             point = self.scene_to_device.matrix.point_in_matrix_space((x, y))
             return point.x, point.y
 
-    def scene_to_show_position(self, x, y, vector=False):
-        """
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.scene_to_show.matrix.transform_vector([x, y])
-            return point[0], point[1]
-        else:
-            point = self.scene_to_show.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def show_to_device_position(self, x, y, vector=False):
-        """
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.show_to_device.matrix.transform_vector((x, y))
-            return point.x, point.y
-        else:
-            point = self.show_to_device.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def show_to_scene_position(self, x, y, vector=False):
-        """
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.show_to_scene.matrix.transform_vector((x, y))
-            return point.x, point.y
-        else:
-            point = self.show_to_scene.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
     def device_position(self, x, y):
         m = self.scene_to_device.matrix
         return m.point_in_matrix_space((x, y))
@@ -402,35 +247,11 @@ class ViewPort:
         """
         return self.device_to_scene.matrix
 
-    def device_to_show_matrix(self):
-        """
-        Returns the device-to-scene matrix.
-        """
-        return self.device_to_show.matrix
-
     def scene_to_device_matrix(self):
         """
         Returns the scene-to-device matrix.
         """
         return self.scene_to_device.matrix
-
-    def scene_to_show_matrix(self):
-        """
-        Returns the scene-to-device matrix.
-        """
-        return self.scene_to_show.matrix
-
-    def show_to_device_matrix(self):
-        """
-        Returns the scene-to-device matrix.
-        """
-        return self.show_to_device.matrix
-
-    def show_to_scene_matrix(self):
-        """
-        Returns the device-to-scene matrix.
-        """
-        return self.show_to_scene.matrix
 
     def native_mm(self):
         return self.laser_view.mm
