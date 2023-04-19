@@ -194,7 +194,9 @@ class Wordlist:
             self.content[skey][1] = 2
 
     def translate(self, pattern, increment=True):
-        result = pattern
+        if pattern is None:
+            return ""
+        result = str(pattern)
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
             #            print(f"Key found: {bracketed_key}")
