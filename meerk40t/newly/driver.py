@@ -232,9 +232,6 @@ class NewlyDriver:
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
-
         self.connection.sync()
         try:
             self.connection.set_xy(*self.service.physical_to_device_position(x, y))
@@ -251,8 +248,6 @@ class NewlyDriver:
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
 
         self.connection.sync()

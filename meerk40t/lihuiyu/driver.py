@@ -352,8 +352,6 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
@@ -366,8 +364,6 @@ class LihuiyuDriver(Parameters):
         @param y:
         @return:
         """
-        if self.service.swap_xy:
-            x, y = y, x
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(round(x)), int(round(y)))
@@ -380,8 +376,6 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
-        if self.service.swap_xy:
-            dx, dy = dy, dx
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self._move_relative(dx, dy)
