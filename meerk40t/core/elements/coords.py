@@ -4,7 +4,7 @@ This is a giant list of console commands that deal with and often implement the 
 
 
 from meerk40t.kernel import Service
-from ..units import NATIVE_UNIT_PER_INCH, UNITS_PER_MM
+from ..units import UNITS_PER_MM, NATIVE_UNIT_PER_INCH
 from ..view import View
 
 
@@ -81,9 +81,20 @@ class CoordinateSystem(Service):
         ]
         kernel.register_choices("coords", choices)
 
-        self.display = View(100.0, 100.0, dpi_x=UNITS_PER_MM, dpi_y=UNITS_PER_MM)
+        self.width = "100mm"
+        self.height = "100mm"
+        self.display = View(self.width, self.height, dpi_x=UNITS_PER_MM, dpi_y=UNITS_PER_MM)
+        self.scene = View(self.width, self.height, dpi=NATIVE_UNIT_PER_INCH)
+        self.validate()
 
-        # calculate show view
+    def update_dims(self, width, height):
+        self.width = width
+        self.height = height
+        self.display.set_dims(self.width, self.height)
+        self.scene.set_dims(self.width, self.height)
+        self.validate()
+
+    def validate(self):
         self.display.transform(
             origin_x=self.origin_x,
             origin_y=self.origin_y,
@@ -91,7 +102,6 @@ class CoordinateSystem(Service):
             flip_y=self.bottom_positive,
             swap_xy=self.show_swap_xy,
         )
-
 
     def physical_to_device_position(self, x, y, unitless=1):
         """

@@ -17,8 +17,6 @@ import re
 from copy import copy
 from math import tau
 
-from meerk40t.core.view import View
-from meerk40t.svgelements import Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
 REGEX_LENGTH = re.compile(r"(%s)\.?([A-Za-z%%]*)" % PATTERN_FLOAT)
@@ -68,312 +66,250 @@ UNITS_INCH = 4
 UNITS_PERCENT = 100
 
 
-class ViewMap:
-    def __init__(self, source, destination):
-        """
-        We map two different views together generating the matrix to warp the views together as well as using
-        values like DPI to provide useful information about the given space.
 
-        @param source: view of source
-        @param destination: view of destination
-        """
-        self._source = source
-        self._destination = destination
-        self._matrix = None
-
-    def revalidate(self):
-        self._matrix = None
-
-    def position(self, x, y, vector=False):
-        if not isinstance(x, (int, float)):
-            width = self._destination.width
-            height = self._destination.height
-            x = Length(x, relative_length=width, unitless=1).units
-            y = Length(y, relative_length=height, unitless=1).units
-        unit_x, unit_y = x, y
-        if vector:
-            return self.matrix.transform_vector([unit_x, unit_y])
-        return self.matrix.point_in_matrix_space([unit_x, unit_y])
-
-    @property
-    def matrix(self):
-        if self._matrix is None:
-            self._matrix = Matrix.map(*self._source.coords, *self._destination.coords)
-        return self._matrix
-
-    def mm(self):
-        x, y = self.position(0, self._source.dpi / MM_PER_INCH, vector=True)
-        return abs(complex(x, y))
-
-    def dpi_to_steps(self, dpi):
-        """
-        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
-        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
-        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
-        per 2 mils.
-
-        Note, steps size can be negative if our driver is x or y flipped.
-
-        @param dpi:
-        @param matrix: matrix to use rather than the scene to device matrix if supplied.
-        @return:
-        """
-        # We require vectors so any positional offsets are non-contributing.
-        unit_x = self._source.dpi
-        unit_y = self._source.dpi
-        matrix = self.matrix
-        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
-        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
-        step_x = float(oneinch_x / dpi)
-        step_y = float(oneinch_y / dpi)
-        return step_x, step_y
-
-
-class ViewPort:
-    """
-    The width and height are of the viewport are stored in MK native units (1/65535) in.
-    Origin_x and origin_y are the location of the machine home position in factors of 1.
-    This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
-    * user_scale is a scale factor for applied by the user rather than the driver.
-    * native_scale is the scale factor of the driver units to MK native units
-    * flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
-    * show_origin is the 0,0 point as seen, for example galvo lasers call 0,0 center of the screen, but the machine
-        units actually have 0,0 as the upper-left corner (depending on the flips and rotates)
-    """
-
-    def __init__(
-        self,
-        width,
-        height,
-        origin_x=0.0,
-        origin_y=0.0,
-        user_scale_x=1.0,
-        user_scale_y=1.0,
-        native_scale_x=1.0,
-        native_scale_y=1.0,
-        flip_x=False,
-        flip_y=False,
-        swap_xy=False,
-        rotary_active=False,
-        rotary_scale_x=1.0,
-        rotary_scale_y=1.0,
-        rotary_flip_x=False,
-        rotary_flip_y=False,
-    ):
-        self.width = width
-        self.height = height
-        self.origin_x = origin_x
-        self.origin_y = origin_y
-        self.user_scale_x = user_scale_x
-        self.user_scale_y = user_scale_y
-        self.native_scale_x = native_scale_x
-        self.native_scale_y = native_scale_y
-        self.flip_x = flip_x
-        self.flip_y = flip_y
-        self.rotary_active = rotary_active
-        self.rotary_flip_x = rotary_flip_x
-        self.rotary_flip_y = rotary_flip_y
-        self.rotary_scale_x = rotary_scale_x
-        self.rotary_scale_y = rotary_scale_y
-        self.swap_xy = swap_xy
-
-        self.scene_view = View(width, height, dpi=NATIVE_UNIT_PER_INCH)
-        self.laser_view = View(
-            width,
-            height,
-            dpi_x=NATIVE_UNIT_PER_INCH / self.native_scale_x,
-            dpi_y=NATIVE_UNIT_PER_INCH / self.native_scale_y,
-        )
-        self.scene_to_device = ViewMap(self.scene_view, self.laser_view)
-        self.device_to_scene = ViewMap(self.laser_view, self.scene_view)
-        self.realize()
-
-    def realize(self):
-        self.scene_view.set_dims(self.width, self.height)
-        self.laser_view.set_dims(self.width, self.height)
-
-        # Calculate regular device matrix
-        self.laser_view.transform(
-            origin_x=self.origin_x,
-            origin_y=self.origin_y,
-            user_scale_x=self.user_scale_x,
-            user_scale_y=self.user_scale_y,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
-        self.scene_to_device.revalidate()
-        self.device_to_scene.revalidate()
-
-    def device_to_scene_position(self, x, y, vector=False):
-        """
-        Converts a device position x, y into a scene position of native units (1/65535) inches.
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.device_to_scene.matrix.transform_vector((x, y))
-            return point.x, point.y
-        else:
-            point = self.device_to_scene.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def scene_to_device_position(self, x, y, vector=False):
-        """
-        Converts scene to a device position (or vector). Converts x, y from scene units (1/65535) inches into
-        device specific units. Optionally allows the calculation of a vector distance.
-
-        @param x:
-        @param y:
-        @param vector:
-        @return:
-        """
-        if vector:
-            point = self.scene_to_device.matrix.transform_vector([x, y])
-            return point[0], point[1]
-        else:
-            point = self.scene_to_device.matrix.point_in_matrix_space((x, y))
-            return point.x, point.y
-
-    def device_position(self, x, y):
-        m = self.scene_to_device.matrix
-        return m.point_in_matrix_space((x, y))
-
-    def device_to_scene_matrix(self):
-        """
-        Returns the device-to-scene matrix.
-        """
-        return self.device_to_scene.matrix
-
-    def scene_to_device_matrix(self):
-        """
-        Returns the scene-to-device matrix.
-        """
-        return self.scene_to_device.matrix
-
-    def native_mm(self):
-        return self.laser_view.mm
-
-    def length(
-        self,
-        value,
-        axis=None,
-        new_units=None,
-        relative_length=None,
-        as_float=False,
-        unitless=1,
-        digits=None,
-        scale=None,
-    ):
-        """
-        Axis 0 is X
-        Axis 1 is Y
-
-        Axis -1 is 1D in x, y space. e.g. a line width.
-
-        Convert a length of distance {value} to new native values.
-
-        @param value:
-        @param axis:
-        @param new_units:
-        @param relative_length:
-        @param as_float:
-        @param unitless: factor for units with no units sets.
-        @param scale: scale length by given factor.
-        @return:
-        """
-        if axis == 0:
-            if relative_length is None:
-                relative_length = self.width
-        else:
-            if relative_length is None:
-                relative_length = self.height
-        length = Length(
-            value, relative_length=relative_length, unitless=unitless, digits=digits
-        )
-        if scale is not None:
-            length *= scale
-
-        if new_units == "mm":
-            if as_float:
-                return length.mm
-            else:
-                return length.length_mm
-        elif new_units == "inch":
-            if as_float:
-                return length.inches
-            else:
-                return length.length_inches
-        elif new_units == "cm":
-            if as_float:
-                return length.cm
-            else:
-                return length.length_cm
-        elif new_units == "px":
-            if as_float:
-                return length.pixels
-            else:
-                return length.length_pixels
-        elif new_units == "mil":
-            if as_float:
-                return length.mil
-            else:
-                return length.length_mil
-        else:
-            return length.units
-
-    def contains(self, x, y):
-        return self.laser_view.contains(x, y)
-
-    def bbox(self):
-        return self.scene_view.bbox()
-
-    def dpi_to_steps(self, dpi, matrix=None):
-        """
-        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
-        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
-        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
-        per 2 mils.
-
-        Note, steps size can be negative if our driver is x or y flipped.
-
-        @param dpi:
-        @param matrix: matrix to use rather than the scene to device matrix if supplied.
-        @return:
-        """
-        # We require vectors so any positional offsets are non-contributing.
-        unit_x = UNITS_PER_INCH
-        unit_y = UNITS_PER_INCH
-        if matrix is None:
-            matrix = self.scene_to_device_matrix()
-        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
-        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
-        step_x = float(oneinch_x / dpi)
-        step_y = float(oneinch_y / dpi)
-        return step_x, step_y
-
-    @property
-    def length_width(self):
-        return Length(self.width)
-
-    @property
-    def length_height(self):
-        return Length(self.height)
-
-    @property
-    def unit_width(self):
-        return float(Length(self.width))
-
-    @property
-    def unit_height(self):
-        return float(Length(self.height))
-
-    @staticmethod
-    def conversion(units, amount=1):
-        return Length(f"{amount}{units}").preferred
-
+# class ViewPort:
+#     """
+#     The width and height are of the viewport are stored in MK native units (1/65535) in.
+#     Origin_x and origin_y are the location of the machine home position in factors of 1.
+#     This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
+#     * user_scale is a scale factor for applied by the user rather than the driver.
+#     * native_scale is the scale factor of the driver units to MK native units
+#     * flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
+#     * show_origin is the 0,0 point as seen, for example galvo lasers call 0,0 center of the screen, but the machine
+#         units actually have 0,0 as the upper-left corner (depending on the flips and rotates)
+#     """
+#
+#     def __init__(
+#         self,
+#         width,
+#         height,
+#         origin_x=0.0,
+#         origin_y=0.0,
+#         user_scale_x=1.0,
+#         user_scale_y=1.0,
+#         native_scale_x=1.0,
+#         native_scale_y=1.0,
+#         flip_x=False,
+#         flip_y=False,
+#         swap_xy=False,
+#         rotary_active=False,
+#         rotary_scale_x=1.0,
+#         rotary_scale_y=1.0,
+#         rotary_flip_x=False,
+#         rotary_flip_y=False,
+#     ):
+#         self.width = width
+#         self.height = height
+#         self.origin_x = origin_x
+#         self.origin_y = origin_y
+#         self.user_scale_x = user_scale_x
+#         self.user_scale_y = user_scale_y
+#         self.native_scale_x = native_scale_x
+#         self.native_scale_y = native_scale_y
+#         self.flip_x = flip_x
+#         self.flip_y = flip_y
+#         self.rotary_active = rotary_active
+#         self.rotary_flip_x = rotary_flip_x
+#         self.rotary_flip_y = rotary_flip_y
+#         self.rotary_scale_x = rotary_scale_x
+#         self.rotary_scale_y = rotary_scale_y
+#         self.swap_xy = swap_xy
+#
+#         self.laser_view = View(
+#             width,
+#             height,
+#             dpi_x=NATIVE_UNIT_PER_INCH / self.native_scale_x,
+#             dpi_y=NATIVE_UNIT_PER_INCH / self.native_scale_y,
+#         )
+#         self.scene_to_device = ViewMap(self.scene_view, self.laser_view)
+#         self.device_to_scene = ViewMap(self.laser_view, self.scene_view)
+#         self.realize()
+#
+#     def realize(self):
+#         self.laser_view.set_dims(self.width, self.height)
+#
+#         # Calculate regular device matrix
+#         self.laser_view.transform(
+#             origin_x=self.origin_x,
+#             origin_y=self.origin_y,
+#             user_scale_x=self.user_scale_x,
+#             user_scale_y=self.user_scale_y,
+#             flip_x=self.flip_x,
+#             flip_y=self.flip_y,
+#             swap_xy=self.swap_xy,
+#         )
+#         self.scene_to_device.revalidate()
+#         self.device_to_scene.revalidate()
+#
+#     def device_to_scene_position(self, x, y, vector=False):
+#         """
+#         Converts a device position x, y into a scene position of native units (1/65535) inches.
+#         @param x:
+#         @param y:
+#         @param vector:
+#         @return:
+#         """
+#         if vector:
+#             point = self.device_to_scene.matrix.transform_vector((x, y))
+#             return point.x, point.y
+#         else:
+#             point = self.device_to_scene.matrix.point_in_matrix_space((x, y))
+#             return point.x, point.y
+#
+#     def scene_to_device_position(self, x, y, vector=False):
+#         """
+#         Converts scene to a device position (or vector). Converts x, y from scene units (1/65535) inches into
+#         device specific units. Optionally allows the calculation of a vector distance.
+#
+#         @param x:
+#         @param y:
+#         @param vector:
+#         @return:
+#         """
+#         if vector:
+#             point = self.scene_to_device.matrix.transform_vector([x, y])
+#             return point[0], point[1]
+#         else:
+#             point = self.scene_to_device.matrix.point_in_matrix_space((x, y))
+#             return point.x, point.y
+#
+#     def device_position(self, x, y):
+#         m = self.scene_to_device.matrix
+#         return m.point_in_matrix_space((x, y))
+#
+#     def device_to_scene_matrix(self):
+#         """
+#         Returns the device-to-scene matrix.
+#         """
+#         return self.device_to_scene.matrix
+#
+#     def scene_to_device_matrix(self):
+#         """
+#         Returns the scene-to-device matrix.
+#         """
+#         return self.scene_to_device.matrix
+#
+#     def native_mm(self):
+#         return self.laser_view.mm
+#
+#     def length(
+#         self,
+#         value,
+#         axis=None,
+#         new_units=None,
+#         relative_length=None,
+#         as_float=False,
+#         unitless=1,
+#         digits=None,
+#         scale=None,
+#     ):
+#         """
+#         Axis 0 is X
+#         Axis 1 is Y
+#
+#         Axis -1 is 1D in x, y space. e.g. a line width.
+#
+#         Convert a length of distance {value} to new native values.
+#
+#         @param value:
+#         @param axis:
+#         @param new_units:
+#         @param relative_length:
+#         @param as_float:
+#         @param unitless: factor for units with no units sets.
+#         @param scale: scale length by given factor.
+#         @return:
+#         """
+#         if axis == 0:
+#             if relative_length is None:
+#                 relative_length = self.width
+#         else:
+#             if relative_length is None:
+#                 relative_length = self.height
+#         length = Length(
+#             value, relative_length=relative_length, unitless=unitless, digits=digits
+#         )
+#         if scale is not None:
+#             length *= scale
+#
+#         if new_units == "mm":
+#             if as_float:
+#                 return length.mm
+#             else:
+#                 return length.length_mm
+#         elif new_units == "inch":
+#             if as_float:
+#                 return length.inches
+#             else:
+#                 return length.length_inches
+#         elif new_units == "cm":
+#             if as_float:
+#                 return length.cm
+#             else:
+#                 return length.length_cm
+#         elif new_units == "px":
+#             if as_float:
+#                 return length.pixels
+#             else:
+#                 return length.length_pixels
+#         elif new_units == "mil":
+#             if as_float:
+#                 return length.mil
+#             else:
+#                 return length.length_mil
+#         else:
+#             return length.units
+#
+#     def contains(self, x, y):
+#         return self.laser_view.contains(x, y)
+#
+#     def bbox(self):
+#         return self.scene_view.bbox()
+#
+#     def dpi_to_steps(self, dpi, matrix=None):
+#         """
+#         Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
+#         the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
+#         200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
+#         per 2 mils.
+#
+#         Note, steps size can be negative if our driver is x or y flipped.
+#
+#         @param dpi:
+#         @param matrix: matrix to use rather than the scene to device matrix if supplied.
+#         @return:
+#         """
+#         # We require vectors so any positional offsets are non-contributing.
+#         unit_x = UNITS_PER_INCH
+#         unit_y = UNITS_PER_INCH
+#         if matrix is None:
+#             matrix = self.scene_to_device_matrix()
+#         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+#         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
+#         step_x = float(oneinch_x / dpi)
+#         step_y = float(oneinch_y / dpi)
+#         return step_x, step_y
+#
+#     @property
+#     def length_width(self):
+#         return Length(self.width)
+#
+#     @property
+#     def length_height(self):
+#         return Length(self.height)
+#
+#     @property
+#     def unit_width(self):
+#         return float(Length(self.width))
+#
+#     @property
+#     def unit_height(self):
+#         return float(Length(self.height))
+#
+#     @staticmethod
+#     def conversion(units, amount=1):
+#         return Length(f"{amount}{units}").preferred
+#
 
 ACCEPTED_UNITS = (
     "",
