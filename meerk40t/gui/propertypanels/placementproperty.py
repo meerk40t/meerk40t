@@ -157,6 +157,8 @@ class PlacementPanel(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
+        if hasattr(self.operation, "validate"):
+            self.operation.validate()
         op = self.operation.type
         is_current = bool(op == "place current")
         if self.operation.output is not None:

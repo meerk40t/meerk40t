@@ -17,48 +17,54 @@ class PlacePointNode(Node):
 
     def __init__(self, x=0, y=0, rotation=0, corner=0, loops=1, **kwargs):
         self.x = x
-        try:
-            if isinstance(x, str):
-                self.x = float(Length(x))
-            elif isinstance(x, Length):
-                self.x = float(x)
-            else:
-                self.x = x
-        except ValueError:
-            self.x = 0
-        try:
-            if isinstance(y, str):
-                self.y = float(Length(x))
-            elif isinstance(y, Length):
-                self.y = float(y)
-            else:
-                self.y = y
-        except ValueError:
-            self.y = 0
-        try:
-            if isinstance(rotation, str):
-                self.rotation = Angle(rotation).radians
-            elif isinstance(rotation, Angle):
-                self.rotation = rotation.radians
-            else:
-                self.rotation = rotation
-        except ValueError:
-            self.rotation = 0
-        try:
-            self.corner = min(4, max(0, int(corner)))
-        except ValueError:
-            self.corner = 0
-        # repetitions at the same point
-        self.loops = 1
-        if loops is not None:
-            try:
-                self.loops = int(loops)
-            except ValueError:
-                pass
-        # Active?
+        self.y = y
+        self.rotation = rotation
+        self.corner = corner
+        self.loops = loops
         self.output = True
         super().__init__(type="place point", **kwargs)
         self._formatter = "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
+        self.validate()
+
+    def validate(self):
+        if isinstance(self.output, str):
+            try:
+                self.output = bool(self.output)
+            except ValueError:
+                self.output = True
+        try:
+            if isinstance(self.x, str):
+                self.x = float(Length(self.x))
+            elif isinstance(self.x, Length):
+                self.x = float(self.x)
+        except ValueError:
+            self.x = 0
+        try:
+            if isinstance(self.y, str):
+                self.y = float(Length(self.y))
+            elif isinstance(self.y, Length):
+                self.y = float(self.y)
+        except ValueError:
+            self.y = 0
+        try:
+            if isinstance(self.rotation, str):
+                self.rotation = Angle(self.rotation).radians
+            elif isinstance(self.rotation, Angle):
+                self.rotation = self.rotation.radians
+        except ValueError:
+            self.rotation = 0
+        try:
+            self.corner = min(4, max(0, int(self.corner)))
+        except ValueError:
+            self.corner = 0
+        # repetitions at the same point
+        if self.loops is None:
+            self.loops = 1
+        else:
+            try:
+                self.loops = int(self.loops)
+            except ValueError:
+                self.loops = 1
 
     def __copy__(self):
         nd = self.node_dict
