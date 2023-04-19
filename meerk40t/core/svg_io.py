@@ -1132,6 +1132,8 @@ class SVGProcessor:
 
                 try:
                     op = self.elements.op_branch.create(type=node_type, **attrs)
+                    if op is None or not hasattr(op, "type") or op.type is None:
+                        return
                     if hasattr(op, "validate"):
                         op.validate()
                     op.id = node_id
