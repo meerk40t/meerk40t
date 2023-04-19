@@ -12,7 +12,68 @@ def plugin(kernel, lifecycle=None):
     elif lifecycle == "boot":
         _ = kernel.root._
         rotary = kernel.rotary
-        # TODO: Flesh out implementation into proper device info.
+        # # TODO: Flesh out implementation into proper device info.
+        choices = [
+            {
+                "attr": "rotary_active",
+                "object": rotary,
+                "default": False,
+                "type": bool,
+                "label": _("Rotary-Mode active"),
+                "tip": _("Is the rotary mode active for this device"),
+            },
+            {
+                "attr": "rotary_scale_x",
+                "object": rotary,
+                "default": 1.0,
+                "type": float,
+                "label": _("X-Scale"),
+                "tip": _("Scale that needs to be applied to the X-Axis"),
+                "conditional": (rotary, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_scale_y",
+                "object": rotary,
+                "default": 1.0,
+                "type": float,
+                "label": _("Y-Scale"),
+                "tip": _("Scale that needs to be applied to the Y-Axis"),
+                "conditional": (rotary, "rotary_active"),
+                "subsection": _("Scale"),
+            },
+            {
+                "attr": "rotary_supress_home",
+                "object": rotary,
+                "default": False,
+                "type": bool,
+                "label": _("Ignore Home"),
+                "tip": _("Ignore Home-Command"),
+                "conditional": (rotary, "rotary_active"),
+            },
+            {
+                "attr": "rotary_mirror_x",
+                "object": rotary,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (rotary, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_mirror_y",
+                "object": rotary,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (rotary, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+        ]
+        kernel.register_choices("rotary", choices)
+
         choices = [
             {
                 "attr": "rotary_enabled",
