@@ -882,7 +882,10 @@ class BalorDevice(Service, ViewPort):
                 channel("Resuming current job")
             else:
                 channel("Pausing current job")
-            self.driver.pause()
+            try:
+                self.driver.pause()
+            except ConnectionRefusedError:
+                channel(_("Could not contact Galvo laser."))
             self.signal("pause")
 
         @self.console_command(
@@ -891,7 +894,10 @@ class BalorDevice(Service, ViewPort):
         )
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Resume the current job")
-            self.driver.resume()
+            try:
+                self.driver.resume()
+            except ConnectionRefusedError:
+                channel(_("Could not contact Galvo laser."))
             self.signal("pause")
 
         @self.console_option(

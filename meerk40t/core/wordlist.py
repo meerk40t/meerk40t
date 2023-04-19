@@ -275,7 +275,7 @@ class Wordlist:
                         wordlist[2] = value + 1
                 else:
                     # This is a variable wordlist.
-                    current_index = wordlist[1] if not reset else 0
+                    current_index = wordlist[1] if not reset else 2  # 2 as 2 based
                     current_index += relative
                     value = self.fetch_value(key, current_index)
                     if autoincrement and increment:

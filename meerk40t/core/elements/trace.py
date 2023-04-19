@@ -158,7 +158,7 @@ def welzl_helper(P, R, n):
     @return:
     """
     # Base case when all points processed or |R| = 3
-    if n == 0 or len(R) == 3:
+    if n <= 0 or len(R) == 3:
         center, radius = min_circle_trivial(R)
         return center, radius
 

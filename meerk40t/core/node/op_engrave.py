@@ -301,11 +301,16 @@ class EngraveOpNode(Node, Parameters):
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
+            try:
+                stroke = node.stroke
+            except AttributeError:
+                # ImageNode does not have a stroke.
+                stroke = None
             yield from path_to_cutobjects(
                 path,
                 settings=settings,
                 closed_distance=closed_distance,
                 passes=passes,
                 original_op=self.type,
-                color=node.stroke,
+                color=stroke,
             )

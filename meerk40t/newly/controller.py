@@ -57,14 +57,16 @@ class NewlyController:
         self._set_pen = None
         self._set_cut_dc = None
         self._set_move_dc = None
-        self._set_speed_mode = None
+        self._set_mode = None
         self._set_speed = None
         self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
 
         #######################
         # Current Set Modes.
@@ -73,14 +75,16 @@ class NewlyController:
         self._pen = None
         self._cut_dc = None
         self._move_dc = None
-        self._speed_mode = None
+        self._mode = None
         self._speed = None
         self._power = None
         self._pwm_frequency = None
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
+        self._backlash = None
+        self._corner_speed = None
+        self._acceleration_length = None
 
         self._realtime = False
 
@@ -209,26 +213,30 @@ class NewlyController:
         self._set_pen = None
         self._set_cut_dc = None
         self._set_move_dc = None
-        self._set_speed_mode = None
+        self._set_mode = None
         self._set_speed = None
         self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
 
         self._pen = None
         self._cut_dc = None
         self._move_dc = None
-        self._speed_mode = None
+        self._mode = None
         self._speed = None
         self._power = None
         self._pwm_frequency = None
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
+        self._backlash = None
+        self._corner_speed = None
+        self._acceleration_length = None
 
     def _set_move_mode(self):
         """
@@ -241,13 +249,15 @@ class NewlyController:
         self._set_pen = self.sp2
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "raster"
+        self._set_mode = "move"
         self._set_speed = self.service.moving_speed
         self._set_pwm_freq = None
         self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
 
     def _set_goto_mode(self):
         """
@@ -260,7 +270,7 @@ class NewlyController:
         @return:
         """
         self._set_pen = self.sp2
-        self._set_speed_mode = "raster"
+        self._set_mode = "goto"
         self._set_speed = self.service.moving_speed
         self._set_relative = True
 
@@ -278,7 +288,7 @@ class NewlyController:
         self._set_pen = self.sp0
         self._set_power = 0
         self._set_relative = True
-        self._set_speed_mode = "raster"
+        self._set_mode = "frame"
         self._set_speed = self.service.moving_speed
         if self.service.pwm_enabled:
             self._set_pwm_freq = self.service.pwm_frequency
@@ -294,8 +304,7 @@ class NewlyController:
         self._set_pen = self.sp1
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "vector"
-        self._power = None
+        self._set_mode = "vector"
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
         if self.service.pwm_enabled:
@@ -303,7 +312,7 @@ class NewlyController:
         self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
     def _set_raster_mode(self):
         """
@@ -317,13 +326,14 @@ class NewlyController:
         self._set_pen = self.sp0
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "raster"
+        self._set_mode = "raster"
+        self._corner_speed = None
+        self._acceleration_length = None
         if self.service.pwm_enabled:
             self._set_pwm_freq = self.service.pwm_frequency
         self._set_relative = True
         self._set_bit_depth = 1
         self._set_bit_width = 1
-        self._set_bit_c = 0
         self._set_speed = self.service.default_raster_speed
         self._set_power = self.service.default_raster_power
 
@@ -481,7 +491,7 @@ class NewlyController:
 
         self._set_raster_mode()
         self.set_settings(raster_cut.settings)
-        self._set_speed_mode = "raster"
+        self._set_mode = "raster"
 
         self._commit_settings()
 
@@ -497,7 +507,9 @@ class NewlyController:
                 if dy != 0:
                     # We are moving in the Y direction.
                     commit_scanline()
-                    self.goto(x, y)  # remain standard rastermode
+                    self._relative = True
+                    self("PR")
+                    self._goto(x, y)  # remain standard rastermode
                 if dx != 0:
                     # Normal move, extend bytes.
                     scanline.extend([int(on)] * abs(dx))
@@ -514,7 +526,9 @@ class NewlyController:
                 if dx != 0:
                     # We are moving in the X direction.
                     commit_scanline()
-                    self.goto(x, y)  # remain standard rastermode
+                    self._relative = True
+                    self("PR")
+                    self._goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
                     scanline.extend([int(on)] * abs(dy))
@@ -534,7 +548,7 @@ class NewlyController:
         """
         if "speed" in settings:
             self._set_speed = settings.get("speed")
-            self._set_speed_mode = "vector"
+            self._set_mode = "vector"
         if "power" in settings:
             self._set_power = settings.get("power")
         if "pwm_frequency" in settings:
@@ -765,13 +779,40 @@ class NewlyController:
     #######################
 
     def _commit_settings(self):
+        if self._set_speed is not None:
+            # If set speed is set, we set all the various speed chart lookup properties.
+            settings = self._get_chart_settings_for_speed(self._set_speed)
+            self._set_corner_speed = int(round(settings["corner_speed"]))
+            self._set_acceleration_length = int(round(settings["acceleration_length"]))
+            self._set_backlash = int(round(settings["backlash"]))
+
+        self.commit_mode()
         self._commit_pwmfreq()
         self._commit_dc()
-        self._commit_pen()
+        if self._mode != "raster":
+            self._commit_pen()
         self._commit_power()
-        self._commit_raster()
+        if self._mode == "raster":
+            self._commit_raster()
+            self._commit_pen()
+        if self._mode != "vector":
+            self._commit_corner_speed()
+            self._commit_acceleration_length()
         self._commit_speed()
         self._commit_relative_mode()
+
+    def commit_mode(self):
+        if self._set_mode is None:
+            # Quick fail.
+            return
+        new_mode = self._set_mode
+        self._set_mode = None
+        if new_mode != self._mode:
+            self._mode = new_mode
+
+            # Old speed and power are void on mode change.
+            self._speed = None
+            self._power = None
 
     #######################
     # Commit DC Info
@@ -892,27 +933,15 @@ class NewlyController:
     #######################
 
     def _commit_speed(self):
-        if (
-            self._set_speed is None
-            and self._set_speed_mode is None
-            and self._speed is not None
-        ):
+        if self._set_speed is None and self._speed is not None:
             return
         new_speed = self._set_speed
-        new_speed_mode = self._set_speed_mode
-        self._set_speed_mode = None
         self._set_speed = None
-        if new_speed is not None and (
-            new_speed != self._speed or new_speed_mode != self._speed_mode
-        ):
-            self._speed_mode = new_speed_mode
+        if new_speed is not None and new_speed != self._speed:
             self._speed = new_speed
-            if self._speed_mode == "vector":
+            if self._mode == "vector":
                 self(f"VS{self._map_vector_speed(new_speed)}")
             else:
-                settings = self._get_chart_settings_for_speed(new_speed)
-                self(f"VQ{int(round(settings['corner_speed']))}")
-                self(f"VJ{int(round(settings['acceleration_length']))}")
                 self(f"VS{self._map_raster_speed(new_speed)}")
 
     def _get_chart_settings_for_speed(self, speed):
@@ -953,6 +982,45 @@ class NewlyController:
             return 132 + int(round(speed * 5))
         else:
             return 127 + int(round(speed * 10))
+
+    #######################
+    # Commit Speed Chart
+    #######################
+
+    def _commit_corner_speed(self):
+        if self._set_corner_speed is None and self._corner_speed is not None:
+            # Quick Fail.
+            return
+
+        # Fetch Requested.
+        new_corner_speed = self._set_corner_speed
+        self._set_corner_speed = None
+        if new_corner_speed is None:
+            # Nothing set, set default.
+            return
+        if new_corner_speed != self._corner_speed:
+            # Corner_speed is different
+            self._corner_speed = new_corner_speed
+            self(f"VQ{int(round(self._corner_speed))}")
+
+    def _commit_acceleration_length(self):
+        if (
+            self._set_acceleration_length is None
+            and self._acceleration_length is not None
+        ):
+            # Quick Fail.
+            return
+
+        # Fetch Requested.
+        new_acceleration_length = self._set_acceleration_length
+        self._set_acceleration_length = None
+        if new_acceleration_length is None:
+            # Nothing set, set default.
+            return
+        if new_acceleration_length != self._acceleration_length:
+            # Acceleration Length is different
+            self._acceleration_length = new_acceleration_length
+            self(f"VJ{int(round(self._acceleration_length))}")
 
     #######################
     # Commit Relative Mode
@@ -1010,23 +1078,23 @@ class NewlyController:
             self._bit_width = new_bitwidth
             self(f"BD{self._bit_width}")
 
-    def _commit_raster_bitc(self):
-        if self._set_bit_c is None and self._bit_c is not None:
+    def _commit_raster_backlash(self):
+        if self._set_backlash is None and self._backlash is not None:
             # Quick Fail.
             return
 
         # Fetch Requested.
-        new_bitc = self._set_bit_c
-        self._set_bit_c = None
-        if new_bitc is None:
+        new_backlash = self._set_backlash
+        self._set_backlash = None
+        if new_backlash is None:
             # Nothing set, set default.
             return
-        if new_bitc != self._bit_c:
-            # Bitc is different
-            self._bit_c = new_bitc
-            self(f"BC{self._bit_c}")
+        if new_backlash != self._backlash:
+            # backlash is different
+            self._backlash = new_backlash
+            self(f"BC{self._backlash}")
 
     def _commit_raster(self):
         self._commit_raster_bitdepth()
-        self._commit_raster_bitc()
+        self._commit_raster_backlash()
         self._commit_raster_bitwidth()
