@@ -88,4 +88,11 @@ class CoordinateSystem(Service):
         self.width = float(Length(width))
         self.height = float(Length(height))
         self.display = View(self.width, self.height, dpi_x=UNITS_PER_MM, dpi_y=UNITS_PER_MM)
+        self.display.transform(
+            origin_x=self.origin_x,
+            origin_y=self.origin_y,
+            flip_x=self.right_positive,
+            flip_y=self.bottom_positive,
+            swap_xy=self.swap_xy,
+        )
 
