@@ -321,7 +321,7 @@ class DevicePanel(wx.Panel):
                 if family_default:
                     break
 
-            family_info = getattr(device, "source", family_default)
+            family_info = device.setting(str, "source", family_default)
             if family_info:
                 family_info = family_info.capitalize()
             self.devices_list.SetItem(index, 1, type_info)

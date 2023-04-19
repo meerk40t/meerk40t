@@ -70,6 +70,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
@@ -355,19 +356,6 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "mini_icon",
-                "object": self.context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Mini icon in tree"),
-                "tip": _(
-                    "Active: Display a miniature representation of the element in the tree\n"
-                    + "Inactive: Use a standard icon for the element type instead"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -376,7 +364,20 @@ class MeerK40t(MWindow):
                 "choices": ["large", "big", "default", "small", "tiny"],
                 "label": _("Icon size:"),
                 "tip": _(
-                    "Appearance of all icons in the GUI (requires a restart to take effect))"
+                    "Appearance of all icons in the GUI (requires a restart to take effect)"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n"
+                    + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
@@ -703,6 +704,19 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
+            },
+        )
+
+        kernel.register(
+            "button/tools/Placement",
+            {
+                "label": _("Job Start"),
+                "icon": icons8_user_location_50,
+                "tip": _("Add a job starting point to the scene"),
+                "action": lambda v: kernel.elements("tool placement\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "placement",
             },
         )
 
@@ -1113,8 +1127,9 @@ class MeerK40t(MWindow):
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
                     node.emphasized = True
-                group_node.emphasized = True
-                kernel.signal("element_property_reload", "Scene", group_node)
+                if group_node is not None:
+                    group_node.emphasized = True
+                    kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         buttonsize = STD_ICON_SIZE
@@ -2425,7 +2440,8 @@ class MeerK40t(MWindow):
                     flag = True
                     if len(node.references) > 0:
                         flag = False
-                node.emphasized = flag
+                if node.can_emphasize:
+                    node.emphasized = flag
             elements.validate_selected_area()
             self.context.signal("refresh_scene", "Scene")
 
@@ -2451,7 +2467,7 @@ class MeerK40t(MWindow):
             self.context("window open Preferences\n")
 
         def on_click_delete():
-            self.context("element delete\n")
+            self.context("tree selected delete\n")
 
         def clipboard_filled():
             res = False
@@ -2553,7 +2569,7 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("Delete\tDel"),
+                "label": _("Delete"),
                 "help": _("Delete the selected elements"),
                 "action": on_click_delete,
                 "enabled": self.context.elements.has_emphasis,
@@ -3120,6 +3136,16 @@ class MeerK40t(MWindow):
             id=menuitem.GetId(),
         )
         self.help_menu.AppendSeparator()
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Check for Updates"),
+            _("Check whether a newer version of Meerk40t is available"),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("check_for_updates -popup\n"),
+            id=menuitem.GetId(),
+        )
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),

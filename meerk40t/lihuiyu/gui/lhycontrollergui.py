@@ -282,7 +282,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
             pass
 
     def set_widgets(self):
-        self.checkbox_show_usb_log.SetValue(self.context.show_usb_log)
+        try:
+            show_log = self.context.show_usb_log
+        except AttributeError:
+            show_log = True
+        self.checkbox_show_usb_log.SetValue(show_log)
         self.on_check_show_usb_log()
 
     def device_execute(self, control_name):
@@ -295,21 +299,25 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def update_status(self, origin, status_data, code_string):
         if origin != self.context.path:
             return
-        if status_data is not None:
-            if isinstance(status_data, int):
-                self.text_desc.SetValue(str(status_data))
-                self.text_desc.SetValue(code_string)
-            else:
-                if len(status_data) == 6:
-                    self.text_byte_0.SetValue(str(status_data[0]))
-                    self.text_byte_1.SetValue(str(status_data[1]))
-                    self.text_byte_2.SetValue(str(status_data[2]))
-                    self.text_byte_3.SetValue(str(status_data[3]))
-                    self.text_byte_4.SetValue(str(status_data[4]))
-                    self.text_byte_5.SetValue(str(status_data[5]))
+        try:
+            if status_data is not None:
+                if isinstance(status_data, int):
+                    self.text_desc.SetValue(str(status_data))
                     self.text_desc.SetValue(code_string)
-        self.packet_count_text.SetValue(str(self.context.packet_count))
-        self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
+                else:
+                    if len(status_data) == 6:
+                        self.text_byte_0.SetValue(str(status_data[0]))
+                        self.text_byte_1.SetValue(str(status_data[1]))
+                        self.text_byte_2.SetValue(str(status_data[2]))
+                        self.text_byte_3.SetValue(str(status_data[3]))
+                        self.text_byte_4.SetValue(str(status_data[4]))
+                        self.text_byte_5.SetValue(str(status_data[5]))
+                        self.text_desc.SetValue(code_string)
+            self.packet_count_text.SetValue(str(self.context.packet_count))
+            self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
+        except RuntimeError:
+            # This should be handled when the controller window is closed.
+            pass
 
     @signal_listener("pipe;packet_text")
     def update_packet_text(self, origin, string_data):

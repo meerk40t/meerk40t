@@ -15,6 +15,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 """
 
 from copy import copy
+from math import isinf
 from os import times
 from time import time
 from typing import Optional
@@ -59,6 +60,7 @@ class CutPlan:
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
         self.outline = None
+        self._previous_bounds = None
 
     def __str__(self):
         parts = list()
@@ -119,41 +121,100 @@ class CutPlan:
         """
         device = self.context.device
 
-        # ==========
-        # Preprocess Operations
-        # ==========
-        matrix = device.scene_to_device_matrix()
+        scene_to_device_matrix = device.scene_to_device_matrix()
 
-        bounds = Node.union_bounds(self.plan)
+        # ==========
+        # Determine the jobs bounds.
+        # ==========
+        bounds = Node.union_bounds(self.plan, bounds=self._previous_bounds)
+        self._previous_bounds = bounds
         if bounds is not None:
             left, top, right, bottom = bounds
             min_x = min(right, left)
             min_y = min(top, bottom)
             max_x = max(right, left)
             max_y = max(top, bottom)
-            self.outline = (
-                device.device_position(min_x, min_y),
-                device.device_position(max_x, min_y),
-                device.device_position(max_x, max_y),
-                device.device_position(min_x, max_y),
-            )
+            if isinf(min_x) or isinf(min_y) or isinf(max_x) or isinf(max_y):
+                # Infinite bounds are invalid.
+                self.outline = None
+            else:
+                self.outline = (
+                    device.device_position(min_x, min_y),
+                    device.device_position(max_x, min_y),
+                    device.device_position(max_x, max_y),
+                    device.device_position(min_x, max_y),
+                )
+
+        # ==========
+        # Query Placements
+        # ==========
+        placements = []
+        for place in self.plan:
+            if not hasattr(place, "type"):
+                continue
+            if place.type.startswith("place "):
+                if hasattr(place, "output") and place.output:
+                    loops = 1
+                    if hasattr(place, "loops") and place.loops > 1:
+                        loops = place.loops
+                    for idx in range(loops):
+                        placements.extend(
+                            place.placements(
+                                self.context, self.outline, scene_to_device_matrix, self
+                            )
+                        )
+        if not placements:
+            # Absolute coordinates.
+            placements.append(scene_to_device_matrix)
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
 
-        for op in self.plan:
-            if not hasattr(op, "type"):
-                continue
-            if op.type.startswith("op"):
-                if hasattr(op, "preprocess"):
-                    op.preprocess(self.context, matrix, self)
-                for node in op.flat():
-                    if node is op:
-                        continue
-                    if hasattr(node, "preprocess"):
-                        node.preprocess(self.context, matrix, self)
+        original_ops = copy(self.plan)
+        self.plan.clear()
+        idx = 0
+        self.context.elements.mywordlist.push()
+
+        for placement in placements:
+            # Adjust wordlist
+            if idx > 0:
+                self.context.elements.mywordlist.move_all_indices(1)
+
+            for original_op in original_ops:
+                op = copy(original_op)
+                if not hasattr(op, "type") or op.type is None:
+                    self.plan.append(op)
+                    continue
+                if op.type.startswith("place "):
+                    continue
+                self.plan.append(op)
+                if op.type.startswith("op"):
+                    for child in original_op.children:
+                        op.add_node(copy(child))
+                    if hasattr(op, "preprocess"):
+                        op.preprocess(self.context, placement, self)
+                    for node in op.flat():
+                        if node is op:
+                            continue
+                        if hasattr(node, "mktext") and hasattr(node, "_cache"):
+                            newtext = self.context.elements.wordlist_translate(
+                                node.mktext, elemnode=node, increment=False
+                            )
+                            oldtext = getattr(node, "_translated_text", "")
+                            # print (f"Was called inside preprocess for {node.type} with {node.mktext}, old: {oldtext}, new:{newtext}")
+                            if newtext != oldtext:
+                                node._translated_text = newtext
+                                kernel = self.context.elements.kernel
+                                for property_op in kernel.lookup_all("path_updater/.*"):
+                                    property_op(kernel.root, node)
+                                if hasattr(node, "_cache"):
+                                    node._cache = None
+                        if hasattr(node, "preprocess"):
+                            node.preprocess(self.context, placement, self)
+            idx += 1
+        self.context.elements.mywordlist.pop()
 
     def _to_grouped_plan(self, plan):
         """
@@ -168,7 +229,11 @@ class CutPlan:
         last_type = None
         group = list()
         for c in plan:
-            c_type = c.type if hasattr(c, "type") else type(c).__name__
+            c_type = (
+                c.type
+                if hasattr(c, "type") and c.type is not None
+                else type(c).__name__
+            )
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
@@ -228,7 +293,7 @@ class CutPlan:
         context = self.context
         for plan in grouped_plan:
             for op in plan:
-                if not hasattr(op, "type"):
+                if not hasattr(op, "type") or op.type is None:
                     yield op
                     continue
                 if (
@@ -534,6 +599,7 @@ class CutPlan:
                 del self.plan[i]
 
     def clear(self):
+        self._previous_bounds = None
         self.plan.clear()
         self.commands.clear()
 

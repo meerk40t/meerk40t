@@ -57,6 +57,10 @@ class ImageNode(Node):
             try:
                 from PIL import Image as PILImage
 
+                if not isinstance(self.href, str):
+                    # Error caused by href being int value
+                    raise ImportError
+
                 self.image = PILImage.open(self.href)
                 if hasattr(self, "x"):
                     self.matrix.post_translate_x(self.x)
@@ -287,7 +291,10 @@ class ImageNode(Node):
             bb = self.bbox()
             self._bounds = bb
             self._paint_bounds = bb
-        except (MemoryError, Image.DecompressionBombError):
+        except (MemoryError, Image.DecompressionBombError, ValueError):
+            # Memory error if creating requires too much memory.
+            # DecompressionBomb if over 272 megapixels.
+            # ValueError if bounds are NaN.
             self._process_image_failed = True
         self.updated()
 

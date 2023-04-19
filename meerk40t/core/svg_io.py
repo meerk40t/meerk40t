@@ -205,7 +205,7 @@ class SVGWriter:
             # If there is a note set then we save the note with the project.
             if elements.note is not None:
                 subelement = SubElement(root, "note")
-                subelement.set(SVG_TAG_TEXT, elements.note)
+                subelement.set(SVG_TAG_TEXT, str(elements.note))
 
         SVGWriter._write_tree(root, elements._tree, version)
 
@@ -363,21 +363,21 @@ class SVGWriter:
                     )
                 # Font features are covered by the `font` value shorthand
                 if c.font_family:
-                    subelement.set(SVG_ATTR_FONT_FAMILY, c.font_family)
+                    subelement.set(SVG_ATTR_FONT_FAMILY, str(c.font_family))
                 if c.font_style:
-                    subelement.set(SVG_ATTR_FONT_STYLE, c.font_style)
+                    subelement.set(SVG_ATTR_FONT_STYLE, str(c.font_style))
                 if c.font_variant:
-                    subelement.set(SVG_ATTR_FONT_VARIANT, c.font_variant)
+                    subelement.set(SVG_ATTR_FONT_VARIANT, str(c.font_variant))
                 if c.font_stretch:
-                    subelement.set(SVG_ATTR_FONT_STRETCH, c.font_stretch)
+                    subelement.set(SVG_ATTR_FONT_STRETCH, str(c.font_stretch))
                 if c.font_size:
                     subelement.set(SVG_ATTR_FONT_SIZE, str(c.font_size))
                 if c.line_height:
                     subelement.set("line_height", str(c.line_height))
                 if c.anchor:
-                    subelement.set(SVG_ATTR_TEXT_ANCHOR, c.anchor)
+                    subelement.set(SVG_ATTR_TEXT_ANCHOR, str(c.anchor))
                 if c.baseline:
-                    subelement.set(SVG_ATTR_TEXT_DOMINANT_BASELINE, c.baseline)
+                    subelement.set(SVG_ATTR_TEXT_DOMINANT_BASELINE, str(c.baseline))
                 decor = ""
                 if c.underline:
                     decor += " underline"
@@ -393,7 +393,7 @@ class SVGWriter:
                 # This is a structural group node of elements. Recurse call to write values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                 if hasattr(c, "label") and c.label is not None and c.label != "":
-                    group_element.set("inkscape:label", c.label)
+                    group_element.set("inkscape:label", str(c.label))
                 SVGWriter._write_elements(group_element, c, version)
                 continue
             elif c.type == "file":
@@ -404,7 +404,7 @@ class SVGWriter:
                 else:
                     group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                     if hasattr(c, "name") and c.name is not None and c.name != "":
-                        group_element.set("inkscape:label", c.name)
+                        group_element.set("inkscape:label", str(c.name))
                     SVGWriter._write_elements(group_element, c, version)
                 continue
             else:
@@ -484,8 +484,9 @@ class SVGWriter:
                         c_m_d = 1
                     else:
                         c_m_d = math.sqrt(abs(c.matrix.determinant))
-                    stroke_width = str(factor * c.stroke_width / c_m_d)
-                    subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
+                    if c.stroke_width is not None:
+                        stroke_width = str(factor * c.stroke_width / c_m_d)
+                        subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
                     pass
 
@@ -520,7 +521,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util"):
+            if c.type.startswith("util") or c.type.startswith("place"):
                 subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
                 SVGWriter._write_custom(subelement, c)
             else:
@@ -619,9 +620,10 @@ class SVGProcessor:
         self.regmark_list = list()
         self.reverse = False
         self.requires_classification = True
-        self.operations_cleared = False
+        self.operations_replaced = False
         self.pathname = None
         self.regmark = None
+        self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) as well as the time
@@ -643,7 +645,11 @@ class SVGProcessor:
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
-        if self.operations_cleared:
+        if self.operations_replaced:
+            self.elements.undo.mark("op-replaced")
+            self.elements.clear_operations()
+            for node in self.operation_list:
+                op = self.elements.op_branch.add_node(node)
             for op in self.elements.ops():
                 if not hasattr(op, "settings"):
                     # Some special nodes might lack settings these can't have references.
@@ -748,26 +754,35 @@ class SVGProcessor:
                 context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
+
+        tag_label = None
         # Let's see whether we can get the label from an inkscape save
-        _label = None
-        if uselabel is not None and uselabel != "":
+        # We only want the 'label' attribute from the current tag, so
+        # we look at element.values["attributes"]
+        if "attributes" in element.values:
+            local_dict = element.values["attributes"]
+        else:
+            local_dict = element.values
+        ink_tag = "inkscape:label"
+        try:
+            inkscape = element.values.get("inkscape")
+            if inkscape is not None and inkscape != "":
+                ink_tag = "{" + inkscape + "}label"
+        except (AttributeError, KeyError):
+            pass
+        try:
+            tag_label = local_dict.get(ink_tag)
+            if tag_label == "":
+                tag_label = None
+            # print ("Found label: %s" %_label)
+        except (AttributeError, KeyError):
+            # Label might simply be "label"
+            tag_label = local_dict.get("label")
+        if uselabel:
             _label = uselabel
-        if _label is None:
-            ink_tag = "inkscape:label"
-            try:
-                inkscape = element.values.get("inkscape")
-                if inkscape is not None and inkscape != "":
-                    ink_tag = "{" + inkscape + "}label"
-            except (AttributeError, KeyError):
-                pass
-            try:
-                _label = element.values.get(ink_tag)
-                if _label == "":
-                    _label = None
-                # print ("Found label: %s" % my_label)
-            except (AttributeError, KeyError):
-                # Label might simply be "label"
-                _label = element.values.get("label")
+        else:
+            _label = tag_label
+
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
@@ -1112,23 +1127,27 @@ class SVGProcessor:
 
             if tag == "operation":
                 # Check if SVGElement: operation
-                if not self.operations_cleared:
-                    self.elements.clear_operations()
-                    self.operations_cleared = True
+                if not self.operations_replaced:
+                    self.operations_replaced = True
 
                 try:
-                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    if hasattr(op, "validate"):
+                        op.validate()
+                    op.id = node_id
+                    self.operation_list.append(op)
                     overlooked_attributes = [
                         "output",
                     ]
+                    # Sometimes certain attributes weren't assigned properly / missed
+                    # This piece of code tries to reapply them. If things were fine
+                    # then this is an unneeded attempt. But better safe than sorry
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             setattr(op, overlooked, element.values.get(overlooked))
-                    op.validate()
-                    op.id = node_id
                 except AttributeError:
                     # This operation is invalid.
-                    pass
+                    return
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:

@@ -448,12 +448,13 @@ class PanelFontManager(wx.Panel):
             _(
                 "MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
                 + "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
-                + "See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+                + "See more: https://en.wikipedia.org/wiki/Hershey_fonts "
             ),
             style=wx.BORDER_NONE | wx.TE_MULTILINE | wx.TE_READONLY,
         )
 
         self.text_info.SetMinSize((-1, 90))
+        self.text_info.SetBackgroundColour(self.GetBackgroundColour())
         sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("Information"), wx.HORIZONTAL)
         mainsizer.Add(sizer_info, 0, wx.EXPAND, 0)
         sizer_info.Add(self.text_info, 1, wx.EXPAND, 0)

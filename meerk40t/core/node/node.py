@@ -80,6 +80,17 @@ class Node:
         self.id = None
         self.label = None
         self.lock = False
+        self._can_emphasize = True
+        self._can_highlight = True
+        self._can_target = True
+        self._can_move = True
+        self._can_scale = True
+        self._can_rotate = True
+        self._can_skew = True
+        self._can_modify = True
+        self._can_alter = True
+        self._can_update = True
+        self._can_remove = True
         self._is_visible = True
 
         for k, v in kwargs.items():
@@ -279,47 +290,48 @@ class Node:
 
     @property
     def can_emphasize(self):
-        return not self.lock
+        return self._can_emphasize
 
     @property
     def can_highlight(self):
-        return not self.lock
+        return self._can_highlight
 
     @property
     def can_target(self):
-        return not self.lock
+        return self._can_target
 
-    @property
-    def can_move(self):
-        return not self.lock
+    def can_move(self, optional_permission=False):
+        if optional_permission is None:
+            optional_permission = False
+        return (self._can_move and not self.lock) or optional_permission
 
     @property
     def can_scale(self):
-        return not self.lock
+        return self._can_scale and not self.lock
 
     @property
     def can_rotate(self):
-        return not self.lock
+        return self._can_rotate and not self.lock
 
     @property
     def can_skew(self):
-        return not self.lock
+        return self._can_skew and not self.lock
 
     @property
     def can_modify(self):
-        return not self.lock
+        return self._can_modify and not self.lock
 
     @property
     def can_alter(self):
-        return not self.lock
+        return self._can_alter and not self.lock
 
     @property
     def can_update(self):
-        return not self.lock
+        return self._can_update and not self.lock
 
     @property
     def can_remove(self):
-        return not self.lock
+        return self._can_remove and not self.lock
 
     @property
     def bounds(self):
@@ -1133,7 +1145,7 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = getattr(e, attr)
+            box = getattr(e, attr, None)
             if box is None:
                 continue
             if box[0] < xmin:

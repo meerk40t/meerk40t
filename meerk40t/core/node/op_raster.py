@@ -3,7 +3,7 @@ from math import isnan
 
 from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
-from meerk40t.core.element_types import *
+from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
@@ -329,6 +329,11 @@ class RasterOpNode(Node, Parameters):
         @param plan:
         @return:
         """
+        if isinstance(self.speed, str):
+            try:
+                self.speed = float(self.speed)
+            except ValueError:
+                pass
         commands = plan.commands
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm

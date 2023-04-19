@@ -488,7 +488,7 @@ class GrblController:
         self.service.signal("pipe;running", False)
 
     def __repr__(self):
-        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.serial_baud_rate)}')"
+        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.baud_rate)}')"
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)

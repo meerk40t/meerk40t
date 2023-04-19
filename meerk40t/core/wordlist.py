@@ -46,6 +46,7 @@ class Wordlist:
             "op_passes",
             "op_dpi",
         )
+        self._stack = list()
         self.transaction_open = False
         self.content_backup = {}
         if directory is None:
@@ -274,7 +275,7 @@ class Wordlist:
                         wordlist[2] = value + 1
                 else:
                     # This is a variable wordlist.
-                    current_index = wordlist[1] if not reset else 0
+                    current_index = wordlist[1] if not reset else 2  # 2 as 2 based
                     current_index += relative
                     value = self.fetch_value(key, current_index)
                     if autoincrement and increment:
@@ -482,3 +483,21 @@ class Wordlist:
         for item in toreplace:
             newtext = newtext.replace(item[1], item[2])
         return newtext
+
+    def push(self):
+        """Stores the current content on the stack"""
+        copied_content = {}
+        for key, entry in self.content.items():
+            copied_content[key] = copy(entry)
+        self._stack.append(copied_content)
+        # print (f"push was called, when name was: '{self.content['name']}'")
+
+    def pop(self):
+        """Restores the last added stack entry"""
+        if len(self._stack) > 0:
+            copied_content = self._stack[-1]
+            self._stack.pop(-1)
+            self.content = {}
+            for key, entry in copied_content.items():
+                self.content[key] = copy(entry)
+        # print (f"pop was called, name now '{self.content['name']}'")

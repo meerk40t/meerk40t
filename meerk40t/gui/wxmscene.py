@@ -5,7 +5,7 @@ import time
 import wx
 from wx import aui
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
@@ -34,6 +34,7 @@ from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
+from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
@@ -178,6 +179,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/ribbon", RibbonTool)
         context.register("tool/linetext", LineTextTool)
         context.register("tool/edit", EditTool)
+        context.register("tool/placement", PlacementTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
 
@@ -780,8 +782,8 @@ class MeerK40tScenePanel(wx.Panel):
         dx = 0
         dy = 0
         if self.has_magnets() and self.magnet_attraction > 0:
-            if self.tick_distance > 0:
-                s = f"{self.tick_distance}{self.context.units_name}"
+            if self.scene.pane.grid.tick_distance > 0:
+                s = f"{self.scene.pane.grid.tick_distance}{self.context.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off

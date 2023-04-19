@@ -5846,6 +5846,12 @@ msgstr "Laser nach unten bewegen"
 msgid "Move laser diagonally in the down and right direction"
 msgstr "Laser diagonal nach rechts-unten bewegen"
 
+msgid "Send laser to home position"
+msgstr "Laser in Home-Position fahren"
+
+msgid "Send laser to home position (right click: to physical home)"
+msgstr "Laser in Home-Position fahren (Rechts-Click: zu Geräte Home)"
+
 #: meerk40t/gui/navigationpanels.py:776
 msgid "Unlock the laser rail"
 msgstr "Laserachsen entriegeln"
@@ -5865,6 +5871,15 @@ msgstr "Achtung: erlaube Laserbewegungen außerhalb der Bettabmessungen"
 #: meerk40t/gui/navigationpanels.py:948
 msgid "Move to the set position"
 msgstr "Zu eingestellter Position bewegen"
+
+msgid "Right click to activate mouse-click mode to set position"
+msgstr "Mit Rechts-Click wird 'Position setzen' Modus aktiviert"
+
+msgid "Current laserhead position. Double-click to use."
+msgstr "Aktuelle Position des Lasers. Mit Doppel-Klick übernehmen."
+
+msgid "Current: "
+msgstr "Aktuell: "
 
 #: meerk40t/gui/navigationpanels.py:950
 msgid "Set X value for the Move To"
@@ -7620,7 +7635,7 @@ msgstr "&Neu\tCtrl-N"
 
 #: meerk40t/gui/wxmmain.py:1991
 msgid "Clear Operations, Elements and Notes"
-msgstr ""
+msgstr "Setze Arbeitsabläufe, Elemente und Notizen zurück"
 
 #: meerk40t/gui/wxmmain.py:1997
 msgid "&Open Project\tCtrl-O"
@@ -7628,7 +7643,7 @@ msgstr "&Öffne Pr&ojekt\tCtrl-O"
 
 #: meerk40t/gui/wxmmain.py:1998
 msgid "Clear existing elements and notes and open a new file"
-msgstr ""
+msgstr "Setze Elemente und Notizen zurück und öffne eine neue Datei"
 
 #: meerk40t/gui/wxmmain.py:2004
 msgid "&Recent"
@@ -7640,7 +7655,7 @@ msgstr "&Importiere Datei"
 
 #: meerk40t/gui/wxmmain.py:2008
 msgid "Import another file into the same project"
-msgstr ""
+msgstr "Importiere eine weitere Datei in das aktuelle Projekt"
 
 #: meerk40t/gui/wxmmain.py:2014
 msgid "&Save\tCtrl-S"
@@ -8053,7 +8068,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmmain.py:2920
 msgid "Load {file}..."
-msgstr ""
+msgstr "Lade Datei {file}..."
 
 #: meerk40t/gui/wxmmain.py:2934
 msgid "Clear Recent"
@@ -8061,7 +8076,7 @@ msgstr "Letzte löschen"
 
 #: meerk40t/gui/wxmmain.py:2935
 msgid "Delete the list of recent projects"
-msgstr ""
+msgstr "Lösche die Merkliste der zuletzt geladenen Projekte"
 
 #: meerk40t/gui/wxmmain.py:2987 meerk40t/gui/wxmmain.py:2999
 msgid "Loading File..."
@@ -10591,6 +10606,12 @@ msgstr ""
 
 msgid "Enable this operation for inclusion in Execute Job."
 msgstr "Aktiviere diesen Arbeitsgang, damit er im Jobablauf ausgeführt wird."
+
+msgid "Visible"
+msgstr "Sichtbar"
+
+msgid "Hide all contained elements on scene if not set."
+msgstr "Deaktiviert: Blende alle enthaltenen Element im Arbeitsbereich aus"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:32
 msgid "Speed at which the head moves in mm/s."
@@ -14735,6 +14756,9 @@ msgstr "Signalton"
 msgid "_TREE_Wait"
 msgstr "Warte"
 
+msgid "_TREE_Placement"
+msgstr "Job-Start"
+
 msgid "Speed Code Features:"
 msgstr "Speed-Code Feature:"
 
@@ -14974,22 +14998,25 @@ msgid "Goto a font-source..."
 msgstr "Gehe zu Zeichensatz-Quelle..."
 
 msgid "Hershey Fonts - #1"
-msgstr ""
+msgstr "Hershey-Zeichensätze #1"
 
 msgid "Hershey Fonts - #2"
-msgstr ""
+msgstr "Hershey-Zeichensätze #2"
 
 msgid "Autocad-SHX-Fonts"
-msgstr ""
+msgstr "Autocad-SHX-Zeichensätze"
+
+msgid "Windows-Font-Directory"
+msgstr "Windows-Font-Verzeichnis"
 
 msgid ""
-"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
 "They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
-"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts "
 msgstr ""
-"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"MeerK40t kann True-Type-, Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
 "Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
-"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts "
 
 msgid "Choose font directory"
 msgstr "Zeichensatz-Verzeichnis auswählen"
@@ -15384,6 +15411,9 @@ msgstr "Selektiere alle gleichartigen Elemente"
 msgid "Speed for Raster-Operation"
 msgstr "Geschwindigkeit für Raster-Operation"
 
+msgid "Speed for Vector-Operation"
+msgstr "Geschwindigkeit für Vektor-Operation"
+
 msgid "Simplify group"
 msgstr "Vereinfache Gruppen-Struktur"
 
@@ -15655,3 +15685,280 @@ msgstr "Nachfragen"
 
 msgid "Calling inkscape..."
 msgstr "Starte inkscape im Hintergrund..."
+
+msgid "Device:"
+msgstr "Gerät:"
+
+msgid "Select Device"
+msgstr "Gerät auswählen"
+
+msgid "Quicksearch for device-entry"
+msgstr "Schnellsuche nach Gerätetyp"
+
+msgid "Filter"
+msgstr "Filter"
+
+msgid ""
+"The M2 Nano is the stock card in most K40 machines. "
+"Produced by Lihuiyu Studios Labs, the typically small green card states: "
+"Designed for Laser Machines. Assembled in China-Hangzhou. "
+"The most recent and popular revision version is 6C6879-LASER-M2:9."
+msgstr ""
+"Der M2Nano ist der Standard-Controller in den meisten K40-Geräten. "
+"Auf der meist grünen Platine steht:\n"
+"Lihuiyu Studios Labs. Designed for Laser Machines. Assembled in China-Hangzhou.\n"
+"Die am meist verbreitete Version ist die 6C6879-LASER-M2:9."
+
+msgid ""
+"The M3 Nano is a newer stock variation of the Lihuiyu Studios Labs board. The board is mostly purple. "
+"The most recent and popular revision version 10, 6C6879-LASER-M3:10. "
+"Unlike previous boards the M3 Nano has a hardware pause multi-plexing button and PWM control. "
+"The M3Nano Plus variation replaces the A4988 stepper motor chips with TMC stepper motor chips."
+msgstr ""
+"Die Nachfolgeversion des M2 Nano bietet PWM-Support zum Regulieren der Laserstärke. "
+"Die neueste Version der zumeist violetten Platine ist die 6C6879-LASER-M3:10. "
+"Die M3 Nano Plus-Variante hat TMC Stepper-Treiber anstelle der A4988 verbaut."
+
+msgid ""
+"The JCZ Controller is a type of Galvo Laser Controller for several different sources compatible with the EZCad2™ software."
+msgstr ""
+"Das JCZ Board ist ein Faserlaser-Controller, der mit der EZCad2™ Software angesteuert wird."
+
+msgid "With specific settings for the UV source. (No specific settings are known)."
+msgstr "Mit spezifischen Einstellungen für die UV-Laser-Quelle (noch keine genutzt bislang)."
+
+msgid "With specific settings for the CO2 source. (No specific settings are known)."
+msgstr "Mit spezifischen Einstellungen für die CO2-Laser-Quelle (noch keine genutzt bislang)."
+
+msgid "With this driver we specifically enable the MOPA feature."
+msgstr "Mit diesem Treiber wird das MOPA Feature (variable Pulslänge) aktiviert."
+
+msgid "CO2-Laser"
+msgstr "CO2-Laser"
+
+msgid "Fibre-Laser"
+msgstr "Faser-Laser"
+
+msgid "Diode-Laser"
+msgstr "Dioden-Laser"
+
+msgid "Older CO2 Laser running the NewlyDraw software"
+msgstr "Älterer CO2 Laser, der mit der NewlyDraw Software angesteuert wird."
+
+msgid "Generic GRBL Laser Device."
+msgstr "Laser mit einem generischen GRBL Controller."
+
+msgid "K40 laser with a modified GRBL laser controller."
+msgstr "K40 Laser mit einem modifizierten GRBL Laser Controller."
+
+msgid "Any of a variety of inexpensive GRBL based diode lasers."
+msgstr "Diodenlaser mit einem gängigen GRBL-kompatiblen Controller."
+
+msgid "This driver is incomplete. Use at your own risk."
+msgstr "Dieser Treiber ist einem frühen Entwicklungsstadium. Verwendung auf eigene Gefahr."
+
+msgid ""
+"Moshiboards MS10105 (V.4.XX) were popular around 2013, "
+"these communicate over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). "
+"The boards are usually red and sport two large black heatsinks for their stepper motor chips."
+msgstr ""
+"Die Moshiboard MS10105 (V.4.XX) waren um 2013 populär. Die Platinen sind meist rot und "
+"haben zwei große Kühlkörper über den Stepper-Treibern verbaut."
+
+msgid "&Undo\tCtrl-Z"
+msgstr "Rückgängig\tCtrl-Z"
+
+msgid "Undo last action"
+msgstr "Letzte Aktion rückgängig machen"
+
+msgid "&Redo\tCtrl-Shift-Z"
+msgstr "Wiederherstellen\tCtrl-Shift-Z"
+
+msgid "Revert last undo"
+msgstr "Letzte rückgängig gemachte Aktion erneut durchführen"
+
+msgid "C&ut\tCtrl-X"
+msgstr "Ausschneiden\tCtrl-X"
+
+msgid "Cut selected elements"
+msgstr "Verschiebe selektierte Elemente in die Zwischenablage"
+
+msgid "&Copy\tCtrl-C"
+msgstr "Kopieren\tCtrl-C"
+
+msgid "Copy selected elements to clipboard"
+msgstr "Kopiere selektierte Elemente in die Zwischenablage"
+
+msgid "&Paste\tCtrl-V"
+msgstr "Einfügen\tCtrl-V"
+
+msgid "Paste elements from clipboard"
+msgstr "Füge Elemente aus Zwischenablage ein"
+
+msgid "&Select all\tCtrl-A"
+msgstr "&Alles auswählen\tCtrl-A"
+
+msgid "Select all elements on scene"
+msgstr "Alle Elemente im Arbeitsbereich auswählen"
+
+msgid "&Select None"
+msgstr "Auswahl aufheben"
+
+msgid "Deselect all elements on scene"
+msgstr "Jede Auswahl von Elementen aufheben"
+
+msgid "&Invert selection\tCtrl-I"
+msgstr "Auswahl umkehren\tCtrl-I"
+
+msgid "Invert the selection status of all elements"
+msgstr "Auswahl invertieren (alle ausgewählten Elemente deselektieren, alle nicht ausgewählten selektieren)"
+
+msgid "Select all non-assigned"
+msgstr "Nicht zugeordnete auswählen"
+
+msgid "Select all elements that are not assigned to an operation"
+msgstr "Alle Elemente auswählen, die keinem Arbeitsablauf zugeordnet sind"
+
+msgid "Delete the selected elements"
+msgstr "Lösche die ausgewählten Elemente"
+
+msgid "Edit the elements properties"
+msgstr "Bearbeite die Eigenschaften des Elements"
+
+msgid "Device-Manager"
+msgstr "Geräte-Manager"
+
+msgid "Manage the Laser devices"
+msgstr "Hinzufügen, Ändern, Löschen con Geräten"
+
+msgid "Device-Configuration"
+msgstr "Geräte-Konfiguration"
+
+msgid "Manage the device settings"
+msgstr "Bearbeite die Einstellungen des Gerätes"
+
+msgid "Wordlist-Editor"
+msgstr "Variablen + Wortlisten Editor"
+
+msgid "Manages Wordlist-Entries"
+msgstr "Verwaltet Wortlisten(Einträge)"
+
+msgid "Key-Bindings"
+msgstr "Tastaturbelegung"
+
+msgid "Preferences\tCtrl-,"
+msgstr "Einstellungen\tCtrl-,"
+
+msgid "Edit the general preferences"
+msgstr "Allgemeine Einstellungen festlegen"
+
+msgid "Home position"
+msgstr "Home-Position"
+
+msgid "Enable similar"
+msgstr "Aktiviere gleichen Typ"
+
+msgid "Disable similar"
+msgstr "Dektiviere gleichen Typ"
+
+msgid "Enable all operations of this type"
+msgstr "Aktiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Disable all operations of this type"
+msgstr "Dektiviere alle Arbeitsabläufe des gleichen Typs"
+
+msgid "Check for Updates"
+msgstr "Prüfe auf Updates"
+
+msgid ""
+"A new {type} release is available:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Es ist eine {type} Version verfügbar:\n"
+"Version: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid ""
+"You seem to have the latest version.\n"
+"Latest version on github: {name} v{version} ({label})\n"
+"Url: {url}"
+msgstr ""
+"Dies scheint die aktuelle Version von {name} zu sein.\n"
+"Neueste Version auf github: {name} v{version} ({label})\n"
+"Url: {url}"
+
+msgid "Could not find any release information on github"
+msgstr "Konnte keine Versionsinformationen von Github abrufen"
+
+msgid "Check whether a newer version of Meerk40t is available"
+msgstr "Überprüfe, ob eine neuere Version von MeerK40t verfügbar ist"
+
+msgid "Do you want to go the download page?"
+msgstr "Soll die Download-Seite geöffnet werden?"
+
+msgid "Do you want to look for yourself?"
+msgstr "Soll diese Seite geöffnet werden?"
+
+msgid "Do you want to change the color of the contained elements too?"
+msgstr "Soll die Farbe der zugeordneten Element ebenfalls geändert werden?"
+
+msgid "Update Colors?"
+msgstr "Farben ändern?"
+
+msgid "Job Start"
+msgstr "Job-Start"
+
+msgid "Add a job starting point to the scene"
+msgstr "Definiere einen Startpunkt für den Laserjob"
+
+msgid "Placement:"
+msgstr "Job-Start:"
+
+msgid "Placement"
+msgstr "Job-Start"
+
+msgid "X-Coordinate of placement"
+msgstr "X-Koordinate des Job-Starts"
+
+msgid "Y-Coordinate of placement"
+msgstr "Y-Koordinate des Job-Starts"
+
+msgid ""
+"The corner type establishes the placement of the bounding box\n"
+"of to be plotted elements against the defined coordinate"
+msgstr ""
+"Dieser Wert legt fest, welche Ecke des umgebenden Rechtecks aller\n"
+"auszugebenden Elemente am Job-Start-Punkt ausgerichtet werden soll"
+
+msgid "The to be plotted elements can be rotated around the defined coordinate"
+msgstr "Die auszugebenden Elemente können gegenüber dem Job-Start-Punkt rotiert werden"
+
+msgid "Rotation:"
+msgstr "Rotation:"
+
+msgid "Corner:"
+msgstr "Ausrichtung:"
+
+msgid "Top-Left"
+msgstr "Links-Oben"
+
+msgid "Top-Right"
+msgstr "Rechts-Oben"
+
+msgid "Bottom-Left"
+msgstr "Links-Unten"
+
+msgid "Bottom-Right"
+msgstr "Rechts-Unten"
+
+msgid "This is a placeholder for the 'place current' operation"
+msgstr ""
+
+msgid ""
+"This will define an origin from where all the elements in this scene\n"
+"will be plotted. You can have multiple such job start points"
+msgstr ""
+"Diese legt einen Startpunkt für die Jobausgabe fest.\n"
+"Es können mehrere solcher Startpunkte verwendet werden."
+
