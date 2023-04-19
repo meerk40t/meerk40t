@@ -78,7 +78,7 @@ class CoordinateSystem(Service):
                 "choices": (0, 1, 2, 3, 4),
             },
         ]
-        kernel.register_choices("coords", choices)
+        kernel.register_choices("space", choices)
 
         self.width = "100mm"
         self.height = "100mm"
@@ -140,7 +140,27 @@ class CoordinateSystem(Service):
 
     def display_origin_in_scene_units(self):
         m = self.map("display", "scene")
-        return m.point_in_matrix_space((0,0))
+        return m.point_in_matrix_space((0, 0))
+
+    def vector_to_device_native(self, dx, dy):
+        """
+        Converts a physical X,Y vector into device vector (dx, dy).
+
+        This natively assumes device coordinate systems are affine. If we convert (0, 1in) as a vector into
+        machine units we are converting the length of 1in into the equal length in machine units. Positionally this
+        could be flipped or moved anywhere in the machine. But, the distance should be the same. However, in some cases
+        due to belt stretching etc. we can have scaled x vs y coord systems so (1in, 0) could be a different length
+        than (0, 1in).
+
+        @param x:
+        @param y:
+        @param unitless:
+        @return:
+        """
+        px, py = self.scene.physical(dx, dy)
+        point = self.map("scene", "device").transform_vector([px, py])
+        return point[0], point[1]
+
 
     def set_centered(self):
         self.origin_x = 0.5
@@ -381,26 +401,6 @@ class CoordinateSystem(Service):
     @staticmethod
     def conversion(units, amount=1):
         return Length(f"{amount}{units}").preferred
-
-
-    def physical_to_device_length(self, x, y, unitless=1):
-        """
-        Converts a physical X,Y vector into device vector (dx, dy).
-
-        This natively assumes device coordinate systems are affine. If we convert (0, 1in) as a vector into
-        machine units we are converting the length of 1in into the equal length in machine units. Positionally this
-        could be flipped or moved anywhere in the machine. But, the distance should be the same. However, in some cases
-        due to belt stretching etc. we can have scaled x vs y coord systems so (1in, 0) could be a different length
-        than (0, 1in).
-
-        @param x:
-        @param y:
-        @param unitless:
-        @return:
-        """
-        px, py = self.scene_view.physical(x, y)
-        return self.scene_to_device_position(px, py, vector=True)
-
 
     def device_to_show_position(self, x, y, vector=False):
         """

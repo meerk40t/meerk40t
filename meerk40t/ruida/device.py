@@ -110,7 +110,6 @@ class RuidaDevice(Service):
 
     def realize(self, origin=None):
         self.view = View(
-            self,
             self.bedwidth,
             self.bedheight,
             dpi_x=UNITS_PER_NM,

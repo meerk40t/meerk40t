@@ -66,6 +66,9 @@ class View:
     def physical(self, x, y):
         return self.length(x, axis=0), self.length(y, axis=1)
 
+    def relative(self, cx, cy, dx, dy):
+
+
     def contains(self, x, y):
         """
         This solves the AABB of the container, not the strict solution. If a view is rotated by a non-tau/4 multiple

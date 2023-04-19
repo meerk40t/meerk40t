@@ -410,6 +410,9 @@ class LihuiyuDriverGui(MWindow):
         panel_rotary = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="rotary"
         )
+        panel_space = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="space"
+        )
 
         self.panels.append(panel_config)
         self.panels.append(panel_interface)

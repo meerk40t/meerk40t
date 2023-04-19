@@ -650,7 +650,6 @@ class NewlyDevice(Service):
     @signal_listener("h_dpi")
     def realize(self, origin=None, *args):
         self.view = View(
-            self,
             self.bedwidth,
             self.bedheight,
             dpi_x=UNITS_PER_INCH / self.h_dpi,
@@ -663,7 +662,7 @@ class NewlyDevice(Service):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.space.update_dim(self.bedwidth, self.bedheight)
+        self.space.update_dims(self.bedwidth, self.bedheight)
 
     @property
     def native(self):

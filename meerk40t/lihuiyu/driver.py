@@ -364,7 +364,10 @@ class LihuiyuDriver(Parameters):
         @param dy:
         @return:
         """
-        dx, dy = self.service.physical_to_device_length(dx, dy)
+        view = self.service.view
+        x, y = view.relative(self.native_x, self.native_y, dx, dy)
+        dx = x - self.native_x
+        dy = y - self.native_y
         self.rapid_mode()
         self._move_relative(dx, dy)
 
