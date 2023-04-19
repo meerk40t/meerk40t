@@ -676,16 +676,6 @@ class NewlyDevice(Service):
         self.space.update_dim(self.bedwidth, self.bedheight)
 
     @property
-    def current(self):
-        """
-        @return: the location in nm for the current known x value.
-        """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
-        )
-
-    @property
     def native(self):
         """
         @return: the location in device native units for the current known position.
