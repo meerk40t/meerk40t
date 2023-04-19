@@ -976,17 +976,17 @@ class MovePanel(wx.Panel):
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_right(idx))
             btn.Bind(wx.EVT_LEFT_DOWN, self.on_left(idx))
             if idx in (2, 5, 8):
-                x = Length(self.context.elements.length_x("100%"))
+                x = Length(self.context.space.length_x("100%"))
             elif idx in (1, 4, 7):
-                x = Length(self.context.elements.length_x("50%"))
+                x = Length(self.context.space.length_x("50%"))
             else:
-                x = Length(self.context.elements.length_x("0%"))
+                x = Length(self.context.space.length_x("0%"))
             if idx in (6, 7, 8):
-                y = Length(self.context.elements.length_y("100%"))
+                y = Length(self.context.space.length_y("100%"))
             elif idx in (3, 4, 5):
-                y = Length(self.context.elements.length_y("50%"))
+                y = Length(self.context.space.length_y("50%"))
             else:
-                y = Length(self.context.elements.length_y("0%"))
+                y = Length(self.context.space.length_y("0%"))
             self.context.root.setting(
                 str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
             )

@@ -142,7 +142,7 @@ def init_commands(kernel):
         return "elements", data_out
 
     @self.console_argument("repeats", type=int, help=_("Number of repeats"))
-    @self.console_argument("radius", type=self.length, help=_("Radius"))
+    @self.console_argument("radius", type=self.space.length, help=_("Radius"))
     @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
     @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
     @self.console_option(
@@ -246,7 +246,7 @@ def init_commands(kernel):
         return "elements", data_out
 
     @self.console_argument("copies", type=int, help=_("Number of copies"))
-    @self.console_argument("radius", type=self.length, help=_("Radius"))
+    @self.console_argument("radius", type=self.space.length, help=_("Radius"))
     @self.console_argument("startangle", type=Angle.parse, help=_("Start-Angle"))
     @self.console_argument("endangle", type=Angle.parse, help=_("End-Angle"))
     @self.console_option(
@@ -347,14 +347,14 @@ def init_commands(kernel):
 
     @self.console_argument("corners", type=int, help=_("Number of corners/vertices"))
     @self.console_argument(
-        "cx", type=self.length_x, help=_("X-Value of polygon's center")
+        "cx", type=self.space.length_x, help=_("X-Value of polygon's center")
     )
     @self.console_argument(
-        "cy", type=self.length_y, help=_("Y-Value of polygon's center")
+        "cy", type=self.space.length_y, help=_("Y-Value of polygon's center")
     )
     @self.console_argument(
         "radius",
-        type=self.length_x,
+        type=self.space.length_x,
         help=_("Radius (length of side if --side_length is used)"),
     )
     @self.console_option("startangle", "s", type=Angle.parse, help=_("Start-Angle"))

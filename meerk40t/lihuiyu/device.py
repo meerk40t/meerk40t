@@ -413,15 +413,6 @@ class LihuiyuDevice(Service):
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
         self.view = View(width=self.bedwidth, height=self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
-        self.view.transform(
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
-            origin_x=1.0 if self.home_right else 0.0,
-            origin_y=1.0 if self.home_bottom else 0.0,
-            flip_x=self.flip_x,
-            flip_y=self.flip_y,
-            swap_xy=self.swap_xy,
-        )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -949,6 +940,9 @@ class LihuiyuDevice(Service):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -956,7 +950,7 @@ class LihuiyuDevice(Service):
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.coord.update_dims(self.bedwidth, self.bedheight)
+        self.space.update_dims(self.bedwidth, self.bedheight)
         self.view = View(width=self.bedwidth, height=self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
         self.view.transform(
             user_scale_x=self.scale_x,
@@ -967,9 +961,6 @@ class LihuiyuDevice(Service):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.width = self.bedwidth
-        self.height = self.bedheight
-        super().realize()
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native
@@ -984,13 +975,6 @@ class LihuiyuDevice(Service):
     @property
     def viewbuffer(self):
         return self.driver.out_pipe.viewbuffer
-
-    @property
-    def current(self):
-        """
-        @return: the location in scene units for the current known position.
-        """
-        return self.coord.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
     @property
     def speed(self):

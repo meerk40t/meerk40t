@@ -189,9 +189,7 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
-        d = self.scene.context.device
-        self.zero_x = d.unit_width * d.show_origin_x
-        self.zero_y = d.unit_height * d.show_origin_y
+        self.zero_x, self.zero_y = self.scene.context.space.display_origin_in_scene_units()
         self._calc_primary_grid_lines()
         self._calc_secondary_grid_lines()
 
@@ -202,7 +200,7 @@ class GridWidget(Widget):
     @property
     def scaled_conversion(self):
         return (
-            self.scene.context.device.length(
+            self.scene.context.space.length(
                 f"1{self.scene.context.units_name}",
                 as_float=True,
             )
@@ -249,8 +247,7 @@ class GridWidget(Widget):
 
     def calculate_center_start(self):
         p = self.scene.context
-        self.primary_start_x = p.device.unit_width * p.device.show_origin_x
-        self.primary_start_y = p.device.unit_height * p.device.show_origin_y
+        self.primary_start_x, self.primary_start_y = p.space.display_origin_in_scene_units()
 
         if self.grid_secondary_cx is None:
             self.secondary_start_x = self.primary_start_x
@@ -290,8 +287,8 @@ class GridWidget(Widget):
 
         self.min_x = max(0, self.min_x)
         self.min_y = max(0, self.min_y)
-        self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
-        self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
+        self.max_x = min(float(self.scene.context.space.unit_width), self.max_x)
+        self.max_y = min(float(self.scene.context.space.unit_height), self.max_y)
 
     def calculate_tick_length(self):
         tick_length = float(

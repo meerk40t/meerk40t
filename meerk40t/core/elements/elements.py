@@ -625,33 +625,6 @@ class Elemental(Service):
                 break
         return emptyset
 
-    def length(self, v):
-        return float(Length(v))
-
-    def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width))
-
-    def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height))
-
-    def bounds(self, x0, y0, x1, y1):
-        return (
-            float(Length(x0, relative_length=self.device.width)),
-            float(Length(y0, relative_length=self.device.height)),
-            float(Length(x1, relative_length=self.device.width)),
-            float(Length(y1, relative_length=self.device.height)),
-        )
-
-    def area(self, v):
-        llx = Length(v, relative_length=self.device.width)
-        lx = float(llx)
-        if "%" in v:
-            lly = Length(v, relative_length=self.device.height)
-        else:
-            lly = Length(f"1{llx._preferred_units}")
-        ly = float(lly)
-        return lx * ly
-
     def has_clipboard(self):
         """
         Returns the amount of elements in the clipboard

@@ -479,7 +479,7 @@ def init_commands(kernel):
     @self.console_option("speed", "s", type=float)
     @self.console_option("power", "p", type=float)
     @self.console_option("dpi", "d", type=int)
-    @self.console_option("overscan", "o", type=self.length)
+    @self.console_option("overscan", "o", type=self.space.length)
     @self.console_option("passes", "x", type=int)
     @self.console_option(
         "parallel",

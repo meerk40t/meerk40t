@@ -497,8 +497,7 @@ class GuideWidget(Widget):
         Calculate center position for primary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.space.display_origin_in_scene_units()
         return self.scene.convert_scene_to_window([x, y])
 
     def _get_center_secondary(self):
@@ -517,8 +516,8 @@ class GuideWidget(Widget):
         return self.scene.convert_scene_to_window([x, y])
 
     def _set_scaled_conversion(self):
-        p = self.scene.context
-        f = p.device.length(f"1{p.units_name}", as_float=True)
+        units = self.scene.context.units_name
+        f = float(Length(f"1{units}"))
         m = self.scene.widget_root.scene_widget.matrix
         self.scaled_conversion_x = f * m.value_scale_x()
         self.scaled_conversion_y = f * m.value_scale_y()
@@ -543,7 +542,7 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
-                if p.device.show_flip_x:
+                if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -576,7 +575,7 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
-                if p.device.show_flip_y:
+                if not p.space.bottom_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0

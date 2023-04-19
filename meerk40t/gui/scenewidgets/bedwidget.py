@@ -51,8 +51,8 @@ class BedWidget(Widget):
         # print ("Bedwidget draw %s" % self.name)
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             context = self.scene.context
-            unit_width = context.device.unit_width
-            unit_height = context.device.unit_height
+            unit_width = context.space.unit_width
+            unit_height = context.space.unit_height
             background = self.background
             if background is None:
                 brush = wx.Brush(

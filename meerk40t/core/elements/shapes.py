@@ -132,25 +132,25 @@ def init_commands(kernel):
 
     @self.console_argument(
         "x_pos",
-        type=self.length_x,
+        type=self.space.length_x,
         help=_("x position for top left corner of rectangle."),
     )
     @self.console_argument(
         "y_pos",
-        type=self.length_y,
+        type=self.space.length_y,
         help=_("y position for top left corner of rectangle."),
     )
     @self.console_argument(
-        "width", type=self.length_x, help=_("width of the rectangle.")
+        "width", type=self.space.length_x, help=_("width of the rectangle.")
     )
     @self.console_argument(
-        "height", type=self.length_y, help=_("height of the rectangle.")
+        "height", type=self.space.length_y, help=_("height of the rectangle.")
     )
     @self.console_option(
-        "rx", "x", type=self.length_x, help=_("rounded rx corner value.")
+        "rx", "x", type=self.space.length_x, help=_("rounded rx corner value.")
     )
     @self.console_option(
-        "ry", "y", type=self.length_y, help=_("rounded ry corner value.")
+        "ry", "y", type=self.space.length_y, help=_("rounded ry corner value.")
     )
     @self.console_command(
         "rect",
@@ -193,10 +193,10 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_argument("x0", type=self.length_x, help=_("start x position"))
-    @self.console_argument("y0", type=self.length_y, help=_("start y position"))
-    @self.console_argument("x1", type=self.length_x, help=_("end x position"))
-    @self.console_argument("y1", type=self.length_y, help=_("end y position"))
+    @self.console_argument("x0", type=self.space.length_x, help=_("start x position"))
+    @self.console_argument("y0", type=self.space.length_y, help=_("start y position"))
+    @self.console_argument("x1", type=self.space.length_x, help=_("end x position"))
+    @self.console_argument("y1", type=self.space.length_y, help=_("end y position"))
     @self.console_command(
         "line",
         help=_("adds line to scene"),
@@ -819,7 +819,7 @@ def init_commands(kernel):
 
     @self.console_argument(
         "stroke_width",
-        type=self.length,
+        type=self.space.length,
         help=_("Stroke-width for the given stroke"),
     )
     @self.console_command(
@@ -1390,10 +1390,10 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument(
-        "x_offset", type=self.length_x, help=_("x offset."), default="0"
+        "x_offset", type=self.space.length_x, help=_("x offset."), default="0"
     )
     @self.console_argument(
-        "y_offset", type=self.length_y, help=_("y offset"), default="0"
+        "y_offset", type=self.space.length_y, help=_("y offset"), default="0"
     )
     @self.console_command(
         "frame",
@@ -1443,8 +1443,8 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
-    @self.console_option("cx", "x", type=self.length_x, help=_("center x"))
-    @self.console_option("cy", "y", type=self.length_y, help=_("center y"))
+    @self.console_option("cx", "x", type=self.space.length_x, help=_("center x"))
+    @self.console_option("cy", "y", type=self.space.length_y, help=_("center y"))
     @self.console_option(
         "absolute",
         "a",
@@ -1531,8 +1531,8 @@ def init_commands(kernel):
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
     @self.console_argument("scale_y", type=str, help=_("scale_y value"))
-    @self.console_option("px", "x", type=self.length_x, help=_("scale x origin point"))
-    @self.console_option("py", "y", type=self.length_y, help=_("scale y origin point"))
+    @self.console_option("px", "x", type=self.space.length_x, help=_("scale x origin point"))
+    @self.console_option("py", "y", type=self.space.length_y, help=_("scale y origin point"))
     @self.console_option(
         "absolute",
         "a",
@@ -1639,7 +1639,7 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_option(
-        "new_area", "n", type=self.area, help=_("provide a new area to cover")
+        "new_area", "n", type=self.space.area, help=_("provide a new area to cover")
     )
     @self.console_option(
         "density", "d", type=int, help=_("Defines the interpolation density")
@@ -1715,8 +1715,8 @@ def init_commands(kernel):
         return "elements", data
         # Do we have a new value to set? If yes scale by sqrt(of the fraction)
 
-    @self.console_argument("tx", type=self.length_x, help=_("translate x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate y value"))
+    @self.console_argument("tx", type=self.space.length_x, help=_("translate x value"))
+    @self.console_argument("ty", type=self.space.length_y, help=_("translate y value"))
     @self.console_option(
         "absolute",
         "a",
@@ -1785,8 +1785,8 @@ def init_commands(kernel):
             self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_argument("tx", type=self.length_x, help=_("New x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+    @self.console_argument("tx", type=self.space.length_x, help=_("New x value"))
+    @self.console_argument("ty", type=self.space.length_y, help=_("New y value"))
     @self.console_command(
         "position",
         help=_("position <tx> <ty>"),
@@ -1851,14 +1851,14 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_argument(
-        "x_pos", type=self.length_x, help=_("x position for top left corner")
+        "x_pos", type=self.space.length_x, help=_("x position for top left corner")
     )
     @self.console_argument(
-        "y_pos", type=self.length_y, help=_("y position for top left corner")
+        "y_pos", type=self.space.length_y, help=_("y position for top left corner")
     )
-    @self.console_argument("width", type=self.length_x, help=_("new width of selected"))
+    @self.console_argument("width", type=self.space.length_x, help=_("new width of selected"))
     @self.console_argument(
-        "height", type=self.length_y, help=_("new height of selected")
+        "height", type=self.space.length_y, help=_("new height of selected")
     )
     @self.console_command(
         "resize",
@@ -1920,8 +1920,8 @@ def init_commands(kernel):
     @self.console_argument("kx", type=float, help=_("skew_x value"))
     @self.console_argument("ky", type=float, help=_("skew_y value"))
     @self.console_argument("sy", type=float, help=_("scale_y value"))
-    @self.console_argument("tx", type=self.length_x, help=_("translate_x value"))
-    @self.console_argument("ty", type=self.length_y, help=_("translate_y value"))
+    @self.console_argument("tx", type=self.space.length_x, help=_("translate_x value"))
+    @self.console_argument("ty", type=self.space.length_y, help=_("translate_y value"))
     @self.console_command(
         "matrix",
         help=_("matrix <sx> <kx> <ky> <sy> <tx> <ty>"),

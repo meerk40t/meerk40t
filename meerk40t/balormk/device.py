@@ -1806,21 +1806,32 @@ class BalorDevice(Service):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
+    @signal_listener("lens_size")
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
     def realize(self, origin=None, *args):
-        self.coord.update(self.lens_size, self.lens_size)
+        unit_size = float(Length(self.lens_size))
+        galvo_range = 0xFFFF
+        units_per_galvo = unit_size / galvo_range
 
-    @property
-    def current(self):
-        """
-        @return: the location in nm for the current known x value.
-        """
-        return self.coord.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
+        self.view = View(
+            self.lens_size,
+            self.lens_size,
+            dpi_x=units_per_galvo,
+            dpi_y=units_per_galvo,
         )
+        self.view.transform(
+            origin_x=1.0 if self.flip_x else 0.0,
+            origin_y=1.0 if self.flip_y else 0.0,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+        )
+        self.space.update_dims(self.lens_size, self.lens_size)
 
     @property
     def native(self):

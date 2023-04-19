@@ -10,12 +10,12 @@ from meerk40t.core.view import View
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "register":
-        kernel.add_service("coord", CoordinateSystem(kernel))
+        kernel.add_service("space", CoordinateSystem(kernel))
 
 
 class CoordinateSystem(Service):
     def __init__(self, kernel, *args, **kwargs):
-        Service.__init__(self, kernel, "coord")
+        Service.__init__(self, kernel, "space")
         _ = kernel.translation
         choices = [
             {
@@ -84,30 +84,13 @@ class CoordinateSystem(Service):
         self.height = "100mm"
         self.display = View(self.width, self.height, dpi_x=UNITS_PER_MM, dpi_y=UNITS_PER_MM)
         self.scene = View(self.width, self.height, dpi=NATIVE_UNIT_PER_INCH)
-        self.scene_to_device = None
-        self.device_to_scene = None
-        self.display_to_scene = None
-        self.display_to_device = None
-        self.scene_to_display = None
-        self.device_to_display = None
+        self.update_dims(self.width, self.height)
 
     def update_dims(self, width, height):
         self.width = width
         self.height = height
         self.display.set_dims(self.width, self.height)
         self.scene.set_dims(self.width, self.height)
-        self.validate()
-
-    def set_centered(self):
-        self.origin_x = 0.5
-        self.origin_y = 0.5
-        self.validate()
-
-    def validate(self):
-
-        self.scene_to_device = ViewMap(self.scene, self.device.view)
-        self.device_to_scene = ViewMap(self.device.view, self.scene)
-
         self.display.transform(
             origin_x=self.origin_x,
             origin_y=self.origin_y,
@@ -115,6 +98,54 @@ class CoordinateSystem(Service):
             flip_y=self.bottom_positive,
             swap_xy=self.swap_xy,
         )
+
+    def get_view(self, view):
+        if view == "scene":
+            return self.scene
+        if view == "device":
+            return self.device.view
+        if view == "display":
+            return self.display
+
+    def map(self, source, dest):
+        view_map = ViewMap(self.get_view(source), self.get_view(dest))
+        return view_map.matrix
+
+    def length(self, v):
+        return float(Length(v))
+
+    def length_x(self, v):
+        return float(Length(v, relative_length=self.width))
+
+    def length_y(self, v):
+        return float(Length(v, relative_length=self.height))
+
+    def bounds(self, x0, y0, x1, y1):
+        return (
+            float(Length(x0, relative_length=self.width)),
+            float(Length(y0, relative_length=self.height)),
+            float(Length(x1, relative_length=self.width)),
+            float(Length(y1, relative_length=self.height)),
+        )
+
+    def area(self, v):
+        llx = Length(v, relative_length=self.width)
+        lx = float(llx)
+        if "%" in v:
+            lly = Length(v, relative_length=self.height)
+        else:
+            lly = Length(f"1{llx._preferred_units}")
+        ly = float(lly)
+        return lx * ly
+
+    def display_origin_in_scene_units(self):
+        m = self.map("display", "scene")
+        return m.point_in_matrix_space((0,0))
+
+    def set_centered(self):
+        self.origin_x = 0.5
+        self.origin_y = 0.5
+        # self.validate()
 
     def physical_to_device_position(self, x, y, unitless=1):
         """

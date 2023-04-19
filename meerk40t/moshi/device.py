@@ -6,7 +6,7 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service, signal_listener
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length
@@ -386,23 +386,15 @@ class MoshiDevice(Service):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_flip_x = self.home_right
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
-            self.show_flip_y = self.home_bottom
             self.realize()
+
+    def service_attach(self, *args, **kwargs):
+        self.realize()
 
     @property
     def viewbuffer(self):
         return self.controller.viewbuffer()
-
-    @property
-    def current(self):
-        """
-        @return: the location in units for the current known position.
-        """
-        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
     @property
     def native(self):
@@ -411,6 +403,12 @@ class MoshiDevice(Service):
         """
         return self.driver.native_x, self.driver.native_y
 
+    @signal_listener("user_scale_x")
+    @signal_listener("user_scale_y")
+    @signal_listener("bedsize")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
     def realize(self, origin=None):
         self.view = View(self.bedwidth, self.bedheight, dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
         self.view.transform(
@@ -422,4 +420,4 @@ class MoshiDevice(Service):
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
         )
-        self.coords.update_dims(self.bedwidth, self.bedheight)
+        self.space.update_dims(self.bedwidth, self.bedheight)

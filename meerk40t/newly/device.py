@@ -673,7 +673,7 @@ class NewlyDevice(Service):
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
         )
-        self.coord.update_dim(self.bedwidth, self.bedheight)
+        self.space.update_dim(self.bedwidth, self.bedheight)
 
     @property
     def current(self):

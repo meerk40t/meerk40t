@@ -8,8 +8,7 @@ from time import sleep
 
 import serial.tools.list_ports
 
-from meerk40t.kernel import CommandSyntaxError, Service
-
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length
@@ -627,15 +626,27 @@ class GRBLDevice(Service):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
-    @property
-    def current(self):
-        """
-        @return: the location in scene units for the current known x value.
-        """
-        return self.device_to_scene_position(
-            self.driver.native_x,
-            self.driver.native_y,
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
+    @signal_listener("user_scale_x")
+    @signal_listener("user_scale_y")
+    @signal_listener("bedsize")
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
+    @signal_listener("swap_xy")
+    def realize(self):
+        self.view = View(self.bedwidth, self.bedheight,dpi_x=UNITS_PER_MIL, dpi_y=UNITS_PER_MIL)
+        self.view.transform(
+            user_scale_x=self.scale_x,
+            user_scale_y=self.scale_y,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
+            origin_x=0,
+            origin_y=0,
         )
+        self.space.update_dims(self.bedwidth, self.bedheight)
 
     @property
     def native(self):

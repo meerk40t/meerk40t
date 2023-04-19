@@ -252,7 +252,7 @@ def init_commands(kernel):
         return "align", (mode, group, bound, elements)
 
     @self.console_option(
-        "boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4
+        "boundaries", "b", type=self.space.bounds, parallel_cast=True, nargs=4
     )
     @self.console_command(
         "ref",
