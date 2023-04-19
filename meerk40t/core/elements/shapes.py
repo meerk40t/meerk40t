@@ -278,7 +278,7 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         for e in data:
-            if hasattr(e, "lock") and e.lock:
+            if hasattr(e, "can_modify") and not e.can_modify:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
             if e.type == "elem text":
@@ -307,7 +307,7 @@ def init_commands(kernel):
             channel(_("No selected elements."))
             return
         for e in data:
-            if hasattr(e, "lock") and e.lock:
+            if hasattr(e, "can_modify") and not e.can_modify:
                 channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
             if e.type == "elem text":
@@ -426,6 +426,11 @@ def init_commands(kernel):
         else:
             for e in data:
                 if prop in ("x", "y"):
+                    if hasattr(e, "can_move") and not e.can_move(self.lock_allows_move):
+                        channel(
+                            _("Element can not be moved: {name}").format(name=str(e))
+                        )
+                        continue
                     # We need to adjust the matrix
                     if hasattr(e, "matrix"):
                         dx = 0
@@ -448,6 +453,11 @@ def init_commands(kernel):
                     if new_value == 0:
                         channel(_("Can't set {field} to zero").format(field=prop))
                         continue
+                    if hasattr(e, "can_scale") and not e.can_scale:
+                        channel(
+                            _("Element can not be scaled: {name}").format(name=str(e))
+                        )
+                        continue
                     if hasattr(e, "matrix") and hasattr(e, "bounds"):
                         bb = e.bounds
                         sx = 1.0
@@ -467,7 +477,7 @@ def init_commands(kernel):
                         )
                         continue
                 elif hasattr(e, prop):
-                    if hasattr(e, "lock") and e.lock:
+                    if hasattr(e, "can_modify") and not e.can_modify:
                         channel(
                             _("Can't modify a locked element: {name}").format(
                                 name=str(e)
@@ -1751,11 +1761,7 @@ def init_commands(kernel):
         try:
             if not absolute:
                 for node in data:
-                    if (
-                        hasattr(node, "lock")
-                        and node.lock
-                        and not self.lock_allows_move
-                    ):
+                    if not node.can_move(self.lock_allows_move):
                         continue
 
                     node.matrix *= matrix
@@ -1763,11 +1769,7 @@ def init_commands(kernel):
                     changes = True
             else:
                 for node in data:
-                    if (
-                        hasattr(node, "lock")
-                        and node.lock
-                        and not self.lock_allows_move
-                    ):
+                    if not node.can_move(self.lock_allows_move):
                         continue
                     otx = node.matrix.value_trans_x()
                     oty = node.matrix.value_trans_y()
@@ -1805,7 +1807,7 @@ def init_commands(kernel):
         changes = False
         dbounds = Node.union_bounds(data)
         for node in data:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 continue
             nbounds = node.bounds
             dx = tx - dbounds[0]
@@ -1839,7 +1841,7 @@ def init_commands(kernel):
             ntx = tx - otx
             nty = ty - oty
             for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                if not node.can_move(self.lock_allows_move):
                     continue
                 node.matrix.post_translate(ntx, nty)
                 # node.modified()

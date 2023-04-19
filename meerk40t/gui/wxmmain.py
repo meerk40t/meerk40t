@@ -70,6 +70,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
@@ -703,6 +704,19 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
+            },
+        )
+
+        kernel.register(
+            "button/tools/Placement",
+            {
+                "label": _("Job Start"),
+                "icon": icons8_user_location_50,
+                "tip": _("Add a job starting point to the scene"),
+                "action": lambda v: kernel.elements("tool placement\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "placement",
             },
         )
 
@@ -2426,7 +2440,8 @@ class MeerK40t(MWindow):
                     flag = True
                     if len(node.references) > 0:
                         flag = False
-                node.emphasized = flag
+                if node.can_emphasize:
+                    node.emphasized = flag
             elements.validate_selected_area()
             self.context.signal("refresh_scene", "Scene")
 

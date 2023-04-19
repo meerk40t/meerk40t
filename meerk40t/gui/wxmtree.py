@@ -18,6 +18,7 @@ from .icons import (
     icons8_ghost_20,
     icons8_group_objects_20,
     icons8_home_20,
+    icons8_home_location_20,
     icons8_image_20,
     icons8_input_20,
     icons8_journey_20,
@@ -381,6 +382,8 @@ class ShadowTree:
             "op raster": icons8_direction_20,
             "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
+            "place current": icons8_home_location_20,
+            "place point": icons8_home_location_20,
             "elem point": icons8_scatter_plot_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
@@ -1319,7 +1322,10 @@ class ShadowTree:
 
         def my_create_label(node, text=None):
             if text is None:
-                text = "{element_type}:{id}"
+                try:
+                    text = node._formatter
+                except AttributeError:
+                    text = "{element_type}:{id}"
             # Just for the optical impression (who understands what a "Rect: None" means),
             # lets replace some of the more obvious ones...
             mymap = node.default_map()
@@ -1721,6 +1727,15 @@ class ShadowTree:
                             hh = Length(amount=bb[3] - bb[1], digits=1)
                             ttip = f"{ww.length_mm} x {hh.length_mm}"
                             # ttip += f"\n{node.font}"
+                    elif node.type == "place current":
+                        ttip = _(
+                            "This is a placeholder for the 'place current' operation"
+                        )
+                    elif node.type == "place point":
+                        ttip = _(
+                            "This will define an origin from where all the elements in this scene\n"
+                            + "will be plotted. You can have multiple such job start points"
+                        )
         self._last_hover_item = item
         if ttip != self.wxtree.GetToolTipText():
             self.wxtree.SetToolTip(ttip)

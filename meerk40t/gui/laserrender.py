@@ -4,7 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
-from meerk40t.core.elements.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes, place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -206,6 +206,7 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
                 nodes = [e for e in nodes if e._parent.type != "branch reg"]
+                nodes = [e for e in nodes if not e.type in place_nodes]
         _nodes = list(nodes)
         variable_translation = draw_mode & DRAW_MODE_VARIABLES
         nodecopy = [e for e in _nodes]
@@ -235,6 +236,8 @@ class LaserRender:
                     node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
+                elif node.type in place_nodes:
+                    node.draw = self.draw_placement_node
                 elif node.type in (
                     "elem rect",
                     "elem line",
@@ -593,6 +596,18 @@ class LaserRender:
         Vector objects are expected to have a make_cache routine which attaches a `_cache_matrix` and a `_cache`
         attribute to them which can be drawn as a GraphicsPath.
         """
+        if hasattr(node, "mktext"):
+            newtext = self.context.elements.wordlist_translate(
+                node.mktext, elemnode=node, increment=False
+            )
+            oldtext = getattr(node, "_translated_text", "")
+            if newtext != oldtext:
+                node._translated_text = newtext
+                kernel = self.context.elements.kernel
+                for property_op in kernel.lookup_all("path_updater/.*"):
+                    property_op(kernel.root, node)
+                if hasattr(node, "_cache"):
+                    node._cache = None
         matrix = node.matrix
         gc.PushState()
         try:
@@ -633,6 +648,104 @@ class LaserRender:
             gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node._cache)
+        gc.PopState()
+
+    def draw_placement_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the placement operation."""
+        if node.type == "place current":
+            # no idea how to draw yet...
+            return
+        gc.PushState()
+        matrix = Matrix()
+        if node.rotation is not None and node.rotation != 0:
+            matrix.post_rotate(node.rotation, node.x, node.y)
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        # First x
+        dif = 20 * zoomscale
+        x_from = node.x
+        y_from = node.y
+        if node.corner == 0:
+            # Top Left
+            x_to = x_from + dif
+            y_to = y_from + dif
+            x_sign = 1
+            y_sign = 1
+        elif node.corner == 1:
+            # Top Right
+            x_to = x_from - dif
+            y_to = y_from + dif
+            x_sign = -1
+            y_sign = 1
+        elif node.corner == 2:
+            # Bottom Right
+            x_to = x_from - dif
+            y_to = y_from - dif
+            x_sign = -1
+            y_sign = -1
+        elif node.corner == 3:
+            # Bottom Left
+            x_to = x_from + dif
+            y_to = y_from - dif
+            x_sign = 1
+            y_sign = -1
+        else:
+            # Center
+            x_from -= dif
+            y_from -= dif
+            x_to = x_from + 2 * dif
+            y_to = y_from + 2 * dif
+            x_sign = 1
+            y_sign = 1
+        rpen = wx.Pen(wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+        gpen = wx.Pen(wx.Colour(red=0, green=255, blue=0, alpha=alpha))
+        gc.SetPen(rpen)
+        dif = 5 * zoomscale
+        gc.StrokeLine(x_from, node.y, x_to, node.y)
+        gc.StrokeLine(x_to - x_sign * dif, node.y - y_sign * dif, x_to, node.y)
+        gc.StrokeLine(x_to - x_sign * dif, node.y + y_sign * dif, x_to, node.y)
+        gc.SetPen(gpen)
+        gc.StrokeLine(node.x, y_from, node.x, y_to)
+        gc.StrokeLine(node.x - x_sign * dif, y_to - y_sign * dif, node.x, y_to)
+        gc.StrokeLine(node.x + x_sign * dif, y_to - y_sign * dif, node.x, y_to)
+
+        loops = 1
+        if hasattr(node, "loops") and node.loops is not None:
+            # No zero or negative values please
+            loops = max(1, node.loops)
+        if loops > 1:
+            symbol = f"{loops}x"
+            matrix = gc.GetTransform().Get()
+            try:
+                font_size = 10.0 / matrix[0]
+            except ZeroDivisionError:
+                font_size = 5000
+            # print (font_size)
+            if font_size < 1.0:
+                font_size = 1.0
+            try:
+                font = wx.Font(
+                    font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            except TypeError:
+                font = wx.Font(
+                    int(font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            gc.SetFont(font, wx.Colour(red=255, green=0, blue=0, alpha=alpha))
+            (t_width, t_height) = gc.GetTextExtent(symbol)
+            x = (x_from + x_to) / 2 - t_width / 2
+            y = (y_from + y_to) / 2 - t_height / 2
+            # is corner center then shift it a bit more
+            if node.corner == 4:
+                x += 0.25 * (x_to - x_from)
+                y += 0.25 * (y_to - y_from)
+            gc.DrawText(symbol, x, y)
+
         gc.PopState()
 
     def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -693,7 +806,9 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, elemnode=node)
+            text = self.context.elements.wordlist_translate(
+                text, elemnode=node, increment=False
+            )
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":

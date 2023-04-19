@@ -415,9 +415,12 @@ def init_tree(kernel):
     def set_power(node, power=1000, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "power"):
+                continue
             n.power = float(power)
             data.append(n)
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("element_property_reload", data)
 
     def radio_match(node, dpi=100, **kwargs):
         return node.dpi == dpi
@@ -433,6 +436,8 @@ def init_tree(kernel):
     def set_step_n(node, dpi=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "dpi"):
+                continue
             n.dpi = dpi
             data.append(n)
         for n in list(self.elems(emphasized=True)):
@@ -440,8 +445,9 @@ def init_tree(kernel):
                 n.dpi = dpi
                 n.update(None)
                 data.append(n)
-        self.signal("refresh_scene", "Scene")
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("refresh_scene", "Scene")
+            self.signal("element_property_reload", data)
 
     def radio_match_passes(node, passvalue=1, **kwargs):
         return (node.passes_custom and passvalue == node.passes) or (
@@ -455,10 +461,31 @@ def init_tree(kernel):
     def set_n_passes(node, passvalue=1, **kwargs):
         data = list()
         for n in list(self.ops(selected=True)):
+            if not hasattr(n, "passes"):
+                continue
             n.passes = passvalue
             n.passes_custom = passvalue != 1
             data.append(n)
-        self.signal("element_property_reload", data)
+        if len(data) > 0:
+            self.signal("element_property_reload", data)
+
+    def radio_match_loops(node, loopvalue=1, **kwargs):
+        return node.loops == loopvalue
+
+    @tree_submenu(_("Set placement loops"))
+    @tree_radio(radio_match_loops)
+    @tree_iterate("loopvalue", 1, 10)
+    @tree_operation(_("Loops {loopvalue}"), node_type=place_nodes, help="")
+    def set_n_loops(node, loopvalue=1, **kwargs):
+        data = list()
+        for n in list(self.ops(selected=True)):
+            if not hasattr(n, "loops"):
+                continue
+            n.loops = loopvalue
+            data.append(n)
+        if len(data) > 0:
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
 
     # ---- Burn Direction
     def get_direction_values():
@@ -586,6 +613,8 @@ def init_tree(kernel):
     def radio_match_speed_all(node, speed=0, **kwargs):
         maxspeed = 0
         for n in list(self.ops()):
+            if not hasattr(n, "speed"):
+                continue
             if n.speed is not None:
                 maxspeed = max(maxspeed, n.speed)
         return bool(abs(maxspeed - float(speed)) < 0.5)
@@ -602,11 +631,14 @@ def init_tree(kernel):
         data = list()
         maxspeed = 0
         for n in list(self.ops()):
-            if n.speed is not None:
-                maxspeed = max(maxspeed, n.speed)
+            if hasattr(node, "speed"):
+                if n.speed is not None:
+                    maxspeed = max(maxspeed, n.speed)
         if maxspeed == 0:
             return
         for n in list(self.ops()):
+            if not hasattr(node, "speed"):
+                continue
             if n.speed is not None:
                 oldspeed = float(n.speed)
                 newspeed = oldspeed / maxspeed * speed
@@ -617,6 +649,8 @@ def init_tree(kernel):
     def radio_match_power_all(node, power=0, **kwargs):
         maxpower = 0
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 maxpower = max(maxpower, n.power)
         return bool(abs(maxpower - float(power)) < 0.5)
@@ -634,11 +668,15 @@ def init_tree(kernel):
         data = list()
         maxpower = 0
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 maxpower = max(maxpower, n.power)
         if maxpower == 0:
             return
         for n in list(self.ops()):
+            if not hasattr(n, "power"):
+                continue
             if n.power is not None:
                 oldpower = float(n.power)
                 newpower = oldpower / maxpower * power
@@ -795,7 +833,7 @@ def init_tree(kernel):
     # ==========
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
-    @tree_conditional(lambda node: not node.lock)
+    @tree_conditional(lambda node: node.can_remove)
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=elem_nodes))
@@ -808,7 +846,7 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_elem(node, **kwargs):
-        if hasattr(node, "lock") and node.lock:
+        if hasattr(node, "can_remove") and not node.can_remove:
             pass
         else:
             node.remove_node()
@@ -862,15 +900,15 @@ def init_tree(kernel):
         self.set_emphasis(None)
         self.signal("operation_removed")
 
-    def contains_no_locked_items():
+    def contains_no_unremovable_items():
         nolock = True
         for e in list(self.flat(selected=True, cascade=True)):
-            if hasattr(e, "lock") and e.lock:
+            if hasattr(e, "can_remove") and not e.can_remove:
                 nolock = False
                 break
         return nolock
 
-    @tree_conditional(lambda cond: contains_no_locked_items())
+    @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -886,7 +924,7 @@ def init_tree(kernel):
         node.remove_node()
         self.set_emphasis(None)
 
-    @tree_conditional(lambda cond: contains_no_locked_items())
+    @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
         lambda cond: len(
             list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -989,7 +1027,7 @@ def init_tree(kernel):
         ntype = node.type
         changes = False
         for e in self.elems():
-            if e.type == ntype and not e.emphasized:
+            if e.type == ntype and not e.emphasized and e.can_emphasize:
                 e.emphasized = True
                 e.selected = True
                 changes = True
@@ -1269,7 +1307,7 @@ def init_tree(kernel):
         changes = False
         for node in self.elems():
             emphasis = bool(len(node.references) == 0)
-            if node.emphasized != emphasis:
+            if node.emphasized != emphasis and node.can_emphasize:
                 changes = True
                 node.emphasized = emphasis
         if changes:
@@ -1494,6 +1532,21 @@ def init_tree(kernel):
             type="util console",
             pos=pos,
             command=opname,
+        )
+        self.signal("updateop_tree")
+
+    @tree_submenu(_("Append special operation(s)"))
+    @tree_prompt("y", _("Y-Coordinate for placement to append?"))
+    @tree_prompt("x", _("X-Coordinate for placement to append?"))
+    @tree_operation(_("Append Placement"), node_type="branch ops", help="")
+    def append_operation_placement(node, y, x, pos=None, **kwargs):
+        self.op_branch.add(
+            type="place point",
+            pos=pos,
+            x=x,
+            y=y,
+            rotation=0,
+            corner=0,
         )
         self.signal("updateop_tree")
 
@@ -2080,7 +2133,7 @@ def init_tree(kernel):
     @tree_submenu(_("Flip"))
     @tree_separator_before()
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_operation(
         _("Horizontally"),
         node_type=elem_group_nodes,
@@ -2096,7 +2149,7 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_submenu(_("Flip"))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_operation(
         _("Vertically"),
         node_type=elem_group_nodes,
@@ -2111,7 +2164,7 @@ def init_tree(kernel):
         self(f"scale 1 -1 {center_x} {center_y}\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_scale)
     @tree_submenu(_("Scale"))
     @tree_iterate("scale", 25, 1, -1)
     @tree_calc("scale_percent", lambda i: f"{(600.0 / float(i)):.2f}")
@@ -2131,7 +2184,7 @@ def init_tree(kernel):
 
     # @tree_conditional(lambda node: isinstance(node.object, SVGElement))
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_rotate)
     @tree_submenu(_("Rotate"))
     @tree_values(
         "angle",
@@ -2177,21 +2230,21 @@ def init_tree(kernel):
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: has_changes(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Reify User Changes"), node_type=elem_group_nodes, help="")
     def reify_elem_changes(node, **kwargs):
         self("reify\n")
         self.signal("ext-modified")
 
     @tree_conditional(lambda node: not is_regmark(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Break Subpaths"), node_type="elem path", help="")
     def break_subpath_elem(node, **kwargs):
         self("element subpath\n")
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_conditional(lambda node: has_changes(node))
-    @tree_conditional_try(lambda node: not node.lock)
+    @tree_conditional_try(lambda node: node.can_modify)
     @tree_operation(_("Reset user changes"), node_type=elem_group_nodes, help="")
     def reset_user_changes(node, copies=1, **kwargs):
         self("reset\n")
@@ -2262,6 +2315,35 @@ def init_tree(kernel):
                 if hasattr(item, "lock"):
                     item.lock = False
                 drop_node.drop(item)
+
+    @tree_conditional(lambda node: is_regmark(node))
+    @tree_separator_before()
+    @tree_operation(_("Create placement"), node_type=elem_nodes, help="")
+    def regmark_as_placement(node, **kwargs):
+        if node is None:
+            return
+        if hasattr(node, "path"):
+            bb = node.path.bbox(transformed=False)
+        elif hasattr(node, "shape"):
+            bb = node.shape.bbox(transformed=False)
+        else:
+            return
+        if bb is None:
+            return
+        x = bb[0]
+        y = bb[1]
+        corner = 0
+        try:
+            rotation = node.matrix.rotation.as_radians
+        except AttributeError:
+            rotation = 0
+        pt = node.matrix.point_in_matrix_space(Point(bb[0], bb[1]))
+        x = pt.x
+        y = pt.y
+        place_node = self.op_branch.add(
+            type="place point", x=x, y=y, corner=corner, rotation=rotation
+        )
+        self.signal("refresh_scene", "Scene")
 
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)

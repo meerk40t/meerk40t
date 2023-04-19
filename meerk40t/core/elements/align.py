@@ -472,7 +472,7 @@ def init_commands(kernel):
         mode, group, bound, raw_elements = data
         haslock = False
         for node in raw_elements:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 haslock = True
                 break
         if haslock:
@@ -493,7 +493,7 @@ def init_commands(kernel):
         mode, group, bound, raw_elements = data
         haslock = False
         for node in raw_elements:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 haslock = True
                 break
         if haslock:
@@ -514,7 +514,7 @@ def init_commands(kernel):
         mode, group, bound, raw_elements = data
         haslock = False
         for node in raw_elements:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 haslock = True
                 break
         if haslock:
@@ -535,7 +535,7 @@ def init_commands(kernel):
         mode, group, bound, raw_elements = data
         haslock = False
         for node in raw_elements:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 haslock = True
                 break
         if haslock:
@@ -602,7 +602,7 @@ def init_commands(kernel):
 
         haslock = False
         for node in elements:
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if hasattr(node, "can_move") and not node.can_move(self.lock_allows_move):
                 haslock = True
                 break
         if haslock:

@@ -521,7 +521,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util"):
+            if c.type.startswith("util") or c.type.startswith("place"):
                 subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
                 SVGWriter._write_custom(subelement, c)
             else:
@@ -1132,12 +1132,16 @@ class SVGProcessor:
 
                 try:
                     op = self.elements.op_branch.create(type=node_type, **attrs)
-                    op.validate()
+                    if hasattr(op, "validate"):
+                        op.validate()
                     op.id = node_id
                     self.operation_list.append(op)
                     overlooked_attributes = [
                         "output",
                     ]
+                    # Sometimes certain attributes weren't assigned properly / missed
+                    # This piece of code tries to reapply them. If things were fine
+                    # then this is an unneeded attempt. But better safe than sorry
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             setattr(op, overlooked, element.values.get(overlooked))
