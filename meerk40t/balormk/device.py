@@ -1806,6 +1806,9 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")

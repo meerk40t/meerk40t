@@ -618,6 +618,9 @@ class GRBLDevice(Service, ViewPort):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @property
     def current(self):
         """

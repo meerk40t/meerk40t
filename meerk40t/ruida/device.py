@@ -172,6 +172,9 @@ class RuidaDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     def realize(self, origin=None):
         self.width = self.bedwidth
         self.height = self.bedheight

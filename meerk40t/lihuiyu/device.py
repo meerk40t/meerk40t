@@ -954,6 +954,9 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")

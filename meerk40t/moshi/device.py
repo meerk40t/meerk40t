@@ -396,6 +396,9 @@ class MoshiDevice(Service, ViewPort):
             self.show_flip_y = self.home_bottom
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @property
     def viewbuffer(self):
         return self.controller.viewbuffer()
