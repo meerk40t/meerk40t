@@ -1,6 +1,6 @@
 from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH
 from meerk40t.core.view import View
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, signal_listener
 
 
 def plugin(kernel, lifecycle=None):
@@ -81,6 +81,14 @@ class CoordinateSystem(Service):
         self.height = None
         self.display = None
         self.update_bounds(0, 0, "100mm", "100mm")
+
+    @signal_listener("right_positive")
+    @signal_listener("bottom_positive")
+    @signal_listener("origin_x")
+    @signal_listener("origin_y")
+    @signal_listener("swap_xy")
+    def update(self, origin, *args):
+        self.update_bounds(self.x, self.y, self.width, self.height)
 
     def origin_zero(self):
         return self.origin_x * self.width, self.origin_y * self.height
