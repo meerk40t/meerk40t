@@ -41,13 +41,13 @@ class MachineOriginWidget(Widget):
             return
         margin = 5000
         space = self.scene.context.space
-        x, y = space.display.position(0, 0)
-        x_dx, x_dy = space.display.position(50000, 0)
-        xa1_dx, xa1_dy = space.display.position(45000, 5000)
-        xa2_dx, xa2_dy = space.display.position(45000, -5000)
-        y_dx, y_dy = space.display.position(0, 50000)
-        ya1_dx, ya1_dy = space.display.position(5000, 45000)
-        ya2_dx, ya2_dy = space.display.position(-5000, 45000)
+        x, y = space.display.iposition(0, 0)
+        x_dx, x_dy = space.display.iposition(50000, 0)
+        xa1_dx, xa1_dy = space.display.iposition(45000, 5000)
+        xa2_dx, xa2_dy = space.display.iposition(45000, -5000)
+        y_dx, y_dy = space.display.iposition(0, 50000)
+        ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
+        ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
         gc.SetBrush(self.brush)
         gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
         gc.SetBrush(wx.NullBrush)
