@@ -410,6 +410,9 @@ class LihuiyuDriverGui(MWindow):
         panel_rotary = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="rotary"
         )
+        panel_space = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices="space"
+        )
 
         self.panels.append(panel_config)
         self.panels.append(panel_interface)
@@ -418,6 +421,7 @@ class LihuiyuDriverGui(MWindow):
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
         self.panels.append(panel_format)
+        self.panels.append(panel_space)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
@@ -426,6 +430,7 @@ class LihuiyuDriverGui(MWindow):
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.notebook_main.AddPage(panel_format, _("Display Options"))
+        self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
 
         self.Layout()
 
