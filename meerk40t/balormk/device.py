@@ -1813,6 +1813,7 @@ class BalorDevice(Service, ViewPort):
         self.width = self.lens_size
         self.height = self.lens_size
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):

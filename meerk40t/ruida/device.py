@@ -176,6 +176,7 @@ class RuidaDevice(Service, ViewPort):
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):

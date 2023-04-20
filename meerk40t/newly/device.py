@@ -662,6 +662,7 @@ class NewlyDevice(Service, ViewPort):
         self.native_scale_x = UNITS_PER_INCH / self.h_dpi
         self.native_scale_y = UNITS_PER_INCH / self.v_dpi
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):

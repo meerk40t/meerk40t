@@ -641,3 +641,4 @@ class GRBLDevice(Service, ViewPort):
         self.origin_x = 1.0 if self.home_right else 0.0
         self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)

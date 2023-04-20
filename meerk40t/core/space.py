@@ -49,7 +49,7 @@ class CoordinateSystem(Service):
             {
                 "attr": "swap_xy",
                 "object": self,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("XY coordinates are swapped"),
