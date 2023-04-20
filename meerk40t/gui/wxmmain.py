@@ -70,6 +70,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
@@ -707,6 +708,19 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
+            "button/tools/Placement",
+            {
+                "label": _("Job Start"),
+                "icon": icons8_user_location_50,
+                "tip": _("Add a job starting point to the scene"),
+                "action": lambda v: kernel.elements("tool placement\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "placement",
+            },
+        )
+
+        kernel.register(
             "button/tools/Draw",
             {
                 "label": _("Draw"),
@@ -1210,23 +1224,26 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_edit",
                         "icon": icons8_curly_brackets_50,
-                        "tip": _("Manages Wordlist-Entries"),
+                        "tip": _("Manages Wordlist-Entries") + _(" (right go to next entry)"),
                         "label": _("Wordlist"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                     {
                         "identifier": "prep_wordlist_plus_1",
                         "icon": icons8_circled_right_50,
-                        "tip": _("Wordlist: go to next entry"),
+                        "tip": _("Wordlist: go to next entry") + _(" (right go to prev entry)"),
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(-1),
                     },
                     {
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
                         "icon": icons8_circled_left_50,
-                        "tip": _("Wordlist: go to prev entry"),
+                        "tip": _("Wordlist: go to prev entry") + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                 ],
             },
@@ -2426,7 +2443,8 @@ class MeerK40t(MWindow):
                     flag = True
                     if len(node.references) > 0:
                         flag = False
-                node.emphasized = flag
+                if node.can_emphasize:
+                    node.emphasized = flag
             elements.validate_selected_area()
             self.context.signal("refresh_scene", "Scene")
 

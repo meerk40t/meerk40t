@@ -121,11 +121,11 @@ class CutPlan:
         """
         device = self.context.device
 
-        # ==========
-        # Preprocess Operations
-        # ==========
-        matrix = device.scene_to_device_matrix()
+        scene_to_device_matrix = device.scene_to_device_matrix()
 
+        # ==========
+        # Determine the jobs bounds.
+        # ==========
         bounds = Node.union_bounds(self.plan, bounds=self._previous_bounds)
         self._previous_bounds = bounds
         if bounds is not None:
@@ -145,22 +145,76 @@ class CutPlan:
                     device.device_position(min_x, max_y),
                 )
 
+        # ==========
+        # Query Placements
+        # ==========
+        placements = []
+        for place in self.plan:
+            if not hasattr(place, "type"):
+                continue
+            if place.type.startswith("place "):
+                if hasattr(place, "output") and place.output:
+                    loops = 1
+                    if hasattr(place, "loops") and place.loops > 1:
+                        loops = place.loops
+                    for idx in range(loops):
+                        placements.extend(
+                            place.placements(
+                                self.context, self.outline, scene_to_device_matrix, self
+                            )
+                        )
+        if not placements:
+            # Absolute coordinates.
+            placements.append(scene_to_device_matrix)
+
         # TODO: Correct rotary.
         # rotary = self.context.rotary
         # if rotary.rotary_enabled:
         #     axis = rotary.axis
 
-        for op in self.plan:
-            if not hasattr(op, "type") or op.type is None:
-                continue
-            if op.type.startswith("op"):
-                if hasattr(op, "preprocess"):
-                    op.preprocess(self.context, matrix, self)
-                for node in op.flat():
-                    if node is op:
-                        continue
-                    if hasattr(node, "preprocess"):
-                        node.preprocess(self.context, matrix, self)
+        original_ops = copy(self.plan)
+        self.plan.clear()
+        idx = 0
+        self.context.elements.mywordlist.push()
+
+        for placement in placements:
+            # Adjust wordlist
+            if idx > 0:
+                self.context.elements.mywordlist.move_all_indices(1)
+
+            for original_op in original_ops:
+                op = copy(original_op)
+                if not hasattr(op, "type") or op.type is None:
+                    self.plan.append(op)
+                    continue
+                if op.type.startswith("place "):
+                    continue
+                self.plan.append(op)
+                if op.type.startswith("op"):
+                    for child in original_op.children:
+                        op.add_node(copy(child))
+                    if hasattr(op, "preprocess"):
+                        op.preprocess(self.context, placement, self)
+                    for node in op.flat():
+                        if node is op:
+                            continue
+                        if hasattr(node, "mktext") and hasattr(node, "_cache"):
+                            newtext = self.context.elements.wordlist_translate(
+                                node.mktext, elemnode=node, increment=False
+                            )
+                            oldtext = getattr(node, "_translated_text", "")
+                            # print (f"Was called inside preprocess for {node.type} with {node.mktext}, old: {oldtext}, new:{newtext}")
+                            if newtext != oldtext:
+                                node._translated_text = newtext
+                                kernel = self.context.elements.kernel
+                                for property_op in kernel.lookup_all("path_updater/.*"):
+                                    property_op(kernel.root, node)
+                                if hasattr(node, "_cache"):
+                                    node._cache = None
+                        if hasattr(node, "preprocess"):
+                            node.preprocess(self.context, placement, self)
+            idx += 1
+        self.context.elements.mywordlist.pop()
 
     def _to_grouped_plan(self, plan):
         """

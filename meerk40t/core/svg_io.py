@@ -521,7 +521,7 @@ class SVGWriter:
         @return:
         """
         for c in op_tree.children:
-            if c.type.startswith("util"):
+            if c.type.startswith("util") or c.type.startswith("place"):
                 subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
                 SVGWriter._write_custom(subelement, c)
             else:
@@ -620,9 +620,10 @@ class SVGProcessor:
         self.regmark_list = list()
         self.reverse = False
         self.requires_classification = True
-        self.operations_cleared = False
+        self.operations_replaced = False
         self.pathname = None
         self.regmark = None
+        self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
         # Both the time to load the file (unexpectedly) as well as the time
@@ -644,7 +645,11 @@ class SVGProcessor:
         file_node.focus()
 
         self.parse(svg, file_node, self.element_list)
-        if self.operations_cleared:
+        if self.operations_replaced:
+            self.elements.undo.mark("op-replaced")
+            self.elements.clear_operations()
+            for node in self.operation_list:
+                op = self.elements.op_branch.add_node(node)
             for op in self.elements.ops():
                 if not hasattr(op, "settings"):
                     # Some special nodes might lack settings these can't have references.
@@ -749,26 +754,35 @@ class SVGProcessor:
                 context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
+
+        tag_label = None
         # Let's see whether we can get the label from an inkscape save
-        _label = None
-        if uselabel is not None and uselabel != "":
+        # We only want the 'label' attribute from the current tag, so
+        # we look at element.values["attributes"]
+        if "attributes" in element.values:
+            local_dict = element.values["attributes"]
+        else:
+            local_dict = element.values
+        ink_tag = "inkscape:label"
+        try:
+            inkscape = element.values.get("inkscape")
+            if inkscape is not None and inkscape != "":
+                ink_tag = "{" + inkscape + "}label"
+        except (AttributeError, KeyError):
+            pass
+        try:
+            tag_label = local_dict.get(ink_tag)
+            if tag_label == "":
+                tag_label = None
+            # print ("Found label: %s" %_label)
+        except (AttributeError, KeyError):
+            # Label might simply be "label"
+            tag_label = local_dict.get("label")
+        if uselabel:
             _label = uselabel
-        if _label is None:
-            ink_tag = "inkscape:label"
-            try:
-                inkscape = element.values.get("inkscape")
-                if inkscape is not None and inkscape != "":
-                    ink_tag = "{" + inkscape + "}label"
-            except (AttributeError, KeyError):
-                pass
-            try:
-                _label = element.values.get(ink_tag)
-                if _label == "":
-                    _label = None
-                # print ("Found label: %s" % my_label)
-            except (AttributeError, KeyError):
-                # Label might simply be "label"
-                _label = element.values.get("label")
+        else:
+            _label = tag_label
+
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
@@ -1113,18 +1127,23 @@ class SVGProcessor:
 
             if tag == "operation":
                 # Check if SVGElement: operation
-                if not self.operations_cleared:
-                    self.elements.clear_operations()
-                    self.operations_cleared = True
+                if not self.operations_replaced:
+                    self.operations_replaced = True
 
                 try:
-                    node = self.elements.op_branch.create(type=node_type, **attrs)
-                    node.validate()
-                    node.id = node_id
-                    op = self.elements.op_branch.add_node(node)
+                    op = self.elements.op_branch.create(type=node_type, **attrs)
+                    if op is None or not hasattr(op, "type") or op.type is None:
+                        return
+                    if hasattr(op, "validate"):
+                        op.validate()
+                    op.id = node_id
+                    self.operation_list.append(op)
                     overlooked_attributes = [
                         "output",
                     ]
+                    # Sometimes certain attributes weren't assigned properly / missed
+                    # This piece of code tries to reapply them. If things were fine
+                    # then this is an unneeded attempt. But better safe than sorry
                     for overlooked in overlooked_attributes:
                         if overlooked in element.values and hasattr(op, overlooked):
                             setattr(op, overlooked, element.values.get(overlooked))

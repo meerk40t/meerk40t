@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.9.1"
+SVGELEMENTS_VERSION = "1.9.3"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -4472,7 +4472,7 @@ class Line(Linear):
 
 
 class QuadraticBezier(Curve):
-    """Represents Quadratic Bezier commands."""
+    """Represents Quadratic Bézier commands."""
 
     def __init__(self, start, control, end, **kwargs):
         Curve.__init__(self, start, end, **kwargs)
@@ -4654,7 +4654,7 @@ class QuadraticBezier(Curve):
 
 
 class CubicBezier(Curve):
-    """Represents Cubic Bezier commands."""
+    """Represents Cubic Bézier commands."""
 
     def __init__(self, start, control1, control2, end, **kwargs):
         Curve.__init__(self, start, end, **kwargs)
@@ -4775,7 +4775,7 @@ class CubicBezier(Curve):
         local_extremizers = [0, 1]
         a = [c[v] for c in self]
         denom = a[0] - 3 * a[1] + 3 * a[2] - a[3]
-        if abs(denom) >= 1e-12:
+        if abs(denom) >= 1e-8:
             delta = (
                 a[1] * a[1] - (a[0] + a[1]) * a[2] + a[2] * a[2] + (a[0] - a[1]) * a[3]
             )
@@ -4893,7 +4893,7 @@ class Arc(Curve):
 
         Sweep is a value in t.
         The sweep angle can be a value greater than tau and less than -tau.
-        However if this is the case, conversion back to Path.d() is expected to fail.
+        However, if this is the case, conversion back to Path.d() is expected to fail.
         We can denote these arc events but not as a single command.
 
         start_t + sweep = end_t
@@ -5272,7 +5272,7 @@ class Arc(Curve):
 
     def _exact_length(self):
         """scipy is not a dependency. However, if scipy exists this function will find the
-        exact arc length. By default .length() delegates to here and on failure uses the
+        exact arc length. .length() delegates to here and on failure uses the
         fallback method."""
         from scipy.special import ellipeinc
 
@@ -5289,7 +5289,7 @@ class Arc(Curve):
     def length(self, error=ERROR, min_depth=MIN_DEPTH):
         """The length of an elliptical arc segment requires numerical
         integration, and in that case it's simpler to just do a geometric
-        approximation, as for cubic bezier curves.
+        approximation, as for cubic Bézier curves.
         """
         if self.sweep == 0:
             return 0
@@ -6030,7 +6030,7 @@ class Path(Shape, MutableSequence):
     @property
     def smooth_point(self):
         """Returns the smoothing control point for the smooth commands.
-        With regards to the SVG standard if the last command was a curve the smooth
+        In regard to the SVG standard if the last command was a curve the smooth
         control point is the reflection of the previous control point.
 
         If the last command was not a curve, the smooth_point is coincident with the current.
@@ -6055,154 +6055,205 @@ class Path(Shape, MutableSequence):
     def end(self):
         pass
 
-    def move(self, *points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
+    def move(self, *points, relative=False, **kwargs):
         start_pos = self.current_point
         end_pos = points[0]
         if end_pos in ("z", "Z"):
             end_pos = self.z_point
-        segment = Move(start_pos, end_pos)
-        segment.relative = relative
-        self.append(segment)
+        self.append(Move(start_pos, end_pos, relative=relative))
         if len(points) > 1:
             self.line(*points[1:], relative=relative)
         return self
 
-    def line(self, *points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        end_pos = points[0]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = Line(start_pos, end_pos)
-        segment.relative = relative
-        self.append(segment)
-        if len(points) > 1:
-            self.line(*points[1:])
+    def line(self, *points, relative=False, **kwargs):
+        for index in range(len(points)):
+            start_pos = self.current_point
+            end_pos = points[index]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(Line(start_pos, end_pos, relative=relative))
         return self
 
-    def vertical(self, *y_points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        if relative:
-            segment = Line(start_pos, Point(start_pos.x, start_pos.y + y_points[0]))
-        else:
-            segment = Line(start_pos, Point(start_pos.x, y_points[0]))
-        segment.relative = relative
-        self.append(segment)
-        if len(y_points) > 1:
-            self.vertical(*y_points[1:], relative=relative)
+    def vertical(self, *y_points, relative=False, **kwargs):
+        for index in range(len(y_points)):
+            start_pos = self.current_point
+            if relative:
+                self.append(
+                    Line(
+                        start_pos,
+                        Point(start_pos.x, start_pos.y + y_points[index]),
+                        relative=relative,
+                    )
+                )
+            else:
+                self.append(
+                    Line(
+                        start_pos,
+                        Point(start_pos.x, y_points[index]),
+                        relative=relative,
+                    )
+                )
         return self
 
-    def horizontal(self, *x_points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        if relative:
-            segment = Line(start_pos, Point(start_pos.x + x_points[0], start_pos.y))
-            segment.relative = relative
-        else:
-            segment = Line(start_pos, Point(x_points[0], start_pos.y))
-            segment.relative = relative
-        self.append(segment)
-        if len(x_points) > 1:
-            self.horizontal(*x_points[1:], relative=relative)
+    def horizontal(self, *x_points, relative=False, **kwargs):
+        for index in range(len(x_points)):
+            start_pos = self.current_point
+            if relative:
+                self.append(
+                    Line(
+                        start_pos,
+                        Point(start_pos.x + x_points[index], start_pos.y),
+                        relative=relative,
+                    )
+                )
+            else:
+                self.append(
+                    Line(
+                        start_pos,
+                        Point(x_points[index], start_pos.y),
+                        relative=relative,
+                    )
+                )
         return self
 
-    def smooth_quad(self, *points, **kwargs):
+    def smooth_quad(self, *points, relative=False, **kwargs):
         """Smooth curve. First control point is the "reflection" of
         the second control point in the previous path."""
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        control1 = self.smooth_point
-        end_pos = points[0]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = QuadraticBezier(start_pos, control1, end_pos)
-        segment.relative = relative
-        segment.smooth = True
-        self.append(segment)
-        if len(points) > 1:
-            self.smooth_quad(*points[1:])
+        for index in range(len(points)):
+            start_pos = self.current_point
+            control1 = self.smooth_point
+            end_pos = points[index]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(
+                QuadraticBezier(
+                    start_pos, control1, end_pos, relative=relative, smooth=True
+                )
+            )
         return self
 
-    def quad(self, *points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        control = points[0]
-        if control in ("z", "Z"):
-            control = self.z_point
-        end_pos = points[1]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = QuadraticBezier(start_pos, control, end_pos)
-        segment.relative = relative
-        segment.smooth = False
-        self.append(segment)
-        if len(points) > 2:
-            self.quad(*points[2:])
+    def quad(self, *points, relative=False, **kwargs):
+        for index in range(0, len(points), 2):
+            start_pos = self.current_point
+            control = points[index]
+            if control in ("z", "Z"):
+                control = self.z_point
+                self.append(
+                    QuadraticBezier(
+                        start_pos, control, control, relative=relative, smooth=False
+                    )
+                )
+                return self
+            end_pos = points[index + 1]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(
+                QuadraticBezier(
+                    start_pos, control, end_pos, relative=relative, smooth=False
+                )
+            )
         return self
 
-    def smooth_cubic(self, *points, **kwargs):
+    def smooth_cubic(self, *points, relative=False, **kwargs):
         """Smooth curve. First control point is the "reflection" of
         the second control point in the previous path."""
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        control1 = self.smooth_point
-        control2 = points[0]
+        for index in range(0, len(points), 2):
+            start_pos = self.current_point
+            control1 = self.smooth_point
+            control2 = points[index]
 
-        if control2 in ("z", "Z"):
-            control2 = self.z_point
-        end_pos = points[1]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = CubicBezier(start_pos, control1, control2, end_pos)
-        segment.relative = relative
-        segment.smooth = True
-        self.append(segment)
-        if len(points) > 2:
-            self.smooth_cubic(*points[2:])
+            if control2 in ("z", "Z"):
+                control2 = self.z_point
+                self.append(
+                    CubicBezier(
+                        start_pos,
+                        control1,
+                        control2,
+                        control2,
+                        relative=relative,
+                        smooth=True,
+                    )
+                )
+                return self
+            end_pos = points[index + 1]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(
+                CubicBezier(
+                    start_pos,
+                    control1,
+                    control2,
+                    end_pos,
+                    relative=relative,
+                    smooth=True,
+                )
+            )
         return self
 
-    def cubic(self, *points, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        control1 = points[0]
-        if control1 in ("z", "Z"):
-            control1 = self.z_point
-        control2 = points[1]
-        if control2 in ("z", "Z"):
-            control2 = self.z_point
-        end_pos = points[2]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = CubicBezier(start_pos, control1, control2, end_pos)
-        segment.relative = relative
-        segment.smooth = False
-        self.append(segment)
-        if len(points) > 3:
-            self.cubic(*points[3:])
+    def cubic(self, *points, relative=False, **kwargs):
+        for index in range(0, len(points), 3):
+            start_pos = self.current_point
+            control1 = points[index]
+            if control1 in ("z", "Z"):
+                control1 = self.z_point
+                self.append(
+                    CubicBezier(
+                        start_pos,
+                        control1,
+                        control1,
+                        control1,
+                        relative=relative,
+                        smooth=True,
+                    )
+                )
+                return self
+            control2 = points[index + 1]
+            if control2 in ("z", "Z"):
+                control2 = self.z_point
+                self.append(
+                    CubicBezier(
+                        start_pos,
+                        control1,
+                        control2,
+                        control2,
+                        relative=relative,
+                        smooth=True,
+                    )
+                )
+                return self
+            end_pos = points[index + 2]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(
+                CubicBezier(
+                    start_pos,
+                    control1,
+                    control2,
+                    end_pos,
+                    relative=relative,
+                    smooth=False,
+                )
+            )
         return self
 
-    def arc(self, *arc_args, **kwargs):
-        relative = kwargs["relative"] if "relative" in kwargs else False
-        start_pos = self.current_point
-        rx = arc_args[0]
-        ry = arc_args[1]
-        if rx < 0:
-            rx = abs(rx)
-        if ry < 0:
-            ry = abs(ry)
-        rotation = arc_args[2]
-        arc = arc_args[3]
-        sweep = arc_args[4]
-        end_pos = arc_args[5]
-        if end_pos in ("z", "Z"):
-            end_pos = self.z_point
-        segment = Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos)
-        segment.relative = relative
-        self.append(segment)
-        if len(arc_args) > 6:
-            self.arc(*arc_args[6:])
+    def arc(self, *arc_args, relative=False, **kwargs):
+        for index in range(0, len(arc_args), 6):
+            start_pos = self.current_point
+            rx = arc_args[index]
+            ry = arc_args[index + 1]
+            if rx < 0:
+                rx = abs(rx)
+            if ry < 0:
+                ry = abs(ry)
+            rotation = arc_args[index + 2]
+            arc = arc_args[index + 3]
+            sweep = arc_args[index + 4]
+            end_pos = arc_args[index + 5]
+            if end_pos in ("z", "Z"):
+                end_pos = self.z_point
+            self.append(
+                Arc(start_pos, rx, ry, rotation, arc, sweep, end_pos, relative=relative)
+            )
         return self
 
     def closed(self, relative=False):
@@ -6404,7 +6455,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_arcs_with_cubics(self, error=0.1):
         """
-        Iterates through this path and replaces any Arcs with cubic bezier curves.
+        Iterates through this path and replaces any Arcs with cubic Bézier curves.
         """
         sweep_limit = tau * error
         for s in range(len(self) - 1, -1, -1):
@@ -6415,7 +6466,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_arcs_with_quads(self, error=0.1):
         """
-        Iterates through this path and replaces any Arcs with quadratic bezier curves.
+        Iterates through this path and replaces any Arcs with quadratic Bézier curves.
         """
         sweep_limit = tau * error
         for s in range(len(self) - 1, -1, -1):
@@ -6426,7 +6477,7 @@ class Path(Shape, MutableSequence):
 
     def approximate_bezier_with_circular_arcs(self, error=0.01):
         """
-        Iterates through this path and replaces any bezier curves with circular arcs.
+        Iterates through this path and replaces any Bézier curves with circular arcs.
         """
         for s in range(len(self) - 1, -1, -1):
             segment = self[s]
@@ -8904,6 +8955,7 @@ class SVG(Group):
         transform=None,
         context=None,
         parse_display_none=False,
+        on_error="ignore",
     ):
         """
         Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
@@ -8918,6 +8970,7 @@ class SVG(Group):
         :param transform: Any required transformations to be pre-applied to this document
         :param context: Any existing document context.
         :param parse_display_none: Parse display_none values anyway.
+        :param on_error: Error mode, "ignore", "raise", "stop"
         :return:
         """
         use = 0
@@ -9131,9 +9184,13 @@ class SVG(Group):
                     SVG_TAG_RECT,
                     SVG_TAG_IMAGE,
                 ):
+                    parse_error = None
+                    s = None
                     try:
                         if SVG_TAG_PATH == tag:
-                            s = Path(values)
+                            # Delayed path parsing, for partial paths.
+                            s = Path(values, pathd_loaded=True)
+                            s.parse(values.get(SVG_ATTR_DATA))
                         elif SVG_TAG_CIRCLE == tag:
                             s = Circle(values)
                         elif SVG_TAG_ELLIPSE == tag:
@@ -9148,8 +9205,11 @@ class SVG(Group):
                             s = Rect(values)
                         else:  # SVG_TAG_IMAGE == tag:
                             s = Image(values)
-                    except ValueError:
-                        continue
+                    except ValueError as e:
+                        parse_error = e
+                        if s is None:
+                            # s was not established we continue without it.
+                            continue
                     s.render(ppi=ppi, width=width, height=height)
                     if reify:
                         s.reify()
@@ -9157,6 +9217,14 @@ class SVG(Group):
                         continue
                     if context is not None:
                         context.append(s)
+                    if parse_error:
+                        # Error was encountered, but s was established and processed.
+                        if on_error == "ignore":
+                            continue
+                        elif on_error == "raise":
+                            raise parse_error
+                        else:  # "stop"
+                            return root
                 elif tag in (
                     SVG_TAG_STYLE,
                     SVG_TAG_TEXT,

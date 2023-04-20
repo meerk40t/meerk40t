@@ -1011,11 +1011,7 @@ class DistributionPanel(wx.Panel):
 
             if dx == 0 and dy == 0 and ptangle == 0:
                 continue
-            if (
-                hasattr(node, "lock")
-                and node.lock
-                and not self.context.elements.lock_allows_move
-            ):
+            if not node.can_move(self.context.elements.lock_allows_move):
                 continue
             else:
                 try:
@@ -1453,11 +1449,7 @@ class ArrangementPanel(wx.Panel):
                 # s += f"dx={Length(amount=dy, unitless=1, digits=1).length_mm}"
                 # print (s)
                 if dx != 0 or dy != 0:
-                    if (
-                        hasattr(node, "lock")
-                        and node.lock
-                        and not self.context.elements.lock_allows_move
-                    ):
+                    if not node.can_move(self.context.elements.lock_allows_move):
                         continue
                     else:
                         try:

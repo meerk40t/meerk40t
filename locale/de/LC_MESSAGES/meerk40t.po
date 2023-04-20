@@ -14756,6 +14756,9 @@ msgstr "Signalton"
 msgid "_TREE_Wait"
 msgstr "Warte"
 
+msgid "_TREE_Placement"
+msgstr "Job-Start"
+
 msgid "Speed Code Features:"
 msgstr "Speed-Code Feature:"
 
@@ -15902,4 +15905,60 @@ msgstr "Soll die Farbe der zugeordneten Element ebenfalls geändert werden?"
 
 msgid "Update Colors?"
 msgstr "Farben ändern?"
+
+msgid "Job Start"
+msgstr "Job-Start"
+
+msgid "Add a job starting point to the scene"
+msgstr "Definiere einen Startpunkt für den Laserjob"
+
+msgid "Placement:"
+msgstr "Job-Start:"
+
+msgid "Placement"
+msgstr "Job-Start"
+
+msgid "X-Coordinate of placement"
+msgstr "X-Koordinate des Job-Starts"
+
+msgid "Y-Coordinate of placement"
+msgstr "Y-Koordinate des Job-Starts"
+
+msgid ""
+"The corner type establishes the placement of the bounding box\n"
+"of to be plotted elements against the defined coordinate"
+msgstr ""
+"Dieser Wert legt fest, welche Ecke des umgebenden Rechtecks aller\n"
+"auszugebenden Elemente am Job-Start-Punkt ausgerichtet werden soll"
+
+msgid "The to be plotted elements can be rotated around the defined coordinate"
+msgstr "Die auszugebenden Elemente können gegenüber dem Job-Start-Punkt rotiert werden"
+
+msgid "Rotation:"
+msgstr "Rotation:"
+
+msgid "Corner:"
+msgstr "Ausrichtung:"
+
+msgid "Top-Left"
+msgstr "Links-Oben"
+
+msgid "Top-Right"
+msgstr "Rechts-Oben"
+
+msgid "Bottom-Left"
+msgstr "Links-Unten"
+
+msgid "Bottom-Right"
+msgstr "Rechts-Unten"
+
+msgid "This is a placeholder for the 'place current' operation"
+msgstr ""
+
+msgid ""
+"This will define an origin from where all the elements in this scene\n"
+"will be plotted. You can have multiple such job start points"
+msgstr ""
+"Diese legt einen Startpunkt für die Jobausgabe fest.\n"
+"Es können mehrere solcher Startpunkte verwendet werden."
 

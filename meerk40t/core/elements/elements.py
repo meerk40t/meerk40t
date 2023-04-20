@@ -36,6 +36,7 @@ def plugin(kernel, lifecycle=None):
             grid,
             materials,
             notes,
+            placements,
             render,
             shapes,
             trace,
@@ -58,6 +59,7 @@ def plugin(kernel, lifecycle=None):
             grid.plugin,
             render.plugin,
             notes.plugin,
+            placements.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -114,6 +116,10 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/branch ops", "{element_type} {loops}")
         kernel.register("format/branch elems", "{element_type}")
         kernel.register("format/branch reg", "{element_type}")
+        kernel.register("format/place current", "{enabled}{element_type}")
+        kernel.register(
+            "format/place point", "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
+        )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
@@ -594,6 +600,8 @@ class Elemental(Service):
         self._first_emphasized = node
 
     def set_node_emphasis(self, node, flag):
+        if not node.can_emphasize:
+            return
         node.emphasized = flag
         if flag:
             if self._first_emphasized is None:
@@ -957,19 +965,18 @@ class Elemental(Service):
         return data_to_align
 
     def translate_node(self, node, dx, dy):
-        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+        if not node.can_move(self.lock_allows_move):
             return
+        if node.type in ("group", "file"):
+            for c in node.children:
+                self.translate_node(c, dx, dy)
+            node.translated(dx, dy)
         else:
-            if node.type in ("group", "file"):
-                for c in node.children:
-                    self.translate_node(c, dx, dy)
+            try:
+                node.matrix.post_translate(dx, dy)
                 node.translated(dx, dy)
-            else:
-                try:
-                    node.matrix.post_translate(dx, dy)
-                    node.translated(dx, dy)
-                except AttributeError:
-                    pass
+            except AttributeError:
+                pass
 
     def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
@@ -1316,6 +1323,10 @@ class Elemental(Service):
         elements = self._tree.get(type="branch reg")
         yield from elements.flat(types=elem_group_nodes, depth=depth, **kwargs)
 
+    def placement_nodes(self, depth=None, **kwargs):
+        elements = self.op_branch
+        yield from elements.flat(types=place_nodes, depth=depth, **kwargs)
+
     def top_element(self, **kwargs):
         """
         Returns the first matching node via a depth first search.
@@ -1557,11 +1568,8 @@ class Elemental(Service):
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
-            try:
-                if hasattr(elem, "lock") and elem.lock:
-                    continue
-            except AttributeError:
-                pass
+            if hasattr(elem, "can_remove") and not elem.can_remove:
+                continue
             elem.remove_node(references=True)
         self.validate_selected_area()
 
@@ -1690,7 +1698,8 @@ class Elemental(Service):
                 s.targeted = False
             if s.selected:
                 s.selected = False
-
+            if not s.can_emphasize:
+                continue
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
                 if not in_list:
@@ -1755,7 +1764,7 @@ class Elemental(Service):
 
     def move_emphasized(self, dx, dy):
         for node in self.elems(emphasized=True):
-            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+            if not node.can_move(self.lock_allows_move):
                 continue
             node.matrix.post_translate(dx, dy)
             # node.modified()
