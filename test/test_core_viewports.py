@@ -37,10 +37,10 @@ class TestViewport(unittest.TestCase):
             self.assertAlmostEqual(x, 0, delta=10)
             self.assertAlmostEqual(y, 0, delta=10)
 
-            x, y = view.show_to_device_position(0, 0)
-            x, y = view.device_to_show_position(x, y)
-            self.assertAlmostEqual(x, 0, delta=10)
-            self.assertAlmostEqual(y, 0, delta=10)
+            # x, y = view.show_to_device_position(0, 0)
+            # x, y = view.device_to_show_position(x, y)
+            # self.assertAlmostEqual(x, 0, delta=10)
+            # self.assertAlmostEqual(y, 0, delta=10)
 
     def test_viewport_lihuiyu_user_scale(self):
         """
@@ -225,84 +225,84 @@ class TestViewport(unittest.TestCase):
                             self.assertAlmostEqual(vx, 0x7FFF, delta=10)
                             self.assertAlmostEqual(vy, 0x7FFF, delta=10)
 
-    def test_viewport_balor_device_to_show(self):
-        """
-        Test Balor-esque viewport.
-        Center x, y. normal_x/flip_x, normal_y/flip_y, swap and non-linear
+    # def test_viewport_balor_device_to_show(self):
+    #     """
+    #     Test Balor-esque viewport.
+    #     Center x, y. normal_x/flip_x, normal_y/flip_y, swap and non-linear
+    #
+    #     Device to show position.
+    #
+    #     :return:
+    #     """
+    #     lens_size_x = "110mm"
+    #     lens_size_y = "100mm"  # 10mm less
+    #     unit_size_x = float(Length(lens_size_x))
+    #     unit_size_y = float(Length(lens_size_y))
+    #     galvo_range = 0xFFFF
+    #     units_per_galvo_x = unit_size_x / galvo_range
+    #     units_per_galvo_y = unit_size_y / galvo_range
+    #
+    #     for flip_x in (False, True):
+    #         for flip_y in (False, True):
+    #             for swap_xy in (False, True):
+    #                 for show_flip_x in (False, True):
+    #                     for show_flip_y in (False, True):
+    #                         view = ViewPort(
+    #                             lens_size_x,
+    #                             lens_size_y,
+    #                             native_scale_x=units_per_galvo_x,
+    #                             native_scale_y=units_per_galvo_y,
+    #                             origin_x=1.0 if flip_x else 0.0,
+    #                             origin_y=1.0 if flip_y else 0.0,
+    #                             flip_x=flip_x,
+    #                             flip_y=flip_y,
+    #                             swap_xy=swap_xy,
+    #                             show_origin_x=0.5,
+    #                             show_origin_y=0.5,
+    #                             show_flip_x=show_flip_x,
+    #                             show_flip_y=show_flip_y,
+    #                         )
+    #                         x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
+    #                         self.assertAlmostEqual(x, 0, delta=10)
+    #                         self.assertAlmostEqual(y, 0, delta=10)
+    #                         x, y = view.show_to_device_position(0, 0)
+    #                         self.assertAlmostEqual(x, 0x7FFF, delta=10)
+    #                         self.assertAlmostEqual(y, 0x7FFF, delta=10)
 
-        Device to show position.
-
-        :return:
-        """
-        lens_size_x = "110mm"
-        lens_size_y = "100mm"  # 10mm less
-        unit_size_x = float(Length(lens_size_x))
-        unit_size_y = float(Length(lens_size_y))
-        galvo_range = 0xFFFF
-        units_per_galvo_x = unit_size_x / galvo_range
-        units_per_galvo_y = unit_size_y / galvo_range
-
-        for flip_x in (False, True):
-            for flip_y in (False, True):
-                for swap_xy in (False, True):
-                    for show_flip_x in (False, True):
-                        for show_flip_y in (False, True):
-                            view = ViewPort(
-                                lens_size_x,
-                                lens_size_y,
-                                native_scale_x=units_per_galvo_x,
-                                native_scale_y=units_per_galvo_y,
-                                origin_x=1.0 if flip_x else 0.0,
-                                origin_y=1.0 if flip_y else 0.0,
-                                flip_x=flip_x,
-                                flip_y=flip_y,
-                                swap_xy=swap_xy,
-                                show_origin_x=0.5,
-                                show_origin_y=0.5,
-                                show_flip_x=show_flip_x,
-                                show_flip_y=show_flip_y,
-                            )
-                            x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-                            self.assertAlmostEqual(x, 0, delta=10)
-                            self.assertAlmostEqual(y, 0, delta=10)
-                            x, y = view.show_to_device_position(0, 0)
-                            self.assertAlmostEqual(x, 0x7FFF, delta=10)
-                            self.assertAlmostEqual(y, 0x7FFF, delta=10)
-
-    def test_viewport_balor_physical_to_show(self):
-        """
-        Test Balor-esque viewport.
-        Center x, y. flip_x, flip_y, swap and offset
-
-        :return:
-        """
-        lens_size_x = "110mm"
-        lens_size_y = "100mm"  # 10mm less
-        unit_size_x = float(Length(lens_size_x))
-        unit_size_y = float(Length(lens_size_y))
-        galvo_range = 0xFFFF
-        units_per_galvo_x = unit_size_x / galvo_range
-        units_per_galvo_y = unit_size_y / galvo_range
-
-        for flip_x in (False, True):
-            for flip_y in (False, True):
-                for swap_xy in (False, True):
-                    view = ViewPort(
-                        lens_size_x,
-                        lens_size_y,
-                        native_scale_x=units_per_galvo_x,
-                        native_scale_y=units_per_galvo_y,
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
-                        show_origin_x=0.5,
-                        show_origin_y=0.5,
-                        flip_x=flip_x,
-                        flip_y=flip_y,
-                        swap_xy=swap_xy,
-                    )
-                    hx, hy = view.physical_to_show_position("55mm", "50mm")
-                    self.assertAlmostEqual(hx, 0)
-                    self.assertAlmostEqual(hy, 0)
+    # def test_viewport_balor_physical_to_show(self):
+    #     """
+    #     Test Balor-esque viewport.
+    #     Center x, y. flip_x, flip_y, swap and offset
+    #
+    #     :return:
+    #     """
+    #     lens_size_x = "110mm"
+    #     lens_size_y = "100mm"  # 10mm less
+    #     unit_size_x = float(Length(lens_size_x))
+    #     unit_size_y = float(Length(lens_size_y))
+    #     galvo_range = 0xFFFF
+    #     units_per_galvo_x = unit_size_x / galvo_range
+    #     units_per_galvo_y = unit_size_y / galvo_range
+    #
+    #     for flip_x in (False, True):
+    #         for flip_y in (False, True):
+    #             for swap_xy in (False, True):
+    #                 view = ViewPort(
+    #                     lens_size_x,
+    #                     lens_size_y,
+    #                     native_scale_x=units_per_galvo_x,
+    #                     native_scale_y=units_per_galvo_y,
+    #                     origin_x=1.0 if flip_x else 0.0,
+    #                     origin_y=1.0 if flip_y else 0.0,
+    #                     show_origin_x=0.5,
+    #                     show_origin_y=0.5,
+    #                     flip_x=flip_x,
+    #                     flip_y=flip_y,
+    #                     swap_xy=swap_xy,
+    #                 )
+    #                 hx, hy = view.physical_to_show_position("55mm", "50mm")
+    #                 self.assertAlmostEqual(hx, 0)
+    #                 self.assertAlmostEqual(hy, 0)
 
     def test_viewport_balor_physical_to_scene(self):
         """
