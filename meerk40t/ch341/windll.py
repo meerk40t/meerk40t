@@ -62,15 +62,15 @@ class WinCH341Driver:
             self.state("STATE_USB_CONNECTED")
             self.channel(_("USB Connected."))
             self.channel(_("Sending CH341 mode change to EPP1.9."))
-            try:
-                self.driver.CH341InitParallel(
-                    self.driver_index, 1
-                )  # 0x40, 177, 0x8800, 0, 0
+            success = self.driver.CH341InitParallel(
+                self.driver_index, 1
+            )  # 0x40, 177, 0x8800, 0, 0
+            if success:
                 self.channel(_("CH341 mode change to EPP1.9: Success."))
-            except ConnectionError as e:
-                self.channel(str(e))
+            else:
                 self.channel(_("CH341 mode change to EPP1.9: Fail."))
                 self.driver.CH341CloseDevice(self.driver_index)
+                raise ConnectionRefusedError
             self.channel(_("Device Connected.\n"))
 
     def close(self):
@@ -113,7 +113,9 @@ class WinCH341Driver:
             obuf[i] = packet[i]
         length = (c_byte * 1)()
         length[0] = len(packet)
-        self.driver.CH341EppWriteData(self.driver_index, obuf, length)
+        success = self.driver.CH341EppWriteData(self.driver_index, obuf, length)
+        if not success:
+            raise ConnectionError("Failed to write to Windll.")
 
     def write_addr(self, packet):
         """
