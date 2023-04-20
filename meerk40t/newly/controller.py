@@ -451,6 +451,13 @@ class NewlyController:
         elif bottom:
             self._last_y += count
 
+    def _raster_jog(self, x, y, raster_cut):
+        self.goto(x, y)
+        self._set_raster_mode()
+        self.set_settings(raster_cut.settings)
+        self._set_mode = "raster"
+        self._commit_settings()
+
     def raster(self, raster_cut: RasterCut):
         """
         Run a raster cut with scanlines and default actions.
@@ -487,13 +494,7 @@ class NewlyController:
 
         previous_x, previous_y = raster_cut.plot.initial_position_in_scene()
 
-        self.goto(previous_x, previous_y)
-
-        self._set_raster_mode()
-        self.set_settings(raster_cut.settings)
-        self._set_mode = "raster"
-
-        self._commit_settings()
+        self._raster_jog(previous_x, previous_y, raster_cut)
 
         if raster_cut.horizontal:
             self.mode = "raster_horizontal"
@@ -507,9 +508,12 @@ class NewlyController:
                 if dy != 0:
                     # We are moving in the Y direction.
                     commit_scanline()
-                    self._relative = True
-                    self("PR")
-                    self._goto(x, y)  # remain standard rastermode
+                    if abs(dy) > self.service.max_raster_jog:
+                        self._raster_jog(x, y, raster_cut)
+                    else:
+                        self._relative = True
+                        self("PR")
+                        self._goto(x, y)  # remain standard rastermode
                 if dx != 0:
                     # Normal move, extend bytes.
                     scanline.extend([int(on)] * abs(dx))
@@ -526,9 +530,12 @@ class NewlyController:
                 if dx != 0:
                     # We are moving in the X direction.
                     commit_scanline()
-                    self._relative = True
-                    self("PR")
-                    self._goto(x, y)  # remain standard rastermode
+                    if abs(dx) > self.service.max_raster_jog:
+                        self._raster_jog(x, y, raster_cut)
+                    else:
+                        self._relative = True
+                        self("PR")
+                        self._goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
                     scanline.extend([int(on)] * abs(dy))
