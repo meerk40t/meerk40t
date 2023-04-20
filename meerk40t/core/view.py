@@ -182,6 +182,7 @@ class View:
     def position(self, x, y, vector=False):
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
+        if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
         unit_x, unit_y = x, y
         if vector:
@@ -191,6 +192,7 @@ class View:
     def iposition(self, x, y, vector=False):
         if not isinstance(x, (int, float)):
             x = Length(x, relative_length=self.width, unitless=1).units
+        if not isinstance(y, (int, float)):
             y = Length(y, relative_length=self.height, unitless=1).units
         unit_x, unit_y = x, y
         matrix = ~self.matrix
