@@ -112,17 +112,16 @@ class View:
         width = float(Length(self.width))
         height = float(Length(self.height))
 
-        dx = width * -origin_x
-        dy = height * -origin_y
+        dx = width * origin_x
+        dy = height * origin_y
 
         top_left, top_right, bottom_right, bottom_left = self._destination
-        top_left, top_right, bottom_right, bottom_left = (
+        self._destination = (
             (top_left[0] + dx, top_left[1] + dy),
             (top_right[0] + dx, top_right[1] + dy),
             (bottom_right[0] + dx, bottom_right[1] + dy),
             (bottom_left[0] + dx, bottom_left[1] + dy),
         )
-        self._destination = top_left, top_right, bottom_right, bottom_left
         self._matrix = None
 
     def flip_x(self):
