@@ -188,6 +188,16 @@ class View:
             return self.matrix.transform_vector([unit_x, unit_y])
         return self.matrix.point_in_matrix_space([unit_x, unit_y])
 
+    def iposition(self, x, y, vector=False):
+        if not isinstance(x, (int, float)):
+            x = Length(x, relative_length=self.width, unitless=1).units
+            y = Length(y, relative_length=self.height, unitless=1).units
+        unit_x, unit_y = x, y
+        matrix = ~self.matrix
+        if vector:
+            return matrix.transform_vector([unit_x, unit_y])
+        return matrix.point_in_inverse_space([unit_x, unit_y])
+
     @property
     def matrix(self):
         if self._matrix is None:

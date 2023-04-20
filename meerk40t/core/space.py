@@ -82,6 +82,9 @@ class CoordinateSystem(Service):
         self.display = None
         self.update_bounds(0, 0, "100mm", "100mm")
 
+    def origin_zero(self):
+        return self.origin_x * self.width, self.origin_y * self.height
+
     def update_bounds(self, x, y, width, height):
         self.x = float(Length(x))
         self.y = float(Length(y))
