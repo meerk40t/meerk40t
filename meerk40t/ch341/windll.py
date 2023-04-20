@@ -106,7 +106,7 @@ class WinCH341Driver:
         @return:
         """
         if not self.is_connected():
-            raise ConnectionError
+            raise ConnectionError("Not connected.")
         length = len(packet)
         obuf = (c_byte * length)()
         for i in range(length):
@@ -115,7 +115,7 @@ class WinCH341Driver:
         length[0] = len(packet)
         success = self.driver.CH341EppWriteData(self.driver_index, obuf, length)
         if not success:
-            raise ConnectionError("Failed to write to Windll.")
+            raise ConnectionError("Failed to write to CH341:Windll.")
 
     def write_addr(self, packet):
         """
@@ -126,14 +126,16 @@ class WinCH341Driver:
         @return:
         """
         if not self.is_connected():
-            raise ConnectionError
+            raise ConnectionError("Not connected.")
         length = len(packet)
         obuf = (c_byte * length)()
         for i in range(length):
             obuf[i] = packet[i]
         length = (c_byte * 1)()
         length[0] = len(packet)
-        self.driver.CH341EppWriteAddr(self.driver_index, packet, length)
+        success = self.driver.CH341EppWriteAddr(self.driver_index, packet, length)
+        if not success:
+            raise ConnectionError("Failed to write_addr to CH341:Windll.")
 
     def get_status(self):
         """
@@ -156,12 +158,14 @@ class WinCH341Driver:
         @return:
         """
         if not self.is_connected():
-            raise ConnectionRefusedError
+            raise ConnectionRefusedError("Not connected.")
         length = (c_byte * 1)()
         write_buffer = (c_byte * 1)()
         write_buffer[0] = 0xA0
         length[0] = len(write_buffer)
-        self.driver.CH341WriteData(self.driver_index, write_buffer, length)
+        success = self.driver.CH341WriteData(self.driver_index, write_buffer, length)
+        # if not success:
+        #     raise ConnectionError("Failed to write to CH341:Windll.")
         read_buffer = (c_byte * 6)()
         length[0] = len(read_buffer)
         self.driver.CH341ReadData(self.driver_index, read_buffer, length)
