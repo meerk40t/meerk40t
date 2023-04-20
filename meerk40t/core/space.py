@@ -1,4 +1,4 @@
-from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH
 from meerk40t.core.view import View
 from meerk40t.kernel import Service
 
@@ -90,12 +90,12 @@ class CoordinateSystem(Service):
         self.y = float(Length(y))
         self.width = float(Length(width))
         self.height = float(Length(height))
-        self.display = View(self.width, self.height, dpi_x=UNITS_PER_MM, dpi_y=UNITS_PER_MM)
+        self.display = View(self.width, self.height, dpi_x=UNITS_PER_INCH, dpi_y=UNITS_PER_INCH)
         self.display.transform(
             origin_x=self.origin_x,
             origin_y=self.origin_y,
-            flip_x=self.right_positive,
-            flip_y=self.bottom_positive,
+            flip_x=not self.right_positive,
+            flip_y=not self.bottom_positive,
             swap_xy=self.swap_xy,
         )
 
