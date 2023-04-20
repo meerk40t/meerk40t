@@ -127,35 +127,32 @@ class View:
 
     def flip_x(self):
         top_left, top_right, bottom_right, bottom_left = self._destination
-        top_left, top_right, bottom_right, bottom_left = (
+        self._destination = (
             top_right,
             top_left,
             bottom_left,
             bottom_right,
         )
-        self._destination = top_left, top_right, bottom_right, bottom_left
         self._matrix = None
 
     def flip_y(self):
         top_left, top_right, bottom_right, bottom_left = self._destination
-        top_left, top_right, bottom_right, bottom_left = (
+        self._destination = (
             bottom_left,
             bottom_right,
             top_right,
             top_left,
         )
-        self._destination = top_left, top_right, bottom_right, bottom_left
         self._matrix = None
 
     def swap_xy(self):
         top_left, top_right, bottom_right, bottom_left = self._destination
-        top_left, top_right, bottom_right, bottom_left = (
+        self._destination = (
             (top_left[1], top_left[0]),
             (top_right[1], top_right[0]),
             (bottom_right[1], bottom_right[0]),
             (bottom_left[1], bottom_left[0]),
         )
-        self._destination = top_left, top_right, bottom_right, bottom_left
         self._matrix = None
 
     def transform(
