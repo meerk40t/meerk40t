@@ -213,7 +213,7 @@ class LegacyController:
                 chipv=self.context.usb_version,
                 bus=self.context.usb_bus,
                 address=self.context.usb_address,
-                mock=self.context.mock,
+                mock=False,
             )
         else:
             try:
@@ -398,7 +398,7 @@ class LegacyController:
             self.context.signal("pipe;buffer", len(self))
 
     def update_packet(self, packet):
-        self.context.signal("pipe;packet", convert_to_list_bytes(packet))
+        # self.context.signal("pipe;packet", convert_to_list_bytes(packet))
         self.context.signal("pipe;packet_text", packet)
         if self.usb_send_channel:
             self.usb_send_channel(packet)
