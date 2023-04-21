@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 23-04-21 06:38UTC\n"
-"PO-Revision-Date: 23-04-21 06:38UTC\n"
+"POT-Creation-Date: 23-04-21 17:45UTC\n"
+"PO-Revision-Date: 23-04-21 17:45UTC\n"
 "Last-Translator: tatarize\n"
 "Language: zh\n"
 "Language-Team: Chinese\n"
@@ -7518,9 +7518,8 @@ msgid "Finishing Thread {name} for {object}"
 msgstr ""
 
 #: meerk40t/kernel/kernel.py:1318
-#, fuzzy, python-format
 msgid "{name} is the current shutdown thread"
-msgstr "%s是当前的关机线程"
+msgstr "{name}是当前的关机线程"
 
 #: meerk40t/kernel/kernel.py:1324
 msgid "Asking thread to stop."

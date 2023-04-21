@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 23-04-21 06:37UTC\n"
-"PO-Revision-Date: 23-04-21 06:37UTC\n"
+"POT-Creation-Date: 23-04-21 17:41UTC\n"
+"PO-Revision-Date: 23-04-21 17:41UTC\n"
 "Last-Translator: Peter Cuevas <petercuevas.6@gmail.com>\n"
 "Language: es\n"
 "Language-Team: Spanish\n"
@@ -7518,9 +7518,8 @@ msgid "Finishing Thread {name} for {object}"
 msgstr ""
 
 #: meerk40t/kernel/kernel.py:1318
-#, fuzzy, python-format
 msgid "{name} is the current shutdown thread"
-msgstr "%s es el hilo de apagado actual"
+msgstr "{name} es el hilo de apagado actual"
 
 #: meerk40t/kernel/kernel.py:1324
 msgid "Asking thread to stop."

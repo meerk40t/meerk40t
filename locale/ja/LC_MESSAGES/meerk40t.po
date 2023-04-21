@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: tatarize@gmail.com\n"
-"POT-Creation-Date: 23-04-21 06:38UTC\n"
-"PO-Revision-Date: 23-04-21 06:38UTC\n"
+"POT-Creation-Date: 23-04-21 17:42UTC\n"
+"PO-Revision-Date: 23-04-21 17:42UTC\n"
 "Last-Translator: DeepL / Google\n"
 "Language: ja\n"
 "Language-Team: Japanese\n"
@@ -572,9 +572,8 @@ msgstr "ミリ秒単位でパルス時間を指定しなければならない。
 
 #: meerk40t/balormk/device.py:920 meerk40t/grbl/device.py:566
 #: meerk40t/lihuiyu/device.py:482 meerk40t/newly/device.py:539
-#, fuzzy, python-format
 msgid "\"{time}ms\" exceeds 1 second limit to fire a standing laser."
-msgstr "%s\\ が 1 秒の制限を超えてレーザーを発射しています。"
+msgstr "{time}\\ が 1 秒の制限を超えてレーザーを発射しています。"
 
 #: meerk40t/balormk/device.py:931 meerk40t/newly/device.py:550
 msgid "Pulse laser for {time} milliseconds"
@@ -1899,9 +1898,8 @@ msgid "inkscape filename fn - filename not specified"
 msgstr "inkscape filename fn - ファイル名が指定されていません。"
 
 #: meerk40t/extra/inkscape.py:311
-#, fuzzy, python-format
 msgid "inkscape filename {filename} - file not found"
-msgstr "inkscape ファイル名 %s - ファイルが見つかりません。"
+msgstr "inkscape ファイル名 {filename} - ファイルが見つかりません。"
 
 #: meerk40t/extra/inkscape.py:320
 msgid "inkscape version   - get the inkscape version"
@@ -6519,9 +6517,8 @@ msgid "Window"
 msgstr "ウィンドウ"
 
 #: meerk40t/gui/wxmmain.py:3038
-#, fuzzy, python-format
 msgid "Offline help file (\"{help}\") was not found."
-msgstr "オフラインのヘルプファイル（\"%s\"）が見つかりませんでした。"
+msgstr "オフラインのヘルプファイル（\"{help}\"）が見つかりませんでした。"
 
 #: meerk40t/gui/wxmmain.py:3041
 msgid "File Not Found"
@@ -7357,9 +7354,8 @@ msgid "Image Inverted."
 msgstr "画像が反転しました。"
 
 #: meerk40t/image/imagetools.py:819
-#, fuzzy, python-format
 msgid "Image type cannot be converted. {mode}"
-msgstr "画像タイプが変換できません。%s"
+msgstr "画像タイプが変換できません。{mode}"
 
 #: meerk40t/image/imagetools.py:825
 msgid "flip image"
@@ -7554,9 +7550,9 @@ msgid "Finishing Thread {name} for {object}"
 msgstr ""
 
 #: meerk40t/kernel/kernel.py:1318
-#, fuzzy, python-format
+#, fuzzy
 msgid "{name} is the current shutdown thread"
-msgstr "%s は現在のシャットダウン・スレッドです。"
+msgstr "{name} は現在のシャットダウン・スレッドです。"
 
 #: meerk40t/kernel/kernel.py:1324
 msgid "Asking thread to stop."
@@ -9852,9 +9848,8 @@ msgstr "操作0,2: 操作#0と#2"
 #: meerk40t/core/elements/branches.py:1264 meerk40t/core/elements/shapes.py:979
 #: meerk40t/core/elements/shapes.py:1056 meerk40t/core/elements/shapes.py:1141
 #: meerk40t/core/elements/shapes.py:1220 meerk40t/core/elements/shapes.py:1321
-#, fuzzy, python-format
 msgid "index {index} out of range"
-msgstr "インデックス %d が範囲外"
+msgstr "インデックス {index} が範囲外"
 
 #: meerk40t/core/elements/branches.py:120
 #: meerk40t/core/elements/branches.py:1356
