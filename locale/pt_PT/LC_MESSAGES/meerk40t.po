@@ -8,10 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: tatarize@gmail.com\n"
-"POT-Creation-Date: 23-04-21 06:38UTC\n"
-"PO-Revision-Date: 23-04-21 06:38UTC\n"
+"POT-Creation-Date: 23-04-21 17:45UTC\n"
+"PO-Revision-Date: 23-04-21 17:45UTC\n"
 "Last-Translator: DeepL / Google\n"
-"Language: pt_BT\n"
+"Language: pt_PT\n"
 "Language-Team: European Portuguese\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
@@ -572,9 +572,8 @@ msgstr "Deve especificar um tempo de pulso em milissegundos."
 
 #: meerk40t/balormk/device.py:920 meerk40t/grbl/device.py:566
 #: meerk40t/lihuiyu/device.py:482 meerk40t/newly/device.py:539
-#, fuzzy, python-format
 msgid "\"{time}ms\" exceeds 1 second limit to fire a standing laser."
-msgstr "\"%s\" excede o limite de 1 segundo para disparar um laser de pé."
+msgstr "\"{time}\" excede o limite de 1 segundo para disparar um laser de pé."
 
 #: meerk40t/balormk/device.py:931 meerk40t/newly/device.py:550
 msgid "Pulse laser for {time} milliseconds"
@@ -1911,9 +1910,8 @@ msgid "inkscape filename fn - filename not specified"
 msgstr "inkscape filename fn - filename não especificado"
 
 #: meerk40t/extra/inkscape.py:311
-#, fuzzy, python-format
 msgid "inkscape filename {filename} - file not found"
-msgstr "inkscape filename %s - ficheiro não encontrado"
+msgstr "inkscape filename {filename} - ficheiro não encontrado"
 
 #: meerk40t/extra/inkscape.py:320
 msgid "inkscape version   - get the inkscape version"
@@ -6554,9 +6552,8 @@ msgid "Window"
 msgstr "Janela"
 
 #: meerk40t/gui/wxmmain.py:3038
-#, fuzzy, python-format
 msgid "Offline help file (\"{help}\") was not found."
-msgstr "Ficheiro de ajuda off-line (\"%s\") não foi encontrado."
+msgstr "Ficheiro de ajuda off-line (\"{help}\") não foi encontrado."
 
 #: meerk40t/gui/wxmmain.py:3041
 msgid "File Not Found"
@@ -7395,9 +7392,8 @@ msgid "Image Inverted."
 msgstr "Imagem Invertida."
 
 #: meerk40t/image/imagetools.py:819
-#, fuzzy, python-format
 msgid "Image type cannot be converted. {mode}"
-msgstr "O tipo de imagem não pode ser convertido. %s"
+msgstr "O tipo de imagem não pode ser convertido. {mode}"
 
 #: meerk40t/image/imagetools.py:825
 msgid "flip image"
@@ -7592,9 +7588,8 @@ msgid "Finishing Thread {name} for {object}"
 msgstr ""
 
 #: meerk40t/kernel/kernel.py:1318
-#, fuzzy, python-format
 msgid "{name} is the current shutdown thread"
-msgstr "%s é o fio de desligamento actual"
+msgstr "{name} é o fio de desligamento actual"
 
 #: meerk40t/kernel/kernel.py:1324
 msgid "Asking thread to stop."
@@ -9913,9 +9908,8 @@ msgstr "operação0,2: operação #0 e #2"
 #: meerk40t/core/elements/branches.py:1264 meerk40t/core/elements/shapes.py:979
 #: meerk40t/core/elements/shapes.py:1056 meerk40t/core/elements/shapes.py:1141
 #: meerk40t/core/elements/shapes.py:1220 meerk40t/core/elements/shapes.py:1321
-#, fuzzy, python-format
 msgid "index {index} out of range"
-msgstr "índice %d fora do intervalo"
+msgstr "índice {index} fora do intervalo"
 
 #: meerk40t/core/elements/branches.py:120
 #: meerk40t/core/elements/branches.py:1356
