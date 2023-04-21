@@ -308,6 +308,14 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 
+        self.radio_legacy = wx.RadioButton(self, wx.ID_ANY, _("Legacy"))
+        self.radio_legacy.SetToolTip(
+            _(
+                "This is the 0.7.9 code to connect to the USB and send data exactly as it was sent in that version."
+            )
+        )
+        sizer_interface_radio.Add(self.radio_legacy, 1, wx.EXPAND, 0)
+
         self.panel_usb_settings = ConfigurationUsb(
             self, wx.ID_ANY, context=self.context
         )
@@ -323,17 +331,22 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_usb)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_legacy)
         # end wxGlade
-        if self.context.mock:
+        if self.context.interface == "mock":
             self.panel_tcp_config.Hide()
             self.panel_usb_settings.Hide()
             self.radio_mock.SetValue(True)
-        elif self.context.networked:
+        elif self.context.interface == "tcp":
             self.panel_usb_settings.Hide()
             self.radio_tcp.SetValue(True)
-        else:
+        elif self.context.interface == "usb":
             self.radio_usb.SetValue(True)
             self.panel_tcp_config.Hide()
+        elif self.context.interface == "legacy":
+            self.panel_tcp_config.Hide()
+            self.panel_usb_settings.Hide()
+            self.radio_legacy.SetValue(True)
         self.SetupScrolling()
 
     def pane_show(self):
@@ -350,20 +363,22 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         if self.radio_usb.GetValue():
             self.panel_tcp_config.Hide()
             self.panel_usb_settings.Show()
-            self.context.networked = False
-            self.context.mock = False
+            self.context.interface = "usb"
             self.context(".network_update\n")
         if self.radio_tcp.GetValue():
             self.panel_tcp_config.Show()
             self.panel_usb_settings.Hide()
-            self.context.networked = True
-            self.context.mock = False
+            self.context.interface = "tcp"
             self.context(".network_update\n")
         if self.radio_mock.GetValue():
             self.panel_tcp_config.Hide()
             self.panel_usb_settings.Hide()
-            self.context.networked = False
-            self.context.mock = True
+            self.context.interface = "mock"
+            self.context(".network_update\n")
+        if self.radio_legacy.GetValue():
+            self.panel_tcp_config.Hide()
+            self.panel_usb_settings.Hide()
+            self.context.interface = "legacy"
             self.context(".network_update\n")
         self.Layout()
 

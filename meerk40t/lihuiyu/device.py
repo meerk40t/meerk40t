@@ -436,10 +436,10 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(int, "usb_bus", -1)
         self.setting(int, "usb_address", -1)
         self.setting(int, "usb_version", -1)
-        self.setting(bool, "mock", False)
+
+        self.setting(str, "interface", "usb")
         self.setting(bool, "show_usb_log", False)
 
-        self.setting(bool, "networked", False)
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(str, "serial", None)
@@ -458,7 +458,10 @@ class LihuiyuDevice(Service, ViewPort):
         self.controller = LihuiyuController(self)
         self.add_service_delegate(self.controller)
 
-        self.driver.out_pipe = self.controller if not self.networked else self.tcp
+        from meerk40t.lihuiyu.legacy.legacy_controller import LegacyController
+        self.legacy_controller = LegacyController(self, "legacy")
+
+        self.update_pipe()
 
         _ = self.kernel.translation
 
@@ -648,7 +651,7 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("Updates network state for m2nano networked."),
         )
         def network_update(**kwargs):
-            self.driver.out_pipe = self.controller if not self.networked else self.tcp
+            self.update_pipe()
 
         @self.console_command(
             "status",
@@ -954,6 +957,14 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    def update_pipe(self):
+        if self.interface == "tcp":
+            self.driver.out_pipe = self.tcp
+        elif self.interface == "usb":
+            self.driver.out_pipe = self.controller
+        elif self.interface == "legacy":
+            self.driver.out_pipe = self.legacy_controller
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -1011,7 +1022,9 @@ class LihuiyuDevice(Service, ViewPort):
         This is the controller in controller mode and the tcp in network mode.
         @return:
         """
-        if self.networked:
+        if self.interface == "tcp":
             return self.tcp
-        else:
+        elif self.interface in ("mock", "usb"):
             return self.controller
+        else:
+            return self.legacy_controller

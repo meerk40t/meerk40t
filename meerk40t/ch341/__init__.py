@@ -3,7 +3,7 @@ def get_ch341_interface(context, log):
         context.signal("pipe;state", state_value)
 
     _ = log._
-    if context.mock:
+    if context.interface == "mock":
         log(_("Using Mock Driver."))
         from .mock import MockCH341Driver as MockDriver
 

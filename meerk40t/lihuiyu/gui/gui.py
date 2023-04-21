@@ -42,7 +42,7 @@ def plugin(service, lifecycle):
         _ = service.kernel.translation
 
         def controller_click(i=None):
-            if service.networked:
+            if service.interface == "tcp":
                 service("window toggle Network-Controller\n")
             else:
                 service("window toggle Controller\n")
