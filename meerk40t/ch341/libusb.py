@@ -344,7 +344,7 @@ class Ch341LibusbDriver:
             raise ConnectionError
 
     # pylint: disable=dangerous-default-value
-    def CH341GetStatus(self, index=0, status=[0]):
+    def CH341GetStatusControlTransfer(self, index=0, status=[0]):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
         device = self.devices[index]
         try:
@@ -365,7 +365,7 @@ class Ch341LibusbDriver:
         return status[0]
 
     # pylint: disable=dangerous-default-value
-    def CH341GetStatusBulk(self, index=0, status=[0]):
+    def CH341GetStatus(self, index=0, status=[0]):
         """
         Older bulk based version with a read and write rather than control transfer.
 
