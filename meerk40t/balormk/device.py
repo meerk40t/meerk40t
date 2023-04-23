@@ -749,8 +749,6 @@ class BalorDevice(Service, ViewPort):
             native_scale_y=units_per_galvo,
             origin_x=1.0 if self.flip_x else 0.0,
             origin_y=1.0 if self.flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,

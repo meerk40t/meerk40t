@@ -424,8 +424,6 @@ class LihuiyuDevice(Service, ViewPort):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
         )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)

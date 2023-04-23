@@ -497,9 +497,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
             self.realize()
 
         @self.console_option(

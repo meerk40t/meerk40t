@@ -389,11 +389,7 @@ class MoshiDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_flip_x = self.home_right
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
-            self.show_flip_y = self.home_bottom
             self.realize()
 
     def service_attach(self, *args, **kwargs):

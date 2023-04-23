@@ -75,8 +75,6 @@ class ViewPort:
     * user_scale is a scale factor for applied by the user rather than the driver.
     * native_scale is the scale factor of the driver units to MK native units
     * flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
-    * show_origin is the 0,0 point as seen, for example galvo lasers call 0,0 center of the screen, but the machine
-        units actually have 0,0 as the upper-left corner (depending on the flips and rotates)
     """
 
     def __init__(
@@ -92,10 +90,6 @@ class ViewPort:
         flip_x=False,
         flip_y=False,
         swap_xy=False,
-        show_origin_x=None,
-        show_origin_y=None,
-        show_flip_x=None,
-        show_flip_y=None,
         rotary_active=False,
         rotary_scale_x=1.0,
         rotary_scale_y=1.0,
@@ -268,23 +262,6 @@ class ViewPort:
             ops.append("scale(-1.0, 1.0)")
         if self.rotary_active and self.rotary_flip_x:
             ops.append("scale(-1.0, 1.0)")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-        if self.swap_xy:
-            ops.append("scale(-1.0, 1.0) rotate(90deg)")
-        return " ".join(ops)
-
-    def _scene_to_show_transform(self):
-        """
-        @return:
-        """
-        dx = self.unit_width * self.show_origin_x
-        dy = self.unit_height * self.show_origin_y
-        ops = []
-        if self.show_flip_x:
-            ops.append("scale(-1.0, 1.0)")
-        if self.show_flip_y:
-            ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:

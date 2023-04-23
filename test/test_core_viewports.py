@@ -26,10 +26,6 @@ class TestViewport(unittest.TestCase):
                 flip_x=bool(random.randint(0, 1)),
                 flip_y=bool(random.randint(0, 1)),
                 swap_xy=bool(random.randint(0, 1)),
-                show_origin_x=random.random(),
-                show_origin_y=random.random(),
-                show_flip_x=bool(random.randint(0, 1)),
-                show_flip_y=bool(random.randint(0, 1)),
             )
 
             x, y = view.scene_to_device_position(0, 0)
@@ -209,10 +205,6 @@ class TestViewport(unittest.TestCase):
                                 flip_x=flip_x,
                                 flip_y=flip_y,
                                 swap_xy=swap_xy,
-                                show_origin_x=0.5,
-                                show_origin_y=0.5,
-                                show_flip_x=show_flip_x,
-                                show_flip_y=show_flip_y,
                             )
                             sx, sy = view.device_to_scene_position(0x7FFF, 0x7FFF)
                             if swap_xy:
