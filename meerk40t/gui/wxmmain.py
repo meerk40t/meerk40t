@@ -321,7 +321,6 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
-        context.setting(bool, "maintain_zoom_resize", True)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
@@ -443,11 +442,11 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "maintain_zoom_resize",
+                "attr": "autofocus_resize",
                 "object": self.context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
-                "label": _("Maintain zoom on resize"),
+                "label": _("Autofocus bed on resize"),
                 "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
                 "section": "Zoom",
@@ -3609,7 +3608,7 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        if self.context.maintain_zoom_resize:
+        if self.context.autofocus_resize:
             zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
