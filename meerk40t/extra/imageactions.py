@@ -39,6 +39,7 @@ def plugin(kernel, lifecycle):
             order=None,
             origin=None,
             data=None,
+            post=None,
             **kwargs,
         ):
             def prepare_data(data, dsort):
@@ -128,6 +129,7 @@ def plugin(kernel, lifecycle):
                 return data_out
 
             elements = context.elements
+            classify_new = elements.post_classify
             if data is None:
                 data = list(elements.elems(emphasized=True))
             if cols is None:
@@ -144,6 +146,11 @@ def plugin(kernel, lifecycle):
                 data_out = None
             else:
                 data_out = split_image(image, matrix, bb, dpi, cols, rows)
+            if data_out is not None:
+                # Newly created! Classification needed?
+                post.append(classify_new(data_out))
+                elements.signal("element_added", data_out)
+                elements.signal("refresh_scene", "Scene")
             return "elements", data_out
 
         @kernel.console_argument("dpi", type=int, help=_("Resolution of created image"))
@@ -174,6 +181,7 @@ def plugin(kernel, lifecycle):
             outline=None,
             origin=None,
             data=None,
+            post=None,
             **kwargs,
         ):
             def prepare_data(dsort):
@@ -247,6 +255,7 @@ def plugin(kernel, lifecycle):
                 return data_out
 
             elements = context.elements
+            classify_new = elements.post_classify
             if data is None:
                 data = list(elements.elems(emphasized=True))
             if order is None:
@@ -303,4 +312,9 @@ def plugin(kernel, lifecycle):
                 data_out = mask_image(
                     elemimage, maskimage, elemmatrix, total_bounds, dpi
                 )
+            if data_out is not None:
+                # Newly created! Classification needed?
+                post.append(classify_new(data_out))
+                elements.signal("element_added", data_out)
+                elements.signal("refresh_scene", "Scene")
             return "elements", data_out
