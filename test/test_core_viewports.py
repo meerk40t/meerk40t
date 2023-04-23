@@ -321,8 +321,6 @@ class TestViewport(unittest.TestCase):
                         native_scale_y=units_per_galvo_y,
                         origin_x=1.0 if flip_x else 0.0,
                         origin_y=1.0 if flip_y else 0.0,
-                        show_origin_x=0.5,
-                        show_origin_y=0.5,
                         flip_x=flip_x,
                         flip_y=flip_y,
                         swap_xy=swap_xy,
