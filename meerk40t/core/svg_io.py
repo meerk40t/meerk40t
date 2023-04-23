@@ -569,7 +569,7 @@ class SVGWriter:
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-            contains.append(c.id)
+            contains.append(str(c.id))
         if contains:
             subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
