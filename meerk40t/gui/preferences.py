@@ -528,6 +528,13 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
+
+        self.context.setting(bool, "developer_mode", False)
+        if self.context.developer_mode:
+            panel_space = ChoicePropertyPanel(
+                self, wx.ID_ANY, context=self.context, choices="space"
+            )
+            self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
         self.Layout()
 
         _icon = wx.NullIcon

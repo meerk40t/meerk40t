@@ -43,6 +43,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.position import PositionPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Angle
@@ -133,23 +134,23 @@ def register_panel_navigation(window, context):
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
 
-    panel = SizePanel(window, wx.ID_ANY, context=context)
-    pane = (
-        aui.AuiPaneInfo()
-        .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
-        .Hide()
-        .Caption(_("Element-Size"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("objsizer")
-    )
-    pane.dock_proportion = 150
-    pane.control = panel
-    pane.submenu = "_40_" + _("Editing")
+    # panel = PositionPanel(window, wx.ID_ANY, context=context, small=False)
+    # pane = (
+    #     aui.AuiPaneInfo()
+    #     .Right()
+    #     .MinSize(75, 50)
+    #     .FloatingSize(150, 75)
+    #     .Hide()
+    #     .Caption(_("Element-Size"))
+    #     .CaptionVisible(not context.pane_lock)
+    #     .Name("objsizer")
+    # )
+    # pane.dock_proportion = 150
+    # pane.control = panel
+    # pane.submenu = "_40_" + _("Editing")
 
-    window.on_pane_create(pane)
-    context.register("pane/objsizer", pane)
+    # window.on_pane_create(pane)
+    # context.register("pane/objsizer", pane)
 
     if platform.system() == "Windows":
         dx = 24
@@ -1244,250 +1245,250 @@ class PulsePanel(wx.Panel):
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
 
 
-class SizePanel(wx.Panel):
-    object_ratio = None
-    object_x = None
-    object_y = None
-    object_width = None
-    object_height = None
+# class SizePanel(wx.Panel):
+#     object_ratio = None
+#     object_x = None
+#     object_y = None
+#     object_width = None
+#     object_height = None
 
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: SizePanel.__init__
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+#     def __init__(self, *args, context=None, **kwds):
+#         # begin wxGlade: SizePanel.__init__
+#         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+#         wx.Panel.__init__(self, *args, **kwds)
+#         self.context = context
 
-        self.mainsizer = StaticBoxSizer(
-            self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
-        )
-        self.button_navigate_resize = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
-        )
-        self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+#         self.mainsizer = StaticBoxSizer(
+#             self, wx.ID_ANY, _("Object Dimensions"), wx.HORIZONTAL
+#         )
+#         self.button_navigate_resize = wx.BitmapButton(
+#             self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
+#         )
+#         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
+#         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
-        self.text_width = TextCtrl(
-            self,
-            wx.ID_ANY,
-            style=wx.TE_PROCESS_ENTER,
-            value="0",
-            check="length",
-            nonzero=True,
-        )
-        self.text_height = TextCtrl(
-            self,
-            wx.ID_ANY,
-            style=wx.TE_PROCESS_ENTER,
-            value="0",
-            check="length",
-            nonzero=True,
-        )
-        self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-        self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
-        self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
+#         self.text_width = TextCtrl(
+#             self,
+#             wx.ID_ANY,
+#             style=wx.TE_PROCESS_ENTER,
+#             value="0",
+#             check="length",
+#             nonzero=True,
+#         )
+#         self.text_height = TextCtrl(
+#             self,
+#             wx.ID_ANY,
+#             style=wx.TE_PROCESS_ENTER,
+#             value="0",
+#             check="length",
+#             nonzero=True,
+#         )
+#         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
+#         self.bitmap_locked = icons8_lock_50.GetBitmap(resize=25, use_theme=False)
+#         self.bitmap_unlocked = icons8_padlock_50.GetBitmap(resize=25, use_theme=False)
 
-        # No change of fields during input
-        # self.text_height.execute_action_on_change = False
-        # self.text_width.execute_action_on_change = False
-        self._updating = False
-        self.__set_properties()
-        self.__do_layout()
+#         # No change of fields during input
+#         # self.text_height.execute_action_on_change = False
+#         # self.text_width.execute_action_on_change = False
+#         self._updating = False
+#         self.__set_properties()
+#         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
-        )
-        self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
-        self.text_width.SetActionRoutine(self.on_textenter_width)
-        self.text_height.SetActionRoutine(self.on_textenter_height)
+#         self.Bind(
+#             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
+#         )
+#         self.btn_lock_ratio.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_ratio)
+#         self.text_width.SetActionRoutine(self.on_textenter_width)
+#         self.text_height.SetActionRoutine(self.on_textenter_height)
 
-    def __set_properties(self):
-        # begin wxGlade: SizePanel.__set_properties
-        self.button_navigate_resize.SetToolTip(_("Resize the object"))
-        self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
-        self.text_width.SetToolTip(_("Define width of selected object"))
-        self.text_height.SetToolTip(_("Define height of selected object"))
-        self.btn_lock_ratio.SetMinSize((32, 32))
-        self.btn_lock_ratio.SetToolTip(
-            _("Lock the ratio of width / height to the original values")
-        )
-        # Set toggle bitmap
-        self.on_toggle_ratio(None)
-        self.text_height.Enable(False)
-        self.text_width.Enable(False)
-        self.button_navigate_resize.Enable(False)
+#     def __set_properties(self):
+#         # begin wxGlade: SizePanel.__set_properties
+#         self.button_navigate_resize.SetToolTip(_("Resize the object"))
+#         self.button_navigate_resize.SetSize(self.button_navigate_resize.GetBestSize())
+#         self.text_width.SetToolTip(_("Define width of selected object"))
+#         self.text_height.SetToolTip(_("Define height of selected object"))
+#         self.btn_lock_ratio.SetMinSize((32, 32))
+#         self.btn_lock_ratio.SetToolTip(
+#             _("Lock the ratio of width / height to the original values")
+#         )
+#         # Set toggle bitmap
+#         self.on_toggle_ratio(None)
+#         self.text_height.Enable(False)
+#         self.text_width.Enable(False)
+#         self.button_navigate_resize.Enable(False)
 
-        # end wxGlade
+#         # end wxGlade
 
-    def __do_layout(self):
-        # begin wxGlade: SizePanel.__do_layout
-        self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_label = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.label_9.SetMinSize(wx.Size(45, -1))
-        self.label_10.SetMinSize(wx.Size(45, -1))
-        fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
+#     def __do_layout(self):
+#         # begin wxGlade: SizePanel.__do_layout
+#         self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         sizer_label = wx.BoxSizer(wx.VERTICAL)
+#         fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+#         fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+#         self.label_9.SetMinSize(wx.Size(45, -1))
+#         self.label_10.SetMinSize(wx.Size(45, -1))
+#         fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
+#         fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
 
-        sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
-        sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
+#         sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
+#         sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
 
-        self.mainsizer.Add(sizer_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+#         self.mainsizer.Add(sizer_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+#         self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(self.mainsizer)
-        self.mainsizer.Fit(self)
+#         self.SetSizer(self.mainsizer)
+#         self.mainsizer.Fit(self)
 
-        self.Layout()
-        # end wxGlade
+#         self.Layout()
+#         # end wxGlade
 
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self.on_emphasized_elements_changed)
-        self.context.listen("modified", self.on_modified_element)
-        self.update_sizes()
+#     def pane_show(self, *args):
+#         self.context.listen("emphasized", self.on_emphasized_elements_changed)
+#         self.context.listen("modified", self.on_modified_element)
+#         self.update_sizes()
 
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("modified", self.on_modified_element)
+#     def pane_hide(self, *args):
+#         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
+#         self.context.unlisten("modified", self.on_modified_element)
 
-    def on_modified_element(self, origin, *args):
-        self.update_sizes()
+#     def on_modified_element(self, origin, *args):
+#         self.update_sizes()
 
-    def on_emphasized_elements_changed(self, origin, elements):
-        self.update_sizes()
+#     def on_emphasized_elements_changed(self, origin, elements):
+#         self.update_sizes()
 
-    def on_toggle_ratio(self, event):
-        if self.btn_lock_ratio.GetValue():
-            self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
-        else:
-            self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
+#     def on_toggle_ratio(self, event):
+#         if self.btn_lock_ratio.GetValue():
+#             self.btn_lock_ratio.SetBitmap(self.bitmap_locked)
+#         else:
+#             self.btn_lock_ratio.SetBitmap(self.bitmap_unlocked)
 
-    def update_sizes(self):
-        self.object_x = None
-        self.object_y = None
-        self.object_width = None
-        self.object_height = None
-        self.object_ratio = None
-        bbox = self.context.elements.selected_area()
-        if bbox is not None:
-            p = self.context
-            units = p.units_name
-            try:
-                self.object_x = bbox[0]
-                self.object_y = bbox[1]
-                self.object_width = bbox[2] - bbox[0]
-                self.object_height = bbox[3] - bbox[1]
-                try:
-                    self.object_ratio = self.object_width / self.object_height
-                except ZeroDivisionError:
-                    self.object_ratio = 0
-            except (ValueError, AttributeError, TypeError):
-                pass
+#     def update_sizes(self):
+#         self.object_x = None
+#         self.object_y = None
+#         self.object_width = None
+#         self.object_height = None
+#         self.object_ratio = None
+#         bbox = self.context.elements.selected_area()
+#         if bbox is not None:
+#             p = self.context
+#             units = p.units_name
+#             try:
+#                 self.object_x = bbox[0]
+#                 self.object_y = bbox[1]
+#                 self.object_width = bbox[2] - bbox[0]
+#                 self.object_height = bbox[3] - bbox[1]
+#                 try:
+#                     self.object_ratio = self.object_width / self.object_height
+#                 except ZeroDivisionError:
+#                     self.object_ratio = 0
+#             except (ValueError, AttributeError, TypeError):
+#                 pass
 
-        if self.object_width is not None:
-            self.text_width.SetValue(
-                Length(
-                    self.object_width, preferred_units=units, digits=3
-                ).preferred_length
-            )
-            self.text_width.Enable(True)
-        else:
-            self.text_width.SetValue("---")
-            self.text_width.Enable(False)
-        if self.object_height is not None:
-            self.text_height.SetValue(
-                Length(
-                    self.object_height, preferred_units=units, digits=3
-                ).preferred_length
-            )
-            self.text_height.Enable(True)
+#         if self.object_width is not None:
+#             self.text_width.SetValue(
+#                 Length(
+#                     self.object_width, preferred_units=units, digits=3
+#                 ).preferred_length
+#             )
+#             self.text_width.Enable(True)
+#         else:
+#             self.text_width.SetValue("---")
+#             self.text_width.Enable(False)
+#         if self.object_height is not None:
+#             self.text_height.SetValue(
+#                 Length(
+#                     self.object_height, preferred_units=units, digits=3
+#                 ).preferred_length
+#             )
+#             self.text_height.Enable(True)
 
-        else:
-            self.text_height.SetValue("---")
-            self.text_height.Enable(False)
-        if self.object_ratio is not None:
-            self.button_navigate_resize.Enable(True)
-        else:
-            self.button_navigate_resize.Enable(False)
+#         else:
+#             self.text_height.SetValue("---")
+#             self.text_height.Enable(False)
+#         if self.object_ratio is not None:
+#             self.button_navigate_resize.Enable(True)
+#         else:
+#             self.button_navigate_resize.Enable(False)
 
-    def on_button_navigate_resize(self, event):
-        new_width = Length(
-            self.text_width.GetValue(), relative_length=self.object_width
-        )
-        new_w = float(new_width)
-        new_height = Length(
-            self.text_height.GetValue(), relative_length=self.object_height
-        )
-        new_h = float(new_height)
-        if (
-            abs(new_h - self.object_height) < 1.0e-6
-            and abs(new_w - self.object_width) < 1.0e-6
-        ):
-            # No change
-            return
-        if new_w == 0 or new_h == 0:
-            return
-        self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
-        self.update_sizes()
+#     def on_button_navigate_resize(self, event):
+#         new_width = Length(
+#             self.text_width.GetValue(), relative_length=self.object_width
+#         )
+#         new_w = float(new_width)
+#         new_height = Length(
+#             self.text_height.GetValue(), relative_length=self.object_height
+#         )
+#         new_h = float(new_height)
+#         if (
+#             abs(new_h - self.object_height) < 1.0e-6
+#             and abs(new_w - self.object_width) < 1.0e-6
+#         ):
+#             # No change
+#             return
+#         if new_w == 0 or new_h == 0:
+#             return
+#         self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
+#         self.update_sizes()
 
-    def on_textenter_width(self):
-        if self._updating:
-            return
-        needsupdate = False
-        try:
-            p = self.context
-            units = p.units_name
-            new_width = Length(
-                self.text_width.GetValue(),
-                relative_length=self.object_width,
-                preferred_units=units,
-                digits=3,
-            )
-            new_w = float(new_width)
-            if new_w != self.object_width:
-                needsupdate = True
-        except ValueError:
-            pass
-        if not needsupdate:
-            return
-        self._updating = True
-        if self.btn_lock_ratio.GetValue():
-            new_h = new_w * (1.0 / self.object_ratio)
-            new_height = Length(new_h, preferred_units=units, digits=3)
-            self.text_height.SetValue(new_height.preferred_length)
-        self._updating = False
-        self.on_button_navigate_resize(None)
+#     def on_textenter_width(self):
+#         if self._updating:
+#             return
+#         needsupdate = False
+#         try:
+#             p = self.context
+#             units = p.units_name
+#             new_width = Length(
+#                 self.text_width.GetValue(),
+#                 relative_length=self.object_width,
+#                 preferred_units=units,
+#                 digits=3,
+#             )
+#             new_w = float(new_width)
+#             if new_w != self.object_width:
+#                 needsupdate = True
+#         except ValueError:
+#             pass
+#         if not needsupdate:
+#             return
+#         self._updating = True
+#         if self.btn_lock_ratio.GetValue():
+#             new_h = new_w * (1.0 / self.object_ratio)
+#             new_height = Length(new_h, preferred_units=units, digits=3)
+#             self.text_height.SetValue(new_height.preferred_length)
+#         self._updating = False
+#         self.on_button_navigate_resize(None)
 
-    def on_textenter_height(self):
-        if self._updating:
-            return
-        needsupdate = False
-        try:
-            p = self.context
-            units = p.units_name
-            new_height = Length(
-                self.text_height.GetValue(),
-                relative_length=self.object_height,
-                preferred_units=units,
-                digits=3,
-            )
-            new_h = float(new_height)
-            if new_h != self.object_height:
-                needsupdate = True
-        except ValueError:
-            pass
-        if not needsupdate:
-            return
-        self._updating = True
-        if self.btn_lock_ratio.GetValue():
-            new_w = new_h * (1.0 / self.object_ratio)
-            new_width = Length(new_w, preferred_units=units, digits=3)
-            self.text_width.SetValue(new_width.preferred_length)
-        self._updating = False
-        self.on_button_navigate_resize(None)
+#     def on_textenter_height(self):
+#         if self._updating:
+#             return
+#         needsupdate = False
+#         try:
+#             p = self.context
+#             units = p.units_name
+#             new_height = Length(
+#                 self.text_height.GetValue(),
+#                 relative_length=self.object_height,
+#                 preferred_units=units,
+#                 digits=3,
+#             )
+#             new_h = float(new_height)
+#             if new_h != self.object_height:
+#                 needsupdate = True
+#         except ValueError:
+#             pass
+#         if not needsupdate:
+#             return
+#         self._updating = True
+#         if self.btn_lock_ratio.GetValue():
+#             new_w = new_h * (1.0 / self.object_ratio)
+#             new_width = Length(new_w, preferred_units=units, digits=3)
+#             self.text_width.SetValue(new_width.preferred_length)
+#         self._updating = False
+#         self.on_button_navigate_resize(None)
 
 
 class Transform(wx.Panel):
@@ -2044,7 +2045,7 @@ class NavigationPanel(wx.Panel):
         move_panel = MovePanel(self, wx.ID_ANY, context=self.context)
         pulse_and_move_sizer.Add(move_panel, 1, wx.EXPAND, 0)
 
-        size_panel = SizePanel(self, wx.ID_ANY, context=self.context)
+        size_panel = PositionPanel(self, wx.ID_ANY, context=self.context, small=True)
         pulse_and_move_sizer.Add(size_panel, 1, wx.EXPAND, 0)
 
         main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)

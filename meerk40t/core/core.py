@@ -12,6 +12,10 @@ def plugin(kernel, lifecycle=None):
 
         plugins.append(spoolers.plugin)
 
+        from . import space
+
+        plugins.append(space.plugin)
+
         from .elements import elements
 
         plugins.append(elements.plugin)

@@ -1138,15 +1138,6 @@ class SVGProcessor:
                         op.validate()
                     op.id = node_id
                     self.operation_list.append(op)
-                    overlooked_attributes = [
-                        "output",
-                    ]
-                    # Sometimes certain attributes weren't assigned properly / missed
-                    # This piece of code tries to reapply them. If things were fine
-                    # then this is an unneeded attempt. But better safe than sorry
-                    for overlooked in overlooked_attributes:
-                        if overlooked in element.values and hasattr(op, overlooked):
-                            setattr(op, overlooked, element.values.get(overlooked))
                 except AttributeError:
                     # This operation is invalid.
                     return
