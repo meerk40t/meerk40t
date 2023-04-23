@@ -235,16 +235,21 @@ def plugin(kernel, lifecycle):
                 data_out = None
                 # elem_image.convert("RGBA")
                 imagematrix0 = copy(matrix)
+                dx = offset_x - imagematrix0.value_trans_x()
+                dy = offset_y - imagematrix0.value_trans_y()
                 imagematrix0.post_translate(offset_x, offset_y)
                 imagematrix1 = copy(imagematrix0)
-                imagematrix2 = copy(imagematrix1)
 
                 mask_pattern = mask_image.convert("1")
                 elem_image.putalpha(mask_pattern)
 
-                image_node1 = ImageNode(image=elem_image, matrix=imagematrix1, dpi=dpi)
+                image_node1 = ImageNode(
+                    image=elem_image,
+                    matrix=imagematrix1,
+                    dpi=dpi,
+                    label="Keyholed Elements",
+                )
                 image_node1.set_dirty_bounds()
-                image_node1.label = "Keyholed Elements"
                 elements.elem_branch.add_node(image_node1)
 
                 # image_node2 = ImageNode(image=mask_image, matrix=imagematrix2, dpi=dpi)
