@@ -196,7 +196,7 @@ class LayerSettingPanel(wx.Panel):
             wx.Colour(swizzlecolor(self.operation.color))
         )
         if self.operation.output is not None:
-            self.checkbox_output.SetValue(self.operation.output)
+            self.checkbox_output.SetValue(bool(self.operation.output))
         flag_set = True
         flag_enabled = False
         if self.operation.output is not None:
