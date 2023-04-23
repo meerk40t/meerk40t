@@ -749,8 +749,6 @@ class BalorDevice(Service, ViewPort):
             native_scale_y=units_per_galvo,
             origin_x=1.0 if self.flip_x else 0.0,
             origin_y=1.0 if self.flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
@@ -1806,6 +1804,9 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
@@ -1813,6 +1814,7 @@ class BalorDevice(Service, ViewPort):
         self.width = self.lens_size
         self.height = self.lens_size
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):
