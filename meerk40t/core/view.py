@@ -112,8 +112,8 @@ class View:
         width = float(Length(self.width))
         height = float(Length(self.height))
 
-        dx = width * origin_x
-        dy = height * origin_y
+        dx = -width * origin_x
+        dy = -height * origin_y
 
         top_left, top_right, bottom_right, bottom_left = self._destination
         self._destination = (
@@ -194,7 +194,7 @@ class View:
         matrix = ~self.matrix
         if vector:
             return matrix.transform_vector([unit_x, unit_y])
-        return matrix.point_in_inverse_space([unit_x, unit_y])
+        return matrix.point_in_matrix_space([unit_x, unit_y])
 
     @property
     def matrix(self):
