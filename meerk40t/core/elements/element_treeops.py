@@ -1049,6 +1049,14 @@ def init_tree(kernel):
     def remove_n_elements(node, **kwargs):
         self("element delete\n")
 
+    @tree_operation(
+        _("Become reference object"),
+        node_type=elem_nodes,
+        help="",
+    )
+    def make_node_reference(node, **kwargs):
+        self.signal("make_reference", node)
+
     @tree_conditional(
         lambda node: isinstance(node.shape, Polygon) and len(node.shape.points) >= 3
     )

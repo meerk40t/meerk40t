@@ -714,6 +714,7 @@ class MeerK40tScenePanel(wx.Panel):
     def reference_object(self, ref_object):
         prev = self._reference
         self._reference = ref_object
+        self.scene.reference_object = self._reference
         dlist = []
         if prev is not None:
             dlist.append(prev)
@@ -859,6 +860,12 @@ class MeerK40tScenePanel(wx.Panel):
             self._last_snap_ts = 0
         else:
             self._last_snap_ts = time.time()
+
+    @signal_listener("make_reference")
+    def listen_make_ref(self, origin, *args):
+        node = args[0]
+        self.reference_object = node
+        self.context.signal("reference")
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
