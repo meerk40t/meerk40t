@@ -170,10 +170,10 @@ class View:
             self.flip_x()
         if flip_y:
             self.flip_y()
-        if origin_x != 0 or origin_y != 0:
-            self.origin(origin_x, origin_y)
         if swap_xy:
             self.swap_xy()
+        if origin_x != 0 or origin_y != 0:
+            self.origin(origin_x, origin_y)
 
     def position(self, x, y, vector=False):
         if not isinstance(x, (int, float)):
