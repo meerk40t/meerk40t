@@ -78,13 +78,15 @@ class CropPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
 
         flag = False
+        self.activate_controls(flag)
+        self.set_widgets(node)
+
+    def activate_controls(self, flag):
         self.button_reset.Enable(flag)
         self.slider_left.Enable(flag)
         self.slider_right.Enable(flag)
         self.slider_top.Enable(flag)
         self.slider_bottom.Enable(flag)
-
-        self.set_widgets(node)
 
     def set_widgets(self, node):
         if self.node is None:
@@ -115,6 +117,8 @@ class CropPanel(wx.Panel):
         self.set_slider_limits("lrtb", False)
 
         self.check_enable_crop.SetValue(flag)
+        self.activate_controls(flag)
+
         self.cropleft = self._bounds[0]
         self.cropright = self._bounds[2]
         self.croptop = self._bounds[1]
@@ -214,16 +218,14 @@ class CropPanel(wx.Panel):
                 self.croptop = 0
                 self.cropbottom = h
                 self._no_update = last
+            else:
+                self.op["enable"] = flag
         else:
             if self.op is not None:
                 self.op["enable"] = flag
         if self.op is not None and not self._no_update:
             self.node.update(self.context)
-        self.button_reset.Enable(flag)
-        self.slider_left.Enable(flag)
-        self.slider_right.Enable(flag)
-        self.slider_top.Enable(flag)
-        self.slider_bottom.Enable(flag)
+        self.activate_controls(flag)
 
     def on_slider_left(self, event=None):
         self.cropleft = self.slider_left.GetValue()
