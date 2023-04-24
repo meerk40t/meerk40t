@@ -107,6 +107,16 @@ class MeerK40tScenePanel(wx.Panel):
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
         self.magnet_attract_c = True  # Shall the center be affected
 
+        self.context.setting(bool, "clear_magnets", True)
+
+        # Save / Load the content of magnets
+        from os.path import realpath, join
+        from meerk40t.kernel.functions import get_safe_path
+        self._magnet_file = join(realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg")
+        self.load_magnets()
+        # Add a plugin routine to be called at the time of a full new start
+        context.kernel.register("reset_routines/magnets", self.clear_magnets_conditionally)
+
         self.active_tool = "none"
 
         self._last_snap_position = None
@@ -727,36 +737,61 @@ class MeerK40tScenePanel(wx.Panel):
     # MAGNETS
     ##########
 
+    def save_magnets(self):
+        try:
+            with open(self._magnet_file, "w") as f:
+                for x in self.magnet_x:
+                    f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
+                for y in self.magnet_y:
+                    f.write(f"y={Length(y, preferred_units='mm').preferred_length}\n")
+        except ValueError: # ( PermissionError, OSError, FileNotFoundError ):
+            return
+
+    def load_magnets(self):
+        self.magnet_x = []
+        self.magnet_y = []
+        try:
+            with open(self._magnet_file, "r") as f:
+                for line in f:
+                    cline = line.strip()
+                    if cline != "":
+                        subs = cline.split("=")
+                        if len(subs) > 1:
+                            # try:
+                            dimens = Length(subs[1])
+                            value = float(dimens)
+                            if subs[0] in ("x", "X"):
+                                if value not in self.magnet_x:
+                                    self.magnet_x.append(value)
+                            elif subs[0] in ("y", "Y"):
+                                if value not in self.magnet_y:
+                                    self.magnet_y.append(value)
+                            # except ValueError:
+                            #     pass
+        except ( PermissionError, OSError, FileNotFoundError ):
+            return
+
     def clear_magnets(self):
         self.magnet_x = []
         self.magnet_y = []
-        self.context.signal("magnets", False)
+        self.save_magnets()
+
+    def clear_magnets_conditionally(self):
+        # Depending on setting
+        if self.context.clear_magnets:
+            self.clear_magnets()
 
     def toggle_x_magnet(self, x_value):
-        prev = self.has_magnets()
         if x_value in self.magnet_x:
             self.magnet_x.remove(x_value)
-            # print("Remove x magnet for %.1f" % x_value)
-            now = self.has_magnets()
         else:
             self.magnet_x += [x_value]
-            # print("Add x magnet for %.1f" % x_value)
-            now = True
-        if prev != now:
-            self.context.signal("magnets", now)
 
     def toggle_y_magnet(self, y_value):
-        prev = self.has_magnets()
         if y_value in self.magnet_y:
             self.magnet_y.remove(y_value)
-            # print("Remove y magnet for %.1f" % y_value)
-            now = self.has_magnets()
         else:
             self.magnet_y += [y_value]
-            now = True
-            # print("Add y magnet for %.1f" % y_value)
-        if prev != now:
-            self.context.signal("magnets", now)
 
     def magnet_attracted_x(self, x_value, useit):
         delta = float("inf")
@@ -1076,6 +1111,7 @@ class MeerK40tScenePanel(wx.Panel):
         elif method == "center":
             self.toggle_x_magnet((bb[0] + bb[2]) / 2)
             self.toggle_y_magnet((bb[1] + bb[3]) / 2)
+        self.save_magnets()
         self.request_refresh()
 
     def pane_show(self, *args):
@@ -1097,6 +1133,9 @@ class MeerK40tScenePanel(wx.Panel):
         # Refresh not needed as scenepanel already does it...
         # self.scene.signal("guide")
         # self.request_refresh()
+
+    def on_close(self, event):
+        self.save_magnets()
 
     @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
