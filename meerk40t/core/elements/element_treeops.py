@@ -2473,6 +2473,26 @@ def init_tree(kernel):
         )
         self.signal("refresh_scene", "Scene")
 
+    @tree_conditional(lambda node: is_regmark(node))
+    @tree_submenu(_("Toggle Magnet-Lines"))
+    @tree_operation(_("Around border"), node_type=elem_group_nodes, help="")
+    def regmark_to_magnet_1(node, **kwargs):
+        if node is None:
+            return
+        if not hasattr(node, "bounds"):
+            return
+        self.signal("magnet_gen", ("outer", node))
+
+    @tree_conditional(lambda node: is_regmark(node))
+    @tree_submenu(_("Toggle Magnet-Lines"))
+    @tree_operation(_("At center"), node_type=elem_group_nodes, help="")
+    def regmark_to_magnet_2(node, **kwargs):
+        if node is None:
+            return
+        if not hasattr(node, "bounds"):
+            return
+        self.signal("magnet_gen", ("center", node))
+
     # @tree_conditional(lambda node: not node.lock)
     # @tree_conditional_try(lambda node: not node.lock)
     # @tree_operation(_("Actualize pixels"), node_type="elem image", help="")
