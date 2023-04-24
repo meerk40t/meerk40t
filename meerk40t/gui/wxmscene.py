@@ -714,6 +714,7 @@ class MeerK40tScenePanel(wx.Panel):
     def reference_object(self, ref_object):
         prev = self._reference
         self._reference = ref_object
+        self.scene.reference_object = self._reference
         dlist = []
         if prev is not None:
             dlist.append(prev)
@@ -782,8 +783,8 @@ class MeerK40tScenePanel(wx.Panel):
         dx = 0
         dy = 0
         if self.has_magnets() and self.magnet_attraction > 0:
-            if self.scene.pane.grid.tick_distance > 0:
-                s = f"{self.scene.pane.grid.tick_distance}{self.context.units_name}"
+            if self.grid.tick_distance > 0:
+                s = f"{self.grid.tick_distance}{self.context.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off
@@ -859,6 +860,12 @@ class MeerK40tScenePanel(wx.Panel):
             self._last_snap_ts = 0
         else:
             self._last_snap_ts = time.time()
+
+    @signal_listener("make_reference")
+    def listen_make_ref(self, origin, *args):
+        node = args[0]
+        self.reference_object = node
+        self.context.signal("reference")
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
@@ -1050,6 +1057,26 @@ class MeerK40tScenePanel(wx.Panel):
         if strength < 0:
             strength = 0
         self.magnet_attraction = strength
+
+    @signal_listener("magnet_gen")
+    def on_magnet(self, origin, *args):
+        candidate = args[0]
+        if candidate is None:
+            return
+        if not isinstance(candidate, (tuple, list)) or len(candidate) < 2:
+            return
+        method = candidate[0]
+        node = candidate[1]
+        bb = node.bounds
+        if method == "outer":
+            self.toggle_x_magnet(bb[0])
+            self.toggle_x_magnet(bb[2])
+            self.toggle_y_magnet(bb[1])
+            self.toggle_y_magnet(bb[3])
+        elif method == "center":
+            self.toggle_x_magnet((bb[0] + bb[2]) / 2)
+            self.toggle_y_magnet((bb[1] + bb[3]) / 2)
+        self.request_refresh()
 
     def pane_show(self, *args):
         zl = self.context.zoom_margin
