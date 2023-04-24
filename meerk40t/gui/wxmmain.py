@@ -586,6 +586,17 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 "subsection": "Grid",
             },
+            {
+                "attr": "clear_magnets",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Clear magnets on File - New"),
+                "tip": _("File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"),
+                "page": "Scene",
+                "section": "Snap-Options",
+                "subsection": "Magnetlines",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
         choices = [

@@ -144,6 +144,7 @@ class GuideWidget(Widget):
             while y <= p.device.unit_height:
                 self.scene.pane.toggle_y_magnet(y)
                 y += tlen
+            self.scene.pane.save_magnets()
         elif self.scene.pane.grid.draw_grid_secondary:
             # Placeholder for a use case, as you can define them manually...
             pass
@@ -438,15 +439,17 @@ class GuideWidget(Widget):
                 self.scene.pane.clear_magnets()
             else:
                 self.fill_magnets()
+            # No need to call save magnets here as both routines already do that
         elif is_x:
             # Get the X coordinate from space_pos [0]
             value = float(Length(f"{mark_point_x:.1f}{self.units}"))
             self.scene.pane.toggle_x_magnet(value)
+            self.scene.pane.save_magnets()
         elif is_y:
             # Get the Y coordinate from space_pos [1]
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
             self.scene.pane.toggle_y_magnet(value)
-
+            self.scene.pane.save_magnets()
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
