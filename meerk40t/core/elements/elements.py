@@ -1458,6 +1458,10 @@ class Elemental(Service):
             self.clear_files()
             self.clear_note()
             self.clear_regmarks(fast=fast)
+            # Do we have any other routine that wants
+            # to be called when we start from scratch?
+            for routine in self.kernel.lookup_all("reset_routines/.*"):
+                routine()
             self.validate_selected_area()
         if fast:
             self.signal("rebuild_tree")
