@@ -424,8 +424,6 @@ class LihuiyuDevice(Service, ViewPort):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
         )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
@@ -965,6 +963,9 @@ class LihuiyuDevice(Service, ViewPort):
         elif self.interface == "legacy":
             self.driver.out_pipe = self.legacy_controller
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -975,6 +976,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native

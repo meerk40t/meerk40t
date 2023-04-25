@@ -23,7 +23,6 @@ def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
     plan_panel = JobPanel(window, wx.ID_ANY, context=context)
 
-    prechoices = context.lookup("choices/optimize")
     optimize_panel = OptimizePanel(window, wx.ID_ANY, context=context)
     jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=25)
@@ -602,6 +601,7 @@ class OptimizePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         from copy import copy
+        self.parent = args[0]
 
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -627,7 +627,7 @@ class OptimizePanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
-
+        self.parent.add_module_delegate(self.optimize_panel)
 
     @signal_listener("optimize")
     def optimize_update(self, origin, *message):

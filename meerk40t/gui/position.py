@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_up_left_50
+from meerk40t.gui.icons import icons8_up_left_50, icons8_compress_50
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
@@ -28,11 +28,12 @@ def register_panel_position(window, context):
 
 
 class PositionPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, small=False, **kwds):
         # begin wxGlade: PositionPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.small = small
         self.text_x = TextCtrl(
             self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
         )
@@ -61,8 +62,13 @@ class PositionPanel(wx.Panel):
         self.text_h.SetMinSize((70, 23))
         self.chk_indivdually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
+        if self.small:
+            resize_param = 32
+        else:
+            resize_param = None
+
         self.button_execute = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
+            self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=resize_param)
         )
         self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
@@ -102,6 +108,7 @@ class PositionPanel(wx.Panel):
         self.org_h = None
         self.context.setting(str, "units_name", "mm")
         self.position_units = self.context.units_name
+
         if self.position_units in ("in", "inches"):
             self.position_units = "inch"
         self._update_position()
@@ -146,6 +153,13 @@ class PositionPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        if self.small:
+            target = StaticBoxSizer(
+                 self, wx.ID_ANY, _("Object Dimensions"), wx.VERTICAL
+            )
+            sizer_main.Add(target, 1, wx.EXPAND, 0)
+        else:
+            target = sizer_main
         sizer_h = StaticBoxSizer(self, wx.ID_ANY, _("Height:"), wx.HORIZONTAL)
         sizer_w = StaticBoxSizer(self, wx.ID_ANY, _("Width:"), wx.HORIZONTAL)
         sizer_y = StaticBoxSizer(self, wx.ID_ANY, "Y:", wx.HORIZONTAL)
@@ -156,28 +170,39 @@ class PositionPanel(wx.Panel):
         sizer_w.Add(self.text_w, 1, wx.EXPAND, 0)
         sizer_h.Add(self.text_h, 1, wx.EXPAND, 0)
 
-        sizer_h_xy = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
-        sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
+        self.sizer_h_xy = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
+        self.sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
 
-        sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
-        sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
+        self.sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
+        self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
 
         sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
-        sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
-        sizer_v_xywh.Add(sizer_h_wh, 0, wx.EXPAND, 0)
+        sizer_v_xywh.Add(self.sizer_h_xy, 0, wx.EXPAND, 0)
+        sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
         sizer_h_all = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h_all.Add(self.button_execute, 0, 0, 0)
         sizer_h_all.Add(sizer_v_xywh, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_h_all, 0, wx.EXPAND, 0)
+        target.Add(sizer_h_all, 0, wx.EXPAND, 0)
 
         sizer_h_options = wx.BoxSizer(wx.HORIZONTAL)
         sizer_h_options.Add(self.chk_indivdually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.chk_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_options.Add(self.combo_box_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_main.Add(sizer_h_options, 0, wx.EXPAND, 0)
+        target.Add(sizer_h_options, 0, wx.EXPAND, 0)
+
+        # Only show x + y if required.
+        show_wh = True
+        show_xy = not self.small
+        show_indiv = not self.small
+
+        self.sizer_h_wh.Show(show_wh)
+        self.sizer_h_wh.ShowItems(show_wh)
+        self.sizer_h_xy.Show(show_xy)
+        self.sizer_h_xy.ShowItems(show_xy)
+        self.chk_indivdually.Show(show_indiv)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
