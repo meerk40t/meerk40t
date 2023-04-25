@@ -332,8 +332,12 @@ def generate_hull_shape_circle_data(data):
                     (bounds[2], bounds[1]),
                     (bounds[2], bounds[3]),
                 ]
-
-    mec_center, mec_radius = welzl(pts)
+    # We could directly call welzl, but for a significant
+    # amount of point this will cause a huge amount
+    # of recursive calls (which will fail)
+    # -> so we apply it to the hull points
+    hull = list(Point.convex_hull(pts))
+    mec_center, mec_radius = welzl(hull)
 
     # So now we have a circle with (mec[0], mec[1]), and mec_radius
     return mec_center, mec_radius
