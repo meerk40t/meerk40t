@@ -580,9 +580,7 @@ class JobPanel(wx.Panel):
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
         if self._optimize:
-            self.context(
-                "planz clear copy preprocess validate blob preopt optimize\n"
-            )
+            self.context("planz clear copy preprocess validate blob preopt optimize\n")
         else:
             self.context("planz clear copy preprocess validate blob\n")
         self.context.kernel.busyinfo.end()
@@ -596,6 +594,7 @@ class JobPanel(wx.Panel):
     def pane_hide(self, *args):
         pass
 
+
 class OptimizePanel(wx.Panel):
     """
     Contains all elements to adjust optimisation
@@ -604,6 +603,7 @@ class OptimizePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: MovePanel.__init__
         from copy import copy
+
         self.parent = args[0]
 
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

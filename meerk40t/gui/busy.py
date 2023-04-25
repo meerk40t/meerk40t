@@ -7,6 +7,7 @@ import wx
 
 DEFAULT_SIZE = 14
 
+
 class BusyInfo:
     """
     Create a custom BusyInfo class.
@@ -65,10 +66,14 @@ class BusyInfo:
         #     self.parent, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         # )
         self.frame = wx.Frame(
-            self.parent, id=wx.ID_ANY, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+            self.parent,
+            id=wx.ID_ANY,
+            style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP,
         )
         self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
-        self.text = wx.StaticText(self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL)
+        self.text = wx.StaticText(
+            self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL
+        )
         self.update_keywords(kwds)
         self.show()
         self.shown = True

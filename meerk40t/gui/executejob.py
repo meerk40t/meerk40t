@@ -141,7 +141,9 @@ class PlannerPanel(wx.Panel):
                 self.context(f"plan{self.plan_name} validate\n")
             self.context.kernel.busyinfo.end()
         elif self.stage == 1:
-            self.context.kernel.busyinfo.start(msg=_("Determining validity of operations..."))
+            self.context.kernel.busyinfo.start(
+                msg=_("Determining validity of operations...")
+            )
             self.context(f"plan{self.plan_name} preprocess\n")
             cutplan = self.context.planner.default_plan
             if len(cutplan.commands) == 0:
@@ -156,7 +158,9 @@ class PlannerPanel(wx.Panel):
             self.context(f"plan{self.plan_name} blob preopt\n")
             self.context.kernel.busyinfo.end()
         elif self.stage == 4:
-            self.context.kernel.busyinfo.start(msg=_("Determining optimizations to perform..."))
+            self.context.kernel.busyinfo.start(
+                msg=_("Determining optimizations to perform...")
+            )
             self.context(f"plan{self.plan_name} preopt\n")
             self.context.kernel.busyinfo.end()
         elif self.stage == 5:

@@ -542,7 +542,9 @@ class CutPlan:
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if busy.shown:
-                busy.change(msg=_("Optimize cuts") + f" {i + 1}/{len(self.plan)}", keep=1)
+                busy.change(
+                    msg=_("Optimize cuts") + f" {i + 1}/{len(self.plan)}", keep=1
+                )
                 busy.show()
             if isinstance(c, CutCode):
                 if c.constrained:
@@ -591,7 +593,9 @@ class CutPlan:
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if busy.shown:
-                busy.change(msg=_("Optimize travel") + f" {i + 1}/{len(self.plan)}", keep=1)
+                busy.change(
+                    msg=_("Optimize travel") + f" {i + 1}/{len(self.plan)}", keep=1
+                )
                 busy.show()
 
             if isinstance(c, CutCode):
