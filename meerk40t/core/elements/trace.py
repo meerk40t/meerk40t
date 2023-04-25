@@ -157,6 +157,7 @@ def welzl_helper(P, R, n):
     @param n:
     @return:
     """
+    # print (f"Welzl_helper. P={len(P)} pts, R={len(R)} pts, n={n}")
     # Base case when all points processed or |R| = 3
     if n <= 0 or len(R) == 3:
         center, radius = min_circle_trivial(R)
@@ -309,7 +310,7 @@ def generate_hull_shape_complex(data, resolution=None):
     return hull
 
 
-def generate_hull_shape_circle(data):
+def generate_hull_shape_circle_data(data):
     pts = []
     for node in data:
         try:
@@ -333,6 +334,13 @@ def generate_hull_shape_circle(data):
                 ]
 
     mec_center, mec_radius = welzl(pts)
+
+    # So now we have a circle with (mec[0], mec[1]), and mec_radius
+    return mec_center, mec_radius
+
+
+def generate_hull_shape_circle(data):
+    mec_center, mec_radius = generate_hull_shape_circle_data(data)
 
     # So now we have a circle with (mec[0], mec[1]), and mec_radius
     hull = []
@@ -506,6 +514,7 @@ def init_commands(kernel):
 
         if data is None:
             data = list(self.elems(emphasized=True))
+        shape_type = "elem polyline"
         if method == "segment":
             hull = generate_hull_shape_segment(data)
         elif method == "quick":
@@ -515,17 +524,25 @@ def init_commands(kernel):
         elif method == "complex":
             hull = generate_hull_shape_complex(data, resolution)
         elif method == "circle":
-            hull = generate_hull_shape_circle(data)
+            shape_type = "elem ellipse"
+            s_center, s_radius = generate_hull_shape_circle_data(data)
         else:
             raise ValueError
-        if len(hull) == 0:
-            channel(_("No elements bounds to trace."))
-            return
-        shape = Polyline(hull)
-        if shape.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=shape, type="elem polyline")
+        if shape_type == "elem polyline":
+
+            if len(hull) == 0:
+                channel(_("No elements bounds to trace."))
+                return
+            shape = Polyline(hull)
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
+        elif shape_type == "elem ellipse":
+            shape = Circle(cx=s_center[0], cy=s_center[1], rx=s_radius, ry=s_radius)
+            if shape.is_degenerate():
+                channel(_("Shape is degenerate."))
+                return "elements", data
+        node = self.elem_branch.add(shape=shape, type=shape_type)
         node.stroke = self.default_stroke
         node.stroke_width = self.default_strokewidth
         node.fill = self.default_fill
@@ -534,7 +551,7 @@ def init_commands(kernel):
         node.focus()
         data.append(node)
         # Newly created! Classification needed?
-        post.append(classify_new)
+        post.append(classify_new(data))
         return "elements", data
 
     # --------------------------- END COMMANDS ------------------------------
