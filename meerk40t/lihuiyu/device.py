@@ -962,6 +962,8 @@ class LihuiyuDevice(Service, ViewPort):
             self.driver.out_pipe = self.controller
         elif self.interface == "legacy":
             self.driver.out_pipe = self.legacy_controller
+        elif self.interface == "mock":
+            self.driver.out_pipe = self.controller
 
     def service_attach(self, *args, **kwargs):
         self.realize()
