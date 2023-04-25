@@ -501,6 +501,11 @@ class CutPlan:
         Optimize travel 2opt at optimize stage on cutcode
         @return:
         """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Optimize inner travel"), keep=1)
+            busy.show()
         channel = self.context.channel("optimize", timestamp=True)
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
@@ -511,6 +516,12 @@ class CutPlan:
         Optimize cuts at optimize stage on cutcode
         @return:
         """
+        # Update Info-panel if displayed
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Optimize cuts"), keep=1)
+            busy.show()
         tolerance = 0
         if self.context.opt_inner_first:
             stol = self.context.opt_inner_tolerance
@@ -530,6 +541,11 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
+            if busy.shown:
+                busy.change(
+                    msg=_("Optimize cuts") + f" {i + 1}/{len(self.plan)}", keep=1
+                )
+                busy.show()
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
@@ -547,6 +563,12 @@ class CutPlan:
         Optimize travel at optimize stage on cutcode.
         @return:
         """
+        # Update Info-panel if displayed
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Optimize travel"), keep=1)
+            busy.show()
         try:
             last = self.context.device.native
         except AttributeError:
@@ -570,6 +592,12 @@ class CutPlan:
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
+            if busy.shown:
+                busy.change(
+                    msg=_("Optimize travel") + f" {i + 1}/{len(self.plan)}", keep=1
+                )
+                busy.show()
+
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(
@@ -591,6 +619,11 @@ class CutPlan:
         Merge all adjacent optimized cutcode into single cutcode objects.
         @return:
         """
+        busy = self.context.kernel.busyinfo
+        _ = self.context.kernel.translation
+        if busy.shown:
+            busy.change(msg=_("Merging cutcode"), keep=1)
+            busy.show()
         for i in range(len(self.plan) - 1, 0, -1):
             cur = self.plan[i]
             prev = self.plan[i - 1]

@@ -70,7 +70,7 @@ def plugin(kernel, lifecycle=None):
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
             },
             {
@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -124,7 +124,7 @@ def plugin(kernel, lifecycle=None):
                     + "and this can result in greater charring "
                     + "or even an increased risk of the material catching fire."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -149,7 +149,7 @@ def plugin(kernel, lifecycle=None):
                     "If you have a complex design with many paths across multiple consecutive burn operations, "
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -171,7 +171,7 @@ def plugin(kernel, lifecycle=None):
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
             },
             {
@@ -181,7 +181,7 @@ def plugin(kernel, lifecycle=None):
                 "type": Length,
                 "label": _("Tolerance"),
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -210,7 +210,7 @@ def plugin(kernel, lifecycle=None):
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -223,7 +223,7 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
@@ -342,6 +342,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Copy data"), keep=1)
+                busy.show()
+
             operations = data  # unused.
             if command == "copy-selected":
                 operations = list(self.elements.ops(emphasized=True))
@@ -568,6 +574,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Preprocessing"), keep=1)
+                busy.show()
+
             data.preprocess()
             self.signal("plan", data.name, 2)
             return data_type, data
@@ -579,6 +591,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Validating"), keep=1)
+                busy.show()
+
             try:
                 data.execute()
             except CutPlanningFailedError as e:
@@ -595,6 +613,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_blob(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Generating lasercode"), keep=1)
+                busy.show()
+
             data.blob()
             self.signal("plan", data.name, 4)
             return data_type, data
@@ -606,6 +630,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Preparing optimisation"), keep=1)
+                busy.show()
+
             data.preopt()
             self.signal("plan", data.name, 5)
             return data_type, data
@@ -617,6 +647,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Optimising"), keep=1)
+                busy.show()
+
             data.execute()
             self.signal("plan", data.name, 6)
             return data_type, data
@@ -628,6 +664,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_clear(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Clearing data"), keep=1)
+                busy.show()
+
             data.clear()
             self.signal("plan", data.name, 0)
             return data_type, data
