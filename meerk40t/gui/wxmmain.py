@@ -1987,6 +1987,8 @@ class MeerK40t(MWindow):
         context.setting(str, "file18", None)
         context.setting(str, "file19", None)
         self.populate_recent_menu()
+        if hasattr(context.kernel.busyinfo, "reparent"):
+            context.kernel.busyinfo.reparent(self)
 
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):

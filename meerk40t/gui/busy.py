@@ -5,6 +5,7 @@ Based on the wxpython wxlib.busy routines.
 
 import wx
 
+DEFAULT_SIZE = 14
 
 class BusyInfo:
     """
@@ -20,15 +21,16 @@ class BusyInfo:
         of the :class:`BusyInfo`
     """
 
-    def __init__(self, **kwds):
+    def __init__(self, parent=None, **kwds):
         self.busy_object = None
         self.msg = None
         self.bgcolor = None
         self.fgcolor = None
-        self.parent = None
+        self.parent = parent
         self.shown = False
-        if "parent" in kwds:
-            self.parent = kwds["parent"]
+        self.fontsize = DEFAULT_SIZE
+        # if "parent" in kwds:
+        #     self.parent = kwds["parent"]
         self.frame = None
         self.update_keywords(kwds)
 
@@ -39,14 +41,19 @@ class BusyInfo:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
             self.fgcolor = kwds["fgcolor"]
+        if "fontsize" in kwds:
+            self.fontsize = kwds["fontsize"]
 
     def start(self, **kwds):
         self.end()
+        # self.frame = wx.Frame(
+        #     self.parent, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+        # )
         self.frame = wx.Frame(
-            self.parent, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
+            self.parent, id=wx.ID_ANY, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
         )
-        self.panel = wx.Panel(self.frame)
-        self.text = wx.StaticText(self.panel, wx.ID_ANY, "")
+        self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
+        self.text = wx.StaticText(self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL)
         self.update_keywords(kwds)
         self.show()
         self.shown = True
@@ -68,17 +75,32 @@ class BusyInfo:
         if self.frame:
             self.frame.Hide()
 
+    def reparent(self, newparent):
+        self.parent = newparent
+
     def show(self):
         for win in [self.panel, self.text]:
             win.SetBackgroundColour(self.bgcolor)
         for win in [self.panel, self.text]:
             win.SetForegroundColour(self.fgcolor)
+        try:
+            self.fontsize = int(self.fontsize)
+        except ValueError:
+            self.fontsize = DEFAULT_SIZE
+        font = wx.Font(
+            self.fontsize,
+            wx.FONTFAMILY_SWISS,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        self.text.SetFont(font)
         self.text.SetLabel(self.msg)
         size = self.text.GetBestSize()
         self.frame.SetClientSize((size.width + 60, size.height + 40))
         self.panel.SetSize(self.frame.GetClientSize())
         self.text.Center()
         self.frame.Center()
+        # That may be a bit over the top, but we really want an update :-)
         self.frame.Show()
         self.frame.Refresh()
         self.frame.Update()
