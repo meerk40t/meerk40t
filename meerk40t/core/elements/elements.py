@@ -1176,6 +1176,7 @@ class Elemental(Service):
             op.load(settings, section)
         if len(list(self.elems())) > 0:
             self.classify(list(self.elems()))
+        self.signal("updateop_tree")
 
     def prepare_undo(self):
         if self.do_undo:
