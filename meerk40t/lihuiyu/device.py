@@ -990,6 +990,8 @@ class LihuiyuDevice(Service, ViewPort):
 
     @property
     def viewbuffer(self):
+        if self.driver.out_pipe is None:
+            return ""
         return self.driver.out_pipe.viewbuffer
 
     @property
