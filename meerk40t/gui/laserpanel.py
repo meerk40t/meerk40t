@@ -446,18 +446,20 @@ class LaserPanel(wx.Panel):
         self.context("element* trace complex\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
-        with wx.BusyInfo(_("Preparing simulation...")):
-            plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan or not self.context.laserpane_hold:
-                if self.checkbox_optimize.GetValue():
-                    self.context(
-                        "planz clear copy preprocess validate blob preopt optimize\n"
-                    )
-                    param = "1"
-                else:
-                    self.context("planz clear copy preprocess validate blob\n")
-                    param = "0"
-            self.context(f"window open Simulation z 0 {param}\n")
+        self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+
+        plan = self.context.planner.get_or_make_plan("z")
+        if not plan.plan or not self.context.laserpane_hold:
+            if self.checkbox_optimize.GetValue():
+                self.context(
+                    "planz clear copy preprocess validate blob preopt optimize\n"
+                )
+                param = "1"
+            else:
+                self.context("planz clear copy preprocess validate blob\n")
+                param = "0"
+        self.context(f"window open Simulation z 0 {param}\n")
+        self.context.kernel.busyinfo.end()
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
@@ -576,13 +578,14 @@ class JobPanel(wx.Panel):
         self.context("planz clear\n")
 
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
-        with wx.BusyInfo(_("Updating Plan...")):
-            if self._optimize:
-                self.context(
-                    "planz clear copy preprocess validate blob preopt optimize\n"
-                )
-            else:
-                self.context("planz clear copy preprocess validate blob\n")
+        self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
+        if self._optimize:
+            self.context(
+                "planz clear copy preprocess validate blob preopt optimize\n"
+            )
+        else:
+            self.context("planz clear copy preprocess validate blob\n")
+        self.context.kernel.busyinfo.end()
 
     def on_check_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()
