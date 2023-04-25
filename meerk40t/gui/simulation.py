@@ -1632,15 +1632,18 @@ class SimulationPanel(wx.Panel, Job):
         event.Skip()
 
     def on_redo_it(self, event):
-        with wx.BusyInfo(_("Preparing simulation...")):
-            plan = self.plan_name
-            if self.checkbox_optimize.GetValue():
-                opt = " optimize"
-            else:
-                opt = ""
-            self.context(
-                f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
-            )
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Preparing simulation..."))
+
+        plan = self.plan_name
+        if self.checkbox_optimize.GetValue():
+            opt = " optimize"
+        else:
+            opt = ""
+        self.context(
+            f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
+        )
+        busy.end()
         self._refresh_simulated_plan()
 
     def pane_show(self):
@@ -2139,10 +2142,14 @@ class Simulation(MWindow):
     @staticmethod
     def sub_register(kernel):
         def open_simulator(v=None):
-            with wx.BusyInfo(_("Preparing simulation...")):
-                kernel.console(
-                    "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
-                ),
+            busy = kernel.busyinfo
+            busy.change(msg=_("Preparing simulation..."))
+            busy.start()
+
+            kernel.console(
+                "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
+            )
+            busy.end()
 
         kernel.register(
             "button/jobstart/Simulation",
