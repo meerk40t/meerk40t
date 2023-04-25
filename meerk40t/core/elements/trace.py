@@ -518,6 +518,9 @@ def init_commands(kernel):
 
         if data is None:
             data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No elements bounds to trace"))
+            return
         shape_type = "elem polyline"
         if method == "segment":
             hull = generate_hull_shape_segment(data)
