@@ -18,88 +18,7 @@ from ...kernel import (
 MILS_IN_MM = 39.3701
 
 
-STATUS_BAD_STATE = 204
-# 0xCC, 11001100
-STATUS_OK = 206
-# 0xCE, 11001110
-STATUS_ERROR = 207
-# 0xCF, 11001111
-STATUS_FINISH = 236
-# 0xEC, 11101100
-STATUS_BUSY = 238
-# 0xEE, 11101110
-STATUS_POWER = 239
-
-
-def get_code_string_from_code(code):
-    if code == STATUS_OK:
-        return "OK"
-    elif code == STATUS_BUSY:
-        return "Busy"
-    elif code == STATUS_ERROR:
-        return "Rejected"
-    elif code == STATUS_FINISH:
-        return "Finish"
-    elif code == STATUS_POWER:
-        return "Low Power"
-    elif code == STATUS_BAD_STATE:
-        return "Bad State"
-    elif code == 0:
-        return "USB Failed"
-    else:
-        return "UNK %02x" % code
-
-
-crc_table = [
-    0x00,
-    0x5E,
-    0xBC,
-    0xE2,
-    0x61,
-    0x3F,
-    0xDD,
-    0x83,
-    0xC2,
-    0x9C,
-    0x7E,
-    0x20,
-    0xA3,
-    0xFD,
-    0x1F,
-    0x41,
-    0x00,
-    0x9D,
-    0x23,
-    0xBE,
-    0x46,
-    0xDB,
-    0x65,
-    0xF8,
-    0x8C,
-    0x11,
-    0xAF,
-    0x32,
-    0xCA,
-    0x57,
-    0xE9,
-    0x74,
-]
-
-
-def onewire_crc_lookup(line):
-    """
-    License: 2-clause "simplified" BSD license
-    Copyright (C) 1992-2017 Arjen Lentz
-    https://lentz.com.au/blog/calculating-crc-with-a-tiny-32-entry-lookup-table
-
-    :param line: line to be CRC'd
-    :return: 8 bit crc of line.
-    """
-    crc = 0
-    for i in range(0, 30):
-        crc = line[i] ^ crc
-        crc = crc_table[crc & 0x0F] ^ crc_table[16 + ((crc >> 4) & 0x0F)]
-    return crc
+from ..controller import get_code_string_from_code, onewire_crc_lookup, STATUS_OK, STATUS_ERROR, STATUS_BUSY, STATUS_FINISH
 
 
 class LegacyController:
@@ -119,9 +38,6 @@ class LegacyController:
         self.name = name
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
-
-        self.next = None
-        self.prev = None
 
         self._thread = None
         self._buffer = (
