@@ -345,9 +345,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Copy data")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Copy data"), keep=1)
                 busy.show()
 
             operations = data  # unused.
@@ -579,9 +577,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Preprocessing")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Preprocessing"), keep=1)
                 busy.show()
 
             data.preprocess()
@@ -598,9 +594,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Validating")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Validating"), keep=1)
                 busy.show()
 
             try:
@@ -622,9 +616,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Generating lasercode")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Generating lasercode"), keep=1)
                 busy.show()
 
             data.blob()
@@ -641,9 +633,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Preparing optimisation")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Preparing optimisation"), keep=1)
                 busy.show()
 
             data.preopt()
@@ -660,9 +650,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Optimising")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Optimising"), keep=1)
                 busy.show()
 
             data.execute()
@@ -679,9 +667,7 @@ class Planner(Service):
             # Update Info-panel if displayed
             busy = self.kernel.busyinfo
             if busy.shown:
-                msgs = busy.msg.split("\n")
-                newmsg = msgs[0] + "\n" + _("Clearing data")
-                busy.change(msg=newmsg)
+                busy.change(msg=_("Clearing data"), keep=1)
                 busy.show()
 
             data.clear()

@@ -35,8 +35,23 @@ class BusyInfo:
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):
+        keep = 0
+        if "keep" in kwds:
+            keep = int(kwds["keep"])
         if "msg" in kwds:
-            self.msg = kwds["msg"]
+            newmsg = ""
+            if self.msg:
+                old = self.msg.split("\n")
+                idx = 0
+                while (idx < keep) and (idx < len(old)):
+                    if newmsg:
+                        newmsg += "\n"
+                    newmsg += old[idx]
+                    idx += 1
+            if newmsg:
+                newmsg += "\n"
+            newmsg += kwds["msg"]
+            self.msg = newmsg
         if "bgcolor" in kwds:
             self.bgcolor = kwds["bgcolor"]
         if "fgcolor" in kwds:
