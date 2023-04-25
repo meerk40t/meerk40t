@@ -33,7 +33,7 @@ class LegacyController:
     """
 
     def __init__(self, context, name, channel=None, *args, **kwargs):
-        context = context.get_context("lhystudios/output/%s" % name)
+        context = context.get_context("lhystudoutput/%s" % name)
         self.context = context
         self.name = name
         self.state = STATE_UNKNOWN
