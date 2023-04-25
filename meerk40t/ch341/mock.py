@@ -148,12 +148,16 @@ class MockCH341Driver:
         # Mock
         from random import randint
 
-        if randint(0, 500) == 0:
+        status = [255, self.mock_status, 0, 0, 0, 1]
+        if randint(0, 50) == 0:
             status = [255, self.mock_error, 0, 0, 0, 1]
-        else:
-            status = [255, self.mock_status, 0, 0, 0, 1]
-        if randint(0, 1000) == 0:
+        elif randint(0, 1000) == 0:
             status = [255, self.mock_finish, 0, 0, 0, 1]
+        elif randint(0, 50) == 0:
+            raise ConnectionError("Whoopsie")
+        elif randint(0, 2) == 0:
+            from meerk40t.lihuiyu.controller import STATUS_BUSY
+            status = [255, STATUS_BUSY, 0, 0, 0, 1]
         time.sleep(0.01)
         return status
 
