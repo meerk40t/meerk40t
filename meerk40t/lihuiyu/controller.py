@@ -157,7 +157,7 @@ class LihuiyuController:
         self.context = context
         self.state = STATE_UNKNOWN
         self.is_shutdown = False
-        self.serial_confirmed = None
+        self.serial_confirmed = None  # DIFF: New
 
         self._thread = None
         self._buffer = (
@@ -195,7 +195,10 @@ class LihuiyuController:
         self.usb_send_channel = context.channel(f"{name}/usb_send")
         self.recv_channel = context.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
+        # DIFF: loaded CH341 here.
+        # DIFF: ensured settings were set (packet_count and rejected_count).
         self.reset()
+        # DIFF tied to lifecycle.
 
     @property
     def viewbuffer(self):
@@ -220,6 +223,7 @@ class LihuiyuController:
     def shutdown(self, *args, **kwargs):
         if self._thread is not None:
             self.realtime_write(b"\x18\n")
+    # DIFF: Lifecycle changes.
 
     def __repr__(self):
         return f"LihuiyuController({str(self.context)})"
@@ -235,6 +239,8 @@ class LihuiyuController:
         self.pipe_channel("open()")
 
         try:
+            # DIFF: Try block
+            # DIFF: Interface gets list rather than predetermined ch341 interface.
             interfaces = list(get_ch341_interface(self.context, self.usb_log))
             if self.context.usb_index != -1:
                 # Instructed to check one specific device.
@@ -246,9 +252,11 @@ class LihuiyuController:
                 self.connection = interface
                 for i in devices:
                     try:
+                        # DIFF: Open at index.
                         self._open_at_index(i)
                         return  # Opened successfully.
                     except ConnectionRefusedError as e:
+                        # DIFF: catch connection refused error.
                         self.usb_log(str(e))
                         if self.connection is not None:
                             self.connection.close()
@@ -258,7 +266,7 @@ class LihuiyuController:
                         break
         except PermissionError:
             return  # OS denied permissions, no point checking anything else.
-
+        # DIFF Criteria check failed.
         self.close()
         raise ConnectionRefusedError(
             _("No valid connection matched any given criteria.")
@@ -464,15 +472,18 @@ class LihuiyuController:
         if self.connection:
             self.connection.release()
         else:
+            # DIFF: raises connection error.
             raise ConnectionError
 
     def usb_reset(self):
         if self.connection:
             self.connection.reset()
         else:
+            # DIFF: raises connection error.
             raise ConnectionError
 
     def challenge(self, serial):
+        # New Fully new function.
         if serial is None:
             return
 
@@ -587,6 +598,7 @@ class LihuiyuController:
                 self.count += 1
             self.context.signal("pipe;running", queue_processed)
         self._thread = None
+        #DIFF Is_shutdown never escapes.
         self.update_state(STATE_END)
         self.pre_ok = False
         self.context.signal("pipe;running", False)
@@ -675,6 +687,7 @@ class LihuiyuController:
                 self.is_shutdown = True
                 packet = packet[:-1]
             if packet.startswith(b"A"):
+                # DIFF: New code.
                 # This is a challenge code. A is only used for serial challenges.
                 post_send_command = self._confirm_serial
             if len(packet) != 0:
@@ -691,7 +704,7 @@ class LihuiyuController:
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
         # Packet is prepared and ready to send. Open Channel.
-        self.open()
+        self.open()  # Diff, may close improperly rather than raise connection errors.
 
         if len(packet) == 30:
             # We have a sendable packet.
