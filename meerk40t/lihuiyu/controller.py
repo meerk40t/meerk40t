@@ -506,7 +506,7 @@ class LihuiyuController:
         self.count = 0
         self.pre_ok = False
         self.is_shutdown = False
-        while self.state != "end" and self.state != "terminate":
+        while self.state not in ("end", "terminate"):
             if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
                 self.update_state("active")
