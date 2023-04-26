@@ -1,3 +1,4 @@
+import random
 import threading
 import time
 
@@ -504,7 +505,7 @@ class LegacyController:
             # We have a sendable packet.
             if not self.pre_ok:
                 self.wait_until_accepting_packets()
-            if default_checksum:
+            if default_checksum and random.randint(0,3) != 0:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet)])
             else:
                 packet = b"\x00" + packet + bytes([onewire_crc_lookup(packet) ^ 0xFF])

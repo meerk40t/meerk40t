@@ -24,6 +24,7 @@ mCH341_VENDOR_WRITE = 0x40
 mCH341A_BUF_CLEAR = 0xB2
 mCH341A_DELAY_MS = 0x5E
 mCH341A_GET_VER = 0x5F
+mCH341A_STATUS = 0x52
 
 
 def convert_to_list_bytes(data):
@@ -320,6 +321,7 @@ class Ch341LibusbDriver:
         if buffer is not None:
             device = self.devices[index]
             data = convert_to_list_bytes(buffer)
+            print(buffer)
             while len(data) > 0:
                 if pipe == 0:
                     packet = [mCH341_PARA_CMD_W0] + data[:31]
@@ -350,6 +352,11 @@ class Ch341LibusbDriver:
 
     # pylint: disable=dangerous-default-value
     def CH341GetStatus(self, index=0, status=[0]):
+        return self.CH341GetStatusBulk(index=index, status=status)
+        # return self.CH341GetStatusControlTransfer(index=index, status=status)
+
+    # pylint: disable=dangerous-default-value
+    def CH341GetStatusBulk(self, index=0, status=[0]):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: datas, 15: addrs"""
         device = self.devices[index]
         try:
@@ -362,6 +369,7 @@ class Ch341LibusbDriver:
             status[0] = device.read(
                 endpoint=BULK_READ_ENDPOINT, size_or_buffer=6, timeout=self.timeout
             )
+            print(status[0])
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 
@@ -369,6 +377,27 @@ class Ch341LibusbDriver:
             raise ConnectionError
         return status[0]
         # 48, reads 0xc0, 95, 0, 0 (30,00? = 48)
+
+    def CH341GetStatusControlTransfer(self, index=0, status=[0]):
+        """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
+        device = self.devices[index]
+        try:
+            buffer = device.ctrl_transfer(
+                bmRequestType=mCH341_VENDOR_READ,
+                bRequest=mCH341A_STATUS,
+                wValue=0,
+                wIndex=0,
+                data_or_wLength=8,
+                timeout=self.timeout,
+            )
+            print(buffer)
+            status[0] = buffer
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+
+            self.channel(str(e))
+            raise ConnectionError
+        return status[0]
 
     def CH341GetVerIC(self, index=0):
         device = self.devices[index]

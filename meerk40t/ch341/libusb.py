@@ -315,6 +315,7 @@ class Ch341LibusbDriver:
         if buffer is not None:
             device = self.devices[index]
             data = convert_to_list_bytes(buffer)
+            print(buffer)
             while len(data) > 0:
                 if pipe == 0:
                     packet = [mCH341_PARA_CMD_W0] + data[:31]
@@ -334,14 +335,20 @@ class Ch341LibusbDriver:
 
     def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
         try:
-            return self.devices[index].read(
+            r = self.devices[index].read(
                 endpoint=BULK_READ_ENDPOINT, size_or_buffer=length, timeout=self.timeout
             )
+            print(r)
+            return r
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 
             self.channel(str(e))
             raise ConnectionError
+
+    # pylint: disable=dangerous-default-value
+    def CH341GetStatus(self, index=0, status=[0]):
+        return self.CH341GetStatusControlTransfer(index=index, status=status)
 
     # pylint: disable=dangerous-default-value
     def CH341GetStatusControlTransfer(self, index=0, status=[0]):
@@ -356,6 +363,7 @@ class Ch341LibusbDriver:
                 data_or_wLength=8,
                 timeout=self.timeout,
             )
+            print(buffer)
             status[0] = buffer
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
@@ -365,7 +373,7 @@ class Ch341LibusbDriver:
         return status[0]
 
     # pylint: disable=dangerous-default-value
-    def CH341GetStatus(self, index=0, status=[0]):
+    def CH341GetStatusBulk(self, index=0, status=[0]):
         """
         Older bulk based version with a read and write rather than control transfer.
 
