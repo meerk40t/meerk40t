@@ -2,7 +2,8 @@
 This module provides routines to create an offsetted path
 """
 from copy import copy
-from meerk40t.svgelements import Path, Line, Arc, CubicBezier, QuadraticBezier, Point
+from math import tau
+from meerk40t.svgelements import Path, Line, Arc, CubicBezier, QuadraticBezier, Point, Move, Close
 
 
 class OffsetPath:
@@ -54,37 +55,94 @@ class OffsetPath:
             self._cached_result = copy(self._path)
 
     def calculate_offset(self):
+
+        def normal_to(p1, p2, dist):
+            # Establishes the normal to the line between p1 and p2, based on p1
+            # and returns the point on that normal with distance dist to p1
+            if p1 == p2:
+                return Point(x=p1.x, y=p1.y)
+            angle = p1.angle_to(p2)
+            angle -= tau / 4
+            return Point.polar(p1, angle, dist)
+
         self._cached_result = copy(self._path)
         # We iterate backwards
         # Any single point on the segment will be offset by the offset
         # value perpendicular to the connection line between start and end
-        for subpath in self._cached_result.as_subpaths():
-            lastpoint = None
-            for seg in subpath:
-                # Is the index not the last?
-
-                # Then we create an additional connection segment
-                # between two segments based on the connection type
+        spath = self._cached_result
+        lastpoint = None
+        continuous = False
+        for idx in range(len(spath) - 1, -1, -1):
+            seg = spath[idx]
+            if isinstance(seg, Arc):
+                # This still has flaws!
+                print (f"Extended Arc: {seg.__repr__()}")
+                continuous = True
+                center = seg.center
+                # Lets extend start and end
+                angle = center.angle_to(seg.start)
+                distance = center.distance_to(seg.start)
+                seg.start = Point.polar(center, angle, distance + self._offset)
+                angle = center.angle_to(seg.end)
+                distance = center.distance_to(seg.end)
+                seg.end = Point.polar(center, angle, distance + self._offset)
+            elif isinstance(seg, CubicBezier):
+                continuous = True
+                delta = normal_to(seg.start, seg.end, self._offset)
+                delta -= seg.start
+                print (f"Extended cubic by: {delta}")
+                seg.start += delta
+                seg.end += delta
+                seg.control1 += delta
+                seg.control2 += delta
+            elif isinstance(seg, QuadraticBezier):
+                continuous = True
+                delta = normal_to(seg.start, seg.end, self._offset)
+                delta -= seg.start
+                print (f"Extended quad by: {delta}")
+                seg.start += delta
+                seg.end += delta
+                seg.control += delta
+            elif isinstance(seg, Line):
+                print(f"Line started with ({seg.start.x:.0f}, {seg.start.y:.0f})-({seg.end.x:.0f}, {seg.end.y:.0f})")
+                continuous = True
+                delta = normal_to(seg.start, seg.end, self._offset)
+                delta -= seg.start
+                print (f"Extended line by: {delta}")
+                seg.start += delta
+                seg.end += delta
+                print(f"Line ended with ({seg.start.x:.0f}, {seg.start.y:.0f})-({seg.end.x:.0f}, {seg.end.y:.0f})")
+            elif isinstance(seg, Move):
                 if lastpoint is not None:
-                    if seg.end != lastpoint:
-                        if self._connection == 0:  # Simple line
-                            connectseg = Line(start=copy(seg.end), end=copy(lastpoint))
-                        elif self._connection == 1:  # Cubic Bezier
-                            c1 = Point(x=seg.end.x, y=seg.end.y)
-                            c2 = Point(x=lastpoint.x, y=lastpoint.y)
-                            connectseg = CubicBezier(
-                                start=copy(seg.end),
-                                control1=c1,
-                                control2=c2,
-                                end=copy(lastpoint),
-                            )
-                        else:
-                            connectseg = None
-                        if connectseg is not None:
-                            # Insert it...
-                            pass
+                    seg.end = lastpoint
+                continuous = False
+            else:
+                continuous = False
+                print(f"Skipped {type(seg).__name__}")
+            # We create an additional connection segment
+            # between two segments based on the connection type
+            if lastpoint is not None and continuous:
+                if seg.end.x != lastpoint.x or seg.end.y != lastpoint.y:
+                    if self._connection == 0:  # Simple line
+                        connectseg = Line(start=Point(seg.end.x, seg.end.y), end=Point(lastpoint.x, lastpoint.y))
+                        print ("Adding line connector")
+                    elif self._connection == 1:  # Cubic Bezier
+                        c1 = Point(x=seg.end.x, y=seg.end.y)
+                        c2 = Point(x=lastpoint.x, y=lastpoint.y)
+                        connectseg = CubicBezier(
+                            start=Point(seg.end.x, seg.end.y),
+                            control1=c1,
+                            control2=c2,
+                            end=Point(lastpoint.x, lastpoint.y),
+                        )
+                        print ("Adding cubic connector")
+                    else:
+                        connectseg = None
+                    if connectseg is not None:
+                        # Insert it...
+                        spath.insert(idx + 1, connectseg)
 
-                lastpoint = seg.start
+            lastpoint = seg.start
 
         self._cached_result.validate_connections()
 

@@ -100,10 +100,10 @@ def init_commands(kernel):
                 )
             elif node.type == "elem path":
                 path = abs(node.path)
-                path.approximate_arcs_with_cubics()
+                # path.approximate_arcs_with_cubics()
             elif hasattr(node, "shape"):
                 path = abs(Path(node.shape))
-                path.approximate_arcs_with_cubics()
+                # path.approximate_arcs_with_cubics()
             if path is not None:
                 offset_routine.offset = value
                 offset_routine.path = path
