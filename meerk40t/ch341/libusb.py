@@ -60,7 +60,7 @@ class Ch341LibusbDriver:
         self.interface = {}
         self.channel = channel
         self.backend_error_code = None
-        self.timeout = 500
+        self.timeout = 1500
 
     def find_device(self, index=0):
         _ = self.channel._
