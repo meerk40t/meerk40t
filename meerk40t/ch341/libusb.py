@@ -61,6 +61,7 @@ class Ch341LibusbDriver:
         self.channel = channel
         self.backend_error_code = None
         self.timeout = 1500
+        self.bulk = True
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -344,6 +345,13 @@ class Ch341LibusbDriver:
             raise ConnectionError
 
     # pylint: disable=dangerous-default-value
+    def CH341GetStatus(self, index=0, status=[0]):
+        if self.bulk:
+            return self.CH341GetStatusBulk(index=0, status=status)
+        else:
+            return self.CH341GetStatusControlTransfer(index=0, status=status)
+
+    # pylint: disable=dangerous-default-value
     def CH341GetStatusControlTransfer(self, index=0, status=[0]):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
         device = self.devices[index]
@@ -365,7 +373,7 @@ class Ch341LibusbDriver:
         return status[0]
 
     # pylint: disable=dangerous-default-value
-    def CH341GetStatus(self, index=0, status=[0]):
+    def CH341GetStatusBulk(self, index=0, status=[0]):
         """
         Older bulk based version with a read and write rather than control transfer.
 

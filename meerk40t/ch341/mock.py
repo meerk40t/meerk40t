@@ -13,6 +13,7 @@ class MockCH341Driver:
         self.driver_value = None
         self.channel = channel
         self.state = state
+        self.bulk = True
 
         self.mock_status = 206
         self.mock_error = 207
