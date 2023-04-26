@@ -521,6 +521,13 @@ class LihuiyuController:
                     self._loop_cond.wait()
                 continue
 
+            self._check_transfer_buffer()
+            if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
+                # The buffer and realtime buffers are empty. No packet creation possible.
+                with self._loop_cond:
+                    self._loop_cond.wait()
+                continue
+
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
@@ -586,6 +593,19 @@ class LihuiyuController:
             self.pre_ok = False
             self.context.signal("pipe;running", False)
 
+    def _check_transfer_buffer(self):
+        if len(self._queue):  # check for and append queue
+            with self._queue_lock:
+                self._buffer += self._queue
+                self._queue.clear()
+            self.update_buffer()
+
+        if len(self._preempt):  # check for and prepend preempt
+            with self._preempt_lock:
+                self._realtime_buffer += self._preempt
+                self._preempt.clear()
+            self.update_buffer()
+
     def process_queue(self):
         """
         Attempts to process the buffer/queue
@@ -606,28 +626,14 @@ class LihuiyuController:
 
         @return: queue process success.
         """
-        if len(self._queue):  # check for and append queue
-            with self._queue_lock:
-                self._buffer += self._queue
-                self._queue.clear()
-            self.update_buffer()
-
-        if len(self._preempt):  # check for and prepend preempt
-            with self._preempt_lock:
-                self._realtime_buffer += self._preempt
-                self._preempt.clear()
-            self.update_buffer()
-
         if len(self._realtime_buffer) > 0:
             buffer = self._realtime_buffer
             realtime = True
+        elif len(self._buffer) > 0:
+            buffer = self._buffer
+            realtime = False
         else:
-            if len(self._buffer) > 0:
-                buffer = self._buffer
-                realtime = False
-            else:
-                # The buffer and realtime buffers are empty. No packet creation possible.
-                return False
+            return False
 
         # Find buffer of 30 or containing '\n'.
         find = buffer.find(b"\n", 0, 30)
