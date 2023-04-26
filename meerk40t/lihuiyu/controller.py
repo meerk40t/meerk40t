@@ -721,8 +721,8 @@ class LihuiyuController:
             # Packet is sent, trying to confirm.
             status = 0
             flawless = True
-            for attempts in range(300):
-                # We'll try to confirm this at 300 times.
+            for attempts in range(500):
+                # We'll try to confirm this at 500 times.
                 try:
                     self.update_status()
                     status = self._status[1]
