@@ -4,14 +4,15 @@ This module provides routines to create an offsetted path
 from copy import copy
 from meerk40t.svgelements import Path, Line, Arc, CubicBezier, QuadraticBezier, Point
 
-class OffsetPath():
+
+class OffsetPath:
     def __init__(self, originalpath=None, offset=0.0, connection=0, **kwds):
         self._offset = offset
         # Connection type:
         # 0: simple line
         # 1: cubic bezier
         self._connection = connection
-        self.path = originalpath
+        self._path = originalpath
         self._cached_result = None
 
     @property
@@ -25,7 +26,8 @@ class OffsetPath():
             del self._cached_result
             self._cached_result = None
             if self._offset == 0:
-                self._cached_result = copy(self.path)
+                self._cached_result = copy(self._path)
+
     @property
     def connection(self):
         return self._connection
@@ -37,10 +39,22 @@ class OffsetPath():
             del self._cached_result
             self._cached_result = None
             if self._offset == 0:
-                self._cached_result = copy(self.path)
+                self._cached_result = copy(self._path)
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = copy(value)
+        del self._cached_result
+        self._cached_result = None
+        if self._offset == 0:
+            self._cached_result = copy(self._path)
 
     def calculate_offset(self):
-        self._cached_result = copy(self.path)
+        self._cached_result = copy(self._path)
         # We iterate backwards
         # Any single point on the segment will be offset by the offset
         # value perpendicular to the connection line between start and end
@@ -53,12 +67,17 @@ class OffsetPath():
                 # between two segments based on the connection type
                 if lastpoint is not None:
                     if seg.end != lastpoint:
-                        if self._connection == 0: # Simple line
+                        if self._connection == 0:  # Simple line
                             connectseg = Line(start=copy(seg.end), end=copy(lastpoint))
-                        elif self._connection == 1: # Cubic Bezier
+                        elif self._connection == 1:  # Cubic Bezier
                             c1 = Point(x=seg.end.x, y=seg.end.y)
                             c2 = Point(x=lastpoint.x, y=lastpoint.y)
-                            connectseg = CubicBezier(start=copy(seg.end), control1=c1, control2=c2, end=copy(lastpoint))
+                            connectseg = CubicBezier(
+                                start=copy(seg.end),
+                                control1=c1,
+                                control2=c2,
+                                end=copy(lastpoint),
+                            )
                         else:
                             connectseg = None
                         if connectseg is not None:

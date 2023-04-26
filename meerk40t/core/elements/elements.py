@@ -43,6 +43,7 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
+            offset,
         )
 
         return [
@@ -60,6 +61,7 @@ def plugin(kernel, lifecycle=None):
             render.plugin,
             notes.plugin,
             placements.plugin,
+            offset.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
@@ -118,7 +120,8 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/branch reg", "{element_type}")
         kernel.register("format/place current", "{enabled}{element_type}")
         kernel.register(
-            "format/place point", "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}"
+            "format/place point",
+            "{enabled}{loops}{element_type} {corner} {x} {y} {rotation}",
         )
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
