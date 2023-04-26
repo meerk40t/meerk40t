@@ -8,7 +8,7 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier, Arc
-
+from meerk40t.tools.offset import OffsetPath
 
 def path_to_cutobjects(
     path, settings, closed_distance=15, passes=1, original_op=None, color=None, kerf=0,
@@ -29,12 +29,8 @@ def path_to_cutobjects(
             color=color,
         )
         if kerf != 0:
-            # we replace everything by an approximated polygon
-
-            # then we apply an offset algorithm
-
-            # Simple, eh ;-) ?
-            pass
+            offset = OffsetPath(originalpath=sp, offset=kerf, connection=1)
+            sp = offset.result()
         group.path = sp
         group.original_op = original_op
         for seg in subpath:
