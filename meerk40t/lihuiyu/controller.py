@@ -162,6 +162,7 @@ class LihuiyuController:
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
+        self._loop_cond = threading.Condition()
 
         self._status = [0] * 6
         self._usb_state = -1
@@ -170,7 +171,6 @@ class LihuiyuController:
         self.max_attempts = 5
         self.refuse_counts = 0
         self.connection_errors = 0
-        self.count = 0
         self.aborted_retries = False
         self.pre_ok = False
         self.realtime = False
@@ -497,15 +497,7 @@ class LihuiyuController:
         if self.usb_send_channel:
             self.usb_send_channel(packet)
 
-    def _thread_data_send(self):
-        """
-        Main threaded function to send data. While the controller is working the thread
-        will be doing work in this function.
-        """
-        self._main_lock.acquire(True)
-        self.count = 0
-        self.pre_ok = False
-        self.is_shutdown = False
+    def _thread_loop(self):
         while self.state not in ("end", "terminate"):
             if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
@@ -515,12 +507,15 @@ class LihuiyuController:
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     self.context.signal("pipe;running", False)
-                    time.sleep(0.25)
+                    with self._loop_cond.acquire(True):
+                        self._loop_cond.wait()
                     continue
             if self.aborted_retries:
                 self.context.signal("pipe;running", False)
-                time.sleep(0.25)
+                with self._loop_cond.acquire(True):
+                    self._loop_cond.wait()
                 continue
+
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
@@ -550,35 +545,41 @@ class LihuiyuController:
                 time.sleep(0.5)
                 self.close()
                 continue
+
+            self.context.signal("pipe;running", queue_processed)
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
-                    "pause",
-                    "busy",
-                    "active",
-                    "terminate",
+                        "pause",
+                        "busy",
+                        "active",
+                        "terminate",
                 ):
                     self.update_state("active")
-                self.count = 0
-            else:
-                # No packet could be sent.
-                if self.state not in (
+                continue
+            # No packet could be sent.
+            if self.state not in (
                     "pause",
                     "busy",
                     "terminate",
-                ):
-                    self.update_state("idle")
-                if self.count > 50:
-                    self.count = 50
-                time.sleep(0.02 * self.count)
-                # will tick up to 1 second waits if there's never a queue.
-                self.count += 1
-            self.context.signal("pipe;running", queue_processed)
-        self._thread = None
-        self.update_state("end")
-        self.pre_ok = False
-        self.context.signal("pipe;running", False)
-        self._main_lock.release()
+            ):
+                self.update_state("idle")
+            with self._loop_cond.acquire(True):
+                self._loop_cond.wait()
+
+    def _thread_data_send(self):
+        """
+        Main threaded function to send data. While the controller is working the thread
+        will be doing work in this function.
+        """
+        with self._main_lock.acquire(True):
+            self.pre_ok = False
+            self.is_shutdown = False
+            self._thread_loop()
+            self._thread = None
+            self.update_state("end")
+            self.pre_ok = False
+            self.context.signal("pipe;running", False)
 
     def process_queue(self):
         """
