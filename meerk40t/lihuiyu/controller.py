@@ -707,8 +707,8 @@ class LihuiyuController:
             # Packet is sent, trying to confirm.
             status = 0
             flawless = True
-            for attempts in range(300):
-                # We'll try to confirm this at 300 times.
+            for attempts in range(500):
+                # We'll try to confirm this at 500 times.
                 try:
                     self.update_status()
                     status = self._status[1]
@@ -725,6 +725,8 @@ class LihuiyuController:
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
+                    if attempts > 10:
+                        time.sleep(0.05)
                     continue
                 elif status == STATUS_ERROR:
                     if not default_checksum:
