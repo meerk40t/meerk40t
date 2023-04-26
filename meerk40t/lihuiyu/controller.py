@@ -725,6 +725,8 @@ class LihuiyuController:
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
+                    if attempts > 10:
+                        time.sleep(0.05)
                     continue
                 elif status == STATUS_ERROR:
                     if not default_checksum:
