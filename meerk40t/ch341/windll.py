@@ -1,5 +1,8 @@
 from ctypes import c_byte, windll
 
+from meerk40t.ch341.libusb import mCH341_PARA_CMD_STS
+
+
 # MIT License.
 
 
@@ -163,7 +166,7 @@ class WinCH341Driver:
         read_buffer = (c_byte * 6)()
         if self.bulk:
             write_buffer = (c_byte * 1)()
-            write_buffer[0] = 0xA0
+            write_buffer[0] = mCH341_PARA_CMD_STS
             length = (c_byte * 1)()
             length[0] = len(write_buffer)
             self.driver.CH341WriteData(self.driver_index, write_buffer, length)
