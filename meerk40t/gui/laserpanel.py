@@ -418,6 +418,8 @@ class LaserPanel(wx.Panel):
         menu.Destroy()
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
@@ -432,6 +434,7 @@ class LaserPanel(wx.Panel):
         self.check_laser_arm()
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
+        busy.end()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
