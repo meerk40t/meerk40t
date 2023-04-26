@@ -164,8 +164,8 @@ class WinCH341Driver:
         write_buffer[0] = 0xA0
         length[0] = len(write_buffer)
         success = self.driver.CH341WriteData(self.driver_index, write_buffer, length)
-        # if not success:
-        #     raise ConnectionError("Failed to write to CH341:Windll.")
+        if not success:
+            raise ConnectionError("Failed to write to CH341:Windll.")
         read_buffer = (c_byte * 6)()
         length[0] = len(read_buffer)
         self.driver.CH341ReadData(self.driver_index, read_buffer, length)
