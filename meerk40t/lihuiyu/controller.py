@@ -577,8 +577,6 @@ class LihuiyuController:
                 "terminate",
             ):
                 self.update_state("idle")
-            with self._loop_cond:
-                self._loop_cond.wait()
 
     def _thread_data_send(self):
         """
