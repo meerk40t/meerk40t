@@ -18,18 +18,6 @@ import threading
 import time
 
 from meerk40t.ch341 import get_ch341_interface
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_SUSPEND,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-)
 
 STATUS_BAD_STATE = 204
 STATUS_SERIAL_CORRECT_M3_FINISH = 204
@@ -155,7 +143,7 @@ class LihuiyuController:
 
     def __init__(self, context, *args, **kwargs):
         self.context = context
-        self.state = STATE_UNKNOWN
+        self.state = "unknown"
         self.is_shutdown = False
         self.serial_confirmed = None
 
@@ -390,7 +378,7 @@ class LihuiyuController:
                 result=self.stop,
             )
             self._thread.stop = self.stop
-            self.update_state(STATE_INITIALIZE)
+            self.update_state("init")
 
     def _pause_busy(self):
         """
@@ -398,10 +386,10 @@ class LihuiyuController:
 
         This can only be done from PAUSE.
         """
-        if self.state != STATE_PAUSE:
+        if self.state != "pause":
             self.pause()
-        if self.state == STATE_PAUSE:
-            self.update_state(STATE_BUSY)
+        if self.state == "pause":
+            self.update_state("busy")
 
     def _resume_busy(self):
         """
@@ -409,8 +397,8 @@ class LihuiyuController:
 
         This can only be done from BUSY.
         """
-        if self.state == STATE_BUSY:
-            self.update_state(STATE_PAUSE)
+        if self.state == "busy":
+            self.update_state("pause")
             self.resume()
 
     def pause(self):
@@ -420,28 +408,28 @@ class LihuiyuController:
         If this state change is done from INITIALIZE it will start the processing.
         Otherwise, it must be done from ACTIVE or IDLE.
         """
-        if self.state == STATE_INITIALIZE:
+        if self.state == "init":
             self.start()
-            self.update_state(STATE_PAUSE)
-        if self.state == STATE_ACTIVE or self.state == STATE_IDLE:
-            self.update_state(STATE_PAUSE)
+            self.update_state("pause")
+        if self.state in ("active", "idle"):
+            self.update_state("pause")
 
     def resume(self):
         """
         Resume can only be called from PAUSE.
         """
-        if self.state == STATE_PAUSE:
-            self.update_state(STATE_ACTIVE)
+        if self.state == "pause":
+            self.update_state("active")
 
     def abort(self):
         self._buffer = bytearray()
         self._queue = bytearray()
         self._realtime_buffer = bytearray()
         self.context.signal("pipe;buffer", 0)
-        self.update_state(STATE_TERMINATE)
+        self.update_state("terminate")
 
     def reset(self):
-        self.update_state(STATE_INITIALIZE)
+        self.update_state("init")
 
     def stop(self, *args):
         self.abort()
@@ -518,11 +506,11 @@ class LihuiyuController:
         self.count = 0
         self.pre_ok = False
         self.is_shutdown = False
-        while self.state != STATE_END and self.state != STATE_TERMINATE:
-            if self.state == STATE_INITIALIZE:
+        while self.state != "end" and self.state != "terminate":
+            if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
-                self.update_state(STATE_ACTIVE)
-            if self.state in (STATE_PAUSE, STATE_BUSY, STATE_SUSPEND):
+                self.update_state("active")
+            if self.state in ("pause", "busy", "suspend"):
                 # If we are paused just keep sleeping until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
@@ -565,21 +553,21 @@ class LihuiyuController:
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
-                    STATE_PAUSE,
-                    STATE_BUSY,
-                    STATE_ACTIVE,
-                    STATE_TERMINATE,
+                    "pause",
+                    "busy",
+                    "active",
+                    "terminate",
                 ):
-                    self.update_state(STATE_ACTIVE)
+                    self.update_state("active")
                 self.count = 0
             else:
                 # No packet could be sent.
                 if self.state not in (
-                    STATE_PAUSE,
-                    STATE_BUSY,
-                    STATE_TERMINATE,
+                    "pause",
+                    "busy",
+                    "terminate",
                 ):
-                    self.update_state(STATE_IDLE)
+                    self.update_state("idle")
                 if self.count > 50:
                     self.count = 50
                 time.sleep(0.02 * self.count)
@@ -587,7 +575,7 @@ class LihuiyuController:
                 self.count += 1
             self.context.signal("pipe;running", queue_processed)
         self._thread = None
-        self.update_state(STATE_END)
+        self.update_state("end")
         self.pre_ok = False
         self.context.signal("pipe;running", False)
         self._main_lock.release()
@@ -671,7 +659,7 @@ class LihuiyuController:
                 default_checksum = False
                 packet = packet[:-1]
             elif packet.endswith(b"\x18"):
-                self.state = STATE_TERMINATE
+                self.state = "terminate"
                 self.is_shutdown = True
                 packet = packet[:-1]
             if packet.startswith(b"A"):
@@ -687,7 +675,7 @@ class LihuiyuController:
                     packet += bytes([c]) * (30 - len(packet))  # Padding. '\n'
                 else:
                     packet += b"F" * (30 - len(packet))  # Padding. '\n'
-        if not realtime and self.state in (STATE_PAUSE, STATE_BUSY):
+        if not realtime and self.state in ("pause", "busy"):
             return False  # Processing normal queue, PAUSE and BUSY apply.
 
         # Packet is prepared and ready to send. Open Channel.
@@ -803,7 +791,7 @@ class LihuiyuController:
 
     def wait_until_accepting_packets(self):
         i = 0
-        while self.state != STATE_TERMINATE:
+        while self.state != "terminate":
             self.update_status()
             status = self._status[1]
             if status == 0:
@@ -824,14 +812,14 @@ class LihuiyuController:
     def wait_finished(self):
         i = 0
         original_state = self.state
-        if self.state != STATE_PAUSE:
+        if self.state != "pause":
             self.pause()
 
         while True:
-            if self.state != STATE_WAIT:
-                if self.state == STATE_TERMINATE:
+            if self.state != "wait":
+                if self.state == "terminate":
                     return  # Abort all the processes was requested. This state change would be after clearing.
-                self.update_state(STATE_WAIT)
+                self.update_state("wait")
             self.update_status()
             status = self._status[1]
             if status == 0:
@@ -852,7 +840,7 @@ class LihuiyuController:
     def _confirm_serial(self):
         t = time.time()
         while time.time() - t < 0.5:  # We spend up to half a second to confirm.
-            if self.state == STATE_TERMINATE:
+            if self.state == "terminate":
                 # We are not confirmed.
                 return  # Abort all the processes was requested. This state change would be after clearing.
             self.update_status()

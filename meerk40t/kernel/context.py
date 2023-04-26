@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, Generator, Optional, Tuple, Union
 
 from .jobs import ConsoleFunction
 from .lifecycles import *
-from .states import *
 
 
 class Context:
@@ -21,7 +20,7 @@ class Context:
     def __init__(self, kernel: "Kernel", path: str):
         self._kernel = kernel
         self._path = path
-        self._state = STATE_UNKNOWN
+        self._state = "unknown"
         self.opened = {}
 
     def __repr__(self):

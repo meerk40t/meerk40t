@@ -15,17 +15,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_WAIT,
-    signal_listener,
-)
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -444,7 +434,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             return
         value = self.context.kernel.get_text_thread_state(state)
         self.text_controller_status.SetValue(str(value))
-        if state == STATE_INITIALIZE or state == STATE_END or state == STATE_IDLE:
+        if state in ("init", "end", "idle"):
 
             def f(event=None):
                 self.context("start\n")
@@ -455,12 +445,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Hold Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_BUSY:
+        elif state == "busy":
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("LOCKED"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(False)
-        elif state == STATE_WAIT:
+        elif state == "wait":
 
             def f(event=None):
                 self.context("continue\n")
@@ -470,7 +460,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Force Continue"))
             button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_PAUSE:
+        elif state == "pause":
 
             def f(event=None):
                 self.context("resume\n")
@@ -480,7 +470,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Resume Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_ACTIVE:
+        elif state == "active":
 
             def f(event=None):
                 self.context("hold\n")
@@ -490,7 +480,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             button.SetLabel(_("Pause Controller"))
             button.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
             button.Enable(True)
-        elif state == STATE_TERMINATE:
+        elif state == "terminate":
 
             def f(event=None):
                 self.context("abort\n")

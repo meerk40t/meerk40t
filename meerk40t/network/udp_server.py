@@ -1,6 +1,6 @@
 import socket
 
-from meerk40t.kernel import STATE_END, STATE_TERMINATE, Module
+from meerk40t.kernel import Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -46,7 +46,7 @@ class UDPServer(Module):
         if self.socket is not None:
             self.socket.close()
             self.socket = None
-        self.state = STATE_TERMINATE
+        self.state = "terminate"
 
     def send(self, message):
         _ = self.context._
@@ -65,7 +65,7 @@ class UDPServer(Module):
             self.events_channel(
                 _("UDP Socket({port}) Listening.").format(port=self.port)
             )
-            while self.state != STATE_END and self.state != STATE_TERMINATE:
+            while self.state not in ("end", "terminate"):
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except (socket.timeout, AttributeError):
