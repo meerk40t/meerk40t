@@ -325,9 +325,8 @@ class LihuiyuController:
             return self
 
         self.pipe_channel(f"write({str(bytes_to_write)})")
-        self._queue_lock.acquire(True)
-        self._queue += bytes_to_write
-        self._queue_lock.release()
+        with self._queue_lock:
+            self._queue += bytes_to_write
         self.start()
         self.update_buffer()
         return self
@@ -356,9 +355,8 @@ class LihuiyuController:
                 self.write(queue_bytes)
             return self
         self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
-        self._preempt_lock.acquire(True)
-        self._preempt = bytearray(bytes_to_write) + self._preempt
-        self._preempt_lock.release()
+        with self._preempt_lock:
+            self._preempt = bytearray(bytes_to_write) + self._preempt
         self.start()
         self.update_buffer()
         return self
@@ -602,17 +600,15 @@ class LihuiyuController:
         @return: queue process success.
         """
         if len(self._queue):  # check for and append queue
-            self._queue_lock.acquire(True)
-            self._buffer += self._queue
-            self._queue = bytearray()
-            self._queue_lock.release()
+            with self._queue_lock:
+                self._buffer += self._queue
+                self._queue.clear()
             self.update_buffer()
 
         if len(self._preempt):  # check for and prepend preempt
-            self._preempt_lock.acquire(True)
-            self._realtime_buffer += self._preempt
-            self._preempt = bytearray()
-            self._preempt_lock.release()
+            with self._preempt_lock:
+                self._realtime_buffer += self._preempt
+                self._preempt.clear()
             self.update_buffer()
 
         if len(self._realtime_buffer) > 0:
