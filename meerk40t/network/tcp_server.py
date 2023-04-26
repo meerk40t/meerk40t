@@ -1,6 +1,6 @@
 import socket
 
-from meerk40t.kernel import STATE_TERMINATE, Module
+from meerk40t.kernel import Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -33,12 +33,12 @@ class TCPServer(Module):
         )
 
     def stop(self):
-        self.state = STATE_TERMINATE
+        self.state = "terminate"
 
     def module_close(self, *args, **kwargs):
         _ = self.context._
         self.events_channel(_("Shutting down server."))
-        self.state = STATE_TERMINATE
+        self.state = "terminate"
         if self.socket is not None:
             self.socket.close()
             self.socket = None
@@ -58,7 +58,7 @@ class TCPServer(Module):
             self.events_channel(_("Could not start listening."))
             return
         handle = 1
-        while self.state != STATE_TERMINATE:
+        while self.state != "terminate":
             self.events_channel(
                 _("Listening {name} on port {port}...").format(
                     name=self.name, port=self.port
@@ -111,7 +111,7 @@ class TCPServer(Module):
             recv = self.context.channel(f"{self.name}/recv", pure=True)
             send_channel_name = f"{self.name}/send"
             self.context.channel(send_channel_name, pure=True).watch(send)
-            while self.state != STATE_TERMINATE:
+            while self.state != "terminate":
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket):
