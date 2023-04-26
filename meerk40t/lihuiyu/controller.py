@@ -516,6 +516,7 @@ class LihuiyuController:
                         self._loop_cond.wait()
                     continue
             if self.aborted_retries:
+                # We are not trying reconnection anymore.
                 self.context.signal("pipe;running", False)
                 with self._loop_cond:
                     self._loop_cond.wait()
@@ -535,7 +536,7 @@ class LihuiyuController:
                     self.context.signal("pipe;failing", 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
-                    break  # Sometimes it could reset this and escape.
+                    return  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
@@ -545,7 +546,7 @@ class LihuiyuController:
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
                 if self.is_shutdown:
-                    break  # Sometimes it could reset this and escape.
+                    return  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
