@@ -835,7 +835,7 @@ class LihuiyuController:
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
-                return  # Wait abort was requested.
+                break  # Wait abort was requested.
         self.update_state(original_state)
 
     def _confirm_serial(self):
