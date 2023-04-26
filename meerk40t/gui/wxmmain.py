@@ -321,7 +321,6 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
-        context.setting(bool, "maintain_zoom_resize", True)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
@@ -443,11 +442,11 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "maintain_zoom_resize",
+                "attr": "autofocus_resize",
                 "object": self.context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
-                "label": _("Maintain zoom on resize"),
+                "label": _("Autofocus bed on resize"),
                 "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
                 "section": "Zoom",
@@ -586,6 +585,17 @@ class MeerK40t(MWindow):
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Grid",
+            },
+            {
+                "attr": "clear_magnets",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Clear magnets on File - New"),
+                "tip": _("File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"),
+                "page": "Scene",
+                "section": "Snap-Options",
+                "subsection": "Magnetlines",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1977,6 +1987,8 @@ class MeerK40t(MWindow):
         context.setting(str, "file18", None)
         context.setting(str, "file19", None)
         self.populate_recent_menu()
+        if hasattr(context.kernel.busyinfo, "reparent"):
+            context.kernel.busyinfo.reparent(self)
 
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
@@ -3609,7 +3621,7 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        if self.context.maintain_zoom_resize:
+        if self.context.autofocus_resize:
             zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 

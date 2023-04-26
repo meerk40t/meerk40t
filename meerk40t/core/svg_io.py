@@ -569,7 +569,7 @@ class SVGWriter:
         for c in node.children:
             if c.type == "reference":
                 c = c.node  # Contain direct reference not reference node reference.
-            contains.append(c.id)
+            contains.append(str(c.id))
         if contains:
             subelement.set("references", " ".join(contains))
         subelement.set(SVG_ATTR_ID, str(node.id))
@@ -1138,15 +1138,6 @@ class SVGProcessor:
                         op.validate()
                     op.id = node_id
                     self.operation_list.append(op)
-                    overlooked_attributes = [
-                        "output",
-                    ]
-                    # Sometimes certain attributes weren't assigned properly / missed
-                    # This piece of code tries to reapply them. If things were fine
-                    # then this is an unneeded attempt. But better safe than sorry
-                    for overlooked in overlooked_attributes:
-                        if overlooked in element.values and hasattr(op, overlooked):
-                            setattr(op, overlooked, element.values.get(overlooked))
                 except AttributeError:
                     # This operation is invalid.
                     return

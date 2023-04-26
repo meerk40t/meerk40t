@@ -144,6 +144,7 @@ class GuideWidget(Widget):
             while y <= p.device.unit_height:
                 self.scene.pane.toggle_y_magnet(y)
                 y += tlen
+            self.scene.pane.save_magnets()
         elif self.scene.pane.grid.draw_grid_secondary:
             # Placeholder for a use case, as you can define them manually...
             pass
@@ -438,15 +439,17 @@ class GuideWidget(Widget):
                 self.scene.pane.clear_magnets()
             else:
                 self.fill_magnets()
+            # No need to call save magnets here as both routines already do that
         elif is_x:
             # Get the X coordinate from space_pos [0]
             value = float(Length(f"{mark_point_x:.1f}{self.units}"))
             self.scene.pane.toggle_x_magnet(value)
+            self.scene.pane.save_magnets()
         elif is_y:
             # Get the Y coordinate from space_pos [1]
             value = float(Length(f"{mark_point_y:.1f}{self.units}"))
             self.scene.pane.toggle_y_magnet(value)
-
+            self.scene.pane.save_magnets()
         self.scene.request_refresh()
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
@@ -497,8 +500,7 @@ class GuideWidget(Widget):
         Calculate center position for primary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.space.origin_zero()
         return self.scene.convert_scene_to_window([x, y])
 
     def _get_center_secondary(self):
@@ -506,8 +508,7 @@ class GuideWidget(Widget):
         Calculate center position for secondary grid
         """
         p = self.scene.context
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
+        x, y = p.space.origin_zero()
         if self.scene.pane.grid.grid_secondary_cx is not None:
             x = self.scene.pane.grid.grid_secondary_cx
 
@@ -543,7 +544,7 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
-                if p.device.show_flip_x:
+                if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -576,7 +577,7 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
-                if p.device.show_flip_y:
+                if not p.space.bottom_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -635,7 +636,7 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx) / (fx * self.scaled_conversion_x)
-                if p.device.show_flip_x:
+                if not p.space.right_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
@@ -666,7 +667,7 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy) / (fy * self.scaled_conversion_y)
-                if p.device.show_flip_y:
+                if not p.space.bottom_positive:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0

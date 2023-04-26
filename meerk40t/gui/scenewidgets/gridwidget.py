@@ -189,9 +189,8 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
-        d = self.scene.context.device
-        self.zero_x = d.unit_width * d.show_origin_x
-        self.zero_y = d.unit_height * d.show_origin_y
+        d = self.scene.context
+        self.zero_x, self.zero_y = d.space.origin_zero()
         self._calc_primary_grid_lines()
         self._calc_secondary_grid_lines()
 
@@ -249,8 +248,7 @@ class GridWidget(Widget):
 
     def calculate_center_start(self):
         p = self.scene.context
-        self.primary_start_x = p.device.unit_width * p.device.show_origin_x
-        self.primary_start_y = p.device.unit_height * p.device.show_origin_y
+        self.primary_start_x, self.primary_start_y = p.space.origin_zero()
 
         if self.grid_secondary_cx is None:
             self.secondary_start_x = self.primary_start_x

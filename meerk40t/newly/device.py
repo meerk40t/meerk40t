@@ -651,6 +651,9 @@ class NewlyDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
@@ -662,6 +665,7 @@ class NewlyDevice(Service, ViewPort):
         self.native_scale_x = UNITS_PER_INCH / self.h_dpi
         self.native_scale_y = UNITS_PER_INCH / self.v_dpi
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):

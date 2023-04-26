@@ -99,10 +99,11 @@ def register_panel_go(window, context):
     go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
 
     def busy_go_plan(*args):
-        with wx.BusyInfo(_("Processing and sending...")):
-            context(
-                "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
-            )
+        context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        context(
+            "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+        )
+        context.kernel.busyinfo.end()
 
     window.Bind(
         wx.EVT_BUTTON,

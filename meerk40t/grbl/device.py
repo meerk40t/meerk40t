@@ -497,9 +497,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
             self.realize()
 
         @self.console_option(
@@ -618,6 +616,9 @@ class GRBLDevice(Service, ViewPort):
                 channel(_("Interpreter cannot be attached to any device."))
             return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @property
     def current(self):
         """
@@ -641,3 +642,4 @@ class GRBLDevice(Service, ViewPort):
         self.origin_x = 1.0 if self.home_right else 0.0
         self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
