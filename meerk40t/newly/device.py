@@ -347,6 +347,16 @@ class NewlyDevice(Service, ViewPort):
                 "section": "_10_Parameters",
                 "subsection": "_40_Current",
             },
+            {
+                "attr": "max_raster_jog",
+                "object": self,
+                "default": 15,
+                "type": int,
+                "label": _("Maximum Raster Jog"),
+                "tip": _("Maximum distance allowed to be done during a raster step/jog"),
+                "section": "_10_Parameters",
+                "subsection": "_50_Raster",
+            },
         ]
         self.register_choices("newly-specific", choices)
 
