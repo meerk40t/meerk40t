@@ -163,13 +163,10 @@ class WinCH341Driver:
         write_buffer = (c_byte * 1)()
         write_buffer[0] = 0xA0
         length[0] = len(write_buffer)
-        success = self.driver.CH341WriteData(self.driver_index, write_buffer, length)
-        if not success:
-            raise ConnectionError("Failed to write to CH341:Windll.")
+        self.driver.CH341WriteData(self.driver_index, write_buffer, length)
         read_buffer = (c_byte * 6)()
         length[0] = len(read_buffer)
         self.driver.CH341ReadData(self.driver_index, read_buffer, length)
-        # self.driver.CH341GetStatus(self.driver_index, read_buffer)
         return [int(q & 0xFF) for q in read_buffer]
 
     def get_chip_version(self):
