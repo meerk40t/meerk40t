@@ -525,6 +525,7 @@ class LihuiyuController:
             self._check_transfer_buffer()
             if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
                 # The buffer and realtime buffers are empty. No packet creation possible.
+                self.context.signal("pipe;running", False)
                 with self._loop_cond:
                     self._loop_cond.wait()
                 continue
