@@ -555,18 +555,18 @@ class LihuiyuController:
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
-                        "pause",
-                        "busy",
-                        "active",
-                        "terminate",
+                    "pause",
+                    "busy",
+                    "active",
+                    "terminate",
                 ):
                     self.update_state("active")
                 continue
             # No packet could be sent.
             if self.state not in (
-                    "pause",
-                    "busy",
-                    "terminate",
+                "pause",
+                "busy",
+                "terminate",
             ):
                 self.update_state("idle")
             with self._loop_cond:
