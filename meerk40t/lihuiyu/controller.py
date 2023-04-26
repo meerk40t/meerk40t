@@ -366,17 +366,18 @@ class LihuiyuController:
         Controller state change to `Started`.
         @return:
         """
-
+        with self._loop_cond:
+            self._loop_cond.notify()
         if not self.is_shutdown and (
             self._thread is None or not self._thread.is_alive()
         ):
+            self.update_state("init")
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name=f"LhyPipe({self.context.path})",
                 result=self.stop,
             )
             self._thread.stop = self.stop
-            self.update_state("init")
 
     def _pause_busy(self):
         """
@@ -439,10 +440,14 @@ class LihuiyuController:
             pass  # Stop called by current thread.
 
     def abort_retry(self):
+        with self._loop_cond:
+            self._loop_cond.notify()
         self.aborted_retries = True
         self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
 
     def continue_retry(self):
+        with self._loop_cond:
+            self._loop_cond.notify()
         self.aborted_retries = False
         self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
 
@@ -476,6 +481,8 @@ class LihuiyuController:
             pass
 
     def update_state(self, state):
+        with self._loop_cond:
+            self._loop_cond.notify()
         if state == self.state:
             return
         self.state = state
@@ -505,12 +512,12 @@ class LihuiyuController:
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     self.context.signal("pipe;running", False)
-                    with self._loop_cond.acquire(True):
+                    with self._loop_cond:
                         self._loop_cond.wait()
                     continue
             if self.aborted_retries:
                 self.context.signal("pipe;running", False)
-                with self._loop_cond.acquire(True):
+                with self._loop_cond:
                     self._loop_cond.wait()
                 continue
 
@@ -562,7 +569,7 @@ class LihuiyuController:
                     "terminate",
             ):
                 self.update_state("idle")
-            with self._loop_cond.acquire(True):
+            with self._loop_cond:
                 self._loop_cond.wait()
 
     def _thread_data_send(self):
@@ -570,7 +577,7 @@ class LihuiyuController:
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
-        with self._main_lock.acquire(True):
+        with self._main_lock:
             self.pre_ok = False
             self.is_shutdown = False
             self._thread_loop()
