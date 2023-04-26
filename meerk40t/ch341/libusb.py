@@ -347,9 +347,9 @@ class Ch341LibusbDriver:
     # pylint: disable=dangerous-default-value
     def CH341GetStatus(self, index=0, status=[0]):
         if self.bulk:
-            return self.CH341GetStatusBulk(index=0, status=status)
+            return self.CH341GetStatusBulk(index=index, status=status)
         else:
-            return self.CH341GetStatusControlTransfer(index=0, status=status)
+            return self.CH341GetStatusControlTransfer(index=index, status=status)
 
     # pylint: disable=dangerous-default-value
     def CH341GetStatusControlTransfer(self, index=0, status=[0]):
