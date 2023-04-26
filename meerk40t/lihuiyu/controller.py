@@ -659,7 +659,7 @@ class LihuiyuController:
                 default_checksum = False
                 packet = packet[:-1]
             elif packet.endswith(b"\x18"):
-                self.state = "terminate"
+                self.update_state("terminate")
                 self.is_shutdown = True
                 packet = packet[:-1]
             if packet.startswith(b"A"):
