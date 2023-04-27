@@ -110,12 +110,18 @@ class MeerK40tScenePanel(wx.Panel):
         self.context.setting(bool, "clear_magnets", True)
 
         # Save / Load the content of magnets
-        from os.path import realpath, join
+        from os.path import join, realpath
+
         from meerk40t.kernel.functions import get_safe_path
-        self._magnet_file = join(realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg")
+
+        self._magnet_file = join(
+            realpath(get_safe_path(self.context.kernel.name)), "magnets.cfg"
+        )
         self.load_magnets()
         # Add a plugin routine to be called at the time of a full new start
-        context.kernel.register("reset_routines/magnets", self.clear_magnets_conditionally)
+        context.kernel.register(
+            "reset_routines/magnets", self.clear_magnets_conditionally
+        )
 
         self.active_tool = "none"
 
@@ -744,7 +750,7 @@ class MeerK40tScenePanel(wx.Panel):
                     f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
                 for y in self.magnet_y:
                     f.write(f"y={Length(y, preferred_units='mm').preferred_length}\n")
-        except ValueError: # ( PermissionError, OSError, FileNotFoundError ):
+        except ValueError:  # ( PermissionError, OSError, FileNotFoundError ):
             return
 
     def load_magnets(self):
@@ -768,7 +774,7 @@ class MeerK40tScenePanel(wx.Panel):
                                     self.magnet_y.append(value)
                             # except ValueError:
                             #     pass
-        except ( PermissionError, OSError, FileNotFoundError ):
+        except (PermissionError, OSError, FileNotFoundError):
             return
 
     def clear_magnets(self):

@@ -353,7 +353,9 @@ class NewlyDevice(Service, ViewPort):
                 "default": 15,
                 "type": int,
                 "label": _("Maximum Raster Jog"),
-                "tip": _("Maximum distance allowed to be done during a raster step/jog"),
+                "tip": _(
+                    "Maximum distance allowed to be done during a raster step/jog"
+                ),
                 "section": "_10_Parameters",
                 "subsection": "_50_Raster",
             },

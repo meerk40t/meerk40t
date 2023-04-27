@@ -592,7 +592,9 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Clear magnets on File - New"),
-                "tip": _("File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"),
+                "tip": _(
+                    "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Magnetlines",
@@ -1234,7 +1236,8 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_edit",
                         "icon": icons8_curly_brackets_50,
-                        "tip": _("Manages Wordlist-Entries") + _(" (right go to next entry)"),
+                        "tip": _("Manages Wordlist-Entries")
+                        + _(" (right go to next entry)"),
                         "label": _("Wordlist"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
@@ -1242,7 +1245,8 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_plus_1",
                         "icon": icons8_circled_right_50,
-                        "tip": _("Wordlist: go to next entry") + _(" (right go to prev entry)"),
+                        "tip": _("Wordlist: go to next entry")
+                        + _(" (right go to prev entry)"),
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(-1),
@@ -1251,7 +1255,8 @@ class MeerK40t(MWindow):
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
                         "icon": icons8_circled_left_50,
-                        "tip": _("Wordlist: go to prev entry") + _(" (right go to next entry)"),
+                        "tip": _("Wordlist: go to prev entry")
+                        + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },

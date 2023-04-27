@@ -9,11 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import (
-    CommandSyntaxError,
-    Service,
-    signal_listener,
-)
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController

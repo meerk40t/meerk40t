@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_up_left_50, icons8_compress_50
+from meerk40t.gui.icons import icons8_compress_50
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
@@ -155,7 +155,7 @@ class PositionPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         if self.small:
             target = StaticBoxSizer(
-                 self, wx.ID_ANY, _("Object Dimensions"), wx.VERTICAL
+                self, wx.ID_ANY, _("Object Dimensions"), wx.VERTICAL
             )
             sizer_main.Add(target, 1, wx.EXPAND, 0)
         else:

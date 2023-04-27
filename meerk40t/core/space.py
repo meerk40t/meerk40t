@@ -1,4 +1,4 @@
-from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.core.view import View
 from meerk40t.kernel import Service, signal_listener
 
@@ -20,7 +20,9 @@ class CoordinateSystem(Service):
                 "default": 0.0,
                 "type": float,
                 "label": _("Origin X"),
-                "tip": _("Value between 0-1 for the location of the origin x parameter"),
+                "tip": _(
+                    "Value between 0-1 for the location of the origin x parameter"
+                ),
             },
             {
                 "attr": "origin_y",
@@ -28,7 +30,9 @@ class CoordinateSystem(Service):
                 "default": 0.0,
                 "type": float,
                 "label": _("Origin Y"),
-                "tip": _("Value between 0-1 for the location of the origin x parameter"),
+                "tip": _(
+                    "Value between 0-1 for the location of the origin x parameter"
+                ),
             },
             {
                 "attr": "right_positive",
@@ -98,7 +102,9 @@ class CoordinateSystem(Service):
         self.y = float(Length(y))
         self.width = float(Length(width))
         self.height = float(Length(height))
-        self.display = View(self.width, self.height, dpi_x=UNITS_PER_INCH, dpi_y=UNITS_PER_INCH)
+        self.display = View(
+            self.width, self.height, dpi_x=UNITS_PER_INCH, dpi_y=UNITS_PER_INCH
+        )
         self.display.transform(
             origin_x=self.origin_x,
             origin_y=self.origin_y,
@@ -107,4 +113,3 @@ class CoordinateSystem(Service):
             swap_xy=self.swap_xy,
         )
         self.signal("refresh_scene", "Scene")
-

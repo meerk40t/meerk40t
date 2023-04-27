@@ -181,9 +181,7 @@ class NewlyDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
 
-                max_power = float(
-                    q.settings.get("power", self.service.default_power)
-                )
+                max_power = float(q.settings.get("power", self.service.default_power))
                 percent_power = max_power / 10.0
 
                 for ox, oy, on, x, y in q.plot:
