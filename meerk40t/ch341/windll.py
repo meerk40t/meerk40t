@@ -1,5 +1,8 @@
 from ctypes import c_byte, windll
 
+from meerk40t.ch341.libusb import mCH341_PARA_CMD_STS
+
+
 # MIT License.
 
 
@@ -13,6 +16,7 @@ class WinCH341Driver:
         self.driver_value = None
         self.channel = channel
         self.state = state
+        self.bulk = True
 
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
@@ -159,14 +163,17 @@ class WinCH341Driver:
         """
         if not self.is_connected():
             raise ConnectionRefusedError("Not connected.")
-        length = (c_byte * 1)()
-        write_buffer = (c_byte * 1)()
-        write_buffer[0] = 0xA0
-        length[0] = len(write_buffer)
-        self.driver.CH341WriteData(self.driver_index, write_buffer, length)
         read_buffer = (c_byte * 6)()
-        length[0] = len(read_buffer)
-        self.driver.CH341ReadData(self.driver_index, read_buffer, length)
+        if self.bulk:
+            write_buffer = (c_byte * 1)()
+            write_buffer[0] = mCH341_PARA_CMD_STS
+            length = (c_byte * 1)()
+            length[0] = len(write_buffer)
+            self.driver.CH341WriteData(self.driver_index, write_buffer, length)
+            length[0] = len(read_buffer)
+            self.driver.CH341ReadData(self.driver_index, read_buffer, length)
+        else:
+            self.driver.CH341GetStatus(self.driver_index, read_buffer)
         return [int(q & 0xFF) for q in read_buffer]
 
     def get_chip_version(self):

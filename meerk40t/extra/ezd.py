@@ -14,16 +14,8 @@ import struct
 from io import BytesIO
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_INCH
-from meerk40t.svgelements import (
-    Color,
-    Rect,
-    Matrix,
-    Path,
-    Circle,
-    Ellipse,
-    Polygon,
-)
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
+from meerk40t.svgelements import Circle, Color, Ellipse, Matrix, Path, Polygon, Rect
 
 
 def plugin(kernel, lifecycle):

@@ -7,7 +7,6 @@ Tasked with sending data to usb connection.
 import threading
 import time
 
-
 from .builder import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,

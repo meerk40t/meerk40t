@@ -110,7 +110,8 @@ class MeerK40tScenePanel(wx.Panel):
         self.context.setting(bool, "clear_magnets", True)
 
         # Save / Load the content of magnets
-        from os.path import realpath, join
+        from os.path import join, realpath
+
         from meerk40t.kernel.functions import get_safe_path
 
         self._magnet_file = join(
