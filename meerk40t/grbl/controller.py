@@ -442,6 +442,7 @@ class GrblController:
         #     f"buffered={self.buffered_characters}\n" +
         #     f"next: {self._length_of_next_line}"
         # )
+
         if self._sending_queue and self.device_buffer_size > (
             self.buffered_characters + self._length_of_next_line
         ):
@@ -449,6 +450,7 @@ class GrblController:
             self._sending_single_line()
             self._buffer_fail = 0
         else:
+            # We cannot write any lines because they won't fit (start read buffer).
             if self.commands_in_device_buffer:
                 self._recv_response()
             else:
