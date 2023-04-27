@@ -423,7 +423,10 @@ def init_tree(kernel):
             self.signal("element_property_reload", data)
 
     def radio_match(node, dpi=100, **kwargs):
-        return node.dpi == dpi
+        try:
+            return round(node.dpi, 0) == round(dpi, 0)
+        except ValueError:
+            return False
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
@@ -2318,7 +2321,9 @@ def init_tree(kernel):
         "angle",
         (
             180,
+            150,
             135,
+            120,
             90,
             60,
             45,
