@@ -70,7 +70,7 @@ def plugin(kernel, lifecycle=None):
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
             },
             {
@@ -95,7 +95,7 @@ def plugin(kernel, lifecycle=None):
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -124,7 +124,7 @@ def plugin(kernel, lifecycle=None):
                     + "and this can result in greater charring "
                     + "or even an increased risk of the material catching fire."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -149,7 +149,7 @@ def plugin(kernel, lifecycle=None):
                     "If you have a complex design with many paths across multiple consecutive burn operations, "
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "conditional": (context, "opt_reduce_travel"),
             },
@@ -171,7 +171,7 @@ def plugin(kernel, lifecycle=None):
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
             },
             {
@@ -181,7 +181,7 @@ def plugin(kernel, lifecycle=None):
                 "type": Length,
                 "label": _("Tolerance"),
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -210,7 +210,7 @@ def plugin(kernel, lifecycle=None):
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
@@ -223,7 +223,7 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
-                "page": "Optimizations",
+                "page": "Optimisations",
                 "section": "_20_Reducing Movements",
                 "hidden": True,
             },
@@ -336,169 +336,24 @@ class Planner(Service):
             return "plan", cutplan
 
         @self.console_command(
-            "copy-selected",
-            help=_("plan<?> copy-selected"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_copy_selected(command, channel, _, data_type=None, data=None, **kwgs):
-            def init_settings():
-                for prefix in ("prepend", "append"):
-                    str_count = f"{prefix}_op_count"
-                    self.device.setting(int, str_count, 0)
-                    value = getattr(self.device, str_count, 0)
-                    if value > 0:
-                        for idx in range(value):
-                            attr1 = f"{prefix}_op_{idx:02d}"
-                            attr2 = f"{prefix}_op_param_{idx:02d}"
-                            self.device.setting(str, attr1, "")
-                            self.device.setting(str, attr2, "")
-
-            def add_ops(is_prepend):
-                # Do we have any default actions to include first?
-                if is_prepend:
-                    prefix = "prepend"
-                else:
-                    prefix = "append"
-                try:
-                    if is_prepend:
-                        count = self.device.prepend_op_count
-                    else:
-                        count = self.device.append_op_count
-                except AttributeError:
-                    count = 0
-                idx = 0
-                while idx <= count - 1:
-                    addop = None
-                    attr1 = f"{prefix}_op_{idx:02d}"
-                    attr2 = f"{prefix}_op_param_{idx:02d}"
-                    if hasattr(self.device, attr1):
-                        optype = getattr(self.device, attr1, None)
-                        opparam = getattr(self.device, attr2, None)
-                        if optype is not None:
-                            if optype == "util console":
-                                addop = ConsoleOperation(command=opparam)
-                            elif optype == "util home":
-                                addop = HomeOperation()
-                            elif optype == "util output":
-                                if opparam is not None:
-                                    params = opparam.split(",")
-                                    mask = 0
-                                    setvalue = 0
-                                    if len(params) > 0:
-                                        try:
-                                            mask = int(params[0])
-                                        except ValueError:
-                                            mask = 0
-                                    if len(params) > 1:
-                                        try:
-                                            setvalue = int(params[1])
-                                        except ValueError:
-                                            setvalue = 0
-                                    if mask != 0 or setvalue != 0:
-                                        addop = OutputOperation(mask, setvalue)
-                            elif optype == "util goto":
-                                if opparam is not None:
-                                    params = opparam.split(",")
-                                    x = 0
-                                    y = 0
-                                    if len(params) > 0:
-                                        try:
-                                            x = float(Length(params[0]))
-                                        except ValueError:
-                                            x = 0
-                                    if len(params) > 1:
-                                        try:
-                                            y = float(Length(params[1]))
-                                        except ValueError:
-                                            y = 0
-                                    addop = GotoOperation(x=x, y=y)
-                            elif optype == "util origin":
-                                if opparam is not None and opparam != "":
-                                    params = opparam.split(",")
-                                    x = 0
-                                    y = 0
-                                    if len(params) > 0:
-                                        try:
-                                            x = float(Length(params[0]))
-                                        except ValueError:
-                                            x = 0
-                                    if len(params) > 1:
-                                        try:
-                                            y = float(Length(params[1]))
-                                        except ValueError:
-                                            y = 0
-                                    addop = SetOriginOperation(x=x, y=y)
-                                else:
-                                    addop = SetOriginOperation(x=None, y=None)
-                            elif optype == "util wait":
-                                if opparam is not None:
-                                    try:
-                                        opparam = float(opparam)
-                                    except ValueError:
-                                        opparam = None
-                                if opparam is not None:
-                                    addop = WaitOperation(wait=opparam)
-                    if addop is not None:
-                        try:
-                            if not addop.output:
-                                continue
-                        except AttributeError:
-                            pass
-                        try:
-                            if len(addop) == 0:
-                                continue
-                        except TypeError:
-                            pass
-                        if addop.type == "cutcode":
-                            # CutNodes are denuded into normal objects.
-                            addop = addop.cutcode
-                        copy_c = copy(addop)
-                        try:
-                            copy_c.copy_children_as_real(addop)
-                        except AttributeError:
-                            pass
-                        data.plan.append(copy_c)
-
-                    idx += 1
-
-            init_settings()
-            # Add default start ops
-            add_ops(True)
-
-            for c in self.elements.ops(emphasized=True):
-                if c.type == "cutcode":
-                    # CutNodes are denuded into normal objects.
-                    c = c.cutcode
-                elif c.type == "blob":
-                    # BlobNodes are denuded into normal objects.
-                    c = c.blob
-                copy_c = copy(c)
-                try:
-                    copy_c.copy_children_as_real(c)
-                except AttributeError:
-                    pass
-                try:
-                    if not copy_c.output:
-                        copy_c.output = True
-                except AttributeError:
-                    pass
-                data.plan.append(copy_c)
-
-            # Add default start ops
-            add_ops(False)
-
-            channel(_("Copied Operations."))
-            self.signal("plan", data.name, 1)
-            return data_type, data
-
-        @self.console_command(
-            "copy",
-            help=_("plan<?> copy"),
+            ("copy", "copy-selected"),
+            help=_("plan(-selected)<?> copy"),
             input_type="plan",
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Copy data"), keep=1)
+                busy.show()
+
+            operations = data  # unused.
+            if command == "copy-selected":
+                operations = list(self.elements.ops(emphasized=True))
+            else:
+                operations = list(self.elements.ops())
+
             def init_settings():
                 for prefix in ("prepend", "append"):
                     str_count = f"{prefix}_op_count"
@@ -620,50 +475,53 @@ class Planner(Service):
                     idx += 1
 
             init_settings()
-            operations = self.elements.get(type="branch ops")
 
             # Add default start ops
             add_ops(True)
-            for c in operations.flat(
-                types=(
-                    "op cut",
-                    "op raster",
-                    "op image",
-                    "op engrave",
-                    "op dots",
-                    "op hatch",
-                    "cutcode",
-                    "util console",
-                    "util wait",
-                    "util home",
-                    "util goto",
-                    "util origin",
-                    "util input",
-                    "util output",
-                    "lasercode",
-                    "blob",
-                ),
-                depth=1,
-            ):
+            # types = (
+            #     "op cut",
+            #     "op raster",
+            #     "op image",
+            #     "op engrave",
+            #     "op dots",
+            #     "op hatch",
+            #     "cutcode",
+            #     "util console",
+            #     "util wait",
+            #     "util home",
+            #     "util goto",
+            #     "util origin",
+            #     "util input",
+            #     "util output",
+            #     "place point"
+            #     "lasercode",
+            #     "blob",
+            # )
+            for c in operations:
                 try:
                     if not c.output:
                         continue
                 except AttributeError:
                     pass
-                try:
-                    if c.type.startswith("op") and len(c.children) == 0:
-                        continue
-                except TypeError:
-                    pass
+                if not hasattr(c, "type") or c.type is None:
+                    # Node must be a type of node.
+                    continue
+                if c.type.startswith("op ") and len(c.children) == 0:
+                    # We don't need empty operations.
+                    continue
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
+
+                # Make copy of node.
                 copy_c = copy(c)
                 try:
+                    # Make copy of real (non-referenced) children if that is permitted.
                     copy_c.copy_children_as_real(c)
                 except AttributeError:
                     pass
                 data.plan.append(copy_c)
+
             # Add default trailing ops
             add_ops(False)
             channel(_("Copied Operations."))
@@ -716,6 +574,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_preprocess(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Preprocessing"), keep=1)
+                busy.show()
+
             data.preprocess()
             self.signal("plan", data.name, 2)
             return data_type, data
@@ -727,6 +591,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_validate(command, channel, _, data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Validating"), keep=1)
+                busy.show()
+
             try:
                 data.execute()
             except CutPlanningFailedError as e:
@@ -743,6 +613,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_blob(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Generating lasercode"), keep=1)
+                busy.show()
+
             data.blob()
             self.signal("plan", data.name, 4)
             return data_type, data
@@ -754,6 +630,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_preopt(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Preparing optimisation"), keep=1)
+                busy.show()
+
             data.preopt()
             self.signal("plan", data.name, 5)
             return data_type, data
@@ -765,6 +647,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_optimize(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Optimising"), keep=1)
+                busy.show()
+
             data.execute()
             self.signal("plan", data.name, 6)
             return data_type, data
@@ -776,6 +664,12 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_clear(data_type=None, data=None, **kwgs):
+            # Update Info-panel if displayed
+            busy = self.kernel.busyinfo
+            if busy.shown:
+                busy.change(msg=_("Clearing data"), keep=1)
+                busy.show()
+
             data.clear()
             self.signal("plan", data.name, 0)
             return data_type, data

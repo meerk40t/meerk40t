@@ -22,16 +22,8 @@ _ = wx.GetTranslation
 def register_panel_laser(window, context):
     laser_panel = LaserPanel(window, wx.ID_ANY, context=context)
     plan_panel = JobPanel(window, wx.ID_ANY, context=context)
-    from copy import copy
 
-    prechoices = context.lookup("choices/optimize")
-    choices = list(map(copy, prechoices))
-    # Clear the page-entry
-    for entry in choices:
-        entry["page"] = ""
-    optimize_panel = ChoicePropertyPanel(
-        window, wx.ID_ANY, context=context, choices=choices
-    )
+    optimize_panel = OptimizePanel(window, wx.ID_ANY, context=context)
     jog_drag = wx.Panel(window, wx.ID_ANY)
     jog_panel = Jog(jog_drag, wx.ID_ANY, context=context, icon_size=25)
     drag_panel = Drag(jog_drag, wx.ID_ANY, context=context, icon_size=25)
@@ -176,9 +168,11 @@ class LaserPanel(wx.Panel):
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
+
+        self._optimize = True
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
-        self.checkbox_optimize.SetValue(1)
+        self.checkbox_optimize.SetValue(self._optimize)
         self.checkbox_adjust = wx.CheckBox(self, wx.ID_ANY, _("Override"))
         self.checkbox_adjust.SetToolTip(
             _("Allow ad-hoc adjustment of speed and power.")
@@ -239,6 +233,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_adjust, self.checkbox_adjust)
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
         self.Bind(wx.EVT_SLIDER, self.on_slider_power, self.slider_power)
+        self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
         # end wxGlade
         if index == -1:
             disable_window(self)
@@ -325,6 +320,22 @@ class LaserPanel(wx.Panel):
         msg = f"{'+' if factor > 1 else ''}{100 * (factor - 1.0):.0f}%"
         self.label_power.SetLabel(msg)
 
+    def on_optimize(self, event):
+        newval = bool(self.checkbox_optimize.GetValue())
+        if newval != self._optimize:
+            self.context.signal("optimize", newval)
+
+    @signal_listener("optimize")
+    def optimize_update(self, origin, *message):
+        try:
+            newvalue = bool(message[0])
+        except ValueError:
+            # You never know
+            return
+        if self._optimize != newvalue:
+            self._optimize = newvalue
+            self.checkbox_optimize.SetValue(newvalue)
+
     @signal_listener("device;modified")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
@@ -407,6 +418,8 @@ class LaserPanel(wx.Panel):
         menu.Destroy()
 
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
@@ -421,6 +434,7 @@ class LaserPanel(wx.Panel):
         self.check_laser_arm()
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
+        busy.end()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -435,18 +449,20 @@ class LaserPanel(wx.Panel):
         self.context("element* trace complex\n")
 
     def on_button_simulate(self, event):  # wxGlade: LaserPanel.<event_handler>
-        with wx.BusyInfo(_("Preparing simulation...")):
-            plan = self.context.planner.get_or_make_plan("z")
-            if not plan.plan or not self.context.laserpane_hold:
-                if self.checkbox_optimize.GetValue():
-                    self.context(
-                        "planz clear copy preprocess validate blob preopt optimize\n"
-                    )
-                    param = "1"
-                else:
-                    self.context("planz clear copy preprocess validate blob\n")
-                    param = "0"
-            self.context(f"window open Simulation z 0 {param}\n")
+        self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
+
+        plan = self.context.planner.get_or_make_plan("z")
+        if not plan.plan or not self.context.laserpane_hold:
+            if self.checkbox_optimize.GetValue():
+                self.context(
+                    "planz clear copy preprocess validate blob preopt optimize\n"
+                )
+                param = "1"
+            else:
+                self.context("planz clear copy preprocess validate blob\n")
+                param = "0"
+        self.context(f"window open Simulation z 0 {param}\n")
+        self.context.kernel.busyinfo.end()
 
     def on_combo_devices(self, event):  # wxGlade: LaserPanel.<event_handler>
         index = self.combo_devices.GetSelection()
@@ -472,6 +488,7 @@ class JobPanel(wx.Panel):
         self.context = context
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self._optimize = True
 
         sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
@@ -526,6 +543,15 @@ class JobPanel(wx.Panel):
             else:
                 self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
 
+    @signal_listener("optimize")
+    def optimize_update(self, origin, *message):
+        try:
+            newvalue = bool(message[0])
+        except ValueError:
+            # You never know
+            return
+        self._optimize = newvalue
+
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         gui = self.context.gui
         extension = "txt"
@@ -555,19 +581,81 @@ class JobPanel(wx.Panel):
         self.context("planz clear\n")
 
     def on_button_update(self, event):  # wxGlade: LaserPanel.<event_handler>
-        with wx.BusyInfo(_("Updating Plan...")):
-            if self.checkbox_optimize.GetValue():
-                self.context(
-                    "planz clear copy preprocess validate blob preopt optimize\n"
-                )
-            else:
-                self.context("planz clear copy preprocess validate blob\n")
+        self.context.kernel.busyinfo.start(msg=_("Updating Plan..."))
+        if self._optimize:
+            self.context("planz clear copy preprocess validate blob preopt optimize\n")
+        else:
+            self.context("planz clear copy preprocess validate blob\n")
+        self.context.kernel.busyinfo.end()
 
     def on_check_hold(self, event):
         self.context.laserpane_hold = self.checkbox_hold.GetValue()
 
     def pane_show(self, *args):
         self.button_save_file.Enable(hasattr(self.context.device, "extension"))
+
+    def pane_hide(self, *args):
+        pass
+
+
+class OptimizePanel(wx.Panel):
+    """
+    Contains all elements to adjust optimisation
+    """
+
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: MovePanel.__init__
+        from copy import copy
+
+        self.parent = args[0]
+
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self._optimize = True
+        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
+        self.checkbox_optimize.SetValue(self._optimize)
+        prechoices = context.lookup("choices/optimize")
+        choices = list(map(copy, prechoices))
+        # Clear the page-entry
+        for entry in choices:
+            entry["page"] = ""
+        self.optimize_panel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=context, choices=choices
+        )
+
+        sizer_main.Add(self.checkbox_optimize, 0, 0, 0)
+        sizer_main.Add(self.optimize_panel, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        self.Layout()
+
+        self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
+        self.parent.add_module_delegate(self.optimize_panel)
+
+    @signal_listener("optimize")
+    def optimize_update(self, origin, *message):
+        try:
+            newvalue = bool(message[0])
+        except ValueError:
+            # You never know
+            return
+        if self._optimize != newvalue:
+            self._optimize = newvalue
+            self.checkbox_optimize.SetValue(newvalue)
+            self.optimize_panel.Enable(newvalue)
+
+    def on_optimize(self, event):
+        newvalue = bool(self.checkbox_optimize.GetValue())
+        if newvalue != self._optimize:
+            self._optimize = newvalue
+            self.context.signal("optimize", newvalue)
+            self.optimize_panel.Enable(newvalue)
+
+    def pane_show(self, *args):
+        pass
 
     def pane_hide(self, *args):
         pass

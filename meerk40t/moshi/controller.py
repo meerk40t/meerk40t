@@ -7,18 +7,6 @@ Tasked with sending data to usb connection.
 import threading
 import time
 
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-    STATE_WAIT,
-)
-
 from .builder import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,
@@ -79,7 +67,7 @@ class MoshiController:
 
     def __init__(self, context, channel=None, *args, **kwargs):
         self.context = context
-        self.state = STATE_UNKNOWN
+        self.state = "unknown"
         self.is_shutdown = False
 
         self._thread = None
@@ -252,7 +240,7 @@ class MoshiController:
                 thread_name=f"MoshiPipe({self.context.path})",
                 result=self.stop,
             )
-            self.update_state(STATE_INITIALIZE)
+            self.update_state("init")
 
     def pause(self):
         """
@@ -261,18 +249,18 @@ class MoshiController:
         If this state change is done from INITIALIZE it will start the processing.
         Otherwise, it must be done from ACTIVE or IDLE.
         """
-        if self.state == STATE_INITIALIZE:
+        if self.state == "init":
             self.start()
-            self.update_state(STATE_PAUSE)
-        if self.state == STATE_ACTIVE or self.state == STATE_IDLE:
-            self.update_state(STATE_PAUSE)
+            self.update_state("pause")
+        if self.state in ("active", "idle"):
+            self.update_state("pause")
 
     def resume(self):
         """
         Resume can only be called from PAUSE.
         """
-        if self.state == STATE_PAUSE:
-            self.update_state(STATE_ACTIVE)
+        if self.state == "pause":
+            self.update_state("active")
 
     def estop(self):
         """
@@ -282,7 +270,7 @@ class MoshiController:
         self._programs.clear()
         self.context.signal("pipe;buffer", 0)
         self.realtime_stop()
-        self.update_state(STATE_TERMINATE)
+        self.update_state("terminate")
         self.pipe_channel("Control Request: Stop")
 
     def stop(self, *args):
@@ -334,21 +322,21 @@ class MoshiController:
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
-                    STATE_PAUSE,
-                    STATE_BUSY,
-                    STATE_ACTIVE,
-                    STATE_TERMINATE,
+                    "pause",
+                    "busy",
+                    "active",
+                    "terminate",
                 ):
-                    self.update_state(STATE_ACTIVE)
+                    self.update_state("active")
                 self.count = 0
             else:
                 # No packet could be sent.
                 if self.state not in (
-                    STATE_PAUSE,
-                    STATE_BUSY,
-                    STATE_TERMINATE,
+                    "pause",
+                    "busy",
+                    "terminate",
                 ):
-                    self.update_state(STATE_IDLE)
+                    self.update_state("idle")
                 if self.count > 50:
                     self.count = 50
                 time.sleep(0.02 * self.count)
@@ -368,9 +356,9 @@ class MoshiController:
         while True:
             self.pipe_channel("While Loop")
             try:
-                if self.state == STATE_INITIALIZE:
+                if self.state == "init":
                     # If we are initialized. Change that to active since we're running.
-                    self.update_state(STATE_ACTIVE)
+                    self.update_state("active")
                 if self.is_shutdown:
                     break
                 if len(self._buffer) == 0 and len(self._programs) == 0:
@@ -428,7 +416,7 @@ class MoshiController:
         self.context.signal("pipe;running", False)
         self._thread = None
         self.is_shutdown = False
-        self.update_state(STATE_END)
+        self.update_state("end")
         self._main_lock.release()
         self.pipe_channel("Send Thread Finished...")
 
@@ -488,7 +476,7 @@ class MoshiController:
         Wait until the device can accept packets.
         """
         i = 0
-        while self.state != STATE_TERMINATE:
+        while self.state != "terminate":
             self.update_status()
             status = self._status[1]
             if status == 0:
@@ -510,14 +498,14 @@ class MoshiController:
         self.pipe_channel("Wait Finished")
         i = 0
         original_state = self.state
-        if self.state != STATE_PAUSE:
+        if self.state != "pause":
             self.pause()
 
         while True:
-            if self.state != STATE_WAIT:
-                if self.state == STATE_TERMINATE:
+            if self.state != "wait":
+                if self.state == "terminate":
                     return  # Abort all the processes was requested. This state change would be after clearing.
-                self.update_state(STATE_WAIT)
+                self.update_state("wait")
             self.update_status()
             status = self._status[1]
             if status == 0:

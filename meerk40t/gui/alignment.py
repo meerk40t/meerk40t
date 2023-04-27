@@ -3,7 +3,7 @@ from math import atan, sqrt, tau
 import numpy as np
 import wx
 
-from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import (
     Arc,
@@ -66,7 +66,7 @@ class InfoPanel(wx.Panel):
         sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
         self.make_raster = None
         self.SetSizer(sizer_main)
-        self.Layout
+        self.Layout()
 
     def show_stuff(self, has_emph):
         def mklabel(label):
@@ -1011,11 +1011,7 @@ class DistributionPanel(wx.Panel):
 
             if dx == 0 and dy == 0 and ptangle == 0:
                 continue
-            if (
-                hasattr(node, "lock")
-                and node.lock
-                and not self.context.elements.lock_allows_move
-            ):
+            if not node.can_move(self.context.elements.lock_allows_move):
                 continue
             else:
                 try:
@@ -1453,11 +1449,7 @@ class ArrangementPanel(wx.Panel):
                 # s += f"dx={Length(amount=dy, unitless=1, digits=1).length_mm}"
                 # print (s)
                 if dx != 0 or dy != 0:
-                    if (
-                        hasattr(node, "lock")
-                        and node.lock
-                        and not self.context.elements.lock_allows_move
-                    ):
+                    if not node.can_move(self.context.elements.lock_allows_move):
                         continue
                     else:
                         try:
@@ -1559,8 +1551,8 @@ class ArrangementPanel(wx.Panel):
 class Alignment(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
-            350,
-            350,
+            360,
+            485,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX

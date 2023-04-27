@@ -9,13 +9,7 @@ from hashlib import md5
 
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    CommandSyntaxError,
-    Service,
-    signal_listener,
-)
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
@@ -424,8 +418,6 @@ class LihuiyuDevice(Service, ViewPort):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
-            show_flip_x=self.home_right,
-            show_flip_y=self.home_bottom,
         )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
@@ -828,19 +820,19 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_command("start", help=_("Start Pipe to Controller"))
         def pipe_start(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Started."))
 
         @self.console_command("hold", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_PAUSE)
+            self.controller.update_state("pause")
             self.controller.pause()
             channel("Lihuiyu Channel Paused.")
 
         @self.console_command("resume", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Lihuiyu Channel Resumed."))
 
@@ -849,7 +841,8 @@ class LihuiyuDevice(Service, ViewPort):
             try:
                 self.controller.open()
                 channel(_("Usb Connection Opened."))
-            except ConnectionRefusedError:
+            except (ConnectionRefusedError, ConnectionError):
+                # Refused is typical but inability to confirm serial would result in connection error.
                 channel(_("Usb Connection Refused"))
 
         @self.console_command("usb_disconnect", help=_("Disconnects USB"))
@@ -953,6 +946,9 @@ class LihuiyuDevice(Service, ViewPort):
                     channel(_("Intepreter cannot be attached to any device."))
                 return
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
@@ -963,6 +959,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.width = self.bedwidth
         self.height = self.bedheight
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     def outline_move_relative(self, dx, dy):
         x, y = self.native

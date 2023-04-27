@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.core.element_types import elem_group_nodes, op_nodes
+from meerk40t.core.elements.element_types import elem_group_nodes, op_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
     icons8_diagonal_20,
@@ -8,6 +8,7 @@ from meerk40t.gui.icons import (
     icons8_file_20,
     icons8_group_objects_20,
     icons8_home_20,
+    icons8_home_location_20,
     icons8_image_20,
     icons8_image_50,
     icons8_input_20,
@@ -66,6 +67,8 @@ class FormatterPanel(wx.Panel):
             "elem rect": icons8_rectangular_50,
             "elem line": icons8_polyline_50,
             "elem text": icons8_text_50,
+            "place current": icons8_home_location_20,
+            "place point": icons8_home_location_20,
         }
         omit = ("elem geomstr", "elem line")
         self.node_list = list(elem_group_nodes + op_nodes)

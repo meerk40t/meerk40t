@@ -44,7 +44,10 @@ class Camera(Service):
         self.setting(bool, "correction_perspective", False)
         self.setting(list, "fisheye", None)
         self.setting(list, "perspective", None)
-        index = int(camera_path[7:])
+        try:
+            index = int(camera_path[7:])
+        except ValueError:
+            index = 0
         self.setting(str, "uri", str(index))
         self.setting(int, "index", index)
         self.setting(bool, "autonormal", False)

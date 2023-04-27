@@ -347,6 +347,18 @@ class NewlyDevice(Service, ViewPort):
                 "section": "_10_Parameters",
                 "subsection": "_40_Current",
             },
+            {
+                "attr": "max_raster_jog",
+                "object": self,
+                "default": 15,
+                "type": int,
+                "label": _("Maximum Raster Jog"),
+                "tip": _(
+                    "Maximum distance allowed to be done during a raster step/jog"
+                ),
+                "section": "_10_Parameters",
+                "subsection": "_50_Raster",
+            },
         ]
         self.register_choices("newly-specific", choices)
 
@@ -651,6 +663,9 @@ class NewlyDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def service_attach(self, *args, **kwargs):
+        self.realize()
+
     @signal_listener("flip_x")
     @signal_listener("flip_y")
     @signal_listener("swap_xy")
@@ -662,6 +677,7 @@ class NewlyDevice(Service, ViewPort):
         self.native_scale_x = UNITS_PER_INCH / self.h_dpi
         self.native_scale_y = UNITS_PER_INCH / self.v_dpi
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)
 
     @property
     def current(self):

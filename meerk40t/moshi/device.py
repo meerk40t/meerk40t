@@ -6,7 +6,7 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
+from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -323,7 +323,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Start output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel("Moshi Channel Started.")
 
@@ -332,7 +332,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Pause output sending.
             """
-            self.controller.update_state(STATE_PAUSE)
+            self.controller.update_state("pause")
             self.controller.pause()
             channel(_("Moshi Channel Paused."))
             self.signal("pause")
@@ -342,7 +342,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Resume output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Moshi Channel Resumed."))
             self.signal("pause")
@@ -389,12 +389,11 @@ class MoshiDevice(Service, ViewPort):
         )
         def codes_update(**kwargs):
             self.origin_x = 1.0 if self.home_right else 0.0
-            self.show_flip_x = self.home_right
-            self.show_origin_x = self.origin_x
             self.origin_y = 1.0 if self.home_bottom else 0.0
-            self.show_origin_y = self.origin_y
-            self.show_flip_y = self.home_bottom
             self.realize()
+
+    def service_attach(self, *args, **kwargs):
+        self.realize()
 
     @property
     def viewbuffer(self):
@@ -420,3 +419,4 @@ class MoshiDevice(Service, ViewPort):
         self.origin_x = 1.0 if self.home_right else 0.0
         self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
+        self.space.update_bounds(0, 0, self.width, self.height)

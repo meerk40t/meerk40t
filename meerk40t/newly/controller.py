@@ -31,58 +31,73 @@ class NewlyController:
         self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
+        # Load Primary Pens
+        self.sp0 = self.service.setting(int, "sp0", 0)
+        self.sp1 = self.service.setting(int, "sp1", 1)
+        self.sp2 = self.service.setting(int, "sp2", 2)
+
         self.connection = None
         self._is_opening = False
         self._abort_open = False
         self._disable_connect = False
 
+        self._job_x = None
+        self._job_y = None
+
         self._last_x = x
         self._last_y = y
+
+        self._last_updated_x = x
+        self._last_updated_y = y
 
         #######################
         # Preset Modes.
         #######################
 
+        self._set_pen = None
         self._set_cut_dc = None
         self._set_move_dc = None
-        self._set_speed_mode = None
+        self._set_mode = None
         self._set_speed = None
         self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
 
         #######################
         # Current Set Modes.
         #######################
 
+        self._pen = None
         self._cut_dc = None
         self._move_dc = None
-        self._speed_mode = None
+        self._mode = None
         self._speed = None
         self._power = None
         self._pwm_frequency = None
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
-
-        self._selected_pen = None
+        self._backlash = None
+        self._corner_speed = None
+        self._acceleration_length = None
 
         self._realtime = False
 
         self.mode = "init"
         self.paused = False
-        self.command_buffer = []
+        self._command_buffer = []
 
     def __call__(self, cmd, *args, **kwargs):
         if isinstance(cmd, str):
             # Any string data sent is latin-1 encoded.
-            self.command_buffer.append(cmd.encode("latin-1"))
+            self._command_buffer.append(cmd.encode("latin-1"))
         else:
-            self.command_buffer.append(cmd)
+            self._command_buffer.append(cmd)
 
     def set_disable_connect(self, status):
         self._disable_connect = status
@@ -167,6 +182,17 @@ class NewlyController:
         self._is_opening = False
         self._abort_open = False
 
+    def sync(self):
+        self._last_updated_x, self._last_updated_y = self._last_x, self._last_y
+
+    def update(self):
+        last_x, last_y = self.service.device.device_to_scene_position(
+            self._last_updated_x, self._last_updated_y
+        )
+        x, y = self.service.device.device_to_scene_position(self._last_x, self._last_y)
+        self.sync()
+        self.service.signal("driver;position", (last_x, last_y, x, y))
+
     #######################
     # MODE SHIFTS
     #######################
@@ -184,61 +210,130 @@ class NewlyController:
         self._clear_settings()
 
     def _clear_settings(self):
+        self._set_pen = None
         self._set_cut_dc = None
         self._set_move_dc = None
-        self._set_speed_mode = None
+        self._set_mode = None
         self._set_speed = None
         self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = None
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
 
+        self._pen = None
         self._cut_dc = None
         self._move_dc = None
-        self._speed_mode = None
+        self._mode = None
         self._speed = None
         self._power = None
         self._pwm_frequency = None
         self._relative = None
         self._bit_depth = None
         self._bit_width = None
-        self._bit_c = None
+        self._backlash = None
+        self._corner_speed = None
+        self._acceleration_length = None
 
     def _set_move_mode(self):
+        """
+        Move mode is done for any major movements usually starting out an execution.
+
+        eg.
+        VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
+        @return:
+        """
+        self._set_pen = self.sp2
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "vector"
+        self._set_mode = "move"
         self._set_speed = self.service.moving_speed
-        self._set_power = 0
         self._set_pwm_freq = None
-        self._set_relative = False
+        self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
+        self._set_corner_speed = None
+        self._set_acceleration_length = None
+
+    def _set_goto_mode(self):
+        """
+        Goto mode is done for minor between movements, where we don't need to set the power to 0, since we will be
+        using PU; commands.
+
+        eg.
+        SP2;SP2;VQ15;VJ24;VS10;PR;PU2083,-5494;
+
+        @return:
+        """
+        self._set_pen = self.sp2
+        self._set_mode = "goto"
+        self._set_speed = self.service.moving_speed
+        self._set_relative = True
+
+    def _set_frame_mode(self):
+        """
+        Frame mode is the standard framing operation settings.
+        eg.
+        SP0;VS20;PR;PD9891,0;PD0,-19704;PD-9891,0;PD0,19704;ZED;
+
+        @return:
+        """
+
+        self._set_cut_dc = self.service.cut_dc
+        self._set_move_dc = self.service.move_dc
+        self._set_pen = self.sp0
+        self._set_power = 0
+        self._set_relative = True
+        self._set_mode = "frame"
+        self._set_speed = self.service.moving_speed
+        if self.service.pwm_enabled:
+            self._set_pwm_freq = self.service.pwm_frequency
 
     def _set_vector_mode(self):
+        """
+        Vector mode typically is just the PD commands for a vector.
+
+        eg.
+        PR;SP1;DA65;VS187;PD0,-2534;PD1099,0;PD0,2534;PD-1099,0;
+        @return:
+        """
+        self._set_pen = self.sp1
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "vector"
+        self._set_mode = "vector"
         self._set_speed = self.service.default_cut_speed
         self._set_power = self.service.default_cut_power
-        self._set_pwm_freq = None
-        self._set_relative = False
+        if self.service.pwm_enabled:
+            self._set_pwm_freq = self.service.pwm_frequency
+        self._set_relative = True
         self._set_bit_depth = None
         self._set_bit_width = None
-        self._set_bit_c = None
+        self._set_backlash = None
 
     def _set_raster_mode(self):
+        """
+        Raster mode is the typical preamble and required settings for running a raster. This usually consists of
+        YF, YZ, XF, XZ, and small PU commands.
+
+        EG.
+        BT1;DA77;BC0;BD3;SP0;VQ20;VJ10;VS18;YF...
+        @return:
+        """
+        self._set_pen = self.sp0
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
-        self._set_speed_mode = "raster"
-        self._set_pwm_freq = None
+        self._set_mode = "raster"
+        self._corner_speed = None
+        self._acceleration_length = None
+        if self.service.pwm_enabled:
+            self._set_pwm_freq = self.service.pwm_frequency
         self._set_relative = True
         self._set_bit_depth = 1
         self._set_bit_width = 1
-        self._set_bit_c = 0
         self._set_speed = self.service.default_raster_speed
         self._set_power = self.service.default_raster_power
 
@@ -247,20 +342,19 @@ class NewlyController:
         if outline is not None:
             x, y = self._last_x, self._last_y
             self("DW")
-            self._write_pen_info(2)
-            self._set_move_mode()
             for pt in outline:
-                self.mark(*pt)
-            self.mark(x, y)
+                self.frame(*pt)
+            self.frame(*outline[0])
+            self.goto(x, y)  # Return to initial x, y if different than outline.
             self._clear_settings()
             self("ZED")
 
     def _execute_job(self):
         self("ZED")
-        cmd = b";".join(self.command_buffer) + b";"
+        cmd = b";".join(self._command_buffer) + b";"
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=cmd)
-        self.command_buffer.clear()
+        self._command_buffer.clear()
         self._clear_settings()
 
     def open_job(self, job=None):
@@ -275,10 +369,11 @@ class NewlyController:
             outline = job.outline
         except AttributeError:
             pass
-        self.set_xy(0, 0, relative=False)
+        if outline is not None:
+            self.set_xy(*outline[0])
+            self._job_x, self._job_y = outline[0]
         self._realtime = False
-        self._speed = None
-        self._power = None
+        self._clear_settings()
         self(f"ZZZFile{self.service.file_index}")
         self._write_frame(outline)
         self("GZ")
@@ -289,13 +384,16 @@ class NewlyController:
         Closes the file and sends.
         @return:
         """
-        if not self.command_buffer:
+        if not self._command_buffer:
             return
         if self.mode in ("realtime", "init"):
             # Job contains no instructions.
             self.mode = "init"
-            self.command_buffer.clear()
+            self._command_buffer.clear()
             return
+        if not self._realtime and self._job_x is not None and self._job_y is not None:
+            self.goto_rel(self._job_x, self._job_y)
+
         self._execute_job()
         self.mode = "init"
         if self.service.autoplay and not self._realtime:
@@ -303,9 +401,6 @@ class NewlyController:
 
     def program_mode(self):
         self._set_vector_mode()
-
-    def moving_mode(self):
-        self._set_move_mode()
 
     def rapid_mode(self):
         pass
@@ -353,8 +448,15 @@ class NewlyController:
             self._last_x += count
         elif top:
             self._last_y -= count
-        elif right:
+        elif bottom:
             self._last_y += count
+
+    def _raster_jog(self, x, y, raster_cut):
+        self.goto(x, y)
+        self._set_raster_mode()
+        self.set_settings(raster_cut.settings)
+        self._set_mode = "raster"
+        self._commit_settings()
 
     def raster(self, raster_cut: RasterCut):
         """
@@ -392,15 +494,7 @@ class NewlyController:
 
         previous_x, previous_y = raster_cut.plot.initial_position_in_scene()
 
-        self._set_move_mode()
-        self.goto(previous_x, previous_y)
-
-        self._set_raster_mode()
-        self.set_settings(raster_cut.settings)
-        self._set_speed_mode = "raster"
-
-        self._write_pen_info(0)
-        self._commit_settings()
+        self._raster_jog(previous_x, previous_y, raster_cut)
 
         if raster_cut.horizontal:
             self.mode = "raster_horizontal"
@@ -414,7 +508,12 @@ class NewlyController:
                 if dy != 0:
                     # We are moving in the Y direction.
                     commit_scanline()
-                    self.goto(x, y)
+                    if abs(dy) > self.service.max_raster_jog:
+                        self._raster_jog(x, y, raster_cut)
+                    else:
+                        self._relative = True
+                        self("PR")
+                        self._goto(x, y)  # remain standard rastermode
                 if dx != 0:
                     # Normal move, extend bytes.
                     scanline.extend([int(on)] * abs(dx))
@@ -431,10 +530,15 @@ class NewlyController:
                 if dx != 0:
                     # We are moving in the X direction.
                     commit_scanline()
-                    self.goto(x, y)
+                    if abs(dx) > self.service.max_raster_jog:
+                        self._raster_jog(x, y, raster_cut)
+                    else:
+                        self._relative = True
+                        self("PR")
+                        self._goto(x, y)  # remain standard rastermode
                 if dy != 0:
                     # Normal move, extend bytes
-                    scanline.extend([int(on)] * abs(dx))
+                    scanline.extend([int(on)] * abs(dy))
                 previous_x, previous_y = x, y
         commit_scanline()
 
@@ -451,7 +555,6 @@ class NewlyController:
         """
         if "speed" in settings:
             self._set_speed = settings.get("speed")
-            self._set_speed_mode = "vector"
         if "power" in settings:
             self._set_power = settings.get("power")
         if "pwm_frequency" in settings:
@@ -466,7 +569,28 @@ class NewlyController:
         self.connect_if_needed()
         self.connection.write(index=self._machine_index, data=data)
 
-    def mark(self, x, y):
+    def frame(self, x, y):
+        self._set_frame_mode()
+        self._mark(x, y)
+
+    def mark(self, x, y, settings=None, power=None, speed=None):
+        """
+        Mark either sets default vector settings or sets the settings based on the settings object provided.
+        @param x:
+        @param y:
+        @param settings:
+        @return:
+        """
+        self._set_vector_mode()
+        if settings is not None:
+            self.set_settings(settings)
+        if power is not None:
+            self._set_power = power
+        if speed is not None:
+            self._set_speed = speed
+        self._mark(x, y)
+
+    def _mark(self, x, y):
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -483,6 +607,36 @@ class NewlyController:
             self._last_x, self._last_y = x, y
 
     def goto(self, x, y):
+        """
+        Goto position.
+        @param x:
+        @param y:
+        @return:
+        """
+        self.goto_rel(x, y)
+
+    def goto_abs(self, x, y):
+        """
+        Goto given absolute coords value.
+        @param x:
+        @param y:
+        @return:
+        """
+        self._set_move_mode()
+        self._relative = False
+        self._goto(x, y)
+
+    def goto_rel(self, x, y):
+        """
+        Positions are given in absolute coords, but the motion sent to the laser is relative.
+        @param x:
+        @param y:
+        @return:
+        """
+        self._set_move_mode()
+        self._goto(x, y)
+
+    def _goto(self, x, y):
         dx = int(round(x - self._last_x))
         dy = int(round(y - self._last_y))
         if dx == 0 and dy == 0:
@@ -498,16 +652,10 @@ class NewlyController:
             self(f"PU{y},{x}")
             self._last_x, self._last_y = x, y
 
-    def set_xy(self, x, y, relative=None):
+    def set_xy(self, x, y):
         self.realtime_job()
         self.mode = "jog"
-        self._set_move_mode()
-        if relative is not None:
-            if relative:
-                self._set_relative = True
-            else:
-                self._set_relative = False
-        self.goto(x, y)
+        self.goto_rel(x, y)
         self.close_job()
 
     def get_last_xy(self):
@@ -581,12 +729,13 @@ class NewlyController:
         self.realtime_job()
         self.mode = "home"
         self("RS")
+        self._last_x = 0
+        self._last_y = 0
         self.close_job()
 
     def origin(self):
         self.realtime_job()
         self.mode = "origin"
-        self._set_move_mode()
         self.goto(0, 0)
         self.close_job()
 
@@ -642,26 +791,50 @@ class NewlyController:
         @param power:
         @return:
         """
-        if self._power == power:
-            return
-        self._power = power
-
-    def _write_pen_info(self, pen):
-        if self._selected_pen != pen:
-            self._selected_pen = pen
-            self(f"SP{int(pen)}")
+        self._set_power = power
 
     #######################
     # Commit settings
     #######################
 
     def _commit_settings(self):
+        if self._set_speed is not None:
+            # If set speed is set, we set all the various speed chart lookup properties.
+            settings = self._get_chart_settings_for_speed(self._set_speed)
+            self._set_corner_speed = int(round(settings["corner_speed"]))
+            self._set_acceleration_length = int(round(settings["acceleration_length"]))
+            self._set_backlash = int(round(settings["backlash"]))
+
+        self.commit_mode()
         self._commit_pwmfreq()
         self._commit_dc()
-        self._commit_speed()
+        if self._mode != "raster":
+            self._commit_pen()
         self._commit_power()
+        if self._mode == "raster":
+            self._commit_raster()
+            self._commit_pen()
+        if self._mode != "vector":
+            self._commit_corner_speed()
+            self._commit_acceleration_length()
+        self._commit_speed()
         self._commit_relative_mode()
-        self._commit_raster()
+
+    def commit_mode(self):
+        if self._set_mode is None:
+            # Quick fail.
+            return
+        new_mode = self._set_mode
+        self._set_mode = None
+        if new_mode != self._mode:
+            self._mode = new_mode
+
+            # Old speed and power are void on mode change.
+            self._speed = None
+            self._power = None
+            self._corner_speed = None
+            self._acceleration_length = None
+            self._backlash = None
 
     #######################
     # Commit DC Info
@@ -704,6 +877,26 @@ class NewlyController:
         self._commit_move_dc()
 
     #######################
+    # Commit Pen
+    #######################
+
+    def _commit_pen(self):
+        if self._set_pen is None and self._pen is not None:
+            # Quick Fail.
+            return
+
+        # Fetch Requested.
+        new_pen = self._set_pen
+        self._set_pen = None
+        if new_pen is None:
+            # Nothing set, set default.
+            new_pen = 0
+        if new_pen != self._pen:
+            # PEN is different
+            self._pen = new_pen
+            self(f"SP{self._pen}")
+
+    #######################
     # Commit Power
     #######################
 
@@ -731,11 +924,7 @@ class NewlyController:
         self._set_power = None
 
         if new_power is None:
-            # No power is set, use default.
-            if self._speed_mode == "vector":
-                new_power = self.service.default_cut_power
-            else:
-                new_power = self.service.default_raster_power
+            return
 
         if new_power != self._power:
             # Already set power is not the new_power setting.
@@ -755,12 +944,7 @@ class NewlyController:
         new_freq = self._set_pwm_freq
         self._set_pwm_freq = None
         if new_freq is None:
-            # Nothing set, set default.
-            if self.service.pwm_enabled:
-                # Frequency should be set.
-                new_freq = self.service.pwm_frequency
-            else:
-                return
+            return
         if new_freq != self._pwm_frequency:
             # Frequency is needed, and different
             self._pwm_frequency = new_freq
@@ -771,25 +955,13 @@ class NewlyController:
     #######################
 
     def _commit_speed(self):
-        if (
-            self._set_speed is None
-            and self._set_speed_mode is None
-            and self._speed is not None
-        ):
+        if self._set_speed is None and self._speed is not None:
             return
         new_speed = self._set_speed
-        new_speed_mode = self._set_speed_mode
-        self._set_speed_mode = None
         self._set_speed = None
-        if new_speed is not None and (
-            new_speed != self._speed or new_speed_mode != self._speed_mode
-        ):
-            self._speed_mode = new_speed_mode
+        if new_speed is not None and new_speed != self._speed:
             self._speed = new_speed
-            settings = self._get_chart_settings_for_speed(new_speed)
-            self(f"VQ{int(round(settings['corner_speed']))}")
-            self(f"VJ{int(round(settings['acceleration_length']))}")
-            if self._speed_mode == "vector":
+            if self._mode == "vector":
                 self(f"VS{self._map_vector_speed(new_speed)}")
             else:
                 self(f"VS{self._map_raster_speed(new_speed)}")
@@ -832,6 +1004,45 @@ class NewlyController:
             return 132 + int(round(speed * 5))
         else:
             return 127 + int(round(speed * 10))
+
+    #######################
+    # Commit Speed Chart
+    #######################
+
+    def _commit_corner_speed(self):
+        if self._set_corner_speed is None and self._corner_speed is not None:
+            # Quick Fail.
+            return
+
+        # Fetch Requested.
+        new_corner_speed = self._set_corner_speed
+        self._set_corner_speed = None
+        if new_corner_speed is None:
+            # Nothing set, set default.
+            return
+        if new_corner_speed != self._corner_speed:
+            # Corner_speed is different
+            self._corner_speed = new_corner_speed
+            self(f"VQ{int(round(self._corner_speed))}")
+
+    def _commit_acceleration_length(self):
+        if (
+            self._set_acceleration_length is None
+            and self._acceleration_length is not None
+        ):
+            # Quick Fail.
+            return
+
+        # Fetch Requested.
+        new_acceleration_length = self._set_acceleration_length
+        self._set_acceleration_length = None
+        if new_acceleration_length is None:
+            # Nothing set, set default.
+            return
+        if new_acceleration_length != self._acceleration_length:
+            # Acceleration Length is different
+            self._acceleration_length = new_acceleration_length
+            self(f"VJ{int(round(self._acceleration_length))}")
 
     #######################
     # Commit Relative Mode
@@ -889,23 +1100,23 @@ class NewlyController:
             self._bit_width = new_bitwidth
             self(f"BD{self._bit_width}")
 
-    def _commit_raster_bitc(self):
-        if self._set_bit_c is None and self._bit_c is not None:
+    def _commit_raster_backlash(self):
+        if self._set_backlash is None and self._backlash is not None:
             # Quick Fail.
             return
 
         # Fetch Requested.
-        new_bitc = self._set_bit_c
-        self._set_bit_c = None
-        if new_bitc is None:
+        new_backlash = self._set_backlash
+        self._set_backlash = None
+        if new_backlash is None:
             # Nothing set, set default.
             return
-        if new_bitc != self._bit_c:
-            # Bitc is different
-            self._bit_c = new_bitc
-            self(f"BC{self._bit_c}")
+        if new_backlash != self._backlash:
+            # backlash is different
+            self._backlash = new_backlash
+            self(f"BC{self._backlash}")
 
     def _commit_raster(self):
         self._commit_raster_bitdepth()
-        self._commit_raster_bitc()
+        self._commit_raster_backlash()
         self._commit_raster_bitwidth()

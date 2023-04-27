@@ -12,7 +12,7 @@ from meerk40t.kernel import Module
 class GRBLInterpreter(Module):
     def __init__(self, service, path):
         Module.__init__(self, service, path)
-        self.emulator = GRBLEmulator(self, service.device.scene_to_show_matrix())
+        self.emulator = GRBLEmulator(self, service.space.display.matrix())
         self._attached_device = None
 
     def __repr__(self):

@@ -40,16 +40,18 @@ class MachineOriginWidget(Widget):
             # We were called without a matrix applied, that's plain wrong
             return
         margin = 5000
-        context = self.scene.context
-        x, y = context.device.show_to_scene_position(0, 0)
-        x_dx, x_dy = context.device.show_to_scene_position(50000, 0)
-        xa1_dx, xa1_dy = context.device.show_to_scene_position(45000, 5000)
-        xa2_dx, xa2_dy = context.device.show_to_scene_position(45000, -5000)
-        y_dx, y_dy = context.device.show_to_scene_position(0, 50000)
-        ya1_dx, ya1_dy = context.device.show_to_scene_position(5000, 45000)
-        ya2_dx, ya2_dy = context.device.show_to_scene_position(-5000, 45000)
+        space = self.scene.context.space
+        x, y = space.display.iposition(0, 0)
+        x_dx, x_dy = space.display.iposition(50000, 0)
+        xa1_dx, xa1_dy = space.display.iposition(45000, 5000)
+        xa2_dx, xa2_dy = space.display.iposition(45000, -5000)
+        y_dx, y_dy = space.display.iposition(0, 50000)
+        ya1_dx, ya1_dy = space.display.iposition(5000, 45000)
+        ya2_dx, ya2_dy = space.display.iposition(-5000, 45000)
+        dev0x, dev0y = self.scene.context.device.device_to_scene_position(0, 0)
         gc.SetBrush(self.brush)
-        gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
+        gc.DrawRectangle(dev0x - margin, dev0y - margin, margin * 2, margin * 2)
+
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)
         gc.DrawLines(

@@ -61,6 +61,7 @@ from .propertypanels.imageproperty import (
 )
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
+from .propertypanels.placementproperty import PlacementParameterPanel
 from .propertypanels.pointproperty import PointPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.rasterwizardpanels import (
@@ -98,10 +99,11 @@ def register_panel_go(window, context):
     go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
 
     def busy_go_plan(*args):
-        with wx.BusyInfo(_("Processing and sending...")):
-            context(
-                "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
-            )
+        context.kernel.busyinfo.start(msg=_("Processing and sending..."))
+        context(
+            "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
+        )
+        context.kernel.busyinfo.end()
 
     window.Bind(
         wx.EVT_BUTTON,
@@ -625,6 +627,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
         kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
         kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
+        kernel.register("property/PlaceCurrentNode/OpMain", PlacementParameterPanel)
+        kernel.register("property/PlacePointNode/OpMain", PlacementParameterPanel)
 
         kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
         kernel.register("property/FileNode/Property", FilePropertiesPanel)

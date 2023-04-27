@@ -1,5 +1,5 @@
 from glob import glob
-from os.path import exists, join, realpath, splitext
+from os.path import basename, exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -98,12 +98,17 @@ def update(context, node):
 
 
 def update_linetext(context, node, newtext):
+    # print ("Update Linetext")
     if node is None:
+        # print ("node is none, exit")
         return
     if not hasattr(node, "mkfont"):
+        # print ("no font attr, exit")
         return
     if not hasattr(node, "mkfontsize"):
+        # print ("no fontsize attr, exit")
         return
+    oldtext = getattr(node, "_translated_text", "")
     registered_fonts = fonts_registered()
     fontname = node.mkfont
     fontsize = node.mkfontsize
@@ -113,7 +118,11 @@ def update_linetext(context, node, newtext):
     font_dir = getattr(context, "font_directory", "")
     font_path = join(font_dir, fontname)
     if not exists(font_path):
-        return
+        # Fallback to meerk40t directory...
+        safe_dir = realpath(get_safe_path(context.kernel.name))
+        font_path = join(safe_dir, fontname)
+        if not exists(font_path):
+            return
     try:
         filename, file_extension = splitext(font_path)
         if len(file_extension) > 0:
@@ -123,7 +132,9 @@ def update_linetext(context, node, newtext):
         fontclass = item[1]
     except (KeyError, IndexError):
         # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
+        # print ("unknown fonttype, exit")
         return
+    # print("Nearly there, all fonts checked...")
     cfont = fontclass(font_path)
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
@@ -145,8 +156,9 @@ def update_linetext(context, node, newtext):
     node.path.transform.f = oldf
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
-
+    # print (f"Updated: from {oldtext} -> {mytext}")
     node.mktext = newtext
+    node._translated_text = mytext
     node.altered()
 
 
@@ -160,22 +172,32 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     safe_dir = realpath(get_safe_path(context.kernel.name))
     context.setting(str, "font_directory", safe_dir)
     font_dir = context.font_directory
-    if font is not None:
-        context.shx_preferred = font
-    font = context.shx_preferred
+    # Check whether the default is still valid
+    if context.shx_preferred is not None and context.shx_preferred != "":
+        font_path = join(font_dir, context.shx_preferred)
+        if not exists(font_path):
+            context.shx_preferred = None
+    # Valid font?
     if font is not None and font != "":
         font_path = join(font_dir, font)
         if not exists(font_path):
-            # print (f"Font {font} could'nt be found, fallback to candidates")
             font = None
-
+    if font is not None:
+        context.shx_preferred = font
+    else:
+        if context.shx_preferred is not None:
+            #  print (f"Fallback to {context.shx_preferred}")
+            font = context.shx_preferred
+    # Still not valid?
     if font is None or font == "":
+        font = ""
         # No preferred font set, let's try a couple of candidates...
         candidates = (
             "timesr.jhf",
             "romant.shx",
             "rowmans.jhf",
             "FUTURA.SHX",
+            "arial.ttf",
         )
         for fname in candidates:
             fullfname = join(font_dir, fname)
@@ -184,7 +206,25 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
                 font = fname
                 context.shx_preferred = font
                 break
+        if font == "":
+            # You know, I take anything at this point...
+            for extension in registered_fonts:
+                ext = "*." + extension
+                if font == "":
+                    for p in glob(join(font_dir, ext.lower())):
+                        font = basename(p)
+                        # print (f"Fallback to first file found: {font}")
+                        context.shx_preferred = font
+                        break
+                if font == "":
+                    for p in glob(join(font_dir, ext.upper())):
+                        font = basename(p)
+                        # print (f"Fallback to first file found: {font}")
+                        context.shx_preferred = font
+                        break
+
     if font is None or font == "":
+        # print ("Font was empty")
         return None
     font_path = join(font_dir, font)
     try:
@@ -195,7 +235,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         item = registered_fonts[file_extension]
         fontclass = item[1]
     except (KeyError, IndexError):
-        # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
+        # print(f"Unknown fonttype {file_extension}")
         return None
     horizontal = True
     try:
@@ -205,7 +245,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         mytext = context.elements.wordlist_translate(text)
         cfont.render(path, mytext, horizontal, float(font_size))
     except ShxFontParseError as e:
-        # channel(f"{e.args}")
+        # print(f"FontParseError {e.args}")
         return
     #  print (f"Pathlen={len(path.path)}")
     # if len(path.path) == 0:
@@ -220,6 +260,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mktext = text
+    path_node._translated_text = mytext
     path_node.mkcoordx = x
     path_node.mkcoordy = y
     path_node.stroke_width = UNITS_PER_PIXEL

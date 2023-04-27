@@ -70,6 +70,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_type_50,
     icons8_undo_50,
     icons8_ungroup_objects_50,
+    icons8_user_location_50,
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
@@ -320,7 +321,6 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
-        context.setting(bool, "maintain_zoom_resize", True)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
@@ -355,19 +355,6 @@ class MeerK40t(MWindow):
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "mini_icon",
-                "object": self.context.root,
-                "default": False,
-                "type": bool,
-                "label": _("Mini icon in tree"),
-                "tip": _(
-                    "Active: Display a miniature representation of the element in the tree\n"
-                    + "Inactive: Use a standard icon for the element type instead"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-            {
                 "attr": "icon_size",
                 "object": self.context.root,
                 "default": "default",
@@ -376,7 +363,20 @@ class MeerK40t(MWindow):
                 "choices": ["large", "big", "default", "small", "tiny"],
                 "label": _("Icon size:"),
                 "tip": _(
-                    "Appearance of all icons in the GUI (requires a restart to take effect))"
+                    "Appearance of all icons in the GUI (requires a restart to take effect)"
+                ),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+            {
+                "attr": "mini_icon",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Mini icon in tree"),
+                "tip": _(
+                    "Active: Display a miniature representation of the element in the tree\n"
+                    + "Inactive: Use a standard icon for the element type instead"
                 ),
                 "page": "Gui",
                 "section": "Appearance",
@@ -442,11 +442,11 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "maintain_zoom_resize",
+                "attr": "autofocus_resize",
                 "object": self.context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
-                "label": _("Maintain zoom on resize"),
+                "label": _("Autofocus bed on resize"),
                 "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
                 "section": "Zoom",
@@ -586,6 +586,19 @@ class MeerK40t(MWindow):
                 "section": "Snap-Options",
                 "subsection": "Grid",
             },
+            {
+                "attr": "clear_magnets",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Clear magnets on File - New"),
+                "tip": _(
+                    "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                ),
+                "page": "Scene",
+                "section": "Snap-Options",
+                "subsection": "Magnetlines",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
         choices = [
@@ -703,6 +716,19 @@ class MeerK40t(MWindow):
                 "group": "tool",
                 "size": bsize_normal,
                 "identifier": "relocate",
+            },
+        )
+
+        kernel.register(
+            "button/tools/Placement",
+            {
+                "label": _("Job Start"),
+                "icon": icons8_user_location_50,
+                "tip": _("Add a job starting point to the scene"),
+                "action": lambda v: kernel.elements("tool placement\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "placement",
             },
         )
 
@@ -1113,8 +1139,9 @@ class MeerK40t(MWindow):
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
                     node.emphasized = True
-                group_node.emphasized = True
-                kernel.signal("element_property_reload", "Scene", group_node)
+                if group_node is not None:
+                    group_node.emphasized = True
+                    kernel.signal("element_property_reload", "Scene", group_node)
 
         # Default Size for normal buttons
         buttonsize = STD_ICON_SIZE
@@ -1209,23 +1236,29 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_edit",
                         "icon": icons8_curly_brackets_50,
-                        "tip": _("Manages Wordlist-Entries"),
+                        "tip": _("Manages Wordlist-Entries")
+                        + _(" (right go to next entry)"),
                         "label": _("Wordlist"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                     {
                         "identifier": "prep_wordlist_plus_1",
                         "icon": icons8_circled_right_50,
-                        "tip": _("Wordlist: go to next entry"),
+                        "tip": _("Wordlist: go to next entry")
+                        + _(" (right go to prev entry)"),
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(-1),
                     },
                     {
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
                         "icon": icons8_circled_left_50,
-                        "tip": _("Wordlist: go to prev entry"),
+                        "tip": _("Wordlist: go to prev entry")
+                        + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
+                        "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
                 ],
             },
@@ -1959,6 +1992,8 @@ class MeerK40t(MWindow):
         context.setting(str, "file18", None)
         context.setting(str, "file19", None)
         self.populate_recent_menu()
+        if hasattr(context.kernel.busyinfo, "reparent"):
+            context.kernel.busyinfo.reparent(self)
 
     @lookup_listener("pane")
     def dynamic_fill_pane_menu(self, new=None, old=None):
@@ -2425,7 +2460,8 @@ class MeerK40t(MWindow):
                     flag = True
                     if len(node.references) > 0:
                         flag = False
-                node.emphasized = flag
+                if node.can_emphasize:
+                    node.emphasized = flag
             elements.validate_selected_area()
             self.context.signal("refresh_scene", "Scene")
 
@@ -2451,7 +2487,7 @@ class MeerK40t(MWindow):
             self.context("window open Preferences\n")
 
         def on_click_delete():
-            self.context("element delete\n")
+            self.context("tree selected delete\n")
 
         def clipboard_filled():
             res = False
@@ -2553,7 +2589,7 @@ class MeerK40t(MWindow):
                 "segment": "",
             },
             {
-                "label": _("Delete\tDel"),
+                "label": _("Delete"),
                 "help": _("Delete the selected elements"),
                 "action": on_click_delete,
                 "enabled": self.context.elements.has_emphasis,
@@ -3121,6 +3157,16 @@ class MeerK40t(MWindow):
         )
         self.help_menu.AppendSeparator()
         menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Check for Updates"),
+            _("Check whether a newer version of Meerk40t is available"),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("check_for_updates -popup\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),
             _(
@@ -3580,7 +3626,7 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        if self.context.maintain_zoom_resize:
+        if self.context.autofocus_resize:
             zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 

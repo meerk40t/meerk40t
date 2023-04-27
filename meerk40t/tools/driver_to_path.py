@@ -457,7 +457,7 @@ class DriverToPath:
                     setattr(plotter, opt["attr"], getattr(self, opt["attr"]))
 
             spooler_job = elements.lookup(f"spoolerjob/{blob_type}")
-            job_object = spooler_job(plotter, elements.device.scene_to_show_matrix())
+            job_object = spooler_job(plotter, elements.space.display.matrix())
             job_object.write_blob(data)
             while not job_object.execute():
                 # Still more to execute.

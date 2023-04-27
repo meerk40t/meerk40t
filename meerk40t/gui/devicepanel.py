@@ -321,7 +321,7 @@ class DevicePanel(wx.Panel):
                 if family_default:
                     break
 
-            family_info = getattr(device, "source", family_default)
+            family_info = device.setting(str, "source", family_default)
             if family_info:
                 family_info = family_info.capitalize()
             self.devices_list.SetItem(index, 1, type_info)
@@ -331,6 +331,7 @@ class DevicePanel(wx.Panel):
                 self.devices_list.SetItemTextColour(index, wx.RED)
 
         self.devices_list.SetFocus()
+        self.on_item_selected(None)
 
     def get_new_label_for_device(self, device_type):
         ct = 0
@@ -361,9 +362,12 @@ class DevicePanel(wx.Panel):
         return label
 
     def on_item_selected(self, event):
-        self.current_item = event.Index
+        if event is None:
+            self.current_item = self.devices_list.GetFirstSelected()
+        else:
+            self.current_item = event.Index
+            event.Skip()
         self.enable_controls()
-        event.Skip()
 
     def on_item_deselected(self, event):
         self.current_item = -1

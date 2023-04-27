@@ -174,7 +174,7 @@ and a wxpython version <= 4.1.1."""
                 "object": kernel.root,
                 "default": False,
                 "type": bool,
-                "label": _("Disable Element-ToolTips"),
+                "label": _("Disable tooltips over tree"),
                 "tip": _(
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),
@@ -212,9 +212,9 @@ and a wxpython version <= 4.1.1."""
             import wx
 
             if option_yes is None:
-                option_yes = "Yes"
+                option_yes = _("Yes")
             if option_no is None:
-                option_yes = "No"
+                option_no = _("No")
             if caption is None:
                 caption = _("Question")
             dlg = wx.MessageDialog(

@@ -129,6 +129,8 @@ class RectSelectWidget(Widget):
                     continue  # This element has no bounds.
                 if q is None:
                     continue
+                if hasattr(node, "can_emphasize") and not node.can_emphasize:
+                    continue
                 xmin = q[0]
                 ymin = q[1]
                 xmax = q[2]

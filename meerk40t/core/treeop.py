@@ -162,6 +162,8 @@ def get_tree_operation(registration):
 
 
 def tree_operations_for_node(registration, node):
+    if node.type is None:
+        return
     for func, m, sname in registration.find("tree", node.type, ".*"):
         reject = False
         for cond in func.conditionals:

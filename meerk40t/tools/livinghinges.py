@@ -451,9 +451,12 @@ class HingePanel(wx.Panel):
 
         if gc:
             wd, ht = self.panel_preview.GetSize()
-            ratio = min(
-                wd / self.hinge_generator.width, ht / self.hinge_generator.height
-            )
+            try:
+                ratio = min(
+                    wd / self.hinge_generator.width, ht / self.hinge_generator.height
+                )
+            except ZeroDivisionError:
+                return
             ratio *= 0.9
             if self._use_geomstr:
                 matrix = gc.CreateMatrix(
