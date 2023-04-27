@@ -79,6 +79,12 @@ class GrblController:
             132: 200.000,  # Z-axis max travel mm.
         }
 
+    def __repr__(self):
+        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.baud_rate)}')"
+
+    def __len__(self):
+        return len(self._sending_queue) + len(self._realtime_queue)
+
     def open(self):
         """
         Opens the connection calling connection.connect.
@@ -491,9 +497,3 @@ class GrblController:
             else:
                 self._sending_buffered()
         self.service.signal("pipe;running", False)
-
-    def __repr__(self):
-        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.baud_rate)}')"
-
-    def __len__(self):
-        return len(self._sending_queue) + len(self._realtime_queue)
