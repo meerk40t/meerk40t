@@ -4494,7 +4494,7 @@ msgid "Note: You will need to restart MeerK40t for any change to take effect."
 msgstr ""
 
 #: meerk40t/gui/plugin.py:177
-msgid "Disable Element-ToolTips"
+msgid "Disable tooltips over tree"
 msgstr ""
 
 #: meerk40t/gui/plugin.py:178
