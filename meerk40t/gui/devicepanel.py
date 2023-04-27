@@ -331,6 +331,7 @@ class DevicePanel(wx.Panel):
                 self.devices_list.SetItemTextColour(index, wx.RED)
 
         self.devices_list.SetFocus()
+        self.on_item_selected(None)
 
     def get_new_label_for_device(self, device_type):
         ct = 0
@@ -361,9 +362,12 @@ class DevicePanel(wx.Panel):
         return label
 
     def on_item_selected(self, event):
-        self.current_item = event.Index
+        if event is None:
+            self.current_item = self.devices_list.GetFirstSelected()
+        else:
+            self.current_item = event.Index
+            event.Skip()
         self.enable_controls()
-        event.Skip()
 
     def on_item_deselected(self, event):
         self.current_item = -1
