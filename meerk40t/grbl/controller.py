@@ -30,7 +30,7 @@ class GrblController:
         self._write_lock = threading.Condition()
         self._buffer = 100
 
-        self._lock = threading.Condition()
+        self._send_lock = threading.Condition()
         self._sending_queue = []
         self._realtime_queue = []
         # buffer for feedback...
@@ -130,12 +130,12 @@ class GrblController:
         """
         self.start()
         self.service.signal("serial;write", data)
-        with self._lock:
+        with self._send_lock:
             self._sending_queue.append(data)
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
-            self._lock.notify()
+            self._send_lock.notify()
         if len(self._sending_queue) > self._buffer:
             with self._write_lock:
                 if len(self._sending_queue) > self._buffer:
@@ -152,14 +152,14 @@ class GrblController:
         """
         self.start()
         self.service.signal("serial;write", data)
-        with self._lock:
+        with self._send_lock:
             self._realtime_queue.append(data)
             if "\x18" in data:
                 self._sending_queue.clear()
             self.service.signal(
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
-            self._lock.notify()
+            self._send_lock.notify()
 
     def start(self):
         """
@@ -185,8 +185,8 @@ class GrblController:
         """
         self.sending_thread = None
         self.close()
-        with self._lock:
-            self._lock.notify()
+        with self._send_lock:
+            self._send_lock.notify()
 
     def grbl_error_code(self, code):
         long = ""
@@ -390,7 +390,7 @@ class GrblController:
 
         @return:
         """
-        with self._lock:
+        with self._send_lock:
             line = self._realtime_queue.pop(0)
         if line is not None:
             self.connection.write(line)
@@ -402,7 +402,7 @@ class GrblController:
 
         @return:
         """
-        with self._lock:
+        with self._send_lock:
             line = self._sending_queue.pop(0)
             if line is not None:
                 self.commands_in_device_buffer.append(line)
@@ -482,9 +482,9 @@ class GrblController:
             if not self._sending_queue and not self.commands_in_device_buffer:
                 # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
-                with self._lock:
+                with self._send_lock:
                     # We wait until new data is put in the buffer.
-                    self._lock.wait()
+                    self._send_lock.wait()
                 continue
             if self.service.buffer_mode == "sync":
                 self._sending_sync()
