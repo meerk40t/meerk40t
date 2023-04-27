@@ -390,14 +390,11 @@ class GrblController:
 
         @return:
         """
-        line = None
         with self._lock:
             line = self._realtime_queue.pop(0)
         if line is not None:
             self.connection.write(line)
             self.send(line)
-        # else:
-        #     print ("Was empty in sending_realtime")
 
     def _sending_single_line(self):
         """
@@ -434,13 +431,11 @@ class GrblController:
     def _sending_buffered(self):
         """
         Buffered connection sends as much data as fits in the planning buffer. Then it waits
-        and for each ok, it reduces the expected size of the plannning buffer and sends the next
+        and for each ok, it reduces the expected size of the planning buffer and sends the next
         line of data, only when there's enough room to hold that data.
 
         @return:
         """
-        while self._realtime_queue:
-            self._sending_realtime()
         # print (
         #     f"Send Queue: {len(self._sending_queue)}\n" +
         #     f"commands_in_device: {len(self.commands_in_device_buffer)}\n"
@@ -468,9 +463,6 @@ class GrblController:
 
         @return:
         """
-        while self._realtime_queue:
-            self._sending_realtime()
-
         # Send 1, recv 1.
         if self._sending_queue:
             self._sending_single_line()
@@ -483,17 +475,15 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if (
-                not self._sending_queue
-                and not self._realtime_queue
-                and not self.commands_in_device_buffer
-            ):
+            while self._realtime_queue:
+                self._sending_realtime()
+            if not self._sending_queue and not self.commands_in_device_buffer:
                 # There is nothing to write, or read
                 self.service.signal("pipe;running", False)
                 with self._lock:
                     # We wait until new data is put in the buffer.
                     self._lock.wait()
-                self.service.signal("pipe;running", True)
+                continue
             if self.service.buffer_mode == "sync":
                 self._sending_sync()
             else:
