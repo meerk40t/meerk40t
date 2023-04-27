@@ -1551,8 +1551,8 @@ class ArrangementPanel(wx.Panel):
 class Alignment(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
-            350,
-            350,
+            360,
+            485,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
