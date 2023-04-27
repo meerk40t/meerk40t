@@ -6279,6 +6279,14 @@ msgstr "Dreht die Richtung des Mausrad beim Zoomen um"
 msgid "Disable ToolTips"
 msgstr "Deaktiviere Tooltips"
 
+msgid "Disable tooltips over tree"
+msgstr "Keine Tooltips über Arbeitsbereich"
+
+msgid "You can suppress the tooltips over operations and elements in the tree"
+msgstr ""
+"Mit dieser Option werden Tooltips über Arbeitsvorgängen\n"
+"und Elementen im Baumdiagramm unterdrückt."
+
 #: meerk40t/gui/plugin.py:172
 msgid "If you do not want to see tooltips like this one, check this box."
 msgstr "Um Tooltips wie diesen auzublenden, aktiviere diese Option."
@@ -7120,6 +7128,10 @@ msgid "Maintain zoom on resize"
 msgstr "Zoom bei Größenänderungen beibehalten"
 
 #: meerk40t/gui/wxmmain.py:424
+
+msgid "Autofocus bed on resize"
+msgstr "Automatischer Zoom bei Größenänderung"
+
 msgid "Autofocus bed when resizing the main window"
 msgstr "Automatischer Zoom auf Laserbett bei Größeneveränderung des Hauptfensters"
 
@@ -7731,7 +7743,7 @@ msgstr "Icons ausblenden"
 
 #: meerk40t/gui/wxmmain.py:2104
 msgid "Don't use icons in the tree"
-msgstr "Verzichte auf die Anzeige von Icons im Baum"
+msgstr "Verzichte auf die Anzeige von Icons im Baumdiagramm"
 
 #: meerk40t/gui/wxmmain.py:2114
 msgid "Hide Origin-Indicator"
@@ -8210,27 +8222,19 @@ msgstr ""
 
 #: meerk40t/gui/wxmscene.py:494
 msgid "On"
-msgstr ""
+msgstr "Ein"
 
 #: meerk40t/gui/scenewidgets/guidewidget.py:271 meerk40t/gui/wxmscene.py:494
 msgid "Off"
-msgstr ""
+msgstr "Aus"
 
 #: meerk40t/gui/wxmscene.py:536
 msgid "Turned primary grid on"
-msgstr ""
+msgstr "Primäres Gitter wurde eingeschaltet"
 
 #: meerk40t/gui/wxmscene.py:538
 msgid "Turned primary grid off"
-msgstr ""
-
-#: meerk40t/gui/wxmscene.py:580
-msgid "Turned secondary grid onTurned secondary grid off"
-msgstr ""
-
-#: meerk40t/gui/wxmscene.py:607
-msgid "Turned circular grid onTurned circular grid off"
-msgstr ""
+msgstr "Primäres Gitter wurde ausgeschaltet"
 
 #: meerk40t/gui/wxmscene.py:617
 msgid "Target needs to be one of primary, secondary, circular"
@@ -15962,3 +15966,19 @@ msgstr ""
 "Diese legt einen Startpunkt für die Jobausgabe fest.\n"
 "Es können mehrere solcher Startpunkte verwendet werden."
 
+msgid "Current Value: {value} pixel"
+msgstr "Aktueller Wert: {value} Pixel"
+
+msgid "Magnetlines"
+msgstr "Magnet-Linien"
+
+msgid "Clear magnets on File - New"
+msgstr "Magnetlinien bei 'Datei - Neu' löschen"
+
+msgid "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+msgstr ""
+"Aktiv: Datei-Neu setzt existierende Magnet-Linien zurück\n"
+"Inaktiv: Existierende Magnetlinien werden beibehalten"
+
+msgid "User defined value: {value}"
+msgstr "Benutzerdefinierter Wert: {value}"

@@ -174,7 +174,7 @@ and a wxpython version <= 4.1.1."""
                 "object": kernel.root,
                 "default": False,
                 "type": bool,
-                "label": _("Disable Element-ToolTips"),
+                "label": _("Disable tooltips over tree"),
                 "tip": _(
                     "You can suppress the tooltips over operations and elements in the tree"
                 ),

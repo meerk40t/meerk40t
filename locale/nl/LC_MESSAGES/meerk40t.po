@@ -4538,7 +4538,7 @@ msgstr ""
 "kracht worden."
 
 #: meerk40t/gui/plugin.py:177
-msgid "Disable Element-ToolTips"
+msgid "Disable tooltips over tree"
 msgstr ""
 
 #: meerk40t/gui/plugin.py:178

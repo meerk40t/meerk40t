@@ -11,8 +11,8 @@ def register_panel_snapoptions(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(80, 165)
-        .FloatingSize(120, 195)
+        .MinSize(80, 125)
+        .FloatingSize(120, 145)
         .Hide()
         .Caption(_("Snap-Options"))
         .CaptionVisible(not context.pane_lock)
@@ -37,7 +37,7 @@ class SnapOptionPanel(wx.Panel):
         maxpoints = 75
 
         self.slider_visibility = wx.Slider(
-            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL
         )
         self.slider_visibility.SetToolTip(
             _("Defines until which distance snap points will be highlighted")
@@ -48,7 +48,7 @@ class SnapOptionPanel(wx.Panel):
             _("Shall the cursor snap to the next element point?")
         )
         self.slider_distance_points = wx.Slider(
-            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL
         )
         self.slider_distance_points.SetToolTip(
             _(
@@ -61,7 +61,7 @@ class SnapOptionPanel(wx.Panel):
             _("Shall the cursor snap to the next grid intersection?")
         )
         self.slider_distance_grid = wx.Slider(
-            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL
+            self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL
         )
         self.slider_distance_grid.SetToolTip(
             _(
@@ -131,26 +131,42 @@ class SnapOptionPanel(wx.Panel):
         state = self.check_snap_grid.GetValue()
         self.context.snap_grid = state
         self.context.signal("snap_grid", state)
+        self.slider_distance_grid.Enable(state)
 
     def on_checkbox_points(self, event):
         state = self.check_snap_points.GetValue()
         self.context.snap_points = state
         self.context.signal("snap_points", state)
+        self.slider_distance_points.Enable(state)
+
+    def update_slider_tooltip(self, control):
+        state = control.GetValue()
+        ttip = control.GetToolTipText()
+        lines = ttip.split("\n")
+        if len(lines) > 1:
+            lines = lines[:-1]
+        lines.append(_("Current Value: {value} pixel").format(value=state))
+        ttip = "\n".join(lines)
+        control.SetToolTip(ttip)
 
     def on_slider_visibility(self, event):
         state = self.slider_visibility.GetValue()
         self.context.show_attract_len = state
         self.context.signal("show_attract_len", state)
+        self.slider_visibility.Enable(state)
+        self.update_slider_tooltip(self.slider_visibility)
 
     def on_slider_grid(self, event):
         state = self.slider_distance_grid.GetValue()
         self.context.grid_attract_len = state
         self.context.signal("grid_attract_len", state)
+        self.update_slider_tooltip(self.slider_distance_grid)
 
     def on_slider_points(self, event):
         state = self.slider_distance_points.GetValue()
         self.context.action_attract_len = state
         self.context.signal("action_attract_len", state)
+        self.update_slider_tooltip(self.slider_distance_points)
 
     def update_values(self):
         if self.check_snap_grid.GetValue != self.context.snap_grid:
@@ -163,6 +179,12 @@ class SnapOptionPanel(wx.Panel):
             self.slider_distance_points.SetValue(self.context.action_attract_len)
         if self.slider_visibility.GetValue() != self.context.show_attract_len:
             self.slider_visibility.SetValue(self.context.show_attract_len)
+        self.update_slider_tooltip(self.slider_distance_grid)
+        self.update_slider_tooltip(self.slider_distance_points)
+        self.update_slider_tooltip(self.slider_visibility)
+        self.slider_visibility.Enable(self.context.show_attract_len)
+        self.slider_distance_points.Enable(self.context.snap_points)
+        self.slider_distance_grid.Enable(self.context.snap_grid)
 
     @signal_listener("snap_points")
     @signal_listener("snap_grid")

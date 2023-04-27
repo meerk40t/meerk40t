@@ -101,7 +101,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Stuff for magnet-lines
         self.magnet_x = []
         self.magnet_y = []
-        self.magnet_attraction = 2
+        self._magnet_attraction = 2
         # 0 off, `1..x` increasing strength (quadratic behaviour)
         self.magnet_attract_x = True  # Shall the X-Axis be affected
         self.magnet_attract_y = True  # Shall the Y-Axis be affected
@@ -743,9 +743,20 @@ class MeerK40tScenePanel(wx.Panel):
     # MAGNETS
     ##########
 
+    @property
+    def magnet_attraction(self):
+        return self._magnet_attraction
+
+    @magnet_attraction.setter
+    def magnet_attraction(self, value):
+        if 0 <= value <= 5:
+            self._magnet_attraction = value
+            self.save_magnets()
+
     def save_magnets(self):
         try:
             with open(self._magnet_file, "w") as f:
+                f.write(f"a={self.magnet_attraction}\n")
                 for x in self.magnet_x:
                     f.write(f"x={Length(x, preferred_units='mm').preferred_length}\n")
                 for y in self.magnet_y:
@@ -763,17 +774,27 @@ class MeerK40tScenePanel(wx.Panel):
                     if cline != "":
                         subs = cline.split("=")
                         if len(subs) > 1:
-                            # try:
-                            dimens = Length(subs[1])
-                            value = float(dimens)
-                            if subs[0] in ("x", "X"):
-                                if value not in self.magnet_x:
-                                    self.magnet_x.append(value)
-                            elif subs[0] in ("y", "Y"):
-                                if value not in self.magnet_y:
-                                    self.magnet_y.append(value)
-                            # except ValueError:
-                            #     pass
+                            try:
+                                if subs[0] in ("a", "A"):
+                                    # Attraction strength
+                                    value = int(subs[1])
+                                    if value < 0:
+                                        value = 0
+                                    if value > 5:
+                                        value = 5
+                                    self._magnet_attraction = value
+                                elif subs[0] in ("x", "X"):
+                                    dimens = Length(subs[1])
+                                    value = float(dimens)
+                                    if value not in self.magnet_x:
+                                        self.magnet_x.append(value)
+                                elif subs[0] in ("y", "Y"):
+                                    dimens = Length(subs[1])
+                                    value = float(dimens)
+                                    if value not in self.magnet_y:
+                                        self.magnet_y.append(value)
+                            except ValueError:
+                                pass
         except (PermissionError, OSError, FileNotFoundError):
             return
 
@@ -823,15 +844,15 @@ class MeerK40tScenePanel(wx.Panel):
 
         dx = 0
         dy = 0
-        if self.has_magnets() and self.magnet_attraction > 0:
+        if self.has_magnets() and self._magnet_attraction > 0:
             if self.grid.tick_distance > 0:
                 s = f"{self.grid.tick_distance}{self.context.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off
-                attraction_len = 1 / 3 * self.magnet_attraction * self.magnet_attraction * len_tick
+                attraction_len = 1 / 3 * self._magnet_attraction * self._magnet_attraction * len_tick
 
-                # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self.magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
+                # print("Attraction len=%s, attract=%d, alen=%.1f, tlen=%.1f, factor=%.1f" % (s, self._magnet_attraction, attraction_len, len_tick, attraction_len / len_tick ))
                 # fmt: on
             else:
                 attraction_len = float(Length("1mm"))

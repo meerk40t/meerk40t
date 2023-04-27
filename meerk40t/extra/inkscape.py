@@ -77,9 +77,12 @@ def run_command_and_log(command_array, logfile):
                 f"Executed successfully, result: {c.returncode} (execution time: {end_time-start_time:.1f} sec)\n"
             )
             f.write("Output:\n")
-            f.write(c.stdout.decode("utf-8") + "\n")
+            try:
+                f.write(c.stdout.decode("utf-8", errors="surrogateescape"))
+            except UnicodeDecodeError:
+                pass
         result = True
-    except (FileNotFoundError, TimeoutExpired) as e:
+    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:
@@ -147,8 +150,11 @@ class MultiLoader:
         result, c = run_command_and_log([inkscape, "-V"], logfile)
         if not result:
             return pathname
+        try:
+            version = c.stdout.decode("utf-8", errors="surrogateescape")
+        except UnicodeDecodeError:
+            version = "inkscape 1.x"
 
-        version = c.stdout.decode("utf-8")
 
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
         logfile = os.path.join(safe_dir, "inkscape.log")
@@ -327,9 +333,14 @@ def plugin(kernel, lifecycle):
                 channel(_("Inkscape not found. Try 'inkscape locate'"))
                 return
             c = run([inkscape_path, "-V"], stdout=PIPE)
+            try:
+                version = c.stdout.decode("utf-8", errors="surrogateescape")
+            except UnicodeDecodeError:
+                version = "unknown"
+
             channel(
                 _('Inkscape executable at "{path}" is: {version}').format(
-                    path=inkscape_path, version=c.stdout.decode("utf-8")
+                    path=inkscape_path, version=version
                 )
             )
             return "inkscape", data
@@ -394,7 +405,7 @@ def plugin(kernel, lifecycle):
             svg_temp_file = os.path.join(safe_dir, "temp.svg")
             png_temp_file = os.path.join(safe_dir, "temp.png")
             needs_conversion = 0
-            with open(source, mode="r", encoding="utf8") as f:
+            with open(source, mode="r", encoding="utf8", errors="surrogateescape") as f:
                 while True:
                     line = f.readline().lower()
                     if not line:
@@ -467,8 +478,11 @@ def plugin(kernel, lifecycle):
             result, c = run_command_and_log([inkscape, "-V"], log_file)
             if not result:
                 return pathname
-
-            version = c.stdout.decode("utf-8")
+            version = None
+            try:
+                version = c.stdout.decode(encoding="utf-8", errors="surrogateescape")
+            except UnicodeDecodeError:
+                version = "inkscape 1.x"
 
             if needs_conversion == METHOD_CONVERT_TO_OBJECT:
                 # Ask inkscape to convert all text elements to paths
