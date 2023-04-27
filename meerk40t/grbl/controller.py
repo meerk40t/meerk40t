@@ -116,8 +116,10 @@ class GrblController:
 
         @return:
         """
-        if self.connection.connected:
-            self.connection.disconnect()
+        if not self.connection.connected:
+            return
+        self.connection.disconnect()
+        self.channel("Disconnecting from GRBL...")
 
     def write(self, data):
         """
