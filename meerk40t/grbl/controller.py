@@ -183,6 +183,8 @@ class GrblController:
         """
         self.sending_thread = None
         self.close()
+        with self._lock:
+            self._lock.notify()
 
     def grbl_error_code(self, code):
         long = ""
