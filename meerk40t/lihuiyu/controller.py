@@ -162,6 +162,7 @@ class LihuiyuController:
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
+        self._loop_cond = threading.Condition()
 
         self._status = [0] * 6
         self._usb_state = -1
@@ -170,7 +171,6 @@ class LihuiyuController:
         self.max_attempts = 5
         self.refuse_counts = 0
         self.connection_errors = 0
-        self.count = 0
         self.aborted_retries = False
         self.pre_ok = False
         self.realtime = False
@@ -325,9 +325,8 @@ class LihuiyuController:
             return self
 
         self.pipe_channel(f"write({str(bytes_to_write)})")
-        self._queue_lock.acquire(True)
-        self._queue += bytes_to_write
-        self._queue_lock.release()
+        with self._queue_lock:
+            self._queue += bytes_to_write
         self.start()
         self.update_buffer()
         return self
@@ -356,9 +355,8 @@ class LihuiyuController:
                 self.write(queue_bytes)
             return self
         self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
-        self._preempt_lock.acquire(True)
-        self._preempt = bytearray(bytes_to_write) + self._preempt
-        self._preempt_lock.release()
+        with self._preempt_lock:
+            self._preempt = bytearray(bytes_to_write) + self._preempt
         self.start()
         self.update_buffer()
         return self
@@ -368,17 +366,18 @@ class LihuiyuController:
         Controller state change to `Started`.
         @return:
         """
-
+        with self._loop_cond:
+            self._loop_cond.notify()
         if not self.is_shutdown and (
             self._thread is None or not self._thread.is_alive()
         ):
+            self.update_state("init")
             self._thread = self.context.threaded(
                 self._thread_data_send,
                 thread_name=f"LhyPipe({self.context.path})",
                 result=self.stop,
             )
             self._thread.stop = self.stop
-            self.update_state("init")
 
     def _pause_busy(self):
         """
@@ -441,10 +440,14 @@ class LihuiyuController:
             pass  # Stop called by current thread.
 
     def abort_retry(self):
+        with self._loop_cond:
+            self._loop_cond.notify()
         self.aborted_retries = True
         self.context.signal("pipe;state", "STATE_FAILED_SUSPENDED")
 
     def continue_retry(self):
+        with self._loop_cond:
+            self._loop_cond.notify()
         self.aborted_retries = False
         self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
 
@@ -478,6 +481,8 @@ class LihuiyuController:
             pass
 
     def update_state(self, state):
+        with self._loop_cond:
+            self._loop_cond.notify()
         if state == self.state:
             return
         self.state = state
@@ -497,16 +502,8 @@ class LihuiyuController:
         if self.usb_send_channel:
             self.usb_send_channel(packet)
 
-    def _thread_data_send(self):
-        """
-        Main threaded function to send data. While the controller is working the thread
-        will be doing work in this function.
-        """
-        self._main_lock.acquire(True)
-        self.count = 0
-        self.pre_ok = False
-        self.is_shutdown = False
-        while self.state != "end" and self.state != "terminate":
+    def _thread_loop(self):
+        while self.state not in ("end", "terminate"):
             if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
                 self.update_state("active")
@@ -515,12 +512,24 @@ class LihuiyuController:
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     self.context.signal("pipe;running", False)
-                    time.sleep(0.25)
+                    with self._loop_cond:
+                        self._loop_cond.wait()
                     continue
             if self.aborted_retries:
+                # We are not trying reconnection anymore.
                 self.context.signal("pipe;running", False)
-                time.sleep(0.25)
+                with self._loop_cond:
+                    self._loop_cond.wait()
                 continue
+
+            self._check_transfer_buffer()
+            if len(self._realtime_buffer) <= 0 and len(self._buffer) <= 0:
+                # The buffer and realtime buffers are empty. No packet creation possible.
+                self.context.signal("pipe;running", False)
+                with self._loop_cond:
+                    self._loop_cond.wait()
+                continue
+
             try:
                 # We try to process the queue.
                 queue_processed = self.process_queue()
@@ -528,7 +537,7 @@ class LihuiyuController:
                     self.context.signal("pipe;failing", 0)
                 self.refuse_counts = 0
                 if self.is_shutdown:
-                    break  # Sometimes it could reset this and escape.
+                    return  # Sometimes it could reset this and escape.
             except ConnectionRefusedError:
                 # The attempt refused the connection.
                 self.refuse_counts += 1
@@ -538,7 +547,7 @@ class LihuiyuController:
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
                 if self.is_shutdown:
-                    break  # Sometimes it could reset this and escape.
+                    return  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
@@ -550,6 +559,8 @@ class LihuiyuController:
                 time.sleep(0.5)
                 self.close()
                 continue
+
+            self.context.signal("pipe;running", queue_processed)
             if queue_processed:
                 # Packet was sent.
                 if self.state not in (
@@ -559,26 +570,41 @@ class LihuiyuController:
                     "terminate",
                 ):
                     self.update_state("active")
-                self.count = 0
-            else:
-                # No packet could be sent.
-                if self.state not in (
-                    "pause",
-                    "busy",
-                    "terminate",
-                ):
-                    self.update_state("idle")
-                if self.count > 50:
-                    self.count = 50
-                time.sleep(0.02 * self.count)
-                # will tick up to 1 second waits if there's never a queue.
-                self.count += 1
-            self.context.signal("pipe;running", queue_processed)
-        self._thread = None
-        self.update_state("end")
-        self.pre_ok = False
-        self.context.signal("pipe;running", False)
-        self._main_lock.release()
+                continue
+            # No packet could be sent.
+            if self.state not in (
+                "pause",
+                "busy",
+                "terminate",
+            ):
+                self.update_state("idle")
+
+    def _thread_data_send(self):
+        """
+        Main threaded function to send data. While the controller is working the thread
+        will be doing work in this function.
+        """
+        with self._main_lock:
+            self.pre_ok = False
+            self.is_shutdown = False
+            self._thread_loop()
+            self._thread = None
+            self.update_state("end")
+            self.pre_ok = False
+            self.context.signal("pipe;running", False)
+
+    def _check_transfer_buffer(self):
+        if len(self._queue):  # check for and append queue
+            with self._queue_lock:
+                self._buffer += self._queue
+                self._queue.clear()
+            self.update_buffer()
+
+        if len(self._preempt):  # check for and prepend preempt
+            with self._preempt_lock:
+                self._realtime_buffer += self._preempt
+                self._preempt.clear()
+            self.update_buffer()
 
     def process_queue(self):
         """
@@ -600,30 +626,14 @@ class LihuiyuController:
 
         @return: queue process success.
         """
-        if len(self._queue):  # check for and append queue
-            self._queue_lock.acquire(True)
-            self._buffer += self._queue
-            self._queue = bytearray()
-            self._queue_lock.release()
-            self.update_buffer()
-
-        if len(self._preempt):  # check for and prepend preempt
-            self._preempt_lock.acquire(True)
-            self._realtime_buffer += self._preempt
-            self._preempt = bytearray()
-            self._preempt_lock.release()
-            self.update_buffer()
-
         if len(self._realtime_buffer) > 0:
             buffer = self._realtime_buffer
             realtime = True
+        elif len(self._buffer) > 0:
+            buffer = self._buffer
+            realtime = False
         else:
-            if len(self._buffer) > 0:
-                buffer = self._buffer
-                realtime = False
-            else:
-                # The buffer and realtime buffers are empty. No packet creation possible.
-                return False
+            return False
 
         # Find buffer of 30 or containing '\n'.
         find = buffer.find(b"\n", 0, 30)
@@ -659,7 +669,7 @@ class LihuiyuController:
                 default_checksum = False
                 packet = packet[:-1]
             elif packet.endswith(b"\x18"):
-                self.state = "terminate"
+                self.update_state("terminate")
                 self.is_shutdown = True
                 packet = packet[:-1]
             if packet.startswith(b"A"):
@@ -834,7 +844,7 @@ class LihuiyuController:
             i += 1
             if self.abort_waiting:
                 self.abort_waiting = False
-                return  # Wait abort was requested.
+                break  # Wait abort was requested.
         self.update_state(original_state)
 
     def _confirm_serial(self):
