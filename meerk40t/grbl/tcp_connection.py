@@ -18,7 +18,7 @@ class TCPOutput:
         self.read_buffer = bytearray()
         self.name = name
 
-        self.lock = threading.RLock()
+        self._write_lock = threading.Condition()
         self.buffer = bytearray()
         self.thread = None
 
@@ -56,9 +56,10 @@ class TCPOutput:
         self.service.signal("tcp;write", data)
         if isinstance(data, str):
             data = bytes(data, "utf-8")
-        with self.lock:
+        with self._write_lock:
             self.buffer += data
             self.service.signal("tcp;buffer", len(self.buffer))
+            self._write_lock.notify()
         self._start()
 
     realtime_write = write
@@ -90,30 +91,24 @@ class TCPOutput:
         self.thread = None
 
     def _sending(self):
-        tries = 0
         while True:
+            if not self.buffer:
+                with self._write_lock:
+                    if not self.buffer:
+                        self._write_lock.wait()
             try:
-                if len(self.buffer):
+                if self._stream is None:
+                    self.connect()
                     if self._stream is None:
-                        self.connect()
-                        if self._stream is None:
-                            return
-                    with self.lock:
-                        sent = self._stream.send(self.buffer)
-                        del self.buffer[:sent]
-                        self.service.signal("tcp;buffer", len(self.buffer))
-                    tries = 0
-                else:
-                    tries += 1
-                    time.sleep(0.1)
+                        raise ConnectionError
+
+                with self._write_lock:
+                    sent = self._stream.send(self.buffer)
+                    del self.buffer[:sent]
+                    self.service.signal("tcp;buffer", len(self.buffer))
             except (ConnectionError, OSError):
-                tries += 1
                 self.disconnect()
                 time.sleep(0.05)
-            if tries >= 20:
-                with self.lock:
-                    if len(self.buffer) == 0:
-                        break
 
     def __repr__(self):
         if self.name is not None:
