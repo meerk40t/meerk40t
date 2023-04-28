@@ -15982,3 +15982,6 @@ msgstr ""
 
 msgid "User defined value: {value}"
 msgstr "Benutzerdefinierter Wert: {value}"
+
+msgid "Make Polygon regular"
+msgstr "Mache alle Seiten gleich lang"
