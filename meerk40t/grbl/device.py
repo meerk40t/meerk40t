@@ -338,7 +338,30 @@ class GRBLDevice(Service, ViewPort):
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
             },
+            {
+                "attr": "limit_buffer",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Limit the controller buffer size"),
+                "tip": _("Enables the controller buffer limit."),
+                "section": "_30_Controller Buffer",
+            },
+            {
+                "attr": "max_buffer",
+                "object": self,
+                "default": 200,
+                "trailer": _("lines"),
+                "type": int,
+                "label": _("Controller Buffer"),
+                "tip": _(
+                    "This is the limit of the controller buffer size. Prevents full writing to the controller."
+                ),
+                "conditional": (self, "limit_buffer"),
+                "section": "_30_Controller Buffer",
+            },
         ]
+
         self.register_choices("grbl-connection", choices)
 
         choices = [

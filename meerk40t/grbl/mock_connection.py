@@ -52,5 +52,6 @@ class MockConnection:
             self.channel("Serial connection could not be established.")
 
     def disconnect(self):
+        self.laser = None
         self.channel("Disconnected")
         self.service.signal("serial;status", "disconnected")
