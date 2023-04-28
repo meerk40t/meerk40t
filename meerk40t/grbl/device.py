@@ -457,14 +457,13 @@ class GRBLDevice(Service, ViewPort):
         self.register_choices("grbl-global", choices)
 
         self.driver = GRBLDriver(self)
-
         self.controller = GrblController(self)
-
-        self.add_service_delegate(self.controller)
-        self.channel("grbl").watch(self.controller.write)
-        self.channel("grbl-realtime").watch(self.controller.realtime)
+        self.driver.out_pipe = self.controller.write
+        self.driver.out_real = self.controller.realtime
 
         self.spooler = Spooler(self, driver=self.driver)
+
+        self.add_service_delegate(self.controller)
         self.add_service_delegate(self.spooler)
         self.add_service_delegate(self.driver)
 
@@ -640,7 +639,8 @@ class GRBLDevice(Service, ViewPort):
                     # f.write(b"(MeerK40t)\n")
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
-                    driver.grbl = f.write
+                    driver.out_pipe = f.write
+                    driver.out_real = f.write
                     job.execute()
 
             except (PermissionError, OSError):
