@@ -6,8 +6,6 @@ Registers relevant commands and options.
 """
 from time import sleep
 
-import serial.tools.list_ports
-
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.laserjob import LaserJob
@@ -243,12 +241,18 @@ class GRBLDevice(Service, ViewPort):
             @param choice_dict:
             @return:
             """
-            ports = serial.tools.list_ports.comports()
-            serial_interface = [x.device for x in ports]
-            serial_interface_display = [str(x) for x in ports]
+            try:
+                import serial.tools.list_ports
 
-            choice_dict["choices"] = serial_interface
-            choice_dict["display"] = serial_interface_display
+                ports = serial.tools.list_ports.comports()
+                serial_interface = [x.device for x in ports]
+                serial_interface_display = [str(x) for x in ports]
+
+                choice_dict["choices"] = serial_interface
+                choice_dict["display"] = serial_interface_display
+            except ImportError:
+                choice_dict["choices"] = ["UNCONFIGURED"]
+                choice_dict["display"] = ["pyserial-not-installed"]
 
         choices = [
             {
