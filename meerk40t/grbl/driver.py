@@ -405,12 +405,18 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
         if self.service.has_endstops:
             self(f"$H{self.line_end}")
         else:
             self(f"G28{self.line_end}")
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def home(self):
         """
