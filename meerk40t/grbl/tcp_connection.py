@@ -14,6 +14,7 @@ class TCPOutput:
         super().__init__()
         self.service = context
         self._stream = None
+        self.read_buffer = bytearray()
         self.name = name
 
         self.lock = threading.RLock()
@@ -56,6 +57,17 @@ class TCPOutput:
         self._start()
 
     realtime_write = write
+
+    def read(self):
+        self.read_buffer += self._stream.read()
+        f = self.read_buffer.find(b"\n")
+        if f == -1:
+            return None
+        response = self.read_buffer[:f]
+        self.read_buffer = self.read_buffer[f + 1 :]
+        str_response = str(response, "raw_unicode_escape")
+        str_response = str_response.strip()
+        return str_response
 
     @property
     def viewbuffer(self):
