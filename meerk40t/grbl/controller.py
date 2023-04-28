@@ -151,7 +151,6 @@ def grbl_alarm_message(code):
     return short, long
 
 
-
 class GrblController:
     def __init__(self, context):
         self.service = context
@@ -225,6 +224,16 @@ class GrblController:
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)
+
+    @property
+    def _length_of_next_line(self):
+        """
+        Lookahead and provide length of the next line.
+        @return:
+        """
+        if not self._sending_queue:
+            return 0
+        return len(self._sending_queue[0])
 
     def open(self):
         """
@@ -426,16 +435,6 @@ class GrblController:
         with self._write_lock:
             self._write_lock.notify()
         return True
-
-    @property
-    def _length_of_next_line(self):
-        """
-        Lookahead and provide length of the next line.
-        @return:
-        """
-        if not self._sending_queue:
-            return 0
-        return len(self._sending_queue[0])
 
     def _sending_buffered(self):
         """
