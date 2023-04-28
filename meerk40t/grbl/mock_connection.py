@@ -7,8 +7,6 @@ any hardware.
 """
 import time
 
-from serial import SerialException
-
 
 class MockConnection:
     def __init__(self, service):
@@ -48,8 +46,6 @@ class MockConnection:
             self.service.signal("serial;status", "connected")
         except ConnectionError:
             self.channel("Connection Failed.")
-        except SerialException:
-            self.channel("Serial connection could not be established.")
 
     def disconnect(self):
         self.laser = None
