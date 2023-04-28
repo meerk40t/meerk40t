@@ -5,8 +5,8 @@ import threading
 
 
 def greet():
-    yield "Grbl 1.1f ['$' for help]\r"
-    yield "[MSG:’$H’|’$X’ to unlock]"
+    yield "Grbl 1.1f ['$' for help]\r\n"
+    yield "[MSG:’$H’|’$X’ to unlock]\r\n"
 
 
 class GRBLControl:
