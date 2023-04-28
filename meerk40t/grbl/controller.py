@@ -201,8 +201,12 @@ class GrblController:
 
         # Channels.
         self.grbl_events = self.service.channel("grbl_state", buffer_size=20)
-        self.grbl_send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
-        self.grbl_recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
+        self.grbl_send = self.service.channel(
+            f"send-{self.serial_port.lower()}", pure=True
+        )
+        self.grbl_recv = self.service.channel(
+            f"recv-{self.serial_port.lower()}", pure=True
+        )
 
         # Sending variables.
         self._sending_thread = None
@@ -454,7 +458,7 @@ class GrblController:
         # )
 
         if self._sending_queue and self._device_buffer_size > (
-                self._buffered_characters + self._length_of_next_line
+            self._buffered_characters + self._length_of_next_line
         ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()

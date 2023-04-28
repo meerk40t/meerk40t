@@ -94,7 +94,10 @@ class GRBLDriver(Parameters):
             # Don't hold realtime work.
             return False
 
-        if self.service.limit_buffer and len(self.service.controller) > self.service.max_buffer:
+        if (
+            self.service.limit_buffer
+            and len(self.service.controller) > self.service.max_buffer
+        ):
             return True
         return priority <= 0 and (self.paused or self.hold)
 

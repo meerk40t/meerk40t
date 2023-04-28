@@ -344,10 +344,7 @@ class GRBLDevice(Service, ViewPort):
                 "default": True,
                 "type": bool,
                 "label": _("Limit the controller buffer size"),
-                "tip": _(
-                    "Enables the controller buffer limit."
-                ),
-                "hidden": True,
+                "tip": _("Enables the controller buffer limit."),
                 "section": "_30_Controller Buffer",
             },
             {
@@ -361,7 +358,6 @@ class GRBLDevice(Service, ViewPort):
                     "This is the limit of the controller buffer size. Prevents full writing to the controller."
                 ),
                 "conditional": (self, "limit_buffer"),
-                "hidden": True,
                 "section": "_30_Controller Buffer",
             },
         ]
