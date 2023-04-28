@@ -219,7 +219,7 @@ class GrblController:
         self._buffer_fail = 0
 
     def __repr__(self):
-        return f"GRBLSerial('{self.service.location()}')"
+        return f"GRBLController('{self.service.location()}')"
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)
