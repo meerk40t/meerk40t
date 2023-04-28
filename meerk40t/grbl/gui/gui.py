@@ -7,6 +7,10 @@ def plugin(service, lifecycle):
         return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/grbl"
+
+    if lifecycle == "assigned":
+        service("window toggle Configuration\n")
+
     if lifecycle == "added":
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
         from meerk40t.grbl.gui.grblserialcontroller import SerialController
