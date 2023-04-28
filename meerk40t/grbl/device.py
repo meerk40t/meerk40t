@@ -21,6 +21,9 @@ class GRBLDevice(Service, ViewPort):
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
+        self.permit_tcp = False
+        self.permit_serial = True
+
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
         self.extension = "gcode"
@@ -278,7 +281,8 @@ class GRBLDevice(Service, ViewPort):
                 "subsection": "_00_",
             },
         ]
-        self.register_choices("serial", choices)
+        if self.permit_serial:
+            self.register_choices("serial", choices)
 
         choices = [
             {
@@ -298,7 +302,8 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _("TCP Port of the GRBL device"),
             },
         ]
-        self.register_choices("tcp", choices)
+        if self.permit_tcp:
+            self.register_choices("tcp", choices)
 
 
         choices = [
@@ -467,31 +472,8 @@ class GRBLDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
-        @self.console_argument("com")
-        @self.console_option("baud", "b")
-        @self.console_command(
-            "serial",
-            help=_("link the serial connection"),
-            input_type=None,
-        )
-        def serial_connection(
-            command,
-            channel,
-            _,
-            data=None,
-            com=None,
-            baud=115200,
-            remainder=None,
-            **kwgs,
-        ):
-            if com is None:
-                import serial.tools.list_ports
-
-                ports = serial.tools.list_ports.comports()
-
-                channel("Available COM ports")
-                for x in ports:
-                    channel(str(x))
+        if self.permit_serial:
+            self._register_console_serial()
 
         @self.console_command(
             "gcode",
@@ -676,6 +658,33 @@ class GRBLDevice(Service, ViewPort):
             except KeyError:
                 channel(_("Interpreter cannot be attached to any device."))
             return
+
+    def _register_console_serial(self):
+        @self.console_argument("com")
+        @self.console_option("baud", "b")
+        @self.console_command(
+            "serial",
+            help=_("link the serial connection"),
+            input_type=None,
+        )
+        def serial_connection(
+                command,
+                channel,
+                _,
+                data=None,
+                com=None,
+                baud=115200,
+                remainder=None,
+                **kwgs,
+        ):
+            if com is None:
+                import serial.tools.list_ports
+
+                ports = serial.tools.list_ports.comports()
+
+                channel("Available COM ports")
+                for x in ports:
+                    channel(str(x))
 
     def service_attach(self, *args, **kwargs):
         self.realize()
