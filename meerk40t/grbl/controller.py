@@ -239,15 +239,18 @@ class GrblController:
         if self.service.permit_serial and self.service.interface == "serial":
             try:
                 from .serial_connection import SerialConnection
+
                 self.connection = SerialConnection(self.service)
             except ImportError:
                 pass
         elif self.service.permit_tcp and self.service.interface == "tcp":
             from meerk40t.grbl.tcp_connection import TCPOutput
+
             self.connection = TCPOutput(self.service)
         else:
             # Mock
             from .mock_connection import MockConnection
+
             self.connection = MockConnection(self.service)
 
     def open(self):
