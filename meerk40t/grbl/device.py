@@ -330,28 +330,6 @@ class GRBLDevice(Service, ViewPort):
                 "signals": "device;renamed",
             },
             {
-                "attr": "serial_port",
-                "object": self,
-                "default": "UNCONFIGURED",
-                "type": str,
-                "style": "option",
-                "label": "",
-                "tip": _("What serial interface does this device connect to?"),
-                "section": "_10_Serial Interface",
-                "subsection": "_00_",
-                "dynamic": update,
-            },
-            {
-                "attr": "baud_rate",
-                "object": self,
-                "default": 115200,
-                "type": int,
-                "label": _("Baud Rate"),
-                "tip": _("Baud Rate of the device"),
-                "section": "_10_Serial Interface",
-                "subsection": "_00_",
-            },
-            {
                 "attr": "buffer_mode",
                 "object": self,
                 "default": "buffered",
@@ -395,16 +373,6 @@ class GRBLDevice(Service, ViewPort):
                     "CR for carriage return (\\r), LF for line feed(\\n), CRLF for both"
                 ),
                 "section": "_20_Protocol",
-            },
-            {
-                "attr": "mock",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Run mock-usb backend"),
-                "tip": _(
-                    "This starts connects to fake software laser rather than real one for debugging."
-                ),
             },
             {
                 "attr": "limit_buffer",
@@ -486,6 +454,8 @@ class GRBLDevice(Service, ViewPort):
         self.driver = GRBLDriver(self)
 
         self.controller = GrblController(self)
+
+        self.add_service_delegate(self.controller)
         self.channel("grbl").watch(self.controller.write)
         self.channel("grbl-realtime").watch(self.controller.realtime)
 
