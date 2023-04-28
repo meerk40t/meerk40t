@@ -3452,7 +3452,7 @@ class Elemental(Service):
             eliminated = simplify_polyline(obj)
             if eliminated > 0:
                 changed = True
-            print (f"pass 1 for {node.type}-{node.label}: simplify polyline: {eliminated}")
+            # print (f"pass 1 for {node.type}-{node.label}: simplify polyline: {eliminated}")
             after = len(obj.points)
 
         # print (f"Before: {before}, After: {after}")
