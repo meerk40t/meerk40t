@@ -7,8 +7,7 @@ Tasked with sending data to the different connection.
 import threading
 import time
 
-from .mock_connection import MockConnection
-from .serial_connection import SerialConnection
+from meerk40t.kernel import signal_listener
 
 
 def grbl_error_code(code):
@@ -157,10 +156,9 @@ class GrblController:
         self.serial_port = self.service.serial_port
         self.baud_rate = self.service.baud_rate
 
-        if not self.service.mock:
-            self.connection = SerialConnection(self.service)
-        else:
-            self.connection = MockConnection(self.service)
+        self.connection = None
+        self.update_connection()
+
         self.driver = self.service.driver
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
@@ -237,6 +235,21 @@ class GrblController:
         if not self._sending_queue:
             return 0
         return len(self._sending_queue[0])
+
+    @signal_listener("update_interface")
+    def update_connection(self, origin=None, *args):
+        if self.service.interface == "mock":
+            from .mock_connection import MockConnection
+            self.connection = MockConnection(self.service)
+        elif self.service.interface == "serial":
+            try:
+                from .serial_connection import SerialConnection
+                self.connection = SerialConnection(self.service)
+            except ImportError:
+                pass
+        elif self.service.interface == "tcp":
+            from meerk40t.grbl.tcp_connection import TCPOutput
+            self.connection = TCPOutput(self.service)
 
     def open(self):
         """
