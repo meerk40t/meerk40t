@@ -157,9 +157,6 @@ class GrblController:
         self.serial_port = self.service.serial_port
         self.baud_rate = self.service.baud_rate
 
-        self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
-        self.recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
@@ -201,6 +198,11 @@ class GrblController:
             131: 200.000,  # Y-axis max travel mm
             132: 200.000,  # Z-axis max travel mm.
         }
+
+        # Channels.
+        self.grbl_events = self.service.channel("grbl_state", buffer_size=20)
+        self.grbl_send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
+        self.grbl_recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
 
         # Sending variables.
         self._sending_thread = None
@@ -246,9 +248,9 @@ class GrblController:
             return
         self.connection.connect()
         if not self.connection.connected:
-            self.channel("Could not connect.")
+            self.grbl_events("Could not connect.")
             return
-        self.channel("Connecting to GRBL...")
+        self.grbl_events("Connecting to GRBL...")
         t = time.time()
         while True:
             response = self.connection.read()
@@ -257,13 +259,13 @@ class GrblController:
                     # 5 second timeout.
                     return
                 continue
-            self.channel(response)
-            self.recv(response)
+            self.grbl_events(response)
+            self.grbl_recv(response)
             if "grbl" in response.lower():
-                self.channel("GRBL Connection Established.")
+                self.grbl_events("GRBL Connection Established.")
                 return
             if "marlin" in response.lower():
-                self.channel("Marlin Connection Established.")
+                self.grbl_events("Marlin Connection Established.")
                 return
 
     def close(self):
@@ -275,7 +277,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self.channel("Disconnecting from GRBL...")
+        self.grbl_events("Disconnecting from GRBL...")
 
     def write(self, data):
         """
@@ -371,17 +373,18 @@ class GrblController:
                 if cmd_issued[-1] == "\r":
                     cmd_issued = cmd_issued[:-1]
             except IndexError:
-                self.channel(f"Response: {response}, but this was unexpected")
+                self.grbl_events(f"Response: {response}, but this was unexpected")
                 self._assembled_response = []
                 raise ConnectionAbortedError
-            self.channel(f"Response: {response}")
-            self.recv(
+            self.grbl_events(f"Response: {response}")
+            self.grbl_recv(
                 f"{response} / {self._buffered_characters} / {len(self._commands_in_device_buffer)} -- {cmd_issued}"
             )
             self.service.signal("grbl;response", cmd_issued, self._assembled_response)
             self._assembled_response = []
             return True
         elif response.startswith("echo:"):
+            # Echo asks that this information be displayed.
             self.service.channel("console")(response[5:])
         elif response.startswith("ALARM"):
             try:
@@ -392,8 +395,8 @@ class GrblController:
             self.service.signal(
                 "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
             )
-            self.recv(f"Alarm #{error_num} {short}\n{long}")
-            self.channel(f"Alarm #{error_num} {short}\n{long}")
+            self.grbl_recv(f"Alarm #{error_num} {short}\n{long}")
+            self.grbl_events(f"Alarm #{error_num} {short}\n{long}")
             self._assembled_response = []
         elif response.startswith("error"):
             try:
@@ -402,12 +405,12 @@ class GrblController:
                 error_num = -1
             short, long = grbl_error_code(error_num)
             self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
-            self.recv(f"ERROR #{error_num} {short}\n{long}")
-            self.channel(f"ERROR #{error_num} {short}\n{long}")
+            self.grbl_recv(f"ERROR #{error_num} {short}\n{long}")
+            self.grbl_events(f"ERROR #{error_num} {short}\n{long}")
             self._assembled_response = []
         else:
-            self.recv(f"{response}")
-            self.channel(f"Data: {response}")
+            self.grbl_recv(f"{response}")
+            self.grbl_events(f"Data: {response}")
             self._assembled_response.append(response)
 
     def _sending_realtime(self):
@@ -420,7 +423,7 @@ class GrblController:
             line = self._realtime_queue.pop(0)
         if line is not None:
             self.connection.write(line)
-            self.send(line)
+            self.grbl_send(line)
 
     def _sending_single_line(self):
         """
@@ -437,7 +440,7 @@ class GrblController:
             #     print ("Was empty in sending_single_line")
 
         self.connection.write(line)
-        self.send(line)
+        self.grbl_send(line)
         self._buffered_characters += len(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
         with self._write_lock:
