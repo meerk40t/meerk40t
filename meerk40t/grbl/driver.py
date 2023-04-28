@@ -90,6 +90,12 @@ class GRBLDriver(Parameters):
 
         @return: hold?
         """
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
+        if self.service.limit_buffer and len(self.service.controller) > self.service.max_buffer:
+            return True
         return priority <= 0 and (self.paused or self.hold)
 
     def get(self, key, default=None):
@@ -258,6 +264,8 @@ class GRBLDriver(Parameters):
         else:
             self.grbl(f"M4{self.line_end}")
         for q in self.queue:
+            while self.hold_work(0):
+                time.sleep(0.05)
             x = self.native_x
             y = self.native_y
             start_x, start_y = q.start
@@ -321,7 +329,7 @@ class GRBLDriver(Parameters):
                 #  Rastercut, PlotCut
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    while self.paused:
+                    while self.hold_work(0):
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
@@ -543,6 +551,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.service.spooler.clear_queue()
+        self.queue.clear()
         self.plot_planner.clear()
         self.grbl_realtime("\x18")
         self.paused = False
