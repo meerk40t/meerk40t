@@ -207,9 +207,6 @@ class GrblController:
         # Sending variables.
         self._sending_thread = None
 
-        self._write_lock = threading.Condition()
-        self._buffer = 100
-
         self._send_lock = threading.Condition()
         self._sending_queue = []
         self._realtime_queue = []
@@ -294,10 +291,6 @@ class GrblController:
                 "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
             )
             self._send_lock.notify()
-        if len(self._sending_queue) > self._buffer:
-            with self._write_lock:
-                if len(self._sending_queue) > self._buffer:
-                    self._write_lock.wait()
 
     def realtime(self, data):
         """
@@ -443,8 +436,6 @@ class GrblController:
         self.grbl_send(line)
         self._buffered_characters += len(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
-        with self._write_lock:
-            self._write_lock.notify()
         return True
 
     def _sending_buffered(self):
