@@ -3173,7 +3173,7 @@ class Elemental(Service):
         def combine_overlapping_chains(obj):
             def list_subpath_bounds(obj):
                 # Return a sorted list of subpaths in the given path (from left to right):
-                # tuples with first index, last index, x-coordinate of first segment
+                # tuples with first index, last index, x-coordinate of first segment, closed
                 result = []
                 start = -1
                 for current, seg in enumerate(obj._segments):
@@ -3198,7 +3198,10 @@ class Elemental(Service):
                 result.sort(key=lambda a: a[2])
                 return result
 
+            #  This is not working properly yet, so we skip this for now
             joined = 0
+            iterations = 0
+            maxiterations = 20
             redo = True
             while redo:
                 # Dont do it again unless indicated...
@@ -3360,8 +3363,11 @@ class Elemental(Service):
                     # end of inner loop
 
                     if redo:
-                        # print(f"Redo required inner loop: {reason}")
+                        iterations += 1
+                        # print(f"Redo required inner loop #{iterations}: {reason}")
                         changed = True
+                        if iterations > maxiterations:
+                            redo = False
                         break
                 # end of outer loop
             return joined
@@ -3416,21 +3422,26 @@ class Elemental(Service):
             eliminated = remove_zero_length_lines(obj)
             if eliminated > 0:
                 changed = True
+            # print (f"pass 1 for {node.type}-{node.label}: zero_length: {eliminated}")
 
             # Pass 2: look inside the nodes and bring small line segments back together...
             eliminated = remove_interim_points_on_line(obj)
             if eliminated > 0:
                 changed = True
+            # print (f"pass 2 for {node.type}-{node.label}: interim_pts: {eliminated}")
 
             # Pass 3: look at the subpaths....
-            eliminated = combine_overlapping_chains(obj)
-            if eliminated > 0:
-                changed = True
+            # Commented out as it is not working properly yet
+            # eliminated = combine_overlapping_chains(obj)
+            # if eliminated > 0:
+            #     changed = True
+            # print (f"pass 3 for {node.type}-{node.label}: overlapping: {eliminated}")
 
             # pass 4: remove superfluous moves
             eliminated = remove_superfluous_moves(obj)
             if eliminated > 0:
                 changed = True
+            # print (f"pass 4 for {node.type}-{node.label}: superfluous moves: {eliminated}")
 
             after = len(obj._segments)
         elif node.type == "elem polyline" and len(node.shape.points) > 2:
@@ -3439,6 +3450,7 @@ class Elemental(Service):
             eliminated = simplify_polyline(obj)
             if eliminated > 0:
                 changed = True
+            # print (f"pass 1 for {node.type}-{node.label}: simplify polyline: {eliminated}")
             after = len(obj.points)
 
         # print (f"Before: {before}, After: {after}")
