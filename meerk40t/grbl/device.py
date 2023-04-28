@@ -22,7 +22,7 @@ class GRBLDevice(Service, ViewPort):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         self.permit_tcp = False
-        self.permit_serial = True
+        self.permit_serial = False
 
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
@@ -660,6 +660,8 @@ class GRBLDevice(Service, ViewPort):
             return
 
     def _register_console_serial(self):
+        _ = self.kernel.translation
+
         @self.console_argument("com")
         @self.console_option("baud", "b")
         @self.console_command(
@@ -685,6 +687,14 @@ class GRBLDevice(Service, ViewPort):
                 channel("Available COM ports")
                 for x in ports:
                     channel(str(x))
+
+    def location(self):
+        if self.permit_tcp and self.interface == "tcp":
+            return f"{self.address}:{self.port}"
+        elif self.permit_serial and self.interface == "serial":
+            return f"{self.serial_port.lower()}:{self.baud_rate}"
+        else:
+            return "mock"
 
     def service_attach(self, *args, **kwargs):
         self.realize()
