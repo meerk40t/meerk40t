@@ -19,6 +19,10 @@ class TCPOutput:
         self.buffer = bytearray()
         self.thread = None
 
+    @property
+    def connected(self):
+        return self._stream is not None
+
     def connect(self):
         try:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
