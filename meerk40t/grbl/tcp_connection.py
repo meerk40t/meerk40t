@@ -14,6 +14,7 @@ class TCPOutput:
         super().__init__()
         self.service = context
         self._stream = None
+        self._read_buffer_size = 1024
         self.read_buffer = bytearray()
         self.name = name
 
@@ -63,7 +64,7 @@ class TCPOutput:
     realtime_write = write
 
     def read(self):
-        self.read_buffer += self._stream.read()
+        self.read_buffer += self._stream.recv(self._read_buffer_size)
         f = self.read_buffer.find(b"\n")
         if f == -1:
             return None
