@@ -62,8 +62,8 @@ class GRBLDriver(Parameters):
         self._g21_units_mm()
         self._g91_absolute()
 
-        self.grbl = self.service.channel("grbl", pure=True)
-        self.grbl_realtime = self.service.channel("grbl-realtime", pure=True)
+        self.out_pipe = None
+        self.out_real = None
 
         self.move_mode = 0
         self.reply = None
@@ -73,6 +73,12 @@ class GRBLDriver(Parameters):
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
+
+    def __call__(self, e, real=False):
+        if real:
+            self.out_real(e)
+        else:
+            self.out_pipe(e)
 
     @signal_listener("line_end")
     def _set_line_end(self, origin=None, *args):
@@ -134,7 +140,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         # TODO: To calculate status correctly we need to actually have access to the response
-        self.grbl_realtime("?")
+        self.out_real("?")
         return (self.native_x, self.native_y), "idle", "unknown"
 
     def move_ori(self, x, y):
@@ -223,7 +229,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl(f"M5{self.line_end}")
+        self(f"M5{self.line_end}")
 
     def laser_on(self, power=None, speed=None, *values):
         """
@@ -243,7 +249,7 @@ class GRBLDriver(Parameters):
             sspeed = f"G1 F{speed}{self.line_end}"
             self.speed = speed
             self.speed_dirty = False
-        self.grbl(f"M3{spower}{self.line_end}{sspeed}")
+        self(f"M3{spower}{self.line_end}{sspeed}")
 
     def plot(self, plot):
         """
@@ -263,9 +269,9 @@ class GRBLDriver(Parameters):
         self._g94_feedrate()
         self._clean()
         if self.service.use_m3:
-            self.grbl(f"M3{self.line_end}")
+            self(f"M3{self.line_end}")
         else:
-            self.grbl(f"M4{self.line_end}")
+            self(f"M4{self.line_end}")
         for q in self.queue:
             while self.hold_work(0):
                 time.sleep(0.05)
@@ -367,8 +373,8 @@ class GRBLDriver(Parameters):
                     self._move(x, y)
         self.queue.clear()
 
-        self.grbl(f"G1 S0{self.line_end}")
-        self.grbl(f"M5{self.line_end}")
+        self(f"G1 S0{self.line_end}")
+        self(f"M5{self.line_end}")
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
@@ -391,7 +397,7 @@ class GRBLDriver(Parameters):
             for split in grbl.split("\r"):
                 g = split.strip()
                 if g:
-                    self.grbl(f"{g}{self.line_end}")
+                    self(f"{g}{self.line_end}")
 
     def physical_home(self):
         """
@@ -403,9 +409,9 @@ class GRBLDriver(Parameters):
         self.native_x = 0
         self.native_y = 0
         if self.service.has_endstops:
-            self.grbl(f"$H{self.line_end}")
+            self(f"$H{self.line_end}")
         else:
-            self.grbl(f"G28{self.line_end}")
+            self(f"G28{self.line_end}")
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -422,7 +428,7 @@ class GRBLDriver(Parameters):
         self.native_y = 0
         if self.service.rotary_active and self.service.rotary_supress_home:
             return
-        self.grbl(f"G28{self.line_end}")
+        self(f"G28{self.line_end}")
 
     def rapid_mode(self, *values):
         """
@@ -440,7 +446,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl(f"M5{self.line_end}")
+        self(f"M5{self.line_end}")
 
     def program_mode(self, *values):
         """
@@ -448,7 +454,7 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        self.grbl(f"M3{self.line_end}")
+        self(f"M3{self.line_end}")
 
     def raster_mode(self, *values):
         """
@@ -479,7 +485,7 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.grbl(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
+        self(f"G04 S{time_in_ms / 1000.0}{self.line_end}")
 
     def wait_finish(self, *values):
         """
@@ -536,7 +542,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self.grbl_realtime("!")
+        self("!", real=True)
 
     def resume(self, *args):
         """
@@ -548,7 +554,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self.grbl_realtime("~")
+        self("~", real=True)
 
     def reset(self, *args):
         """
@@ -562,7 +568,7 @@ class GRBLDriver(Parameters):
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
-        self.grbl_realtime("\x18")
+        self("\x18", real=True)
         self.paused = False
 
     def clear_alarm(self):
@@ -571,7 +577,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self.grbl_realtime("$X\n")
+        self("$X\n", real=True)
 
     ####################
     # PROTECTED DRIVER CODE
@@ -601,7 +607,7 @@ class GRBLDriver(Parameters):
         if self.speed_dirty:
             line.append(f"F{self.feed_convert(self.speed):.1f}")
             self.speed_dirty = False
-        self.grbl(" ".join(line) + self.line_end)
+        self(" ".join(line) + self.line_end)
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -611,23 +617,23 @@ class GRBLDriver(Parameters):
     def _clean(self):
         if self.absolute_dirty:
             if self._absolute:
-                self.grbl(f"G90{self.line_end}")
+                self(f"G90{self.line_end}")
             else:
-                self.grbl(f"G91{self.line_end}")
+                self(f"G91{self.line_end}")
         self.absolute_dirty = False
 
         if self.feedrate_dirty:
             if self.feed_mode == 94:
-                self.grbl(f"G94{self.line_end}")
+                self(f"G94{self.line_end}")
             else:
-                self.grbl(f"G93{self.line_end}")
+                self(f"G93{self.line_end}")
         self.feedrate_dirty = False
 
         if self.units_dirty:
             if self.units == 20:
-                self.grbl(f"G20{self.line_end}")
+                self(f"G20{self.line_end}")
             else:
-                self.grbl(f"G21{self.line_end}")
+                self(f"G21{self.line_end}")
         self.units_dirty = False
 
     def _g90_relative(self):
@@ -687,13 +693,13 @@ class GRBLDriver(Parameters):
         # Grbl can only deal with factors between 10% and 200%
         ifactor = int(self.power_scale * 10 + 10)
         ifactor = min(20, max(1, ifactor))
-        self.grbl_realtime("\x99")
+        self("\x99", real=True)
         if ifactor < 10:
             for idx in range(10 - ifactor):
-                self.grbl_realtime("\x9A")
+                self("\x9A", real=True)
         elif ifactor > 10:
             for idx in range(ifactor - 10):
-                self.grbl_realtime("\x9B")
+                self("\x9B", real=True)
 
     def set_speed_scale(self, factor):
         if 0 < factor < 100:
@@ -703,13 +709,13 @@ class GRBLDriver(Parameters):
         # Grbl can only deal with factors between 10% and 200%
         ifactor = int(self.speed_scale * 10 + 10)
         ifactor = min(20, max(1, ifactor))
-        self.grbl_realtime("\x90")
+        self("\x90", real=True)
         if ifactor < 10:
             for idx in range(10 - ifactor):
-                self.grbl_realtime("\x92")
+                self("\x92", real=True)
         elif ifactor > 10:
             for idx in range(ifactor - 10):
-                self.grbl_realtime("\x91")
+                self("\x91", real=True)
 
     @staticmethod
     def has_adjustable_power():

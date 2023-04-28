@@ -2,6 +2,7 @@ import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
@@ -12,9 +13,13 @@ class TCPController(MWindow):
         super().__init__(499, 170, *args, **kwds)
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_port = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_ip_host = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, check="empty"
+        )
+        self.text_port = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -25,21 +30,19 @@ class TCPController(MWindow):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
         )
-        self.text_port.Bind(wx.EVT_TEXT_ENTER, self.on_port_change)
-        self.text_port.Bind(wx.EVT_KILL_FOCUS, self.on_port_change)
-        self.text_ip_host.Bind(wx.EVT_TEXT_ENTER, self.on_address_change)
-        self.text_ip_host.Bind(wx.EVT_KILL_FOCUS, self.on_address_change)
+        self.text_port.SetActionRoutine(self.on_port_change)
+        self.text_ip_host.SetActionRoutine(self.on_address_change)
         # end wxGlade
         self.max = 0
         self.state = None
 
-    def on_port_change(self, event):
+    def on_port_change(self):
         try:
             self.service.port = int(self.text_port.GetValue())
         except ValueError:
             pass
 
-    def on_address_change(self, event):
+    def on_address_change(self):
         self.service.address = str(self.text_ip_host.GetValue())
 
     def __set_properties(self):
@@ -87,28 +90,31 @@ class TCPController(MWindow):
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         connection_controller.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         label_7 = wx.StaticText(self, wx.ID_ANY, _("Status"))
-        sizer_15.Add(label_7, 1, 0, 0)
-        sizer_15.Add(self.text_status, 11, 0, 0)
         label_8 = wx.StaticText(self, wx.ID_ANY, _("Address"))
-        sizer_15.Add(label_8, 1, 0, 0)
-        sizer_15.Add(self.text_ip_host, 11, 0, 0)
-        sizer_15.Add((20, 20), 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, _("Port"))
-        sizer_15.Add(label_9, 1, 0, 0)
-        sizer_15.Add(self.text_port, 11, 0, 0)
+
+        sizer_15.Add(label_7, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add(self.text_status, 11, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add(label_8, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add(self.text_ip_host, 11, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add((20, 20), 0, 0, 0)
+        sizer_15.Add(label_9, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_15.Add(self.text_port, 11, wx.ALIGN_CENTER_VERTICAL, 0)
+
         connection_controller.Add(sizer_15, 0, 0, 0)
+
         sizer_1.Add(connection_controller, 0, wx.EXPAND, 0)
         static_line_2 = wx.StaticLine(self, wx.ID_ANY)
         static_line_2.SetMinSize((483, 5))
         sizer_1.Add(static_line_2, 0, wx.EXPAND, 0)
         sizer_1.Add(self.gauge_buffer, 0, wx.EXPAND, 0)
         label_12 = wx.StaticText(self, wx.ID_ANY, _("Buffer Size: "))
-        write_buffer.Add(label_12, 0, 0, 0)
-        write_buffer.Add(self.text_buffer_length, 10, 0, 0)
+        write_buffer.Add(label_12, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        write_buffer.Add(self.text_buffer_length, 10, wx.ALIGN_CENTER_VERTICAL, 0)
         write_buffer.Add((20, 20), 0, 0, 0)
         label_13 = wx.StaticText(self, wx.ID_ANY, _("Max Buffer Size:"))
-        write_buffer.Add(label_13, 0, 0, 0)
-        write_buffer.Add(self.text_buffer_max, 10, 0, 0)
+        write_buffer.Add(label_13, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        write_buffer.Add(self.text_buffer_max, 10, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_1.Add(write_buffer, 0, 0, 0)
         self.SetSizer(sizer_1)
         self.Layout()
@@ -119,6 +125,11 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(self.service.port))
         self.text_buffer_max.SetValue("0")
         self.text_buffer_length.SetValue("0")
+        self.on_network_update()
+
+    @signal_listener("interface_update")
+    def on_network_update(self, origin=None, *args):
+        self.button_device_connect.Enable(self.service.interface == "tcp")
 
     @signal_listener("tcp;status")
     def on_tcp_status(self, origin, state):
@@ -152,10 +163,14 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(status))
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
+        connection = self.service.controller.connection
+        if connection is None:
+            # No connection cannot do anything.
+            return
         if self.state == "connected":
-            self.service.controller.disconnect()
+            connection.disconnect()
         else:
-            self.service.controller.connect()
+            connection.connect()
 
     @staticmethod
     def submenu():

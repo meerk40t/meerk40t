@@ -50,7 +50,6 @@ class TCPServer(Module):
         """
         _ = self.context._
         self.socket = socket.socket()
-        # self.socket.settimeout(0)
         try:
             self.socket.bind(("", self.port))
             self.socket.listen(1)
