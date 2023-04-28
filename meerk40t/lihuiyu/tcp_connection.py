@@ -32,15 +32,15 @@ class TCPOutput:
         except ConnectionError:
             self.disconnect()
             self.service.signal("tcp;status", "connection error")
-        except OSError as e:
-            self.disconnect()
-            self.service.signal("tcp;status", f"Host down {str(e)}")
         except socket.gaierror as e:
             self.disconnect()
             self.service.signal("tcp;status", "address resolve error")
         except socket.herror as e:
             self.disconnect()
             self.service.signal("tcp;status", f"herror: {str(e)}")
+        except OSError as e:
+            self.disconnect()
+            self.service.signal("tcp;status", f"Host down {str(e)}")
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
