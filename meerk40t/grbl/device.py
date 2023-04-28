@@ -256,6 +256,70 @@ class GRBLDevice(Service, ViewPort):
 
         choices = [
             {
+                "attr": "serial_port",
+                "object": self,
+                "default": "UNCONFIGURED",
+                "type": str,
+                "style": "option",
+                "label": "",
+                "tip": _("What serial interface does this device connect to?"),
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+                "dynamic": update,
+            },
+            {
+                "attr": "baud_rate",
+                "object": self,
+                "default": 115200,
+                "type": int,
+                "label": _("Baud Rate"),
+                "tip": _("Baud Rate of the device"),
+                "section": "_10_Serial Interface",
+                "subsection": "_00_",
+            },
+        ]
+        self.register_choices("serial", choices)
+
+        choices = [
+            {
+                "attr": "address",
+                "object": self,
+                "default": "localhost",
+                "type": str,
+                # "style": "address",
+                "tip": _("What serial interface does this device connect to?"),
+            },
+            {
+                "attr": "port",
+                "object": self,
+                "default": 23,
+                "type": int,
+                "label": _("Port"),
+                "tip": _("TCP Port of the GRBL device"),
+            },
+        ]
+        self.register_choices("tcp", choices)
+
+
+        choices = [
+            {
+                "attr": "interface",
+                "object": self,
+                "default": "serial",
+                "style": "combosmall",
+                "choices": ["serial", "tcp", "mock"],
+                "display": [_("Serial"), _("TCP-Network"), _("mock")],
+                "type": str,
+                "label": _("Interface Type"),
+                "tip": _("Select the interface type for the grbl device"),
+                "section": "_20_Protocol",
+                "signals": "update_interface",
+            },
+        ]
+        self.register_choices("interface", choices)
+
+        choices = [
+            {
                 "attr": "label",
                 "object": self,
                 "default": "grbl",
