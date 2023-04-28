@@ -317,6 +317,10 @@ class GrblController:
             )
             self._send_lock.notify()
 
+    ####################
+    # Control GRBL Sender
+    ####################
+
     def start(self):
         """
         Starts the driver thread.
@@ -343,6 +347,10 @@ class GrblController:
         self.close()
         with self._send_lock:
             self._send_lock.notify()
+
+    ####################
+    # GRBL SEND ROUTINES
+    ####################
 
     def _recv_response(self):
         """
@@ -481,11 +489,14 @@ class GrblController:
     def _sending(self):
         """
         Generic sender, delegate the function according to the desired mode.
+
+        This function is only run with the self.sending_thread
         @return:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
             while self._realtime_queue:
+                # Send all realtime data.
                 self._sending_realtime()
             if not self._sending_queue and not self.commands_in_device_buffer:
                 # There is nothing to write, or read
