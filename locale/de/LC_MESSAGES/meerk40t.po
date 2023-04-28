@@ -14972,7 +14972,7 @@ msgid "Prev"
 msgstr "Zurück"
 
 msgid "Next"
-msgstr "VOr"
+msgstr "Vor"
 
 msgid "Wordlist: go to next entry"
 msgstr "Gehe zum nächsten Wortlisten-Eintrag"
