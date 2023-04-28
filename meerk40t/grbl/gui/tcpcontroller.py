@@ -152,10 +152,14 @@ class TCPController(MWindow):
         self.text_port.SetValue(str(status))
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
+        connection = self.service.controller.connection
+        if connection is None:
+            # No connection cannot do anything.
+            return
         if self.state == "connected":
-            self.service.controller.disconnect()
+            connection.disconnect()
         else:
-            self.service.controller.connect()
+            connection.connect()
 
     @staticmethod
     def submenu():
