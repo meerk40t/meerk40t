@@ -153,8 +153,6 @@ def grbl_alarm_message(code):
 class GrblController:
     def __init__(self, context):
         self.service = context
-        self.serial_port = self.service.serial_port
-        self.baud_rate = self.service.baud_rate
 
         self.connection = None
         self.update_connection()
@@ -200,10 +198,10 @@ class GrblController:
         # Channels.
         self.grbl_events = self.service.channel("grbl_state", buffer_size=20)
         self.grbl_send = self.service.channel(
-            f"send-{self.serial_port.lower()}", pure=True
+            f"send-{self.service.location()}", pure=True
         )
         self.grbl_recv = self.service.channel(
-            f"recv-{self.serial_port.lower()}", pure=True
+            f"recv-{self.service.location()}", pure=True
         )
 
         # Sending variables.
@@ -221,7 +219,7 @@ class GrblController:
         self._buffer_fail = 0
 
     def __repr__(self):
-        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.baud_rate)}')"
+        return f"GRBLSerial('{self.service.location()}')"
 
     def __len__(self):
         return len(self._sending_queue) + len(self._realtime_queue)
@@ -238,18 +236,19 @@ class GrblController:
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
-        if self.service.interface == "mock":
-            from .mock_connection import MockConnection
-            self.connection = MockConnection(self.service)
-        elif self.service.interface == "serial":
+        if self.service.permit_serial and self.service.interface == "serial":
             try:
                 from .serial_connection import SerialConnection
                 self.connection = SerialConnection(self.service)
             except ImportError:
                 pass
-        elif self.service.interface == "tcp":
+        elif self.service.permit_tcp and self.service.interface == "tcp":
             from meerk40t.grbl.tcp_connection import TCPOutput
             self.connection = TCPOutput(self.service)
+        else:
+            # Mock
+            from .mock_connection import MockConnection
+            self.connection = MockConnection(self.service)
 
     def open(self):
         """
@@ -343,7 +342,7 @@ class GrblController:
         if self._sending_thread is None:
             self._sending_thread = self.service.threaded(
                 self._sending,
-                thread_name=f"sender-{self.serial_port.lower()}",
+                thread_name=f"sender-{self.service.location()}",
                 result=self.stop,
                 daemon=True,
             )

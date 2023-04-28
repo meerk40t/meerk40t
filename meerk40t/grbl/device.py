@@ -21,8 +21,8 @@ class GRBLDevice(Service, ViewPort):
     """
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
-        self.permit_tcp = False
-        self.permit_serial = False
+        self.permit_tcp = True
+        self.permit_serial = True
 
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"

@@ -200,7 +200,7 @@ class SerialController(MWindow):
         self.serial_panel.on_serial_status(origin, state)
 
     def window_open(self):
-        self._opened_port = self.service.serial_port.lower()
+        self._opened_port = self.service.location()
         self.context.channel(f"send-{self._opened_port}").watch(
             self.serial_panel.update_sent
         )

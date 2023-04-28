@@ -26,19 +26,22 @@ def plugin(service, lifecycle):
         )
 
         service.register("window/Serial-Controller", SerialController)
-
-        service.register("window/TCP-Controller", TCPController)
-        service.register("window/Configuration", GRBLConfiguration)
-
         service.register("winpath/Serial-Controller", service)
-        service.register("winpath/TCP-Controller", service)
+
+        if service.permit_tcp:
+            service.register("window/TCP-Controller", TCPController)
+            service.register("winpath/TCP-Controller", service)
+
+        service.register("window/Configuration", GRBLConfiguration)
         service.register("winpath/Configuration", service)
 
         _ = service._
 
         def controller_click(i=None):
-            if service.interface == "tcp":
+            if service.permit_tcp and service.interface == "tcp":
                 service("window toggle TCP-Controller\n")
+            elif service.permit_serial and service.interface == "serial":
+                service("window toggle Serial-Controller\n")
             else:
                 service("window toggle Serial-Controller\n")
 

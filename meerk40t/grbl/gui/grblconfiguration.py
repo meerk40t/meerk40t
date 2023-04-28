@@ -31,22 +31,24 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         sizer_interface_radio = wx.BoxSizer(wx.HORIZONTAL)
         sizer_interface.Add(sizer_interface_radio, 0, wx.EXPAND, 0)
 
-        self.radio_serial = wx.RadioButton(self, wx.ID_ANY, _("Serial"), style=wx.RB_GROUP)
-        self.radio_serial.SetValue(1)
-        self.radio_serial.SetToolTip(
-            _(
-                "Select this if you have a GRBL device running through a serial connection."
+        if self.context.permit_serial:
+            self.radio_serial = wx.RadioButton(self, wx.ID_ANY, _("Serial"), style=wx.RB_GROUP)
+            self.radio_serial.SetValue(1)
+            self.radio_serial.SetToolTip(
+                _(
+                    "Select this if you have a GRBL device running through a serial connection."
+                )
             )
-        )
-        sizer_interface_radio.Add(self.radio_serial, 1, wx.EXPAND, 0)
+            sizer_interface_radio.Add(self.radio_serial, 1, wx.EXPAND, 0)
 
-        self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, _("Networked"))
-        self.radio_tcp.SetToolTip(
-            _(
-                "Select this if the GRBL device is contacted via TCP connection"
+        if self.context.permit_tcp:
+            self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, _("Networked"))
+            self.radio_tcp.SetToolTip(
+                _(
+                    "Select this if the GRBL device is contacted via TCP connection"
+                )
             )
-        )
-        sizer_interface_radio.Add(self.radio_tcp, 1, wx.EXPAND, 0)
+            sizer_interface_radio.Add(self.radio_tcp, 1, wx.EXPAND, 0)
 
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
@@ -70,20 +72,24 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_serial)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
+        if self.context.permit_serial:
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_serial)
+        if self.context.permit_tcp:
+            self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_tcp)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_interface, self.radio_mock)
         # end wxGlade
-        if self.context.interface == "mock":
+        if self.context.permit_serial and self.context.interface == "serial":
+            self.radio_serial.SetValue(True)
             self.panel_tcp_config.Hide()
-            self.panel_serial_settings.Hide()
-            self.radio_mock.SetValue(True)
-        elif self.context.interface == "tcp":
+        elif self.context.permit_tcp and self.context.interface == "tcp":
             self.panel_serial_settings.Hide()
             self.radio_tcp.SetValue(True)
         else:
-            self.radio_serial.SetValue(True)
+            # Mock
             self.panel_tcp_config.Hide()
+            self.panel_serial_settings.Hide()
+            self.radio_mock.SetValue(True)
+
         self.SetupScrolling()
 
     def pane_show(self):
@@ -97,16 +103,22 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def on_radio_interface(
         self, event
     ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
-        if self.radio_serial.GetValue():
-            self.panel_tcp_config.Hide()
-            self.panel_serial_settings.Show()
-            self.context.interface = "serial"
-            self.context.signal("update_interface")
-        if self.radio_tcp.GetValue():
-            self.panel_tcp_config.Show()
-            self.panel_serial_settings.Hide()
-            self.context.interface = "tcp"
-            self.context.signal("update_interface")
+        try:
+            if self.radio_serial.GetValue():
+                self.context.interface = "serial"
+                self.context.signal("update_interface")
+                self.panel_serial_settings.Show()
+                self.panel_tcp_config.Hide()
+        except AttributeError:
+            pass
+        try:
+            if self.radio_tcp.GetValue():
+                self.context.interface = "tcp"
+                self.context.signal("update_interface")
+                self.panel_serial_settings.Hide()
+                self.panel_tcp_config.Show()
+        except AttributeError:
+            pass
         if self.radio_mock.GetValue():
             self.panel_tcp_config.Hide()
             self.panel_serial_settings.Hide()
