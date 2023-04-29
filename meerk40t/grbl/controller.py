@@ -398,7 +398,7 @@ class GrblController:
         """
         self.connection.write(line)
         self.grbl_send(line)
-        self._forward_buffer += line
+        self._forward_buffer += bytes(line, encoding="latin-1")
 
     def _recv_response(self):
         """
