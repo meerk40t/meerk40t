@@ -529,12 +529,20 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.notebook_main.AddPage(self.panel_color, _("Colors"))
 
+        self.panels = [
+            self.panel_main,
+            self.panel_classification,
+            self.panel_gui,
+            self.panel_scene,
+            self.panel_color
+        ]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
             panel_space = ChoicePropertyPanel(
                 self, wx.ID_ANY, context=self.context, choices="space"
             )
             self.notebook_main.AddPage(panel_space, _("Coordinate Space"))
+            self.panels.append(panel_space)
         self.Layout()
 
         _icon = wx.NullIcon
@@ -581,11 +589,12 @@ class Preferences(MWindow):
                 self.context.signal(preset[1], preset[2], preset[0])
 
     def delegates(self):
-        yield self.panel_main
-        yield self.panel_classification
-        yield self.panel_gui
-        yield self.panel_scene
-        yield self.panel_color
+        yield from self.panels
+        # yield self.panel_main
+        # yield self.panel_classification
+        # yield self.panel_gui
+        # yield self.panel_scene
+        # yield self.panel_color
 
     @staticmethod
     def sub_register(kernel):
