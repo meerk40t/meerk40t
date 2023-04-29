@@ -400,6 +400,20 @@ class GrblController:
         self.grbl_send(line)
         self._forward_buffer += bytes(line, encoding="latin-1")
 
+    def get_forward_command(self):
+        """
+        Gets the forward command from the front of the forward buffer. This was the oldest command that the controller
+        has not processed.
+
+        @return:
+        """
+        q = self._index_of_forward_line
+        if q == -1:
+            raise ValueError("No forward command exists.")
+        cmd_issued = self._forward_buffer[:q]
+        self._forward_buffer = self._forward_buffer[q:]
+        return cmd_issued
+
     def _recv_response(self):
         """
         Read and process response from grbl.
@@ -413,14 +427,13 @@ class GrblController:
         self.service.signal("serial;response", response)
         # print(f"Response: '{response}'")
         if response == "ok":
-            q = self._index_of_forward_line
-            if q == -1:
+            try:
+                cmd_issued = self.get_forward_command()
+            except ValueError as e:
                 # We got an ok. But, had not sent anything.
                 self.grbl_events(f"Response: {response}, but this was unexpected")
                 self._assembled_response = []
-                raise ConnectionAbortedError
-            cmd_issued = self._forward_buffer[:q]
-            self._forward_buffer = self._forward_buffer[q:]
+                raise ConnectionAbortedError from e
 
             self.grbl_events(f"Response: {response}")
             self.grbl_recv(
