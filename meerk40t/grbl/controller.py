@@ -239,8 +239,15 @@ class GrblController:
 
     @property
     def _index_of_forward_line(self):
-        r = self._forward_buffer.index(b"\r")
-        n = self._forward_buffer.index(b"\n")
+        try:
+            r = self._forward_buffer.index(b"\r")
+        except ValueError:
+            r = -1
+        try:
+            n = self._forward_buffer.index(b"\n")
+        except ValueError:
+            n = -1
+
         if n != -1:
             return min(n, r) if r != -1 else n
         else:
