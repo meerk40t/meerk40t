@@ -540,7 +540,9 @@ class GrblController:
                     # We got an ok. But, had not sent anything.
                     self.grbl_events(f"Response: {response}, but this was unexpected")
                     self._assembled_response = []
-                    raise ConnectionAbortedError from e
+                    self._forward_buffer.clear()
+                    continue
+                    # raise ConnectionAbortedError from e
 
                 self.grbl_events(f"Response: {response}")
                 self.grbl_recv(
