@@ -542,7 +542,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self("!", real=True)
+        self(f"!{self.line_end}", real=True)
 
     def resume(self, *args):
         """
@@ -554,7 +554,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self("~", real=True)
+        self(f"~{self.line_end}", real=True)
 
     def reset(self, *args):
         """
@@ -568,7 +568,7 @@ class GRBLDriver(Parameters):
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
-        self("\x18", real=True)
+        self(f"\x18{self.line_end}", real=True)
         self.paused = False
 
     def clear_alarm(self):
@@ -577,7 +577,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self("$X\n", real=True)
+        self(f"$X{self.line_end}", real=True)
 
     ####################
     # PROTECTED DRIVER CODE
