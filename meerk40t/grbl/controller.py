@@ -206,6 +206,7 @@ class GrblController:
 
         # Sending variables.
         self._sending_thread = None
+        self._recving_thread = None
 
         self._sending_lock = threading.Lock()
         self._realtime_lock = threading.Lock()
@@ -251,7 +252,6 @@ class GrblController:
             return min(n, r) if r != -1 else n
         else:
             return r
-
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
@@ -328,8 +328,7 @@ class GrblController:
         self.service.signal(
             "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
-        with self._loop_cond:
-            self._loop_cond.notify()
+        self._send_resume()
 
     def realtime(self, data):
         """
@@ -350,8 +349,7 @@ class GrblController:
         self.service.signal(
             "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
-        with self._loop_cond:
-            self._loop_cond.notify()
+        self._send_resume()
 
     ####################
     # Control GRBL Sender
@@ -371,6 +369,16 @@ class GrblController:
                 result=self.stop,
                 daemon=True,
             )
+        if self._recving_thread is None:
+            self._recving_thread = self.service.threaded(
+                self._recving,
+                thread_name=f"recver-{self.service.location()}",
+                result=self._rstop,
+                daemon=True,
+            )
+
+    def _rstop(self, *args):
+        self._recving_thread = None
 
     def stop(self, *args):
         """
@@ -381,8 +389,7 @@ class GrblController:
         """
         self._sending_thread = None
         self.close()
-        with self._loop_cond:
-            self._loop_cond.notify()
+        self._send_resume()
 
     ####################
     # GRBL SEND ROUTINES
@@ -409,69 +416,78 @@ class GrblController:
         q = self._index_of_forward_line
         if q == -1:
             raise ValueError("No forward command exists.")
-        cmd_issued = self._forward_buffer[:q+1]
-        self._forward_buffer = self._forward_buffer[q+1:]
+        cmd_issued = self._forward_buffer[: q + 1]
+        self._forward_buffer = self._forward_buffer[q + 1 :]
         return cmd_issued
 
-    def _recv_response(self):
+    def _recving(self):
         """
+        Generic recver, delegate the function according to the desired mode.
+
         Read and process response from grbl.
 
+        This function is only run with the self.recver_thread
         @return:
         """
-        # reading responses.
-        response = None
-        while not response:
-            response = self.connection.read()
-            if not response:
-                time.sleep(0.01)
-        self.service.signal("serial;response", response)
-        # print(f"Response: '{response}'")
-        if response == "ok":
-            try:
-                cmd_issued = self.get_forward_command()
-            except ValueError as e:
-                # We got an ok. But, had not sent anything.
-                self.grbl_events(f"Response: {response}, but this was unexpected")
-                self._assembled_response = []
-                raise ConnectionAbortedError from e
+        while self.connection.connected:
+            print("recving")
+            # reading responses.
+            response = None
+            while not response:
+                response = self.connection.read()
+                if not response:
+                    time.sleep(0.01)
+            self.service.signal("serial;response", response)
+            if response == "ok":
+                try:
+                    cmd_issued = self.get_forward_command()
+                except ValueError as e:
+                    # We got an ok. But, had not sent anything.
+                    self.grbl_events(f"Response: {response}, but this was unexpected")
+                    self._assembled_response = []
+                    raise ConnectionAbortedError from e
 
-            self.grbl_events(f"Response: {response}")
-            self.grbl_recv(
-                f"{response} / {len(self._forward_buffer)} -- {cmd_issued}"
-            )
-            self.service.signal("grbl;response", cmd_issued, self._assembled_response)
-            self._assembled_response = []
-            return True
-        elif response.startswith("echo:"):
-            # Echo asks that this information be displayed.
-            self.service.channel("console")(response[5:])
-        elif response.startswith("ALARM"):
-            try:
-                error_num = int(response[6:])
-            except ValueError:
-                error_num = -1
-            short, long = grbl_alarm_message(error_num)
-            self.service.signal(
-                "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
-            )
-            self.grbl_recv(f"Alarm #{error_num} {short}\n{long}")
-            self.grbl_events(f"Alarm #{error_num} {short}\n{long}")
-            self._assembled_response = []
-        elif response.startswith("error"):
-            try:
-                error_num = int(response[6:])
-            except ValueError:
-                error_num = -1
-            short, long = grbl_error_code(error_num)
-            self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
-            self.grbl_recv(f"ERROR #{error_num} {short}\n{long}")
-            self.grbl_events(f"ERROR #{error_num} {short}\n{long}")
-            self._assembled_response = []
-        else:
-            self.grbl_recv(f"{response}")
-            self.grbl_events(f"Data: {response}")
-            self._assembled_response.append(response)
+                self.grbl_events(f"Response: {response}")
+                self.grbl_recv(
+                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}"
+                )
+                self.service.signal(
+                    "grbl;response", cmd_issued, self._assembled_response
+                )
+                self._assembled_response = []
+                self._send_resume()
+                continue
+            elif response.startswith("echo:"):
+                # Echo asks that this information be displayed.
+                self.service.channel("console")(response[5:])
+            elif response.startswith("ALARM"):
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_alarm_message(error_num)
+                self.service.signal(
+                    "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
+                )
+                self.grbl_recv(f"Alarm #{error_num} {short}\n{long}")
+                self.grbl_events(f"Alarm #{error_num} {short}\n{long}")
+                self._assembled_response = []
+            elif response.startswith("error"):
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_error_code(error_num)
+                self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
+                self.grbl_recv(f"ERROR #{error_num} {short}\n{long}")
+                self.grbl_events(f"ERROR #{error_num} {short}\n{long}")
+                self._assembled_response = []
+                self._send_resume()
+            else:
+                self.grbl_recv(f"{response}")
+                self.grbl_events(f"Data: {response}")
+                self._assembled_response.append(response)
+        self.service.signal("pipe;running", False)
 
     def _sending_realtime(self):
         """
@@ -503,42 +519,15 @@ class GrblController:
         self.service.signal("serial;buffer", len(self._sending_queue))
         return True
 
-    def _sending_buffered(self):
-        """
-        Buffered connection sends as much data as fits in the planning buffer. Then it waits
-        and for each ok, it reduces the expected size of the planning buffer and sends the next
-        line of data, only when there's enough room to hold that data.
+    def _send_halt(self):
+        with self._loop_cond:
+            self.service.signal("pipe;running", False)
+            self._loop_cond.wait()
 
-        @return:
-        """
-        if self._sending_queue and self._device_buffer_size > (
-            len(self._forward_buffer) + self._length_of_next_line
-        ):
-            # There is a line and there is enough buffer to send this line.
-            self._sending_single_line()
-            self._buffer_fail = 0
-        else:
-            # We cannot write any lines because they won't fit (start read buffer).
-            if self._forward_buffer:
-                self._recv_response()
-            else:
-                # There is no forward buffer. This is an error state.
-                self._buffer_fail += 1
-                if self._buffer_fail > 10:
-                    pass
-                    # we should do something like raising an error... for tat to decide
-
-    def _sending_sync(self):
-        """
-        Synchronous mode sends 1 line and waits to receive 1 "ok" from the laser
-
-        @return:
-        """
-        # Send 1, recv 1.
-        if self._sending_queue:
-            self._sending_single_line()
-            while self._forward_buffer:
-                self._recv_response()
+    def _send_resume(self):
+        with self._loop_cond:
+            self.service.signal("pipe;running", True)
+            self._loop_cond.notify()
 
     def _sending(self):
         """
@@ -546,16 +535,14 @@ class GrblController:
 
         This function is only run with the self.sending_thread
         @return:
+
         """
+
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._forward_buffer and not self._realtime_queue:
-                # There is nothing to write, or read, realtime
-                self.service.signal("pipe;running", False)
-                with self._loop_cond:
-                    # We wait until new data is put in the buffer.
-                    self._loop_cond.wait()
-                continue
+            if not self._sending_queue and not self._realtime_queue:
+                # There is nothing to write/realtime
+                self._send_halt()
             if self._realtime_queue:
                 # Send realtime data.
                 self._sending_realtime()
@@ -563,8 +550,21 @@ class GrblController:
             if self._paused:
                 # We are paused. We do not send anything other than realtime commands.
                 continue
+            if not self._sending_queue:
+                continue
             if self.service.buffer_mode == "sync":
-                self._sending_sync()
+                if len(self._forward_buffer):
+                    # Any buffer is too much buffer. Halt.
+                    self._send_halt()
+                    continue
             else:
-                self._sending_buffered()
+                if (
+                    self._device_buffer_size
+                    <= len(self._forward_buffer) + self._length_of_next_line
+                ):
+                    # Stop sending when buffer is the size of permitted buffer size.
+                    self._send_halt()
+                    continue
+            # Go for send_line
+            self._sending_single_line()
         self.service.signal("pipe;running", False)
