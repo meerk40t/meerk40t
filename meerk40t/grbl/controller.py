@@ -214,9 +214,8 @@ class GrblController:
         self._realtime_queue = []
         # buffer for feedback...
         self._assembled_response = []
-
+        self._forward_buffer = bytearray()
         self._commands_in_device_buffer = []
-        self._buffered_characters = 0
         self._device_buffer_size = self.service.planning_buffer_size
         self._buffer_fail = 0
 
@@ -237,6 +236,16 @@ class GrblController:
         if not self._sending_queue:
             return 0
         return len(self._sending_queue[0])
+
+    @property
+    def _index_of_forward_line(self):
+        r = self._forward_buffer.index(b"\r")
+        n = self._forward_buffer.index(b"\n")
+        if n != -1:
+            return min(n, r) if r != -1 else n
+        else:
+            return r
+
 
     @signal_listener("update_interface")
     def update_connection(self, origin=None, *args):
@@ -373,6 +382,17 @@ class GrblController:
     # GRBL SEND ROUTINES
     ####################
 
+    def _send(self, line):
+        """
+        Write the line to the connection, announce it to the send channel, and add it to the forward buffer.
+
+        @param line:
+        @return:
+        """
+        self.connection.write(line)
+        self.grbl_send(line)
+        self._forward_buffer += line
+
     def _recv_response(self):
         """
         Read and process response from grbl.
@@ -386,18 +406,18 @@ class GrblController:
         self.service.signal("serial;response", response)
         # print(f"Response: '{response}'")
         if response == "ok":
-            try:
-                cmd_issued = self._commands_in_device_buffer.pop(0)
-                self._buffered_characters -= len(cmd_issued)
-                if cmd_issued[-1] == "\r":
-                    cmd_issued = cmd_issued[:-1]
-            except IndexError:
+            q = self._index_of_forward_line
+            if q == -1:
+                # We got an ok. But, had not sent anything.
                 self.grbl_events(f"Response: {response}, but this was unexpected")
                 self._assembled_response = []
                 raise ConnectionAbortedError
+            cmd_issued = self._forward_buffer[:q]
+            self._forward_buffer = self._forward_buffer[q:]
+
             self.grbl_events(f"Response: {response}")
             self.grbl_recv(
-                f"{response} / {self._buffered_characters} / {len(self._commands_in_device_buffer)} -- {cmd_issued}"
+                f"{response} / {len(self._forward_buffer)} -- {cmd_issued}"
             )
             self.service.signal("grbl;response", cmd_issued, self._assembled_response)
             self._assembled_response = []
@@ -445,8 +465,7 @@ class GrblController:
         if "!" in line:
             self._paused = False
         if line is not None:
-            self.connection.write(line)
-            self.grbl_send(line)
+            self._send(line)
 
     def _sending_single_line(self):
         """
@@ -458,13 +477,7 @@ class GrblController:
             line = self._sending_queue.pop(0)
         if line is not None:
             self._commands_in_device_buffer.append(line)
-        #     print (f"Appended '{line[:10]}...', len={len(self.commands_in_device_buffer)}")
-        # else:
-        #     print ("Was empty in sending_single_line")
-
-        self.connection.write(line)
-        self.grbl_send(line)
-        self._buffered_characters += len(line)
+        self._send(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
         return True
 
@@ -476,24 +489,18 @@ class GrblController:
 
         @return:
         """
-        # print (
-        #     f"Send Queue: {len(self._sending_queue)}\n" +
-        #     f"commands_in_device: {len(self.commands_in_device_buffer)}\n"
-        #     f"buffered={self.buffered_characters}\n" +
-        #     f"next: {self._length_of_next_line}"
-        # )
-
         if self._sending_queue and self._device_buffer_size > (
-            self._buffered_characters + self._length_of_next_line
+            len(self._forward_buffer) + self._length_of_next_line
         ):
             # There is a line and there is enough buffer to send this line.
             self._sending_single_line()
             self._buffer_fail = 0
         else:
             # We cannot write any lines because they won't fit (start read buffer).
-            if self._commands_in_device_buffer:
+            if self._forward_buffer:
                 self._recv_response()
             else:
+                # There is no forward buffer. This is an error state.
                 self._buffer_fail += 1
                 if self._buffer_fail > 10:
                     pass
@@ -508,7 +515,8 @@ class GrblController:
         # Send 1, recv 1.
         if self._sending_queue:
             self._sending_single_line()
-            self._recv_response()
+            while self._forward_buffer:
+                self._recv_response()
 
     def _sending(self):
         """
@@ -519,7 +527,7 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._commands_in_device_buffer and not self._realtime_queue:
+            if not self._sending_queue and not self._forward_buffer and not self._realtime_queue:
                 # There is nothing to write, or read, realtime
                 self.service.signal("pipe;running", False)
                 with self._loop_cond:
