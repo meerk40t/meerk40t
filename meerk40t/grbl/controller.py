@@ -443,6 +443,7 @@ class GrblController:
             if response == "ok":
                 try:
                     cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
                 except ValueError as e:
                     # We got an ok. But, had not sent anything.
                     self.grbl_events(f"Response: {response}, but this was unexpected")
@@ -540,30 +541,29 @@ class GrblController:
         @return:
 
         """
+        self.service.signal("pipe;running", True)
         while self.connection.connected:
-            self.service.signal("pipe;running", True)
-            if not self._sending_queue and not self._realtime_queue:
-                # There is nothing to write/realtime
-                self._send_halt()
             if self._realtime_queue:
                 # Send realtime data.
                 self._sending_realtime()
                 continue
             if self._paused:
                 # We are paused. We do not send anything other than realtime commands.
+                time.sleep(0.05)
                 continue
             if not self._sending_queue:
+                # There is nothing to write/realtime
+                self._send_halt()
                 continue
+            buffer = len(self._forward_buffer)
             if self.service.buffer_mode == "sync":
-                if len(self._forward_buffer):
+                if buffer:
                     # Any buffer is too much buffer. Halt.
                     self._send_halt()
                     continue
             else:
-                if (
-                    self._device_buffer_size
-                    <= len(self._forward_buffer) + self._length_of_next_line
-                ):
+                # Buffered
+                if self._device_buffer_size <= buffer + self._length_of_next_line:
                     # Stop sending when buffer is the size of permitted buffer size.
                     self._send_halt()
                     continue
