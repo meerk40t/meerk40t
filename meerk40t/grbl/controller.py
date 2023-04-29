@@ -496,7 +496,7 @@ class GrblController:
         """
         with self._sending_lock:
             line = self._sending_queue.pop(0)
-        if not line:
+        if line:
             self._send(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
         return True
