@@ -28,6 +28,7 @@ def get_inkscape(context, manual_candidate=None):
             "C:/Program Files (x86)/Inkscape/bin/inkscape.exe",
             "C:/Program Files/Inkscape/inkscape.exe",
             "C:/Program Files/Inkscape/bin/inkscape.exe",
+            "C:/inkscape/bin/inkscape.exe",
         ]
     elif system == "Linux":
         candidates = [
