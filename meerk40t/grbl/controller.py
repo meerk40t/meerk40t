@@ -424,6 +424,8 @@ class GrblController:
         response = None
         while not response:
             response = self.connection.read()
+            if not response:
+                time.sleep(0.01)
         self.service.signal("serial;response", response)
         # print(f"Response: '{response}'")
         if response == "ok":
