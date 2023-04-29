@@ -50,6 +50,12 @@ class SerialControllerPanel(wx.Panel):
         sizer_1.Add(self.data_exchange, 1, wx.EXPAND, 0)
 
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.realtime_commands = (
+            "!",  # pause
+            "~",  # resume
+            "?",  # status report
+            # "$X",
+        )
         self.gcode_commands = [
             ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
             ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
@@ -120,7 +126,11 @@ class SerialControllerPanel(wx.Panel):
         return handler
 
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
-        self.service(f"gcode {self.gcode_text.GetValue()}")
+        cmd = self.gcode_text.GetValue()
+        if cmd in self.realtime_commands:
+            self.service(f"gcode_realtime {cmd}")
+        else:
+            self.service(f"gcode {cmd}")
         self.gcode_text.Clear()
 
     def update_sent(self, text):
