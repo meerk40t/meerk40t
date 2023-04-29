@@ -485,6 +485,8 @@ class GrblController:
             self._paused = True
         if "~" in line:
             self._paused = False
+        if "\x18" in line:
+            self._forward_buffer.clear()
         if line is not None:
             self._send(line)
 
