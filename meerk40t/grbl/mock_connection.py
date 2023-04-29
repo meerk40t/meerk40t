@@ -24,8 +24,7 @@ class MockConnection:
     def read(self):
         if self.just_connected:
             self.just_connected = False
-            return "Grbl 1.1f ['$' for help]\r\n"\
-                   "[MSG:’$H’|’$X’ to unlock]\r\n"
+            return "Grbl 1.1f ['$' for help]\r\n" "[MSG:’$H’|’$X’ to unlock]\r\n"
         if self.time_stamps:
             if self.time_stamps[0] < (time.time() - 0.3):
                 self.time_stamps.pop(0)

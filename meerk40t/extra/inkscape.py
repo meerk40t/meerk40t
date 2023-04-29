@@ -155,7 +155,6 @@ class MultiLoader:
         except UnicodeDecodeError:
             version = "inkscape 1.x"
 
-
         svg_temp_file = os.path.join(safe_dir, "inkscape.svg")
         logfile = os.path.join(safe_dir, "inkscape.log")
 

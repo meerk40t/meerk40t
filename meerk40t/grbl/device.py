@@ -305,7 +305,6 @@ class GRBLDevice(Service, ViewPort):
         if self.permit_tcp:
             self.register_choices("tcp", choices)
 
-
         choices = [
             {
                 "attr": "interface",
@@ -474,7 +473,6 @@ class GRBLDevice(Service, ViewPort):
         if self.permit_serial:
             self._register_console_serial()
 
-
         @self.console_command(
             "gcode",
             help=_("Send raw gcode to the device"),
@@ -483,7 +481,7 @@ class GRBLDevice(Service, ViewPort):
         def gcode(command, channel, _, data=None, remainder=None, **kwgs):
             if remainder is not None:
                 channel(remainder)
-                self.driver(remainder + self.driver.line_end) #, real=True)
+                self.driver(remainder + self.driver.line_end)  # , real=True)
                 # self.channel("grbl/send")(remainder + self.driver.line_end)
 
         @self.console_command(
@@ -682,14 +680,14 @@ class GRBLDevice(Service, ViewPort):
             input_type=None,
         )
         def serial_connection(
-                command,
-                channel,
-                _,
-                data=None,
-                com=None,
-                baud=115200,
-                remainder=None,
-                **kwgs,
+            command,
+            channel,
+            _,
+            data=None,
+            com=None,
+            baud=115200,
+            remainder=None,
+            **kwgs,
         ):
             if com is None:
                 import serial.tools.list_ports

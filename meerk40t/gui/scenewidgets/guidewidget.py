@@ -221,7 +221,9 @@ class GuideWidget(Widget):
         menu.AppendSeparator()
         item = menu.Append(
             wx.ID_ANY,
-            _("User defined value: {value}").format(value= f"{self.scene.pane.grid.tick_distance}{units}"),
+            _("User defined value: {value}").format(
+                value=f"{self.scene.pane.grid.tick_distance}{units}"
+            ),
             "",
             wx.ITEM_NORMAL,
         )

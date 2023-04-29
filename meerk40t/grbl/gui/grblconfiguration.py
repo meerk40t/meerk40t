@@ -32,7 +32,9 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         sizer_interface.Add(sizer_interface_radio, 0, wx.EXPAND, 0)
 
         if self.context.permit_serial:
-            self.radio_serial = wx.RadioButton(self, wx.ID_ANY, _("Serial"), style=wx.RB_GROUP)
+            self.radio_serial = wx.RadioButton(
+                self, wx.ID_ANY, _("Serial"), style=wx.RB_GROUP
+            )
             self.radio_serial.SetValue(1)
             self.radio_serial.SetToolTip(
                 _(
@@ -44,17 +46,13 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         if self.context.permit_tcp:
             self.radio_tcp = wx.RadioButton(self, wx.ID_ANY, _("Networked"))
             self.radio_tcp.SetToolTip(
-                _(
-                    "Select this if the GRBL device is contacted via TCP connection"
-                )
+                _("Select this if the GRBL device is contacted via TCP connection")
             )
             sizer_interface_radio.Add(self.radio_tcp, 1, wx.EXPAND, 0)
 
         self.radio_mock = wx.RadioButton(self, wx.ID_ANY, _("Mock"))
         self.radio_mock.SetToolTip(
-            _(
-                "Select this only for debugging without a physical laser available."
-            )
+            _("Select this only for debugging without a physical laser available.")
         )
         sizer_interface_radio.Add(self.radio_mock, 1, wx.EXPAND, 0)
 

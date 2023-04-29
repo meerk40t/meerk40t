@@ -184,7 +184,9 @@ def plugin(kernel, lifecycle=None):
                             z = 0
                             f = 0
                             s = 0
-                            status = f"<Idle|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
+                            status = (
+                                f"<Idle|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
+                            )
                             tcp_send_channel(status)
 
                 tcp_send_channel.watch(print)

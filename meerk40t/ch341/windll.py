@@ -2,7 +2,6 @@ from ctypes import c_byte, windll
 
 from meerk40t.ch341.libusb import mCH341_PARA_CMD_STS
 
-
 # MIT License.
 
 

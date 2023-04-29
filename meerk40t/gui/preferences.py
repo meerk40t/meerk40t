@@ -534,7 +534,7 @@ class Preferences(MWindow):
             self.panel_classification,
             self.panel_gui,
             self.panel_scene,
-            self.panel_color
+            self.panel_color,
         ]
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
