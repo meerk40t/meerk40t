@@ -481,9 +481,9 @@ class GrblController:
         """
         with self._realtime_lock:
             line = self._realtime_queue.pop(0)
-        if "~" in line:
-            self._paused = True
         if "!" in line:
+            self._paused = True
+        if "~" in line:
             self._paused = False
         if line is not None:
             self._send(line)
