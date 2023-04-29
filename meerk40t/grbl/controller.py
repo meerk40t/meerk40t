@@ -408,6 +408,98 @@ class GrblController:
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
 
+    def _sending_realtime(self):
+        """
+        Send one line of realtime queue.
+
+        @return:
+        """
+        with self._realtime_lock:
+            line = self._realtime_queue.pop(0)
+        if "!" in line:
+            self._paused = True
+        if "~" in line:
+            self._paused = False
+        if "\x18" in line:
+            with self._forward_lock:
+                self._forward_buffer.clear()
+        if line is not None:
+            self._send(line)
+
+    def _sending_single_line(self):
+        """
+        Send one line of sending queue.
+
+        @return:
+        """
+        with self._sending_lock:
+            line = self._sending_queue.pop(0)
+        if line:
+            self._send(line)
+        self.service.signal("serial;buffer", len(self._sending_queue))
+        return True
+
+    def _send_halt(self):
+        """
+        This is called internally in the _sending command.
+        @return:
+        """
+        with self._loop_cond:
+            self.service.signal("pipe;running", False)
+            self._loop_cond.wait()
+
+    def _send_resume(self):
+        """
+        Other threads are expected to call this routine to permit _sending to resume.
+
+        @return:
+        """
+        with self._loop_cond:
+            self.service.signal("pipe;running", True)
+            self._loop_cond.notify()
+
+    def _sending(self):
+        """
+        Generic sender, delegate the function according to the desired mode.
+
+        This function is only run with the self.sending_thread
+        @return:
+
+        """
+        self.service.signal("pipe;running", True)
+        while self.connection.connected:
+            if self._realtime_queue:
+                # Send realtime data.
+                self._sending_realtime()
+                continue
+            if self._paused:
+                # We are paused. We do not send anything other than realtime commands.
+                time.sleep(0.05)
+                continue
+            if not self._sending_queue:
+                # There is nothing to write/realtime
+                self._send_halt()
+                continue
+            buffer = len(self._forward_buffer)
+            if self.service.buffer_mode == "sync":
+                if buffer:
+                    # Any buffer is too much buffer. Halt.
+                    self._send_halt()
+                    continue
+            else:
+                # Buffered
+                if self._device_buffer_size <= buffer + self._length_of_next_line:
+                    # Stop sending when buffer is the size of permitted buffer size.
+                    self._send_halt()
+                    continue
+            # Go for send_line
+            self._sending_single_line()
+        self.service.signal("pipe;running", False)
+
+    ####################
+    # GRBL RECV ROUTINES
+    ####################
+
     def get_forward_command(self):
         """
         Gets the forward command from the front of the forward buffer. This was the oldest command that the controller
@@ -490,83 +582,4 @@ class GrblController:
                 self.grbl_recv(f"{response}")
                 self.grbl_events(f"Data: {response}")
                 self._assembled_response.append(response)
-        self.service.signal("pipe;running", False)
-
-    def _sending_realtime(self):
-        """
-        Send one line of realtime queue.
-
-        @return:
-        """
-        with self._realtime_lock:
-            line = self._realtime_queue.pop(0)
-        if "!" in line:
-            self._paused = True
-        if "~" in line:
-            self._paused = False
-        if "\x18" in line:
-            with self._forward_lock:
-                self._forward_buffer.clear()
-        if line is not None:
-            self._send(line)
-
-    def _sending_single_line(self):
-        """
-        Send one line of sending queue.
-
-        @return:
-        """
-        with self._sending_lock:
-            line = self._sending_queue.pop(0)
-        if line:
-            self._send(line)
-        self.service.signal("serial;buffer", len(self._sending_queue))
-        return True
-
-    def _send_halt(self):
-        with self._loop_cond:
-            self.service.signal("pipe;running", False)
-            self._loop_cond.wait()
-
-    def _send_resume(self):
-        with self._loop_cond:
-            self.service.signal("pipe;running", True)
-            self._loop_cond.notify()
-
-    def _sending(self):
-        """
-        Generic sender, delegate the function according to the desired mode.
-
-        This function is only run with the self.sending_thread
-        @return:
-
-        """
-        self.service.signal("pipe;running", True)
-        while self.connection.connected:
-            if self._realtime_queue:
-                # Send realtime data.
-                self._sending_realtime()
-                continue
-            if self._paused:
-                # We are paused. We do not send anything other than realtime commands.
-                time.sleep(0.05)
-                continue
-            if not self._sending_queue:
-                # There is nothing to write/realtime
-                self._send_halt()
-                continue
-            buffer = len(self._forward_buffer)
-            if self.service.buffer_mode == "sync":
-                if buffer:
-                    # Any buffer is too much buffer. Halt.
-                    self._send_halt()
-                    continue
-            else:
-                # Buffered
-                if self._device_buffer_size <= buffer + self._length_of_next_line:
-                    # Stop sending when buffer is the size of permitted buffer size.
-                    self._send_halt()
-                    continue
-            # Go for send_line
-            self._sending_single_line()
         self.service.signal("pipe;running", False)
