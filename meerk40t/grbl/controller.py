@@ -409,8 +409,8 @@ class GrblController:
         q = self._index_of_forward_line
         if q == -1:
             raise ValueError("No forward command exists.")
-        cmd_issued = self._forward_buffer[:q]
-        self._forward_buffer = self._forward_buffer[q:]
+        cmd_issued = self._forward_buffer[:q+1]
+        self._forward_buffer = self._forward_buffer[q+1:]
         return cmd_issued
 
     def _recv_response(self):
