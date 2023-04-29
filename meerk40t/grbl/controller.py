@@ -208,6 +208,7 @@ class GrblController:
         self._sending_thread = None
         self._recving_thread = None
 
+        self._forward_lock = threading.Lock()
         self._sending_lock = threading.Lock()
         self._realtime_lock = threading.Lock()
         self._loop_cond = threading.Condition()
@@ -404,7 +405,8 @@ class GrblController:
         """
         self.connection.write(line)
         self.grbl_send(line)
-        self._forward_buffer += bytes(line, encoding="latin-1")
+        with self._forward_lock:
+            self._forward_buffer += bytes(line, encoding="latin-1")
 
     def get_forward_command(self):
         """
@@ -416,8 +418,9 @@ class GrblController:
         q = self._index_of_forward_line
         if q == -1:
             raise ValueError("No forward command exists.")
-        cmd_issued = self._forward_buffer[: q + 1]
-        self._forward_buffer = self._forward_buffer[q + 1 :]
+        with self._forward_lock:
+            cmd_issued = self._forward_buffer[: q + 1]
+            self._forward_buffer = self._forward_buffer[q + 1 :]
         return cmd_issued
 
     def _recving(self):
@@ -430,7 +433,6 @@ class GrblController:
         @return:
         """
         while self.connection.connected:
-            print("recving")
             # reading responses.
             response = None
             while not response:
@@ -502,7 +504,8 @@ class GrblController:
         if "~" in line:
             self._paused = False
         if "\x18" in line:
-            self._forward_buffer.clear()
+            with self._forward_lock:
+                self._forward_buffer.clear()
         if line is not None:
             self._send(line)
 
@@ -537,7 +540,6 @@ class GrblController:
         @return:
 
         """
-
         while self.connection.connected:
             self.service.signal("pipe;running", True)
             if not self._sending_queue and not self._realtime_queue:
