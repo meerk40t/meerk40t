@@ -287,22 +287,6 @@ class GrblController:
             self.grbl_events("Could not connect.")
             return
         self.grbl_events("Connecting to GRBL...")
-        t = time.time()
-        while True:
-            response = self.connection.read()
-            if not response:
-                if (time.time() - t) > 5.0:
-                    # 5 second timeout.
-                    return
-                continue
-            self.grbl_events(response)
-            self.grbl_recv(response)
-            if "grbl" in response.lower():
-                self.grbl_events("GRBL Connection Established.")
-                return
-            if "marlin" in response.lower():
-                self.grbl_events("Marlin Connection Established.")
-                return
 
     def close(self):
         """
