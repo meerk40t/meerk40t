@@ -215,7 +215,6 @@ class GrblController:
         # buffer for feedback...
         self._assembled_response = []
         self._forward_buffer = bytearray()
-        self._commands_in_device_buffer = []
         self._device_buffer_size = self.service.planning_buffer_size
         self._buffer_fail = 0
 
@@ -497,9 +496,8 @@ class GrblController:
         """
         with self._sending_lock:
             line = self._sending_queue.pop(0)
-        if line is not None:
-            self._commands_in_device_buffer.append(line)
-        self._send(line)
+        if not line:
+            self._send(line)
         self.service.signal("serial;buffer", len(self._sending_queue))
         return True
 
