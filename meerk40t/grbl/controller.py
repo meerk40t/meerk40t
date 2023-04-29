@@ -433,6 +433,7 @@ class GrblController:
         with self._loop_cond:
             self.service.signal("pipe;running", False)
             self._loop_cond.wait()
+            self.service.signal("pipe;running", True)
 
     def _send_resume(self):
         """
@@ -441,7 +442,6 @@ class GrblController:
         @return:
         """
         with self._loop_cond:
-            self.service.signal("pipe;running", True)
             self._loop_cond.notify()
 
     def _sending(self):
