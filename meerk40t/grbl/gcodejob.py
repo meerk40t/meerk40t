@@ -203,10 +203,14 @@ class GcodeJob:
         self._stopped = False
         if self.time_started is None:
             self.time_started = time.time()
-        with self.lock:
-            line = self.buffer.pop(0)
-        cmd = self._process_gcode(line)
-        self.reply_code(cmd)
+        try:
+            with self.lock:
+                line = self.buffer.pop(0)
+            cmd = self._process_gcode(line)
+            self.reply_code(cmd)
+        except IndexError:
+            # Could not pop, list is empty. Job is done.
+            pass
         if not self.buffer:
             # Buffer is empty now. Job is complete
             self.runtime += time.time() - self.time_started
