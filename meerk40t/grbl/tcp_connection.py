@@ -61,10 +61,12 @@ class TCPOutput:
     realtime_write = write
 
     def read(self):
-        self.read_buffer += self._stream.recv(self._read_buffer_size)
         f = self.read_buffer.find(b"\n")
         if f == -1:
-            return None
+            self.read_buffer += self._stream.recv(self._read_buffer_size)
+            f = self.read_buffer.find(b"\n")
+            if f == -1:
+                return
         response = self.read_buffer[:f]
         self.read_buffer = self.read_buffer[f + 1 :]
         str_response = str(response, "latin-1")
@@ -73,7 +75,5 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return (
-                f"TCPOutput('{self.service.location()}','{self.name}')"
-            )
+            return f"TCPOutput('{self.service.location()}','{self.name}')"
         return f"TCPOutput('{self.service.location()}')"
