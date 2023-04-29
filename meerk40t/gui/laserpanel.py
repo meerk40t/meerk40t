@@ -49,15 +49,15 @@ def register_panel_laser(window, context):
         aui.AuiPaneInfo()
         .Left()
         .MinSize(200, 180)
-        .FloatingSize(230, 300)
-        .MaxSize(500, 300)
+        .BestSize(300, 270)
+        .FloatingSize(300, 270)
         .Caption(_("Laser-Control"))
         .CaptionVisible(not context.pane_lock)
         .Name("laser")
     )
     pane.submenu = "_10_" + _("Laser")
     pane.control = notebook
-    pane.dock_proportion = 150
+    pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))

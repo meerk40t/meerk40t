@@ -88,6 +88,7 @@ def register_panel_navigation(window, context):
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
+        .Hide()
         .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 3 * iconsize + dx
@@ -108,6 +109,7 @@ def register_panel_navigation(window, context):
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
         .Name("move")
+        .Hide()
     )
     pane.dock_proportion = iconsize + 100
     pane.control = panel
