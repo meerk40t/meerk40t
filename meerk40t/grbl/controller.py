@@ -155,6 +155,7 @@ class GrblController:
         self.service = context
 
         self.connection = None
+        self._connection_validated = False
         self.update_connection()
 
         self.driver = self.service.driver
@@ -297,6 +298,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
+        self._connection_validated = False
         self.grbl_events("Disconnecting from GRBL...")
 
     def write(self, data):
@@ -456,7 +458,7 @@ class GrblController:
                 # Send realtime data.
                 self._sending_realtime()
                 continue
-            if self._paused:
+            if self._paused or not self._connection_validated:
                 # We are paused. We do not send anything other than realtime commands.
                 time.sleep(0.05)
                 continue
@@ -564,6 +566,9 @@ class GrblController:
                 self.grbl_events(f"ERROR #{error_num} {short}\n{long}")
                 self._assembled_response = []
                 self._send_resume()
+            elif response.startswith("Grbl"):
+                self.grbl_events("Connection Confirmed.")
+                self._connection_validated = True
             else:
                 self.grbl_recv(f"{response}")
                 self.grbl_events(f"Data: {response}")
