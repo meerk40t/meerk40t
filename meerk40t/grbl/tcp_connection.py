@@ -18,10 +18,6 @@ class TCPOutput:
         self.read_buffer = bytearray()
         self.name = name
 
-        self._write_lock = threading.Condition()
-        self.buffer = bytearray()
-        self.thread = None
-
     @property
     def connected(self):
         return self._stream is not None
@@ -56,11 +52,11 @@ class TCPOutput:
         self.service.signal("tcp;write", data)
         if isinstance(data, str):
             data = bytes(data, "utf-8")
-        with self._write_lock:
-            self.buffer += data
-            self.service.signal("tcp;buffer", len(self.buffer))
-            self._write_lock.notify()
-        self._start()
+        while data:
+            sent = self._stream.send(data)
+            if sent == len(data):
+                return
+            data = data[sent:]
 
     realtime_write = write
 
@@ -71,44 +67,9 @@ class TCPOutput:
             return None
         response = self.read_buffer[:f]
         self.read_buffer = self.read_buffer[f + 1 :]
-        str_response = str(response, "raw_unicode_escape")
+        str_response = str(response, "latin-1")
         str_response = str_response.strip()
         return str_response
-
-    @property
-    def viewbuffer(self):
-        return self.buffer.decode("utf8")
-
-    def _start(self):
-        if self.thread is None:
-            self.thread = self.service.threaded(
-                self._sending,
-                thread_name=f"sender-{self.service.port}",
-                result=self._stop,
-            )
-
-    def _stop(self, *args):
-        self.thread = None
-
-    def _sending(self):
-        while True:
-            if not self.buffer:
-                with self._write_lock:
-                    if not self.buffer:
-                        self._write_lock.wait()
-            try:
-                if self._stream is None:
-                    self.connect()
-                    if self._stream is None:
-                        raise ConnectionError
-
-                with self._write_lock:
-                    sent = self._stream.send(self.buffer)
-                    del self.buffer[:sent]
-                    self.service.signal("tcp;buffer", len(self.buffer))
-            except (ConnectionError, OSError):
-                self.disconnect()
-                time.sleep(0.05)
 
     def __repr__(self):
         if self.name is not None:
@@ -116,6 +77,3 @@ class TCPOutput:
                 f"TCPOutput('{self.service.location()}','{self.name}')"
             )
         return f"TCPOutput('{self.service.location()}')"
-
-    def __len__(self):
-        return len(self.buffer)
