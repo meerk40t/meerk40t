@@ -207,7 +207,9 @@ class GrblController:
         # Sending variables.
         self._sending_thread = None
 
-        self._send_lock = threading.Condition()
+        self._sending_lock = threading.Lock()
+        self._realtime_lock = threading.Lock()
+        self._loop_cond = threading.Condition()
         self._sending_queue = []
         self._realtime_queue = []
         # buffer for feedback...
@@ -217,6 +219,8 @@ class GrblController:
         self._buffered_characters = 0
         self._device_buffer_size = self.service.planning_buffer_size
         self._buffer_fail = 0
+
+        self._paused = False
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -304,12 +308,13 @@ class GrblController:
         """
         self.start()
         self.service.signal("serial;write", data)
-        with self._send_lock:
+        with self._sending_lock:
             self._sending_queue.append(data)
-            self.service.signal(
-                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
-            )
-            self._send_lock.notify()
+        self.service.signal(
+            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+        )
+        with self._loop_cond:
+            self._loop_cond.notify()
 
     def realtime(self, data):
         """
@@ -322,14 +327,16 @@ class GrblController:
         """
         self.start()
         self.service.signal("serial;write", data)
-        with self._send_lock:
+        with self._realtime_lock:
             self._realtime_queue.append(data)
-            if "\x18" in data:
+        if "\x18" in data:
+            with self._sending_lock:
                 self._sending_queue.clear()
-            self.service.signal(
-                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
-            )
-            self._send_lock.notify()
+        self.service.signal(
+            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+        )
+        with self._loop_cond:
+            self._loop_cond.notify()
 
     ####################
     # Control GRBL Sender
@@ -359,8 +366,8 @@ class GrblController:
         """
         self._sending_thread = None
         self.close()
-        with self._send_lock:
-            self._send_lock.notify()
+        with self._loop_cond:
+            self._loop_cond.notify()
 
     ####################
     # GRBL SEND ROUTINES
@@ -431,8 +438,12 @@ class GrblController:
 
         @return:
         """
-        with self._send_lock:
+        with self._realtime_lock:
             line = self._realtime_queue.pop(0)
+        if "~" in line:
+            self._paused = True
+        if "!" in line:
+            self._paused = False
         if line is not None:
             self.connection.write(line)
             self.grbl_send(line)
@@ -443,13 +454,13 @@ class GrblController:
 
         @return:
         """
-        with self._send_lock:
+        with self._sending_lock:
             line = self._sending_queue.pop(0)
-            if line is not None:
-                self._commands_in_device_buffer.append(line)
-            #     print (f"Appended '{line[:10]}...', len={len(self.commands_in_device_buffer)}")
-            # else:
-            #     print ("Was empty in sending_single_line")
+        if line is not None:
+            self._commands_in_device_buffer.append(line)
+        #     print (f"Appended '{line[:10]}...', len={len(self.commands_in_device_buffer)}")
+        # else:
+        #     print ("Was empty in sending_single_line")
 
         self.connection.write(line)
         self.grbl_send(line)
@@ -508,15 +519,19 @@ class GrblController:
         """
         while self.connection.connected:
             self.service.signal("pipe;running", True)
-            while self._realtime_queue:
-                # Send all realtime data.
-                self._sending_realtime()
-            if not self._sending_queue and not self._commands_in_device_buffer:
-                # There is nothing to write, or read
+            if not self._sending_queue and not self._commands_in_device_buffer and not self._realtime_queue:
+                # There is nothing to write, or read, realtime
                 self.service.signal("pipe;running", False)
-                with self._send_lock:
+                with self._loop_cond:
                     # We wait until new data is put in the buffer.
-                    self._send_lock.wait()
+                    self._loop_cond.wait()
+                continue
+            if self._realtime_queue:
+                # Send realtime data.
+                self._sending_realtime()
+                continue
+            if self._paused:
+                # We are paused. We do not send anything other than realtime commands.
                 continue
             if self.service.buffer_mode == "sync":
                 self._sending_sync()
