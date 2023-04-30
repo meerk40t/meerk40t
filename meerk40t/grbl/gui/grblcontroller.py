@@ -13,7 +13,7 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 
-class SerialControllerPanel(wx.Panel):
+class GRBLControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SerialControllerPanel.__init__
         self.service = context
@@ -195,16 +195,16 @@ class SerialControllerPanel(wx.Panel):
         return
 
 
-class SerialController(MWindow):
+class GRBLController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 357, *args, **kwds)
         self.service = self.context.device
-        self.SetTitle("SerialController")
+        self.SetTitle("GRBL Controller")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
 
-        self.serial_panel = SerialControllerPanel(self, wx.ID_ANY, context=self.service)
+        self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
         self.Layout()
         self._opened_port = None
         # end wxGlade
@@ -232,4 +232,4 @@ class SerialController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "GRBL Serial Controller")
+        return ("Device-Control", "GRBL Controller")

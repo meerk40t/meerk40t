@@ -13,8 +13,7 @@ def plugin(service, lifecycle):
 
     if lifecycle == "added":
         from meerk40t.grbl.gui.grblconfiguration import GRBLConfiguration
-        from meerk40t.grbl.gui.grblserialcontroller import SerialController
-        from meerk40t.grbl.gui.tcpcontroller import TCPController
+        from meerk40t.grbl.gui.grblcontroller import GRBLController
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
@@ -25,25 +24,14 @@ def plugin(service, lifecycle):
             icons8_quick_mode_on_50,
         )
 
-        service.register("window/Serial-Controller", SerialController)
-        service.register("winpath/Serial-Controller", service)
-
-        if service.permit_tcp:
-            service.register("window/TCP-Controller", TCPController)
-            service.register("winpath/TCP-Controller", service)
+        service.register("window/GRBLController", GRBLController)
+        service.register("winpath/GRBLController", service)
 
         service.register("window/Configuration", GRBLConfiguration)
         service.register("winpath/Configuration", service)
 
         _ = service._
 
-        def controller_click(i=None):
-            if service.permit_tcp and service.interface == "tcp":
-                service("window toggle TCP-Controller\n")
-            elif service.permit_serial and service.interface == "serial":
-                service("window toggle Serial-Controller\n")
-            else:
-                service("window toggle Serial-Controller\n")
 
         service.register(
             "button/control/Controller",
@@ -51,17 +39,7 @@ def plugin(service, lifecycle):
                 "label": _("Controller"),
                 "icon": icons8_connected_50,
                 "tip": _("Opens Controller Window"),
-                "action": controller_click,
-                "alt-action": (
-                    (
-                        _("Opens Serial-Controller"),
-                        lambda e: service("window toggle Serial-Controller\n"),
-                    ),
-                    (
-                        _("Opens TCP-Controller"),
-                        lambda e: service("window toggle TCP-Controller\n"),
-                    ),
-                ),
+                "action": lambda v: service("window toggle GRBLController\n"),
             },
         )
         service.register(
@@ -69,7 +47,7 @@ def plugin(service, lifecycle):
             {
                 "label": _("Config"),
                 "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
+                "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
