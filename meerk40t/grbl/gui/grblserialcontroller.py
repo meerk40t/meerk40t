@@ -133,15 +133,19 @@ class SerialControllerPanel(wx.Panel):
             self.service(f"gcode {cmd}")
         self.gcode_text.Clear()
 
-    def update_sent(self, text):
-        with self._buffer_lock:
-            self._buffer += f"<--{text}\n"
-        self.service.signal("grbl_controller_update", True)
-
-    def update_recv(self, text):
-        with self._buffer_lock:
-            self._buffer += f"-->\t{text}\n"
-        self.service.signal("grbl_controller_update", True)
+    def update(self, data, type):
+        if type == "send":
+            with self._buffer_lock:
+                self._buffer += f"<--{data}\n"
+            self.service.signal("grbl_controller_update", True)
+        elif type == "recv":
+            with self._buffer_lock:
+                self._buffer += f"-->\t{data}\n"
+            self.service.signal("grbl_controller_update", True)
+        elif type == "event":
+            with self._buffer_lock:
+                self._buffer += f"{data}\n"
+            self.service.signal("grbl_controller_update", True)
 
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
@@ -210,22 +214,17 @@ class SerialController(MWindow):
         self.serial_panel.on_serial_status(origin, state)
 
     def window_open(self):
-        self._opened_port = self.service.location()
-        self.context.channel(f"send-{self._opened_port}").watch(
-            self.serial_panel.update_sent
-        )
-        self.context.channel(f"recv-{self._opened_port}").watch(
-            self.serial_panel.update_recv
-        )
+        try:
+            self.service.controller.add_watcher(self.serial_panel.update)
+        except AttributeError:
+            pass
         self.serial_panel.pane_show()
 
     def window_close(self):
-        self.context.channel(f"send-{self._opened_port}").unwatch(
-            self.serial_panel.update_sent
-        )
-        self.context.channel(f"recv-{self._opened_port}").unwatch(
-            self.serial_panel.update_recv
-        )
+        try:
+            self.service.controller.remove_watcher(self.serial_panel.update)
+        except AttributeError:
+            pass
         self.serial_panel.pane_hide()
 
     def delegates(self):
