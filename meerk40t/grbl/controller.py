@@ -541,6 +541,7 @@ class GrblController:
                 if not response:
                     time.sleep(0.01)
             self.service.signal("serial;response", response)
+            self.log(response, type="recv")
             if response == "ok":
                 try:
                     cmd_issued = self.get_forward_command()
@@ -592,6 +593,5 @@ class GrblController:
                 self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
             else:
-                self.log(f"{response}", type="recv")
                 self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
