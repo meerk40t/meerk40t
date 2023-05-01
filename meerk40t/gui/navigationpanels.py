@@ -1,4 +1,5 @@
 import platform
+from time import time
 
 import wx
 from wx import aui
@@ -717,14 +718,27 @@ class Jog(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_ul, self.button_navigate_up_left
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_u, self.button_navigate_up)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_ur, self.button_navigate_up_right
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
+        self.timer = wx.Timer(self, id=wx.ID_ANY)
+        self.timer_execution = None
+        self.timer_action = None
+        self.timer_param1 = None
+        self.timer_param2 = None
+        self.timer_delta = 1.0
+        self.timer_looped = 0
+
+        for button in (
+            self.button_navigate_left,
+            self.button_navigate_right,
+            self.button_navigate_up,
+            self.button_navigate_down,
+            self.button_navigate_up_left,
+            self.button_navigate_up_right,
+            self.button_navigate_down_left,
+            self.button_navigate_down_right,
+        ):
+            button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
+            button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
+        # self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
         )
@@ -732,14 +746,6 @@ class Jog(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_button_navigate_physical_home
         )
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_r, self.button_navigate_right)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_dl, self.button_navigate_down_left
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_button_navigate_d, self.button_navigate_down)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_navigate_dr, self.button_navigate_down_right
-        )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_unlock, self.button_navigate_unlock
         )
@@ -855,17 +861,17 @@ class Jog(wx.Panel):
             new_y = min(max_y, max(min_y, current_y))
             if new_x != current_x or new_y != current_y:
                 self.context(
-                    f"move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
+                    f".move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
                 )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        self.context(f"move_relative {nx} {ny}\n")
+        self.context(f".move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
-        self.context("home\n")
+        self.context(".home\n")
 
     def on_button_navigate_physical_home(self, event=None):
         physical = False
@@ -877,41 +883,80 @@ class Jog(wx.Panel):
         else:
             self.context("home\n")
 
-    def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"-{self.context.jog_amount}",
-            f"-{self.context.jog_amount}",
-        )
+    def timer_event(self, event):
+        self.timer_action(self.timer_param1, self.timer_param2)
+        self.timer_execution = time()
+        self.timer_looped += 1
+        if self.timer_looped == 5:
+            self.timer.Stop()
+            self.timer.Start(self.timer_delta * 500)
+        elif self.timer_looped == 10:
+            self.timer.Stop()
+            self.timer.Start(self.timer_delta * 250)
 
-    def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", f"-{self.context.jog_amount}")
+    def stop_timer(self, action):
+        self.timer.Stop()
+        t = time()
+        if action and (
+            self.timer_execution is None
+            or t - self.timer_execution > self.timer_delta * 0.75
+        ):
+            self.timer_action(self.timer_param1, self.timer_param2)
+        self.timer_execution = None
+        self.timer_action = None
+        self.timer_param1 = None
+        self.timer_param2 = None
+        self.timer_delta = 1.0
+        self.timer_looped = 0
 
-    def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"{self.context.jog_amount}",
-            f"-{self.context.jog_amount}",
-        )
+    def start_timer(self, delta=1.0, action_routine=None, param1=None, param2=None):
+        self.stop_timer(action=False)
 
-    def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(f"-{self.context.jog_amount}", "0")
+        self.timer_execution = None
+        self.timer_action = action_routine
+        self.timer_param1 = param1
+        self.timer_param2 = param2
+        self.timer_delta = delta
+        self.Bind(wx.EVT_TIMER, self.timer_event, self.timer)
+        self.timer.Start(self.timer_delta * 1000)
 
-    def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(f"{self.context.jog_amount}", "0")
+    def on_button_down(self, event=None):
+        if event is None:
+            return
+        self.stop_timer(action=False)
+        button = event.GetEventObject()
+        p1 = ""
+        p2 = ""
+        if button is self.button_navigate_down:
+            p1 = "0"
+            p2 = f"{self.context.jog_amount}"
+        elif button is self.button_navigate_up:
+            p1 = "0"
+            p2 = f"-{self.context.jog_amount}"
+        elif button is self.button_navigate_right:
+            p1 = f"{self.context.jog_amount}"
+            p2 = "0"
+        elif button is self.button_navigate_left:
+            p1 = f"-{self.context.jog_amount}"
+            p2 = "0"
+        elif button is self.button_navigate_up_left:
+            p1 = f"-{self.context.jog_amount}"
+            p2 = f"-{self.context.jog_amount}"
+        elif button is self.button_navigate_up_right:
+            p1 = f"{self.context.jog_amount}"
+            p2 = f"-{self.context.jog_amount}"
+        elif button is self.button_navigate_down_left:
+            p1 = f"-{self.context.jog_amount}"
+            p2 = f"{self.context.jog_amount}"
+        elif button is self.button_navigate_down_right:
+            p1 = f"{self.context.jog_amount}"
+            p2 = f"{self.context.jog_amount}"
+        else:
+            return
+        self.start_timer(delta=0.5, action_routine=self.move_rel, param1=p1, param2=p2)
 
-    def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"-{self.context.jog_amount}",
-            f"{self.context.jog_amount}",
-        )
-
-    def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", f"{self.context.jog_amount}")
-
-    def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel(
-            f"{self.context.jog_amount}",
-            f"{self.context.jog_amount}",
-        )
+    def on_button_up(self, event=None):
+        self.stop_timer(action=True)
 
     def on_button_navigate_unlock(
         self, event=None
