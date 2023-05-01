@@ -565,6 +565,12 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
