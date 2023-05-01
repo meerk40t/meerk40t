@@ -297,7 +297,6 @@ class GrblController:
         """
         if self.connection.connected:
             return
-        self.driver.clear_states()
         self.connection.connect()
         if not self.connection.connected:
             self.log("Could not connect.", type="event")
@@ -312,7 +311,6 @@ class GrblController:
         """
         if not self.connection.connected:
             return
-        self.driver.clear_states()
         self.connection.disconnect()
         self._connection_validated = False
         self.log("Disconnecting from GRBL...", type="event")

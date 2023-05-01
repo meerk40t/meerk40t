@@ -157,7 +157,6 @@ class GRBLDriver(Parameters):
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        self.move_mode = 0
         self._move(self.origin_x + x, self.origin_y + y)
         new_current = self.service.current
         self.service.signal(
@@ -179,7 +178,6 @@ class GRBLDriver(Parameters):
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        self.move_mode = 0
         self._move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -202,7 +200,6 @@ class GRBLDriver(Parameters):
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        self.move_mode = 0
         self._move(dx, dy)
 
         new_current = self.service.current
@@ -267,6 +264,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        self.clear_states()
         self._g91_absolute()
         self._g94_feedrate()
         self._clean()
@@ -377,11 +375,7 @@ class GRBLDriver(Parameters):
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
-        self.power_dirty = True
-        self.speed_dirty = True
-        self.absolute_dirty = True
-        self.feedrate_dirty = True
-        self.units_dirty = True
+        self.clear_states()
         return False
 
     def blob(self, data_type, data):
@@ -565,7 +559,6 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         self.move_mode = 0
-
 
     def reset(self, *args):
         """
