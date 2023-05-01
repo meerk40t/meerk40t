@@ -2301,6 +2301,7 @@ class Kernel(Settings):
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
                 "page": "Options",
+                "hidden": True,
             },
         ]
         self.register_choices("preferences", choices)
