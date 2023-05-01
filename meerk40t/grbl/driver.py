@@ -337,6 +337,7 @@ class GRBLDriver(Parameters):
             else:
                 #  Rastercut, PlotCut
                 self.plot_planner.push(q)
+                self.move_mode = 1
                 for x, y, on in self.plot_planner.gen():
                     while self.hold_work(0):
                         time.sleep(0.05)
