@@ -219,7 +219,7 @@ class GrblController:
         return f"GRBLController('{self.service.location()}')"
 
     def __len__(self):
-        return len(self._sending_queue) + len(self._realtime_queue)
+        return len(self._sending_queue) + len(self._realtime_queue) + len(self._forward_buffer)
 
     @property
     def _length_of_next_line(self):

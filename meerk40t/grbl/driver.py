@@ -70,6 +70,7 @@ class GRBLDriver(Parameters):
         self.elements = None
         self.power_scale = 1.0
         self.speed_scale = 1.0
+        self.temp_holds = []
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -99,6 +100,18 @@ class GRBLDriver(Parameters):
         if priority > 0:
             # Don't hold realtime work.
             return False
+        temp_hold = False
+        fail_hold = False
+        for i, hold in enumerate(self.temp_holds):
+            if not hold():
+                self.temp_holds[i] = None
+                fail_hold = True
+            else:
+                temp_hold = True
+        if fail_hold:
+            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
+        if temp_hold:
+            return True
 
         if (
             self.service.limit_buffer
@@ -492,7 +505,13 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        pass
+        def temp_hold():
+            if self.queue:
+                return True
+            if len(self.service.controller):
+                return True
+            return False
+        self.temp_holds.append(temp_hold)
 
     def function(self, function):
         """
