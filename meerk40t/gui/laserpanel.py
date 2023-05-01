@@ -291,12 +291,12 @@ class LaserPanel(wx.Panel):
             self.slider_speed.Enable(False)
             if hasattr(self.context.device.driver, "has_adjustable_power"):
                 if self.context.device.driver.has_adjustable_power:
-                    self.context.device.driver.power_scale = 1.0
+                    self.context.device.driver.set_power_scale(1.0)
                     self.slider_power.SetValue(10)
                     self.on_slider_power(None)
             if hasattr(self.context.device.driver, "has_adjustable_speed"):
                 if self.context.device.driver.has_adjustable_speed:
-                    self.context.device.driver.speed_scale = 1.0
+                    self.context.device.driver.set_speed_scale(1.0)
                     self.slider_speed.SetValue(10)
                     self.on_slider_speed(None)
 
