@@ -70,7 +70,6 @@ class GRBLDriver(Parameters):
         self.elements = None
         self.power_scale = 1.0
         self.speed_scale = 1.0
-        self.temp_holds = []
 
     def __repr__(self):
         return f"GRBLDriver({self.name})"
@@ -100,19 +99,6 @@ class GRBLDriver(Parameters):
         if priority > 0:
             # Don't hold realtime work.
             return False
-        temp_hold = False
-        fail_hold = False
-        for i, hold in enumerate(self.temp_holds):
-            if not hold():
-                self.temp_holds[i] = None
-                fail_hold = True
-            else:
-                temp_hold = True
-        if fail_hold:
-            self.temp_holds = [hold for hold in self.temp_holds if hold is not None]
-        if temp_hold:
-            return True
-
         if (
             self.service.limit_buffer
             and len(self.service.controller) > self.service.max_buffer
@@ -277,7 +263,6 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self.wait_finish()
         self.clear_states()
         self._g91_absolute()
         self._g94_feedrate()
@@ -391,6 +376,7 @@ class GRBLDriver(Parameters):
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
         self.clear_states()
+        self.wait_finish()
         return False
 
     def blob(self, data_type, data):
@@ -506,13 +492,11 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        def temp_hold():
-            if self.queue:
-                return True
-            if len(self.service.controller):
-                return True
-            return False
-        self.temp_holds.append(temp_hold)
+        while True:
+            if self.queue or len(self.service.controller):
+                time.sleep(0.05)
+                continue
+            break
 
     def function(self, function):
         """
