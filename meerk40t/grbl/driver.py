@@ -556,6 +556,15 @@ class GRBLDriver(Parameters):
         self.paused = False
         self(f"~{self.line_end}", real=True)
 
+    def clear_states(self):
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+        self._move_mode = 0
+
+
     def reset(self, *args):
         """
         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
@@ -565,13 +574,6 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        self.power_dirty = True
-        self.speed_dirty = True
-        self.absolute_dirty = True
-        self.feedrate_dirty = True
-        self.units_dirty = True
-        self._move_mode = 0
-
         self.service.spooler.clear_queue()
         self.queue.clear()
         self.plot_planner.clear()
