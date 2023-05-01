@@ -712,7 +712,6 @@ class GRBLDriver(Parameters):
             self("\x9A\r", real=True)
             start -= 0.1
 
-
     def set_speed_scale(self, factor):
         # Grbl can only deal with factors between 10% and 200%
         if 0 < factor <= 2.0:

@@ -219,7 +219,11 @@ class GrblController:
         return f"GRBLController('{self.service.location()}')"
 
     def __len__(self):
-        return len(self._sending_queue) + len(self._realtime_queue) + len(self._forward_buffer)
+        return (
+            len(self._sending_queue)
+            + len(self._realtime_queue)
+            + len(self._forward_buffer)
+        )
 
     @property
     def _length_of_next_line(self):
@@ -279,11 +283,15 @@ class GrblController:
     def _channel_log(self, data, type=None):
         if type == "send":
             if not hasattr(self, "_grbl_send"):
-                self._grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
+                self._grbl_send = self.service.channel(
+                    f"send-{self.service.label}", pure=True
+                )
             self._grbl_send(data)
         elif type == "recv":
             if not hasattr(self, "_grbl_recv"):
-                self._grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
+                self._grbl_recv = self.service.channel(
+                    f"recv-{self.service.label}", pure=True
+                )
             self._grbl_recv(data)
         elif type == "event":
             if not hasattr(self, "_grbl_events"):
@@ -583,9 +591,7 @@ class GrblController:
                     error_num = -1
                 short, long = grbl_alarm_message(error_num)
                 alarm_desc = f"#{error_num}, '{cmd_issued}' {short}\n{long}"
-                self.service.signal(
-                    "warning", f"GRBL: {alarm_desc}", response, 4
-                )
+                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
                 self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
             elif response.startswith("error"):
