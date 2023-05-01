@@ -390,6 +390,7 @@ class GRBLDriver(Parameters):
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
         self.clear_states()
+        self.wait_finish()
         return False
 
     def blob(self, data_type, data):
