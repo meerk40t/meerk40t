@@ -436,21 +436,23 @@ class GRBLDevice(Service, ViewPort):
                     + "of the current position to help with focusing and positioning. Use with care!"
                 ),
                 "signals": "icons",  # Update ribbonbar if needed
+                "section": "_10_Red Dot",
             },
             {
                 "attr": "red_dot_level",
                 "object": self,
-                "default": 3,
+                "default": 30,
                 "type": int,
                 "style": "slider",
                 "min": 0,
-                "max": 50,
+                "max": 200,
                 "label": _("Reddot Laser strength"),
-                "trailer": "%",
+                "trailer": "/1000",
                 "tip": _(
                     "Provide the power level of the red dot indicator, needs to be under the critical laser strength to not burn the material"
                 ),
                 "conditional": (self, "use_red_dot"),
+                "section": "_10_Red Dot",
             },
         ]
         self.register_choices("grbl-global", choices)
@@ -572,9 +574,11 @@ class GRBLDevice(Service, ViewPort):
                 channel("Won't interfere with a running job, abort...")
                 return
             if strength is not None:
-                if strength >= 0 and strength <= 100:
+                if strength >= 0 and strength <= 1000:
                     self.red_dot_level = strength
-                    channel(f"Laser strength for red dot is now: {self.red_dot_level}%")
+                    channel(
+                        f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
+                    )
             if off == "off":
                 self.driver.laser_off()
                 # self.driver.grbl("G0")
@@ -586,9 +590,7 @@ class GRBLDevice(Service, ViewPort):
                 # self.redlight_preferred = True
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
                 self.driver._clean()
-                self.driver.laser_on(
-                    power=int(self.red_dot_level / 100 * 1000), speed=1000
-                )
+                self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
                 # By default any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
                 self.driver.move_mode = 1
