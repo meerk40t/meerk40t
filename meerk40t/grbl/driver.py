@@ -31,7 +31,6 @@ class GRBLDriver(Parameters):
         self.name = str(service)
         self.line_end = None
         self._set_line_end()
-        self.hold = False
         self.paused = False
         self.native_x = 0
         self.native_y = 0
@@ -104,7 +103,7 @@ class GRBLDriver(Parameters):
             and len(self.service.controller) > self.service.max_buffer
         ):
             return True
-        return priority <= 0 and (self.paused or self.hold)
+        return self.paused
 
     def get(self, key, default=None):
         """
