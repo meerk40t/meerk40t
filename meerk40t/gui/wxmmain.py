@@ -198,9 +198,9 @@ class MeerK40t(MWindow):
 
     def update_check(self, silent=True):
         if self.context.update_check == 1:
-            self.context("check_for_updates --popup 1\n")
+            self.context("check_for_updates --verbosity 2\n")
         elif self.context.update_check == 2:
-            self.context("check_for_updates --beta --popup 1\n")
+            self.context("check_for_updates --beta --verbosity 2\n")
 
     def setup_statusbar_panels(self):
         if not self.context.show_colorbar:
@@ -3186,7 +3186,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("check_for_updates -beta -popup=2\n"),
+            lambda v: self.context("check_for_updates -beta --verbosity 3\n"),
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(

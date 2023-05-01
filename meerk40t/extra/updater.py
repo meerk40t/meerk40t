@@ -38,12 +38,12 @@ def plugin(kernel, lifecycle):
         @context.console_option(
             "beta", "b", type=bool, action="store_true", help=_("Check for betas")
         )
-        @context.console_option("popup", "p", type=int, help=("Show Info-Popup: 0 never, 1 if version found, 2 always"))
+        @context.console_option("verbosity", "p", type=int, help=("Show Info: 0 never, 1 console only, 2 if version found, 3 always"))
         @kernel.console_command(
             "check_for_updates",
             help=_("Check whether a newer version of Meerk40t is available"),
         )
-        def check_for_updates(channel, _, beta=None, popup=None, **kwargs):
+        def check_for_updates(channel, _, beta=None, verbosity=None, **kwargs):
             """
             This command checks for updates and outputs the results to the console.
 
@@ -132,7 +132,7 @@ def plugin(kernel, lifecycle):
                 # print (f"Comparing {candidate_version} vs {reference_version}: {is_newer}")
                 return is_newer
 
-            def update_check(popup=None, beta=None):
+            def update_check(verbosity=None, beta=None):
                 def update_test(*args):
                     version_current = comparable_version(kernel.version)
                     is_a_beta = version_current[3]
@@ -140,15 +140,17 @@ def plugin(kernel, lifecycle):
                         url = GITHUB_RELEASES
                     else:
                         url = GITHUB_LATEST
-                    channel(
-                        f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version} (include betas: {'yes' if beta else 'no'})"
-                    )
+                    if verbosity > 0:
+                        channel(
+                            f"Testing against current {'beta' if is_a_beta else 'full'} version: {kernel.version} (include betas: {'yes' if beta else 'no'})"
+                        )
                     req = Request(url)
                     req.add_header(*GITHUB_HEADER)
                     try:
                         req = urlopen(req)
                     except (HTTPError, URLError):
-                        channel(ERROR_MESSAGE)
+                        if verbosity > 0:
+                            channel(ERROR_MESSAGE)
                         return
 
                     tag_full = tag_beta = None
@@ -247,7 +249,8 @@ def plugin(kernel, lifecycle):
                             url=url_full,
                             info=info_full,
                         )
-                        channel(message)
+                        if verbosity > 0:
+                            channel(message)
                         newest_message = message
 
                     if newer_version(version_beta, version_current):
@@ -260,11 +263,12 @@ def plugin(kernel, lifecycle):
                             url=url_beta,
                             info=info_beta,
                         )
-                        channel(message)
+                        if verbosity > 0:
+                            channel(message)
                         newest_message = message
                     if something:
                         # if we have a hit then we brag about it
-                        if popup > 0:
+                        if verbosity > 1:
                             if kernel.yesno(
                                 newest_message
                                 + "\n"
@@ -283,8 +287,10 @@ def plugin(kernel, lifecycle):
                                 url=url_newest,
                                 info=info_newest,
                             )
-                            channel(message)
-                            if popup > 1:
+                            if verbosity > 0:
+                                channel(message)
+                            if verbosity > 2:
+                                channel(message)
                                 if kernel.yesno(
                                     message + "\n" + _("Do you want to look for yourself?")
                                 ):
@@ -292,12 +298,13 @@ def plugin(kernel, lifecycle):
 
                                     webbrowser.open(url_newest, new=0, autoraise=True)
                         else:
-                            channel(ERROR_MESSAGE)
+                            if verbosity > 0:
+                                channel(ERROR_MESSAGE)
 
                 if beta is None:
                     beta = False
-                if popup is None:
-                    popup = 0
+                if verbosity is None:
+                    verbosity = 1
                 return update_test
 
-            kernel.threaded(update_check(popup, beta), "update_check")
+            kernel.threaded(update_check(verbosity, beta), "update_check")
