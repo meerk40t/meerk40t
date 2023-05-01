@@ -157,6 +157,7 @@ class GRBLDriver(Parameters):
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
+        self.move_mode = 0
         self._move(self.origin_x + x, self.origin_y + y)
         new_current = self.service.current
         self.service.signal(
@@ -178,6 +179,7 @@ class GRBLDriver(Parameters):
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
+        self.move_mode = 0
         self._move(x, y)
         new_current = self.service.current
         self.service.signal(
@@ -200,7 +202,7 @@ class GRBLDriver(Parameters):
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        # self.rapid_mode()
+        self.move_mode = 0
         self._move(dx, dy)
 
         new_current = self.service.current
