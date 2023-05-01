@@ -144,8 +144,7 @@ class GRBLControllerPanel(wx.Panel):
                 for c in data:
                     if idx > 0:
                         display += " "
-                    hc = "00" + hex(ord(c))
-                    display += hc[-2:]
+                    display += f"{ord(c):02x}"
                     idx += 1
             else:
                 display = data
