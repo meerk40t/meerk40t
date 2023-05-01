@@ -278,14 +278,17 @@ class GrblController:
 
     def _channel_log(self, data, type=None):
         if type == "send":
-            grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
-            grbl_send(data)
+            if not hasattr(self, "_grbl_send"):
+                self._grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
+            self._grbl_send(data)
         elif type == "recv":
-            grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
-            grbl_recv(data)
+            if not hasattr(self, "_grbl_recv"):
+                self._grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
+            self._grbl_recv(data)
         elif type == "event":
-            grbl_events = self.service.channel(f"events-{self.service.label}")
-            grbl_events(data)
+            if not hasattr(self, "_grbl_events"):
+                self._grbl_events = self.service.channel(f"events-{self.service.label}")
+            self._grbl_events(data)
 
     def open(self):
         """
@@ -396,7 +399,7 @@ class GrblController:
 
         try:
             self.remove_watcher(self._channel_log)
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
 
     ####################
