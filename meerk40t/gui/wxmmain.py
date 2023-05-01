@@ -194,6 +194,13 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+        self.update_check()
+
+    def update_check(self, silent=True):
+        if self.context.update_check == 1:
+            self.context("check_for_updates --popup 1\n")
+        elif self.context.update_check == 2:
+            self.context("check_for_updates --beta --popup 1\n")
 
     def setup_statusbar_panels(self):
         if not self.context.show_colorbar:
@@ -633,6 +640,22 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 # "hidden": True,
                 "section": "Misc.",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "update_check",
+                "object": context.root,
+                "default": 1,
+                "type": int,
+                "label": _("Action"),
+                "style": "option",
+                "display": (_("No, thank you"), _("Look for major releases"), _("Look for major+beta releases")),
+                "choices": (0, 1, 2),
+                "tip": _("Check for available updates on startup."),
+                "page": "Options",
+                "section": "Check for updates on startup",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -3163,7 +3186,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("check_for_updates -popup\n"),
+            lambda v: self.context("check_for_updates -beta -popup=2\n"),
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(
