@@ -136,8 +136,21 @@ class GRBLControllerPanel(wx.Panel):
 
     def update(self, data, type):
         if type == "send":
+            # Quick judgement call: first character extended ascii?
+            # Then show all in hex:
+            if len(data) > 0 and ord(data[0]) >= 128:
+                display = "0x"
+                idx = 0
+                for c in data:
+                    if idx > 0:
+                        display += " "
+                    hc = "00" + hex(ord(c))
+                    display += hc[-2:]
+                    idx += 1
+            else:
+                display = data
             with self._buffer_lock:
-                self._buffer += f"<--{data}\n"
+                self._buffer += f"<--{display}\n"
             self.service.signal("grbl_controller_update", True)
         elif type == "recv":
             with self._buffer_lock:
