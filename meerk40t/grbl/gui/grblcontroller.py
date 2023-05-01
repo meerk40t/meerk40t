@@ -154,7 +154,7 @@ class GRBLControllerPanel(wx.Panel):
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
 
-    def on_serial_status(self, origin, state):
+    def on_status(self, origin, state):
         self.state = state
         if state == "uninitialized" or state == "disconnected":
             self.button_device_connect.SetBackgroundColour("#ffff00")
@@ -209,9 +209,9 @@ class GRBLController(MWindow):
         self._opened_port = None
         # end wxGlade
 
-    @signal_listener("serial;status")
+    @signal_listener("grbl;status")
     def on_serial_status(self, origin, state):
-        self.serial_panel.on_serial_status(origin, state)
+        self.serial_panel.on_status(origin, state)
 
     def window_open(self):
         try:

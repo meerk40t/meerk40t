@@ -43,11 +43,11 @@ class MockConnection:
             self.laser = True
             self.just_connected = True
             self.channel("Connected")
-            self.service.signal("serial;status", "connected")
+            self.service.signal("grbl;status", "connected")
         except ConnectionError:
             self.channel("Connection Failed.")
 
     def disconnect(self):
         self.laser = None
         self.channel("Disconnected")
-        self.service.signal("serial;status", "disconnected")
+        self.service.signal("grbl;status", "disconnected")

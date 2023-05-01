@@ -277,6 +277,17 @@ class GrblController:
         for w in self._watchers:
             w(data, type=type)
 
+    def _channel_log(self, data, type=None):
+        if type == "send":
+            grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
+            grbl_send(data)
+        elif type == "recv":
+            grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
+            grbl_recv(data)
+        elif type == "event":
+            grbl_events = self.service.channel(f"events-{self.service.label}")
+            grbl_events(data)
+
     def open(self):
         """
         Opens the connection calling connection.connect.
@@ -312,11 +323,11 @@ class GrblController:
         @return:
         """
         self.start()
-        self.service.signal("serial;write", data)
+        self.service.signal("grbl;write", data)
         with self._sending_lock:
             self._sending_queue.append(data)
         self.service.signal(
-            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
         self._send_resume()
 
@@ -330,14 +341,14 @@ class GrblController:
         @return:
         """
         self.start()
-        self.service.signal("serial;write", data)
+        self.service.signal("grbl;write", data)
         with self._realtime_lock:
             self._realtime_queue.append(data)
         if "\x18" in data:
             with self._sending_lock:
                 self._sending_queue.clear()
         self.service.signal(
-            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
         self._send_resume()
 
@@ -353,19 +364,7 @@ class GrblController:
         """
         self.open()
 
-        grbl_events = self.service.channel(f"events-{self.service.label}")
-        grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
-        grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
-
-        def log(data, type=None):
-            if type == "send":
-                grbl_send(data)
-            elif type == "recv":
-                grbl_recv(data)
-            elif type == "event":
-                grbl_events(data)
-        self._log = log
-        self.add_watcher(log)
+        self.add_watcher(self._channel_log)
 
         if self._sending_thread is None:
             self._sending_thread = self.service.threaded(
@@ -397,7 +396,7 @@ class GrblController:
         self._send_resume()
 
         try:
-            self.remove_watcher(self._log)
+            self.remove_watcher(self._channel_log)
         except AttributeError:
             pass
 
@@ -445,7 +444,7 @@ class GrblController:
             line = self._sending_queue.pop(0)
         if line:
             self._send(line)
-        self.service.signal("serial;buffer", len(self._sending_queue))
+        self.service.signal("grbl;buffer", len(self._sending_queue))
         return True
 
     def _send_halt(self):
@@ -537,10 +536,13 @@ class GrblController:
             # reading responses.
             response = None
             while not response:
-                response = self.connection.read()
+                try:
+                    response = self.connection.read()
+                except (ConnectionAbortedError, AttributeError):
+                    return
                 if not response:
                     time.sleep(0.01)
-            self.service.signal("serial;response", response)
+            self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
                 try:
