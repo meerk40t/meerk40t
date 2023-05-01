@@ -700,16 +700,16 @@ class GRBLDriver(Parameters):
         else:
             self.power_scale = 1.0
         # Grbl can only deal with factors between 10% and 200%
-        self("\x99", real=True)
+        self("\x99\r", real=True)
         # Upward loop
         start = 1.0
         while start < 2.0 and start < factor:
-            self("\x9B", real=True)
+            self("\x9B\r", real=True)
             start += 0.1
         # Downward loop
         start = 1.0
         while start > 0.0 and start > factor:
-            self("\x9A", real=True)
+            self("\x9A\r", real=True)
             start -= 0.1
 
 
@@ -719,15 +719,15 @@ class GRBLDriver(Parameters):
             self.speed_scale = factor
         else:
             self.speed_scale = 1.0
-        self("\x90", real=True)
+        self("\x90\r", real=True)
         start = 1.0
         while start < 2.0 and start < factor:
-            self("\x91", real=True)
+            self("\x91\r", real=True)
             start += 0.1
         # Downward loop
         start = 1.0
         while start > 0.0 and start > factor:
-            self("\x92", real=True)
+            self("\x92\r", real=True)
             start -= 0.1
 
     @staticmethod
