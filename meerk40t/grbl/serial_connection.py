@@ -71,7 +71,7 @@ class SerialConnection:
         except SerialException:
             self.channel("Serial connection could not be established.")
 
-        self.service.signal("serial;status", signal_load)
+        self.service.signal("grbl;status", signal_load)
 
     def disconnect(self):
         self.channel("Disconnected")
@@ -79,4 +79,4 @@ class SerialConnection:
             self.laser.close()
             del self.laser
             self.laser = None
-        self.service.signal("serial;status", "disconnected")
+        self.service.signal("grbl;status", "disconnected")

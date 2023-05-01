@@ -26,30 +26,30 @@ class TCPOutput:
         try:
             self._stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._stream.connect((self.service.address, self.service.port))
-            self.service.signal("tcp;status", "connected")
+            self.service.signal("grbl;status", "connected")
         except TimeoutError:
             self.disconnect()
-            self.service.signal("tcp;status", "timeout connect")
+            self.service.signal("grbl;status", "timeout connect")
         except ConnectionError:
             self.disconnect()
-            self.service.signal("tcp;status", "connection error")
+            self.service.signal("grbl;status", "connection error")
         except socket.gaierror as e:
             self.disconnect()
-            self.service.signal("tcp;status", "address resolve error")
+            self.service.signal("grbl;status", "address resolve error")
         except socket.herror as e:
             self.disconnect()
-            self.service.signal("tcp;status", f"herror: {str(e)}")
+            self.service.signal("grbl;status", f"herror: {str(e)}")
         except OSError as e:
             self.disconnect()
-            self.service.signal("tcp;status", f"Host down {str(e)}")
+            self.service.signal("grbl;status", f"Host down {str(e)}")
 
     def disconnect(self):
-        self.service.signal("tcp;status", "disconnected")
+        self.service.signal("grbl;status", "disconnected")
         self._stream.close()
         self._stream = None
 
     def write(self, data):
-        self.service.signal("tcp;write", data)
+        self.service.signal("grbl;write", data)
         if isinstance(data, str):
             data = bytes(data, "utf-8")
         while data:

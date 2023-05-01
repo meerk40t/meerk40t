@@ -13,7 +13,7 @@ from meerk40t.kernel import signal_listener
 _ = wx.GetTranslation
 
 
-class SerialControllerPanel(wx.Panel):
+class GRBLControllerPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SerialControllerPanel.__init__
         self.service = context
@@ -57,11 +57,12 @@ class SerialControllerPanel(wx.Panel):
             # "$X",
         )
         self.gcode_commands = [
-            ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
-            ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
-            ("$$", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
-            ("$I", _("Info"), _("Show Build-Info"), None),
+            ("\x18", _("Reset"), _("Reset laser"), None),
             ("?", _("Status"), _("Query status"), None),
+            ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None),
+            ("$#", _("Gcode"), _("Display active Gcode-parameters"), None),
+            ("$$", _("GRBL"), _("Display active GRBL-parameters"), None),
+            ("$I", _("Info"), _("Show Build-Info"), None),
         ]
         if self.service.has_endstops:
             self.gcode_commands.insert(
@@ -133,15 +134,19 @@ class SerialControllerPanel(wx.Panel):
             self.service(f"gcode {cmd}")
         self.gcode_text.Clear()
 
-    def update_sent(self, text):
-        with self._buffer_lock:
-            self._buffer += f"<--{text}\n"
-        self.service.signal("grbl_controller_update", True)
-
-    def update_recv(self, text):
-        with self._buffer_lock:
-            self._buffer += f"-->\t{text}\n"
-        self.service.signal("grbl_controller_update", True)
+    def update(self, data, type):
+        if type == "send":
+            with self._buffer_lock:
+                self._buffer += f"<--{data}\n"
+            self.service.signal("grbl_controller_update", True)
+        elif type == "recv":
+            with self._buffer_lock:
+                self._buffer += f"-->\t{data}\n"
+            self.service.signal("grbl_controller_update", True)
+        elif type == "event":
+            with self._buffer_lock:
+                self._buffer += f"{data}\n"
+            self.service.signal("grbl_controller_update", True)
 
     @signal_listener("grbl_controller_update")
     def update_text_gui(self, origin, *args):
@@ -150,7 +155,7 @@ class SerialControllerPanel(wx.Panel):
             self._buffer = ""
         self.data_exchange.AppendText(buffer)
 
-    def on_serial_status(self, origin, state):
+    def on_status(self, origin, state):
         self.state = state
         if state == "uninitialized" or state == "disconnected":
             self.button_device_connect.SetBackgroundColour("#ffff00")
@@ -191,41 +196,36 @@ class SerialControllerPanel(wx.Panel):
         return
 
 
-class SerialController(MWindow):
+class GRBLController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 357, *args, **kwds)
         self.service = self.context.device
-        self.SetTitle("SerialController")
+        self.SetTitle("GRBL Controller")
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
 
-        self.serial_panel = SerialControllerPanel(self, wx.ID_ANY, context=self.service)
+        self.serial_panel = GRBLControllerPanel(self, wx.ID_ANY, context=self.service)
         self.Layout()
         self._opened_port = None
         # end wxGlade
 
-    @signal_listener("serial;status")
+    @signal_listener("grbl;status")
     def on_serial_status(self, origin, state):
-        self.serial_panel.on_serial_status(origin, state)
+        self.serial_panel.on_status(origin, state)
 
     def window_open(self):
-        self._opened_port = self.service.location()
-        self.context.channel(f"send-{self._opened_port}").watch(
-            self.serial_panel.update_sent
-        )
-        self.context.channel(f"recv-{self._opened_port}").watch(
-            self.serial_panel.update_recv
-        )
+        try:
+            self.service.controller.add_watcher(self.serial_panel.update)
+        except AttributeError:
+            pass
         self.serial_panel.pane_show()
 
     def window_close(self):
-        self.context.channel(f"send-{self._opened_port}").unwatch(
-            self.serial_panel.update_sent
-        )
-        self.context.channel(f"recv-{self._opened_port}").unwatch(
-            self.serial_panel.update_recv
-        )
+        try:
+            self.service.controller.remove_watcher(self.serial_panel.update)
+        except AttributeError:
+            pass
         self.serial_panel.pane_hide()
 
     def delegates(self):
@@ -233,4 +233,4 @@ class SerialController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "GRBL Serial Controller")
+        return ("Device-Control", "GRBL Controller")

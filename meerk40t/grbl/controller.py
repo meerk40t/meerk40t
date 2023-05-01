@@ -196,15 +196,6 @@ class GrblController:
             132: 200.000,  # Z-axis max travel mm.
         }
 
-        # Channels.
-        self.grbl_events = self.service.channel("grbl_state", buffer_size=20)
-        self.grbl_send = self.service.channel(
-            f"send-{self.service.location()}", pure=True
-        )
-        self.grbl_recv = self.service.channel(
-            f"recv-{self.service.location()}", pure=True
-        )
-
         # Sending variables.
         self._sending_thread = None
         self._recving_thread = None
@@ -220,8 +211,10 @@ class GrblController:
         self._forward_buffer = bytearray()
         self._device_buffer_size = self.service.planning_buffer_size
         self._buffer_fail = 0
+        self._log = None
 
         self._paused = False
+        self._watchers = []
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -274,6 +267,27 @@ class GrblController:
 
             self.connection = MockConnection(self.service)
 
+    def add_watcher(self, watcher):
+        self._watchers.append(watcher)
+
+    def remove_watcher(self, watcher):
+        self._watchers.remove(watcher)
+
+    def log(self, data, type):
+        for w in self._watchers:
+            w(data, type=type)
+
+    def _channel_log(self, data, type=None):
+        if type == "send":
+            grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
+            grbl_send(data)
+        elif type == "recv":
+            grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
+            grbl_recv(data)
+        elif type == "event":
+            grbl_events = self.service.channel(f"events-{self.service.label}")
+            grbl_events(data)
+
     def open(self):
         """
         Opens the connection calling connection.connect.
@@ -285,9 +299,9 @@ class GrblController:
             return
         self.connection.connect()
         if not self.connection.connected:
-            self.grbl_events("Could not connect.")
+            self.log("Could not connect.", type="event")
             return
-        self.grbl_events("Connecting to GRBL...")
+        self.log("Connecting to GRBL...", type="event")
 
     def close(self):
         """
@@ -299,7 +313,7 @@ class GrblController:
             return
         self.connection.disconnect()
         self._connection_validated = False
-        self.grbl_events("Disconnecting from GRBL...")
+        self.log("Disconnecting from GRBL...", type="event")
 
     def write(self, data):
         """
@@ -309,11 +323,11 @@ class GrblController:
         @return:
         """
         self.start()
-        self.service.signal("serial;write", data)
+        self.service.signal("grbl;write", data)
         with self._sending_lock:
             self._sending_queue.append(data)
         self.service.signal(
-            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
         self._send_resume()
 
@@ -327,14 +341,14 @@ class GrblController:
         @return:
         """
         self.start()
-        self.service.signal("serial;write", data)
+        self.service.signal("grbl;write", data)
         with self._realtime_lock:
             self._realtime_queue.append(data)
         if "\x18" in data:
             with self._sending_lock:
                 self._sending_queue.clear()
         self.service.signal(
-            "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
         self._send_resume()
 
@@ -349,6 +363,9 @@ class GrblController:
         @return:
         """
         self.open()
+
+        self.add_watcher(self._channel_log)
+
         if self._sending_thread is None:
             self._sending_thread = self.service.threaded(
                 self._sending,
@@ -378,6 +395,11 @@ class GrblController:
         self.close()
         self._send_resume()
 
+        try:
+            self.remove_watcher(self._channel_log)
+        except AttributeError:
+            pass
+
     ####################
     # GRBL SEND ROUTINES
     ####################
@@ -390,7 +412,7 @@ class GrblController:
         @return:
         """
         self.connection.write(line)
-        self.grbl_send(line)
+        self.log(line, type="send")
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
 
@@ -422,7 +444,7 @@ class GrblController:
             line = self._sending_queue.pop(0)
         if line:
             self._send(line)
-        self.service.signal("serial;buffer", len(self._sending_queue))
+        self.service.signal("grbl;buffer", len(self._sending_queue))
         return True
 
     def _send_halt(self):
@@ -514,25 +536,32 @@ class GrblController:
             # reading responses.
             response = None
             while not response:
-                response = self.connection.read()
+                try:
+                    response = self.connection.read()
+                except (ConnectionAbortedError, AttributeError):
+                    return
                 if not response:
                     time.sleep(0.01)
-            self.service.signal("serial;response", response)
+            self.service.signal("grbl;response", response)
+            self.log(response, type="recv")
             if response == "ok":
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
                 except ValueError as e:
                     # We got an ok. But, had not sent anything.
-                    self.grbl_events(f"Response: {response}, but this was unexpected")
+                    self.log(
+                        f"Response: {response}, but this was unexpected", type="event"
+                    )
                     self._assembled_response = []
                     self._forward_buffer.clear()
                     continue
                     # raise ConnectionAbortedError from e
 
-                self.grbl_events(f"Response: {response}")
-                self.grbl_recv(
-                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}"
+                self.log(f"Response: {response}", type="event")
+                self.log(
+                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
+                    type="recv",
                 )
                 self.service.signal(
                     "grbl;response", cmd_issued, self._assembled_response
@@ -552,8 +581,7 @@ class GrblController:
                 self.service.signal(
                     "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
                 )
-                self.grbl_recv(f"Alarm #{error_num} {short}\n{long}")
-                self.grbl_events(f"Alarm #{error_num} {short}\n{long}")
+                self.log(f"Alarm #{error_num} {short}\n{long}", type="recv")
                 self._assembled_response = []
             elif response.startswith("error"):
                 try:
@@ -562,15 +590,12 @@ class GrblController:
                     error_num = -1
                 short, long = grbl_error_code(error_num)
                 self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
-                self.grbl_recv(f"ERROR #{error_num} {short}\n{long}")
-                self.grbl_events(f"ERROR #{error_num} {short}\n{long}")
+                self.log(f"ERROR #{error_num} {short}\n{long}", type="recv")
                 self._assembled_response = []
                 self._send_resume()
             elif response.startswith("Grbl"):
-                self.grbl_events("Connection Confirmed.")
+                self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
             else:
-                self.grbl_recv(f"{response}")
-                self.grbl_events(f"Data: {response}")
                 self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
