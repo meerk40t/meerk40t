@@ -57,7 +57,8 @@ class GRBLControllerPanel(wx.Panel):
             # "$X",
         )
         self.gcode_commands = [
-            ("$X", _("Reset"), _("Reset laser and clear alarm"), None),
+            ("\x18", _("Reset"), _("Reset laser"), None),
+            ("$X", _("Kill Alarm"), _("Kills alarms and locks"), None),
             ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
             ("$$", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
             ("$I", _("Info"), _("Show Build-Info"), None),
