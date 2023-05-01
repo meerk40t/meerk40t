@@ -239,7 +239,7 @@ class GRBLConfiguration(MWindow):
             )
 
     @signal_listener("grbl;response")
-    def on_serial_status(self, origin, cmd_issued, responses):
+    def on_serial_status(self, origin, cmd_issued, responses=None):
         if cmd_issued == "$$":
             # Right command
             if self._requested_status:
