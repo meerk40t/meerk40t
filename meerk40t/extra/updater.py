@@ -287,8 +287,6 @@ def plugin(kernel, lifecycle):
                                 url=url_newest,
                                 info=info_newest,
                             )
-                            if verbosity > 0:
-                                channel(message)
                             if verbosity > 2:
                                 channel(message)
                                 if kernel.yesno(
