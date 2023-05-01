@@ -210,7 +210,6 @@ class GrblController:
         self._assembled_response = []
         self._forward_buffer = bytearray()
         self._device_buffer_size = self.service.planning_buffer_size
-        self._buffer_fail = 0
         self._log = None
 
         self._paused = False
@@ -411,10 +410,10 @@ class GrblController:
         @param line:
         @return:
         """
-        self.connection.write(line)
-        self.log(line, type="send")
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
+        self.connection.write(line)
+        self.log(line, type="send")
 
     def _sending_realtime(self):
         """
@@ -554,7 +553,6 @@ class GrblController:
                         f"Response: {response}, but this was unexpected", type="event"
                     )
                     self._assembled_response = []
-                    self._forward_buffer.clear()
                     continue
                     # raise ConnectionAbortedError from e
 
