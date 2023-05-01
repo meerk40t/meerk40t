@@ -550,7 +550,9 @@ class GrblController:
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
                 except ValueError as e:
                     # We got an ok. But, had not sent anything.
-                    self.log(f"Response: {response}, but this was unexpected", type="event")
+                    self.log(
+                        f"Response: {response}, but this was unexpected", type="event"
+                    )
                     self._assembled_response = []
                     self._forward_buffer.clear()
                     continue
@@ -559,7 +561,7 @@ class GrblController:
                 self.log(f"Response: {response}", type="event")
                 self.log(
                     f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
-                    type="recv"
+                    type="recv",
                 )
                 self.service.signal(
                     "grbl;response", cmd_issued, self._assembled_response

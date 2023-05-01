@@ -32,7 +32,6 @@ def plugin(service, lifecycle):
 
         _ = service._
 
-
         service.register(
             "button/control/Controller",
             {
