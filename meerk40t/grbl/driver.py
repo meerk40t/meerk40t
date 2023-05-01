@@ -51,7 +51,7 @@ class GRBLDriver(Parameters):
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
-        self._move_mode = 0
+        self.move_mode = 0
 
         self._absolute = True
         self.feed_mode = None
@@ -281,7 +281,7 @@ class GRBLDriver(Parameters):
             if x != start_x or y != start_y:
                 self.on_value = 0
                 self.power_dirty = True
-                self._move_mode = 0
+                self.move_mode = 0
                 self._move(start_x, start_y)
             if self.on_value != 1.0:
                 self.power_dirty = True
@@ -301,10 +301,10 @@ class GRBLDriver(Parameters):
                 self.set("speed", qspeed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self._move_mode = 1
+                self.move_mode = 1
                 self._move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
-                self._move_mode = 1
+                self.move_mode = 1
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
                 t = step_size
@@ -360,13 +360,13 @@ class GRBLDriver(Parameters):
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            self._move_mode = 0
+                            self.move_mode = 0
                             self._move(x, y)
                         continue
                     if on == 0:
-                        self._move_mode = 0
+                        self.move_mode = 0
                     else:
-                        self._move_mode = 1
+                        self.move_mode = 1
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
@@ -562,7 +562,7 @@ class GRBLDriver(Parameters):
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
-        self._move_mode = 0
+        self.move_mode = 0
 
 
     def reset(self, *args):
@@ -601,7 +601,7 @@ class GRBLDriver(Parameters):
             self.native_x += x
             self.native_y += y
         line = []
-        if self._move_mode == 0:
+        if self.move_mode == 0:
             line.append("G0")
         else:
             line.append("G1")

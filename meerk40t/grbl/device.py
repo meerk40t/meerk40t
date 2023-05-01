@@ -577,7 +577,7 @@ class GRBLDevice(Service, ViewPort):
             if off == "off":
                 self.driver.laser_off()
                 # self.driver.grbl("G0")
-                self.driver._move_mode = 0
+                self.driver.move_mode = 0
                 # self.redlight_preferred = False
                 channel("Turning off redlight.")
                 self.signal("grbl_red_dot", False)
@@ -590,7 +590,7 @@ class GRBLDevice(Service, ViewPort):
                 )
                 # By default any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
-                self.driver._move_mode = 1
+                self.driver.move_mode = 1
                 # An arbitrary move to turn the laser really on!
                 # self.driver.grbl("G1")
                 channel("Turning on redlight.")
