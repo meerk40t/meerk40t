@@ -365,8 +365,8 @@ class GrblController:
         @return:
         """
         self.open()
-
-        self.add_watcher(self._channel_log)
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
 
         if self._sending_thread is None:
             self._sending_thread = self.service.threaded(
