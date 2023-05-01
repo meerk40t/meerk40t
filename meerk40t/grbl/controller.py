@@ -555,8 +555,6 @@ class GrblController:
                     self._assembled_response = []
                     continue
                     # raise ConnectionAbortedError from e
-
-                self.log(f"Response: {response}", type="event")
                 self.log(
                     f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
                     type="recv",
