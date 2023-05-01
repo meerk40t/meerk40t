@@ -360,13 +360,13 @@ class GRBLDriver(Parameters):
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            self.move_mode = 0
+                            # self.move_mode = 0
                             self._move(x, y)
                         continue
-                    if on == 0:
-                        self.move_mode = 0
-                    else:
-                        self.move_mode = 1
+                    # if on == 0:
+                    #     self.move_mode = 0
+                    # else:
+                    #     self.move_mode = 1
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
