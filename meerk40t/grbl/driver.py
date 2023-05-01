@@ -694,36 +694,41 @@ class GRBLDriver(Parameters):
         self.units_dirty = True
 
     def set_power_scale(self, factor):
-        if 0 < factor < 100:
+        # Grbl can only deal with factors between 10% and 200%
+        if 0 < factor <= 2.0:
             self.power_scale = factor
         else:
             self.power_scale = 1.0
         # Grbl can only deal with factors between 10% and 200%
-        ifactor = int(self.power_scale * 10 + 10)
-        ifactor = min(20, max(1, ifactor))
         self("\x99", real=True)
-        if ifactor < 10:
-            for idx in range(10 - ifactor):
-                self("\x9A", real=True)
-        elif ifactor > 10:
-            for idx in range(ifactor - 10):
-                self("\x9B", real=True)
+        # Upward loop
+        start = 1.0
+        while start < 2.0 and start < factor:
+            self("\x9B", real=True)
+            start += 0.1
+        # Downward loop
+        start = 1.0
+        while start > 0.0 and start > factor:
+            self("\x9A", real=True)
+            start -= 0.1
+
 
     def set_speed_scale(self, factor):
-        if 0 < factor < 100:
+        # Grbl can only deal with factors between 10% and 200%
+        if 0 < factor <= 2.0:
             self.speed_scale = factor
         else:
             self.speed_scale = 1.0
-        # Grbl can only deal with factors between 10% and 200%
-        ifactor = int(self.speed_scale * 10 + 10)
-        ifactor = min(20, max(1, ifactor))
         self("\x90", real=True)
-        if ifactor < 10:
-            for idx in range(10 - ifactor):
-                self("\x92", real=True)
-        elif ifactor > 10:
-            for idx in range(ifactor - 10):
-                self("\x91", real=True)
+        start = 1.0
+        while start < 2.0 and start < factor:
+            self("\x91", real=True)
+            start += 0.1
+        # Downward loop
+        start = 1.0
+        while start > 0.0 and start > factor:
+            self("\x92", real=True)
+            start -= 0.1
 
     @staticmethod
     def has_adjustable_power():
