@@ -58,11 +58,11 @@ class GRBLControllerPanel(wx.Panel):
         )
         self.gcode_commands = [
             ("\x18", _("Reset"), _("Reset laser"), None),
-            ("$X", _("Kill Alarm"), _("Kills alarms and locks"), None),
-            ("$#", _("Gcode Parameter"), _("Display active Gcode-parameters"), None),
-            ("$$", _("GRBL Parameter"), _("Display active GRBL-parameters"), None),
-            ("$I", _("Info"), _("Show Build-Info"), None),
             ("?", _("Status"), _("Query status"), None),
+            ("$X", _("Kill Alarm"), _("Kills alarms and locks"), None),
+            ("$#", _("Gcode Param"), _("Display active Gcode-parameters"), None),
+            ("$$", _("GRBL Param"), _("Display active GRBL-parameters"), None),
+            ("$I", _("Info"), _("Show Build-Info"), None),
         ]
         if self.service.has_endstops:
             self.gcode_commands.insert(
