@@ -31,7 +31,6 @@ class GRBLDriver(Parameters):
         self.name = str(service)
         self.line_end = None
         self._set_line_end()
-        self.hold = False
         self.paused = False
         self.native_x = 0
         self.native_y = 0
@@ -51,6 +50,7 @@ class GRBLDriver(Parameters):
         self.absolute_dirty = True
         self.feedrate_dirty = True
         self.units_dirty = True
+        self.move_mode = 0
 
         self._absolute = True
         self.feed_mode = None
@@ -65,7 +65,6 @@ class GRBLDriver(Parameters):
         self.out_pipe = None
         self.out_real = None
 
-        self.move_mode = 0
         self.reply = None
         self.elements = None
         self.power_scale = 1.0
@@ -99,13 +98,12 @@ class GRBLDriver(Parameters):
         if priority > 0:
             # Don't hold realtime work.
             return False
-
         if (
             self.service.limit_buffer
             and len(self.service.controller) > self.service.max_buffer
         ):
             return True
-        return priority <= 0 and (self.paused or self.hold)
+        return self.paused
 
     def get(self, key, default=None):
         """
@@ -200,7 +198,6 @@ class GRBLDriver(Parameters):
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
-        # self.rapid_mode()
         self._move(dx, dy)
 
         new_current = self.service.current
@@ -265,6 +262,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        self.clear_states()
         self._g91_absolute()
         self._g94_feedrate()
         self._clean()
@@ -337,6 +335,7 @@ class GRBLDriver(Parameters):
             else:
                 #  Rastercut, PlotCut
                 self.plot_planner.push(q)
+                self.move_mode = 1
                 for x, y, on in self.plot_planner.gen():
                     while self.hold_work(0):
                         time.sleep(0.05)
@@ -360,13 +359,13 @@ class GRBLDriver(Parameters):
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            self.move_mode = 0
+                            # self.move_mode = 0
                             self._move(x, y)
                         continue
-                    if on == 0:
-                        self.move_mode = 0
-                    else:
-                        self.move_mode = 1
+                    # if on == 0:
+                    #     self.move_mode = 0
+                    # else:
+                    #     self.move_mode = 1
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
@@ -375,11 +374,8 @@ class GRBLDriver(Parameters):
 
         self(f"G1 S0{self.line_end}")
         self(f"M5{self.line_end}")
-        self.power_dirty = True
-        self.speed_dirty = True
-        self.absolute_dirty = True
-        self.feedrate_dirty = True
-        self.units_dirty = True
+        self.clear_states()
+        self.wait_finish()
         return False
 
     def blob(self, data_type, data):
@@ -495,7 +491,11 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-        pass
+        while True:
+            if self.queue or len(self.service.controller):
+                time.sleep(0.05)
+                continue
+            break
 
     def function(self, function):
         """
@@ -555,6 +555,14 @@ class GRBLDriver(Parameters):
         """
         self.paused = False
         self(f"~{self.line_end}", real=True)
+
+    def clear_states(self):
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+        self.move_mode = 0
 
     def reset(self, *args):
         """
@@ -686,36 +694,41 @@ class GRBLDriver(Parameters):
         self.units_dirty = True
 
     def set_power_scale(self, factor):
-        if 0 < factor < 100:
+        # Grbl can only deal with factors between 10% and 200%
+        if 0 < factor <= 2.0:
             self.power_scale = factor
         else:
             self.power_scale = 1.0
         # Grbl can only deal with factors between 10% and 200%
-        ifactor = int(self.power_scale * 10 + 10)
-        ifactor = min(20, max(1, ifactor))
-        self("\x99", real=True)
-        if ifactor < 10:
-            for idx in range(10 - ifactor):
-                self("\x9A", real=True)
-        elif ifactor > 10:
-            for idx in range(ifactor - 10):
-                self("\x9B", real=True)
+        self("\x99\r", real=True)
+        # Upward loop
+        start = 1.0
+        while start < 2.0 and start < factor:
+            self("\x9B\r", real=True)
+            start += 0.1
+        # Downward loop
+        start = 1.0
+        while start > 0.0 and start > factor:
+            self("\x9A\r", real=True)
+            start -= 0.1
+
 
     def set_speed_scale(self, factor):
-        if 0 < factor < 100:
+        # Grbl can only deal with factors between 10% and 200%
+        if 0 < factor <= 2.0:
             self.speed_scale = factor
         else:
             self.speed_scale = 1.0
-        # Grbl can only deal with factors between 10% and 200%
-        ifactor = int(self.speed_scale * 10 + 10)
-        ifactor = min(20, max(1, ifactor))
-        self("\x90", real=True)
-        if ifactor < 10:
-            for idx in range(10 - ifactor):
-                self("\x92", real=True)
-        elif ifactor > 10:
-            for idx in range(ifactor - 10):
-                self("\x91", real=True)
+        self("\x90\r", real=True)
+        start = 1.0
+        while start < 2.0 and start < factor:
+            self("\x91\r", real=True)
+            start += 0.1
+        # Downward loop
+        start = 1.0
+        while start > 0.0 and start > factor:
+            self("\x92\r", real=True)
+            start -= 0.1
 
     @staticmethod
     def has_adjustable_power():

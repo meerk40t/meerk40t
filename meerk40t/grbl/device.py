@@ -511,6 +511,7 @@ class GRBLDevice(Service, ViewPort):
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
             self.signal("pipe;running", False)
+            self.signal("pause")
 
         @self.console_command(
             "clear_alarm",

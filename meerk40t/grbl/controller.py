@@ -210,7 +210,6 @@ class GrblController:
         self._assembled_response = []
         self._forward_buffer = bytearray()
         self._device_buffer_size = self.service.planning_buffer_size
-        self._buffer_fail = 0
         self._log = None
 
         self._paused = False
@@ -220,7 +219,7 @@ class GrblController:
         return f"GRBLController('{self.service.location()}')"
 
     def __len__(self):
-        return len(self._sending_queue) + len(self._realtime_queue)
+        return len(self._sending_queue) + len(self._realtime_queue) + len(self._forward_buffer)
 
     @property
     def _length_of_next_line(self):
@@ -279,14 +278,17 @@ class GrblController:
 
     def _channel_log(self, data, type=None):
         if type == "send":
-            grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
-            grbl_send(data)
+            if not hasattr(self, "_grbl_send"):
+                self._grbl_send = self.service.channel(f"send-{self.service.label}", pure=True)
+            self._grbl_send(data)
         elif type == "recv":
-            grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
-            grbl_recv(data)
+            if not hasattr(self, "_grbl_recv"):
+                self._grbl_recv = self.service.channel(f"recv-{self.service.label}", pure=True)
+            self._grbl_recv(data)
         elif type == "event":
-            grbl_events = self.service.channel(f"events-{self.service.label}")
-            grbl_events(data)
+            if not hasattr(self, "_grbl_events"):
+                self._grbl_events = self.service.channel(f"events-{self.service.label}")
+            self._grbl_events(data)
 
     def open(self):
         """
@@ -363,8 +365,8 @@ class GrblController:
         @return:
         """
         self.open()
-
-        self.add_watcher(self._channel_log)
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
 
         if self._sending_thread is None:
             self._sending_thread = self.service.threaded(
@@ -397,7 +399,7 @@ class GrblController:
 
         try:
             self.remove_watcher(self._channel_log)
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
 
     ####################
@@ -411,10 +413,10 @@ class GrblController:
         @param line:
         @return:
         """
-        self.connection.write(line)
-        self.log(line, type="send")
         with self._forward_lock:
             self._forward_buffer += bytes(line, encoding="latin-1")
+        self.connection.write(line)
+        self.log(line, type="send")
 
     def _sending_realtime(self):
         """
@@ -554,11 +556,8 @@ class GrblController:
                         f"Response: {response}, but this was unexpected", type="event"
                     )
                     self._assembled_response = []
-                    self._forward_buffer.clear()
                     continue
                     # raise ConnectionAbortedError from e
-
-                self.log(f"Response: {response}", type="event")
                 self.log(
                     f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
                     type="recv",
@@ -574,23 +573,35 @@ class GrblController:
                 self.service.channel("console")(response[5:])
             elif response.startswith("ALARM"):
                 try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    cmd_issued = ""
+                try:
                     error_num = int(response[6:])
                 except ValueError:
                     error_num = -1
                 short, long = grbl_alarm_message(error_num)
+                alarm_desc = f"#{error_num}, '{cmd_issued}' {short}\n{long}"
                 self.service.signal(
-                    "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
+                    "warning", f"GRBL: {alarm_desc}", response, 4
                 )
-                self.log(f"Alarm #{error_num} {short}\n{long}", type="recv")
+                self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
             elif response.startswith("error"):
+                try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    cmd_issued = ""
                 try:
                     error_num = int(response[6:])
                 except ValueError:
                     error_num = -1
                 short, long = grbl_error_code(error_num)
-                self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
-                self.log(f"ERROR #{error_num} {short}\n{long}", type="recv")
+                error_desc = f"#{error_num} '{cmd_issued}' {short}\n{long}"
+                self.service.signal("grbl;error", f"GRBL: {error_desc}", response, 4)
+                self.log(f"ERROR {error_desc}", type="recv")
                 self._assembled_response = []
                 self._send_resume()
             elif response.startswith("Grbl"):

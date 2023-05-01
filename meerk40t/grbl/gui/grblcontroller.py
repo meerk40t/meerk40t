@@ -56,17 +56,9 @@ class GRBLControllerPanel(wx.Panel):
             "?",  # status report
             # "$X",
         )
-        self.gcode_commands = [
-            ("\x18", _("Reset"), _("Reset laser"), None),
-            ("?", _("Status"), _("Query status"), None),
-            ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None),
-            ("$#", _("Gcode"), _("Display active Gcode-parameters"), None),
-            ("$$", _("GRBL"), _("Display active GRBL-parameters"), None),
-            ("$I", _("Info"), _("Show Build-Info"), None),
-        ]
+        self.gcode_commands = list()
         if self.service.has_endstops:
-            self.gcode_commands.insert(
-                0,
+            self.gcode_commands.append(
                 (
                     "$H",
                     _("Physical Home"),
@@ -75,10 +67,19 @@ class GRBLControllerPanel(wx.Panel):
                 ),
             )
         else:
-            self.gcode_commands.insert(
-                0, ("G28", _("Home"), _("Send laser to logical home-position"), None)
+            self.gcode_commands.append(
+                ("G28", _("Home"), _("Send laser to logical home-position"), None)
             )
-
+        self.gcode_commands.extend(
+            [
+                ("\x18", _("Reset"), _("Reset laser"), None),
+                ("?", _("Status"), _("Query status"), None),
+                ("$X", _("Clear Alarm"), _("Kills alarms and locks"), None),
+                ("$#", _("Gcode"), _("Display active Gcode-parameters"), None),
+                ("$$", _("GRBL"), _("Display active GRBL-parameters"), None),
+                ("$I", _("Info"), _("Show Build-Info"), None),
+            ]
+        )
         for entry in self.gcode_commands:
             btn = wx.Button(self, wx.ID_ANY, entry[1])
             btn.Bind(wx.EVT_BUTTON, self.send_gcode(entry[0]))
@@ -136,8 +137,20 @@ class GRBLControllerPanel(wx.Panel):
 
     def update(self, data, type):
         if type == "send":
+            # Quick judgement call: first character extended ascii?
+            # Then show all in hex:
+            if len(data) > 0 and ord(data[0]) >= 128:
+                display = "0x"
+                idx = 0
+                for c in data:
+                    if idx > 0:
+                        display += " "
+                    display += f"{ord(c):02x}"
+                    idx += 1
+            else:
+                display = data
             with self._buffer_lock:
-                self._buffer += f"<--{data}\n"
+                self._buffer += f"<--{display}\n"
             self.service.signal("grbl_controller_update", True)
         elif type == "recv":
             with self._buffer_lock:
