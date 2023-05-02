@@ -223,6 +223,7 @@ class GRBLDriver(Parameters):
         """
         Turn laser off in place.
 
+        @param power: Power after laser turn off (0=default).
         @param values:
         @return:
         """
@@ -237,6 +238,8 @@ class GRBLDriver(Parameters):
         """
         Turn laser on in place.
 
+        @param speed: Speed for laser turn on.
+        @param power: Power at the laser turn on.
         @param values:
         @return:
         """
