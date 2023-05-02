@@ -219,13 +219,18 @@ class GRBLDriver(Parameters):
         self.wait(time_in_ms)
         self.laser_off()
 
-    def laser_off(self, *values):
+    def laser_off(self, power=0, *values):
         """
         Turn laser off in place.
 
         @param values:
         @return:
         """
+        if power is not None:
+            spower = f" S{power:.1f}"
+            self.power = power
+            self.power_dirty = False
+            self(f"G1 {spower}{self.line_end}")
         self(f"M5{self.line_end}")
 
     def laser_on(self, power=None, speed=None, *values):
