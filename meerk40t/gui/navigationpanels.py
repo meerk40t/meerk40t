@@ -1,6 +1,7 @@
-from math import isinf
 import platform
+from math import isinf
 from time import time
+
 import wx
 from wx import aui
 
@@ -245,7 +246,8 @@ def get_movement(device, dx, dy):
     ny = f"{sy.mm:.4f}mm"
     return nx, ny
 
-class TimerButtons():
+
+class TimerButtons:
     """
     This is a wrapper class around some buttons that
     allow a click, hold & repeat action
@@ -269,6 +271,7 @@ class TimerButtons():
         self.timer.add_button(button1, test1, None)
         self.timer.add_button(button2, test2, ('First', 'Second'))
     """
+
     def __init__(self, *args, interval=0.5, accelerate=True, **kwds):
         self.parent = args[0]
         self.timer = wx.Timer(self.parent, wx.ID_ANY)
@@ -779,7 +782,6 @@ class Drag(wx.Panel):
         self.timer.interval = interval
         self.timer.accelerate = accelerate
 
-
     def on_button_repeat(self, origin, *args):
         self.set_timer_options()
 
@@ -1101,9 +1103,9 @@ class Jog(wx.Panel):
         self.timer.interval = interval
         self.timer.accelerate = accelerate
 
-
     def on_button_repeat(self, origin, *args):
         self.set_timer_options()
+
 
 class MovePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -1925,7 +1927,6 @@ class Transform(wx.Panel):
             accelerate = True
         self.timer.interval = interval
         self.timer.accelerate = accelerate
-
 
     def on_button_repeat(self, origin, *args):
         self.set_timer_options()

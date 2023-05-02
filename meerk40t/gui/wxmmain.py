@@ -629,14 +629,14 @@ class MeerK40t(MWindow):
                 "type": float,
                 "label": _("Button repeat-interval"),
                 "tip": _(
-                    "If you click and hold the mouse-button on the Jog/Drag-Panels\n" +
-                    "the movement action will be repeated. This value establishes\n"+
-                    "the interval between individual executions.\n"
+                    "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+                    + "the movement action will be repeated. This value establishes\n"
+                    + "the interval between individual executions.\n"
                     "A value of 0 will disable this feature."
                 ),
                 "page": "Gui",
                 "section": "Misc.",
-                "subsection" : "Button-Behaviour",
+                "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
             },
             {
@@ -651,7 +651,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Gui",
                 "section": "Misc.",
-                "subsection" : "Button-Behaviour",
+                "subsection": "Button-Behaviour",
                 "signals": "button-repeat",
             },
             {
@@ -683,7 +683,11 @@ class MeerK40t(MWindow):
                 "type": int,
                 "label": _("Action"),
                 "style": "option",
-                "display": (_("No, thank you"), _("Look for major releases"), _("Look for major+beta releases")),
+                "display": (
+                    _("No, thank you"),
+                    _("Look for major releases"),
+                    _("Look for major+beta releases"),
+                ),
                 "choices": (0, 1, 2),
                 "tip": _("Check for available updates on startup."),
                 "page": "Options",
