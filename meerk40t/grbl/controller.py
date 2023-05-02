@@ -601,6 +601,8 @@ class GrblController:
                 self._assembled_response = []
                 self._send_resume()
                 continue
+            elif response.startswith("<"):
+                self._process_status_message(response)
             elif response.startswith("["):
                 self._process_feedback_message(response)
                 continue
@@ -625,6 +627,21 @@ class GrblController:
             else:
                 self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
+
+    def _process_status_message(self, response):
+        message = response[1:-1]
+        data = list(message.split("|"))
+        self.service.signal("grbl:state", data[0])
+        for datum in data[1:]:
+            name, info = datum.split(":")
+            if name == "F":
+                self.service.signal(f"grbl:speed", float(info))
+            elif name == "FS":
+                if name == "F":
+                    f, s = info.split(",")
+                    self.service.signal(f"grbl:speed", float(f))
+                    self.service.signal(f"grbl:power", float(s))
+            self.service.signal(f"grbl:status:{name}", info)
 
     def _process_feedback_message(self, response):
         if response.startswith("[MSG:"):
