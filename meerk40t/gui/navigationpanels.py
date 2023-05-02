@@ -1,6 +1,6 @@
+from math import isinf
 import platform
 from time import time
-
 import wx
 from wx import aui
 
@@ -245,6 +245,128 @@ def get_movement(device, dx, dy):
     ny = f"{sy.mm:.4f}mm"
     return nx, ny
 
+class TimerButtons():
+    """
+    This is a wrapper class around some buttons that
+    allow a click, hold & repeat action
+    Parameters: interval = time between repeats in seconds
+    After instantiation you can add buttons via the
+    add_button method.
+        add_button(button, routine, parameters)
+    this will call routine(parameters)
+
+    Usage:
+
+        def test1():
+            print ("Clicked")
+
+        def test2(p1, p2):
+            print (f"Clicked with {p1} and {p2}")
+
+        self.timer = TimerButton(self, interval=0.5)
+        button1 = wx.Button(self, wx.ID_ANY, "Click and hold me")
+        button2 = wx.Button(self, wx.ID_ANY, "Me too, please")
+        self.timer.add_button(button1, test1, None)
+        self.timer.add_button(button2, test2, ('First', 'Second'))
+    """
+    def __init__(self, *args, interval=0.5, accelerate=True, **kwds):
+        self.parent = args[0]
+        self.timer = wx.Timer(self.parent, wx.ID_ANY)
+        self.timer_buttons = dict()
+        self._interval = 0
+        self.interval = interval
+        self.accelerate = accelerate
+        self.timer_execution = None
+        self.timer_delta = 1.0
+        self.timer_looped = 0
+        self.active_button = None
+        self.parent.Bind(wx.EVT_TIMER, self.timer_event, self.timer)
+
+    @property
+    def interval(self):
+        return self._interval
+
+    @interval.setter
+    def interval(self, value):
+        self._interval = value
+
+    def add_button(self, button, routine):
+        id = button.GetId()
+        self.timer_buttons[id] = (button, routine)
+        button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
+        button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
+        button.Bind(wx.EVT_LEAVE_WINDOW, self.on_button_lost)
+        button.Bind(wx.EVT_BUTTON, self.on_button_click)
+
+    def execute(self, button):
+        if button is None:
+            return
+        id = button.GetId()
+        if id not in self.timer_buttons:
+            return
+        action = self.timer_buttons[id][1]
+        if action is None:
+            return
+        action()
+
+    def timer_event(self, event):
+        if self.active_button is None:
+            return
+        self.execute(self.active_button)
+        self.timer_execution = time()
+        self.timer_looped += 1
+        if self.timer_looped == 5 and self.accelerate:
+            self.timer.Stop()
+            if self.interval > 0:
+                self.timer.Start(self.interval * 500)
+        elif self.timer_looped == 10 and self.accelerate:
+            self.timer.Stop()
+            if self.interval > 0:
+                self.timer.Start(self.interval * 250)
+
+    def stop_timer(self, action):
+        self.timer.Stop()
+        t = time()
+        if self.active_button is not None and (
+            self.timer_execution is None
+            or t - self.timer_execution > self.interval * 500
+        ):
+            self.execute(self.active_button)
+        # self.timer_execution = None
+        self.timer_looped = 0
+        self.active_button = None
+
+    def start_timer(self, button=None):
+        self.stop_timer(action=False)
+        self.active_button = button
+        self.timer_execution = None
+        if self.active_button is not None:
+            if self.interval > 0:
+                self.timer.Start(self.interval * 1000)
+
+    def on_button_lost(self, event=None):
+        self.stop_timer(action=False)
+
+    def on_button_down(self, event=None):
+        self.stop_timer(action=False)
+        if event is None:
+            return
+        button = event.GetEventObject()
+        self.start_timer(button=button)
+
+    def on_button_up(self, event=None):
+        # That consumes the event and a wx.EVT_BUTTON will not be raised
+        self.stop_timer(action=True)
+
+    def on_button_click(self, event=None):
+        # That could still happen due to a keypress
+        # (ie return, space) while the button has focus
+        if event is None:
+            return
+        button = event.GetEventObject()
+        self.active_button = button
+        self.stop_timer(action=True)
+
 
 class Drag(wx.Panel):
     def __init__(self, *args, context=None, icon_size=None, **kwds):
@@ -292,33 +414,28 @@ class Drag(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_align_drag_left, self.drag_left)
+        self.timer.add_button(self.button_align_drag_right, self.drag_right)
+        self.timer.add_button(self.button_align_drag_up, self.drag_up)
+        self.timer.add_button(self.button_align_drag_down, self.drag_down)
+        self.set_timer_options()
+
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_tl,
             self.button_align_corner_top_left,
         )
         self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_up, self.button_align_drag_up
-        )
-        self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_tr,
             self.button_align_corner_top_right,
         )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_left, self.button_align_drag_left
-        )
         self.Bind(wx.EVT_BUTTON, self.on_button_align_center, self.button_align_center)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_right, self.button_align_drag_right
-        )
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_align_corner_bl,
             self.button_align_corner_bottom_left,
-        )
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_align_drag_down, self.button_align_drag_down
         )
         self.Bind(
             wx.EVT_BUTTON,
@@ -475,6 +592,26 @@ class Drag(wx.Panel):
         else:
             self.lockmode = button
 
+    def drag_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = "0"
+        self.drag_relative(p1, p2)
+
+    def drag_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = "0"
+        self.drag_relative(p1, p2)
+
+    def drag_down(self):
+        p1 = "0"
+        p2 = f"{self.context.jog_amount}"
+        self.drag_relative(p1, p2)
+
+    def drag_up(self):
+        p1 = "0"
+        p2 = f"-{self.context.jog_amount}"
+        self.drag_relative(p1, p2)
+
     def on_button_lock_tl(self, event=None):
         self.lock_mode_toggle(1)
 
@@ -513,18 +650,28 @@ class Drag(wx.Panel):
         if value == 1:
             x = bbox[0]
             y = bbox[1]
+            if isinf(x) or isinf(y):
+                return
         elif value == 2:
             x = bbox[2]
             y = bbox[1]
+            if isinf(x) or isinf(y):
+                return
         elif value == 3:
             x = bbox[0]
             y = bbox[3]
+            if isinf(x) or isinf(y):
+                return
         elif value == 4:
             x = bbox[2]
             y = bbox[3]
+            if isinf(x) or isinf(y):
+                return
         elif value == 5:
             x = (bbox[0] + bbox[2]) / 2.0
             y = (bbox[3] + bbox[1]) / 2.0
+            if isinf(x) or isinf(y):
+                return
         else:
             return
         if _confined:
@@ -571,26 +718,6 @@ class Drag(wx.Panel):
         nx, ny = get_movement(self.context.device, dx, dy)
         self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
-    def on_button_align_drag_down(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, self.context.jog_amount)
-
-    def on_button_align_drag_right(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(self.context.jog_amount, 0)
-
-    def on_button_align_drag_up(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(0, str(-Length(self.context.jog_amount)))
-
-    def on_button_align_drag_left(
-        self, event=None
-    ):  # wxGlade: Navigation.<event_handler>
-        self.drag_relative(str(-Length(self.context.jog_amount)), 0)
-
     def on_button_align_first_position(self, event=None):
         elements = self.context.elements
         e = list(elements.elems(emphasized=True))
@@ -631,12 +758,30 @@ class Drag(wx.Panel):
     def pane_show(self, *args):
         self.context.listen("driver;position", self.on_update)
         self.context.listen("emulator;position", self.on_update)
+        self.context.listen("button-repeat", self.on_button_repeat)
 
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
     def pane_hide(self, *args):
         self.context.unlisten("driver;position", self.on_update)
         self.context.unlisten("emulator;position", self.on_update)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
     def on_update(self, origin, pos):
         # bb = self.get_bbox()
@@ -718,26 +863,18 @@ class Jog(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.timer = wx.Timer(self, id=wx.ID_ANY)
-        self.timer_execution = None
-        self.timer_action = None
-        self.timer_param1 = None
-        self.timer_param2 = None
-        self.timer_delta = 1.0
-        self.timer_looped = 0
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_navigate_down, self.jog_down)
+        self.timer.add_button(self.button_navigate_left, self.jog_left)
+        self.timer.add_button(self.button_navigate_right, self.jog_right)
+        self.timer.add_button(self.button_navigate_up, self.jog_up)
 
-        for button in (
-            self.button_navigate_left,
-            self.button_navigate_right,
-            self.button_navigate_up,
-            self.button_navigate_down,
-            self.button_navigate_up_left,
-            self.button_navigate_up_right,
-            self.button_navigate_down_left,
-            self.button_navigate_down_right,
-        ):
-            button.Bind(wx.EVT_LEFT_DOWN, self.on_button_down)
-            button.Bind(wx.EVT_LEFT_UP, self.on_button_up)
+        self.timer.add_button(self.button_navigate_up_left, self.jog_up_left)
+        self.timer.add_button(self.button_navigate_up_right, self.jog_up_right)
+        self.timer.add_button(self.button_navigate_down_left, self.jog_down_left)
+        self.timer.add_button(self.button_navigate_down_right, self.jog_down_right)
+        self.set_timer_options()
+
         # self.Bind(wx.EVT_BUTTON, self.on_button_navigate_l, self.button_navigate_left)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_home, self.button_navigate_home
@@ -819,6 +956,46 @@ class Jog(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def jog_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = "0"
+        self.move_rel(p1, p2)
+
+    def jog_up_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down_left(self):
+        p1 = f"-{self.context.jog_amount}"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = "0"
+        self.move_rel(p1, p2)
+
+    def jog_up_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down_right(self):
+        p1 = f"{self.context.jog_amount}"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_up(self):
+        p1 = "0"
+        p2 = f"-{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
+    def jog_down(self):
+        p1 = "0"
+        p2 = f"{self.context.jog_amount}"
+        self.move_rel(p1, p2)
+
     @property
     def confined(self):
         global _confined
@@ -883,81 +1060,6 @@ class Jog(wx.Panel):
         else:
             self.context("home\n")
 
-    def timer_event(self, event):
-        self.timer_action(self.timer_param1, self.timer_param2)
-        self.timer_execution = time()
-        self.timer_looped += 1
-        if self.timer_looped == 5:
-            self.timer.Stop()
-            self.timer.Start(self.timer_delta * 500)
-        elif self.timer_looped == 10:
-            self.timer.Stop()
-            self.timer.Start(self.timer_delta * 250)
-
-    def stop_timer(self, action):
-        self.timer.Stop()
-        t = time()
-        if action and (
-            self.timer_execution is None
-            or t - self.timer_execution > self.timer_delta * 0.75
-        ):
-            self.timer_action(self.timer_param1, self.timer_param2)
-        self.timer_execution = None
-        self.timer_action = None
-        self.timer_param1 = None
-        self.timer_param2 = None
-        self.timer_delta = 1.0
-        self.timer_looped = 0
-
-    def start_timer(self, delta=1.0, action_routine=None, param1=None, param2=None):
-        self.stop_timer(action=False)
-
-        self.timer_execution = None
-        self.timer_action = action_routine
-        self.timer_param1 = param1
-        self.timer_param2 = param2
-        self.timer_delta = delta
-        self.Bind(wx.EVT_TIMER, self.timer_event, self.timer)
-        self.timer.Start(self.timer_delta * 1000)
-
-    def on_button_down(self, event=None):
-        if event is None:
-            return
-        self.stop_timer(action=False)
-        button = event.GetEventObject()
-        p1 = ""
-        p2 = ""
-        if button is self.button_navigate_down:
-            p1 = "0"
-            p2 = f"{self.context.jog_amount}"
-        elif button is self.button_navigate_up:
-            p1 = "0"
-            p2 = f"-{self.context.jog_amount}"
-        elif button is self.button_navigate_right:
-            p1 = f"{self.context.jog_amount}"
-            p2 = "0"
-        elif button is self.button_navigate_left:
-            p1 = f"-{self.context.jog_amount}"
-            p2 = "0"
-        elif button is self.button_navigate_up_left:
-            p1 = f"-{self.context.jog_amount}"
-            p2 = f"-{self.context.jog_amount}"
-        elif button is self.button_navigate_up_right:
-            p1 = f"{self.context.jog_amount}"
-            p2 = f"-{self.context.jog_amount}"
-        elif button is self.button_navigate_down_left:
-            p1 = f"-{self.context.jog_amount}"
-            p2 = f"{self.context.jog_amount}"
-        elif button is self.button_navigate_down_right:
-            p1 = f"{self.context.jog_amount}"
-            p2 = f"{self.context.jog_amount}"
-        else:
-            return
-        self.start_timer(delta=0.5, action_routine=self.move_rel, param1=p1, param2=p2)
-
-    def on_button_up(self, event=None):
-        self.stop_timer(action=True)
-
     def on_button_navigate_unlock(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
@@ -980,11 +1082,28 @@ class Jog(wx.Panel):
 
     def pane_show(self):
         self.context.listen("activate;device", self.on_update)
+        self.context.listen("button-repeat", self.on_button_repeat)
         self.set_home_logic()
 
     def pane_hide(self):
         self.context.unlisten("activate;device", self.on_update)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
 
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
 class MovePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -1620,18 +1739,20 @@ class Transform(wx.Panel):
             limited=True,
         )
 
+        self.timer = TimerButtons(self)
+        self.timer.add_button(self.button_translate_left, self.trans_left)
+        self.timer.add_button(self.button_translate_right, self.trans_right)
+        self.timer.add_button(self.button_translate_up, self.trans_up)
+        self.timer.add_button(self.button_translate_down, self.trans_down)
+        self.set_timer_options()
         self.__set_properties()
         self.__do_layout()
 
         self.button_scale_down.Bind(wx.EVT_BUTTON, self.on_scale_down_5)
-        self.button_translate_up.Bind(wx.EVT_BUTTON, self.on_translate_up_1)
         self.button_scale_up.Bind(wx.EVT_BUTTON, self.on_scale_up_5)
-        self.button_translate_left.Bind(wx.EVT_BUTTON, self.on_translate_left_1)
         self.button_reset.Bind(wx.EVT_BUTTON, self.on_reset)
         self.button_rotate_ccw.Bind(wx.EVT_BUTTON, self.on_rotate_ccw_5)
-        self.button_translate_right.Bind(wx.EVT_BUTTON, self.on_translate_right_1)
         self.button_rotate_cw.Bind(wx.EVT_BUTTON, self.on_rotate_cw_5)
-        self.button_translate_down.Bind(wx.EVT_BUTTON, self.on_translate_down_1)
         self.text_a.SetActionRoutine(self.on_text_matrix)
         self.text_b.SetActionRoutine(self.on_text_matrix)
         self.text_c.SetActionRoutine(self.on_text_matrix)
@@ -1785,11 +1906,29 @@ class Transform(wx.Panel):
     def pane_show(self, *args):
         self.context.listen("emphasized", self.on_emphasized_elements_changed)
         self.context.listen("modified", self.on_modified_element)
+        self.context.listen("button-repeat", self.on_button_repeat)
         self.update_matrix_text()
 
     def pane_hide(self, *args):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("modified", self.on_modified_element)
+        self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    def set_timer_options(self):
+        interval = self.context.button_repeat
+        if interval is None:
+            interval = 0.5
+        if interval < 0:
+            interval = 0
+        accelerate = self.context.button_accelerate
+        if accelerate is None:
+            accelerate = True
+        self.timer.interval = interval
+        self.timer.accelerate = accelerate
+
+
+    def on_button_repeat(self, origin, *args):
+        self.set_timer_options()
 
     def on_modified_element(self, origin, *args):
         self.update_matrix_text()
@@ -1908,40 +2047,40 @@ class Transform(wx.Panel):
         scale = 20.0 / 19.0
         self._scale(scale)
 
-    def on_translate_up_1(self, event=None):  # wxGlade: Navigation.<event_handler>
+    def trans_down(self):
+        dx = 0
+        dy = self.context.jog_amount
+        self._translate(dx, dy, 1)
+
+    def trans_up(self):
         dx = 0
         dy = self.context.jog_amount
         self._translate(dx, dy, -1)
+
+    def trans_left(self):
+        dx = self.context.jog_amount
+        dy = 0
+        self._translate(dx, dy, -1)
+
+    def trans_right(self):
+        dx = self.context.jog_amount
+        dy = 0
+        self._translate(dx, dy, 1)
 
     def on_translate_up_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
         dy = self.context.jog_amount * 10
         self._translate(dx, dy, -10)
 
-    def on_translate_left_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.jog_amount
-        dy = 0
-        self._translate(dx, dy, -1)
-
     def on_translate_left_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.jog_amount
         dy = 0
         self._translate(dx, dy, -10)
 
-    def on_translate_right_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = self.context.jog_amount
-        dy = 0
-        self._translate(dx, dy, 1)
-
     def on_translate_right_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = self.context.jog_amount
         dy = 0
         self._translate(dx, dy, 10)
-
-    def on_translate_down_1(self, event=None):  # wxGlade: Navigation.<event_handler>
-        dx = 0
-        dy = self.context.jog_amount
-        self._translate(dx, dy, 1)
 
     def on_translate_down_10(self, event=None):  # wxGlade: Navigation.<event_handler>
         dx = 0
