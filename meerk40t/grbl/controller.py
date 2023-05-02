@@ -674,6 +674,67 @@ class GrblController:
         elif response.startwith("[VER:"):
             message = response[5:-1]
             self.service.signal("grbl:ver", message)
+        elif response.startwith("[OPT:"):
+            message = response[5:-1]
+            codes, block_buffer_size, rx_buffer_size = message.split(",")
+            self.log(f"codes: {codes}", type="event")
+            if "V" in codes:
+                # Variable spindle enabled
+                pass
+            if "N" in codes:
+                # Line numbers enabled
+                pass
+
+            if "M" in codes:
+                # Mist coolant enabled
+                pass
+            if "C" in codes:
+                # CoreXY enabled
+                pass
+            if "P" in codes:
+                # Parking motion enabled
+                pass
+            if "Z" in codes:
+                # Homing force origin enabled
+                pass
+            if "H" in codes:
+                # Homing single axis enabled
+                pass
+            if "T" in codes:
+                # Two limit switches on axis enabled
+                pass
+            if "A" in codes:
+                # Allow feed rate overrides in probe cycles
+                pass
+            if "*" in codes:
+                # Restore all EEPROM disabled
+                pass
+            if "$" in codes:
+                # Restore EEPROM $ settings disabled
+                pass
+            if "#" in codes:
+                # Restore EEPROM parameter data disabled
+                pass
+            if "I" in codes:
+                # Build info write user string disabled
+                pass
+            if "E" in codes:
+                # Force sync upon EEPROM write disabled
+                pass
+            if "W" in codes:
+                # Force sync upon work coordinate offset change disabled
+                pass
+            if "L" in codes:
+                # Homing init lock sets Grbl into an alarm state upon power up
+                pass
+            if "2" in codes:
+                # Dual axis motors with self-squaring enabled
+                pass
+            self.log(f"blockBufferSize: {block_buffer_size}", type="event")
+            self.log(f"rxBufferSize: {rx_buffer_size}", type="event")
+            self.service.signal("grbl:block_buffer", int(block_buffer_size))
+            self.service.signal("grbl:rx_buffer", int(rx_buffer_size))
+            self.service.signal("grbl:opt", message)
         elif response.startwith("[echo:"):
             message = response[6:-1]
             self.service.channel("console")(message)
