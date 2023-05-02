@@ -637,12 +637,12 @@ class GrblController:
         for datum in data[1:]:
             name, info = datum.split(":")
             if name == "F":
-                self.service.signal(f"grbl:speed", float(info))
+                self.service.signal("grbl:speed", float(info))
             elif name == "FS":
                 if name == "F":
                     f, s = info.split(",")
-                    self.service.signal(f"grbl:speed", float(f))
-                    self.service.signal(f"grbl:power", float(s))
+                    self.service.signal("grbl:speed", float(f))
+                    self.service.signal("grbl:power", float(s))
             self.service.signal(f"grbl:status:{name}", info)
 
     def _process_feedback_message(self, response):
