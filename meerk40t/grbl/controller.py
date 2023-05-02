@@ -576,6 +576,22 @@ class GrblController:
                 self._assembled_response = []
                 self._send_resume()
                 continue
+            elif response.startswith("error"):
+                try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    cmd_issued = ""
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_error_code(error_num)
+                error_desc = f"#{error_num} '{cmd_issued}' {short}\n{long}"
+                self.service.signal("grbl;error", f"GRBL: {error_desc}", response, 4)
+                self.log(f"ERROR {error_desc}", type="recv")
+                self._assembled_response = []
+                self._send_resume()
             elif response.startswith("echo:"):
                 # Echo asks that this information be displayed.
                 self.service.channel("console")(response[5:])
@@ -594,22 +610,6 @@ class GrblController:
                 self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
                 self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
-            elif response.startswith("error"):
-                try:
-                    cmd_issued = self.get_forward_command()
-                    cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
-                    cmd_issued = ""
-                try:
-                    error_num = int(response[6:])
-                except ValueError:
-                    error_num = -1
-                short, long = grbl_error_code(error_num)
-                error_desc = f"#{error_num} '{cmd_issued}' {short}\n{long}"
-                self.service.signal("grbl;error", f"GRBL: {error_desc}", response, 4)
-                self.log(f"ERROR {error_desc}", type="recv")
-                self._assembled_response = []
-                self._send_resume()
             elif response.startswith("Grbl"):
                 self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
