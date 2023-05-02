@@ -270,6 +270,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
         self.clear_states()
         self._g91_absolute()
         self._g94_feedrate()
