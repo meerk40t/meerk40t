@@ -632,7 +632,7 @@ class MeerK40t(MWindow):
                     "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
                     + "the movement action will be repeated. This value establishes\n"
                     + "the interval between individual executions.\n"
-                    "A value of 0 will disable this feature."
+                    + "A value of 0 will disable this feature."
                 ),
                 "page": "Gui",
                 "section": "Misc.",
@@ -647,7 +647,7 @@ class MeerK40t(MWindow):
                 "label": _("Accelerate repeats"),
                 "tip": _(
                     "If you hold the button for some time, then after some repetitions\n"
-                    "the action will increase in speed if you activate this option."
+                    + "the action will increase in speed if you activate this option."
                 ),
                 "page": "Gui",
                 "section": "Misc.",
