@@ -555,6 +555,7 @@ class GrblController:
             self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
+                # Indicates that the command line received was parsed and executed (or set to be executed).
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
@@ -577,6 +578,7 @@ class GrblController:
                 self._send_resume()
                 continue
             elif response.startswith("error"):
+                # Indicates that the command line received contained an error, with an error code x, and was purged.
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
@@ -592,6 +594,7 @@ class GrblController:
                 self.log(f"ERROR {error_desc}", type="recv")
                 self._assembled_response = []
                 self._send_resume()
+                continue
             elif response.startswith("echo:"):
                 # Echo asks that this information be displayed.
                 self.service.channel("console")(response[5:])
