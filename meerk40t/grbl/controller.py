@@ -622,7 +622,7 @@ class GrblController:
                 self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
             elif response.startswith(">"):
-                self.log(f"STARTUP: {response}")
+                self.log(f"STARTUP: {response}", type="event")
             elif response.startswith(self.welcome):
                 self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
