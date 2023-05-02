@@ -15985,3 +15985,47 @@ msgstr "Benutzerdefinierter Wert: {value}"
 
 msgid "Make Polygon regular"
 msgstr "Mache alle Seiten gleich lang"
+
+msgid "Check for updates on startup"
+msgstr "Überprüfe auf neue Versionen beim Programmstart"
+
+msgid "Check for available updates on startup."
+msgstr "Überprüfe beim Programmstart auf das Vorhandensein neuerer Versionen"
+
+msgid "No, thank you"
+msgstr "Nein Danke"
+
+msgid "Look for major releases"
+msgstr "Suche nach neuen Versionen"
+
+msgid "Look for major+beta releases"
+msgstr "Suche nach Versionen (inkl. Betas)"
+
+msgid "Button repeat-interval"
+msgstr "Intervall"
+
+msgid ""
+"If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+"the movement action will be repeated. This value establishes\n"
+"the interval between individual executions.\n"
+"A value of 0 will disable this feature."
+msgstr ""
+"Wenn über einer Bewegungs-Schaltfläche in den Tippbetrieb-Panels\n"
+"die linke Maustaste gedrückt und niedergehalten wird, so wird\n"
+"die Aktion immer wieder wiederholt.\n"
+"Der hier angegebene Wert legt das Intervall zwischen\n"
+"den einzelnen Aufrufen fest.\n"
+"Ein Wert von 0 schaltet dieses Feature aus."
+
+msgid "Button-Behaviour"
+msgstr "Verhalten von Tippbetrieb-Schaltflächen"
+
+msgid "Accelerate repeats"
+msgstr "Wiederholungen beschleunigen"
+
+msgid ""
+"If you hold the button for some time, then after some repetitions\n"
+"the action will increase in speed if you activate this option."
+msgstr ""
+"Bei aktiver Option gilt: wenn die Schaltfläche eine gewisse Zeit\n"
+"gedrückt wird, so wird die Wiederholungsfrequenz ncoh einmal erhöht."
