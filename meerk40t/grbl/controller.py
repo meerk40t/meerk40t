@@ -595,9 +595,9 @@ class GrblController:
                 self._assembled_response = []
                 self._send_resume()
                 continue
-            elif response.startswith("echo:"):
-                # Echo asks that this information be displayed.
-                self.service.channel("console")(response[5:])
+            elif response.startswith("["):
+                self._process_feedback_message(response)
+                continue
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])
@@ -614,3 +614,56 @@ class GrblController:
             else:
                 self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
+
+    def _process_feedback_message(self, response):
+        if response.startswith("[MSG:"):
+            message = response[5:-1]
+            self.log(message, type="event")
+            self.service.channel("console")(message)
+        elif response.startswith("[GC:"):
+            message = response[4:-1]
+            self.log(message, type="event")
+            self.service.signal("grbl:states", list(message.split(" ")))
+        elif response.startswith("[HLP:"):
+            message = response[5:-1]
+            self.log(message, type="event")
+        elif response.startswith("[G54:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g54", message)
+        elif response.startswith("[G55:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g55", message)
+        elif response.startswith("[G56:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g56", message)
+        elif response.startswith("[G57:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g57", message)
+        elif response.startswith("[G58:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g58", message)
+        elif response.startswith("[G59:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g59", message)
+        elif response.startswith("[G28:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g28", message)
+        elif response.startswith("[G30:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g30", message)
+        elif response.startswith("[G92:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g92", message)
+        elif response.startswith("[TLO:"):
+            message = response[5:-1]
+            self.service.signal("grbl:tlo", message)
+        elif response.startswith("[PRB:"):
+            message = response[5:-1]
+            self.service.signal("grbl:prb", message)
+        elif response.startwith("[VER:"):
+            message = response[5:-1]
+            self.service.signal("grbl:ver", message)
+        elif response.startwith("[echo:"):
+            message = response[6:-1]
+            self.service.channel("console")(message)
+
