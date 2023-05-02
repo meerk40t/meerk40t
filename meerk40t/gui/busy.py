@@ -99,6 +99,10 @@ class BusyInfo:
         self.parent = newparent
 
     def show(self):
+        if self.frame is None or self.panel is None:
+            # Shouldnt happen
+            # print (f"Strange, show called although frame was none: {self.shown}")
+            return
         for win in [self.panel, self.text]:
             win.SetBackgroundColour(self.bgcolor)
         for win in [self.panel, self.text]:
