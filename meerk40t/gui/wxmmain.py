@@ -892,7 +892,7 @@ class MeerK40t(MWindow):
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
                 "tip": _(
-                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
+                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
