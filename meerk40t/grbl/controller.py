@@ -202,7 +202,7 @@ class GrblController:
         self._requires_validation = self.service.setting(
             bool, "requires_validation", True
         )
-        self._connection_validated = self._requires_validation
+        self._connection_validated = not self._requires_validation
 
         # Sending variables.
         self._sending_thread = None
@@ -330,7 +330,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = self._requires_validation
+        self._connection_validated = not self._requires_validation
         self.log("Disconnecting from GRBL...", type="event")
 
     def write(self, data):
