@@ -600,16 +600,11 @@ class GrblController:
                 self.service.channel("console")(response[5:])
             elif response.startswith("ALARM"):
                 try:
-                    cmd_issued = self.get_forward_command()
-                    cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
-                    cmd_issued = ""
-                try:
                     error_num = int(response[6:])
                 except ValueError:
                     error_num = -1
                 short, long = grbl_alarm_message(error_num)
-                alarm_desc = f"#{error_num}, '{cmd_issued}' {short}\n{long}"
+                alarm_desc = f"#{error_num}, {short}\n{long}"
                 self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
                 self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
