@@ -11,6 +11,7 @@ from meerk40t.kernel import signal_listener
 
 SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
 
+
 def grbl_error_code(code):
     long = ""
     short = f"Error #{code}"
@@ -198,9 +199,10 @@ class GrblController:
 
         # Welcome message into, indicates the device is initialized.
         self.welcome = self.service.setting(str, "welcome", "Grbl")
-        self._requires_validation = self.service.setting(bool, "requires_validation", True)
+        self._requires_validation = self.service.setting(
+            bool, "requires_validation", True
+        )
         self._connection_validated = self._requires_validation
-
 
         # Sending variables.
         self._sending_thread = None
