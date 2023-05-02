@@ -154,9 +154,8 @@ def grbl_alarm_message(code):
 class GrblController:
     def __init__(self, context):
         self.service = context
-
         self.connection = None
-        self._connection_validated = False
+
         self.update_connection()
 
         self.driver = self.service.driver
@@ -196,6 +195,12 @@ class GrblController:
             131: 200.000,  # Y-axis max travel mm
             132: 200.000,  # Z-axis max travel mm.
         }
+
+        # Welcome message into, indicates the device is initialized.
+        self.welcome = self.service.setting(str, "welcome", "Grbl")
+        self._requires_validation = self.service.setting(bool, "requires_validation", True)
+        self._connection_validated = self._requires_validation
+
 
         # Sending variables.
         self._sending_thread = None
@@ -323,7 +328,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = False
+        self._connection_validated = self._requires_validation
         self.log("Disconnecting from GRBL...", type="event")
 
     def write(self, data):
@@ -612,7 +617,9 @@ class GrblController:
                 self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
                 self.log(f"Alarm {alarm_desc}", type="recv")
                 self._assembled_response = []
-            elif response.startswith("Grbl"):
+            elif response.startswith(">"):
+                self.log(f"STARTUP: {response}")
+            elif response.startswith(self.welcome):
                 self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
             else:
