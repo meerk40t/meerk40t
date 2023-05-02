@@ -3,12 +3,13 @@ GRBL Controller
 
 Tasked with sending data to the different connection.
 """
-
+import re
 import threading
 import time
 
 from meerk40t.kernel import signal_listener
 
+SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
 
 def grbl_error_code(code):
     long = ""
@@ -598,6 +599,9 @@ class GrblController:
             elif response.startswith("["):
                 self._process_feedback_message(response)
                 continue
+            elif response.startswith("$"):
+                self._process_settings_message(response)
+                continue
             elif response.startswith("ALARM"):
                 try:
                     error_num = int(response[6:])
@@ -667,3 +671,10 @@ class GrblController:
             message = response[6:-1]
             self.service.channel("console")(message)
 
+    def _process_settings_message(self, response):
+        match = SETTINGS_MESSAGE.match(response)
+        if match:
+            try:
+                self.grbl_settings[int(match.group(1))] = float(match.group(2))
+            except ValueError:
+                pass
