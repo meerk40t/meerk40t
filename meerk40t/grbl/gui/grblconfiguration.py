@@ -229,7 +229,7 @@ class GRBLConfiguration(MWindow):
         if not value:
             return
         try:
-            self.context.driver.grbl("$$\r")
+            self.context.driver(f"$${self.context.driver.line_end}")
             self._requested_status = True
         except:
             wx.MessageBox(
@@ -240,43 +240,52 @@ class GRBLConfiguration(MWindow):
 
     @signal_listener("grbl;response")
     def on_serial_status(self, origin, cmd_issued, responses=None):
+        if responses is None:
+            return
+        flag = False
+        # Workaround for newly introduced bug, normally we would
+        # have a clear connection between the command and
+        # the result of this command. With 0.8.4 that is broken
         if cmd_issued == "$$":
+            flag = True
+        elif len(responses) > 0 and responses[0].startswith("$0"):
+            flag = True
+        if flag:
             # Right command
             if self._requested_status:
                 # coming from myself
-                if responses is not None:
-                    changes = False
-                    for resp in responses:
-                        index = -1
-                        value = None
-                        match = DOLLAR_INFO.match(resp)
-                        if match:
-                            # $xx=yy
-                            index = int(match.group(1))
-                            value = match.group(2)
-                        if index >= 0 and value is not None:
-                            self.context.controller.grbl_settings[index] = value
-                        if index == 21:
-                            flag = bool(int(value) == 1)
-                            self.context.has_endstops = flag
-                            self.context.signal("has_endstops", flag, self.context)
-                        elif index == 130:
-                            self.context.bedwidth = f"{value}mm"
-                            self.context.signal(
-                                "bedwidth", self.context.bedwidth, self.context
-                            )
-                            changes = True
-                        elif index == 131:
-                            self.context.bedheight = f"{value}mm"
-                            self.context.signal(
-                                "bedheight", self.context.bedheight, self.context
-                            )
-                            changes = True
-                    if changes:
-                        self.context("viewport_update\n")
-                        self.context.signal("guide")
-                        self.context.signal("grid")
-                        self.context.signal("refresh_scene", "Scene")
+                changes = False
+                for resp in responses:
+                    index = -1
+                    value = None
+                    match = DOLLAR_INFO.match(resp)
+                    if match:
+                        # $xx=yy
+                        index = int(match.group(1))
+                        value = match.group(2)
+                    if index >= 0 and value is not None:
+                        self.context.controller.grbl_settings[index] = value
+                    if index == 21:
+                        flag = bool(int(value) == 1)
+                        self.context.has_endstops = flag
+                        self.context.signal("has_endstops", flag, self.context)
+                    elif index == 130:
+                        self.context.bedwidth = f"{value}mm"
+                        self.context.signal(
+                            "bedwidth", self.context.bedwidth, self.context
+                        )
+                        changes = True
+                    elif index == 131:
+                        self.context.bedheight = f"{value}mm"
+                        self.context.signal(
+                            "bedheight", self.context.bedheight, self.context
+                        )
+                        changes = True
+                if changes:
+                    self.context("viewport_update\n")
+                    self.context.signal("guide")
+                    self.context.signal("grid")
+                    self.context.signal("refresh_scene", "Scene")
                 self._requested_status = False
                 wx.MessageBox(
                     _("Successfully queried laser-data!"),
