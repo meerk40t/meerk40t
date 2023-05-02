@@ -49,6 +49,37 @@ def plugin(kernel, lifecycle=None):
             },
         )
         kernel.register(
+            "dev_info/grbl-fluidnc",
+            {
+                "provider": "provider/device/grbl",
+                "friendly_name": _("GRBL-FluidNC (FluidNC-Controller)"),
+                "extended_info": _(
+                    "Any of a variety of ESP32 based FluidNC drivers that implement GRBL as a protocol"
+                ),
+                "priority": 20,
+                "family": _("Generic"),
+                "family_priority": 20,
+                "choices": [
+                    {
+                        "attr": "label",
+                        "default": "FluidNC",
+                    },
+                    {
+                        "attr": "requires_validation",
+                        "default": False,
+                    },
+                    {
+                        "attr": "source",
+                        "default": "generic",
+                    },
+                    {
+                        "attr": "flavor",
+                        "default": "fluidnc",
+                    },
+                ],
+            },
+        )
+        kernel.register(
             "dev_info/grbl-k40",
             {
                 "provider": "provider/device/grbl",
