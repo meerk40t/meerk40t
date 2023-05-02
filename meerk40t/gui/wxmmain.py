@@ -623,6 +623,38 @@ class MeerK40t(MWindow):
                 "section": "Scene",
             },
             {
+                "attr": "button_repeat",
+                "object": self.context.root,
+                "default": 0.5,
+                "type": float,
+                "label": _("Button repeat-interval"),
+                "tip": _(
+                    "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+                    + "the movement action will be repeated. This value establishes\n"
+                    + "the interval between individual executions.\n"
+                    + "A value of 0 will disable this feature."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
+            },
+            {
+                "attr": "button_accelerate",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Accelerate repeats"),
+                "tip": _(
+                    "If you hold the button for some time, then after some repetitions\n"
+                    + "the action will increase in speed if you activate this option."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
+            },
+            {
                 "attr": "process_while_typing",
                 "object": context.root,
                 "default": False,
@@ -651,7 +683,11 @@ class MeerK40t(MWindow):
                 "type": int,
                 "label": _("Action"),
                 "style": "option",
-                "display": (_("No, thank you"), _("Look for major releases"), _("Look for major+beta releases")),
+                "display": (
+                    _("No, thank you"),
+                    _("Look for major releases"),
+                    _("Look for major+beta releases"),
+                ),
                 "choices": (0, 1, 2),
                 "tip": _("Check for available updates on startup."),
                 "page": "Options",
