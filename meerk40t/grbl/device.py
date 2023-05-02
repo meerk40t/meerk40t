@@ -400,8 +400,34 @@ class GRBLDevice(Service, ViewPort):
                 "conditional": (self, "limit_buffer"),
                 "section": "_30_Controller Buffer",
             },
+            {
+                "attr": "requires_validation",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Requires validation for device."),
+                "tip": _(
+                    "Ensure device is completely initialized before sending data. This is usually known to be valid at the 'Grbl xx.x' version message."
+                ),
+                "section": "_40_Validation",
+            },
+            {
+                "attr": "welcome",
+                "object": self,
+                "default": "Grbl",
+                "type": str,
+                "label": _("Welcome Validator"),
+                "tip": _(
+                    "If for some reason the device needs a different welcome validator than 'Grbl' (default), for example, somewhat custom grbl-like firmware"
+                ),
+                "conditional": (self, "requires_validation"),
+                "section": "_40_Validation",
+            },
         ]
-
+        # self.welcome = self.service.setting(str, "welcome", "Grbl")
+        # self._requires_validation = self.service.setting(
+        #     bool, "requires_validation", True
+        # )
         self.register_choices("grbl-connection", choices)
 
         choices = [
