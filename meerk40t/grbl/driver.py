@@ -236,7 +236,7 @@ class GRBLDriver(Parameters):
 
     def laser_on(self, power=None, speed=None, *values):
         """
-        Turn laser on in place.
+        Turn laser on in place. This is done specifically with an M3 command so that the laser is on while stationary
 
         @param speed: Speed for laser turn on.
         @param power: Power at the laser turn on.
