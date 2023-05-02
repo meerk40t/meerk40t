@@ -33,6 +33,8 @@ class BusyInfo:
         # if "parent" in kwds:
         #     self.parent = kwds["parent"]
         self.frame = None
+        self.panel = None
+        self.text = None
         self.update_keywords(kwds)
 
     def update_keywords(self, kwds):
@@ -99,8 +101,8 @@ class BusyInfo:
         self.parent = newparent
 
     def show(self):
-        if self.frame is None or self.panel is None:
-            # Shouldnt happen
+        if self.frame is None or self.panel is None or self.text is None:
+            # Shouldn't happen, `show` called before `start`
             # print (f"Strange, show called although frame was none: {self.shown}")
             return
         for win in [self.panel, self.text]:
