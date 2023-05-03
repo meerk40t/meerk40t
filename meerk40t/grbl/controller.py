@@ -690,10 +690,10 @@ class GrblController:
         elif response.startswith("[PRB:"):
             message = response[5:-1]
             self.service.signal("grbl:prb", message)
-        elif response.startwith("[VER:"):
+        elif response.startswith("[VER:"):
             message = response[5:-1]
             self.service.signal("grbl:ver", message)
-        elif response.startwith("[OPT:"):
+        elif response.startswith("[OPT:"):
             message = response[5:-1]
             codes, block_buffer_size, rx_buffer_size = message.split(",")
             self.log(f"codes: {codes}", type="event")
@@ -754,7 +754,7 @@ class GrblController:
             self.service.signal("grbl:block_buffer", int(block_buffer_size))
             self.service.signal("grbl:rx_buffer", int(rx_buffer_size))
             self.service.signal("grbl:opt", message)
-        elif response.startwith("[echo:"):
+        elif response.startswith("[echo:"):
             message = response[6:-1]
             self.service.channel("console")(message)
 
