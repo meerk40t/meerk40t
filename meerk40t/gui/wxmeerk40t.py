@@ -97,19 +97,37 @@ _ = wx.GetTranslation
 def register_panel_go(window, context):
     # Define Go
     go = wx.BitmapButton(window, wx.ID_ANY, icons8_gas_industry_50.GetBitmap())
+    button_start_was_clicked = False
 
-    def busy_go_plan(*args):
+    def busy_go_plan(event, *args):
+        global button_start_was_clicked
+        if not button_start_was_clicked:
+            channel = context.kernel.channel("console")
+            channel(
+                _(
+                    "We intentionally ignored a request to start a job via the keyboard.\n"
+                    + "You need to make your intent clear by a deliberate mouse-click"
+                )
+            )
+            return
         context.kernel.busyinfo.start(msg=_("Processing and sending..."))
         context(
             "plan clear copy preprocess validate blob preopt optimize spool\nplan clear\n"
         )
         context.kernel.busyinfo.end()
+        button_start_was_clicked = False
+
+    def mouse_down(event, *args):
+        global button_start_was_clicked
+        button_start_was_clicked = True
+        event.Skip()
 
     window.Bind(
         wx.EVT_BUTTON,
         busy_go_plan,
         go,
     )
+    go.Bind(wx.EVT_LEFT_DOWN, mouse_down)
     go.SetBackgroundColour(wx.Colour(0, 127, 0))
     go.SetToolTip(_("One Touch: Send Job To Laser "))
     go.SetSize(go.GetBestSize())

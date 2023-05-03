@@ -57,11 +57,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
+        self.button_clear_stats = wx.Button(self, wx.ID_ANY, _("Reset\nstatistics"))
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start_usb, self.button_device_connect)
+        self.Bind(wx.EVT_BUTTON, self.on_button_reset_stats, self.button_clear_stats)
         self.Bind(
             wx.EVT_BUTTON,
             self.on_button_start_controller,
@@ -149,8 +151,8 @@ class LihuiyuControllerPanel(ScrolledPanel):
         # end wxGlade
 
     def __do_layout(self):
-        sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main_vertical = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
         packet_count = StaticBoxSizer(self, wx.ID_ANY, _("Packet Info"), wx.VERTICAL)
         byte_data_status = StaticBoxSizer(
@@ -163,9 +165,9 @@ class LihuiyuControllerPanel(ScrolledPanel):
         byte1sizer = wx.BoxSizer(wx.VERTICAL)
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
         packet_info = StaticBoxSizer(self, wx.ID_ANY, _("Last Packet"), wx.HORIZONTAL)
-        sizer_25 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_21 = StaticBoxSizer(self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL)
-        sizer_22 = StaticBoxSizer(self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL)
+        sizer_statistics = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_count_rejected = StaticBoxSizer(self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL)
+        sizer_count_packets = StaticBoxSizer(self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL)
         sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
         sizer_usb_settings = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL
@@ -180,15 +182,16 @@ class LihuiyuControllerPanel(ScrolledPanel):
         )
         sizer_usb_connect.Add(self.button_device_connect, 0, wx.EXPAND, 0)
         sizer_usb_connect.Add(self.text_connection_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
+        sizer_main_vertical.Add(sizer_usb_connect, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.button_controller_control, 0, wx.EXPAND, 0)
         sizer_controller.Add(self.text_controller_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(sizer_controller, 0, wx.EXPAND, 0)
-        sizer_22.Add(self.packet_count_text, 0, wx.EXPAND, 0)
-        sizer_25.Add(sizer_22, 1, wx.EXPAND, 0)
-        sizer_21.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
-        sizer_25.Add(sizer_21, 1, wx.EXPAND, 0)
-        packet_count.Add(sizer_25, 1, wx.EXPAND, 0)
+        sizer_main_vertical.Add(sizer_controller, 0, wx.EXPAND, 0)
+        sizer_count_packets.Add(self.packet_count_text, 0, wx.EXPAND, 0)
+        sizer_statistics.Add(sizer_count_packets, 1, wx.EXPAND, 0)
+        sizer_count_rejected.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
+        sizer_statistics.Add(sizer_count_rejected, 1, wx.EXPAND, 0)
+        sizer_statistics.Add(self.button_clear_stats, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
         packet_info.Add(self.packet_text_text, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
         byte0sizer.Add(self.text_byte_0, 0, 0, 0)
@@ -217,14 +220,14 @@ class LihuiyuControllerPanel(ScrolledPanel):
         byte5sizer.Add(label_18, 0, 0, 0)
         byte_data_status.Add(byte5sizer, 1, wx.EXPAND, 0)
         packet_count.Add(byte_data_status, 0, wx.EXPAND, 0)
-        sizer_1.Add(packet_count, 0, 0, 0)
+        sizer_main_vertical.Add(packet_count, 0, 0, 0)
         label_6 = wx.StaticText(self, wx.ID_ANY, "")
         sizer_show_usb_log.Add(label_6, 10, wx.EXPAND, 0)
         sizer_show_usb_log.Add(self.checkbox_show_usb_log, 0, 0, 0)
-        sizer_1.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
-        sizer_24.Add(sizer_1, 1, 0, 0)
-        sizer_24.Add(self.text_usb_log, 2, wx.EXPAND, 0)
-        self.SetSizer(sizer_24)
+        sizer_main_vertical.Add(sizer_show_usb_log, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_main_vertical, 1, 0, 0)
+        sizer_main.Add(self.text_usb_log, 2, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
         self.Layout()
         # end wxGlade
 
@@ -244,6 +247,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
 
     def pane_hide(self):
         self.context.channel(self._channel_watching).unwatch(self.update_text)
+
+    def on_button_reset_stats(self, event):
+        self.context.packet_count = 0
+        self.context.rejected_count = 0
+        self.packet_count_text.SetValue(str(self.context.packet_count))
+        self.rejected_packet_count_text.SetValue(str(self.context.rejected_count))
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
