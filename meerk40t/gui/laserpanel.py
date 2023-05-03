@@ -222,6 +222,7 @@ class LaserPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
+        self.button_start.Bind(wx.EVT_LEFT_DOWN, self.on_start_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
@@ -240,6 +241,8 @@ class LaserPanel(wx.Panel):
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
         self.update_override_controls()
+        # Check for a real click of the execute button
+        self.button_start_was_clicked = False
 
     def update_override_controls(self):
         flag_power = False
@@ -424,7 +427,20 @@ class LaserPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def on_start_left(self, event):
+        self.button_start_was_clicked = True
+        event.Skip()
+
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
+        # We don't want this button to be executed if it has focus and
+        # the user presses the space bar or the return key.
+        # Cats can do wondrous things when they wlak over a keyboard
+        if not self.button_start_was_clicked:
+            channel = self.context.kernel.channel("console")
+            channel(_("We intentionally ignored a request to start a job via the keyboard.\n" +
+                      "You need to make your intent clear by a deliberate mouse-click"))
+            return
+
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
@@ -442,6 +458,7 @@ class LaserPanel(wx.Panel):
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
         busy.end()
+        self.button_start_was_clicked = False
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
