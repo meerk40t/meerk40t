@@ -103,8 +103,12 @@ def register_panel_go(window, context):
         global button_start_was_clicked
         if not button_start_was_clicked:
             channel = context.kernel.channel("console")
-            channel(_("We intentionally ignored a request to start a job via the keyboard.\n" +
-                      "You need to make your intent clear by a deliberate mouse-click"))
+            channel(
+                _(
+                    "We intentionally ignored a request to start a job via the keyboard.\n"
+                    + "You need to make your intent clear by a deliberate mouse-click"
+                )
+            )
             return
         context.kernel.busyinfo.start(msg=_("Processing and sending..."))
         context(
@@ -112,7 +116,6 @@ def register_panel_go(window, context):
         )
         context.kernel.busyinfo.end()
         button_start_was_clicked = False
-
 
     def mouse_down(event, *args):
         global button_start_was_clicked

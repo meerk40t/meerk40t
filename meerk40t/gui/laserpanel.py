@@ -434,11 +434,15 @@ class LaserPanel(wx.Panel):
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
         # We don't want this button to be executed if it has focus and
         # the user presses the space bar or the return key.
-        # Cats can do wondrous things when they wlak over a keyboard
+        # Cats can do wondrous things when they walk over a keyboard
         if not self.button_start_was_clicked:
             channel = self.context.kernel.channel("console")
-            channel(_("We intentionally ignored a request to start a job via the keyboard.\n" +
-                      "You need to make your intent clear by a deliberate mouse-click"))
+            channel(
+                _(
+                    "We intentionally ignored a request to start a job via the keyboard.\n"
+                    + "You need to make your intent clear by a deliberate mouse-click"
+                )
+            )
             return
 
         busy = self.context.kernel.busyinfo
