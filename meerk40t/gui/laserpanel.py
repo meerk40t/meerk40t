@@ -291,12 +291,14 @@ class LaserPanel(wx.Panel):
             self.slider_speed.Enable(False)
             if hasattr(self.context.device.driver, "has_adjustable_power"):
                 if self.context.device.driver.has_adjustable_power:
-                    self.context.device.driver.set_power_scale(1.0)
+                    if event is not None:
+                        self.context.device.driver.set_power_scale(1.0)
                     self.slider_power.SetValue(10)
                     self.on_slider_power(None)
             if hasattr(self.context.device.driver, "has_adjustable_speed"):
                 if self.context.device.driver.has_adjustable_speed:
-                    self.context.device.driver.set_speed_scale(1.0)
+                    if event is not None:
+                        self.context.device.driver.set_speed_scale(1.0)
                     self.slider_speed.SetValue(10)
                     self.on_slider_speed(None)
 
@@ -352,6 +354,11 @@ class LaserPanel(wx.Panel):
             self.combo_devices.Append(spool.label)
         self.combo_devices.SetSelection(index)
         self.set_pause_color()
+        self.update_override_controls()
+
+    @signal_listener("device;connected")
+    def on_connectivity(self, *args):
+        # There's no signal yet, but there should be one...
         self.update_override_controls()
 
     def set_pause_color(self):
