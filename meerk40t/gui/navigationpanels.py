@@ -321,11 +321,11 @@ class TimerButtons:
         if self.timer_looped == 5 and self.accelerate:
             self.timer.Stop()
             if self.interval > 0:
-                self.timer.Start(self.interval * 500)
+                self.timer.Start(int(self.interval * 500))
         elif self.timer_looped == 10 and self.accelerate:
             self.timer.Stop()
             if self.interval > 0:
-                self.timer.Start(self.interval * 250)
+                self.timer.Start(int(self.interval * 250))
 
     def stop_timer(self, action):
         self.timer.Stop()
@@ -345,7 +345,7 @@ class TimerButtons:
         self.timer_execution = None
         if self.active_button is not None:
             if self.interval > 0:
-                self.timer.Start(self.interval * 1000)
+                self.timer.Start(int(self.interval * 1000))
 
     def on_button_lost(self, event=None):
         self.stop_timer(action=False)
