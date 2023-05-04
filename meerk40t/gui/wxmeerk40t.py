@@ -27,6 +27,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from ..tools.kerftest import KerfTool
 from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
@@ -683,6 +684,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
         kernel.register("window/NodeEditToolbar", NodeEditToolbar)
+        kernel.register("window/Kerftest", KerfTool)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
