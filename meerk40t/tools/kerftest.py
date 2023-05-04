@@ -7,11 +7,11 @@ import wx
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.units import ACCEPTED_UNITS, Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective_50, icons8_hinges_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.svgelements import Color, Rect, Circle, Polyline, Point
+from meerk40t.svgelements import Color, Rect, Circle, Polyline, Matrix
 
 _ = wx.GetTranslation
 
@@ -262,62 +262,107 @@ class KerfPanel(wx.Panel):
             text_op.label = "Descriptions"
             xx = 0
             yy = 0
-            shape0 = None
-            shape1 = None
-            shape2 = None
-            if rectangular:
-                shape0 = None
-                elem0 = None
-                shape1 = Polyline(
-                    (
-                        (0.0 * pattern_size, 0.0 * pattern_size),
-                        (1.0 * pattern_size, 0.0 * pattern_size),
-                        (1.0 * pattern_size, 0.5 * pattern_size),
-                        (0.7 * pattern_size, 0.5 * pattern_size),
-                        (0.7 * pattern_size, 0.2 * pattern_size),
-                        (0.3 * pattern_size, 0.2 * pattern_size),
-                        (0.3 * pattern_size, 0.5 * pattern_size),
-                        (0.0 * pattern_size, 0.5 * pattern_size),
-                        (0.0 * pattern_size, 0.0 * pattern_size),
-                    )
-                )
-                elem1 = "elem polyline"
-                shape2 = Polyline(
-                    (
-                        (0.0 * pattern_size, 0.5 * pattern_size),
-                        (0.3 * pattern_size, 0.5 * pattern_size),
-                        (0.3 * pattern_size, 0.2 * pattern_size),
-                        (0.7 * pattern_size, 0.2 * pattern_size),
-                        (0.7 * pattern_size, 0.5 * pattern_size),
-                        (1.0 * pattern_size, 0.5 * pattern_size),
-                        (1.0 * pattern_size, 1.0 * pattern_size),
-                        (0.0 * pattern_size, 1.0 * pattern_size),
-                        (0.0 * pattern_size, 0.5 * pattern_size),
-                    )
-                )
-                elem2 = "elem polyline"
-            else:
-                shape0 = Rect(x=0, y=0, width=pattern_size, height=pattern_size)
-                elem0 = "elem rect"
-                shape1 = Circle(
-                    cx= 0.5 * pattern_size,
-                    cy = 0.5 * pattern_size,
-                    rx = 0.3 * pattern_size,
-                    ry = 0.3 * pattern_size,
-                )
-                elem1 = "elem ellipse"
-                shape2 = Circle(
-                    cx= 0.5 * pattern_size,
-                    cy = 0.5 * pattern_size,
-                    rx = 0.3 * pattern_size,
-                    ry = 0.3 * pattern_size,
-                )
-                elem2 = "elem ellipse"
             for idx in range(count - 1):
+                kerlen = Length(kerf)
+                if rectangular:
+                    shape0 = None
+                    elem0 = None
+
+                    shape1 = Polyline(
+                        (
+                            (xx + 0.0 * pattern_size, yy + 0.0 * pattern_size),
+                            (xx + 1.0 * pattern_size, yy + 0.0 * pattern_size),
+                            (xx + 1.0 * pattern_size, yy + 0.75 * pattern_size),
+                            (xx + 0.75 * pattern_size, yy + 0.75 * pattern_size),
+                            (xx + 0.75 * pattern_size, yy + 0.5 * pattern_size),
+                            (xx + 0.25 * pattern_size, yy + 0.5 * pattern_size),
+                            (xx + 0.25 * pattern_size, yy + 0.75 * pattern_size),
+                            (xx + 0.0 * pattern_size, yy + 0.75 * pattern_size),
+                            (xx + 0.0 * pattern_size, yy + 0.0 * pattern_size),
+                        )
+                    )
+                    elem1 = "elem polyline"
+                    node = element_branch.add(
+                        text=f"{shortened(kerlen.mm, 3)}mm",
+                        matrix=Matrix(
+                            f"translate({xx + 0.5 * pattern_size}, {yy + 0.25 * pattern_size})"
+                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                        ),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+
+                    shape2 = Polyline(
+                        (
+                            (xx + 0.0 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
+                            (xx + 0.25 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
+                            (xx + 0.25 * pattern_size, yy + (1.1 + 0.25) * pattern_size),
+                            (xx + 0.75 * pattern_size, yy + (1.1 + 0.25) * pattern_size),
+                            (xx + 0.75 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
+                            (xx + 1.0 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
+                            (xx + 1.0 * pattern_size, yy + (1.1 + 1.0) * pattern_size),
+                            (xx + 0.0 * pattern_size, yy + (1.1 + 1.0) * pattern_size),
+                            (xx + 0.0 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
+                        )
+                    )
+                    elem2 = "elem polyline"
+                    node = element_branch.add(
+                        text=f"{shortened(kerlen.mm, 3)}mm",
+                        matrix=Matrix(
+                            f"translate({xx + 0.5 * pattern_size}, {yy + (1.1 + 0.7) * pattern_size})"
+                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                        ),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+                else:
+                    shape0 = Rect(x=xx, y=yy, width=pattern_size, height=pattern_size)
+                    elem0 = "elem rect"
+                    shape1 = Circle(
+                        cx = xx + 0.5 * pattern_size,
+                        cy = yy + 0.5 * pattern_size,
+                        rx = 0.3 * pattern_size,
+                        ry = 0.3 * pattern_size,
+                    )
+                    elem1 = "elem ellipse"
+                    node = element_branch.add(
+                        text=f"{shortened(kerlen.mm, 3)}mm",
+                        matrix=Matrix(
+                            f"translate({xx + 0.5 * pattern_size}, {yy + 0.8 * pattern_size})"
+                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                        ),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+
+                    shape2 = Circle(
+                        cx = xx + 0.5 * pattern_size,
+                        cy = yy + (1.1 + 0.5) * pattern_size,
+                        rx = 0.3 * pattern_size,
+                        ry = 0.3 * pattern_size,
+                    )
+                    elem2 = "elem ellipse"
+                    node = element_branch.add(
+                        text=f"{shortened(kerlen.mm, 3)}mm",
+                        matrix=Matrix(
+                            f"translate({xx + 0.5 * pattern_size}, {yy + (1.1 + 0.4) * pattern_size})"
+                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                        ),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+
                 op_col1 = make_color(idx, count, "r")
                 op_col2 = make_color(idx, count, "g")
 
-                kerlen = Length(kerf)
                 op1 = CutOpNode(label=f"Inner {shortened(kerlen.mm, 3)}mm")
                 op1.color = op_col1
                 op1.speed = op_speed
@@ -328,15 +373,11 @@ class KerfPanel(wx.Panel):
                     node = element_branch.add(shape=shape0, type=elem0)
                     node.stroke = op_col1
                     node.stroke_width = 500
-                    node.matrix.post_translate(xx, yy)
-                    node.modified()
                     op1.add_reference(node, 0)
                 if shape1 is not None:
                     node = element_branch.add(shape=shape1, type=elem1)
                     node.stroke = op_col1
                     node.stroke_width = 500
-                    node.matrix.post_translate(xx, yy)
-                    node.modified()
                     op1.add_reference(node, 0)
 
                 op2 = CutOpNode(label=f"Outer {shortened(kerlen.mm, 3)}mm")
@@ -349,13 +390,21 @@ class KerfPanel(wx.Panel):
                     node = element_branch.add(shape=shape2, type=elem2)
                     node.stroke = op_col2
                     node.stroke_width = 500
-                    node.matrix.post_translate(xx, yy + pattern_size + gap_size)
-                    node.modified()
                     op2.add_reference(node, 0)
 
                 kerf += delta
                 xx += pattern_size
                 xx += gap_size
+            node = element_branch.add(
+                text=f"Kerf-Test (speed={op_speed}mm/s, power={op_power/10.0:.0f}%)",
+                matrix=Matrix(
+                    f"translate({0}, {2.2 * pattern_size})"
+                    + f" scale({UNITS_PER_PIXEL})"
+                ),
+                fill=Color("black"),
+                type="elem text",
+            )
+            text_op.add_reference(node, 0)
 
         try:
             minv = float(Length(self.text_min.GetValue()))
