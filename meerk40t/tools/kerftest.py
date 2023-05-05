@@ -7,11 +7,11 @@ import wx
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.units import Length, UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective_50, icons8_hinges_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.svgelements import Color, Rect, Circle, Polyline, Matrix
+from meerk40t.svgelements import Circle, Color, Matrix, Polyline, Rect
 
 _ = wx.GetTranslation
 
@@ -261,8 +261,6 @@ class KerfPanel(wx.Panel):
                         result = result[:-1]
                 return result
 
-            display_labels = True
-            display_values = True
             kerf = minv
             if count < 2:
                 delta = maxv - minv
@@ -327,8 +325,14 @@ class KerfPanel(wx.Panel):
                         (
                             (xx + 0.0 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
                             (xx + 0.25 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
-                            (xx + 0.25 * pattern_size, yy + (1.1 + 0.25) * pattern_size),
-                            (xx + 0.75 * pattern_size, yy + (1.1 + 0.25) * pattern_size),
+                            (
+                                xx + 0.25 * pattern_size,
+                                yy + (1.1 + 0.25) * pattern_size,
+                            ),
+                            (
+                                xx + 0.75 * pattern_size,
+                                yy + (1.1 + 0.25) * pattern_size,
+                            ),
                             (xx + 0.75 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
                             (xx + 1.0 * pattern_size, yy + (1.1 + 0.5) * pattern_size),
                             (xx + 1.0 * pattern_size, yy + (1.1 + 1.0) * pattern_size),
@@ -365,10 +369,10 @@ class KerfPanel(wx.Panel):
                     outer_op.add_reference(node, 0)
 
                     shape1 = Circle(
-                        cx = xx + 0.5 * pattern_size,
-                        cy = yy + 0.5 * pattern_size,
-                        rx = 0.3 * pattern_size,
-                        ry = 0.3 * pattern_size,
+                        cx=xx + 0.5 * pattern_size,
+                        cy=yy + 0.5 * pattern_size,
+                        rx=0.3 * pattern_size,
+                        ry=0.3 * pattern_size,
                     )
                     elem1 = "elem ellipse"
                     node = element_branch.add(shape=shape1, type=elem1)
@@ -389,10 +393,10 @@ class KerfPanel(wx.Panel):
                     text_op.add_reference(node, 0)
 
                     shape2 = Circle(
-                        cx = xx + 0.5 * pattern_size,
-                        cy = yy + (1.1 + 0.5) * pattern_size,
-                        rx = 0.3 * pattern_size,
-                        ry = 0.3 * pattern_size,
+                        cx=xx + 0.5 * pattern_size,
+                        cy=yy + (1.1 + 0.5) * pattern_size,
+                        rx=0.3 * pattern_size,
+                        ry=0.3 * pattern_size,
                     )
                     elem2 = "elem ellipse"
                     node = element_branch.add(shape=shape2, type=elem2)
@@ -437,7 +441,7 @@ class KerfPanel(wx.Panel):
                 count = 1
                 maxv = minv
             pattern_size = float(Length(self.text_dim.GetValue()))
-            rectangular =  bool(self.radio_pattern.GetSelection() == 0)
+            rectangular = bool(self.radio_pattern.GetSelection() == 0)
         except ValueError:
             return
 
@@ -471,10 +475,8 @@ class KerfPanel(wx.Panel):
 
 class KerfTool(MWindow):
     """
-    LivingHingeTool is the wrapper class to setup the
-    required calls to open the HingePanel window
-    In addition it listens to element selection and passes this
-    information to HingePanel
+    KerfTool is the wrapper class to setup the
+    required calls to open the KerfPanel window
     """
 
     def __init__(self, *args, **kwds):
