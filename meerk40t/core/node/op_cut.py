@@ -5,7 +5,7 @@ from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -20,6 +20,7 @@ class CutOpNode(Node, Parameters):
         Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+        self.kerf = 0
 
         if len(args) == 1:
             obj = args[0]
@@ -84,6 +85,7 @@ class CutOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
+        default_map["kerf"] = f"{Length(self.kerf, digits=2, preferred_units='mm').preferred_length}" if self.kerf != 0 else ""
         ct = 0
         t = ""
         s = ""
@@ -274,6 +276,8 @@ class CutOpNode(Node, Parameters):
             except ValueError:
                 pass
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        if self.kerf is None:
+            self.kerf = 0
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
@@ -315,4 +319,5 @@ class CutOpNode(Node, Parameters):
                 passes=passes,
                 original_op=self.type,
                 color=stroke,
+                kerf=self.kerf,
             )

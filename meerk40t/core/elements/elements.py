@@ -43,6 +43,7 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
+            offset,
         )
 
         return [
@@ -60,6 +61,7 @@ def plugin(kernel, lifecycle=None):
             render.plugin,
             notes.plugin,
             placements.plugin,
+            offset.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
