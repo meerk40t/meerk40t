@@ -5,8 +5,8 @@ import threading
 
 
 def greet():
-    yield "Grbl 1.1f ['$' for help]\r"
-    yield "[MSG:’$H’|’$X’ to unlock]"
+    yield "Grbl 1.1f ['$' for help]\r\n"
+    yield "[MSG:’$H’|’$X’ to unlock]\r\n"
 
 
 class GRBLControl:
@@ -20,15 +20,16 @@ class GRBLControl:
 
     def thread_execute(self):
         while not self._shutdown:
-            while self._queue:
+            if self._queue:
                 q = self._queue.pop(0)
                 self.emulator.write(q)
-            with self._lock:
-                self._lock.wait()
+            else:
+                with self._lock:
+                    self._lock.wait()
 
     def add_queue(self, data):
-        self._queue.append(data)
         with self._lock:
+            self._queue.append(data)
             self._lock.notify()
 
     def start(self, port=23, verbose=False):

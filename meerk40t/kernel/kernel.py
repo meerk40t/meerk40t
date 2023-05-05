@@ -24,7 +24,6 @@ from .lifecycles import *
 from .module import Module
 from .service import Service
 from .settings import Settings
-from .states import *
 
 KERNEL_VERSION = "0.0.10"
 
@@ -133,7 +132,7 @@ class Kernel(Settings):
         self.scheduler_handles_main_thread_jobs = True
         self.scheduler_handles_default_thread_jobs = True
 
-        self.state = STATE_INITIALIZE
+        self.state = "init"
 
         # Scheduler
         self.jobs = {}
@@ -1225,7 +1224,7 @@ class Kernel(Settings):
         @return:
         """
         channel = self.channel("shutdown")
-        self.state = STATE_END  # Terminates the Scheduler.
+        self.state = "end"  # Terminates the Scheduler.
 
         _ = self.translation
 
@@ -1368,7 +1367,7 @@ class Kernel(Settings):
             self.scheduler_thread.join()
         if channel:
             channel(_("Shutdown."))
-        self._state = STATE_TERMINATE
+        self._state = "terminate"
 
     # ==========
     # REGISTRATION
@@ -1731,23 +1730,23 @@ class Kernel(Settings):
 
     def get_text_thread_state(self, state: int) -> str:
         _ = self.translation
-        if state == STATE_INITIALIZE:
+        if state == "init":
             return _("Unstarted")
-        elif state == STATE_TERMINATE:
+        elif state == "terminate":
             return _("Abort")
-        elif state == STATE_END:
+        elif state == "end":
             return _("Finished")
-        elif state == STATE_PAUSE:
+        elif state == "pause":
             return _("Pause")
-        elif state == STATE_BUSY:
+        elif state == "busy":
             return _("Busy")
-        elif state == STATE_WAIT:
+        elif state == "wait":
             return _("Waiting")
-        elif state == STATE_ACTIVE:
+        elif state == "active":
             return _("Active")
-        elif state == STATE_IDLE:
+        elif state == "idle":
             return _("Idle")
-        elif state == STATE_UNKNOWN:
+        elif state == "unknown":
             return _("Unknown")
 
     # ==========
@@ -1809,19 +1808,19 @@ class Kernel(Settings):
         Check each job, and if that job is scheduled to run. Executes that job.
         @return:
         """
-        self.state = STATE_ACTIVE
-        while self.state != STATE_END:
+        self.state = "active"
+        while self.state != "end":
             time.sleep(0.005)  # 200 ticks a second.
-            while self.state == STATE_PAUSE:
+            while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)
-            if self.state == STATE_TERMINATE:
+            if self.state == "terminate":
                 break
             self.schedule_run(
                 self.scheduler_handles_default_thread_jobs,
                 self.scheduler_handles_main_thread_jobs,
             )
-        self.state = STATE_END
+        self.state = "end"
 
     def schedule(self, job: "Job") -> "Job":
         try:
@@ -2302,6 +2301,7 @@ class Kernel(Settings):
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
                 "page": "Options",
+                "hidden": True,
             },
         ]
         self.register_choices("preferences", choices)

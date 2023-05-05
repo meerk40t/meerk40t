@@ -3,7 +3,7 @@ GRBL Device Plugin
 
 Registers the required files to run the GRBL device.
 """
-from meerk40t.grbl.control import GRBLControl
+from meerk40t.grbl.control import GRBLControl, greet
 from meerk40t.grbl.device import GRBLDevice, GRBLDriver
 from meerk40t.grbl.emulator import GRBLEmulator
 from meerk40t.grbl.gcodejob import GcodeJob
@@ -158,6 +158,43 @@ def plugin(kernel, lifecycle=None):
             if quit:
                 grblcontrol.quit()
                 root.device.unregister("grblcontrol")
+
+        @kernel.console_option(
+            "port", "p", type=int, default=23, help=_("port to listen on.")
+        )
+        @kernel.console_command(
+            "grblmock", help=_("starts a grblmock server on port 23 (telnet)")
+        )
+        def server_console(command, channel, _, port=23, **kwargs):
+            root = kernel.root
+
+            try:
+                root.open_as("module/TCPServer", "grblmock", port=port)
+                tcp_recv_channel = root.channel("grblmock/recv", pure=True)
+                tcp_send_channel = root.channel("grblmock/send", pure=True)
+                tcp_send_channel.greet = greet
+
+                def everything_ok(line):
+                    for c in line:
+                        if c == ord("\n") or c == ord("\r"):
+                            tcp_send_channel("ok\r\n")
+                        if c == ord("?"):
+                            x = 0
+                            y = 0
+                            z = 0
+                            f = 0
+                            s = 0
+                            status = (
+                                f"<Idle|MPos:{x:.3f},{y:.3f},{z:.3f}|FS:{f},{s}>\r\n"
+                            )
+                            tcp_send_channel(status)
+
+                tcp_send_channel.watch(print)
+                tcp_recv_channel.watch(print)
+                tcp_recv_channel.watch(everything_ok)
+            except (OSError, ValueError):
+                channel(_("Server failed on port: {port}").format(port=port))
+            return
 
     elif lifecycle == "preboot":
         suffix = "grbl"

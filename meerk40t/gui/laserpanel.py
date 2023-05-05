@@ -49,15 +49,15 @@ def register_panel_laser(window, context):
         aui.AuiPaneInfo()
         .Left()
         .MinSize(200, 180)
-        .FloatingSize(230, 300)
-        .MaxSize(500, 300)
+        .BestSize(300, 270)
+        .FloatingSize(300, 270)
         .Caption(_("Laser-Control"))
         .CaptionVisible(not context.pane_lock)
         .Name("laser")
     )
     pane.submenu = "_10_" + _("Laser")
     pane.control = notebook
-    pane.dock_proportion = 150
+    pane.dock_proportion = 270
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(plan_panel, _("Plan"))
     notebook.AddPage(optimize_panel, _("Optimize"))
@@ -222,6 +222,7 @@ class LaserPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
+        self.button_start.Bind(wx.EVT_LEFT_DOWN, self.on_start_left)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_TOGGLEBUTTON, self.on_check_arm, self.arm_toggle)
@@ -240,6 +241,8 @@ class LaserPanel(wx.Panel):
         self.checkbox_adjust.SetValue(False)
         self.on_check_adjust(None)
         self.update_override_controls()
+        # Check for a real click of the execute button
+        self.button_start_was_clicked = False
 
     def update_override_controls(self):
         flag_power = False
@@ -291,12 +294,14 @@ class LaserPanel(wx.Panel):
             self.slider_speed.Enable(False)
             if hasattr(self.context.device.driver, "has_adjustable_power"):
                 if self.context.device.driver.has_adjustable_power:
-                    self.context.device.driver.power_scale = 1.0
+                    if event is not None:
+                        self.context.device.driver.set_power_scale(1.0)
                     self.slider_power.SetValue(10)
                     self.on_slider_power(None)
             if hasattr(self.context.device.driver, "has_adjustable_speed"):
                 if self.context.device.driver.has_adjustable_speed:
-                    self.context.device.driver.speed_scale = 1.0
+                    if event is not None:
+                        self.context.device.driver.set_speed_scale(1.0)
                     self.slider_speed.SetValue(10)
                     self.on_slider_speed(None)
 
@@ -352,6 +357,11 @@ class LaserPanel(wx.Panel):
             self.combo_devices.Append(spool.label)
         self.combo_devices.SetSelection(index)
         self.set_pause_color()
+        self.update_override_controls()
+
+    @signal_listener("device;connected")
+    def on_connectivity(self, *args):
+        # There's no signal yet, but there should be one...
         self.update_override_controls()
 
     def set_pause_color(self):
@@ -417,7 +427,26 @@ class LaserPanel(wx.Panel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+    def on_start_left(self, event):
+        self.button_start_was_clicked = True
+        event.Skip()
+
     def on_button_start(self, event):  # wxGlade: LaserPanel.<event_handler>
+        # We don't want this button to be executed if it has focus and
+        # the user presses the space bar or the return key.
+        # Cats can do wondrous things when they walk over a keyboard
+        if not self.button_start_was_clicked:
+            channel = self.context.kernel.channel("console")
+            channel(
+                _(
+                    "We intentionally ignored a request to start a job via the keyboard.\n"
+                    + "You need to make your intent clear by a deliberate mouse-click"
+                )
+            )
+            return
+
+        busy = self.context.kernel.busyinfo
+        busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
@@ -432,6 +461,8 @@ class LaserPanel(wx.Panel):
         self.check_laser_arm()
         if self.context.auto_spooler:
             self.context("window open JobSpooler\n")
+        busy.end()
+        self.button_start_was_clicked = False
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")

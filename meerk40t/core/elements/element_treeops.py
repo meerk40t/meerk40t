@@ -423,7 +423,10 @@ def init_tree(kernel):
             self.signal("element_property_reload", data)
 
     def radio_match(node, dpi=100, **kwargs):
-        return node.dpi == dpi
+        try:
+            return round(node.dpi, 0) == round(dpi, 0)
+        except ValueError:
+            return False
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
@@ -489,8 +492,15 @@ def init_tree(kernel):
 
     @tree_submenu(_("Layout"))
     @tree_prompt("dx", _("Distance between placements?"))
-    @tree_prompt("nx", _("How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"))
-    @tree_operation(_("Create placements horizontally"), node_type="place point", help="")
+    @tree_prompt(
+        "nx",
+        _(
+            "How many additional placements on the X-Axis?\n(0 = as many as fit on the bed)"
+        ),
+    )
+    @tree_operation(
+        _("Create placements horizontally"), node_type="place point", help=""
+    )
     def copies_horizontally(node, dx, nx, pos=None, **kwargs):
         #
         if dx is None or dx == "":
@@ -549,7 +559,12 @@ def init_tree(kernel):
 
     @tree_submenu(_("Layout"))
     @tree_prompt("dy", _("Distance between placements?"))
-    @tree_prompt("ny", _("How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"))
+    @tree_prompt(
+        "ny",
+        _(
+            "How many additional placements on the Y-Axis?\n(0 = as many as fit on the bed)"
+        ),
+    )
     @tree_operation(_("Create placements vertically"), node_type="place point", help="")
     def copies_vertically(node, dy, ny, pos=None, **kwargs):
         #
@@ -2318,7 +2333,9 @@ def init_tree(kernel):
         "angle",
         (
             180,
+            150,
             135,
+            120,
             90,
             60,
             45,

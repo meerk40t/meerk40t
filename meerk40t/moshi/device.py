@@ -6,7 +6,7 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
+from meerk40t.kernel import Service
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -323,7 +323,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Start output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel("Moshi Channel Started.")
 
@@ -332,7 +332,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Pause output sending.
             """
-            self.controller.update_state(STATE_PAUSE)
+            self.controller.update_state("pause")
             self.controller.pause()
             channel(_("Moshi Channel Paused."))
             self.signal("pause")
@@ -342,7 +342,7 @@ class MoshiDevice(Service, ViewPort):
             """
             Resume output sending.
             """
-            self.controller.update_state(STATE_ACTIVE)
+            self.controller.update_state("active")
             self.controller.start()
             channel(_("Moshi Channel Resumed."))
             self.signal("pause")

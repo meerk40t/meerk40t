@@ -7,38 +7,158 @@ Tasked with sending data to the different connection.
 import threading
 import time
 
-from .mock_connection import MockConnection
-from .serial_connection import SerialConnection
+from meerk40t.kernel import signal_listener
+
+
+def grbl_error_code(code):
+    long = ""
+    short = f"Error #{code}"
+    if code == 1:
+        long = "GCode Command letter was not found."
+    elif code == 2:
+        long = "GCode Command value invalid or missing."
+    elif code == 3:
+        long = "Grbl '$' not recognized or supported."
+    elif code == 4:
+        long = "Negative value for an expected positive value."
+    elif code == 5:
+        long = "Homing fail. Homing not enabled in settings."
+    elif code == 6:
+        long = "Min step pulse must be greater than 3usec."
+    elif code == 7:
+        long = "EEPROM read failed. Default values used."
+    elif code == 8:
+        long = "Grbl '$' command Only valid when Idle."
+    elif code == 9:
+        long = "GCode commands invalid in alarm or jog state."
+    elif code == 10:
+        long = "Soft limits require homing to be enabled."
+    elif code == 11:
+        long = "Max characters per line exceeded. Ignored."
+    elif code == 12:
+        long = "Grbl '$' setting exceeds the maximum step rate."
+    elif code == 13:
+        long = "Safety door opened and door state initiated."
+    elif code == 14:
+        long = "Build info or start-up line > EEPROM line length"
+    elif code == 15:
+        long = "Jog target exceeds machine travel, ignored."
+    elif code == 16:
+        long = "Jog Cmd missing '=' or has prohibited GCode."
+    elif code == 17:
+        long = "Laser mode requires PWM output."
+    elif code == 20:
+        long = "Unsupported or invalid GCode command."
+    elif code == 21:
+        long = "> 1 GCode command in a modal group in block."
+    elif code == 22:
+        long = "Feed rate has not yet been set or is undefined."
+    elif code == 23:
+        long = "GCode command requires an integer value."
+    elif code == 24:
+        long = "> 1 GCode command using axis words found."
+    elif code == 25:
+        long = "Repeated GCode word found in block."
+    elif code == 26:
+        long = "No axis words found in command block."
+    elif code == 27:
+        long = "Line number value is invalid."
+    elif code == 28:
+        long = "GCode Cmd missing a required value word."
+    elif code == 29:
+        long = "G59.x WCS are not supported."
+    elif code == 30:
+        long = "G53 only valid with G0 and G1 motion modes."
+    elif code == 31:
+        long = "Unneeded Axis words found in block."
+    elif code == 32:
+        long = "G2/G3 arcs need >= 1 in-plane axis word."
+    elif code == 33:
+        long = "Motion command target is invalid."
+    elif code == 34:
+        long = "Arc radius value is invalid."
+    elif code == 35:
+        long = "G2/G3 arcs need >= 1 in-plane offset word."
+    elif code == 36:
+        long = "Unused value words found in block."
+    elif code == 37:
+        long = "G43.1 offset not assigned to tool length axis."
+    elif code == 38:
+        long = "Tool number greater than max value."
+    else:
+        long = f"Unrecodgnised error code #{code}"
+    return short, long
+
+
+def grbl_alarm_message(code):
+    if code == 1:
+        short = "Hard limit"
+        long = (
+            "Hard limit has been triggered."
+            + " Machine position is likely lost due to sudden halt."
+            + " Re-homing is highly recommended."
+        )
+    elif code == 2:
+        short = "Soft limit"
+        long = (
+            "Soft limit alarm. G-code motion target exceeds machine travel."
+            + " Machine position retained. Alarm may be safely unlocked."
+        )
+    elif code == 3:
+        short = "Abort during cycle"
+        long = (
+            "Reset while in motion. Machine position is likely lost due to sudden halt."
+            + " Re-homing is highly recommended. May be due to issuing g-code"
+            + " commands that exceed the limit of the machine."
+        )
+    elif code == 4:
+        short = "Probe fail"
+        long = (
+            "Probe fail. Probe is not in the expected initial state before"
+            + " starting probe cycle when G38.2 and G38.3 is not triggered"
+            + " and G38.4 and G38.5 is triggered."
+        )
+    elif code == 5:
+        short = "Probe fail"
+        long = (
+            "Probe fail. Probe did not contact the workpiece within the programmed"
+            + " travel for G38.2 and G38.4."
+        )
+    elif code == 6:
+        short = "Homing fail"
+        long = "Homing fail. The active homing cycle was reset."
+    elif code == 7:
+        short = "Homing fail"
+        long = "Homing fail. Safety door was opened during homing cycle."
+    elif code == 8:
+        short = "Homing fail"
+        long = (
+            "Homing fail. Pull off travel failed to clear limit switch."
+            + " Try increasing pull-off setting or check wiring."
+        )
+    elif code == 9:
+        short = "Homing fail"
+        long = (
+            "Homing fail. Could not find limit switch within search distances."
+            + " Try increasing max travel, decreasing pull-off distance,"
+            + " or check wiring."
+        )
+    else:
+        short = f"Alarm #{code}"
+        long = "Unknow alarm status"
+    long += "\nTry to clear the alarm status."
+    return short, long
 
 
 class GrblController:
     def __init__(self, context):
         self.service = context
-        self.serial_port = self.service.serial_port
-        self.baud_rate = self.service.baud_rate
 
-        self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel(f"send-{self.serial_port.lower()}", pure=True)
-        self.recv = self.service.channel(f"recv-{self.serial_port.lower()}", pure=True)
-        if not self.service.mock:
-            self.connection = SerialConnection(self.service)
-        else:
-            self.connection = MockConnection(self.service)
+        self.connection = None
+        self._connection_validated = False
+        self.update_connection()
+
         self.driver = self.service.driver
-        self.sending_thread = None
-
-        self._lock = threading.Condition()
-        self._sending_queue = []
-        self._realtime_queue = []
-        # buffer for feedback...
-        self._assembled_response = []
-
-        self.commands_in_device_buffer = []
-        self.buffered_characters = 0
-        self.device_buffer_size = self.service.planning_buffer_size
-        self.old_x = 0
-        self.old_y = 0
-        self._buffer_fail = 0
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -76,337 +196,34 @@ class GrblController:
             132: 200.000,  # Z-axis max travel mm.
         }
 
-    def open(self):
-        """
-        Opens the connection calling connection.connect.
+        # Sending variables.
+        self._sending_thread = None
+        self._recving_thread = None
 
-        Reads the first line this should be GRBL version and information.
-        @return:
-        """
-        if self.connection.connected:
-            return
-        self.connection.connect()
-        if not self.connection.connected:
-            self.channel("Could not connect.")
-            return
-        self.channel("Connecting to GRBL...")
-        t = time.time()
-        while True:
-            response = self.connection.read()
-            if not response:
-                if (time.time() - t) > 5.0:
-                    # 5 second timeout.
-                    return
-                continue
-            self.channel(response)
-            self.recv(response)
-            if "grbl" in response.lower():
-                self.channel("GRBL Connection Established.")
-                return
-            if "marlin" in response.lower():
-                self.channel("Marlin Connection Established.")
-                return
+        self._forward_lock = threading.Lock()
+        self._sending_lock = threading.Lock()
+        self._realtime_lock = threading.Lock()
+        self._loop_cond = threading.Condition()
+        self._sending_queue = []
+        self._realtime_queue = []
+        # buffer for feedback...
+        self._assembled_response = []
+        self._forward_buffer = bytearray()
+        self._device_buffer_size = self.service.planning_buffer_size
+        self._log = None
 
-    def close(self):
-        """
-        Close the GRBL connection.
+        self._paused = False
+        self._watchers = []
 
-        @return:
-        """
-        if self.connection.connected:
-            self.connection.disconnect()
+    def __repr__(self):
+        return f"GRBLController('{self.service.location()}')"
 
-    def write(self, data):
-        """
-        Write data to the sending queue.
-
-        @param data:
-        @return:
-        """
-        self.start()
-        self.service.signal("serial;write", data)
-        with self._lock:
-            self._sending_queue.append(data)
-            self.service.signal(
-                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
-            )
-            self._lock.notify()
-
-    def realtime(self, data):
-        """
-        Write data to the realtime queue.
-
-        The realtime queue should preemt the regular dataqueue.
-
-        @param data:
-        @return:
-        """
-        self.start()
-        self.service.signal("serial;write", data)
-        with self._lock:
-            self._realtime_queue.append(data)
-            if "\x18" in data:
-                self._sending_queue.clear()
-            self.service.signal(
-                "serial;buffer", len(self._sending_queue) + len(self._realtime_queue)
-            )
-            self._lock.notify()
-
-    def start(self):
-        """
-        Starts the driver thread.
-
-        @return:
-        """
-        self.open()
-        if self.sending_thread is None:
-            self.sending_thread = self.service.threaded(
-                self._sending,
-                thread_name=f"sender-{self.serial_port.lower()}",
-                result=self.stop,
-                daemon=True,
-            )
-
-    def stop(self, *args):
-        """
-        Processes the stopping of the sending queue.
-
-        @param args:
-        @return:
-        """
-        self.sending_thread = None
-        self.close()
-
-    def grbl_error_code(self, code):
-        long = ""
-        short = f"Error #{code}"
-        if code == 1:
-            long = "GCode Command letter was not found."
-        elif code == 2:
-            long = "GCode Command value invalid or missing."
-        elif code == 3:
-            long = "Grbl '$' not recognized or supported."
-        elif code == 4:
-            long = "Negative value for an expected positive value."
-        elif code == 5:
-            long = "Homing fail. Homing not enabled in settings."
-        elif code == 6:
-            long = "Min step pulse must be greater than 3usec."
-        elif code == 7:
-            long = "EEPROM read failed. Default values used."
-        elif code == 8:
-            long = "Grbl '$' command Only valid when Idle."
-        elif code == 9:
-            long = "GCode commands invalid in alarm or jog state."
-        elif code == 10:
-            long = "Soft limits require homing to be enabled."
-        elif code == 11:
-            long = "Max characters per line exceeded. Ignored."
-        elif code == 12:
-            long = "Grbl '$' setting exceeds the maximum step rate."
-        elif code == 13:
-            long = "Safety door opened and door state initiated."
-        elif code == 14:
-            long = "Build info or start-up line > EEPROM line length"
-        elif code == 15:
-            long = "Jog target exceeds machine travel, ignored."
-        elif code == 16:
-            long = "Jog Cmd missing '=' or has prohibited GCode."
-        elif code == 17:
-            long = "Laser mode requires PWM output."
-        elif code == 20:
-            long = "Unsupported or invalid GCode command."
-        elif code == 21:
-            long = "> 1 GCode command in a modal group in block."
-        elif code == 22:
-            long = "Feed rate has not yet been set or is undefined."
-        elif code == 23:
-            long = "GCode command requires an integer value."
-        elif code == 24:
-            long = "> 1 GCode command using axis words found."
-        elif code == 25:
-            long = "Repeated GCode word found in block."
-        elif code == 26:
-            long = "No axis words found in command block."
-        elif code == 27:
-            long = "Line number value is invalid."
-        elif code == 28:
-            long = "GCode Cmd missing a required value word."
-        elif code == 29:
-            long = "G59.x WCS are not supported."
-        elif code == 30:
-            long = "G53 only valid with G0 and G1 motion modes."
-        elif code == 31:
-            long = "Unneeded Axis words found in block."
-        elif code == 32:
-            long = "G2/G3 arcs need >= 1 in-plane axis word."
-        elif code == 33:
-            long = "Motion command target is invalid."
-        elif code == 34:
-            long = "Arc radius value is invalid."
-        elif code == 35:
-            long = "G2/G3 arcs need >= 1 in-plane offset word."
-        elif code == 36:
-            long = "Unused value words found in block."
-        elif code == 37:
-            long = "G43.1 offset not assigned to tool length axis."
-        elif code == 38:
-            long = "Tool number greater than max value."
-        else:
-            long = f"Unrecodgnised error code #{code}"
-        return short, long
-
-    def grbl_alarm_message(self, code):
-        if code == 1:
-            short = "Hard limit"
-            long = (
-                "Hard limit has been triggered."
-                + " Machine position is likely lost due to sudden halt."
-                + " Re-homing is highly recommended."
-            )
-        elif code == 2:
-            short = "Soft limit"
-            long = (
-                "Soft limit alarm. G-code motion target exceeds machine travel."
-                + " Machine position retained. Alarm may be safely unlocked."
-            )
-        elif code == 3:
-            short = "Abort during cycle"
-            long = (
-                "Reset while in motion. Machine position is likely lost due to sudden halt."
-                + " Re-homing is highly recommended. May be due to issuing g-code"
-                + " commands that exceed the limit of the machine."
-            )
-        elif code == 4:
-            short = "Probe fail"
-            long = (
-                "Probe fail. Probe is not in the expected initial state before"
-                + " starting probe cycle when G38.2 and G38.3 is not triggered"
-                + " and G38.4 and G38.5 is triggered."
-            )
-        elif code == 5:
-            short = "Probe fail"
-            long = (
-                "Probe fail. Probe did not contact the workpiece within the programmed"
-                + " travel for G38.2 and G38.4."
-            )
-        elif code == 6:
-            short = "Homing fail"
-            long = "Homing fail. The active homing cycle was reset."
-        elif code == 7:
-            short = "Homing fail"
-            long = "Homing fail. Safety door was opened during homing cycle."
-        elif code == 8:
-            short = "Homing fail"
-            long = (
-                "Homing fail. Pull off travel failed to clear limit switch."
-                + " Try increasing pull-off setting or check wiring."
-            )
-        elif code == 9:
-            short = "Homing fail"
-            long = (
-                "Homing fail. Could not find limit switch within search distances."
-                + " Try increasing max travel, decreasing pull-off distance,"
-                + " or check wiring."
-            )
-        else:
-            short = f"Alarm #{code}"
-            long = "Unknow alarm status"
-        long += "\nTry to clear the alarm status."
-        return short, long
-
-    def _recv_response(self):
-        """
-        Read and process response from grbl.
-
-        @return:
-        """
-        # reading responses.
-        response = None
-        while not response:
-            response = self.connection.read()
-        self.service.signal("serial;response", response)
-        # print(f"Response: '{response}'")
-        if response == "ok":
-            try:
-                cmd_issued = self.commands_in_device_buffer.pop(0)
-                self.buffered_characters -= len(cmd_issued)
-                if cmd_issued[-1] == "\r":
-                    cmd_issued = cmd_issued[:-1]
-            except IndexError:
-                self.channel(f"Response: {response}, but this was unexpected")
-                self._assembled_response = []
-                raise ConnectionAbortedError
-            self.channel(f"Response: {response}")
-            self.recv(
-                f"{response} / {self.buffered_characters} / {len(self.commands_in_device_buffer)} -- {cmd_issued}"
-            )
-            self.service.signal("grbl;response", cmd_issued, self._assembled_response)
-            self._assembled_response = []
-            return True
-        elif response.startswith("echo:"):
-            self.service.channel("console")(response[5:])
-        elif response.startswith("ALARM"):
-            try:
-                error_num = int(response[6:])
-            except ValueError:
-                error_num = -1
-            short, long = self.grbl_alarm_message(error_num)
-            self.service.signal(
-                "warning", f"GRBL: Alarm #{error_num} {short}\n{long}", response, 4
-            )
-            self.recv(f"Alarm #{error_num} {short}\n{long}")
-            self.channel(f"Alarm #{error_num} {short}\n{long}")
-            self._assembled_response = []
-        elif response.startswith("error"):
-            try:
-                error_num = int(response[6:])
-            except ValueError:
-                error_num = -1
-            short, long = self.grbl_error_code(error_num)
-            self.service.signal("grbl;error", f"GRBL: {short}\n{long}", response, 4)
-            self.recv(f"ERROR #{error_num} {short}\n{long}")
-            self.channel(f"ERROR #{error_num} {short}\n{long}")
-            self._assembled_response = []
-        else:
-            self.recv(f"{response}")
-            self.channel(f"Data: {response}")
-            self._assembled_response.append(response)
-
-    def _sending_realtime(self):
-        """
-        Send one line of realtime queue.
-
-        @return:
-        """
-        line = None
-        with self._lock:
-            line = self._realtime_queue.pop(0)
-        if line is not None:
-            self.connection.write(line)
-            self.send(line)
-        # else:
-        #     print ("Was empty in sending_realtime")
-
-    def _sending_single_line(self):
-        """
-        Send one line of sending queue.
-
-        @return:
-        """
-        with self._lock:
-            line = self._sending_queue.pop(0)
-            if line is not None:
-                self.commands_in_device_buffer.append(line)
-            #     print (f"Appended '{line[:10]}...', len={len(self.commands_in_device_buffer)}")
-            # else:
-            #     print ("Was empty in sending_single_line")
-
-        self.connection.write(line)
-        self.send(line)
-        self.buffered_characters += len(line)
-        self.service.signal("serial;buffer", len(self._sending_queue))
-        return True
+    def __len__(self):
+        return (
+            len(self._sending_queue)
+            + len(self._realtime_queue)
+            + len(self._forward_buffer)
+        )
 
     @property
     def _length_of_next_line(self):
@@ -418,77 +235,384 @@ class GrblController:
             return 0
         return len(self._sending_queue[0])
 
-    def _sending_buffered(self):
-        """
-        Buffered connection sends as much data as fits in the planning buffer. Then it waits
-        and for each ok, it reduces the expected size of the plannning buffer and sends the next
-        line of data, only when there's enough room to hold that data.
+    @property
+    def _index_of_forward_line(self):
+        try:
+            r = self._forward_buffer.index(b"\r")
+        except ValueError:
+            r = -1
+        try:
+            n = self._forward_buffer.index(b"\n")
+        except ValueError:
+            n = -1
 
-        @return:
-        """
-        while self._realtime_queue:
-            self._sending_realtime()
-        # print (
-        #     f"Send Queue: {len(self._sending_queue)}\n" +
-        #     f"commands_in_device: {len(self.commands_in_device_buffer)}\n"
-        #     f"buffered={self.buffered_characters}\n" +
-        #     f"next: {self._length_of_next_line}"
-        # )
-        if self._sending_queue and self.device_buffer_size > (
-            self.buffered_characters + self._length_of_next_line
-        ):
-            # There is a line and there is enough buffer to send this line.
-            self._sending_single_line()
-            self._buffer_fail = 0
+        if n != -1:
+            return min(n, r) if r != -1 else n
         else:
-            if self.commands_in_device_buffer:
-                self._recv_response()
-            else:
-                self._buffer_fail += 1
-                if self._buffer_fail > 10:
-                    pass
-                    # we should do something like raising an error... for tat to decide
+            return r
 
-    def _sending_sync(self):
+    @signal_listener("update_interface")
+    def update_connection(self, origin=None, *args):
+        if self.service.permit_serial and self.service.interface == "serial":
+            try:
+                from .serial_connection import SerialConnection
+
+                self.connection = SerialConnection(self.service)
+            except ImportError:
+                pass
+        elif self.service.permit_tcp and self.service.interface == "tcp":
+            from meerk40t.grbl.tcp_connection import TCPOutput
+
+            self.connection = TCPOutput(self.service)
+        else:
+            # Mock
+            from .mock_connection import MockConnection
+
+            self.connection = MockConnection(self.service)
+
+    def add_watcher(self, watcher):
+        self._watchers.append(watcher)
+
+    def remove_watcher(self, watcher):
+        self._watchers.remove(watcher)
+
+    def log(self, data, type):
+        for w in self._watchers:
+            w(data, type=type)
+
+    def _channel_log(self, data, type=None):
+        if type == "send":
+            if not hasattr(self, "_grbl_send"):
+                self._grbl_send = self.service.channel(
+                    f"send-{self.service.label}", pure=True
+                )
+            self._grbl_send(data)
+        elif type == "recv":
+            if not hasattr(self, "_grbl_recv"):
+                self._grbl_recv = self.service.channel(
+                    f"recv-{self.service.label}", pure=True
+                )
+            self._grbl_recv(data)
+        elif type == "event":
+            if not hasattr(self, "_grbl_events"):
+                self._grbl_events = self.service.channel(f"events-{self.service.label}")
+            self._grbl_events(data)
+
+    def open(self):
         """
-        Synchronous mode sends 1 line and waits to receive 1 "ok" from the laser
+        Opens the connection calling connection.connect.
+
+        Reads the first line this should be GRBL version and information.
+        @return:
+        """
+        if self.connection.connected:
+            return
+        self.connection.connect()
+        if not self.connection.connected:
+            self.log("Could not connect.", type="event")
+            return
+        self.log("Connecting to GRBL...", type="event")
+
+    def close(self):
+        """
+        Close the GRBL connection.
 
         @return:
         """
-        while self._realtime_queue:
-            self._sending_realtime()
+        if not self.connection.connected:
+            return
+        self.connection.disconnect()
+        self._connection_validated = False
+        self.log("Disconnecting from GRBL...", type="event")
 
-        # Send 1, recv 1.
-        if self._sending_queue:
-            self._sending_single_line()
-            self._recv_response()
+    def write(self, data):
+        """
+        Write data to the sending queue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        self.service.signal("grbl;write", data)
+        with self._sending_lock:
+            self._sending_queue.append(data)
+        self.service.signal(
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
+        )
+        self._send_resume()
+
+    def realtime(self, data):
+        """
+        Write data to the realtime queue.
+
+        The realtime queue should preemt the regular dataqueue.
+
+        @param data:
+        @return:
+        """
+        self.start()
+        self.service.signal("grbl;write", data)
+        with self._realtime_lock:
+            self._realtime_queue.append(data)
+        if "\x18" in data:
+            with self._sending_lock:
+                self._sending_queue.clear()
+        self.service.signal(
+            "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
+        )
+        self._send_resume()
+
+    ####################
+    # Control GRBL Sender
+    ####################
+
+    def start(self):
+        """
+        Starts the driver thread.
+
+        @return:
+        """
+        self.open()
+        if self._channel_log not in self._watchers:
+            self.add_watcher(self._channel_log)
+
+        if self._sending_thread is None:
+            self._sending_thread = self.service.threaded(
+                self._sending,
+                thread_name=f"sender-{self.service.location()}",
+                result=self.stop,
+                daemon=True,
+            )
+        if self._recving_thread is None:
+            self._recving_thread = self.service.threaded(
+                self._recving,
+                thread_name=f"recver-{self.service.location()}",
+                result=self._rstop,
+                daemon=True,
+            )
+
+    def _rstop(self, *args):
+        self._recving_thread = None
+
+    def stop(self, *args):
+        """
+        Processes the stopping of the sending queue.
+
+        @param args:
+        @return:
+        """
+        self._sending_thread = None
+        self.close()
+        self._send_resume()
+
+        try:
+            self.remove_watcher(self._channel_log)
+        except (AttributeError, ValueError):
+            pass
+
+    ####################
+    # GRBL SEND ROUTINES
+    ####################
+
+    def _send(self, line):
+        """
+        Write the line to the connection, announce it to the send channel, and add it to the forward buffer.
+
+        @param line:
+        @return:
+        """
+        with self._forward_lock:
+            self._forward_buffer += bytes(line, encoding="latin-1")
+        self.connection.write(line)
+        self.log(line, type="send")
+
+    def _sending_realtime(self):
+        """
+        Send one line of realtime queue.
+
+        @return:
+        """
+        with self._realtime_lock:
+            line = self._realtime_queue.pop(0)
+        if "!" in line:
+            self._paused = True
+        if "~" in line:
+            self._paused = False
+        if "\x18" in line:
+            with self._forward_lock:
+                self._forward_buffer.clear()
+        if line is not None:
+            self._send(line)
+
+    def _sending_single_line(self):
+        """
+        Send one line of sending queue.
+
+        @return:
+        """
+        with self._sending_lock:
+            line = self._sending_queue.pop(0)
+        if line:
+            self._send(line)
+        self.service.signal("grbl;buffer", len(self._sending_queue))
+        return True
+
+    def _send_halt(self):
+        """
+        This is called internally in the _sending command.
+        @return:
+        """
+        with self._loop_cond:
+            self.service.signal("pipe;running", False)
+            self._loop_cond.wait()
+            self.service.signal("pipe;running", True)
+
+    def _send_resume(self):
+        """
+        Other threads are expected to call this routine to permit _sending to resume.
+
+        @return:
+        """
+        with self._loop_cond:
+            self._loop_cond.notify()
 
     def _sending(self):
         """
         Generic sender, delegate the function according to the desired mode.
+
+        This function is only run with the self.sending_thread
+        @return:
+
+        """
+        self.service.signal("pipe;running", True)
+        while self.connection.connected:
+            if self._realtime_queue:
+                # Send realtime data.
+                self._sending_realtime()
+                continue
+            if self._paused or not self._connection_validated:
+                # We are paused. We do not send anything other than realtime commands.
+                time.sleep(0.05)
+                continue
+            if not self._sending_queue:
+                # There is nothing to write/realtime
+                self._send_halt()
+                continue
+            buffer = len(self._forward_buffer)
+            if self.service.buffer_mode == "sync":
+                if buffer:
+                    # Any buffer is too much buffer. Halt.
+                    self._send_halt()
+                    continue
+            else:
+                # Buffered
+                if self._device_buffer_size <= buffer + self._length_of_next_line:
+                    # Stop sending when buffer is the size of permitted buffer size.
+                    self._send_halt()
+                    continue
+            # Go for send_line
+            self._sending_single_line()
+        self.service.signal("pipe;running", False)
+
+    ####################
+    # GRBL RECV ROUTINES
+    ####################
+
+    def get_forward_command(self):
+        """
+        Gets the forward command from the front of the forward buffer. This was the oldest command that the controller
+        has not processed.
+
+        @return:
+        """
+        q = self._index_of_forward_line
+        if q == -1:
+            raise ValueError("No forward command exists.")
+        with self._forward_lock:
+            cmd_issued = self._forward_buffer[: q + 1]
+            self._forward_buffer = self._forward_buffer[q + 1 :]
+        return cmd_issued
+
+    def _recving(self):
+        """
+        Generic recver, delegate the function according to the desired mode.
+
+        Read and process response from grbl.
+
+        This function is only run with the self.recver_thread
         @return:
         """
         while self.connection.connected:
-            self.service.signal("pipe;running", True)
-            if (
-                not self._sending_queue
-                and not self._realtime_queue
-                and not self.commands_in_device_buffer
-            ):
-                # There is nothing to write, or read
-                self.service.signal("pipe;running", False)
-                with self._lock:
-                    # We wait until new data is put in the buffer.
-                    self._lock.wait()
-                self.service.signal("pipe;running", True)
-            if self.service.buffer_mode == "sync":
-                self._sending_sync()
+            # reading responses.
+            response = None
+            while not response:
+                try:
+                    response = self.connection.read()
+                except (ConnectionAbortedError, AttributeError):
+                    return
+                if not response:
+                    time.sleep(0.01)
+            self.service.signal("grbl;response", response)
+            self.log(response, type="recv")
+            if response == "ok":
+                try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    # We got an ok. But, had not sent anything.
+                    self.log(
+                        f"Response: {response}, but this was unexpected", type="event"
+                    )
+                    self._assembled_response = []
+                    continue
+                    # raise ConnectionAbortedError from e
+                self.log(
+                    f"{response} / {len(self._forward_buffer)} -- {cmd_issued}",
+                    type="recv",
+                )
+                self.service.signal(
+                    "grbl;response", cmd_issued, self._assembled_response
+                )
+                self._assembled_response = []
+                self._send_resume()
+                continue
+            elif response.startswith("echo:"):
+                # Echo asks that this information be displayed.
+                self.service.channel("console")(response[5:])
+            elif response.startswith("ALARM"):
+                try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    cmd_issued = ""
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_alarm_message(error_num)
+                alarm_desc = f"#{error_num}, '{cmd_issued}' {short}\n{long}"
+                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
+                self.log(f"Alarm {alarm_desc}", type="recv")
+                self._assembled_response = []
+            elif response.startswith("error"):
+                try:
+                    cmd_issued = self.get_forward_command()
+                    cmd_issued = cmd_issued.decode(encoding="latin-1")
+                except ValueError as e:
+                    cmd_issued = ""
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_error_code(error_num)
+                error_desc = f"#{error_num} '{cmd_issued}' {short}\n{long}"
+                self.service.signal("grbl;error", f"GRBL: {error_desc}", response, 4)
+                self.log(f"ERROR {error_desc}", type="recv")
+                self._assembled_response = []
+                self._send_resume()
+            elif response.startswith("Grbl"):
+                self.log("Connection Confirmed.", type="event")
+                self._connection_validated = True
             else:
-                self._sending_buffered()
+                self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
-
-    def __repr__(self):
-        return f"GRBLSerial('{self.service.serial_port}:{str(self.service.baud_rate)}')"
-
-    def __len__(self):
-        return len(self._sending_queue) + len(self._realtime_queue)

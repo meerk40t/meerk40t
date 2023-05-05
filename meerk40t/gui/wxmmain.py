@@ -194,6 +194,13 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.CenterOnScreen()
+        self.update_check()
+
+    def update_check(self, silent=True):
+        if self.context.update_check == 1:
+            self.context("check_for_updates --verbosity 2\n")
+        elif self.context.update_check == 2:
+            self.context("check_for_updates --beta --verbosity 2\n")
 
     def setup_statusbar_panels(self):
         if not self.context.show_colorbar:
@@ -592,7 +599,9 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Clear magnets on File - New"),
-                "tip": _("File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"),
+                "tip": _(
+                    "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Magnetlines",
@@ -614,6 +623,38 @@ class MeerK40t(MWindow):
                 "section": "Scene",
             },
             {
+                "attr": "button_repeat",
+                "object": self.context.root,
+                "default": 0.5,
+                "type": float,
+                "label": _("Button repeat-interval"),
+                "tip": _(
+                    "If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+                    + "the movement action will be repeated. This value establishes\n"
+                    + "the interval between individual executions.\n"
+                    + "A value of 0 will disable this feature."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
+            },
+            {
+                "attr": "button_accelerate",
+                "object": self.context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Accelerate repeats"),
+                "tip": _(
+                    "If you hold the button for some time, then after some repetitions\n"
+                    + "the action will increase in speed if you activate this option."
+                ),
+                "page": "Gui",
+                "section": "Misc.",
+                "subsection": "Button-Behaviour",
+                "signals": "button-repeat",
+            },
+            {
                 "attr": "process_while_typing",
                 "object": context.root,
                 "default": False,
@@ -631,6 +672,26 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 # "hidden": True,
                 "section": "Misc.",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "update_check",
+                "object": context.root,
+                "default": 1,
+                "type": int,
+                "label": _("Action"),
+                "style": "option",
+                "display": (
+                    _("No, thank you"),
+                    _("Look for major releases"),
+                    _("Look for major+beta releases"),
+                ),
+                "choices": (0, 1, 2),
+                "tip": _("Check for available updates on startup."),
+                "page": "Options",
+                "section": "Check for updates on startup",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -831,7 +892,7 @@ class MeerK40t(MWindow):
                 "label": _("Vector"),
                 "icon": icons8_vector_50,
                 "tip": _(
-                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
+                    "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: end"
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
@@ -1234,7 +1295,8 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_edit",
                         "icon": icons8_curly_brackets_50,
-                        "tip": _("Manages Wordlist-Entries") + _(" (right go to next entry)"),
+                        "tip": _("Manages Wordlist-Entries")
+                        + _(" (right go to next entry)"),
                         "label": _("Wordlist"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
@@ -1242,7 +1304,8 @@ class MeerK40t(MWindow):
                     {
                         "identifier": "prep_wordlist_plus_1",
                         "icon": icons8_circled_right_50,
-                        "tip": _("Wordlist: go to next entry") + _(" (right go to prev entry)"),
+                        "tip": _("Wordlist: go to next entry")
+                        + _(" (right go to prev entry)"),
                         "label": _("Next"),
                         "action": lambda v: kernel.elements.wordlist_advance(1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(-1),
@@ -1251,7 +1314,8 @@ class MeerK40t(MWindow):
                         "identifier": "prep_wordlist_minus_1",
                         "label": _("Prev"),
                         "icon": icons8_circled_left_50,
-                        "tip": _("Wordlist: go to prev entry") + _(" (right go to next entry)"),
+                        "tip": _("Wordlist: go to prev entry")
+                        + _(" (right go to next entry)"),
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
@@ -3158,7 +3222,7 @@ class MeerK40t(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda v: self.context("check_for_updates -popup\n"),
+            lambda v: self.context("check_for_updates -beta --verbosity 3\n"),
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(

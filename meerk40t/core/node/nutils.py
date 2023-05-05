@@ -105,9 +105,10 @@ def path_to_cutobjects(
                         color=color,
                     )
                 )
-
-        if len(group) > 0:
-            group[0].first = True
+        if len(group) == 0:
+            # Singleton Move or something. No cutobjects in generated group.
+            continue
+        group[0].first = True
         for i, cut_obj in enumerate(group):
             cut_obj.closed = closed
             try:

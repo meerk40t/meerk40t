@@ -279,6 +279,7 @@ def init_commands(kernel):
         rotate=None,
         deltaangle=None,
         data=None,
+        post=None,
         **kwargs,
     ):
         if data is None:
@@ -342,6 +343,7 @@ def init_commands(kernel):
         for e in images:
             e.update(None)
 
+        post.append(classify_new(data_out))
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 

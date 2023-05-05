@@ -1,5 +1,5 @@
 # MIT License.
-
+import random
 import time
 
 
@@ -13,6 +13,7 @@ class MockCH341Driver:
         self.driver_value = None
         self.channel = channel
         self.state = state
+        self.bulk = True
 
         self.mock_status = 206
         self.mock_error = 207
@@ -99,6 +100,9 @@ class MockCH341Driver:
             self._start_time_status = time.time()
             self._end_time_status = self._start_time_status + 0.5
             self._time_status = 204
+        if random.randint(0, 5000) == 0:
+            # Write failed.
+            raise ConnectionError
         time.sleep(0.04)
         # Mock
 

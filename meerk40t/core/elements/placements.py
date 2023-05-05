@@ -56,7 +56,12 @@ def init_commands(kernel):
         if y is None:
             y = x
         node = self.op_branch.add(
-            x=x, y=y, rotation=rotation.radians, corner=corner, loops=loops, type="place point"
+            x=x,
+            y=y,
+            rotation=rotation.radians,
+            corner=corner,
+            loops=loops,
+            type="place point",
         )
         added.append(node)
         self.set_emphasis(added)

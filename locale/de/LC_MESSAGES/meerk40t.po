@@ -6279,6 +6279,14 @@ msgstr "Dreht die Richtung des Mausrad beim Zoomen um"
 msgid "Disable ToolTips"
 msgstr "Deaktiviere Tooltips"
 
+msgid "Disable tooltips over tree"
+msgstr "Keine Tooltips über Arbeitsbereich"
+
+msgid "You can suppress the tooltips over operations and elements in the tree"
+msgstr ""
+"Mit dieser Option werden Tooltips über Arbeitsvorgängen\n"
+"und Elementen im Baumdiagramm unterdrückt."
+
 #: meerk40t/gui/plugin.py:172
 msgid "If you do not want to see tooltips like this one, check this box."
 msgstr "Um Tooltips wie diesen auzublenden, aktiviere diese Option."
@@ -7120,6 +7128,10 @@ msgid "Maintain zoom on resize"
 msgstr "Zoom bei Größenänderungen beibehalten"
 
 #: meerk40t/gui/wxmmain.py:424
+
+msgid "Autofocus bed on resize"
+msgstr "Automatischer Zoom bei Größenänderung"
+
 msgid "Autofocus bed when resizing the main window"
 msgstr "Automatischer Zoom auf Laserbett bei Größeneveränderung des Hauptfensters"
 
@@ -7262,12 +7274,13 @@ msgid ""
 "Add a polygon element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
+
 msgstr ""
 "Füge ein geschlossenes Polygon zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Abbruch"
+"Click rechts: Ende"
 
 #: meerk40t/gui/wxmmain.py:738
 msgid "Polyline"
@@ -7278,12 +7291,12 @@ msgid ""
 "Add a polyline element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 "Füge ein Polyline-Objekt zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Abbruch"
+"Click rechts: Ende"
 
 #: meerk40t/gui/wxmmain.py:753
 msgid "Rectangle"
@@ -7311,13 +7324,13 @@ msgid ""
 "Left click: point/line\n"
 "Click and hold: curve\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 "Füge ein Vektor-Objekt zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Click und halten: Kurve\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Abbruch"
+"Click rechts: Ende"
 
 #: meerk40t/gui/wxmmain.py:796
 msgid "Add a text element"
@@ -7332,12 +7345,12 @@ msgid ""
 "Measure distance / perimeter / area\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 "Misst den Abstand / Umfang / Fläche\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Abbruch"
+"Click rechts: Ende"
 
 #: meerk40t/gui/wxmmain.py:824
 msgid "Flip Vertical"
@@ -7731,7 +7744,7 @@ msgstr "Icons ausblenden"
 
 #: meerk40t/gui/wxmmain.py:2104
 msgid "Don't use icons in the tree"
-msgstr "Verzichte auf die Anzeige von Icons im Baum"
+msgstr "Verzichte auf die Anzeige von Icons im Baumdiagramm"
 
 #: meerk40t/gui/wxmmain.py:2114
 msgid "Hide Origin-Indicator"
@@ -8210,27 +8223,19 @@ msgstr ""
 
 #: meerk40t/gui/wxmscene.py:494
 msgid "On"
-msgstr ""
+msgstr "Ein"
 
 #: meerk40t/gui/scenewidgets/guidewidget.py:271 meerk40t/gui/wxmscene.py:494
 msgid "Off"
-msgstr ""
+msgstr "Aus"
 
 #: meerk40t/gui/wxmscene.py:536
 msgid "Turned primary grid on"
-msgstr ""
+msgstr "Primäres Gitter wurde eingeschaltet"
 
 #: meerk40t/gui/wxmscene.py:538
 msgid "Turned primary grid off"
-msgstr ""
-
-#: meerk40t/gui/wxmscene.py:580
-msgid "Turned secondary grid onTurned secondary grid off"
-msgstr ""
-
-#: meerk40t/gui/wxmscene.py:607
-msgid "Turned circular grid onTurned circular grid off"
-msgstr ""
+msgstr "Primäres Gitter wurde ausgeschaltet"
 
 #: meerk40t/gui/wxmscene.py:617
 msgid "Target needs to be one of primary, secondary, circular"
@@ -14968,7 +14973,7 @@ msgid "Prev"
 msgstr "Zurück"
 
 msgid "Next"
-msgstr "VOr"
+msgstr "Vor"
 
 msgid "Wordlist: go to next entry"
 msgstr "Gehe zum nächsten Wortlisten-Eintrag"
@@ -15962,3 +15967,66 @@ msgstr ""
 "Diese legt einen Startpunkt für die Jobausgabe fest.\n"
 "Es können mehrere solcher Startpunkte verwendet werden."
 
+msgid "Current Value: {value} pixel"
+msgstr "Aktueller Wert: {value} Pixel"
+
+msgid "Magnetlines"
+msgstr "Magnet-Linien"
+
+msgid "Clear magnets on File - New"
+msgstr "Magnetlinien bei 'Datei - Neu' löschen"
+
+msgid "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+msgstr ""
+"Aktiv: Datei-Neu setzt existierende Magnet-Linien zurück\n"
+"Inaktiv: Existierende Magnetlinien werden beibehalten"
+
+msgid "User defined value: {value}"
+msgstr "Benutzerdefinierter Wert: {value}"
+
+msgid "Make Polygon regular"
+msgstr "Mache alle Seiten gleich lang"
+
+msgid "Check for updates on startup"
+msgstr "Überprüfe auf neue Versionen beim Programmstart"
+
+msgid "Check for available updates on startup."
+msgstr "Überprüfe beim Programmstart auf das Vorhandensein neuerer Versionen"
+
+msgid "No, thank you"
+msgstr "Nein Danke"
+
+msgid "Look for major releases"
+msgstr "Suche nach neuen Versionen"
+
+msgid "Look for major+beta releases"
+msgstr "Suche nach Versionen (inkl. Betas)"
+
+msgid "Button repeat-interval"
+msgstr "Intervall"
+
+msgid ""
+"If you click and hold the mouse-button on the Jog/Drag-Panels\n"
+"the movement action will be repeated. This value establishes\n"
+"the interval between individual executions.\n"
+"A value of 0 will disable this feature."
+msgstr ""
+"Wenn über einer Bewegungs-Schaltfläche in den Tippbetrieb-Panels\n"
+"die linke Maustaste gedrückt und niedergehalten wird, so wird\n"
+"die Aktion immer wieder wiederholt.\n"
+"Der hier angegebene Wert legt das Intervall zwischen\n"
+"den einzelnen Aufrufen fest.\n"
+"Ein Wert von 0 schaltet dieses Feature aus."
+
+msgid "Button-Behaviour"
+msgstr "Verhalten von Tippbetrieb-Schaltflächen"
+
+msgid "Accelerate repeats"
+msgstr "Wiederholungen beschleunigen"
+
+msgid ""
+"If you hold the button for some time, then after some repetitions\n"
+"the action will increase in speed if you activate this option."
+msgstr ""
+"Bei aktiver Option gilt: wenn die Schaltfläche eine gewisse Zeit\n"
+"gedrückt wird, so wird die Wiederholungsfrequenz ncoh einmal erhöht."

@@ -57,6 +57,7 @@ def register_panel_tree(window, context):
         .Name("tree")
         .Left()
         .MinSize(minwd, -1)
+        .BestSize(300, 500)
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
@@ -64,7 +65,7 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
-    pane.dock_proportion = minwd
+    pane.dock_proportion = 500
     pane.control = wxtree
     window.on_pane_create(pane)
     context.register("pane/tree", pane)

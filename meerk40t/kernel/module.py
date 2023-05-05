@@ -1,6 +1,3 @@
-from .states import *
-
-
 class Module:
     """
     Modules are a generic lifecycle object. These are registered in the kernel as modules and when open() is called for
@@ -25,7 +22,7 @@ class Module:
         self.context = context
         self.name = name
         self.registered_path = registered_path
-        self.state = STATE_INITIALIZE
+        self.state = "init"
 
     def __repr__(self):
         return f'{self.__class__.__name__}({repr(self.context)}, name="{self.name}")'

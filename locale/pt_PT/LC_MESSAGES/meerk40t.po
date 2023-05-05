@@ -4540,7 +4540,7 @@ msgstr ""
 "efeito."
 
 #: meerk40t/gui/plugin.py:177
-msgid "Disable Element-ToolTips"
+msgid "Disable tooltips over tree"
 msgstr ""
 
 #: meerk40t/gui/plugin.py:178
@@ -5748,7 +5748,7 @@ msgid ""
 "Add a polygon element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 
 #: meerk40t/gui/wxmmain.py:780
@@ -5760,7 +5760,7 @@ msgid ""
 "Add a polyline element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 
 #: meerk40t/gui/wxmmain.py:795
@@ -5789,7 +5789,7 @@ msgid ""
 "Left click: point/line\n"
 "Click and hold: curve\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 
 #: meerk40t/gui/wxmmain.py:838
@@ -5838,7 +5838,7 @@ msgid ""
 "Measure distance / perimeter / area\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: cancel"
+"Right click: end"
 msgstr ""
 
 #: meerk40t/gui/wxmmain.py:969
