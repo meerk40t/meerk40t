@@ -136,7 +136,7 @@ class KerfPanel(wx.Panel):
         sizer_info = StaticBoxSizer(self, wx.ID_ANY, _("How to use it"), wx.VERTICAL)
         infomsg = _(
             "If you want to produce cut out shapes with *exact* dimensions"
-            + " after the burn, then you need to take the width of the"
+            + " after the burn, then you need to take half the width of the"
             + " laserbeam into consideration (aka Kerf).\n"
             + "This routine will create a couple of testshapes for you to establish this value.\n"
             + "After you cut these shapes out you need to try to fit shapes with the same"
