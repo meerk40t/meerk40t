@@ -137,11 +137,11 @@ class KerfPanel(wx.Panel):
         infomsg = _(
             "If you want to produce cut out shapes with *exact* dimensions"
             + " after the burn, then you need to take half the width of the"
-            + " laserbeam into consideration (aka Kerf).\n"
+            + " laserbeam into consideration (aka Kerf compensation).\n"
             + "This routine will create a couple of testshapes for you to establish this value.\n"
-            + "After you cut these shapes out you need to try to fit shapes with the same"
-            + " label together. Choose the one that have a perfect fit and use the"
-            + " label as your kerf-value."
+            + "After you cut these shapes out you need to try to fit the shapes with the same"
+            + " label together. Choose the pair that has a perfect fit and use the"
+            + " label as your kerf-compensation value."
         )
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
@@ -271,8 +271,12 @@ class KerfPanel(wx.Panel):
             text_op = RasterOpNode()
             text_op.color = Color("black")
             text_op.label = "Descriptions"
-            xx = 0
-            yy = 0
+            x_offset = y_offset = float(Length("5mm"))
+            xx = x_offset
+            yy = y_offset
+            textfactor = pattern_size / float(Length("20mm"))
+            if textfactor > 2:
+                textfactor = 2
             for idx in range(count - 1):
                 kerlen = Length(kerf)
                 op_col_inner = make_color(idx, count, "g")
@@ -313,7 +317,7 @@ class KerfPanel(wx.Panel):
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
                             f"translate({xx + 0.5 * pattern_size}, {yy + 0.25 * pattern_size})"
-                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                            + f" scale({0.5 * textfactor * UNITS_PER_PIXEL})"
                         ),
                         anchor="middle",
                         fill=Color("black"),
@@ -350,7 +354,7 @@ class KerfPanel(wx.Panel):
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
                             f"translate({xx + 0.5 * pattern_size}, {yy + (1.1 + 0.7) * pattern_size})"
-                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                            + f" scale({0.5 * textfactor * UNITS_PER_PIXEL})"
                         ),
                         anchor="middle",
                         fill=Color("black"),
@@ -384,7 +388,7 @@ class KerfPanel(wx.Panel):
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
                             f"translate({xx + 0.5 * pattern_size}, {yy + 0.8 * pattern_size})"
-                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                            + f" scale({0.5 * textfactor * UNITS_PER_PIXEL})"
                         ),
                         anchor="middle",
                         fill=Color("black"),
@@ -408,7 +412,7 @@ class KerfPanel(wx.Panel):
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
                             f"translate({xx + 0.5 * pattern_size}, {yy + (1.1 + 0.4) * pattern_size})"
-                            + f" scale({0.5 * UNITS_PER_PIXEL})"
+                            + f" scale({0.5 * textfactor * UNITS_PER_PIXEL})"
                         ),
                         anchor="middle",
                         fill=Color("black"),
@@ -422,7 +426,7 @@ class KerfPanel(wx.Panel):
             node = element_branch.add(
                 text=f"Kerf-Test (speed={op_speed}mm/s, power={op_power/10.0:.0f}%)",
                 matrix=Matrix(
-                    f"translate({0}, {2.2 * pattern_size})"
+                    f"translate({0 + x_offset}, {2.2 * pattern_size + y_offset})"
                     + f" scale({UNITS_PER_PIXEL})"
                 ),
                 fill=Color("black"),
