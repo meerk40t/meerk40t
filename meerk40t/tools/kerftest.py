@@ -222,12 +222,25 @@ class KerfPanel(wx.Panel):
             r = 0
             g = 0
             b = 0
+            if maxidx < 8:
+                colrange = 8
+            if maxidx < 16:
+                colrange = 16
+            elif maxidx < 32:
+                colrange = 32
+            elif maxidx < 64:
+                colrange = 64
+            elif maxidx < 128:
+                colrange = 128
+            else:
+                colrange = 255
+            colfactor = 256 / colrange
             if colidx == "r":
-                r = int(255 / maxidx * idx)
+                r = 255 - int(colfactor * colrange / maxidx * idx)
             elif colidx == "g":
-                g = int(255 / maxidx * idx)
+                g = 255 - int(colfactor * colrange / maxidx * idx)
             elif colidx == "b":
-                b = int(255 / maxidx * idx)
+                b = 255 - int(colfactor * colrange / maxidx * idx)
             mycolor = Color(r, g, b)
             return mycolor
 
@@ -264,9 +277,20 @@ class KerfPanel(wx.Panel):
             yy = 0
             for idx in range(count - 1):
                 kerlen = Length(kerf)
+                op_col_inner = make_color(idx, count, "g")
+                op_col_outer = make_color(idx, count, "r")
+                inner_op = CutOpNode(label=f"Inner {shortened(kerlen.mm, 3)}mm")
+                inner_op.color = op_col_inner
+                inner_op.speed = op_speed
+                inner_op.speed = op_power
+                inner_op.kerf = -1 * kerf
+                outer_op = CutOpNode(label=f"Outer {shortened(kerlen.mm, 3)}mm")
+                outer_op.color = op_col_outer
+                outer_op.speed = op_speed
+                outer_op.speed = op_power
+                outer_op.kerf = kerf
                 if rectangular:
-                    shape0 = None
-                    elem0 = None
+                    operation_branch.add_node(outer_op)
 
                     shape1 = Polyline(
                         (
@@ -282,6 +306,11 @@ class KerfPanel(wx.Panel):
                         )
                     )
                     elem1 = "elem polyline"
+                    node = element_branch.add(shape=shape1, type=elem1)
+                    node.stroke = op_col_outer
+                    node.stroke_width = 500
+                    outer_op.add_reference(node, 0)
+
                     node = element_branch.add(
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
@@ -308,6 +337,11 @@ class KerfPanel(wx.Panel):
                         )
                     )
                     elem2 = "elem polyline"
+                    node = element_branch.add(shape=shape2, type=elem2)
+                    node.stroke = op_col_outer
+                    node.stroke_width = 500
+                    outer_op.add_reference(node, 0)
+
                     node = element_branch.add(
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
@@ -320,8 +354,16 @@ class KerfPanel(wx.Panel):
                     )
                     text_op.add_reference(node, 0)
                 else:
+                    operation_branch.add_node(outer_op)
+                    operation_branch.add_node(inner_op)
                     shape0 = Rect(x=xx, y=yy, width=pattern_size, height=pattern_size)
                     elem0 = "elem rect"
+                    node = element_branch.add(shape=shape0, type=elem0)
+                    node.stroke = op_col_outer
+                    node.stroke_width = 500
+                    # Needs to be outer
+                    outer_op.add_reference(node, 0)
+
                     shape1 = Circle(
                         cx = xx + 0.5 * pattern_size,
                         cy = yy + 0.5 * pattern_size,
@@ -329,6 +371,11 @@ class KerfPanel(wx.Panel):
                         ry = 0.3 * pattern_size,
                     )
                     elem1 = "elem ellipse"
+                    node = element_branch.add(shape=shape1, type=elem1)
+                    node.stroke = op_col_inner
+                    node.stroke_width = 500
+                    inner_op.add_reference(node, 0)
+
                     node = element_branch.add(
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
@@ -348,6 +395,11 @@ class KerfPanel(wx.Panel):
                         ry = 0.3 * pattern_size,
                     )
                     elem2 = "elem ellipse"
+                    node = element_branch.add(shape=shape2, type=elem2)
+                    node.stroke = op_col_outer
+                    node.stroke_width = 500
+                    outer_op.add_reference(node, 0)
+
                     node = element_branch.add(
                         text=f"{shortened(kerlen.mm, 3)}mm",
                         matrix=Matrix(
@@ -359,38 +411,6 @@ class KerfPanel(wx.Panel):
                         type="elem text",
                     )
                     text_op.add_reference(node, 0)
-
-                op_col1 = make_color(idx, count, "r")
-                op_col2 = make_color(idx, count, "g")
-
-                op1 = CutOpNode(label=f"Inner {shortened(kerlen.mm, 3)}mm")
-                op1.color = op_col1
-                op1.speed = op_speed
-                op1.speed = op_power
-                op1.kerf = -1 * kerf
-                operation_branch.add_node(op1)
-                if shape0 is not None:
-                    node = element_branch.add(shape=shape0, type=elem0)
-                    node.stroke = op_col1
-                    node.stroke_width = 500
-                    op1.add_reference(node, 0)
-                if shape1 is not None:
-                    node = element_branch.add(shape=shape1, type=elem1)
-                    node.stroke = op_col1
-                    node.stroke_width = 500
-                    op1.add_reference(node, 0)
-
-                op2 = CutOpNode(label=f"Outer {shortened(kerlen.mm, 3)}mm")
-                op2.color = op_col2
-                op2.speed = op_speed
-                op2.speed = op_power
-                op2.kerf = +1 * kerf
-                operation_branch.add_node(op2)
-                if shape2 is not None:
-                    node = element_branch.add(shape=shape2, type=elem2)
-                    node.stroke = op_col2
-                    node.stroke_width = 500
-                    op2.add_reference(node, 0)
 
                 kerf += delta
                 xx += pattern_size
