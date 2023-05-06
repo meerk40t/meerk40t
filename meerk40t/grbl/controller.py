@@ -3,11 +3,13 @@ GRBL Controller
 
 Tasked with sending data to the different connection.
 """
-
+import re
 import threading
 import time
 
 from meerk40t.kernel import signal_listener
+
+SETTINGS_MESSAGE = re.compile(r"^\$([0-9]+)=(.*)")
 
 
 def grbl_error_code(code):
@@ -153,9 +155,8 @@ def grbl_alarm_message(code):
 class GrblController:
     def __init__(self, context):
         self.service = context
-
         self.connection = None
-        self._connection_validated = False
+
         self.update_connection()
 
         self.driver = self.service.driver
@@ -195,6 +196,13 @@ class GrblController:
             131: 200.000,  # Y-axis max travel mm
             132: 200.000,  # Z-axis max travel mm.
         }
+
+        # Welcome message into, indicates the device is initialized.
+        self.welcome = self.service.setting(str, "welcome", "Grbl")
+        self._requires_validation = self.service.setting(
+            bool, "requires_validation", True
+        )
+        self._connection_validated = not self._requires_validation
 
         # Sending variables.
         self._sending_thread = None
@@ -322,7 +330,7 @@ class GrblController:
         if not self.connection.connected:
             return
         self.connection.disconnect()
-        self._connection_validated = False
+        self._connection_validated = not self._requires_validation
         self.log("Disconnecting from GRBL...", type="event")
 
     def write(self, data):
@@ -555,6 +563,7 @@ class GrblController:
             self.service.signal("grbl;response", response)
             self.log(response, type="recv")
             if response == "ok":
+                # Indicates that the command line received was parsed and executed (or set to be executed).
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
@@ -576,25 +585,8 @@ class GrblController:
                 self._assembled_response = []
                 self._send_resume()
                 continue
-            elif response.startswith("echo:"):
-                # Echo asks that this information be displayed.
-                self.service.channel("console")(response[5:])
-            elif response.startswith("ALARM"):
-                try:
-                    cmd_issued = self.get_forward_command()
-                    cmd_issued = cmd_issued.decode(encoding="latin-1")
-                except ValueError as e:
-                    cmd_issued = ""
-                try:
-                    error_num = int(response[6:])
-                except ValueError:
-                    error_num = -1
-                short, long = grbl_alarm_message(error_num)
-                alarm_desc = f"#{error_num}, '{cmd_issued}' {short}\n{long}"
-                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
-                self.log(f"Alarm {alarm_desc}", type="recv")
-                self._assembled_response = []
             elif response.startswith("error"):
+                # Indicates that the command line received contained an error, with an error code x, and was purged.
                 try:
                     cmd_issued = self.get_forward_command()
                     cmd_issued = cmd_issued.decode(encoding="latin-1")
@@ -610,9 +602,166 @@ class GrblController:
                 self.log(f"ERROR {error_desc}", type="recv")
                 self._assembled_response = []
                 self._send_resume()
-            elif response.startswith("Grbl"):
+                continue
+            elif response.startswith("<"):
+                self._process_status_message(response)
+            elif response.startswith("["):
+                self._process_feedback_message(response)
+                continue
+            elif response.startswith("$"):
+                self._process_settings_message(response)
+                continue
+            elif response.startswith("ALARM"):
+                try:
+                    error_num = int(response[6:])
+                except ValueError:
+                    error_num = -1
+                short, long = grbl_alarm_message(error_num)
+                alarm_desc = f"#{error_num}, {short}\n{long}"
+                self.service.signal("warning", f"GRBL: {alarm_desc}", response, 4)
+                self.log(f"Alarm {alarm_desc}", type="recv")
+                self._assembled_response = []
+            elif response.startswith(">"):
+                self.log(f"STARTUP: {response}", type="event")
+            elif response.startswith(self.welcome):
                 self.log("Connection Confirmed.", type="event")
                 self._connection_validated = True
             else:
                 self._assembled_response.append(response)
         self.service.signal("pipe;running", False)
+
+    def _process_status_message(self, response):
+        message = response[1:-1]
+        data = list(message.split("|"))
+        self.service.signal("grbl:state", data[0])
+        for datum in data[1:]:
+            name, info = datum.split(":")
+            if name == "F":
+                self.service.signal("grbl:speed", float(info))
+            elif name == "FS":
+                if name == "F":
+                    f, s = info.split(",")
+                    self.service.signal("grbl:speed", float(f))
+                    self.service.signal("grbl:power", float(s))
+            self.service.signal(f"grbl:status:{name}", info)
+
+    def _process_feedback_message(self, response):
+        if response.startswith("[MSG:"):
+            message = response[5:-1]
+            self.log(message, type="event")
+            self.service.channel("console")(message)
+        elif response.startswith("[GC:"):
+            message = response[4:-1]
+            self.log(message, type="event")
+            self.service.signal("grbl:states", list(message.split(" ")))
+        elif response.startswith("[HLP:"):
+            message = response[5:-1]
+            self.log(message, type="event")
+        elif response.startswith("[G54:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g54", message)
+        elif response.startswith("[G55:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g55", message)
+        elif response.startswith("[G56:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g56", message)
+        elif response.startswith("[G57:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g57", message)
+        elif response.startswith("[G58:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g58", message)
+        elif response.startswith("[G59:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g59", message)
+        elif response.startswith("[G28:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g28", message)
+        elif response.startswith("[G30:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g30", message)
+        elif response.startswith("[G92:"):
+            message = response[5:-1]
+            self.service.signal("grbl:g92", message)
+        elif response.startswith("[TLO:"):
+            message = response[5:-1]
+            self.service.signal("grbl:tlo", message)
+        elif response.startswith("[PRB:"):
+            message = response[5:-1]
+            self.service.signal("grbl:prb", message)
+        elif response.startswith("[VER:"):
+            message = response[5:-1]
+            self.service.signal("grbl:ver", message)
+        elif response.startswith("[OPT:"):
+            message = response[5:-1]
+            codes, block_buffer_size, rx_buffer_size = message.split(",")
+            self.log(f"codes: {codes}", type="event")
+            if "V" in codes:
+                # Variable spindle enabled
+                pass
+            if "N" in codes:
+                # Line numbers enabled
+                pass
+
+            if "M" in codes:
+                # Mist coolant enabled
+                pass
+            if "C" in codes:
+                # CoreXY enabled
+                pass
+            if "P" in codes:
+                # Parking motion enabled
+                pass
+            if "Z" in codes:
+                # Homing force origin enabled
+                pass
+            if "H" in codes:
+                # Homing single axis enabled
+                pass
+            if "T" in codes:
+                # Two limit switches on axis enabled
+                pass
+            if "A" in codes:
+                # Allow feed rate overrides in probe cycles
+                pass
+            if "*" in codes:
+                # Restore all EEPROM disabled
+                pass
+            if "$" in codes:
+                # Restore EEPROM $ settings disabled
+                pass
+            if "#" in codes:
+                # Restore EEPROM parameter data disabled
+                pass
+            if "I" in codes:
+                # Build info write user string disabled
+                pass
+            if "E" in codes:
+                # Force sync upon EEPROM write disabled
+                pass
+            if "W" in codes:
+                # Force sync upon work coordinate offset change disabled
+                pass
+            if "L" in codes:
+                # Homing init lock sets Grbl into an alarm state upon power up
+                pass
+            if "2" in codes:
+                # Dual axis motors with self-squaring enabled
+                pass
+            self.log(f"blockBufferSize: {block_buffer_size}", type="event")
+            self.log(f"rxBufferSize: {rx_buffer_size}", type="event")
+            self.service.signal("grbl:block_buffer", int(block_buffer_size))
+            self.service.signal("grbl:rx_buffer", int(rx_buffer_size))
+            self.service.signal("grbl:opt", message)
+        elif response.startswith("[echo:"):
+            message = response[6:-1]
+            self.service.channel("console")(message)
+
+    def _process_settings_message(self, response):
+        match = SETTINGS_MESSAGE.match(response)
+        if match:
+            try:
+                self.grbl_settings[int(match.group(1))] = float(match.group(2))
+            except ValueError:
+                pass

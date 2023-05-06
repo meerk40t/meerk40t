@@ -211,7 +211,7 @@ def init_commands(kernel):
         eg. filter engrave=op&speed=35|cut=op&speed=10
         eg. filter len=0
         eg. operation* filter "type='op image'" list
-        eg. element* filter "id startwith 'p'" list
+        eg. element* filter "id startswith 'p'" list
         """
         sublist = list()
         _filter_parse = [

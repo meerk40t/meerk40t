@@ -219,19 +219,27 @@ class GRBLDriver(Parameters):
         self.wait(time_in_ms)
         self.laser_off()
 
-    def laser_off(self, *values):
+    def laser_off(self, power=0, *values):
         """
         Turn laser off in place.
 
+        @param power: Power after laser turn off (0=default).
         @param values:
         @return:
         """
+        if power is not None:
+            spower = f" S{power:.1f}"
+            self.power = power
+            self.power_dirty = False
+            self(f"G1 {spower}{self.line_end}")
         self(f"M5{self.line_end}")
 
     def laser_on(self, power=None, speed=None, *values):
         """
-        Turn laser on in place.
+        Turn laser on in place. This is done specifically with an M3 command so that the laser is on while stationary
 
+        @param speed: Speed for laser turn on.
+        @param power: Power at the laser turn on.
         @param values:
         @return:
         """
@@ -262,6 +270,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        self.signal("grbl_red_dot", False)  # We are not using red-dot if we're cutting.
         self.clear_states()
         self._g91_absolute()
         self._g94_feedrate()
