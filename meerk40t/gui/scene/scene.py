@@ -183,6 +183,9 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        # Scene lock is used for widget structure modification and scene drawing.
+        self.scene_lock = threading.RLock()
+
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
@@ -190,7 +193,7 @@ class Scene(Module, Job):
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
-        self.screen_refresh_lock = threading.Lock()
+
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
         self._down_start_time = None
@@ -238,7 +241,7 @@ class Scene(Module, Job):
 
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
-        self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
+        self.scene_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
 
     def _init_widget(self, widget, context):
@@ -332,7 +335,7 @@ class Scene(Module, Job):
         """
         if not self.screen_refresh_is_requested:
             return
-        if self.screen_refresh_lock.acquire(timeout=0.2):
+        if self.scene_lock.acquire(timeout=0.2):
             try:
                 self._update_buffer_ui_thread()  # May hit runtime error.
                 self.gui.Refresh()
@@ -340,7 +343,7 @@ class Scene(Module, Job):
             except RuntimeError:
                 pass
             self.screen_refresh_is_requested = False
-            self.screen_refresh_lock.release()
+            self.scene_lock.release()
         else:
             self.screen_refresh_is_requested = False
 

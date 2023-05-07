@@ -163,29 +163,6 @@ class Widget(list):
         """
         self.scene.notify_moved_child(child)
 
-    def add_widget(self, index=-1, widget=None, properties=None):
-        """
-        Add a widget to the current widget.
-
-        Adds at the particular index according to the properties.
-
-        The properties can be used to trigger particular layouts or properties for the added widget.
-        """
-        if properties is None:
-            properties = self.properties
-        if len(self) == 0:
-            last = self
-        else:
-            last = self[-1]
-        if 0 <= index < len(self):
-            self.insert(index, widget)
-        else:
-            self.append(widget)
-        widget.parent = self
-        self.layout_by_orientation(widget, last, properties)
-        self.notify_added_to_parent(self)
-        self.notify_added_child(widget)
-
     def translate(self, dx, dy):
         """
         Move the current widget and all child widgets.
@@ -340,21 +317,47 @@ class Widget(list):
         dy = y - self.top
         self.translate(dx, dy)
 
+    def add_widget(self, index=-1, widget=None, properties=None):
+        """
+        Add a widget to the current widget.
+
+        Adds at the particular index according to the properties.
+
+        The properties can be used to trigger particular layouts or properties for the added widget.
+        """
+        with self.scene.scene_lock:
+            if properties is None:
+                properties = self.properties
+            if len(self) == 0:
+                last = self
+            else:
+                last = self[-1]
+
+            if 0 <= index < len(self):
+                self.insert(index, widget)
+            else:
+                self.append(widget)
+            widget.parent = self
+            self.layout_by_orientation(widget, last, properties)
+            self.notify_added_to_parent(self)
+            self.notify_added_child(widget)
+
     def remove_all_widgets(self):
         """
         Remove all widgets from the current widget.
         """
-        for w in self:
-            if w is None:
-                continue
-            w.parent = None
-            w.notify_removed_from_parent(self)
-            self.notify_removed_child(w)
-        self.clear()
-        try:
-            self.scene.notify_tree_changed()
-        except AttributeError:
-            pass
+        with self.scene.scene_lock:
+            for w in self:
+                if w is None:
+                    continue
+                w.parent = None
+                w.notify_removed_from_parent(self)
+                self.notify_removed_child(w)
+            self.clear()
+            try:
+                self.scene.notify_tree_changed()
+            except AttributeError:
+                pass
 
     def remove_widget(self, widget=None):
         """
@@ -362,33 +365,37 @@ class Widget(list):
         """
         if widget is None:
             return
-        if isinstance(widget, Widget):
-            self.remove(widget)
-        elif isinstance(widget, int):
-            index = widget
-            widget = self[index]
-            del self[index]
-        widget.parent = None
-        widget.notify_removed_from_parent(self)
-        self.notify_removed_child(widget)
-        try:
-            self.scene.notify_tree_changed()
-        except AttributeError:
-            pass
+        with self.scene.scene_lock:
+            if isinstance(widget, Widget):
+                for i, w in enumerate(self):
+                    if w is widget:
+                        del self[i]
+            elif isinstance(widget, int):
+                index = widget
+                widget = self[index]
+                del self[index]
+            widget.parent = None
+            widget.notify_removed_from_parent(self)
+            self.notify_removed_child(widget)
+            try:
+                self.scene.notify_tree_changed()
+            except AttributeError:
+                pass
 
     def set_widget(self, index, widget):
         """
         Sets the given widget at the index to replace the child currently at the position of that widget.
         """
-        w = self[index]
-        self[index] = widget
-        widget.parent = self
-        widget.notify_added_to_parent(self)
-        self.notify_removed_child(w)
-        try:
-            self.scene.notify_tree_changed()
-        except AttributeError:
-            pass
+        with self.scene.scene_lock:
+            w = self[index]
+            self[index] = widget
+            widget.parent = self
+            widget.notify_added_to_parent(self)
+            self.notify_removed_child(w)
+            try:
+                self.scene.notify_tree_changed()
+            except AttributeError:
+                pass
 
     def on_matrix_change(self):
         """
