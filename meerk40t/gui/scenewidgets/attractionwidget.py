@@ -103,6 +103,7 @@ class AttractionWidget(Widget):
             # Na, we don't need points to be displayed
             # (but we needed the calculation)
             self._show_snap_points = False
+            return RESPONSE_CHAIN
 
         # Loop through display points
         if len(self.display_points) > 0 and self.my_x is not None:
@@ -111,10 +112,9 @@ class AttractionWidget(Widget):
             new_x = None
             new_y = None
             for pt in self.display_points:
-                delta = sqrt(
-                    (pt[0] - self.my_x) * (pt[0] - self.my_x)
-                    + (pt[1] - self.my_y) * (pt[1] - self.my_y)
-                )
+                dx = pt[0] - self.my_x
+                dy = pt[1] - self.my_y
+                delta = dx * dx + dy * dy
                 if delta < min_delta:
                     new_x = pt[0]
                     new_y = pt[1]
