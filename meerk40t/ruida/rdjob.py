@@ -582,7 +582,7 @@ class RDJob:
                 elif array[2] == 0x08:
                     desc = "Interface Origin"
                     try:
-                        self._driver.move_ori(0, 0)
+                        self._driver.move_abs(0, 0)
                     except AttributeError:
                         pass
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
@@ -957,7 +957,7 @@ class RDJob:
                     desc = f"Move {param} XY ({self.x}, {self.y})"
                     if "Origin" in param:
                         try:
-                            self._driver.move_ori(
+                            self._driver.move_abs(
                                 f"{self.x / UNITS_PER_MM}mm",
                                 f"{self.y / UNITS_PER_MM}mm",
                             )

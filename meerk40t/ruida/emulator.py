@@ -307,7 +307,7 @@ class RuidaEmulator:
                 elif array[2] == 0x08:
                     self._describe(array, "Interface Origin")
                     try:
-                        self.device.driver.move_ori(0, 0)
+                        self.device.driver.move_abs(0, 0)
                     except AttributeError:
                         pass
             return True

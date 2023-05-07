@@ -344,20 +344,6 @@ class LihuiyuDriver(Parameters):
         if blob_type == "egv":
             self(data)
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
-        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
