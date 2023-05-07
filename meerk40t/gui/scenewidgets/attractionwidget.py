@@ -47,6 +47,8 @@ class AttractionWidget(Widget):
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", False)
         self._show_snap_points = False
+        self._snap_grid = False
+        self._snap_points = False
 
     def load_colors(self):
         self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
@@ -80,14 +82,28 @@ class AttractionWidget(Widget):
         self.my_x = space_pos[0]
         self.my_y = space_pos[1]
         ctx = self.context
-        # Shift inverts the on/off of snaps.
-        snaps_on = (ctx.snap_points or ctx.snap_grid) != "shift" in modifiers
-        snaps_requested = self.scene.pane.tool_active or self.scene.pane.modif_active
-        self._show_snap_points = False
 
-        if snaps_requested and snaps_on:
+        self._snap_grid = ctx.snap_grid
+        self._snap_points = ctx.snap_points
+        self._show_snap_points = False
+        if "shift" in modifiers:
+            # Shift inverts the on/off of snaps.
+            self._snap_grid = not self._snap_grid
+            self._snap_points = not self._snap_points
+
+        if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
+            return RESPONSE_CHAIN
+
+        if self._snap_points or self._snap_grid:
             self._show_snap_points = True
-            self.calculate_display_points()
+            # Inform profiler
+            ctx.elements.set_start_time("attr_calc_disp")
+            self._calculate_display_points()
+            ctx.elements.set_end_time(
+                "attr_calc_disp", message=f"points added={len(self.display_points)}"
+            )
+        else:
+            return RESPONSE_CHAIN
 
         if event_type in (
             "hover",
@@ -96,14 +112,10 @@ class AttractionWidget(Widget):
             # Hovers show snaps, but they do not snap.
             return RESPONSE_CHAIN
 
-        if not self._show_snap_points:
-            return RESPONSE_CHAIN
-
         if event_type in ("leftup", "leftclick"):
             # Na, we don't need points to be displayed
             # (but we needed the calculation)
             self._show_snap_points = False
-            return RESPONSE_CHAIN
 
         # Loop through display points
         if len(self.display_points) > 0 and self.my_x is not None:
@@ -119,12 +131,13 @@ class AttractionWidget(Widget):
                     new_x = pt[0]
                     new_y = pt[1]
                     min_delta = delta
+            if new_x is None:
+                return RESPONSE_CHAIN
             matrix = self.parent.matrix
             pixel = self.context.action_attract_len / matrix.value_scale_x()
-            if new_x is not None:
-                if abs(new_x - self.my_x) <= pixel and abs(new_y - self.my_y) <= pixel:
-                    # Is the distance small enough?
-                    return RESPONSE_CHAIN, new_x, new_y
+            if abs(new_x - self.my_x) <= pixel and abs(new_y - self.my_y) <= pixel:
+                # If the distance small enough, snap.
+                return RESPONSE_CHAIN, new_x, new_y
         return RESPONSE_CHAIN
 
     def draw_caret(self, gc, x, y, closeup):
@@ -220,79 +233,79 @@ class AttractionWidget(Widget):
         """
         Draw all attraction points on the scene.
         """
-        if self._show_snap_points:
-            self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
-            self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
-            matrix = self.parent.matrix
-            try:
-                # Intentionally big to clearly see shape
-                self.symbol_size = 10 / matrix.value_scale_x()
-            except ZeroDivisionError:
-                matrix.reset()
-                return
-            # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
-            local_attract_len = self.context.show_attract_len / matrix.value_scale_x()
-            local_action_attract_len = (
-                self.context.action_attract_len / matrix.value_scale_x()
-            )
-            local_grid_attract_len = (
-                self.context.grid_attract_len / matrix.value_scale_x()
-            )
+        if not self._show_snap_points:
+            return
 
-            min_delta = float("inf")
-            min_x = None
-            min_y = None
-            min_type = None
-            for pts in self.display_points:
-                if (
-                    abs(pts[0] - self.my_x) <= local_attract_len
-                    and abs(pts[1] - self.my_y) <= local_attract_len
-                ):
-                    closeup = 0
-                    delta = sqrt(
-                        (pts[0] - self.my_x) * (pts[0] - self.my_x)
-                        + (pts[1] - self.my_y) * (pts[1] - self.my_y)
-                    )
-                    dx = abs(pts[0] - self.my_x)
-                    dy = abs(pts[1] - self.my_y)
+        self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
+        self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
+        matrix = self.parent.matrix
+        try:
+            # Intentionally big to clearly see shape
+            self.symbol_size = 10 / matrix.value_scale_x()
+        except ZeroDivisionError:
+            matrix.reset()
+            return
+        # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
+        local_attract_len = self.context.show_attract_len / matrix.value_scale_x()
+        local_action_attract_len = (
+            self.context.action_attract_len / matrix.value_scale_x()
+        )
+        local_grid_attract_len = self.context.grid_attract_len / matrix.value_scale_x()
 
-                    if pts[2] == TYPE_GRID:
-                        distance = local_grid_attract_len
-                    else:
-                        distance = local_action_attract_len
-                    if dx <= distance and dy <= distance:
-                        closeup = 1
-                        if delta < min_delta:
-                            min_delta = delta
-                            min_x = pts[0]
-                            min_y = pts[1]
-                            min_type = pts[2]
+        min_delta = float("inf")
+        min_x = None
+        min_y = None
+        min_type = None
+        for pts in self.display_points:
+            if (
+                abs(pts[0] - self.my_x) <= local_attract_len
+                and abs(pts[1] - self.my_y) <= local_attract_len
+            ):
+                closeup = 0
+                delta = sqrt(
+                    (pts[0] - self.my_x) * (pts[0] - self.my_x)
+                    + (pts[1] - self.my_y) * (pts[1] - self.my_y)
+                )
+                dx = abs(pts[0] - self.my_x)
+                dy = abs(pts[1] - self.my_y)
 
-                    if pts[2] in (TYPE_POINT, TYPE_BOUND):
-                        self.draw_caret(gc, pts[0], pts[1], closeup)
-                    elif pts[2] == TYPE_MIDDLE:
-                        self.draw_midpoint(gc, pts[0], pts[1], closeup)
-                    elif pts[2] == TYPE_MIDDLE_SMALL:
-                        self.draw_midpoint(gc, pts[0], pts[1], closeup)
-                    elif pts[2] == TYPE_CENTER:
-                        self.draw_center(gc, pts[0], pts[1], closeup)
-                    elif pts[2] == TYPE_GRID:
-                        self.draw_gridpoint(gc, pts[0], pts[1], closeup)
-            # Draw the closest point
-            if min_x is not None:
-                closeup = 2  # closest
-                if min_type in (TYPE_POINT, TYPE_BOUND):
-                    self.draw_caret(gc, min_x, min_y, closeup)
-                elif min_type == TYPE_MIDDLE:
-                    self.draw_midpoint(gc, min_x, min_y, closeup)
-                elif min_type == TYPE_MIDDLE_SMALL:
-                    self.draw_midpoint(gc, min_x, min_y, closeup)
-                elif min_type == TYPE_CENTER:
-                    self.draw_center(gc, min_x, min_y, closeup)
-                elif min_type == TYPE_GRID:
-                    self.draw_gridpoint(gc, min_x, min_y, closeup)
+                if pts[2] == TYPE_GRID:
+                    distance = local_grid_attract_len
+                else:
+                    distance = local_action_attract_len
+                if dx <= distance and dy <= distance:
+                    closeup = 1
+                    if delta < min_delta:
+                        min_delta = delta
+                        min_x = pts[0]
+                        min_y = pts[1]
+                        min_type = pts[2]
 
-    def calculate_attraction_points(self):
+                if pts[2] in (TYPE_POINT, TYPE_BOUND):
+                    self.draw_caret(gc, pts[0], pts[1], closeup)
+                elif pts[2] == TYPE_MIDDLE:
+                    self.draw_midpoint(gc, pts[0], pts[1], closeup)
+                elif pts[2] == TYPE_MIDDLE_SMALL:
+                    self.draw_midpoint(gc, pts[0], pts[1], closeup)
+                elif pts[2] == TYPE_CENTER:
+                    self.draw_center(gc, pts[0], pts[1], closeup)
+                elif pts[2] == TYPE_GRID:
+                    self.draw_gridpoint(gc, pts[0], pts[1], closeup)
+        # Draw the closest point
+        if min_x is not None:
+            closeup = 2  # closest
+            if min_type in (TYPE_POINT, TYPE_BOUND):
+                self.draw_caret(gc, min_x, min_y, closeup)
+            elif min_type == TYPE_MIDDLE:
+                self.draw_midpoint(gc, min_x, min_y, closeup)
+            elif min_type == TYPE_MIDDLE_SMALL:
+                self.draw_midpoint(gc, min_x, min_y, closeup)
+            elif min_type == TYPE_CENTER:
+                self.draw_center(gc, min_x, min_y, closeup)
+            elif min_type == TYPE_GRID:
+                self.draw_gridpoint(gc, min_x, min_y, closeup)
+
+    def _calculate_attraction_points(self):
         """
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
         attraction points (center, corners, sides)
@@ -333,50 +346,35 @@ class AttractionWidget(Widget):
             "attr_calc_points", message=f"points added={len(self.attraction_points)}"
         )
 
-    def calculate_display_points(self):
-        # Inform profiler
-        self.context.elements.set_start_time("attr_calc_disp")
+    def _calculate_snap_points(self, length):
+        for pts in self.attraction_points:
+            if self.scene.pane.modif_active:
+                if pts[3]:
+                    # No snap points for emphasized objects.
+                    continue
+            if abs(pts[0] - self.my_x) <= length and abs(pts[1] - self.my_y) <= length:
+                self.display_points.append([pts[0], pts[1], pts[2]])
 
+    def _calculate_grid_points(self, length):
+        for pts in self.scene.pane.grid.grid_points:
+            if abs(pts[0] - self.my_x) <= length and abs(pts[1] - self.my_y) <= length:
+                self.display_points.append([pts[0], pts[1], TYPE_GRID])
+
+    def _calculate_display_points(self):
         self.display_points = []
-        if self.attraction_points is None and self.context.snap_points:
-            self.calculate_attraction_points()
+        if self.my_x is None:
+            return
+        if self.attraction_points is None and self._snap_points:
+            self._calculate_attraction_points()
 
         matrix = self.parent.matrix
-        pixel = self.context.show_attract_len / matrix.value_scale_x()
+        length = self.context.show_attract_len / matrix.value_scale_x()
 
-        if (
-            self.context.snap_points
-            and len(self.attraction_points) > 0
-            and not self.my_x is None
-        ):
-            dummy = 0
-            for pts in self.attraction_points:
-                doit = True  # Not sure why not :-)
-                if self.scene.pane.modif_active:
-                    doit = not pts[3]  # not emphasized
-                if doit:
-                    if (
-                        abs(pts[0] - self.my_x) <= pixel
-                        and abs(pts[1] - self.my_y) <= pixel
-                    ):
-                        self.display_points.append([pts[0], pts[1], pts[2]])
+        if self._snap_points and self.attraction_points:
+            self._calculate_snap_points(length)
 
-        if (
-            self.context.snap_grid
-            and self.scene.pane.grid.grid_points is not None
-            and len(self.scene.pane.grid.grid_points) > 0
-            and not self.my_x is None
-        ):
-            for pts in self.scene.pane.grid.grid_points:
-                if (
-                    abs(pts[0] - self.my_x) <= pixel
-                    and abs(pts[1] - self.my_y) <= pixel
-                ):
-                    self.display_points.append([pts[0], pts[1], TYPE_GRID])
-
-        self.context.elements.set_end_time(
-            "attr_calc_disp", message=f"points added={len(self.display_points)}"
-        )
+        if self._snap_grid and self.scene.pane.grid.grid_points:
+            self._calculate_grid_points(length)
 
     def signal(self, signal, *args, **kwargs):
         """
