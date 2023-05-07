@@ -10,7 +10,6 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
-from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
