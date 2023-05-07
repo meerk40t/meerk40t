@@ -1,11 +1,15 @@
+"""
+Attraction Widget governs over the scenes snap-to-grid and snap-to-elements. It is expected to be the first in the
+list of widgets, to modify the later widget's events in the case of snapping.
+"""
+
 from math import sqrt
 
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_DELEGATE,
-    HITCHAIN_HIT,
+    HITCHAIN_PRIORITY_HIT,
     RESPONSE_CHAIN,
 )
 from meerk40t.gui.scene.widget import Widget
@@ -20,7 +24,7 @@ TYPE_MIDDLE_SMALL = 5
 
 class AttractionWidget(Widget):
     """
-    Interface Widget - computes and displays attraction points
+    Interface Widget - computes and displays attraction points, performs snapping.
     """
 
     def __init__(self, scene):
@@ -56,15 +60,17 @@ class AttractionWidget(Widget):
 
     def hit(self):
         """
-        Hit-Logic - by definition: yes, I want to be involved
+        Hit-Logic - by definition: yes, I want to be involved.
+        In fact, if there's widgets to be hit, this should be the first (even if it's not)
         """
-        return HITCHAIN_HIT
+        return HITCHAIN_PRIORITY_HIT
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         """
-        Event-Logic - just note the current position
+        Process the events. In all cases we will chain all events. The only way this widget affects the underlying
+        widgets is by returning values with the chain during a registered snap, when all criteria are met.
         """
 
         if space_pos is None:
@@ -91,10 +97,13 @@ class AttractionWidget(Widget):
             # Shift inverts the on/off of snaps.
             self._snap_grid = not self._snap_grid
             self._snap_points = not self._snap_points
+
         if not self._snap_points and not self._snap_grid:
+            # We are not going to snap.
             return RESPONSE_CHAIN
 
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
+            # Nothing is active that would need snapping.
             return RESPONSE_CHAIN
 
         self._show_snap_points = True
@@ -114,11 +123,13 @@ class AttractionWidget(Widget):
             return RESPONSE_CHAIN
 
         if event_type in ("leftup", "leftclick"):
+            # We are finished, turn off the snow snap.
+
             # Na, we don't need points to be displayed
             # (but we needed the calculation)
             self._show_snap_points = False
 
-        # Loop through display points
+        # Loop through display points, find closest.
         if self.display_points and self.my_x is not None:
             # Has to be lower than the action threshold
             min_delta = float("inf")
@@ -141,7 +152,7 @@ class AttractionWidget(Widget):
                 return RESPONSE_CHAIN, new_x, new_y
         return RESPONSE_CHAIN
 
-    def draw_caret(self, gc, x, y, closeup):
+    def _draw_caret(self, gc, x, y, closeup):
         if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
@@ -162,7 +173,7 @@ class AttractionWidget(Widget):
         path.CloseSubpath()
         gc.DrawPath(path)
 
-    def draw_center(self, gc, x, y, closeup):
+    def _draw_center(self, gc, x, y, closeup):
         if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = self.symbol_size
@@ -185,7 +196,7 @@ class AttractionWidget(Widget):
         path.CloseSubpath()
         gc.DrawPath(path)
 
-    def draw_gridpoint(self, gc, x, y, closeup):
+    def _draw_gridpoint(self, gc, x, y, closeup):
         if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
@@ -207,7 +218,7 @@ class AttractionWidget(Widget):
             2 * dsize,
         )
 
-    def draw_midpoint(self, gc, x, y, closeup):
+    def _draw_midpoint(self, gc, x, y, closeup):
         if closeup == 2:  # closest
             pen = self.closeup_pen
             sym_size = 1.5 * self.symbol_size
@@ -283,38 +294,34 @@ class AttractionWidget(Widget):
                         min_type = pts[2]
 
                 if pts[2] in (TYPE_POINT, TYPE_BOUND):
-                    self.draw_caret(gc, pts[0], pts[1], closeup)
+                    self._draw_caret(gc, pts[0], pts[1], closeup)
                 elif pts[2] == TYPE_MIDDLE:
-                    self.draw_midpoint(gc, pts[0], pts[1], closeup)
+                    self._draw_midpoint(gc, pts[0], pts[1], closeup)
                 elif pts[2] == TYPE_MIDDLE_SMALL:
-                    self.draw_midpoint(gc, pts[0], pts[1], closeup)
+                    self._draw_midpoint(gc, pts[0], pts[1], closeup)
                 elif pts[2] == TYPE_CENTER:
-                    self.draw_center(gc, pts[0], pts[1], closeup)
+                    self._draw_center(gc, pts[0], pts[1], closeup)
                 elif pts[2] == TYPE_GRID:
-                    self.draw_gridpoint(gc, pts[0], pts[1], closeup)
+                    self._draw_gridpoint(gc, pts[0], pts[1], closeup)
         # Draw the closest point
         if min_x is not None:
             closeup = 2  # closest
             if min_type in (TYPE_POINT, TYPE_BOUND):
-                self.draw_caret(gc, min_x, min_y, closeup)
+                self._draw_caret(gc, min_x, min_y, closeup)
             elif min_type == TYPE_MIDDLE:
-                self.draw_midpoint(gc, min_x, min_y, closeup)
+                self._draw_midpoint(gc, min_x, min_y, closeup)
             elif min_type == TYPE_MIDDLE_SMALL:
-                self.draw_midpoint(gc, min_x, min_y, closeup)
+                self._draw_midpoint(gc, min_x, min_y, closeup)
             elif min_type == TYPE_CENTER:
-                self.draw_center(gc, min_x, min_y, closeup)
+                self._draw_center(gc, min_x, min_y, closeup)
             elif min_type == TYPE_GRID:
-                self.draw_gridpoint(gc, min_x, min_y, closeup)
+                self._draw_gridpoint(gc, min_x, min_y, closeup)
 
     def _calculate_attraction_points(self):
         """
         Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
         attraction points (center, corners, sides)
         """
-        # if self.attraction_points is None:
-        #     print (f"Array was empty")
-        # else:
-        #     print (f"Array contained {len(self.attraction_points)} points")
         self.context.elements.set_start_time("attr_calc_points")
         self.attraction_points = []  # Clear all
         translation_table = {
@@ -348,6 +355,12 @@ class AttractionWidget(Widget):
         )
 
     def _calculate_snap_points(self, length):
+        """
+        Recalculate the snap element attraction points
+
+        @param length:
+        @return:
+        """
         for pts in self.attraction_points:
             if self.scene.pane.modif_active:
                 if pts[3]:
@@ -357,11 +370,22 @@ class AttractionWidget(Widget):
                 self.display_points.append([pts[0], pts[1], pts[2]])
 
     def _calculate_grid_points(self, length):
+        """
+        Recalculate the local grid points
+
+        @param length:
+        @return:
+        """
         for pts in self.scene.pane.grid.grid_points:
             if abs(pts[0] - self.my_x) <= length and abs(pts[1] - self.my_y) <= length:
                 self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
     def _calculate_display_points(self):
+        """
+        Recalcuate the points that need to be displayed for the user.
+
+        @return:
+        """
         self.display_points = []
         if self.my_x is None:
             return

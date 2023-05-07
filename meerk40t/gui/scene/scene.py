@@ -16,6 +16,7 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
     HITCHAIN_HIT,
     HITCHAIN_HIT_AND_DELEGATE,
+    HITCHAIN_PRIORITY_HIT,
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -513,8 +514,8 @@ class Scene(Module, Job):
         response = current_widget.hit()
         if response == HITCHAIN_HIT:
             self.hittable_elements.append((current_widget, matrix_within_scene))
-        # elif response == HITCHAIN_HIT_WITH_PRIORITY:
-        #    self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
+        elif response == HITCHAIN_PRIORITY_HIT:
+            self.hittable_elements.insert(0, (current_widget, matrix_within_scene))
         elif response == HITCHAIN_DELEGATE:
             for w in current_widget:
                 self.rebuild_hit_chain(w, matrix_within_scene)
