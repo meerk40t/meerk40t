@@ -24,6 +24,9 @@ class AffineMover(Widget):
         self._matrix = None
         self._last_m = None
         self._locked_point = None
+        self.lock_1 = False
+        self.lock_2 = False
+        self.lock_4 = False
 
     def init(self, context):
         context.listen("emphasized", self.emphasis_changed)
@@ -49,21 +52,32 @@ class AffineMover(Widget):
         self._bounds = bounds
         gc.PushState()
         gc.SetPen(self.tool_pen)
-        gc.SetBrush(wx.RED_BRUSH)
         buffer = 2000
         try:
+            if self.lock_1:
+                gc.SetBrush(wx.GREEN_BRUSH)
+            else:
+                gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
                 self.point_1[0] - buffer,
                 self.point_1[1] - buffer,
                 2 * buffer,
                 2 * buffer,
             )
+            if self.lock_2:
+                gc.SetBrush(wx.GREEN_BRUSH)
+            else:
+                gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
                 self.point_2[0] - buffer,
                 self.point_2[1] - buffer,
                 2 * buffer,
                 2 * buffer,
             )
+            if self.lock_4:
+                gc.SetBrush(wx.GREEN_BRUSH)
+            else:
+                gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
                 self.point_4[0] - buffer,
                 self.point_4[1] - buffer,
@@ -107,10 +121,28 @@ class AffineMover(Widget):
             self.scene.toast(f"moving point {self._locked_point} to {space_pos[:2]}")
             if self._locked_point == 1:
                 self.point_1 = list(space_pos[:2])
+                if self.lock_2:
+                    self.point_2[0] += space_pos[4]
+                    self.point_2[1] += space_pos[5]
+                if self.lock_4:
+                    self.point_4[0] += space_pos[4]
+                    self.point_4[1] += space_pos[5]
             elif self._locked_point == 2:
                 self.point_2 = list(space_pos[:2])
+                if self.lock_1:
+                    self.point_1[0] += space_pos[4]
+                    self.point_1[1] += space_pos[5]
+                if self.lock_4:
+                    self.point_4[0] += space_pos[4]
+                    self.point_4[1] += space_pos[5]
             elif self._locked_point == 4:
                 self.point_4 = list(space_pos[:2])
+                if self.lock_1:
+                    self.point_1[0] += space_pos[4]
+                    self.point_1[1] += space_pos[5]
+                if self.lock_2:
+                    self.point_2[0] += space_pos[4]
+                    self.point_2[1] += space_pos[5]
             matrix = self.current_affine_matrix()
             try:
                 m = ~self._matrix * matrix
@@ -146,6 +178,15 @@ class AffineMover(Widget):
             self._locked_point = None
             self._bounds = None
             self._last_m = None
+            self.scene.request_refresh()
+            return RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            if self._locked_point == 1:
+                self.lock_1 = not self.lock_1
+            elif self._locked_point == 2:
+                self.lock_2 = not self.lock_2
+            elif self._locked_point == 4:
+                self.lock_4 = not self.lock_4
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         return RESPONSE_CHAIN
