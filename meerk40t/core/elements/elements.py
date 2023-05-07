@@ -91,7 +91,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
         kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
-        kernel.register("format/util origin", "{enabled}{element_type} {adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")

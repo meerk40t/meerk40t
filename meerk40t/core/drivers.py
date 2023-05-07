@@ -238,17 +238,6 @@ class Driver:
         @return:
         """
 
-    def set_origin(self, x, y):
-        """
-        This should set the origin position for the laser. X, Y refer to the origin position. If these are None then the
-        origin position should be set to the current position of the laser head (if possible).
-
-        @param x:
-        @param y:
-        @return:
-        """
-        pass
-
     def wait(self, time_in_ms):
         """
         Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is

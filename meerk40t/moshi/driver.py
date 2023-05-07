@@ -15,7 +15,6 @@ from ..core.cutcode.linecut import LineCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -51,8 +50,6 @@ class MoshiDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
-        self.origin_x = 0
-        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
@@ -204,16 +201,7 @@ class MoshiDriver(Parameters):
                 self.home()
             elif isinstance(q, GotoCut):
                 start = q.start
-                self._goto_absolute(
-                    self.origin_x + start[0], self.origin_y + start[1], 0
-                )
-            elif isinstance(q, SetOriginCut):
-                if q.set_current:
-                    x = self.native_x
-                    y = self.native_y
-                else:
-                    x, y = q.start
-                self.set_origin(x, y)
+                self._goto_absolute(start[0], start[1], 0)
             elif isinstance(q, WaitCut):
                 # Moshi has no forced wait functionality.
                 # self.wait_finish()
@@ -443,17 +431,6 @@ class MoshiDriver(Parameters):
         except (ValueError, IndexError):
             move_y = 0
         self._start_raster_mode(offset_x, offset_y, move_x, move_y)
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
 
     def wait(self, time_in_ms):
         """
