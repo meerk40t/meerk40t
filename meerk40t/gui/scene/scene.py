@@ -10,7 +10,6 @@ from meerk40t.gui.laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_REFRESH,
 )
-from meerk40t.gui.scene.guicolors import GuiColors
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE,
     HITCHAIN_DELEGATE_AND_HIT,
@@ -202,7 +201,7 @@ class Scene(Module, Job):
         self._cursor = None
         self.suppress_changes = True
 
-        self.colors = GuiColors(self.context)
+        self.colors = self.context.colors
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
