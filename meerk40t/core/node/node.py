@@ -908,7 +908,9 @@ class Node:
         """
         from .bootstrap import bootstrap, defaults
 
-        node_class = bootstrap.get(type, Node)
+        node_class = bootstrap.get(type, None)
+        if node_class is None:
+            raise ValueError("Attempted to create unbootstrapped node")
         node_defaults = defaults.get(type, {})
         nd = dict(node_defaults)
         nd.update(kwargs)

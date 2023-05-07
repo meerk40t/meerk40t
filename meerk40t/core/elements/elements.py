@@ -1169,7 +1169,7 @@ class Elemental(Service):
             # So recover gracefully
             try:
                 op = operation_branch.add(type=op_type)
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError, ValueError):
                 print(f"That should not happen, but ops contained: '{op_type}'")
                 continue
 
