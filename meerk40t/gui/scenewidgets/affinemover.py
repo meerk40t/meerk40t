@@ -1,10 +1,10 @@
 import wx
 
 from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
     HITCHAIN_DELEGATE,
-    RESPONSE_CONSUME,
+    HITCHAIN_HIT,
     RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget

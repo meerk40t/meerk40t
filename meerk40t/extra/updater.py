@@ -38,7 +38,12 @@ def plugin(kernel, lifecycle):
         @context.console_option(
             "beta", "b", type=bool, action="store_true", help=_("Check for betas")
         )
-        @context.console_option("verbosity", "p", type=int, help=("Show Info: 0 never, 1 console only, 2 if version found, 3 always"))
+        @context.console_option(
+            "verbosity",
+            "p",
+            type=int,
+            help=("Show Info: 0 never, 1 console only, 2 if version found, 3 always"),
+        )
         @kernel.console_command(
             "check_for_updates",
             help=_("Check whether a newer version of Meerk40t is available"),
@@ -101,7 +106,11 @@ def plugin(kernel, lifecycle):
                 if response["body"]:
                     infomessages = response["body"].split("\n")
                     for idx, line in enumerate(infomessages):
-                        if "what's changed" in line.lower() or "full changelog:" in line.lower() or idx > 6:
+                        if (
+                            "what's changed" in line.lower()
+                            or "full changelog:" in line.lower()
+                            or idx > 6
+                        ):
                             # Too much information... stop
                             break
                         if rel_info != "":
@@ -168,7 +177,14 @@ def plugin(kernel, lifecycle):
                         for resp in response:
                             if resp["draft"]:
                                 continue
-                            tag, version, label, url, assets, rel_info = extract_from_json(resp)
+                            (
+                                tag,
+                                version,
+                                label,
+                                url,
+                                assets,
+                                rel_info,
+                            ) = extract_from_json(resp)
                             # What is the newest beta
                             if resp["prerelease"]:
                                 if newer_version(version, version_beta):
@@ -206,7 +222,14 @@ def plugin(kernel, lifecycle):
                                 )
                         # If full version is latest, disregard betas
                         if newer_version(version_full, version_beta):
-                            tag_beta, version_beta, label_beta, url_beta, assets_beta, info_beta = (
+                            (
+                                tag_beta,
+                                version_beta,
+                                label_beta,
+                                url_beta,
+                                assets_beta,
+                                info_beta,
+                            ) = (
                                 None,
                                 None,
                                 None,
@@ -290,7 +313,9 @@ def plugin(kernel, lifecycle):
                             if verbosity > 2:
                                 channel(message)
                                 if kernel.yesno(
-                                    message + "\n" + _("Do you want to look for yourself?")
+                                    message
+                                    + "\n"
+                                    + _("Do you want to look for yourself?")
                                 ):
                                     import webbrowser
 

@@ -692,7 +692,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             start = plot.start
             self.wait_finish()
-            self._move_absolute(start[0],start[1])
+            self._move_absolute(start[0], start[1])
         else:
             # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
             if isinstance(plot, PlotCut):

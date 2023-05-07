@@ -8,6 +8,7 @@ All color aspects exist, if they don't actually exist a base color will be provi
 """
 
 import random
+
 import wx
 
 from meerk40t.kernel import Service

@@ -8,10 +8,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.elements.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_PRIORITY_HIT,
-    RESPONSE_CHAIN,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_PRIORITY_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0
