@@ -1,11 +1,25 @@
-import random
+"""
+Provides and stores all relevant colors for gui.
 
+This is a service, such that it's available at `.colors` for all contexts. However, this, because it requires wx a
+purely gui service. Calling .colors.get("<aspect>") will provide the relevant wxColour() object.
+
+All color aspects exist, if they don't actually exist a base color will be provided.
+"""
+
+import random
 import wx
 
+from meerk40t.kernel import Service
 from meerk40t.svgelements import Color
 
 
 def random_color():
+    """
+    Creates a random color.
+
+    @return:
+    """
     return (
         f"#"
         f"{random.randint(0, 255):02X}"
@@ -37,24 +51,94 @@ default_color = {
 }
 
 
-class GuiColors:
+def base_color(item):
     """
-    Provides and stores all relevant colors for a scene
+    Provides a base color, either default if the color is provided by default, or a random color.
+    @param item:
+    @return:
+    """
+    if item in default_color:
+        return default_color[item]
+    else:
+        return random_color()
+
+
+class GuiColors(Service):
+    """
+    Color service class, for wxGui.
+    Service is registered by the gui.plugin
     """
 
-    def __init__(self, context):
-        self.context = context
+    def __init__(self, kernel, *args, **kwargs):
+        Service.__init__(self, kernel, "colors")
+        _ = kernel.translation
         for key in default_color:
-            self.context.setting(str, f"color_{key}", default_color[key])
+            self.setting(str, key, default_color[key])
         self.sanity_check()
 
-    def get(self, item, default=None):
+    def __getattr__(self, item):
+        """
+        Getattr replaces the .color_* values with the declared colors.
+        @param item:
+        @return:
+        """
+        if not item.startswith("color_"):
+            raise AttributeError
+        return self.get_color(item[6:])
+
+    def __setattr__(self, key, value):
+        """
+        Setattr applying to the .color_* values.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key.startswith("color_"):
+            key = key[6:]
+        super().__setattr__(key, value)
+
+    def __getitem__(self, item):
+        """
+        Permit .colors["bed"], this will return a wx.Colour() object.
+        @param item:
+        @return:
+        """
+        return self.get(item)
+
+    def get_color(self, item, default=None):
+        """
+        Returns a string color value corresponding to the key used.
+
+        @param item:
+        @param default:
+        @return:
+        """
         if default is None:
-            if item in default_color:
-                default = default_color[item]
-            else:
-                default = random_color()
-        return self.context.setting(str, f"color_{item}", default)
+            default = base_color(item)
+        d = self.__dict__
+        if item in d:
+            color = d[item]
+        else:
+            color = default
+            d[item] = color
+
+        if color == "default":
+            color = base_color(item)
+            d[item] = color
+        return color
+
+    def get(self, item, default=None):
+        """
+        Get wxColor at the item key value.
+
+        @param item:
+        @param default:
+        @return:
+        """
+        color = self.get_color(item, default)
+        c = Color(color)
+        return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
 
     def sanity_check(self):
         """
@@ -66,8 +150,7 @@ class GuiColors:
         def identical(color1, color2):
             return color1.GetRGB() == color2.GetRGB()
 
-        bed_color = self.color_bed
-        fixed = 0
+        bed_color = self.get("bed")
         for key in (
             "grid",
             "guide",
@@ -79,115 +162,20 @@ class GuiColors:
             "selection2",
             "selection3",
         ):
-            item_color = self._get_color(key)
+            item_color = self.get(key)
             if identical(bed_color, item_color):
-                fixed += 1
-                color_key = f"color_{key}"
-                setattr(self.context, color_key, default_color[key])
-        # if fixed>0:
-        # self.context("Reset %d colors to their defaults, as thye wre indistinguishable from the bed" % fixed)
+                setattr(self, key, base_color(key))
 
     def set_random_colors(self):
         """
         Reset all colors to random values...
         """
         for key in default_color:
-            color_key = f"color_{key}"
-            setattr(self.context, color_key, random_color())
+            setattr(self, key, random_color())
 
     def set_default_colors(self):
         """
         Reset all colors to default values...
         """
         for key in default_color:
-            color_key = f"color_{key}"
-            setattr(self.context, color_key, default_color[key])
-
-    def _get_color(self, key):
-        color_key = f"color_{key}"
-        if hasattr(self.context, color_key):
-            s = getattr(self.context, color_key)
-            if len(s) == 0 or s == "default":
-                # print ("Reset requested for color: %s" % color_key)
-                s = default_color[key]
-                setattr(self.context, color_key, s)
-        else:
-            s = default_color[key]
-        c = Color(s)
-        return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
-
-    @property
-    def color_manipulation(self):
-        return self._get_color("manipulation")
-
-    @property
-    def color_manipulation_handle(self):
-        return self._get_color("manipulation_handle")
-
-    @property
-    def color_laserpath(self):
-        return self._get_color("laserpath")
-
-    @property
-    def color_grid(self):
-        return self._get_color("grid")
-
-    @property
-    def color_grid2(self):
-        return self._get_color("grid2")
-
-    @property
-    def color_grid3(self):
-        return self._get_color("grid3")
-
-    @property
-    def color_guide(self):
-        return self._get_color("guide")
-
-    @property
-    def color_guide2(self):
-        return self._get_color("guide2")
-
-    @property
-    def color_guide3(self):
-        return self._get_color("guide3")
-
-    @property
-    def color_background(self):
-        return self._get_color("background")
-
-    @property
-    def color_magnetline(self):
-        return self._get_color("magnetline")
-
-    @property
-    def color_snap_visible(self):
-        return self._get_color("snap_visible")
-
-    @property
-    def color_snap_closeup(self):
-        return self._get_color("snap_closeup")
-
-    @property
-    def color_selection1(self):
-        return self._get_color("selection1")
-
-    @property
-    def color_selection2(self):
-        return self._get_color("selection2")
-
-    @property
-    def color_selection3(self):
-        return self._get_color("selection3")
-
-    @property
-    def color_measure_line(self):
-        return self._get_color("measure_line")
-
-    @property
-    def color_measure_text(self):
-        return self._get_color("measure_text")
-
-    @property
-    def color_bed(self):
-        return self._get_color("bed")
+            setattr(self, key, default_color[key])

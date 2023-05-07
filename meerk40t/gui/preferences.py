@@ -472,15 +472,14 @@ class Preferences(MWindow):
         self.panel_scene.SetupScrolling()
 
         main_scene = getattr(self.context.root, "mainscene", None)
-        colorchoices = []
+        color_choices = []
         local_default_color = []
-        for key in main_scene.colors.default_color:
-            local_default_color.append(key)
+        for key, value in main_scene.colors.__dict__.items():
+            if not key.startswith("_") and isinstance(value, str):
+                local_default_color.append(key)
         local_default_color.sort()
         section = ""
         for key in local_default_color:
-            colorkey = f"color_{key}"
-            defaultcolor = main_scene.colors.default_color[key]
             # Try to make a sensible name out of it
             keyname = key.replace("_", " ")
             idx = 1  # Intentionally
@@ -493,32 +492,31 @@ class Preferences(MWindow):
             possible_section = words[0]
             if possible_section[0:2] != section[0:2]:
                 section = possible_section
-            singlechoice = {
-                "attr": colorkey,
-                "object": self.context,
-                "default": defaultcolor,
+            color_choices.append({
+                "attr": f"color_{key}",
+                "object": main_scene.colors,
+                "default": main_scene.colors[key],
                 "type": str,
                 "style": "color",  # hexa representation
                 "label": keyname,
                 "section": section,
                 "signals": ("refresh_scene", "theme"),
-            }
-            colorchoices.append(singlechoice)
-        singlechoice = {
+            })
+
+        color_choices.append({
             "attr": "color_reset",
             "object": self,
             "type": bool,
             "style": "button",
             "label": _("Reset Colors to Default"),
             "section": "_ZZ_",
-        }
-        colorchoices.append(singlechoice)
+        })
 
         self.panel_color = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
             context=self.context,
-            choices=colorchoices,
+            choices=color_choices,
             entries_per_column=12,
         )
         self.panel_color.SetupScrolling()

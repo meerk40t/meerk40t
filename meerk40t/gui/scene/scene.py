@@ -202,7 +202,7 @@ class Scene(Module, Job):
         self._cursor = None
         self.suppress_changes = True
 
-        self.colors = GuiColors(self.context)
+        self.colors = self.context.colors
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
