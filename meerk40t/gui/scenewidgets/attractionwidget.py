@@ -56,10 +56,7 @@ class AttractionWidget(Widget):
         """
         Hit-Logic - by definition: yes, I want to be involved
         """
-        if self.context.snap_points or self.context.snap_grid:
-            return HITCHAIN_HIT
-        else:
-            return HITCHAIN_DELEGATE
+        return HITCHAIN_HIT
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
@@ -67,71 +64,68 @@ class AttractionWidget(Widget):
         """
         Event-Logic - just note the current position
         """
-        # if event_type.startswith("left"):
-        #     print(f"Attract - event={event_type}, space={space_pos}")
-        response = RESPONSE_CHAIN
         if space_pos is None:
-            return response
+            return RESPONSE_CHAIN
+
+        if event_type not in (
+            "leftdown",
+            "leftup",
+            "leftclick",
+            "move",
+            "hover",
+            "hover_start",
+        ):
+            return RESPONSE_CHAIN
+
         self.my_x = space_pos[0]
         self.my_y = space_pos[1]
-        if (
-            event_type
-            in ("leftdown", "leftup", "leftclick", "move", "hover", "hover_start")
-            and (self.scene.pane.tool_active or self.scene.pane.modif_active)
-            and "shift" not in modifiers
-        ):
-            self.calculate_display_points()
+        ctx = self.context
+        # Shift inverts the on/off of snaps.
+        snaps_on = (ctx.snap_points or ctx.snap_grid) != "shift" in modifiers
+        snaps_requested = self.scene.pane.tool_active or self.scene.pane.modif_active
+        self._show_snap_points = False
+
+        if snaps_requested and snaps_on:
             self._show_snap_points = True
-        else:
-            self._show_snap_points = False
-        if (
-            event_type
-            in (
-                "leftdown",
-                "leftup",
-                "leftclick",
-                "move",
-                # "hover",
-            )
-            and self._show_snap_points
+            self.calculate_display_points()
+
+        if event_type in (
+            "hover",
+            "hover_start",
         ):
-            if event_type in ("leftup", "leftclick"):
-                # Na, we don't need points to be displayed
-                # (but we needed the calculation)
-                self._show_snap_points = False
-            # Check whether shift key is pressed...
-            if "shift" not in modifiers:
-                # if event_type.startswith("left"):
-                #     print (f"x={self.my_x}, y={self.my_y}, len={len(self.display_points)}")
-                # Loop through display points
-                if len(self.display_points) > 0 and not self.my_x is None:
-                    # Has to be lower than the action threshold
-                    min_delta = float("inf")  # self.action_attract_len
-                    new_x = None
-                    new_y = None
-                    for pt in self.display_points:
-                        delta = sqrt(
-                            (pt[0] - self.my_x) * (pt[0] - self.my_x)
-                            + (pt[1] - self.my_y) * (pt[1] - self.my_y)
-                        )
-                        if delta < min_delta:
-                            new_x = pt[0]
-                            new_y = pt[1]
-                            min_delta = delta
-                    # fmt:off
-                    # print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
-                    #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.context.action_attract_len, ))
-                    # fmt:on
-                    matrix = self.parent.matrix
-                    pixel = self.context.action_attract_len / matrix.value_scale_x()
-                    if new_x is not None:
-                        if (
-                            abs(new_x - self.my_x) <= pixel
-                            and abs(new_y - self.my_y) <= pixel
-                        ):
-                            # Is the distance small enough?
-                            response = (RESPONSE_CHAIN, new_x, new_y)
-        return response
+            # Hovers show snaps, but they do not snap.
+            return RESPONSE_CHAIN
+
+        if not self._show_snap_points:
+            return RESPONSE_CHAIN
+
+        if event_type in ("leftup", "leftclick"):
+            # Na, we don't need points to be displayed
+            # (but we needed the calculation)
+            self._show_snap_points = False
+
+        # Loop through display points
+        if len(self.display_points) > 0 and self.my_x is not None:
+            # Has to be lower than the action threshold
+            min_delta = float("inf")
+            new_x = None
+            new_y = None
+            for pt in self.display_points:
+                delta = sqrt(
+                    (pt[0] - self.my_x) * (pt[0] - self.my_x)
+                    + (pt[1] - self.my_y) * (pt[1] - self.my_y)
+                )
+                if delta < min_delta:
+                    new_x = pt[0]
+                    new_y = pt[1]
+                    min_delta = delta
+            matrix = self.parent.matrix
+            pixel = self.context.action_attract_len / matrix.value_scale_x()
+            if new_x is not None:
+                if abs(new_x - self.my_x) <= pixel and abs(new_y - self.my_y) <= pixel:
+                    # Is the distance small enough?
+                    return RESPONSE_CHAIN, new_x, new_y
+        return RESPONSE_CHAIN
 
     def draw_caret(self, gc, x, y, closeup):
         if closeup == 2:  # closest
