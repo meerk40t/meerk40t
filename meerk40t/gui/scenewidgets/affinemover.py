@@ -24,9 +24,9 @@ class AffineMover(Widget):
         self._matrix = None
         self._last_m = None
         self._locked_point = None
-        self.lock_1 = False
-        self.lock_2 = False
-        self.lock_4 = False
+        self.lock_1 = 0
+        self.lock_2 = 0
+        self.lock_4 = 0
 
     def init(self, context):
         context.listen("emphasized", self.emphasis_changed)
@@ -46,16 +46,29 @@ class AffineMover(Widget):
             self.point_4 = None
             return
         if self._bounds is None:
-            self.point_1 = [bounds[0], bounds[1]]
-            self.point_2 = [bounds[2], bounds[1]]
-            self.point_4 = [bounds[0], bounds[3]]
+            primary = self.scene.context.elements.first_emphasized
+            try:
+                bounds = primary.bbox(transformed=False)
+            except AttributeError:
+                return
+            matrix = primary.matrix
+            left, top, right, bottom = bounds
+            min_x = min(right, left)
+            min_y = min(top, bottom)
+            max_x = max(right, left)
+            max_y = max(top, bottom)
+            self.point_1 = matrix.point_in_matrix_space([min_x, min_y])
+            self.point_2 = matrix.point_in_matrix_space([max_x, min_y])
+            self.point_4 = matrix.point_in_matrix_space([min_x, max_y])
         self._bounds = bounds
         gc.PushState()
         gc.SetPen(self.tool_pen)
         buffer = 2000
         try:
-            if self.lock_1:
+            if self.lock_1 == 1:
                 gc.SetBrush(wx.GREEN_BRUSH)
+            if self.lock_1 == -1:
+                gc.SetBrush(wx.BLUE_BRUSH)
             else:
                 gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
@@ -64,8 +77,10 @@ class AffineMover(Widget):
                 2 * buffer,
                 2 * buffer,
             )
-            if self.lock_2:
+            if self.lock_2 == 1:
                 gc.SetBrush(wx.GREEN_BRUSH)
+            elif self.lock_2 == -1:
+                gc.SetBrush(wx.BLUE_BRUSH)
             else:
                 gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
@@ -74,8 +89,10 @@ class AffineMover(Widget):
                 2 * buffer,
                 2 * buffer,
             )
-            if self.lock_4:
+            if self.lock_4 == 1:
                 gc.SetBrush(wx.GREEN_BRUSH)
+            elif self.lock_4 == -1:
+                gc.SetBrush(wx.BLUE_BRUSH)
             else:
                 gc.SetBrush(wx.RED_BRUSH)
             gc.DrawEllipse(
@@ -121,28 +138,22 @@ class AffineMover(Widget):
             self.scene.toast(f"moving point {self._locked_point} to {space_pos[:2]}")
             if self._locked_point == 1:
                 self.point_1 = list(space_pos[:2])
-                if self.lock_2:
-                    self.point_2[0] += space_pos[4]
-                    self.point_2[1] += space_pos[5]
-                if self.lock_4:
-                    self.point_4[0] += space_pos[4]
-                    self.point_4[1] += space_pos[5]
+                self.point_2[0] += space_pos[4] * self.lock_2
+                self.point_2[1] += space_pos[5] * self.lock_2
+                self.point_4[0] += space_pos[4] * self.lock_4
+                self.point_4[1] += space_pos[5] * self.lock_4
             elif self._locked_point == 2:
                 self.point_2 = list(space_pos[:2])
-                if self.lock_1:
-                    self.point_1[0] += space_pos[4]
-                    self.point_1[1] += space_pos[5]
-                if self.lock_4:
-                    self.point_4[0] += space_pos[4]
-                    self.point_4[1] += space_pos[5]
+                self.point_1[0] += space_pos[4] * self.lock_1
+                self.point_1[1] += space_pos[5] * self.lock_1
+                self.point_4[0] += space_pos[4] * self.lock_4
+                self.point_4[1] += space_pos[5] * self.lock_4
             elif self._locked_point == 4:
                 self.point_4 = list(space_pos[:2])
-                if self.lock_1:
-                    self.point_1[0] += space_pos[4]
-                    self.point_1[1] += space_pos[5]
-                if self.lock_2:
-                    self.point_2[0] += space_pos[4]
-                    self.point_2[1] += space_pos[5]
+                self.point_1[0] += space_pos[4] * self.lock_1
+                self.point_1[1] += space_pos[5] * self.lock_1
+                self.point_2[0] += space_pos[4] * self.lock_2
+                self.point_2[1] += space_pos[5] * self.lock_2
             matrix = self.current_affine_matrix()
             try:
                 m = ~self._matrix * matrix
@@ -182,11 +193,11 @@ class AffineMover(Widget):
             return RESPONSE_CONSUME
         elif event_type == "leftclick":
             if self._locked_point == 1:
-                self.lock_1 = not self.lock_1
+                self.lock_1 = ((self.lock_1 + 2) % 3) - 1
             elif self._locked_point == 2:
-                self.lock_2 = not self.lock_2
+                self.lock_2 = ((self.lock_2 + 2) % 3) - 1
             elif self._locked_point == 4:
-                self.lock_4 = not self.lock_4
+                self.lock_4 = ((self.lock_4 + 2) % 3) - 1
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         return RESPONSE_CHAIN
