@@ -72,7 +72,7 @@ class Widget(list):
             self.visible = visible
 
     def __str__(self):
-        return f"Widget({self.left}, {self.top}, {self.right}, {self.bottom})"
+        return f"{type(self).__name__}({self.left}, {self.top}, {self.right}, {self.bottom})"
 
     def __repr__(self):
         return f"{type(self).__name__}({self.left}, {self.top}, {self.right}, {self.bottom})"
