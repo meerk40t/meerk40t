@@ -66,6 +66,7 @@ class AttractionWidget(Widget):
         """
         Event-Logic - just note the current position
         """
+
         if space_pos is None:
             return RESPONSE_CHAIN
 
@@ -90,20 +91,20 @@ class AttractionWidget(Widget):
             # Shift inverts the on/off of snaps.
             self._snap_grid = not self._snap_grid
             self._snap_points = not self._snap_points
+        if not self._snap_points and not self._snap_grid:
+            return RESPONSE_CHAIN
 
         if not self.scene.pane.tool_active and not self.scene.pane.modif_active:
             return RESPONSE_CHAIN
 
-        if self._snap_points or self._snap_grid:
-            self._show_snap_points = True
-            # Inform profiler
-            ctx.elements.set_start_time("attr_calc_disp")
-            self._calculate_display_points()
-            ctx.elements.set_end_time(
-                "attr_calc_disp", message=f"points added={len(self.display_points)}"
-            )
-        else:
-            return RESPONSE_CHAIN
+        self._show_snap_points = True
+
+        # Inform profiler
+        ctx.elements.set_start_time("attr_calc_disp")
+        self._calculate_display_points()
+        ctx.elements.set_end_time(
+            "attr_calc_disp", message=f"points added={len(self.display_points)}"
+        )
 
         if event_type in (
             "hover",
@@ -118,7 +119,7 @@ class AttractionWidget(Widget):
             self._show_snap_points = False
 
         # Loop through display points
-        if len(self.display_points) > 0 and self.my_x is not None:
+        if self.display_points and self.my_x is not None:
             # Has to be lower than the action threshold
             min_delta = float("inf")
             new_x = None
