@@ -183,6 +183,9 @@ class Scene(Module, Job):
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
         )
+        # Scene lock is used for widget structure modification and scene drawing.
+        self.scene_lock = threading.RLock()
+
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
@@ -190,7 +193,7 @@ class Scene(Module, Job):
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
-        self.screen_refresh_lock = threading.Lock()
+
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
         self._down_start_time = None
@@ -238,7 +241,7 @@ class Scene(Module, Job):
 
     def module_close(self, *args, **kwargs):
         self._final_widget(self.widget_root, self.context)
-        self.screen_refresh_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
+        self.scene_lock.acquire()  # calling shutdown live locks here since it's already shutting down.
         self.context.unschedule(self)
 
     def _init_widget(self, widget, context):
@@ -330,26 +333,27 @@ class Scene(Module, Job):
         Called by the Scheduler at a given the specified framerate.
         Called in the UI thread.
         """
-        if self.screen_refresh_is_requested:
-            if self.screen_refresh_lock.acquire(timeout=0.2):
-                try:
-                    self.update_buffer_ui_thread()  # May hit runtime error.
-                    self.gui.Refresh()
-                    self.gui.Update()
-                except RuntimeError:
-                    pass
-                self.screen_refresh_is_requested = False
-                self.screen_refresh_lock.release()
-            else:
-                self.screen_refresh_is_requested = False
+        if not self.screen_refresh_is_requested:
+            return
+        if self.scene_lock.acquire(timeout=0.2):
+            try:
+                self._update_buffer_ui_thread()  # May hit runtime error.
+                self.gui.Refresh()
+                self.gui.Update()
+            except RuntimeError:
+                pass
+            self.screen_refresh_is_requested = False
+            self.scene_lock.release()
+        else:
+            self.screen_refresh_is_requested = False
 
-    def update_buffer_ui_thread(self):
+    def _update_buffer_ui_thread(self):
         """Performs redrawing of the data in the UI thread."""
         dm = self.context.draw_mode
-        buf = self.gui._Buffer
+        buf = self.gui.scene_buffer
         if buf is None or buf.GetSize() != self.gui.ClientSize or not buf.IsOk():
             self.gui.set_buffer()
-            buf = self.gui._Buffer
+            buf = self.gui.scene_buffer
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
         if self.overrule_background is None:

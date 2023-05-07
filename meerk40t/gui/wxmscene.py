@@ -45,6 +45,7 @@ from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
+from meerk40t.gui.scenewidgets.affinemover import AffineMover
 from meerk40t.gui.utilitywidgets.harmonograph import HarmonographWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
@@ -130,7 +131,9 @@ class MeerK40tScenePanel(wx.Panel):
 
         context = self.context
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
+        self.selectionwidget = SelectionWidget(self.widget_scene)
+        self.affinemover = None
+        self.widget_scene.add_scenewidget(self.selectionwidget)
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
@@ -320,6 +323,30 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
             channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
+
+        @context.console_command("affinemover", hidden=True)
+        def affinemover(channel, _, **kwgs):
+            """
+            Replaces the selection widget with the affine-mover.
+            """
+            if self.affinemover is None:
+                self.affinemover = AffineMover(self.widget_scene)
+                self.widget_scene.widget_root.scene_widget.remove_widget(
+                    self.selectionwidget
+                )
+                self.widget_scene.widget_root.scene_widget.add_widget(
+                    0, self.affinemover
+                )
+                channel(_("Affine-Mover made selection widget."))
+            else:
+                self.widget_scene.widget_root.scene_widget.remove_widget(
+                    self.affinemover
+                )
+                self.widget_scene.widget_root.scene_widget.add_widget(
+                    0, self.selectionwidget
+                )
+                channel(_("Selection-Widget selection widget."))
+                self.affinemover = None
 
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwgs):
