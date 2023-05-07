@@ -380,19 +380,7 @@ class AttractionWidget(Widget):
         """
         Signal commands which indicate that we need to refresh / discard some data
         """
-        # print ("AttractionWidget receives signal: %s" % signal)
-        consumed = False
-        if signal == "attraction":
-            consumed = True
-        elif signal in ("modified", "emphasized", "element_added", "tool_modified"):
-            consumed = True
+        if signal in ("modified", "emphasized", "element_added", "tool_modified"):
             self.attraction_points = None
-        elif signal in ("grid", "guide"):
-            consumed = True
-            # self.scene.grid_points = None
         elif signal == "theme":
-            consumed = True
             self.load_colors()
-        if not consumed:
-            # print ("Don't know what to do with signal %s" % signal)
-            pass
