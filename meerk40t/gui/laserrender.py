@@ -28,7 +28,6 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
@@ -553,9 +552,6 @@ class LaserRender:
                 pass
             elif isinstance(cut, HomeCut):
                 p.MoveToPoint(0, 0)
-            elif isinstance(cut, SetOriginCut):
-                # This may actually need to set a new draw location for loop cuts
-                pass
             elif isinstance(cut, GotoCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
             elif isinstance(cut, InputCut):

@@ -101,15 +101,6 @@ class Driver:
             state1 = "paused" if self.paused else "hold"
         return (self.native_x, self.native_y), state0, state1
 
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -246,17 +237,6 @@ class Driver:
         @param values:
         @return:
         """
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position for the laser. X, Y refer to the origin position. If these are None then the
-        origin position should be set to the current position of the laser head (if possible).
-
-        @param x:
-        @param y:
-        @return:
-        """
-        pass
 
     def wait(self, time_in_ms):
         """

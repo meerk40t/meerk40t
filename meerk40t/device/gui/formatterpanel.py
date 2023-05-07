@@ -46,7 +46,6 @@ class FormatterPanel(wx.Panel):
             "util wait": icons8_timer_20,
             "util home": icons8_home_20,
             "util goto": icons8_return_20,
-            "util origin": icons8_return_20,
             "util output": icons8_output_20,
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
@@ -169,7 +168,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_goto import GotoOperation
         from meerk40t.core.node.util_home import HomeOperation
         from meerk40t.core.node.util_input import InputOperation
-        from meerk40t.core.node.util_origin import SetOriginOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
         from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
@@ -183,7 +181,6 @@ class FormatterPanel(wx.Panel):
             "op hatch": HatchOpNode,
             "util console": ConsoleOperation,
             "util wait": WaitOperation,
-            "util origin": SetOriginOperation,
             "util home": HomeOperation,
             "util goto": GotoOperation,
             "util input": InputOperation,

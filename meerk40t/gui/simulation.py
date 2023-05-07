@@ -16,12 +16,10 @@ from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.node.util_console import ConsoleOperation
 from ..core.node.util_goto import GotoOperation
 from ..core.node.util_home import HomeOperation
-from ..core.node.util_origin import SetOriginOperation
 from ..core.node.util_wait import WaitOperation
 from ..core.units import Length
 from ..svgelements import Matrix
@@ -117,7 +115,6 @@ class OperationsPanel(wx.Panel):
             ["home", icons8_home_20],
             ["goto", icons8_return_20],
             ["origin", icons8_return_20],
-            ["setorigin", icons8_visit_20],
             ["output", icons8_output_20],
             ["input", icons8_input_20],
             ["cutcode", icons8_laser_beam_hazard2_50],
@@ -199,15 +196,6 @@ class OperationsPanel(wx.Panel):
                                 self.cutplan.plan.insert(myidx, newop)
                                 myidx += 1
                                 cut.pop(0)
-                            elif isinstance(entry, SetOriginCut):
-                                # reverse engineer
-                                changes = True
-                                x = entry._start_x
-                                y = entry._start_y
-                                newop = SetOriginOperation(x=x, y=y)
-                                self.cutplan.plan.insert(myidx, newop)
-                                myidx += 1
-                                cut.pop(0)
                             else:
                                 # 'Real ' stuff starts that's enough...
                                 break
@@ -235,14 +223,6 @@ class OperationsPanel(wx.Panel):
                                 changes = True
                                 wt = entry.dwell_time
                                 newop = WaitOperation(wait=wt)
-                                self.cutplan.plan.insert(myidx + 1, newop)
-                                cut.pop(last)
-                            elif isinstance(entry, SetOriginCut):
-                                # reverse engineer
-                                changes = True
-                                x = entry._start_x
-                                y = entry._start_y
-                                newop = SetOriginOperation(x=x, y=y)
                                 self.cutplan.plan.insert(myidx + 1, newop)
                                 cut.pop(last)
                             else:
@@ -315,24 +295,6 @@ class OperationsPanel(wx.Panel):
                     flag = True
                 except ValueError:
                     return
-            elif isinstance(op, SetOriginOperation):
-                if content != "":
-                    params = content.split(",")
-                    x = 0
-                    y = 0
-                    if len(params) > 0:
-                        try:
-                            x = float(Length(params[0]))
-                        except ValueError:
-                            return
-                    if len(params) > 1:
-                        try:
-                            y = float(Length(params[1]))
-                        except ValueError:
-                            return
-                    op.x = x
-                    op.y = y
-                    flag = True
                 else:
                     op.x = None
                     op.y = None
@@ -355,12 +317,6 @@ class OperationsPanel(wx.Panel):
                 flag = True
             elif isinstance(op, WaitOperation):
                 content = str(op.wait)
-                flag = True
-            elif isinstance(op, SetOriginOperation):
-                if op.x is None or op.y is None:
-                    content = ""
-                else:
-                    content = str(op.x) + "," + str(op.y)
                 flag = True
             elif isinstance(op, CutCode):
                 cutcode = op
@@ -410,7 +366,6 @@ class OperationsPanel(wx.Panel):
         )
         standards = (
             ("Home", "util home", ""),
-            ("Set Origin", "util origin", ""),
             ("Goto Origin", "util goto", "0,0"),
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
@@ -462,24 +417,6 @@ class OperationsPanel(wx.Panel):
                             except ValueError:
                                 y = 0
                         addop = GotoOperation(x=x, y=y)
-                elif optype == "util origin":
-                    if opparam is not None and opparam != "":
-                        params = opparam.split(",")
-                        x = 0
-                        y = 0
-                        if len(params) > 0:
-                            try:
-                                x = float(Length(params[0]))
-                            except ValueError:
-                                x = 0
-                        if len(params) > 1:
-                            try:
-                                y = float(Length(params[1]))
-                            except ValueError:
-                                y = 0
-                        addop = SetOriginOperation(x=x, y=y)
-                    else:
-                        addop = SetOriginOperation(x=None, y=None)
                 elif optype == "util wait":
                     if opparam is not None:
                         try:
@@ -585,14 +522,6 @@ class CutcodePanel(wx.Panel):
             elif isinstance(e, QuadCut):
                 res = f"Quad: {e.start[0]:.0f}, {e.start[1]:.0f} - {e.end[0]:.0f}, {e.end[1]:.0f}"
                 res += f" (c={e.c()[0]:.0f}, {e.c()[1]:.0f})"
-            # elif isinstance(e, InfoCut):
-            #     res = f"Info: {e.message}"
-            elif isinstance(e, SetOriginCut):
-                if e.set_current:
-                    coord = "<current>"
-                else:
-                    coord = f"({e._start_x:.0f}, {e._start_y:.0f})"
-                res = f"Set Origin: {coord}"
             else:
                 try:
                     res = e.__name__
@@ -724,7 +653,6 @@ class CutcodePanel(wx.Panel):
             )
         standards = (
             ("Home", "home", ""),
-            ("Set Origin", "origin", ""),
             ("Goto Origin", "goto", "0,0"),
             # ("Info", "info", "Still burning"),
             ("Wait", "wait", "5"),
@@ -777,24 +705,6 @@ class CutcodePanel(wx.Panel):
                             except ValueError:
                                 y = 0
                         addop = GotoCut((x, y))
-                elif optype == "origin":
-                    if opparam is not None and opparam != "":
-                        params = opparam.split(",")
-                        x = 0
-                        y = 0
-                        if len(params) > 0:
-                            try:
-                                x = float(Length(params[0]))
-                            except ValueError:
-                                x = 0
-                        if len(params) > 1:
-                            try:
-                                y = float(Length(params[1]))
-                            except ValueError:
-                                y = 0
-                        addop = SetOriginCut((x, y))
-                    else:
-                        addop = SetOriginCut()
                 elif optype == "wait":
                     if opparam is not None:
                         try:

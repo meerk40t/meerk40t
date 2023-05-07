@@ -492,25 +492,29 @@ class Preferences(MWindow):
             possible_section = words[0]
             if possible_section[0:2] != section[0:2]:
                 section = possible_section
-            color_choices.append({
-                "attr": f"color_{key}",
-                "object": main_scene.colors,
-                "default": main_scene.colors[key],
-                "type": str,
-                "style": "color",  # hexa representation
-                "label": keyname,
-                "section": section,
-                "signals": ("refresh_scene", "theme"),
-            })
+            color_choices.append(
+                {
+                    "attr": f"color_{key}",
+                    "object": main_scene.colors,
+                    "default": main_scene.colors[key],
+                    "type": str,
+                    "style": "color",  # hexa representation
+                    "label": keyname,
+                    "section": section,
+                    "signals": ("refresh_scene", "theme"),
+                }
+            )
 
-        color_choices.append({
-            "attr": "color_reset",
-            "object": self,
-            "type": bool,
-            "style": "button",
-            "label": _("Reset Colors to Default"),
-            "section": "_ZZ_",
-        })
+        color_choices.append(
+            {
+                "attr": "color_reset",
+                "object": self,
+                "type": bool,
+                "style": "button",
+                "label": _("Reset Colors to Default"),
+                "section": "_ZZ_",
+            }
+        )
 
         self.panel_color = ChoicePropertyPanel(
             self,

@@ -14,7 +14,6 @@ from meerk40t.core.cutcode.inputcut import InputCut
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 
 from ..core.parameters import Parameters
@@ -34,8 +33,6 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
-        self.origin_x = 0
-        self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -140,27 +137,6 @@ class GRBLDriver(Parameters):
         # TODO: To calculate status correctly we need to actually have access to the response
         self.out_real("?")
         return (self.native_x, self.native_y), "idle", "unknown"
-
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        if self.service.swap_xy:
-            x, y = y, x
-        self._g91_absolute()
-        self._clean()
-        old_current = self.service.current
-        x, y = self.service.physical_to_device_position(x, y)
-        self._move(self.origin_x + x, self.origin_y + y)
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
 
     def move_abs(self, x, y):
         """
@@ -328,14 +304,7 @@ class GRBLDriver(Parameters):
                 self.home()
             elif isinstance(q, GotoCut):
                 start = q.start
-                self._move(self.origin_x + start[0], self.origin_y + start[1])
-            elif isinstance(q, SetOriginCut):
-                if q.set_current:
-                    x = self.native_x
-                    y = self.native_y
-                else:
-                    x, y = q.start
-                self.set_origin(x, y)
+                self._move(start[0], start[1])
             elif isinstance(q, DwellCut):
                 self.dwell(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
@@ -468,17 +437,6 @@ class GRBLDriver(Parameters):
         @param values:
         @return:
         """
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
 
     def wait(self, time_in_ms):
         """

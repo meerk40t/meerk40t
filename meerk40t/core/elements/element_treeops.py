@@ -1141,7 +1141,6 @@ def init_tree(kernel):
             "util wait",
             "util home",
             "util goto",
-            "util origin",
             "util output",
             "util input",
             "lasercode",
@@ -1569,21 +1568,6 @@ def init_tree(kernel):
     @tree_operation(_("Append Return to Origin"), node_type="branch ops", help="")
     def append_operation_goto(node, pos=None, **kwargs):
         self.op_branch.add(type="util goto", pos=pos, x=0, y=0)
-        self.signal("updateop_tree")
-
-    @tree_submenu(_("Append special operation(s)"))
-    @tree_operation(
-        _("Append Set Origin"),
-        node_type="branch ops",
-        help="",
-    )
-    def append_operation_setorigin(node, pos=None, **kwargs):
-        self.op_branch.add(
-            type="util origin",
-            pos=pos,
-            x=None,
-            y=None,
-        )
         self.signal("updateop_tree")
 
     @tree_submenu(_("Append special operation(s)"))

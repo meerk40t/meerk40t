@@ -13,7 +13,6 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.node.node import Linecap, Linejoin
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -130,8 +129,6 @@ class PlotterDriver:
         elif isinstance(q, HomeCut):
             self.path.move((0, 0))
         elif isinstance(q, GotoCut):
-            pass
-        elif isinstance(q, SetOriginCut):
             pass
         elif isinstance(q, DwellCut):
             pass

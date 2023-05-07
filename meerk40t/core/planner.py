@@ -13,7 +13,6 @@ from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
 from .node.util_goto import GotoOperation
 from .node.util_home import HomeOperation
-from .node.util_origin import SetOriginOperation
 from .node.util_output import OutputOperation
 from .node.util_wait import WaitOperation
 from .units import Length
@@ -425,24 +424,6 @@ class Planner(Service):
                                         except ValueError:
                                             y = 0
                                     addop = GotoOperation(x=x, y=y)
-                            elif optype == "util origin":
-                                if opparam is not None and opparam != "":
-                                    params = opparam.split(",")
-                                    x = 0
-                                    y = 0
-                                    if len(params) > 0:
-                                        try:
-                                            x = float(Length(params[0]))
-                                        except ValueError:
-                                            x = 0
-                                    if len(params) > 1:
-                                        try:
-                                            y = float(Length(params[1]))
-                                        except ValueError:
-                                            y = 0
-                                    addop = SetOriginOperation(x=x, y=y)
-                                else:
-                                    addop = SetOriginOperation(x=None, y=None)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:
@@ -490,7 +471,6 @@ class Planner(Service):
             #     "util wait",
             #     "util home",
             #     "util goto",
-            #     "util origin",
             #     "util input",
             #     "util output",
             #     "place point"

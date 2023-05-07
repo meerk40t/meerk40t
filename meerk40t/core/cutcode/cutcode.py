@@ -302,11 +302,6 @@ class CutCode(CutGroup):
                 ny = y + ny
                 x = nx
                 y = ny
-            elif cmd == "move_ori":
-                nx = code[1]
-                ny = code[2]
-                x = nx
-                y = ny
             elif cmd == "move_abs":
                 nx = code[1]
                 ny = code[2]

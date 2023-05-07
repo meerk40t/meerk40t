@@ -62,4 +62,4 @@ class GotoOperation(Node):
         yield cut
 
     def generate(self):
-        yield "move_ori", self.x, self.y
+        yield "move_abs", self.x, self.y

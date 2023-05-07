@@ -211,30 +211,6 @@ def plugin(kernel, lifecycle):
         @kernel.console_argument("x", type=Length, help=_("change in x"))
         @kernel.console_argument("y", type=Length, help=_("change in y"))
         @kernel.console_command(
-            "move_origin",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("move <x> <y>: move to position."),
-        )
-        def move_origin(channel, _, x, y, data=None, force=False, **kwgs):
-            if data is None:
-                data = kernel.device.spooler
-            spooler = data
-            if y is None:
-                raise CommandSyntaxError
-            if force:
-                spooler.command("move_ori", x, y)
-            else:
-                if spooler.is_idle:
-                    spooler.command("move_ori", x, y)
-                else:
-                    channel(_("Busy Error"))
-            return "spooler", spooler
-
-        @kernel.console_option("force", "f", type=bool, action="store_true")
-        @kernel.console_argument("x", type=Length, help=_("change in x"))
-        @kernel.console_argument("y", type=Length, help=_("change in y"))
-        @kernel.console_command(
             ("move", "move_absolute"),
             input_type=("spooler", None),
             output_type="spooler",
@@ -277,25 +253,6 @@ def plugin(kernel, lifecycle):
                     spooler.command("move_rel", dx, dy)
                 else:
                     channel(_("Busy Error"))
-            return "spooler", spooler
-
-        @kernel.console_argument("x", type=Length, help=_("change in x"))
-        @kernel.console_argument("y", type=Length, help=_("change in y"))
-        @kernel.console_command(
-            "set_origin",
-            input_type=("spooler", None),
-            output_type="spooler",
-            help=_("set_origin <x> <y>: set origin to position"),
-        )
-        def set_origin(channel, _, x, y, data=None, **kwgs):
-            if data is None:
-                data = kernel.device.spooler
-            spooler = data
-            if y is None:
-                spooler.command("set_origin", None, None)
-            else:
-                x, y = kernel.device.physical_to_device_position(x, y)
-                spooler.command("set_origin", x, y)
             return "spooler", spooler
 
         @kernel.console_command(
