@@ -202,31 +202,22 @@ class FormatterPanel(wx.Panel):
         if nodetype in bootstrap:
             # print (f"Try to get an instance of {nodetype}")
             if nodetype.startswith("elem"):
-                param = None
-                shape = None
-                image = None
-                path = None
-                # might need a shape
                 if nodetype == "elem rect":
                     shape = Rect(0, 0, 10, 10)
+                    node = bootstrap[nodetype](shape=shape)
                 elif nodetype == "elem ellipse":
                     shape = Ellipse(0, 0, 10, 10)
+                    node = bootstrap[nodetype](shape=shape)
                 elif nodetype == "elem path":
                     path = Path(Ellipse(0, 0, 10, 10))
+                    node = bootstrap[nodetype](path=path)
                 elif nodetype == "elem image":
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+                    node = bootstrap[nodetype](image=image)
                 elif nodetype == "elem polyline":
                     shape = Polyline()
-
-                if shape is not None:
                     node = bootstrap[nodetype](shape=shape)
-                elif image is not None:
-                    node = bootstrap[nodetype](image=image)
-                elif path is not None:
-                    node = bootstrap[nodetype](path=path)
-                elif param is not None:
-                    node = bootstrap[nodetype](param)
                 else:
                     node = bootstrap[nodetype]()
             else:
