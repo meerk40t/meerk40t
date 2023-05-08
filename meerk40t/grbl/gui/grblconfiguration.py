@@ -168,7 +168,7 @@ class GRBLConfiguration(MWindow):
             injector=inject_choices,
         )
         panel_global = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="grbl-global"
+            self, wx.ID_ANY, context=self.context, choices="grbl-advanced"
         )
         panel_interface = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
@@ -195,7 +195,7 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(panel_main, _("Connection"))
         self.notebook_main.AddPage(panel_interface, _("Interface"))
         self.notebook_main.AddPage(panel_dim, _("Dimensions"))
-        self.notebook_main.AddPage(panel_global, _("Global Settings"))
+        self.notebook_main.AddPage(panel_global, _("Advanced"))
         self.notebook_main.AddPage(panel_rotary, _("Rotary"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))

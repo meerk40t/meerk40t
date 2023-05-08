@@ -14,7 +14,6 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.outputcut import OutputCut
 from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
 from meerk40t.core.cutcode.waitcut import WaitCut
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -229,9 +228,6 @@ class RuidaDriver:
                 con.home_xy()
             elif isinstance(q, GotoCut):
                 con.goto(0, 0)
-            elif isinstance(q, SetOriginCut):
-                # Currently not supporting set origin cut.
-                pass
             elif isinstance(q, OutputCut):
                 pass
             elif isinstance(q, InputCut):

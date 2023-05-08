@@ -17,7 +17,8 @@ class ScenePanel(wx.Panel):
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
 
-        self._Buffer = None
+        # The scene buffer is the updated image that is drawn to screen.
+        self.scene_buffer = None
 
         self.__set_properties()
         self.__do_layout()
@@ -308,9 +309,10 @@ class ScenePanel(wx.Panel):
         it is created in the self.scene.update_buffer_ui_thread() call.
         """
         try:
-            if self._Buffer is None:
-                self.scene.update_buffer_ui_thread()
-            wx.BufferedPaintDC(self.scene_panel, self._Buffer)
+            if self.scene_buffer is None:
+                self.scene.request_refresh()
+                return
+            wx.BufferedPaintDC(self.scene_panel, self.scene_buffer)
         except (RuntimeError, AssertionError, TypeError):
             pass
 
@@ -329,4 +331,4 @@ class ScenePanel(wx.Panel):
             width = 1
         if height <= 0:
             height = 1
-        self._Buffer = wx.Bitmap(width, height)
+        self.scene_buffer = wx.Bitmap(width, height)

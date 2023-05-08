@@ -1141,6 +1141,9 @@ class SVGProcessor:
                 except AttributeError:
                     # This operation is invalid.
                     return
+                except ValueError:
+                    # This operation type failed to bootstrap.
+                    return
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:

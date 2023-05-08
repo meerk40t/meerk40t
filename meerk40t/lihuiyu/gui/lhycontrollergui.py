@@ -166,8 +166,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
         byte0sizer = wx.BoxSizer(wx.VERTICAL)
         packet_info = StaticBoxSizer(self, wx.ID_ANY, _("Last Packet"), wx.HORIZONTAL)
         sizer_statistics = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_count_rejected = StaticBoxSizer(self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL)
-        sizer_count_packets = StaticBoxSizer(self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL)
+        sizer_count_rejected = StaticBoxSizer(
+            self, wx.ID_ANY, _("Rejected Packets"), wx.VERTICAL
+        )
+        sizer_count_packets = StaticBoxSizer(
+            self, wx.ID_ANY, _("Packet Count"), wx.VERTICAL
+        )
         sizer_controller = StaticBoxSizer(self, wx.ID_ANY, _("Controller"), wx.VERTICAL)
         sizer_usb_settings = StaticBoxSizer(
             self, wx.ID_ANY, _("USB Settings"), wx.VERTICAL

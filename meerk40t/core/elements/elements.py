@@ -93,7 +93,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
         kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
-        kernel.register("format/util origin", "{enabled}{element_type} {adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
@@ -1172,7 +1171,7 @@ class Elemental(Service):
             # So recover gracefully
             try:
                 op = operation_branch.add(type=op_type)
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError, ValueError):
                 print(f"That should not happen, but ops contained: '{op_type}'")
                 continue
 

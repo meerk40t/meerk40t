@@ -18,7 +18,6 @@ from ..core.cutcode.homecut import HomeCut
 from ..core.cutcode.inputcut import InputCut
 from ..core.cutcode.outputcut import OutputCut
 from ..core.cutcode.plotcut import PlotCut
-from ..core.cutcode.setorigincut import SetOriginCut
 from ..core.cutcode.waitcut import WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -135,8 +134,6 @@ class LihuiyuDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
-        self.origin_x = 0
-        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
@@ -343,20 +340,6 @@ class LihuiyuDriver(Parameters):
         """
         if blob_type == "egv":
             self(data)
-
-    def move_ori(self, x, y):
-        """
-        Requests laser move to origin offset position x,y in physical units
-
-        @param x:
-        @param y:
-        @return:
-        """
-        if self.service.swap_xy:
-            x, y = y, x
-        x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
-        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
 
     def move_abs(self, x, y):
         """
@@ -709,15 +692,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             start = plot.start
             self.wait_finish()
-            self._move_absolute(self.origin_x + start[0], self.origin_y + start[1])
-        elif isinstance(plot, SetOriginCut):
-            self.plot_start()
-            if plot.set_current:
-                x = self.native_x
-                y = self.native_y
-            else:
-                x, y = plot.start
-            self.set_origin(x, y)
+            self._move_absolute(start[0], start[1])
         else:
             # LineCut, QuadCut, CubicCut, PlotCut, RasterCut
             if isinstance(plot, PlotCut):
@@ -734,17 +709,6 @@ class LihuiyuDriver(Parameters):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
         self._plotplanner_process()
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
 
     def wait(self, time_in_ms):
         """
