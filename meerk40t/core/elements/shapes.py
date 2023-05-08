@@ -2172,65 +2172,105 @@ def init_commands(kernel):
         normal_vector *= factor
         return normal_vector
 
-    def offset_arc(segment, offset=0):
+    def linearize_segment(segment, interpolation=500, reduce=True):
+        slope_tolerance = 0.001
+        s = []
+        delta = 1.0 / interpolation
+        lastpt = None
+        t = 0
+        last_slope = None
+        while (t <= 1):
+            appendit = True
+            np = segment.point(t)
+            if lastpt is not None:
+                dx = lastpt.x - np.x
+                dy = lastpt.y - np.y
+                if abs(dx) < 1E-6 and abs(dy) < 1E-6:
+                    appendit = False
+                    # identical points!
+                else:
+                    this_slope = atan2(dy, dx)
+                    if last_slope is not None:
+                        if abs(last_slope - this_slope) < slope_tolerance:
+                            # Combine segments, ie get rid of mid point
+                            this_slope = last_slope
+                            appendit = False
+                    last_slope = this_slope
+
+            if appendit:
+                s.append(np)
+            else:
+                s[-1] = np
+            t += delta
+            lastpt = np
+        return s
+
+    def offset_point_array(points, offset):
+        result = list()
+        p0 = None
+        for idx, p1 in enumerate(points):
+            if idx > 0:
+                nv = norm_vector(p0, p1, offset)
+                result.append(p0 + nv)
+                result.append(p1 + nv)
+            p0 = Point(p1)
+        for idx in range(3, len(result)):
+            w = result[idx - 3]
+            z = result[idx - 2]
+            x = result[idx - 1]
+            y = result[idx ]
+            p_i, s, t = intersect_line_segments(w, z, x, y)
+            if p_i is None:
+                continue
+            result[idx - 2] = Point(p_i)
+            result[idx - 1] = Point(p_i)
+        return result
+
+    def offset_arc(segment, offset=0, linearize=False, interpolation=500):
         if not isinstance(segment, Arc):
             return None
-        newsegment = copy(segment)
-        p1 = (segment.rx + offset) / segment.rx
-        p2 = (segment.ry + offset) / segment.ry
-        mat = Matrix(f"scale({p1}, {p2})")
-        newsegment.start *= mat
-        newsegment.end *= mat
-        newsegment.prx *= mat
-        newsegment.pry *= mat
-        return newsegment
-
-        startpt = segment.start
-        endpt = segment.end
-        center = segment.center
-        newstart = center.polar_to(
-            angle=center.angle_to(startpt),
-            distance=center.distance_to(startpt) + offset
-        )
-        newend = center.polar_to(
-            angle=center.angle_to(endpt),
-            distance=center.distance_to(endpt) + offset
-        )
-        newprx = center.polar_to(
-            angle=center.angle_to(segment.prx),
-            distance=center.distance_to(segment.prx) + offset
-        )
-        newpry = center.polar_to(
-            angle=center.angle_to(segment.pry),
-            distance=center.distance_to(segment.pry) + offset
-        )
-        newsegment = Arc(newstart, newend, center, newprx, newpry, segment.sweep)
-        print(f"Old: {segment.__repr__()}")
-        print(f"New: {newsegment.__repr__()}")
-        return newsegment
+        newsegments = list()
+        if linearize:
+            s = linearize_segment(segment, interpolation=interpolation, reduce=True)
+            s = offset_point_array(s, offset)
+            for idx in range(1, len(s)):
+                seg = Line(start=Point(s[idx-1][0], s[idx-1][1]), end=Point(s[idx][0], s[idx][1]))
+                newsegments.append(seg)
+        else:
+            newseg = copy(segment)
+            p1 = (segment.rx + offset) / segment.rx
+            p2 = (segment.ry + offset) / segment.ry
+            mat = Matrix(f"scale({p1}, {p2})")
+            newseg.start *= mat
+            newseg.end *= mat
+            newseg.prx *= mat
+            newseg.pry *= mat
+            newsegments.append(newseg)
+        return newsegments
 
     def offset_line(segment, offset=0):
         if not isinstance(segment, Line):
             return None
-        newsegment = copy(segment)
+        newseg = copy(segment)
         normal_vector = norm_vector(segment.start, segment.end, offset)
-        newsegment.start += normal_vector
-        newsegment.end += normal_vector
+        newseg.start += normal_vector
+        newseg.end += normal_vector
         # print (f"Old= ({segment.start.x:.0f}, {segment.start.y:.0f})-({segment.end.x:.0f}, {segment.end.y:.0f})")
         # print (f"New= ({newsegment.start.x:.0f}, {newsegment.start.y:.0f})-({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
-        return newsegment
+        return [newseg]
 
-    def offset_quad(segment, offset=0):
+    def offset_quad(segment, offset=0, linearize=False, interpolation=500):
         from svgelements import QuadraticBezier
         from copy import copy
         if not isinstance(segment, QuadraticBezier):
             return None
         cubic = CubicBezier(start=segment.start, control1=segment.control, control2=segment.control, end=segment.end)
-        newsegment = offset_cubic(cubic, offset)
-        return newsegment
+        newsegments = offset_cubic(cubic, offset, linearize, interpolation)
+
+        return newsegments
 
 
-    def offset_cubic(segment, offset=0):
+    def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
         """
         To establish an offset for a quadratic or cubic bezier by another cubic bezier
         is not possible so this requires approximation.
@@ -2252,44 +2292,53 @@ def init_commands(kernel):
 
         if not isinstance(segment, CubicBezier):
             return None
-        newsegment = copy(segment)
-        if segment.control1 == segment.start:
-            p1 = segment.control2
+        newsegments = list()
+        if linearize:
+            s = linearize_segment(segment, interpolation=interpolation, reduce=True)
+            s = offset_point_array(s, offset)
+            for idx in range(1, len(s)):
+                seg = Line(start=Point(s[idx-1][0], s[idx-1][1]), end=Point(s[idx][0], s[idx][1]))
+                newsegments.append(seg)
         else:
-            p1 = segment.control1
-        normal_vector1 = norm_vector(segment.start, p1, offset)
-        if segment.control2 == segment.end:
-            p1 = segment.control1
-        else:
-            p1 = segment.control2
-        normal_vector2 = norm_vector(p1, segment.end, offset)
-        normal_vector3 = norm_vector(segment.control1, segment.control2, offset)
+            newseg = copy(segment)
+            if segment.control1 == segment.start:
+                p1 = segment.control2
+            else:
+                p1 = segment.control1
+            normal_vector1 = norm_vector(segment.start, p1, offset)
+            if segment.control2 == segment.end:
+                p1 = segment.control1
+            else:
+                p1 = segment.control2
+            normal_vector2 = norm_vector(p1, segment.end, offset)
+            normal_vector3 = norm_vector(segment.control1, segment.control2, offset)
 
-        newsegment.start += normal_vector1
-        newsegment.end += normal_vector2
+            newseg.start += normal_vector1
+            newseg.end += normal_vector2
 
-        v = segment.start + normal_vector1
-        w = segment.control1 + normal_vector1
-        x = segment.control1 + normal_vector3
-        y = segment.control2 + normal_vector3
-        intersect, s, t = intersect_line_segments(v, w, x, y)
-        if intersect is None:
-            # Fallback
-            intersect = segment.control1 + 0.5 * (normal_vector1 + normal_vector3)
-        newsegment.control1 = intersect
+            v = segment.start + normal_vector1
+            w = segment.control1 + normal_vector1
+            x = segment.control1 + normal_vector3
+            y = segment.control2 + normal_vector3
+            intersect, s, t = intersect_line_segments(v, w, x, y)
+            if intersect is None:
+                # Fallback
+                intersect = segment.control1 + 0.5 * (normal_vector1 + normal_vector3)
+            newseg.control1 = intersect
 
-        x = segment.control2 + normal_vector2
-        y = segment.end + normal_vector2
-        v = segment.control1 + normal_vector3
-        w = segment.control2 + normal_vector3
-        intersect, s, t = intersect_line_segments(v, w, x, y)
-        if intersect is None:
-            # Fallback
-            intersect = segment.control2 + 0.5 * (normal_vector2 + normal_vector3)
-        newsegment.control2 = intersect
-        # print (f"Old: start=({segment.start.x:.0f}, {segment.start.y:.0f}), c1=({segment.control1.x:.0f}, {segment.control1.y:.0f}), c2=({segment.control2.x:.0f}, {segment.control2.y:.0f}), end=({segment.end.x:.0f}, {segment.end.y:.0f})")
-        # print (f"New: start=({newsegment.start.x:.0f}, {newsegment.start.y:.0f}), c1=({newsegment.control1.x:.0f}, {newsegment.control1.y:.0f}), c2=({newsegment.control2.x:.0f}, {newsegment.control2.y:.0f}), end=({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
-        return newsegment
+            x = segment.control2 + normal_vector2
+            y = segment.end + normal_vector2
+            v = segment.control1 + normal_vector3
+            w = segment.control2 + normal_vector3
+            intersect, s, t = intersect_line_segments(v, w, x, y)
+            if intersect is None:
+                # Fallback
+                intersect = segment.control2 + 0.5 * (normal_vector2 + normal_vector3)
+            newseg.control2 = intersect
+            # print (f"Old: start=({segment.start.x:.0f}, {segment.start.y:.0f}), c1=({segment.control1.x:.0f}, {segment.control1.y:.0f}), c2=({segment.control2.x:.0f}, {segment.control2.y:.0f}), end=({segment.end.x:.0f}, {segment.end.y:.0f})")
+            # print (f"New: start=({newsegment.start.x:.0f}, {newsegment.start.y:.0f}), c1=({newsegment.control1.x:.0f}, {newsegment.control1.y:.0f}), c2=({newsegment.control2.x:.0f}, {newsegment.control2.y:.0f}), end=({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
+            newsegments.append(newseg)
+        return newsegments
 
     def intersect_line_segments(w, z, x, y):
         """
@@ -2350,7 +2399,7 @@ def init_commands(kernel):
         return p, s, t
 
 
-    def offset_path(path, offset=0, radial_connector=False, linearize=True):
+    def offset_path(path, offset_value=0, radial_connector=False, linearize=True, interpolation=500):
 
         def stitch_segments_at_index(stitchpath, index, orgintersect, radial=False, closed=False):
             # Stitch the two segments index and index+1 together
@@ -2417,7 +2466,7 @@ def init_commands(kernel):
                         angle += tau
                     while angle > tau:
                         angle -= tau
-                    print (f"Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
+                    # print (f"Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
                     startpt = Point(seg1.end)
                     endpt = Point(seg2.start)
                     if angle >= tau / 2:
@@ -2441,23 +2490,48 @@ def init_commands(kernel):
         # This needs to be a continuous path
         for subpath in path.as_subpaths():
             p = Path(subpath)
+            offset = offset_value
+            # # No offset bigger than half the path size, otherwise stuff will get crazy
+            # if offset > 0:
+            #     bb = p.bbox()
+            #     offset = min(offset, bb[2] - bb[0])
+            #     offset = min(offset, bb[3] - bb[1])
+            is_closed = False
             remember = False
             remember_helper = None
             # Lets check the first and last valid point. If they are identical
             # we consider this to be a closed path even if it has no closed indicator.
-            firstp = None
+            firstp_start = None
+            firstp_end = None
             lastp = None
             idx = 0
             while (idx < len(p)) and not isinstance(p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)):
                 idx += 1
-            firstp = Point(p._segments[idx].start)
+            firstp_start = Point(p._segments[idx].start)
+            firstp_end = Point(p._segments[idx].end)
             idx = len(p._segments) - 1
             while idx >= 0 and not isinstance(p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)):
                 idx -= 1
             lastp = Point(p._segments[idx].end)
-            if firstp == lastp:
+            if firstp_start == lastp:
                 remember = True
                 remember_helper = Point(lastp)
+            # We need to establish if this is a closed path and if the first segment goes counterclockwise
+            if not is_closed:
+                for idx in range(len(p._segments) - 1, -1, -1):
+                    if isinstance(p._segments[idx], Close):
+                        is_closed = True
+                        break
+            if is_closed:
+                # This is a very stupid test to establish if we have a ccw closed shape. In this case left is inner...
+                test1 = norm_vector(firstp_start, firstp_end, 10) + (firstp_start + firstp_end) * 0.5
+                test2 = norm_vector(firstp_end, firstp_start, 10) + (firstp_start + firstp_end) * 0.5
+                bb = p.bbox()
+                center = Point((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
+                test1_outer = bool(center.distance_to(test1) > center.distance_to(test2))
+                if test1_outer:
+                    offset = -1 * offset
+                # print (f"Test 1 farther away from center than test 2: {test1_outer}")
 
             for idx in range(len(p._segments) - 1, -1, -1):
                 segment = p._segments[idx]
@@ -2475,19 +2549,32 @@ def init_commands(kernel):
                     remember_helper = Point(p._segments[idx2].start)
 
                 helper = Point(p._segments[idx].end)
+                idxend = idx
                 if isinstance(segment, Arc):
-                    newsegment = offset_arc(segment, offset)
-                    p._segments[idx] = newsegment
+                    newsegment = offset_arc(segment, offset, linearize, interpolation)
+                    idxend = idx - 1 + len(newsegment)
+                    p._segments[idx] = newsegment[0]
+                    for nidx in range(len(newsegment) - 1, 0, -1): # All but the first
+                        p._segments.insert(idx + 1, newsegment[nidx])
                 elif isinstance(segment, QuadraticBezier):
-                    newsegment = offset_quad(segment, offset)
-                    p._segments[idx] = newsegment
+                    newsegment = offset_quad(segment, offset, linearize, interpolation)
+                    idxend = idx - 1 + len(newsegment)
+                    p._segments[idx] = newsegment[0]
+                    for nidx in range(len(newsegment) - 1, 0, -1): # All but the first
+                        p._segments.insert(idx + 1, newsegment[nidx])
                 elif isinstance(segment, CubicBezier):
-                    newsegment = offset_cubic(segment, offset)
-                    p._segments[idx] = newsegment
+                    newsegment = offset_cubic(segment, offset, linearize, interpolation)
+                    idxend = idx - 1 + len(newsegment)
+                    p._segments[idx] = newsegment[0]
+                    for nidx in range(len(newsegment) - 1, 0, -1): # All but the first
+                        p._segments.insert(idx + 1, newsegment[nidx])
                 elif isinstance(segment, Line):
                     newsegment = offset_line(segment, offset)
-                    p._segments[idx] = newsegment
-                stitch_segments_at_index(p, idx, helper, radial=radial_connector)
+                    idxend = idx - 1 + len(newsegment)
+                    p._segments[idx] = newsegment[0]
+                    for nidx in range(len(newsegment) - 1, 0, -1): # All but the first
+                        p._segments.insert(idx + 1, newsegment[nidx])
+                stitch_segments_at_index(p, idxend, helper, radial=radial_connector)
             if remember:
                 helper = remember_helper
                 stitch_segments_at_index(p, len(p._segments) - 1, helper, radial=radial_connector, closed=True)
@@ -2501,161 +2588,6 @@ def init_commands(kernel):
             result += results[idx]
         return result
 
-    @self.console_option(
-        "interpolation", "i", type=int, help=_("interpolation numbers")
-    )
-    @self.console_option(
-        "tolerance", "t", type=float, help=_("tolerance to combine segments")
-    )
-    @self.console_option(
-        "offset", "o", type=str, help=_("offset")
-    )
-    @self.console_command(
-        "poly_copy",
-        help=_("create a polygon out of the given paths"),
-        input_type=(None, "elements"),
-        output_type="elements",
-    )
-    def element_poly_copy(command, channel, _, interpolation=None, tolerance=None, offset = None, data=None, post=None, **kwargs):
-        import numpy as np
-
-        def normalizeVec(val1, val2):
-            s = sqrt(val1 * val1 + val2 * val2)
-            if s == 0:
-                return val1, val2
-            else:
-                return val1 / s, val2 / s
-
-        def offset_polygon(points, offset, outer_ccw = 1):
-
-            num_points = len(points)
-            newpoints = []
-
-            for curr in range(num_points):
-                # Circle around if needed
-                prev = (curr + num_points - 1) % num_points
-                next = (curr + 1) % num_points
-                if curr in (0, num_points-1):
-                    print (f"len= {num_points}: prev={prev}, curr={curr}, next={next}")
-
-                vnX =  points[next][0] - points[curr][0]
-                vnY =  points[next][1] - points[curr][1]
-                vnnX, vnnY = normalizeVec(vnX, vnY)
-                nnnX = vnnY
-                nnnY = -vnnX
-
-                vpX = points[curr][0] - points[prev][0]
-                vpY = points[curr][1] - points[prev][1]
-                vpnX, vpnY = normalizeVec(vpX, vpY)
-                npnX = vpnY * outer_ccw
-                npnY = -vpnX * outer_ccw
-
-                bisX = (nnnX + npnX) * outer_ccw
-                bisY = (nnnY + npnY) * outer_ccw
-
-                bisnX, bisnY = normalizeVec(bisX,  bisY)
-                bislen = offset / sqrt((1 + nnnX * npnX + nnnY * npnY)/2)
-                newx = points[curr][0] + bislen * bisnX
-                newy = points[curr][1] + bislen * bisnY
-                newpoints.append((newx, newy))
-            return newpoints
-
-        def linearize_path(path):
-            s = []
-            for segment in path:
-                t = type(segment).__name__
-                if t == "Move":
-                    s.append((segment.end[0], segment.end[1]))
-                elif t in ("Line", "Close"):
-                    s.append((segment.end[0], segment.end[1]))
-                    print (f"Close called: {segment.end[0]:.0f}, {segment.end[1]:.0f} - First point was: {s[0][0]:.0f}, {s[0][1]:.0f}")
-                else:
-                    s.extend(
-                        (np[0], np[1]) for np in segment.npoint(np.linspace(0, 1, interpolation))
-                    )
-            return s
-
-        def simplify_polygon(poly, slope_tolerance):
-            # Traverse back and look for same slope...
-            # This uses an expensive trigonmetric function to establish similarity.
-            # May be too slow for time critical applications
-            last_slope = None
-            lastpt = poly[-1]
-            for idx in range(len(poly) - 2,  -1, -1):
-                thispt = s[idx]
-                dx = lastpt[0] - thispt[0]
-                dy = lastpt[1] - thispt[1]
-                if abs(dx) < 1E-6 and abs(dy) < 1E-6:
-                    # identical points!
-                    poly.pop(idx + 1)
-                else:
-                    this_slope = atan2(dy, dx)
-                    # if abs(dx) <= 1E-8:
-                    #     if dy > 0:
-                    #         this_slope = float("inf")
-                    #     else:
-                    #         this_slope = float("-inf")
-                    # else:
-                    #     this_slope = dy / dx
-                    if last_slope is not None:
-                        if abs(last_slope - this_slope) < slope_tolerance:
-                            # Combine segments, ie get rid of mid point
-                            poly.pop(idx + 1)
-                            this_slope = last_slope
-                        # print (f"pt #{idx}: last={last_slope:.3f}, this={this_slope:.3f}")
-                    last_slope = this_slope
-                lastpt = thispt
-            # lastpt = poly[-1]
-            # thispt = poly[0]
-
-        if data is None:
-            data = list(self.elems(emphasized=True))
-        if len(data) == 0:
-            return "elements", data
-        if tolerance is None:
-            tolerance = 1E-3
-        if interpolation is None:
-            interpolation = 100
-        if offset is None:
-            offset = 0
-        else:
-            try:
-                ll = Length(offset)
-                offset = float(ll)
-            except ValueError:
-                offset = 0
-        channel(f"Interpolating with {interpolation} points if necessary, tolerance={tolerance}, offset={Length(offset, digits=2, preferred_units='mm').preferred_length}")
-        data_out = list()
-        for node in data:
-            if not hasattr(node, "as_path"):
-                continue
-            pth = node.as_path()
-            for subpath in pth.as_subpaths():
-                p = Path(subpath)
-                s = linearize_path(p)
-                oldlen = len(s)
-                if oldlen > 1:
-                    simplify_polygon(s, tolerance)
-                newlen = len(s)
-                channel (f"Length of shape, before: {oldlen}, after: {newlen}")
-                if offset != 0:
-                    ccw = 1
-                    if offset < 0:
-                        ccw = -1
-                    s = offset_polygon(s, offset, ccw)
-
-                shape = Polyline(s)
-                if shape.is_degenerate():
-                    continue
-                newnode = self.elem_branch.add(shape=shape, type="elem polyline", stroke=node.stroke)
-                data_out.append(newnode)
-
-        # Newly created! Classification needed?
-        if len(data_out) > 0:
-            post.append(classify_new(data_out))
-            self.signal("refresh_scene", "Scene")
-        return "elements", data_out
-
     @self.console_argument(
         "offset", type=str, help=_("offset to line mm (positive values to left/outside, negative values to right/inside)")
     )
@@ -2665,19 +2597,37 @@ def init_commands(kernel):
         type=bool,
         help=_("radial connector")
     )
+    @self.console_option(
+        "native", "n",
+        action="store_true",
+        type=bool,
+        help=_("native path offset (use at you own risk)")
+    )
+    @self.console_option(
+        "interpolation", "i",
+        type=int,
+        help=_("interpolation points per segment")
+    )
     @self.console_command(
         "offset_path",
         help=_("create an offsetpath for any of the given paths"),
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_offset_path(command, channel, _, offset=None, radial=None, data=None, post=None, **kwargs):
+    def element_offset_path(command, channel, _, offset=None, radial=None, native=False, interpolation=None, data=None, post=None, **kwargs):
         import numpy as np
 
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
+            channel(_("No elements selected"))
             return "elements", data
+        if native:
+            linearize = False
+        else:
+            linearize = True
+        if interpolation is None:
+            interpolation = 500
         if offset is None:
             offset = 0
         else:
@@ -2693,9 +2643,13 @@ def init_commands(kernel):
         for node in data:
             if not hasattr(node, "as_path"):
                 continue
-            node_path = offset_path(node.as_path(), offset, radial_connector=radial)
+            p = abs(node.as_path())
+            node_path = offset_path(p, offset, radial_connector=radial, linearize=linearize, interpolation=interpolation)
             node_path.validate_connections()
             newnode = self.elem_branch.add(path=node_path, type="elem path", stroke=node.stroke)
+            newnode.stroke_width = UNITS_PER_PIXEL
+            newnode.linejoin=Linejoin.JOIN_ROUND
+            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
             data_out.append(newnode)
 
         # Newly created! Classification needed?
