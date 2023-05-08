@@ -17,7 +17,7 @@ from meerk40t.svgelements import (
     QuadraticBezier,
     Rect,
 )
-from meerk40t.tools.offset import OffsetPath
+from meerk40t.core.elements.offset import offset_path
 
 
 def path_to_cutobjects(
@@ -29,7 +29,23 @@ def path_to_cutobjects(
     color=None,
     kerf=0,
 ):
-    for subpath in path.as_subpaths():
+    if kerf != 0:
+        source = offset_path(
+            abs(path),
+            -1 * kerf,
+            radial_connector=False,
+            linearize=True,
+            interpolation=500,
+        )
+        source.validate_connections()
+        # Just a test to see if it works, replace path by it bounding box
+        # bb = sp.bbox(transformed=True)
+        # sp = Path(Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]))
+        print (path)
+        print (source)
+    else:
+        source = path
+    for subpath in source.as_subpaths():
         sp = Path(subpath)
         if len(sp) == 0:
             continue
@@ -44,13 +60,6 @@ def path_to_cutobjects(
             passes=passes,
             color=color,
         )
-        if kerf != 0:
-
-            offset = OffsetPath(originalpath=sp, offset=kerf, connection=1)
-            sp = offset.result()
-            # Just a test to see if it works, replace path by it bounding box
-            # bb = sp.bbox(transformed=True)
-            # sp = Path(Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]))
         group.path = sp
         group.original_op = original_op
         for seg in sp:

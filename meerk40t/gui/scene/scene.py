@@ -340,7 +340,7 @@ class Scene(Module, Job):
                 self._update_buffer_ui_thread()  # May hit runtime error.
                 self.gui.Refresh()
                 self.gui.Update()
-            except RuntimeError:
+            except (RuntimeError, TypeError):
                 pass
             self.screen_refresh_is_requested = False
             self.scene_lock.release()
