@@ -29,7 +29,7 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
+from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -230,7 +230,7 @@ class LaserRender:
                 if node.type == "elem path":
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_path
-                elif node.type == "elem geomstr":
+                elif node.type in ("elem geomstr", "elem ellipse"):
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
@@ -241,7 +241,6 @@ class LaserRender:
                     "elem rect",
                     "elem line",
                     "elem polyline",
-                    "elem ellipse",
                 ):
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_shape
@@ -329,6 +328,9 @@ class LaserRender:
                 if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
                 elif seg_type == TYPE_QUAD:
+                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                elif seg_type == TYPE_ARC:
+                    # TODO: Perform corrected arc drawing.
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(

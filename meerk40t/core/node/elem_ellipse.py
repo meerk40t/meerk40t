@@ -1,72 +1,58 @@
 from copy import copy
-from math import sqrt
+from math import tau, cos, sin, sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
-    SVG_ATTR_VECTOR_EFFECT,
-    SVG_VALUE_NON_SCALING_STROKE,
-    Circle,
-    Ellipse,
-    Matrix,
-    Path,
-    Point,
+    Point, Matrix,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node, Stroked):
+class EllipseNode(Node):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        self.cx = None
+        self.cy = None
+        self.rx = None
+        self.ry = None
+
         self.matrix = None
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_scale = False
         self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
-        self.__formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, (Ellipse, Circle))
-
         if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
-        if self._stroke_zero is None:
-            # This defines the stroke-width zero point scale
-            self.stroke_width_zero()
-
+            self.matrix = Matrix()
+        self.__formatter = "{element_type} {id} {stroke}"
         self.set_dirty_bounds()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
+        nd["cx"] = copy(self.cx)
+        nd["cy"] = copy(self.cy)
+        nd["rx"] = copy(self.rx)
+        nd["ry"] = copy(self.ry)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
+        nd["stroke"] = copy(self.stroke)
         nd["stroke_width"] = copy(self.stroke_width)
         return EllipseNode(**nd)
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -89,7 +75,6 @@ class EllipseNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -99,12 +84,40 @@ class EllipseNode(Node, Stroked):
         )
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
+    def point_at_t(self, t):
+        """
+        find the point that corresponds to given value t.
+        Where t=0 is the first point and t=tau is the final point.
+
+        In the case of a circle: t = angle.
+
+        :param t:
+        :return:
+        """
+        return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
+
+    @property
+    def path(self):
+        path = Geomstr()
+        steps = 4
+        step_size = tau / steps
+        if self.matrix.determinant < 0:
+            step_size = -step_size
+
+        t_start = 0
+        t_end = step_size
+        for i in range(steps):
+            path.arc(self.point_at_t(t_start), self.point_at_t((t_start + t_end) / 2), self.point_at_t(t_end))
+            t_start = t_end
+            t_end += step_size
+        return path
+
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        path = self.path
+        if transformed:
+            bounds = path.bbox(mx=self.matrix)
+        else:
+            bounds = path.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -121,7 +134,6 @@ class EllipseNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -143,28 +155,16 @@ class EllipseNode(Node, Stroked):
         if bounds is None:
             return
         self._points = []
-        cx = (bounds[0] + bounds[2]) / 2
-        cy = (bounds[1] + bounds[3]) / 2
-        # self._points.append([bounds[0], bounds[1], "bounds top_left"])
-        # self._points.append([bounds[2], bounds[1], "bounds top_right"])
-        # self._points.append([bounds[0], bounds[3], "bounds bottom_left"])
-        # self._points.append([bounds[2], bounds[3], "bounds bottom_right"])
-        # self._points.append([cx, cy, "bounds center_center"])
-        # self._points.append([cx, bounds[1], "bounds top_center"])
-        # self._points.append([cx, bounds[3], "bounds bottom_center"])
-        # self._points.append([bounds[0], cy, "bounds center_left"])
-        # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
         npoints = [
-            Point(obj.cx - obj.rx, obj.cy),
-            Point(obj.cx, obj.cy - obj.ry),
-            Point(obj.cx + obj.rx, obj.cy),
-            Point(obj.cx, obj.cy + obj.ry),
+            Point(self.cx - self.rx, self.cy),
+            Point(self.cx, self.cy - self.ry),
+            Point(self.cx + self.rx, self.cy),
+            Point(self.cx, self.cy + self.ry),
         ]
-        p1 = Point(obj.cx, obj.cy)
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
-            p1 = obj.transform.point_in_matrix_space(p1)
+        p1 = Point(self.cx, self.cy)
+        if not self.matrix.is_identity():
+            points = list(map(self.matrix.point_in_matrix_space, npoints))
+            p1 = self.matrix.point_in_matrix_space(p1)
         else:
             points = npoints
         for pt in points:
@@ -177,19 +177,70 @@ class EllipseNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
+    @property
+    def stroke_scaled(self):
+        return self.stroke_scale
 
-    def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        """
+        Setting stroke_scale directly will not resize the stroke-width based on current scaling. This function allows
+        the toggling of the stroke-scaling without the current stroke_width being affected.
+
+        @param v:
+        @return:
+        """
+        if bool(v) == bool(self.stroke_scale):
+            # Unchanged.
+            return
+        if not v:
+            self.stroke_width *= self.stroke_factor
+        self.stroke_width_zero()
+        self.stroke_scale = v
+
+    @property
+    def implied_stroke_width(self):
+        """
+        The implied stroke width is stroke_width if not scaled or the scaled stroke_width if scaled.
+
+        @return:
+        """
+        if self.stroke_scale:
+            factor = self.stroke_factor
+        else:
+            factor = 1
+        if hasattr(self, "stroke"):
+            # print (f"Have stroke {self.stroke}, {type(self.stroke).__name__}")
+            if self.stroke is None or self.stroke.argb is None:
+                # print ("set to zero")
+                factor = 0
+
+        return self.stroke_width * factor
+
+    @property
+    def stroke_factor(self):
+        """
+        The stroke factor is the ratio of the new to old stroke-width scale.
+
+        @return:
+        """
+        matrix = self.matrix
+        stroke_one = sqrt(abs(matrix.determinant))
+        try:
+            return stroke_one / self._stroke_zero
+        except AttributeError:
+            return 1.0
+
+    def stroke_reify(self):
+        """Set the stroke width to the real stroke width."""
+        if self.stroke_scale:
+            self.stroke_width *= self.stroke_factor
+        self.stroke_width_zero()
+
+    def stroke_width_zero(self):
+        """
+        Ensures the current stroke scale is marked as stroke_zero.
+        @return:
+        """
+        matrix = self.matrix
+        self._stroke_zero = sqrt(abs(matrix.determinant))
