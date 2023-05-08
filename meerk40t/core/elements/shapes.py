@@ -2,7 +2,7 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from math import sqrt
+from math import sqrt, atan2
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
@@ -2121,5 +2121,159 @@ def init_commands(kernel):
             else:
                 self.first_emphasized = None
         return "elements", data
+
+
+    @self.console_option(
+        "interpolation", "i", type=int, help=_("interpolation numbers")
+    )
+    @self.console_option(
+        "tolerance", "t", type=float, help=_("tolerance to combine segments")
+    )
+    @self.console_option(
+        "offset", "o", type=str, help=_("offset")
+    )
+    @self.console_command(
+        "poly_copy",
+        help=_("create a polygon out of the given paths"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_poly_copy(command, channel, _, interpolation=None, tolerance=None, offset = None, data=None, post=None, **kwargs):
+        import numpy as np
+
+        def normalizeVec(val1, val2):
+            s = sqrt(val1 * val1 + val2 * val2)
+            if s == 0:
+                return val1, val2
+            else:
+                return val1 / s, val2 / s
+
+        def offset_polygon(points, offset, outer_ccw = 1):
+
+            num_points = len(points)
+            newpoints = []
+
+            for curr in range(num_points):
+                # Circle around if needed
+                prev = (curr + num_points - 1) % num_points
+                next = (curr + 1) % num_points
+                if curr in (0, num_points-1):
+                    print (f"len= {num_points}: prev={prev}, curr={curr}, next={next}")
+
+                vnX =  points[next][0] - points[curr][0]
+                vnY =  points[next][1] - points[curr][1]
+                vnnX, vnnY = normalizeVec(vnX, vnY)
+                nnnX = vnnY
+                nnnY = -vnnX
+
+                vpX = points[curr][0] - points[prev][0]
+                vpY = points[curr][1] - points[prev][1]
+                vpnX, vpnY = normalizeVec(vpX, vpY)
+                npnX = vpnY * outer_ccw
+                npnY = -vpnX * outer_ccw
+
+                bisX = (nnnX + npnX) * outer_ccw
+                bisY = (nnnY + npnY) * outer_ccw
+
+                bisnX, bisnY = normalizeVec(bisX,  bisY)
+                bislen = offset / sqrt((1 + nnnX * npnX + nnnY * npnY)/2)
+                newx = points[curr][0] + bislen * bisnX
+                newy = points[curr][1] + bislen * bisnY
+                newpoints.append((newx, newy))
+            return newpoints
+
+        def linearize_path(path):
+            s = []
+            for segment in path:
+                t = type(segment).__name__
+                if t == "Move":
+                    s.append((segment.end[0], segment.end[1]))
+                elif t in ("Line", "Close"):
+                    s.append((segment.end[0], segment.end[1]))
+                    print (f"Close called: {segment.end[0]:.0f}, {segment.end[1]:.0f} - First point was: {s[0][0]:.0f}, {s[0][1]:.0f}")
+                else:
+                    s.extend(
+                        (np[0], np[1]) for np in segment.npoint(np.linspace(0, 1, interpolation))
+                    )
+            return s
+
+        def simplify_polygon(poly, slope_tolerance):
+            # Traverse back and look for same slope...
+            last_slope = None
+            lastpt = poly[-1]
+            for idx in range(len(poly) - 2,  -1, -1):
+                thispt = s[idx]
+                dx = lastpt[0] - thispt[0]
+                dy = lastpt[1] - thispt[1]
+                if abs(dx) < 1E-6 and abs(dy) < 1E-6:
+                    # identical points!
+                    poly.pop(idx + 1)
+                else:
+                    this_slope = atan2(dy, dx)
+                    # if abs(dx) <= 1E-8:
+                    #     if dy > 0:
+                    #         this_slope = float("inf")
+                    #     else:
+                    #         this_slope = float("-inf")
+                    # else:
+                    #     this_slope = dy / dx
+                    if last_slope is not None:
+                        if abs(last_slope - this_slope) < slope_tolerance:
+                            # Combine segments, ie get rid of mid point
+                            poly.pop(idx + 1)
+                            this_slope = last_slope
+                        # print (f"pt #{idx}: last={last_slope:.3f}, this={this_slope:.3f}")
+                    last_slope = this_slope
+                lastpt = thispt
+            # lastpt = poly[-1]
+            # thispt = poly[0]
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            return "elements", data
+        if tolerance is None:
+            tolerance = 1E-3
+        if interpolation is None:
+            interpolation = 100
+        if offset is None:
+            offset = 0
+        else:
+            try:
+                ll = Length(offset)
+                offset = float(ll)
+            except ValueError:
+                offset = 0
+        channel(f"Interpolating with {interpolation} points if necessary, tolerance={tolerance}, offset={Length(offset, digits=2, preferred_units='mm').preferred_length}")
+        data_out = list()
+        for node in data:
+            if not hasattr(node, "as_path"):
+                continue
+            pth = node.as_path()
+            for subpath in pth.as_subpaths():
+                p = Path(subpath)
+                s = linearize_path(p)
+                oldlen = len(s)
+                if oldlen > 1:
+                    simplify_polygon(s, tolerance)
+                newlen = len(s)
+                channel (f"Length of shape, before: {oldlen}, after: {newlen}")
+                if offset != 0:
+                    ccw = 1
+                    if offset < 0:
+                        ccw = -1
+                    s = offset_polygon(s, offset, ccw)
+
+                shape = Polyline(s)
+                if shape.is_degenerate():
+                    continue
+                newnode = self.elem_branch.add(shape=shape, type="elem polyline", stroke=node.stroke)
+                data_out.append(newnode)
+
+        # Newly created! Classification needed?
+        if len(data_out) > 0:
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
+        return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------
