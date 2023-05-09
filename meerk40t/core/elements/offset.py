@@ -163,7 +163,7 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
             )
             newsegments.append(seg)
     else:
-        centerpt = segment.center
+        centerpt = Point(segment.center)
         startpt = centerpt.polar_to(
             angle = centerpt.angle_to(segment.start),
             distance = centerpt.distance_to(segment.start) + offset,
@@ -172,10 +172,10 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
             angle = centerpt.angle_to(segment.end),
             distance = centerpt.distance_to(segment.end) + offset,
         )
-        print (f"{segment.d()}: {segment.sweep}")
-        ccw = segment.sweep >= 0
-        newseg = Arc(start=startpt, end=endpt, center=Point(centerpt), ccw=ccw)
-
+        newseg = Arc(
+                 startpt, endpt, centerpt,
+        #         ccw=ccw,
+        )
         newsegments.append(newseg)
     return newsegments
 
@@ -193,10 +193,6 @@ def offset_line(segment, offset=0):
 
 
 def offset_quad(segment, offset=0, linearize=False, interpolation=500):
-    from copy import copy
-
-    from svgelements import QuadraticBezier
-
     if not isinstance(segment, QuadraticBezier):
         return None
     cubic = CubicBezier(
@@ -426,7 +422,7 @@ def offset_path(
                     ccw = True
                 else:
                     ccw = False
-
+                print ("Generate connect-arc")
                 connect_seg = Arc(
                     start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
                 )
@@ -445,6 +441,7 @@ def offset_path(
     # This needs to be a continuous path
     for subpath in path.as_subpaths():
         p = Path(subpath)
+        p.approximate_arcs_with_cubics()
         offset = offset_value
         # # No offset bigger than half the path size, otherwise stuff will get crazy
         # if offset > 0:
@@ -509,6 +506,7 @@ def offset_path(
             helper = Point(p._segments[idx].end)
             idxend = idx
             if isinstance(segment, Arc):
+                print(f"{idx}/{len(p._segments)}: Arc")
                 newsegment = offset_arc(segment, offset, linearize, interpolation)
                 idxend = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
