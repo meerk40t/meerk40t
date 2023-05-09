@@ -360,7 +360,7 @@ def offset_path(
                 idx2 += 1
         seg2 = stitchpath._segments[idx2]
 
-        # print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__}")
+        print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
@@ -469,18 +469,22 @@ def offset_path(
         ):
             idx -= 1
         lastp = Point(p._segments[idx].end)
-        if firstp_start == lastp:
+        if firstp_start.distance_to(lastp) < 1E-3:
             remember = True
             remember_helper = Point(lastp)
+            is_closed = True
         # We need to establish if this is a closed path and if the first segment goes counterclockwise
+        cw = False
         if not is_closed:
             for idx in range(len(p._segments) - 1, -1, -1):
                 if isinstance(p._segments[idx], Close):
                     is_closed = True
                     break
         if is_closed:
-            if is_clockwise(p):
+            cw = is_clockwise(p)
+            if cw:
                 offset = -1 * offset
+        print (f"Subpath: closed={is_closed}, clockwise={cw}")
 
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
