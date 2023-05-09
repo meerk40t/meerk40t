@@ -1,27 +1,19 @@
-import math
-from copy import copy
-
-import numpy as np
-
-from meerk40t.svgelements import Matrix, Path
-from meerk40t.tools.zinglplotter import ZinglPlotter
-
 """
 Geomstr objects store aligned arrays of geom primitives. These primitives are line,
 quad, cubic, arc, and point. There are a couple additional structural elements
-like end, and vertex. 
+like end, and vertex.
 
 All the geom primitives are stored in an array of with a width of 5 complex
 numbers. The complex numbers are often, but not always used as points. This
 structure is intended to permit not just efficient storage of all geom objects
-and mixtures of those  primitives but also to permit efficient reversing
+and mixtures of those primitives but also to permit efficient reversing
 with the use of flips.
 
 The center complex number stores the geom type and a reference point to the
 associated settings information. This is usually going to be a dictionary
 but objects would work equally well.
 
-Adjacent geoms are part of a run. It's assumed that most geometry accessing 
+Adjacent geoms are part of a run. It's assumed that most geometry accessing
 this data is going travel in a path through each of these points. Disjointed
 geoms are considered to be implicit moves. For example:
 
@@ -59,6 +51,14 @@ not properly give a counterclockwise circle. If the three points are all
 collinear this is effectively a line. If all three points are coincident
 this is effectively a point.
 """
+
+import math
+from copy import copy
+
+import numpy as np
+
+from meerk40t.svgelements import Matrix, Path, Line, Move, QuadraticBezier, CubicBezier, Arc, Close
+from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)
 TYPE_NOP = 0 | 0b000
@@ -699,6 +699,31 @@ class Geomstr:
 
     def __iter__(self):
         return self.segments
+
+    @classmethod
+    def svg(cls, path_d):
+        obj = cls()
+        if isinstance(path_d, str):
+            path = Path(path_d)
+        else:
+            path = path_d
+        for seg in path:
+            if isinstance(seg, Move):
+                pass
+            elif isinstance(seg, (Line, Close)):
+                obj.line(seg.start, seg.end)
+            elif isinstance(seg, QuadraticBezier):
+                obj.quad(seg.start, seg.control, seg.end)
+            elif isinstance(seg, CubicBezier):
+                obj.cubic(seg.start, seg.control1, seg.control2, seg.end)
+            elif isinstance(seg, Arc):
+                if seg.is_circular():
+                    obj.arc(cls, seg.start, seg.point(0.5), seg.end)
+                else:
+                    quads = seg.as_quad_curves(4)
+                    for q in quads:
+                        obj.quad(q.start, q.control, q.end)
+        return obj
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -1830,7 +1855,7 @@ class Geomstr:
         fun1 = self._get_segment_function(segment1[2].real)
         fun2 = self._get_segment_function(segment2[2].real)
         if fun1 is None or fun2 is None:
-            return  # Only shapes can intersect. We don't do point point.
+            return  # Only shapes can intersect. We don't do point x point.
         yield from self._find_intersections_main(segment1, segment2, fun1, fun2)
 
     def _find_intersections_main(
