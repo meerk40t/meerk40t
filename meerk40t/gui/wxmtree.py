@@ -1694,22 +1694,19 @@ class ShadowTree:
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
-                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                            ttip = f"{ww.length_mm} x {hh.length_mm}"
                     elif node.type == "elem rect":
                         bb = node.bounds
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
-                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                            ttip = f"{ww.length_mm} x {hh.length_mm},"
                     elif node.type == "elem polyline":
                         bb = node.bounds
                         if bb is not None:
                             ww = Length(amount=bb[2] - bb[0], digits=1)
                             hh = Length(amount=bb[3] - bb[1], digits=1)
-                            ll = Length(amount=node.shape.length(), digits=1)
-                            ttip = f"{ww.length_mm} x {hh.length_mm}, L={ll.length_mm}"
+                            ttip = f"{ww.length_mm} x {hh.length_mm}"
                             ttip += f"\n{len(node.shape.points)} pts"
                     elif node.type == "elem ellipse":
                         bb = node.bounds
