@@ -1,7 +1,8 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix, Point, Color
+from meerk40t.tools.geomstr import Geomstr
 
 
 class PointNode(Node):
@@ -10,57 +11,42 @@ class PointNode(Node):
     """
 
     def __init__(self, **kwargs):
-        self.point = None
         self.x = 0
         self.y = 0
         self.matrix = None
         self.fill = None
-        self.stroke = None
-        self.stroke_width = None
+        self.stroke = Color("black")
+        self.stroke_width = 1000.0
         super().__init__(type="elem point", **kwargs)
+        if self.matrix is None:
+            self.matrix = Matrix()
+
         self._formatter = "{element_type} {id} {stroke}"
+        self.set_dirty_bounds()
 
     def __copy__(self):
         nd = self.node_dict
-        nd["point"] = copy(self.point)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
         return PointNode(**nd)
 
-    def validate(self):
-        if self.matrix is None:
-            self.matrix = Matrix()
-        if self.point is None:
-            x = float(self.x)
-            y = float(self.y)
-            self.matrix.pre_translate(x, y)
-            self.point = Point(0, 0)
-
     def preprocess(self, context, matrix, plan):
-        if self.point is None:
-            self.validate()
         self.matrix *= matrix
         self.set_dirty_bounds()
-        if not self.matrix.is_identity():
-            self.point = matrix.point_in_matrix_space(self.point)
-            self.matrix.reset()
 
     def bbox(self, transformed=True, with_stroke=False):
-        if self.point is None:
-            return None
-        p = self.matrix.point_in_matrix_space(self.point)
-        return p[0], p[1], p[0], p[1]
+        if transformed:
+            p = self.matrix.point_in_matrix_space((self.x, self.y))
+            return p[0], p[1], p[0], p[1]
+        else:
+            return self.x, self.y, self.x, self.y
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Point"
-        if self.point is not None:
-            default_map["x"] = self.point[0]
-            default_map["y"] = self.point[1]
-        else:
-            default_map["x"] = 0
-            default_map["y"] = 0
+        default_map["x"] = self.x
+        default_map["y"] = self.y
         default_map.update(self.__dict__)
         return default_map
 
@@ -76,10 +62,15 @@ class PointNode(Node):
         bounds = self.bounds
         if bounds is None:
             return
-        self._points.append([self.point.x, self.point.y, "point"])
+        self._points.append([self.x, self.y, "point"])
 
     def update_point(self, index, point):
         return False
 
     def add_point(self, point, index=None):
         return False
+
+    def as_path(self):
+        path = Geomstr()
+        path.point(complex(self.x, self.y))
+        return path
