@@ -360,7 +360,7 @@ def offset_path(
                 idx2 += 1
         seg2 = stitchpath._segments[idx2]
 
-        # print (f"Check {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__}")
+        # print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__}")
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
@@ -404,7 +404,7 @@ def offset_path(
             needs_connector = True
             if isinstance(seg2, Line):
                 needs_connector = True
-            elif isinstance(seg1, Move):
+            elif isinstance(seg2, Move):
                 needs_connector = False
 
         if needs_connector and seg1.end != seg1.start:
@@ -422,7 +422,7 @@ def offset_path(
                     ccw = True
                 else:
                     ccw = False
-                print ("Generate connect-arc")
+                # print ("Generate connect-arc")
                 connect_seg = Arc(
                     start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
                 )
