@@ -118,7 +118,7 @@ def linearize_segment(segment, interpolation=500, reduce=True):
                         appendit = False
                 last_slope = this_slope
 
-        if appendit:
+        if appendit or not reduce:
             s.append(np)
         else:
             s[-1] = np
@@ -163,14 +163,19 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
             )
             newsegments.append(seg)
     else:
-        newseg = copy(segment)
-        p1 = (segment.rx + offset) / segment.rx
-        p2 = (segment.ry + offset) / segment.ry
-        mat = Matrix(f"scale({p1}, {p2})")
-        newseg.start *= mat
-        newseg.end *= mat
-        newseg.prx *= mat
-        newseg.pry *= mat
+        centerpt = segment.center
+        startpt = centerpt.polar_to(
+            angle = centerpt.angle_to(segment.start),
+            distance = centerpt.distance_to(segment.start) + offset,
+        )
+        endpt = centerpt.polar_to(
+            angle = centerpt.angle_to(segment.end),
+            distance = centerpt.distance_to(segment.end) + offset,
+        )
+        print (f"{segment.d()}: {segment.sweep}")
+        ccw = segment.sweep >= 0
+        newseg = Arc(start=startpt, end=endpt, center=Point(centerpt), ccw=ccw)
+
         newsegments.append(newseg)
     return newsegments
 
