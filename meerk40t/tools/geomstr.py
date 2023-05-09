@@ -57,7 +57,16 @@ from copy import copy
 
 import numpy as np
 
-from meerk40t.svgelements import Matrix, Path, Line, Move, QuadraticBezier, CubicBezier, Arc, Close
+from meerk40t.svgelements import (
+    Matrix,
+    Path,
+    Line,
+    Move,
+    QuadraticBezier,
+    CubicBezier,
+    Arc,
+    Close,
+)
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 # Note lower nibble is which indexes are positions (except info index)
