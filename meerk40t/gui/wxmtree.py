@@ -745,12 +745,16 @@ class ShadowTree:
                     node = node.node
                 try:
                     self.update_decorations(node, force=True)
+                    for refnode in node.references:
+                        self.update_decorations(refnode, force=True)
                 except RuntimeError:
                     # A timer can update after the tree closes.
                     return
         else:
             try:
                 self.update_decorations(element, force=True)
+                for refnode in element.references:
+                    self.update_decorations(refnode, force=True)
             except RuntimeError:
                 # A timer can update after the tree closes.
                 return
