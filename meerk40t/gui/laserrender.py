@@ -29,7 +29,7 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC  # , TYPE_RAMP
+from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -227,23 +227,20 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                if node.type == "elem path":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_path
-                elif node.type in ("elem geomstr", "elem ellipse"):
+                if node.type in (
+                    "elem path",
+                    "elem geomstr",
+                    "elem ellipse",
+                    "elem rect",
+                    "elem line",
+                    "elem polyline",
+                ):
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in place_nodes:
                     node.draw = self.draw_placement_node
-                elif node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_shape
                 elif node.type == "elem image":
                     node.draw = self.draw_image_node
                 elif node.type == "elem text":
@@ -254,57 +251,57 @@ class LaserRender:
                     continue
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
 
-    def make_path(self, gc, path):
-        """
-        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
-        """
-        p = gc.CreatePath()
-        init = False
-        for e in path.segments(transformed=True):
-            if isinstance(e, Move):
-                p.MoveToPoint(e.end[0], e.end[1])
-                init = True
-            elif isinstance(e, Line):
-                if not init:
-                    init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddLineToPoint(e.end[0], e.end[1])
-            elif isinstance(e, Close):
-                if not init:
-                    init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.CloseSubpath()
-            elif isinstance(e, QuadraticBezier):
-                if not init:
-                    init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddQuadCurveToPoint(e.control[0], e.control[1], e.end[0], e.end[1])
-            elif isinstance(e, CubicBezier):
-                if not init:
-                    init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                p.AddCurveToPoint(
-                    e.control1[0],
-                    e.control1[1],
-                    e.control2[0],
-                    e.control2[1],
-                    e.end[0],
-                    e.end[1],
-                )
-            elif isinstance(e, Arc):
-                if not init:
-                    init = True
-                    p.MoveToPoint(e.start[0], e.start[1])
-                for curve in e.as_cubic_curves():
-                    p.AddCurveToPoint(
-                        curve.control1[0],
-                        curve.control1[1],
-                        curve.control2[0],
-                        curve.control2[1],
-                        curve.end[0],
-                        curve.end[1],
-                    )
-        return p
+    # def make_path(self, gc, path):
+    #     """
+    #     Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+    #     """
+    #     p = gc.CreatePath()
+    #     init = False
+    #     for e in path.segments(transformed=True):
+    #         if isinstance(e, Move):
+    #             p.MoveToPoint(e.end[0], e.end[1])
+    #             init = True
+    #         elif isinstance(e, Line):
+    #             if not init:
+    #                 init = True
+    #                 p.MoveToPoint(e.start[0], e.start[1])
+    #             p.AddLineToPoint(e.end[0], e.end[1])
+    #         elif isinstance(e, Close):
+    #             if not init:
+    #                 init = True
+    #                 p.MoveToPoint(e.start[0], e.start[1])
+    #             p.CloseSubpath()
+    #         elif isinstance(e, QuadraticBezier):
+    #             if not init:
+    #                 init = True
+    #                 p.MoveToPoint(e.start[0], e.start[1])
+    #             p.AddQuadCurveToPoint(e.control[0], e.control[1], e.end[0], e.end[1])
+    #         elif isinstance(e, CubicBezier):
+    #             if not init:
+    #                 init = True
+    #                 p.MoveToPoint(e.start[0], e.start[1])
+    #             p.AddCurveToPoint(
+    #                 e.control1[0],
+    #                 e.control1[1],
+    #                 e.control2[0],
+    #                 e.control2[1],
+    #                 e.end[0],
+    #                 e.end[1],
+    #             )
+    #         elif isinstance(e, Arc):
+    #             if not init:
+    #                 init = True
+    #                 p.MoveToPoint(e.start[0], e.start[1])
+    #             for curve in e.as_cubic_curves():
+    #                 p.AddCurveToPoint(
+    #                     curve.control1[0],
+    #                     curve.control1[1],
+    #                     curve.control2[0],
+    #                     curve.control2[1],
+    #                     curve.end[0],
+    #                     curve.end[1],
+    #                 )
+    #     return p
 
     def make_geomstr(self, gc, path):
         """
@@ -330,6 +327,10 @@ class LaserRender:
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                 elif seg_type == TYPE_ARC:
+                    if isinstance(p, wx.GraphicsPath):
+                        # c = path.arc_center(line=e)
+                        radius = e.arc_radius(line=e)
+                        p.AddArcToPoint(start.real, start.imag, end.real, end.imag, radius)
                     # TODO: Perform corrected arc drawing.
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                 elif seg_type == TYPE_CUBIC:
@@ -565,26 +566,26 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def cache_shape(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.shape.transform = matrix
-        cache = self.make_path(gc, node.shape)
-        node._cache = cache
+    # def cache_shape(self, node, gc):
+    #     matrix = node.matrix
+    #     node._cache_matrix = copy(matrix)
+    #     # Ensure Sync.
+    #     node.shape.transform = matrix
+    #     cache = self.make_path(gc, node.shape)
+    #     node._cache = cache
 
-    def cache_path(self, node, gc):
-        matrix = node.matrix
-        node._cache_matrix = copy(matrix)
-        # Ensure Sync.
-        node.path.transform = matrix
-        cache = self.make_path(gc, node.path)
-        node._cache = cache
+    # def cache_path(self, node, gc):
+    #     matrix = node.matrix
+    #     node._cache_matrix = copy(matrix)
+    #     # Ensure Sync.
+    #     node.path.transform = matrix
+    #     cache = self.make_path(gc, node.path)
+    #     node._cache = cache
 
     def cache_geomstr(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
-        cache = self.make_geomstr(gc, node.path)
+        cache = self.make_geomstr(gc, node.as_path())
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
