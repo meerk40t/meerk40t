@@ -711,18 +711,18 @@ class Geomstr:
             if isinstance(seg, Move):
                 pass
             elif isinstance(seg, (Line, Close)):
-                obj.line(seg.start, seg.end)
+                obj.line(complex(seg.start), complex(seg.end))
             elif isinstance(seg, QuadraticBezier):
-                obj.quad(seg.start, seg.control, seg.end)
+                obj.quad(complex(seg.start), complex(seg.control), complex(seg.end))
             elif isinstance(seg, CubicBezier):
-                obj.cubic(seg.start, seg.control1, seg.control2, seg.end)
+                obj.cubic(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
             elif isinstance(seg, Arc):
                 if seg.is_circular():
-                    obj.arc(cls, seg.start, seg.point(0.5), seg.end)
+                    obj.arc(complex(seg.start), complex(seg.point(0.5)), complex(seg.end))
                 else:
                     quads = seg.as_quad_curves(4)
                     for q in quads:
-                        obj.quad(q.start, q.control, q.end)
+                        obj.quad(complex(q.start), complex(q.control), complex(q.end))
         return obj
 
     def _ensure_capacity(self, capacity):
