@@ -163,4 +163,6 @@ class PolylineNode(Node, Stroked):
         return False
 
     def as_path(self):
-        return self.polyline
+        path = self.polyline
+        path.transform(self.matrix)
+        return path

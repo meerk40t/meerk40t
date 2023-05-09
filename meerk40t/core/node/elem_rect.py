@@ -219,4 +219,5 @@ class RectNode(Node, Stroked):
             path.line(complex(x, y + height - ry), complex(x, y + ry))
             path.arc(complex(x, y + ry), complex(x, y), complex(x + rx, y))
             path.line(complex(x + rx, y), complex(x + rx, y))
+        path.transform(self.matrix)
         return path

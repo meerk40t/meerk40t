@@ -155,4 +155,6 @@ class PathNode(Node, Stroked):
         return False
 
     def as_path(self):
-        return self.path
+        path = copy(self.path)
+        path.transform(self.matrix)
+        return path

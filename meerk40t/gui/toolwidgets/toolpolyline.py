@@ -10,7 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Point, Polyline
+from meerk40t.svgelements import Point, Polyline, Path
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -180,7 +180,7 @@ class PolylineTool(ToolWidget):
             polyline = Polyline(*self.point_series)
             elements = self.scene.context.elements
             node = elements.elem_branch.add(
-                polyline=Geomstr.svg(polyline),
+                polyline=Geomstr.svg(Path(polyline)),
                 type="elem polyline",
                 stroke_width=elements.default_strokewidth,
                 stroke=elements.default_stroke,

@@ -181,4 +181,5 @@ class EllipseNode(Node, Stroked):
             )
             t_start = t_end
             t_end += step_size
+        path.transform(self.matrix)
         return path

@@ -73,4 +73,5 @@ class PointNode(Node):
     def as_path(self):
         path = Geomstr()
         path.point(complex(self.x, self.y))
+        path.transform(self.matrix)
         return path
