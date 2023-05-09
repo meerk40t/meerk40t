@@ -32,6 +32,20 @@ class RectNode(Node, Stroked):
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem rect", **kwargs)
+        if self.rx is None and self.ry is None:
+            self.rx = self.ry = 0
+        elif self.rx is not None and self.ry is None:
+            self.ry = self.rx
+        elif self.ry is not None and self.rx is None:
+            self.rx = self.ry
+        if self.x is None:
+            self.x = 0
+        if self.y is None:
+            self.y = 0
+        if self.width is None:
+            self.width = 0
+        if self.height is None:
+            self.height = 0
 
         if self.matrix is None:
             self.matrix = Matrix()
