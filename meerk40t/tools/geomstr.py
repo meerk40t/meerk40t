@@ -697,6 +697,9 @@ class Geomstr:
         """
         return self.index
 
+    def __iter__(self):
+        return self.segments
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
