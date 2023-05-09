@@ -2121,8 +2121,9 @@ class Geomstr:
     # Arc Functions
     #######################
 
-    def arc_radius(self, e):
-        line = self.segments[e]
+    def arc_radius(self, e=None, line=None):
+        if line is None:
+            line = self.segments[e]
         start = line[0]
         center = self.arc_center(e)
         return abs(start - center)
