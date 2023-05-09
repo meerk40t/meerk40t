@@ -21,6 +21,7 @@ class CutOpNode(Node, Parameters):
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.kerf = 0
+        self._device_factor = 1.0
 
         if len(args) == 1:
             obj = args[0]
@@ -281,6 +282,10 @@ class CutOpNode(Node, Parameters):
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+        # We need to establish the native device resolution,
+        # as kerf is given in scene space but needs to be passed on in device space
+        device = context.device
+        self._device_factor = 1 / (device.native_scale_x**2 + device.native_scale_y**2)**0.5
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
@@ -319,5 +324,5 @@ class CutOpNode(Node, Parameters):
                 passes=passes,
                 original_op=self.type,
                 color=stroke,
-                kerf=self.kerf,
+                kerf=self.kerf * self._device_factor,
             )
