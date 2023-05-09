@@ -1,16 +1,9 @@
 from copy import copy
-from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import (
-    SVG_ATTR_VECTOR_EFFECT,
-    SVG_VALUE_NON_SCALING_STROKE,
-    Matrix,
-    Path,
-    Polygon,
-    Polyline,
-)
+from meerk40t.svgelements import  Matrix, Color
+from meerk40t.tools.geomstr import Geomstr
 
 
 class PolylineNode(Node, Stroked):
@@ -19,54 +12,45 @@ class PolylineNode(Node, Stroked):
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        self.polyline = None
+        self.closed = False
+
         self.matrix = None
         self.fill = None
-        self.stroke = None
-        self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke = Color("black")
+        self.stroke_width = 1000.0
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem polyline", **kwargs)
-        self._formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, (Polyline, Polygon))
         if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
+            self.matrix = Matrix()
+
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
 
+        self._formatter = "{element_type} {id} {stroke}"
         self.set_dirty_bounds()
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
+        nd["shape"] = copy(self.polyline)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
         return PolylineNode(**nd)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {len(self.polyline)}, {str(self._parent)})"
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -101,11 +85,11 @@ class PolylineNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        path = self.as_path()
+        if transformed:
+            bounds = path.bbox(mx=self.matrix)
+        else:
+            bounds = path.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -122,7 +106,6 @@ class PolylineNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -155,25 +138,24 @@ class PolylineNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
-        lastpt = None
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, obj.points))
-        else:
-            points = obj.points
-        maxidx = len(points) - 1
+        last_pt = None
+        points = copy(self.polyline)
+        if isinstance(points, Geomstr):
+            points.transform(self.matrix)
+
+        max_index = len(points) - 1
         for idx, pt in enumerate(points):
+            start, control1, info, control2, end = pt
             if idx == 0:
-                self._points.append([pt.x, pt.y, "endpoint"])
-            elif idx == maxidx:
-                self._points.append([pt.x, pt.y, "endpoint"])
+                self._points.append([start.real, start.imag, "endpoint"])
+            elif idx == max_index:
+                self._points.append([end.real, end.imag, "endpoint"])
             else:
-                self._points.append([pt.x, pt.y, "point"])
+                self._points.append([end.real, end.imag, "point"])
             if idx > 0:
-                self._points.append(
-                    [0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"]
-                )
-            lastpt = pt
+                mid = start + end / 2.0
+                self._points.append([mid.real, mid.imag, "midpoint"])
+            last_pt = pt
 
     def update_point(self, index, point):
         return False
@@ -181,19 +163,5 @@ class PolylineNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
     def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        return self.polyline
