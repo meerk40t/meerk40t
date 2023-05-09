@@ -85,6 +85,7 @@ from ..svgelements import (
     Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
+from ..tools.geomstr import Geomstr
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -780,8 +781,10 @@ class SVGProcessor:
             pass
         is_dot, dot_point = SVGProcessor.is_dot(element)
         if is_dot:
+            x, y = dot_point
             node = context_node.add(
-                point=dot_point,
+                x=x,
+                y=y,
                 type="elem point",
                 matrix=Matrix(),
                 fill=element.fill,
@@ -836,9 +839,20 @@ class SVGProcessor:
                     pass
                 if element.values.get("type") == "elem line":
                     pass
-                element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    path=element, type="elem path", id=ident, label=_label, lock=_lock
+                    path=Geomstr.svg(element),
+                    type="elem path",
+                    matrix=element.transform,
+                    fill=element.fill,
+                    stroke=element.stroke,
+                    stroke_width=element.stroke_width,
+                    stroke_scale=bool(
+                        SVG_VALUE_NON_SCALING_STROKE
+                        not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                    ),
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
@@ -848,8 +862,17 @@ class SVGProcessor:
             if element.is_degenerate():
                 return
             node = context_node.add(
-                shape=element,
+                polyline=Geomstr.svg(Path(element)),
+                closed=bool(isinstance(element, Polygon)),
                 type="elem polyline",
+                matrix=element.transform,
+                fill=element.fill,
+                stroke=element.stroke,
+                stroke_width=element.stroke_width,
+                stroke_scale=bool(
+                    SVG_VALUE_NON_SCALING_STROKE
+                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                ),
                 id=ident,
                 label=_label,
                 lock=_lock,
@@ -904,7 +927,24 @@ class SVGProcessor:
             if element.is_degenerate():
                 return
             node = context_node.add(
-                shape=element, type="elem rect", id=ident, label=_label, lock=_lock
+                x=element.x,
+                y=element.y,
+                width=element.width,
+                height=element.height,
+                rx=element.rx,
+                ry=element.ry,
+                type="elem rect",
+                matrix=element.transform,
+                fill=element.fill,
+                stroke=element.stroke,
+                stroke_width=element.stroke_width,
+                stroke_scale=bool(
+                    SVG_VALUE_NON_SCALING_STROKE
+                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                ),
+                id=ident,
+                label=_label,
+                lock=_lock,
             )
             self.check_for_line_attributes(node, element)
             if self.precalc_bbox:
@@ -935,7 +975,22 @@ class SVGProcessor:
             if element.is_degenerate():
                 return
             node = context_node.add(
-                shape=element, type="elem line", id=ident, label=_label, lock=_lock
+                x1=element.x1,
+                y1=element.y1,
+                x2=element.x2,
+                y2=element.y2,
+                type="elem line",
+                matrix=element.transform,
+                fill=element.fill,
+                stroke=element.stroke,
+                stroke_width=element.stroke_width,
+                stroke_scale=bool(
+                    SVG_VALUE_NON_SCALING_STROKE
+                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                ),
+                id=ident,
+                label=_label,
+                lock=_lock,
             )
             self.check_for_line_attributes(node, element)
             if self.precalc_bbox:

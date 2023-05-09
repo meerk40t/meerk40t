@@ -73,7 +73,6 @@ class PolylineNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
