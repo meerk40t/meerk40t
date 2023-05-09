@@ -360,7 +360,7 @@ def offset_path(
                 idx2 += 1
         seg2 = stitchpath._segments[idx2]
 
-        print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
+        #  print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
@@ -441,7 +441,8 @@ def offset_path(
     # This needs to be a continuous path
     for subpath in path.as_subpaths():
         p = Path(subpath)
-        p.approximate_arcs_with_cubics()
+        if not linearize:
+            p.approximate_arcs_with_cubics()
         offset = offset_value
         # # No offset bigger than half the path size, otherwise stuff will get crazy
         # if offset > 0:
@@ -449,6 +450,7 @@ def offset_path(
         #     offset = min(offset, bb[2] - bb[0])
         #     offset = min(offset, bb[3] - bb[1])
         is_closed = False
+        is_closed_by_pts = False
         remember = False
         remember_helper = None
         # Lets check the first and last valid point. If they are identical
@@ -473,6 +475,7 @@ def offset_path(
             remember = True
             remember_helper = Point(lastp)
             is_closed = True
+            is_closed_by_pts = True
         # We need to establish if this is a closed path and if the first segment goes counterclockwise
         cw = False
         if not is_closed:
@@ -484,11 +487,17 @@ def offset_path(
             cw = is_clockwise(p)
             if cw:
                 offset = -1 * offset
-        print (f"Subpath: closed={is_closed}, clockwise={cw}")
+        # print (f"Subpath: closed={is_closed}, clockwise={cw}")
 
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
             if isinstance(segment, Close):
+                if is_closed_by_pts:
+                    # it was already closed with the last and the first point, so we just skip it...
+                    p._segments.pop(idx)
+                    remember = False
+                    remember_helper = None
+                    continue
                 remember = True
                 # Lets add an additional line and replace the closed segment by this new segment
                 idx1 = idx
@@ -501,17 +510,21 @@ def offset_path(
                     p._segments[idx2], (Arc, Line, QuadraticBezier, CubicBezier)
                 ):
                     idx2 += 1
+                # We replace the close by a line
                 segment = Line(
                     Point(p._segments[idx1].end), Point(p._segments[idx2].start)
                 )
                 p._segments[idx] = segment
                 remember_helper = Point(p._segments[idx2].start)
+                # Test:
 
             helper = Point(p._segments[idx].end)
             idxend = idx
             if isinstance(segment, Arc):
-                print(f"{idx}/{len(p._segments)}: Arc")
-                newsegment = offset_arc(segment, offset, linearize, interpolation)
+                arclinearize = linearize
+                # Arc is not working, so we always linearize
+                arclinearize = True
+                newsegment = offset_arc(segment, offset, arclinearize, interpolation)
                 idxend = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
