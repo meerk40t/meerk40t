@@ -1,6 +1,7 @@
 from copy import copy
 from math import tau, cos, sin, sqrt
 
+from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     Point, Matrix, Color,
@@ -8,7 +9,7 @@ from meerk40t.svgelements import (
 from meerk40t.tools.geomstr import Geomstr
 
 
-class EllipseNode(Node):
+class EllipseNode(Node, Stroked):
     """
     EllipseNode is the bootstrapped node type for the 'elem ellipse' type.
     """
@@ -44,14 +45,9 @@ class EllipseNode(Node):
 
     def __copy__(self):
         nd = self.node_dict
-        nd["cx"] = copy(self.cx)
-        nd["cy"] = copy(self.cy)
-        nd["rx"] = copy(self.rx)
-        nd["ry"] = copy(self.ry)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke"] = copy(self.stroke)
-        nd["stroke_width"] = copy(self.stroke_width)
         return EllipseNode(**nd)
 
     def scaled(self, sx, sy, ox, oy):
@@ -101,24 +97,8 @@ class EllipseNode(Node):
         """
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
-    @property
-    def path(self):
-        path = Geomstr()
-        steps = 4
-        step_size = tau / steps
-        if self.matrix.determinant < 0:
-            step_size = -step_size
-
-        t_start = 0
-        t_end = step_size
-        for i in range(steps):
-            path.arc(self.point_at_t(t_start), self.point_at_t((t_start + t_end) / 2), self.point_at_t(t_end))
-            t_start = t_end
-            t_end += step_size
-        return path
-
     def bbox(self, transformed=True, with_stroke=False):
-        path = self.path
+        path = self.as_path()
         if transformed:
             bounds = path.bbox(mx=self.matrix)
         else:
@@ -182,70 +162,17 @@ class EllipseNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    @property
-    def stroke_scaled(self):
-        return self.stroke_scale
+    def as_path(self):
+        path = Geomstr()
+        steps = 4
+        step_size = tau / steps
+        if self.matrix.determinant < 0:
+            step_size = -step_size
 
-    @stroke_scaled.setter
-    def stroke_scaled(self, v):
-        """
-        Setting stroke_scale directly will not resize the stroke-width based on current scaling. This function allows
-        the toggling of the stroke-scaling without the current stroke_width being affected.
-
-        @param v:
-        @return:
-        """
-        if bool(v) == bool(self.stroke_scale):
-            # Unchanged.
-            return
-        if not v:
-            self.stroke_width *= self.stroke_factor
-        self.stroke_width_zero()
-        self.stroke_scale = v
-
-    @property
-    def implied_stroke_width(self):
-        """
-        The implied stroke width is stroke_width if not scaled or the scaled stroke_width if scaled.
-
-        @return:
-        """
-        if self.stroke_scale:
-            factor = self.stroke_factor
-        else:
-            factor = 1
-        if hasattr(self, "stroke"):
-            # print (f"Have stroke {self.stroke}, {type(self.stroke).__name__}")
-            if self.stroke is None or self.stroke.argb is None:
-                # print ("set to zero")
-                factor = 0
-
-        return self.stroke_width * factor
-
-    @property
-    def stroke_factor(self):
-        """
-        The stroke factor is the ratio of the new to old stroke-width scale.
-
-        @return:
-        """
-        matrix = self.matrix
-        stroke_one = sqrt(abs(matrix.determinant))
-        try:
-            return stroke_one / self._stroke_zero
-        except AttributeError:
-            return 1.0
-
-    def stroke_reify(self):
-        """Set the stroke width to the real stroke width."""
-        if self.stroke_scale:
-            self.stroke_width *= self.stroke_factor
-        self.stroke_width_zero()
-
-    def stroke_width_zero(self):
-        """
-        Ensures the current stroke scale is marked as stroke_zero.
-        @return:
-        """
-        matrix = self.matrix
-        self._stroke_zero = sqrt(abs(matrix.determinant))
+        t_start = 0
+        t_end = step_size
+        for i in range(steps):
+            path.arc(self.point_at_t(t_start), self.point_at_t((t_start + t_end) / 2), self.point_at_t(t_end))
+            t_start = t_end
+            t_end += step_size
+        return path
