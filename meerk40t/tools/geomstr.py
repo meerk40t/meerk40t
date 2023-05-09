@@ -718,7 +718,7 @@ class Geomstr:
                 obj.cubic(seg.start, seg.control1, seg.control2, seg.end)
             elif isinstance(seg, Arc):
                 if seg.is_circular():
-                    obj.arc(cls, seg.start, seg.point(0.5), seg.end)
+                    obj.arc(seg.start, seg.point(0.5), seg.end)
                 else:
                     quads = seg.as_quad_curves(4)
                     for q in quads:
