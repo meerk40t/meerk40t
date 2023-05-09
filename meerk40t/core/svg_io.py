@@ -246,12 +246,11 @@ class SVGWriter:
 
         for c in elem_tree.children:
             if c.type == "elem ellipse":
-                element = c
                 subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
-                subelement.set(SVG_ATTR_CENTER_X, str(element.cx))
-                subelement.set(SVG_ATTR_CENTER_Y, str(element.cy))
-                subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
-                subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
+                subelement.set(SVG_ATTR_CENTER_X, str(c.cx))
+                subelement.set(SVG_ATTR_CENTER_Y, str(c.cy))
+                subelement.set(SVG_ATTR_RADIUS_X, str(c.rx))
+                subelement.set(SVG_ATTR_RADIUS_Y, str(c.ry))
                 t = c.matrix
                 if not t.is_identity():
                     subelement.set(
@@ -259,7 +258,6 @@ class SVGWriter:
                         f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                     )
             elif c.type == "elem image":
-                element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 try:
@@ -284,13 +282,11 @@ class SVGWriter:
                         f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                     )
             elif c.type == "elem line":
-                element = c.shape
-                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_LINE)
-                subelement.set(SVG_ATTR_X1, str(element.x1))
-                subelement.set(SVG_ATTR_Y1, str(element.y1))
-                subelement.set(SVG_ATTR_X2, str(element.x2))
-                subelement.set(SVG_ATTR_Y2, str(element.y2))
+                subelement.set(SVG_ATTR_X1, str(c.x1))
+                subelement.set(SVG_ATTR_Y1, str(c.y1))
+                subelement.set(SVG_ATTR_X2, str(c.x2))
+                subelement.set(SVG_ATTR_Y2, str(c.y2))
                 t = c.matrix
                 if not t.is_identity():
                     subelement.set(
@@ -299,8 +295,9 @@ class SVGWriter:
                     )
 
             elif c.type == "elem path":
-                element = c.path
-                copy_attributes(c, element)
+                gpath = c.as_path()
+                svg_path = gpath.as_path()
+                element = svg_path
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
                 t = c.matrix
@@ -310,9 +307,6 @@ class SVGWriter:
                         f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                     )
             elif c.type == "elem point":
-                element = Point(c.point)
-                c.x = element.x
-                c.y = element.y
                 subelement = SubElement(xml_tree, "element")
                 t = c.matrix
                 if not t.is_identity():
@@ -322,12 +316,12 @@ class SVGWriter:
                     )
                 SVGWriter._write_custom(subelement, c)
             elif c.type == "elem polyline":
-                element = c.shape
-                copy_attributes(c, element)
+                gpath = c.as_path()
+                points = gpath.as_points()
                 subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
                 subelement.set(
                     SVG_ATTR_POINTS,
-                    " ".join([f"{e[0]} {e[1]}" for e in element.points]),
+                    " ".join([f"{e[0]} {e[1]}" for e in points]),
                 )
                 t = c.matrix
                 if not t.is_identity():
@@ -336,15 +330,13 @@ class SVGWriter:
                         f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                     )
             elif c.type == "elem rect":
-                element = c.shape
-                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_RECT)
-                subelement.set(SVG_ATTR_X, str(element.x))
-                subelement.set(SVG_ATTR_Y, str(element.y))
-                subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
-                subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
-                subelement.set(SVG_ATTR_WIDTH, str(element.width))
-                subelement.set(SVG_ATTR_HEIGHT, str(element.height))
+                subelement.set(SVG_ATTR_X, str(c.x))
+                subelement.set(SVG_ATTR_Y, str(c.y))
+                subelement.set(SVG_ATTR_RADIUS_X, str(c.rx))
+                subelement.set(SVG_ATTR_RADIUS_Y, str(c.ry))
+                subelement.set(SVG_ATTR_WIDTH, str(c.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(c.height))
                 t = c.matrix
                 if not t.is_identity():
                     subelement.set(
@@ -387,7 +379,6 @@ class SVGWriter:
                 decor = decor.strip()
                 if decor:
                     subelement.set("text-decoration", decor)
-                element = c
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
