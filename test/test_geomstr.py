@@ -966,3 +966,7 @@ class TestGeomstr(unittest.TestCase):
         splits = list(g.split(0, np.linspace(1, 0, steps)[1:-1]))
         g.replace(0, 7, splits)
         self.assertEqual(g.index, steps - 2)
+
+    def test_geomstr_svg(self):
+        gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
+        self.assertEqual(gs.raw_length(), 400.0)
