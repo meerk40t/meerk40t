@@ -11,6 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Point, Polygon
+from meerk40t.tools.geomstr import Geomstr
 
 
 class PolygonTool(ToolWidget):
@@ -175,7 +176,7 @@ class PolygonTool(ToolWidget):
             polyline = Polygon(*self.point_series)
             elements = self.scene.context.elements
             node = elements.elem_branch.add(
-                shape=polyline,
+                polyline=Geomstr.svg(polyline),
                 type="elem polyline",
                 stroke_width=elements.default_strokewidth,
                 stroke=elements.default_stroke,

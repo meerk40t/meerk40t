@@ -35,7 +35,8 @@ class PointTool(ToolWidget):
                 point = Point(nearest_snap[0], nearest_snap[1])
             elements = self.scene.context.elements
             node = elements.elem_branch.add(
-                point=point,
+                x=point.x,
+                y=point.y,
                 matrix=Matrix(),
                 type="elem point",
                 stroke_width=elements.default_strokewidth,

@@ -8,6 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
+from meerk40t.tools.geomstr import Geomstr
 
 
 class DrawTool(ToolWidget):
@@ -73,7 +74,7 @@ class DrawTool(ToolWidget):
                     t.line(m)
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(
-                    path=t,
+                    path=Geomstr.svg(t),
                     type="elem path",
                     stroke_width=elements.default_strokewidth,
                     stroke=elements.default_stroke,

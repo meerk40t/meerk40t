@@ -8,7 +8,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Rect
 
 _ = wx.GetTranslation
 
@@ -167,19 +166,20 @@ class RectTool(ToolWidget):
                     y0 = min(self.p1.imag, self.p2.imag)
                     x1 = max(self.p1.real, self.p2.real)
                     y1 = max(self.p1.imag, self.p2.imag)
-                rect = Rect(x0, y0, x1 - x0, y1 - y0)
-                if not rect.is_degenerate():
-                    elements = self.scene.context.elements
-                    node = elements.elem_branch.add(
-                        shape=rect,
-                        type="elem rect",
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                    )
-                    if elements.classify_new:
-                        elements.classify([node])
-                    self.notify_created(node)
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(
+                    x=x0,
+                    y=y0,
+                    x1=x1 - x0,
+                    y1=y1 - y0,
+                    type="elem rect",
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
+                )
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

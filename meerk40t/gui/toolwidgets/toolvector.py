@@ -7,6 +7,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
 
 from ..laserrender import LaserRender, swizzlecolor
+from ...tools.geomstr import Geomstr
 
 
 class VectorTool(ToolWidget):
@@ -51,7 +52,8 @@ class VectorTool(ToolWidget):
                 else:
                     pos = self.angled(self.mouse_position)
                     path.line(pos)
-            gpath = self.render.make_path(gc, path)
+            gs = Geomstr.svg(path)
+            gpath = self.render.make_geomstr(gc, gs)
             gc.DrawPath(gpath)
             del gpath
             # x0 = points[-2][0]
@@ -183,7 +185,7 @@ class VectorTool(ToolWidget):
         if t is not None and len(t) > 1:
             elements = self.scene.context.elements
             node = elements.elem_branch.add(
-                path=t,
+                path=Geomstr.svg(t),
                 type="elem path",
                 stroke_width=elements.default_strokewidth,
                 stroke=elements.default_stroke,
