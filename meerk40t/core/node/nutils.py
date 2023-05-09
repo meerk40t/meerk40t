@@ -6,18 +6,16 @@ from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.elements.offset import offset_path
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import (
-    Arc,
     Close,
     CubicBezier,
     Line,
     Move,
     Path,
     QuadraticBezier,
-    Rect,
 )
-from meerk40t.core.elements.offset import offset_path
 
 
 def path_to_cutobjects(
