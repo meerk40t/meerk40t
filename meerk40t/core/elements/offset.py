@@ -67,6 +67,32 @@ def norm_vector(p1, p2, target_len):
     return normal_vector
 
 
+
+
+def is_clockwise(path):
+    def poly_clockwise(poly):
+        """
+        returns True if the polygon is clockwise ordered, false if not
+        """
+
+        total = poly[-1].x * poly[0].y - poly[0].x * poly[-1].y  # last point to first point
+        for i in range(len(poly) - 1):
+            total += poly[i].x * poly[i + 1].y - poly[i + 1].x * poly[i].y
+
+        if total <= 0:
+            return True
+        else:
+            return False
+
+    poly = []
+    for seg in path._segments:
+        if isinstance(seg, (Arc, Line, QuadraticBezier, CubicBezier)):
+            if len(poly) == 0:
+                poly.append(seg.start)
+            poly.append(seg.end)
+    res = poly_clockwise(poly)
+    return res
+
 def linearize_segment(segment, interpolation=500, reduce=True):
     slope_tolerance = 0.001
     s = []
@@ -451,21 +477,8 @@ def offset_path(
                     is_closed = True
                     break
         if is_closed:
-            # This is a very stupid test to establish if we have a ccw closed shape. In this case left is inner...
-            test1 = (
-                norm_vector(firstp_start, firstp_end, 10)
-                + (firstp_start + firstp_end) * 0.5
-            )
-            test2 = (
-                norm_vector(firstp_end, firstp_start, 10)
-                + (firstp_start + firstp_end) * 0.5
-            )
-            bb = p.bbox()
-            center = Point((bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2)
-            test1_outer = bool(center.distance_to(test1) > center.distance_to(test2))
-            if test1_outer:
+            if is_clockwise(p):
                 offset = -1 * offset
-            # print (f"Test 1 farther away from center than test 2: {test1_outer}")
 
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
