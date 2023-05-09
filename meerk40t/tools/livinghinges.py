@@ -31,11 +31,8 @@ class HingePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self._use_geomstr = self.context.setting(bool, "geomstr_hinge", False)
-        if self._use_geomstr:
-            from meerk40t.fill.patterns import LivingHinges
-        else:
-            from meerk40t.fill.patternfill import LivingHinges
+        from meerk40t.fill.patterns import LivingHinges
+
         self.hinge_generator = LivingHinges(
             0, 0, float(Length("5cm")), float(Length("5cm"))
         )
@@ -458,31 +455,17 @@ class HingePanel(wx.Panel):
             except ZeroDivisionError:
                 return
             ratio *= 0.9
-            if self._use_geomstr:
-                matrix = gc.CreateMatrix(
-                    a=ratio,
-                    b=0,
-                    c=0,
-                    d=ratio,
-                    tx=ratio
-                    * (
-                        0.05 * self.hinge_generator.width - self.hinge_generator.start_x
-                    ),
-                    ty=ratio
-                    * (
-                        0.05 * self.hinge_generator.height
-                        - self.hinge_generator.start_y
-                    ),
-                )
-            else:
-                matrix = gc.CreateMatrix(
-                    a=ratio,
-                    b=0,
-                    c=0,
-                    d=ratio,
-                    tx=0.05 * ratio * self.hinge_generator.width,
-                    ty=0.05 * ratio * self.hinge_generator.height,
-                )
+
+            matrix = gc.CreateMatrix(
+                a=ratio,
+                b=0,
+                c=0,
+                d=ratio,
+                tx=ratio
+                * (0.05 * self.hinge_generator.width - self.hinge_generator.start_x),
+                ty=ratio
+                * (0.05 * self.hinge_generator.height - self.hinge_generator.start_y),
+            )
             gc.SetTransform(matrix)
             if ratio == 0:
                 ratio = 1
@@ -496,17 +479,9 @@ class HingePanel(wx.Panel):
                         0, 0, self.hinge_generator.width, self.hinge_generator.height
                     )
                 else:
-                    if self._use_geomstr:
-                        path = self.hinge_generator.outershape.as_path()
-                        if path:
-                            gcpath = self.renderer.make_path(gc, path)
-                            gc.StrokePath(gcpath)
-                    else:
-                        node = copy(self.hinge_generator.outershape)
-                        bb = node.bbox()
-                        node.matrix *= Matrix.translate(-bb[0], -bb[1])
-                        path = node.as_path()
-                        gcpath = self.renderer.make_path(gc, path)
+                    path = self.hinge_generator.outershape
+                    if path:
+                        gcpath = self.renderer.make_geomstr(gc, path)
                         gc.StrokePath(gcpath)
             if self.check_preview_show_pattern.GetValue():
                 mypen_path = wx.Pen(wx.RED, linewidth, wx.PENSTYLE_SOLID)
@@ -519,10 +494,7 @@ class HingePanel(wx.Panel):
                 gc.SetPen(mypen_path)
                 gspath = self.hinge_generator.preview_path
                 if gspath is not None:
-                    if isinstance(gspath, Path):
-                        gcpath = self.renderer.make_path(gc, gspath)
-                    else:
-                        gcpath = self.renderer.make_geomstr(gc, gspath)
+                    gcpath = self.renderer.make_geomstr(gc, gspath)
                     gc.StrokePath(gcpath)
         self.panel_preview.Refresh()
         self.panel_preview.Update()
@@ -590,17 +562,15 @@ class HingePanel(wx.Panel):
         # Polycut algorithm does not work for me (yet), final=False still
         self.hinge_generator.generate(show_outline=False, force=True, final=True)
         path = self.hinge_generator.path
-        if hasattr(path, "as_path"):
-            path = path.as_path()
+
+        # Lets simplify things...
+        path.simplify()
         node = self.context.elements.elem_branch.add(
             path=path,
             stroke_width=500,
             stroke=Color("red"),
             type="elem path",
         )
-        # Lets simplify things...
-        self.context.elements.simplify_node(node)
-
         if self.hinge_generator.outershape is not None:
             group_node = self.hinge_generator.outershape.parent.add(
                 type="group", label="Hinge"
