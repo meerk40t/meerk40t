@@ -1,16 +1,13 @@
 from copy import copy
-from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
-    SVG_ATTR_VECTOR_EFFECT,
-    SVG_VALUE_NON_SCALING_STROKE,
     Matrix,
-    Path,
     Point,
-    Rect,
+    Color,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class RectNode(Node, Stroked):
@@ -19,46 +16,41 @@ class RectNode(Node, Stroked):
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        self.rx = None
+        self.ry = None
+
         self.matrix = None
         self.fill = None
-        self.stroke = None
-        self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke = Color("black")
+        self.stroke_width = 1000.0
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem rect", **kwargs)
-        self._formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, Rect)
 
         if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
+            self.matrix = Matrix()
+
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
 
+        self._formatter = "{element_type} {id} {stroke}"
         self.set_dirty_bounds()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
+        nd["stroke"] = copy(self.stroke)
         nd["stroke_width"] = copy(self.stroke_width)
         return RectNode(**nd)
 
@@ -100,11 +92,11 @@ class RectNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        path = self.as_path()
+        if transformed:
+            bounds = path.bbox(mx=self.matrix)
+        else:
+            bounds = path.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -121,7 +113,6 @@ class RectNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -154,15 +145,14 @@ class RectNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
         npoints = [
-            Point(obj.x, obj.y),
-            Point(obj.x + obj.width, obj.y),
-            Point(obj.x + obj.width, obj.y + obj.height),
-            Point(obj.x, obj.y + obj.height),
+            Point(self.x, self.y),
+            Point(self.x + self.width, self.y),
+            Point(self.x + self.width, self.y + self.height),
+            Point(self.x, self.y + self.height),
         ]
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
+        if not self.matrix.is_identity():
+            points = list(map(self.matrix.point_in_matrix_space, npoints))
         else:
             points = npoints
         if not self.matrix.is_identity():
@@ -177,19 +167,43 @@ class RectNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
     def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        path = Geomstr()
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+
+        rx = self.rx
+        ry = self.ry
+        if rx < 0 < width or ry < 0 < height:
+            rx = abs(rx)
+            ry = abs(ry)
+        if rx == ry == 0:
+            path.line(complex(x, y), complex(x + width, y)),
+            path.line(complex(x + width, y), complex(x + width, y + height)),
+            path.line(complex(x + width, y + height), complex(x, y + height)),
+            path.line(complex(x, y + height), complex(x, y)),
+        else:
+            path.line(complex(x + rx, y), complex(x + width - rx, y))
+            path.arc(
+                complex(x + width - rx, y),
+                complex(x + width, y),
+                complex(x + width, y + ry),
+            )
+            path.line((x + width, y + ry), (x + width, y + height - ry))
+            path.arc(
+                complex(x + width, y + height - ry),
+                complex(x + width, y + height),
+                complex(x + width - rx, y + height),
+            )
+            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
+            path.arc(
+                complex(x + rx, y + height),
+                complex(x, y + height),
+                complex(x, y + height - ry),
+            )
+            path.line(complex(x, y + height - ry), complex(x, y + ry))
+            path.arc(complex(x, y + ry), complex(x, y), complex(x + rx, y))
+            path.line(complex(x + rx, y), complex(x + rx, y))
+        return path

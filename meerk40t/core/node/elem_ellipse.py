@@ -4,7 +4,9 @@ from math import tau, cos, sin, sqrt
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
-    Point, Matrix, Color,
+    Point,
+    Matrix,
+    Color,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -172,7 +174,11 @@ class EllipseNode(Node, Stroked):
         t_start = 0
         t_end = step_size
         for i in range(steps):
-            path.arc(self.point_at_t(t_start), self.point_at_t((t_start + t_end) / 2), self.point_at_t(t_end))
+            path.arc(
+                self.point_at_t(t_start),
+                self.point_at_t((t_start + t_end) / 2),
+                self.point_at_t(t_end),
+            )
             t_start = t_end
             t_end += step_size
         return path
