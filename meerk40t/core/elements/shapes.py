@@ -563,7 +563,11 @@ def init_commands(kernel):
             except AttributeError:
                 sub_before = 0
 
-            changed, before, after = self.simplify_node(node)
+            try:
+                changed, before, after = node.simplify()
+            except AttributeError:
+                changed = False
+
             if changed:
                 node.altered()
                 try:

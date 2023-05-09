@@ -154,6 +154,9 @@ class PathNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
+    def simplify(self):
+        self.path.simplify()
+
     def as_path(self):
         path = copy(self.path)
         path.transform(self.matrix)

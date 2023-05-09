@@ -162,6 +162,9 @@ class PolylineNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
+    def simplify(self):
+        self.polyline.simplify()
+
     def as_path(self):
         path = self.polyline
         path.transform(self.matrix)
