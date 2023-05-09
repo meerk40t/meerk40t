@@ -2125,7 +2125,7 @@ class Geomstr:
         if line is None:
             line = self.segments[e]
         start = line[0]
-        center = self.arc_center(e)
+        center = Geomstr.arc_center(self, line=line)
         return abs(start - center)
 
     def arc_center(self, e=None, line=None):
