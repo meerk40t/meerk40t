@@ -748,9 +748,9 @@ class NewlyController:
     def wait(self, time_in_ms):
         while time_in_ms > 255:
             time_in_ms -= 255
-            self("TO255")
+            self("TX255")
         if time_in_ms > 0:
-            self(f"TO{int(round(time_in_ms))}")
+            self(f"TX{int(round(time_in_ms))}")
 
     def dwell(self, time_in_ms):
         if self._pwm_frequency is not None:
@@ -759,9 +759,9 @@ class NewlyController:
         self(f"DA{self._map_power(power)}")
         while time_in_ms > 255:
             time_in_ms -= 255
-            self("TX255")
+            self("TO255")
         if time_in_ms > 0:
-            self(f"TX{int(round(time_in_ms))}")
+            self(f"TO{int(round(time_in_ms))}")
 
     def pause(self):
         self.realtime_job()
