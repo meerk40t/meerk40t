@@ -2451,10 +2451,8 @@ def init_tree(kernel):
     def regmark_as_placement(node, **kwargs):
         if node is None:
             return
-        if hasattr(node, "path"):
-            bb = node.path.bbox(transformed=False)
-        elif hasattr(node, "shape"):
-            bb = node.shape.bbox(transformed=False)
+        if hasattr(node, "as_path"):
+            bb = node.as_path().bbox(transformed=False)
         else:
             return
         if bb is None:

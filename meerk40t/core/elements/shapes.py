@@ -1995,45 +1995,45 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data
 
-    @self.console_command(
-        "reify",
-        help=_("reify affine transformations"),
-        input_type=(None, "elements"),
-        output_type="elements",
-    )
-    def element_reify(command, channel, _, data=None, **kwargs):
-        if data is None:
-            data = list(self.elems(emphasized=True))
-        for e in data:
-            try:
-                if e.lock:
-                    continue
-            except AttributeError:
-                pass
-
-            name = str(e)
-            if len(name) > 50:
-                name = name[:50] + "…"
-            try:
-                e.stroke_reify()
-            except AttributeError:
-                pass
-
-            try:
-                e.shape.reify()
-            except AttributeError as err:
-                try:
-                    e.path.reify()
-                except AttributeError:
-                    channel(_("Couldn't reify - %s - %s") % (name, err))
-                    return "elements", data
-            try:
-                e.stroke_width_zero()
-            except AttributeError:
-                pass
-            e.altered()
-            channel(_("reified - %s") % name)
-        return "elements", data
+    # @self.console_command(
+    #     "reify",
+    #     help=_("reify affine transformations"),
+    #     input_type=(None, "elements"),
+    #     output_type="elements",
+    # )
+    # def element_reify(command, channel, _, data=None, **kwargs):
+    #     if data is None:
+    #         data = list(self.elems(emphasized=True))
+    #     for e in data:
+    #         try:
+    #             if e.lock:
+    #                 continue
+    #         except AttributeError:
+    #             pass
+    #
+    #         name = str(e)
+    #         if len(name) > 50:
+    #             name = name[:50] + "…"
+    #         try:
+    #             e.stroke_reify()
+    #         except AttributeError:
+    #             pass
+    #
+    #         try:
+    #             e.shape.reify()
+    #         except AttributeError as err:
+    #             try:
+    #                 e.path.reify()
+    #             except AttributeError:
+    #                 channel(_("Couldn't reify - %s - %s") % (name, err))
+    #                 return "elements", data
+    #         try:
+    #             e.stroke_width_zero()
+    #         except AttributeError:
+    #             pass
+    #         e.altered()
+    #         channel(_("reified - %s") % name)
+    #     return "elements", data
 
     @self.console_command(
         "circle_arc_path",
