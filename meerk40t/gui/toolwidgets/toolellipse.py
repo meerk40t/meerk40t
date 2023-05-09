@@ -172,24 +172,20 @@ class EllipseTool(ToolWidget):
                     self.scene.context.signal("statusmsg", "")
                     response = RESPONSE_ABORT
                     return response
-                ellipse = Ellipse(
-                    (x1 + x0) / 2.0,
-                    (y1 + y0) / 2.0,
-                    abs(x0 - x1) / 2,
-                    abs(y0 - y1) / 2,
+                elements = self.scene.context.elements
+                node = elements.elem_branch.add(
+                    cx=(x1 + x0) / 2.0,
+                    cy=(y1 + y0) / 2.0,
+                    rx=abs(x0 - x1) / 2,
+                    ry=abs(y0 - y1) / 2,
+                    type="elem ellipse",
+                    stroke_width=elements.default_strokewidth,
+                    stroke=elements.default_stroke,
+                    fill=elements.default_fill,
                 )
-                if not ellipse.is_degenerate():
-                    elements = self.scene.context.elements
-                    node = elements.elem_branch.add(
-                        shape=ellipse,
-                        type="elem ellipse",
-                        stroke_width=elements.default_strokewidth,
-                        stroke=elements.default_stroke,
-                        fill=elements.default_fill,
-                    )
-                    if elements.classify_new:
-                        elements.classify([node])
-                    self.notify_created(node)
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

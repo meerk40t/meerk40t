@@ -957,17 +957,15 @@ class TemplatePanel(wx.Panel):
                             shape=pattern, type=elem_type
                         )
                     elif shapetype == "circle":
-                        pattern = Circle(
+                        elem_type = "elem ellipse"
+                        elemnode = self.context.elements.elem_branch.add(
                             cx=xx + size_x / 2,
                             cy=yy + size_y / 2,
                             rx=size_x / 2,
                             ry=size_y / 2,
                             stroke=set_color,
                             fill=fill_color,
-                        )
-                        elem_type = "elem ellipse"
-                        elemnode = self.context.elements.elem_branch.add(
-                            shape=pattern, type=elem_type
+                            type=elem_type
                         )
                     elemnode.label = s_lbl
                     this_op.add_reference(elemnode, 0)

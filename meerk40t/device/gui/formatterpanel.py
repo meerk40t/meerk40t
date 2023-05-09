@@ -206,8 +206,7 @@ class FormatterPanel(wx.Panel):
                     shape = Rect(0, 0, 10, 10)
                     node = bootstrap[nodetype](shape=shape)
                 elif nodetype == "elem ellipse":
-                    shape = Ellipse(0, 0, 10, 10)
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
                     path = Path(Ellipse(0, 0, 10, 10))
                     node = bootstrap[nodetype](path=path)

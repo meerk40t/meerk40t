@@ -1,10 +1,9 @@
 from copy import copy
 from math import tau, cos, sin, sqrt
 
-from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
-    Point, Matrix,
+    Point, Matrix, Color,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -22,15 +21,21 @@ class EllipseNode(Node):
 
         self.matrix = None
         self.fill = None
-        self.stroke = None
-        self.stroke_width = None
+        self.stroke = Color("black")
+        self.stroke_width = 1000.0
         self.stroke_scale = False
-        self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
+
+        self._stroke_zero = None
 
         super().__init__(type="elem ellipse", **kwargs)
         if self.matrix is None:
             self.matrix = Matrix()
+
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            self.stroke_width_zero()
+
         self.__formatter = "{element_type} {id} {stroke}"
         self.set_dirty_bounds()
 

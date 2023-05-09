@@ -919,12 +919,14 @@ class EZProcessor:
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
             mx *= self.matrix
-            shape = Circle(
-                center=element.center, r=element.radius, transform=mx, stroke="black"
-            )
+            r = element.radius
+            cx, cy = element.center
             node = elem.add(
+                cx=cx,
+                cy=cy,
+                rx=r,
+                ry=r,
                 type="elem ellipse",
-                shape=shape,
                 stroke_width=self.elements.default_strokewidth,
             )
             p = ez.pens[element.pen]
@@ -936,15 +938,16 @@ class EZProcessor:
             mx *= self.matrix
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
-            shape = Ellipse(
-                center=((x0 + x1) / 2.0, (y0 + y1) / 2.0),
+            node = elem.add(
+                cx=(x0 + x1) / 2.0,
+                cy=(y0 + y1) / 2.0,
                 rx=(x1 - x0) / 2.0,
                 ry=(y1 - y0) / 2.0,
-                transform=mx,
+                matrix=mx,
                 stroke="black",
                 stroke_width=self.elements.default_strokewidth,
+                type="elem ellipse"
             )
-            node = elem.add(type="elem ellipse", shape=shape)
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)

@@ -246,14 +246,13 @@ class SVGWriter:
 
         for c in elem_tree.children:
             if c.type == "elem ellipse":
-                element = c.shape
-                copy_attributes(c, element)
+                element = c
                 subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
                 subelement.set(SVG_ATTR_CENTER_X, str(element.cx))
                 subelement.set(SVG_ATTR_CENTER_Y, str(element.cy))
                 subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
                 subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
-                t = Matrix(c.matrix)
+                t = c.matrix
                 if not t.is_identity():
                     subelement.set(
                         "transform",
@@ -892,7 +891,18 @@ class SVGProcessor:
             if element.is_degenerate():
                 return
             node = context_node.add(
-                shape=element,
+                cx=element.cx,
+                cy=element.cy,
+                rx=element.rx,
+                ry=element.ry,
+                matrix=element.transform,
+                fill=element.fill,
+                stroke=element.stroke,
+                stroke_width=element.stroke_width,
+                stroke_scale=bool(
+                    SVG_VALUE_NON_SCALING_STROKE
+                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                ),
                 type="elem ellipse",
                 id=ident,
                 label=_label,

@@ -157,11 +157,12 @@ class DXFProcessor:
         except AttributeError:
             pass
         if entity.dxftype() == "CIRCLE":
-            element = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-            node = context_node.add(shape=element, type="elem ellipse")
+            m = Matrix()
+            m.post_scale(self.scale, -self.scale)
+            m.post_translate_y(self.elements.device.unit_height)
+            cx, cy = entity.dx.center
+            r = entity.dxf.radius
+            node = context_node.add(cx=cx, cy=cy, rx=r, ry=r, scaled_stroke=False, matrix=m, type="elem ellipse")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
@@ -196,9 +197,10 @@ class DXFProcessor:
                 end_angle=entity.dxf.end_param,
             )
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-            node = context_node.add(shape=element, type="elem ellipse")
+            m = Matrix()
+            m.post_scale(self.scale, -self.scale)
+            m.post_translate_y(self.elements.device.unit_height)
+            node = context_node.add(cx=element.cx, cy=element.cy, rx=element.rx, ry=element.ry, matrix=m, scaled_stroke=False, type="elem ellipse")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
