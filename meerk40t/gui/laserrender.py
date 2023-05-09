@@ -1,5 +1,5 @@
 from copy import copy
-from math import ceil, isnan, sqrt
+from math import ceil, isnan, sqrt, tau
 
 import wx
 from PIL import Image
@@ -29,7 +29,13 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr  # , TYPE_RAMP
+from ..tools.geomstr import (
+    TYPE_CUBIC,
+    TYPE_LINE,
+    TYPE_QUAD,
+    TYPE_ARC,
+    Geomstr,
+)  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -327,12 +333,18 @@ class LaserRender:
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                 elif seg_type == TYPE_ARC:
-                    if isinstance(p, wx.GraphicsPath):
-                        # c = path.arc_center(line=e)
-                        radius = e.arc_radius(line=e)
-                        p.AddArcToPoint(start.real, start.imag, end.real, end.imag, radius)
-                    # TODO: Perform corrected arc drawing.
-                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                    radius = Geomstr.arc_radius(None, line=e)
+                    center = Geomstr.arc_center(None, line=e)
+                    start_t = Geomstr.angle(None, center, start)
+                    end_t = Geomstr.angle(None, center, end)
+                    p.AddArc(
+                        center.real,
+                        center.imag,
+                        radius,
+                        start_t,
+                        end_t,
+                        clockwise="cw" == Geomstr.orientation(None, start, c0, end),
+                    )
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
