@@ -285,7 +285,7 @@ class CutOpNode(Node, Parameters):
         # We need to establish the native device resolution,
         # as kerf is given in scene space but needs to be passed on in device space
         device = context.device
-        self._device_factor = 1 / (device.native_scale_x**2 + device.native_scale_y**2)**0.5
+        self._device_factor = 1/abs(complex(device.native_scale_x, device.native_scale_y))
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""

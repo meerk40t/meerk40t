@@ -407,7 +407,7 @@ def offset_path(
             elif isinstance(seg2, Move):
                 needs_connector = False
 
-        if needs_connector and seg1.end != seg1.start:
+        if needs_connector and seg1.end != seg2.start:
             if radial:
                 # print ("Inserted an arc")
                 angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(seg2.start)
