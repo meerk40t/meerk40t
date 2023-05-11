@@ -343,31 +343,33 @@ def offset_path(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
     def stitch_segments_at_index(
-        stitchpath, index, orgintersect, radial=False, closed=False
+        offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False
     ):
-        # Stitch the two segments index and index+1 together
-        seg1 = stitchpath._segments[index]
+        left_end = seg1_end
         lp = len(stitchpath)
-        idx2 = index + 1
-        if idx2 >= lp:
+        right_start = left_end + 1
+        if right_start >= lp:
             if not closed:
                 return
             # Look for the first segment
-            idx2 = idx2 % lp
+            right_start = right_start % lp
             while not isinstance(
-                stitchpath._segments[idx2], (Arc, Line, QuadraticBezier, CubicBezier)
+                stitchpath._segments[right_start], (Arc, Line, QuadraticBezier, CubicBezier)
             ):
-                idx2 += 1
-        seg2 = stitchpath._segments[idx2]
+                right_start += 1
+        seg1 = stitchpath._segments[left_end]
+        seg2 = stitchpath._segments[right_start]
 
-        #  print (f"Stitch {index}: {type(seg1).__name__}, {idx2}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
+        #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
             return
-        elif isinstance(seg1, Move):
+        if isinstance(seg1, Move):
             seg1.end = Point(seg2.start)
-        elif isinstance(seg1, Line):
+            return
+
+        if isinstance(seg1, Line):
             needs_connector = True
             if isinstance(seg2, Line):
                 p, s, t = intersect_line_segments(
@@ -382,20 +384,20 @@ def offset_path(
                         # We shorten the segments accordingly.
                         seg1.end = Point(p)
                         seg2.start = Point(p)
-                        if idx2 > 0 and isinstance(
-                            stitchpath._segments[idx2 - 1], Move
+                        if right_start > 0 and isinstance(
+                            stitchpath._segments[right_start - 1], Move
                         ):
-                            stitchpath._segments[idx2 - 1].end = Point(p)
+                            stitchpath._segments[right_start - 1].end = Point(p)
                         needs_connector = False
                         # print ("Used interal intersect")
                     else:
                         if not radial:
                             seg1.end = Point(p)
                             seg2.start = Point(p)
-                            if idx2 > 0 and isinstance(
-                                stitchpath._segments[idx2 - 1], Move
+                            if right_start > 0 and isinstance(
+                                stitchpath._segments[right_start - 1], Move
                             ):
-                                stitchpath._segments[idx2 - 1].end = Point(p)
+                                stitchpath._segments[right_start - 1].end = Point(p)
                             needs_connector = False
                             # print ("Used external intersect")
             elif isinstance(seg1, Move):
@@ -408,8 +410,30 @@ def offset_path(
                 needs_connector = False
 
         if needs_connector and seg1.end != seg2.start:
+            """
+            There is a fundamental challenge to this naiive implementation:
+            if the offset gets bigger you will get intersections of previous segments
+            which will effectively defeat it. You will end up with connection lines
+            reaching back creating a loop. Right now there's no real good way
+            to deal with it:
+            a) if it would be just the effort to create an offset of your path you
+            can apply an intersection algorithm like Bentley-Ottman to identify
+            intersections and remove them (or even simpler just use the
+            Point.convex_hull method in svgelements).
+            *BUT*
+            b) this might defeat the initial purpose of the routine to get some kerf
+            compensation. So you are effectively eliminating cutlines from your design
+            which may not be what you want.
+
+            So we try to avoid that by just looking at two consecutive path segments
+            as these were by definition continuous.
+            """
+
             if radial:
                 # print ("Inserted an arc")
+                # Let's check whether the distance of these points is smaller
+                # than the radius
+
                 angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(seg2.start)
                 while angle < 0:
                     angle += tau
@@ -418,6 +442,7 @@ def offset_path(
                 # print (f"Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
                 startpt = Point(seg1.end)
                 endpt = Point(seg2.start)
+
                 if angle >= tau / 2:
                     ccw = True
                 else:
@@ -426,16 +451,22 @@ def offset_path(
                 connect_seg = Arc(
                     start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
                 )
+                clen = connect_seg.length()
+                # print (f"Ratio: {clen / abs(tau * offset):.2f}")
+                if clen > abs(tau * offset / 2):
+                    # That seems strange...
+                    connect_seg = Line(startpt, endpt)
             else:
                 # print ("Inserted a Line")
                 connect_seg = Line(Point(seg1.end), Point(seg2.start))
-            stitchpath._segments.insert(index + 1, connect_seg)
+            stitchpath._segments.insert(left_end + 1, connect_seg)
         elif needs_connector:
             # print ("Need connector but end points were identical")
             pass
         else:
             # print ("No connector needed")
             pass
+        return
 
     results = []
     # This needs to be a continuous path
@@ -488,6 +519,7 @@ def offset_path(
             if cw:
                 offset = -1 * offset
         # print (f"Subpath: closed={is_closed}, clockwise={cw}")
+        # Remember the complete subshape (could be multiple segements due to linearization)
 
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
@@ -516,42 +548,42 @@ def offset_path(
                 )
                 p._segments[idx] = segment
                 remember_helper = Point(p._segments[idx2].start)
-                # Test:
 
             helper = Point(p._segments[idx].end)
-            idxend = idx
+            left_end = idx
             if isinstance(segment, Arc):
                 arclinearize = linearize
                 # Arc is not working, so we always linearize
                 arclinearize = True
                 newsegment = offset_arc(segment, offset, arclinearize, interpolation)
-                idxend = idx - 1 + len(newsegment)
+                left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, QuadraticBezier):
                 newsegment = offset_quad(segment, offset, linearize, interpolation)
-                idxend = idx - 1 + len(newsegment)
+                left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
-                idxend = idx - 1 + len(newsegment)
+                left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
                 newsegment = offset_line(segment, offset)
-                idxend = idx - 1 + len(newsegment)
+                left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
-            stitch_segments_at_index(p, idxend, helper, radial=radial_connector)
+            stitch_segments_at_index(offset, p, left_end, helper, radial=radial_connector)
         if remember:
             helper = remember_helper
+            left_end = len(p._segments) - 1
             stitch_segments_at_index(
-                p, len(p._segments) - 1, helper, radial=radial_connector, closed=True
+                offset, p, left_end, helper, radial=radial_connector, closed=True
             )
         results.append(p)
 
