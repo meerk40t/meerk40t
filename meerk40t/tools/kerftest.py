@@ -284,12 +284,12 @@ class KerfPanel(wx.Panel):
                 inner_op = CutOpNode(label=f"Inner {shortened(kerlen.mm, 3)}mm")
                 inner_op.color = op_col_inner
                 inner_op.speed = op_speed
-                inner_op.speed = op_power
+                inner_op.power = op_power
                 inner_op.kerf = -1 * kerf
                 outer_op = CutOpNode(label=f"Outer {shortened(kerlen.mm, 3)}mm")
                 outer_op.color = op_col_outer
                 outer_op.speed = op_speed
-                outer_op.speed = op_power
+                outer_op.power = op_power
                 outer_op.kerf = kerf
                 if rectangular:
                     operation_branch.add_node(outer_op)
