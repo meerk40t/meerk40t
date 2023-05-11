@@ -6,6 +6,7 @@ to establish the correct kerf size of your laser
 import wx
 
 from meerk40t.core.node.op_cut import CutOpNode
+from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective_50, icons8_hinges_50
@@ -36,7 +37,11 @@ class KerfPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Pattern"),
-            choices=(_("Rectangular (box joints)"), _("Circular (inlays)")),
+            choices=(
+                _("Rectangular (box joints)"),
+                _("Circular (inlays)"),
+                _("Slider"),
+            ),
         )
         self.spin_count = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
         self.text_min = TextCtrl(self, wx.ID_ANY, limited=True, check="length")
@@ -248,19 +253,19 @@ class KerfPanel(wx.Panel):
             self.context.elements.clear_operations(fast=True)
             self.context.elements.clear_elements(fast=True)
 
-        def create_operations():
-            def shortened(value, digits):
-                result = str(round(value, digits))
-                if "." in result:
-                    while result.endswith("0"):
-                        result = result[:-1]
-                if result.endswith("."):
-                    if result == ".":
-                        result = "0"
-                    else:
-                        result = result[:-1]
-                return result
+        def shortened(value, digits):
+            result = str(round(value, digits))
+            if "." in result:
+                while result.endswith("0"):
+                    result = result[:-1]
+            if result.endswith("."):
+                if result == ".":
+                    result = "0"
+                else:
+                    result = result[:-1]
+            return result
 
+        def create_operations():
             kerf = minv
             if count < 2:
                 delta = maxv - minv
@@ -434,6 +439,206 @@ class KerfPanel(wx.Panel):
             )
             text_op.add_reference(node, 0)
 
+        def create_slider():
+            num_cuts = 20
+            pat_size = 2
+            pat_wid = 0.5
+            border = 1.0
+            pattern_size = float(Length(f"{pat_size}cm"))
+            pattern_width = float(Length(f"{pat_wid}cm"))
+            inner_border = float(Length(f"{border}cm"))
+
+            operation_branch = self.context.elements.op_branch
+            element_branch = self.context.elements.elem_branch
+
+            cut_op = CutOpNode(label=f"Regular cut (no kerf)")
+            cut_op.color = Color("red")
+            cut_op.speed = op_speed
+            cut_op.power = op_power
+            cut_op.kerf = 0
+            engrave_op = EngraveOpNode(label=f"Markings")
+            engrave_op.color = Color("blue")
+            cut_op.kerf = 0
+            text_op = RasterOpNode()
+            text_op.color = Color("black")
+            text_op.label = "Descriptions"
+            # instruction_op = RasterOpNode()
+            # instruction_op.color = Color("cyan")
+            # instruction_op.label = "Instructions"
+            # instruction_op.output = False
+            # operation_branch.add_node(instruction_op)
+            operation_branch.add_node(text_op)
+            operation_branch.add_node(cut_op)
+            x_offset = float(Length("1cm"))
+            y_offset = float(Length("1cm"))
+
+            # First the engraves
+
+            # The outer box
+            wd = 2 * inner_border + (num_cuts - 1) * pattern_width
+            ht = 2 * inner_border + pattern_size
+            shape = Rect(x=x_offset, y=y_offset, width=wd, height=ht)
+            node = element_branch.add(shape=shape, type="elem rect", label="Outer box")
+            node.stroke = engrave_op.color
+            node.stroke_width = 500
+            engrave_op.add_reference(node, 0)
+
+            # The scales
+            # 0.1 mm will be num_cuts x 0.1 mm
+            # The compensation is just half of it
+            x_val = x_offset + inner_border + (num_cuts - 1) * pattern_width
+            y_val = y_offset + inner_border + pattern_size
+            kerfval = 0
+            idx = 0
+            ticklen = float(Length("4mm"))
+            tickdist = float(Length("0.02mm"))
+            xfactor = tickdist * num_cuts / 2.0
+            textsize = UNITS_PER_PIXEL / 5.0
+            for idx in range(51):
+                if idx % 10 == 0:
+                    yfactor = 1.0
+                    zfactor = 0.6
+                elif idx % 5 == 0:
+                    yfactor = 0.6
+                    zfactor = 1.0
+                else:
+                    yfactor = 0
+                    zfactor = 0
+                if yfactor != 0:
+                    shape = Polyline(
+                        (x_val - idx * xfactor, y_val),
+                        (x_val - idx * xfactor, y_val + yfactor * ticklen),
+                    )
+                    node = element_branch.add(shape=shape, type="elem polyline")
+                    node.stroke = engrave_op.color
+                    node.stroke_width = 500
+                    engrave_op.add_reference(node, 0)
+                if zfactor != 0:
+                    y = y_offset + inner_border
+                    shape = Polyline(
+                        (x_val - idx * xfactor, y),
+                        (x_val - idx * xfactor, y - zfactor * ticklen),
+                    )
+                    node = element_branch.add(shape=shape, type="elem polyline")
+                    node.stroke = engrave_op.color
+                    node.stroke_width = 500
+                    engrave_op.add_reference(node, 0)
+                x = x_val - idx * xfactor
+                if idx % 10 == 0:
+                    y = y_val + 1.25 * ticklen
+                    node = element_branch.add(
+                        text=f"{shortened(Length(kerfval).mm, 3)}",
+                        matrix=Matrix(f"translate({x}, {y}) scale({textsize})"),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+                elif idx % 5 == 0:
+                    y = y_offset + inner_border - 1.45 * ticklen
+                    node = element_branch.add(
+                        text=f"{shortened(Length(kerfval).mm, 3)}",
+                        matrix=Matrix(f"translate({x}, {y}) scale({textsize})"),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    text_op.add_reference(node, 0)
+
+                idx += 1
+                kerfval += tickdist
+            x = x_offset + inner_border + (num_cuts - 5) * pattern_width
+            y = y_offset + 0.10 * inner_border
+            node = element_branch.add(
+                text="Kerf-Compensation [mm]",
+                matrix=Matrix(f"translate({x}, {y})" + f" scale({1.5 * textsize})"),
+                fill=Color("black"),
+                type="elem text",
+            )
+            text_op.add_reference(node, 0)
+            x = x_offset + inner_border + (num_cuts - 5) * pattern_width
+            y = y_offset + 1.75 * inner_border + pattern_size
+            node = element_branch.add(
+                text="Kerf-Compensation [mm]",
+                matrix=Matrix(f"translate({x}, {y})" + f" scale({1.5 * textsize})"),
+                fill=Color("black"),
+                type="elem text",
+            )
+            text_op.add_reference(node, 0)
+
+            info = (
+                "1) Burn this design, so that all shapes are cut out.",
+                "2) Push all shapes firmly to the left.",
+                "3) The right edge of the last shape will indicate the required kerf-compensation",
+            )
+            for i in range(3):
+                x = x_offset + inner_border
+                y = y_offset + inner_border * (1 + (i + 0.75) / 4) + pattern_size
+                node = element_branch.add(
+                    text=info[i],
+                    matrix=Matrix(f"translate({x}, {y})" + f" scale({1.5 * textsize})"),
+                    fill=Color("black"),
+                    type="elem text",
+                )
+                text_op.add_reference(node, 0)
+
+            # wd = 2 * inner_border + num_cuts * pattern_width
+            # ht = 2 * inner_border + pattern_size
+            # shape0 = Rect(x=x_offset, y=y_offset, width=wd, height=ht)
+            # elem0 = "elem rect"
+            # node = element_branch.add(shape=shape0, type=elem0)
+            # node.stroke = engrave_op.color
+            # node.stroke_width = 500
+            # engrave_op.add_reference(node, 0)
+
+            # Now the cuts
+            # First all divider lines
+            for i in range(1, num_cuts - 1):
+                shape = Polyline(
+                    (
+                        x_offset + inner_border + i * pattern_width,
+                        y_offset + inner_border,
+                    ),
+                    (
+                        x_offset + inner_border + i * pattern_width,
+                        y_offset + inner_border + pattern_size,
+                    ),
+                )
+                node = element_branch.add(
+                    shape=shape, type="elem polyline", label=f"Divider #{i}"
+                )
+                node.stroke = cut_op.color
+                node.stroke_width = 500
+                cut_op.add_reference(node, 0)
+
+            # The inner box as cut
+            wd = (num_cuts - 1) * pattern_width
+            ht = pattern_size
+            shape = Rect(
+                x=x_offset + inner_border,
+                y=y_offset + inner_border,
+                width=wd,
+                height=ht,
+            )
+            node = element_branch.add(shape=shape, type="elem rect", label="Inner box")
+            node.stroke = cut_op.color
+            node.stroke_width = 500
+            cut_op.add_reference(node, 0)
+
+            # node = element_branch.add(
+            #     text="Burn the displayed pattern on your laser and push the cut out shapes to the left,\n"
+            #          "so that there are no more gaps. Look at the value of the scale at the right side\n"
+            #          "of your last block and use this as your kerf compensation value.",
+            #     matrix=Matrix(
+            #         f"translate({xx + 0.5 * pattern_size}, {yy + (1.1 + 0.4) * pattern_size})"
+            #         + f" scale({0.5 * textfactor * UNITS_PER_PIXEL})"
+            #     ),
+            #     anchor="middle",
+            #     fill=instruction_op.color,
+            #     type="elem text",
+            # )
+            # text_op.add_reference(node, 0)
+
         try:
             minv = float(Length(self.text_min.GetValue()))
             maxv = float(Length(self.text_max.GetValue()))
@@ -446,6 +651,7 @@ class KerfPanel(wx.Panel):
                 maxv = minv
             pattern_size = float(Length(self.text_dim.GetValue()))
             rectangular = bool(self.radio_pattern.GetSelection() == 0)
+            slider = bool(self.radio_pattern.GetSelection() == 2)
         except ValueError:
             return
 
@@ -467,8 +673,10 @@ class KerfPanel(wx.Panel):
             clear_all()
         elif result == wx.ID_CANCEL:
             return
-
-        create_operations()
+        if slider:
+            create_slider()
+        else:
+            create_operations()
 
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")
