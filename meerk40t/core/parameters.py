@@ -29,6 +29,7 @@ FLOAT_PARAMETERS = (
     "dratio",
     "dwell_time",
     "frequency",
+    "kerf",
 )
 
 BOOL_PARAMETERS = (
@@ -374,6 +375,18 @@ class Parameters:
     @bidirectional.setter
     def bidirectional(self, value):
         self.settings["bidirectional"] = value
+
+    #####################
+    # KERF PROPERTIES
+    #####################
+
+    @property
+    def kerf(self):
+        return self.settings.get("kerf", 0)
+
+    @kerf.setter
+    def kerf(self, value):
+        self.settings["kerf"] = value
 
     #####################
     # HATCH PROPERTIES
