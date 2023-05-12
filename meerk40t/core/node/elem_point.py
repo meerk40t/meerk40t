@@ -11,6 +11,12 @@ class PointNode(Node):
     """
 
     def __init__(self, **kwargs):
+        point = kwargs.get("point")
+        if point is not None:
+            if "x" not in kwargs:
+                kwargs["x"] = point.x
+            if "y" not in kwargs:
+                kwargs["y"] = point.y
         self.x = 0
         self.y = 0
         self.matrix = None
