@@ -749,13 +749,6 @@ class LaserRender:
         if draw_mode & DRAW_MODE_POINTS:
             return
         point = node.point
-        if point is None:
-            return
-        matrix = node.matrix
-        if matrix is not None and not matrix.is_identity():
-            point = matrix.point_in_matrix_space(point)
-            node.point = point
-            matrix.reset()
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         dif = 5 * zoomscale
