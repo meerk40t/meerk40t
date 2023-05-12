@@ -742,8 +742,7 @@ class Geomstr:
         for start, c1, info, c2, end in self.segments[:self.index]:
             if at_start:
                 yield start
-            else:
-                yield end
+            yield end
             at_start = False
 
     def _ensure_capacity(self, capacity):
