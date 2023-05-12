@@ -1086,6 +1086,20 @@ class Geomstr:
             ymax = max(local_extrema)
 
             return xmin, ymin, xmax, ymax
+        elif line[2].real == TYPE_ARC:
+            local_extremizers = list(self._arc_local_extremes(0, line))
+            extreme_points = self._arc_position(line, local_extremizers)
+            local_extrema = extreme_points.real
+            xmin = min(local_extrema)
+            xmax = max(local_extrema)
+
+            local_extremizers = list(self._arc_local_extremes(1, line))
+            extreme_points = self._arc_position(line, local_extremizers)
+            local_extrema = extreme_points.imag
+            ymin = min(local_extrema)
+            ymax = max(local_extrema)
+
+            return xmin, ymin, xmax, ymax
 
     def position(self, e, t):
         """
@@ -1278,6 +1292,7 @@ class Geomstr:
         if start == end and sweep == 0:
             xy[:, 0], xy[:, 1] = start
         else:
+            positions = np.array(positions)
             t = theta + positions * sweep
             r = abs(center - start)
 
@@ -1293,6 +1308,23 @@ class Geomstr:
             xy[positions == 1, :] = list([end.real, end.imag])
 
         return xy[:, 0] + xy[:, 1] * 1j
+
+    def _arc_local_extremes(self, v, e):
+        """
+        returns the extreme t values for an arc curve
+        """
+        yield 0.0
+        yield 1.0
+        for k in range(0, 4):
+            # TODO: Correct
+            # Get t for positions located at circle extremes.
+            # If t is within 0-1 then this extreme exists in the arc.
+            pass
+            # self._arc_position()
+            # if 0 <= tx <= 1:
+            #     xtrema.append(self.position(line, tx).real)
+            # if 0 <= ty <= 1:
+            #     ytrema.append(self.position(line, ty).imag)
 
     def length(self, e):
         """
