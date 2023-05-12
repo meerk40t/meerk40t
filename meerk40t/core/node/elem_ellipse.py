@@ -1,5 +1,5 @@
 from copy import copy
-from math import sqrt
+from math import sqrt, tau, cos, sin
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
@@ -12,6 +12,7 @@ from meerk40t.svgelements import (
     Path,
     Point,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class EllipseNode(Node, Stroked):
@@ -87,6 +88,38 @@ class EllipseNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
 
+    def point_at_t(self, t):
+        """
+        find the point that corresponds to given value t.
+        Where t=0 is the first point and t=tau is the final point.
+
+        In the case of a circle: t = angle.
+
+        :param t:
+        :return:
+        """
+        return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
+
+    def as_geometry(self):
+        path = Geomstr()
+        steps = 4
+        step_size = tau / steps
+        if self.matrix.determinant < 0:
+            step_size = -step_size
+
+        t_start = 0
+        t_end = step_size
+        for i in range(steps):
+            path.arc(
+                self.point_at_t(t_start),
+                self.point_at_t((t_start + t_end) / 2),
+                self.point_at_t(t_end),
+            )
+            t_start = t_end
+            t_end += step_size
+        path.transform(self.matrix)
+        return path
+
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
@@ -113,7 +146,6 @@ class EllipseNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -124,11 +156,16 @@ class EllipseNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        # self._sync_svg()
+        # bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
+        # if bounds is None:
+        #     # degenerate paths can have no bounds.
+        #     return None
+        path = self.as_path()
+        if transformed:
+            bounds = path.bbox(mx=self.matrix)
+        else:
+            bounds = path.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -145,7 +182,6 @@ class EllipseNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -201,19 +237,13 @@ class EllipseNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
+    def as_path(self):
+        geometry = self.as_geometry()
+        path = geometry.as_path()
+        path.stroke = self.stroke
+        path.fill = self.fill
+        path.stroke_width = self.stroke_width
+        path.values[SVG_ATTR_VECTOR_EFFECT] = (
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
-    def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        return path
