@@ -78,13 +78,17 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("rect 1in 1in 1in 1in stroke red fill blue\n")
             for node in kernel_root.elements.elems():
+                shape = node.shape
                 self.assertEqual(
-                    node.shape,
+                    shape,
                     Rect(
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
                         1000 * UNITS_PER_MIL,
+                        stroke_width=shape.stroke_width,
+                        fill=shape.fill,
+                        stroke=shape.stroke,
                     ),
                 )
                 self.assertEqual(node.stroke, "red")
