@@ -671,7 +671,12 @@ class Geomstr:
     """
 
     def __init__(self, segments=None):
+        self._settings = dict()
         if segments is not None:
+            if isinstance(segments, Geomstr):
+                self._settings.update(segments._settings)
+                segments = segments.segments
+
             self.index = len(segments)
             self.capacity = self.index
             self.segments = segments
@@ -679,8 +684,6 @@ class Geomstr:
             self.index = 0
             self.capacity = 12
             self.segments = np.zeros((self.capacity, 5), dtype="complex")
-
-        self._settings = dict()
 
     def __str__(self):
         return f"Geomstr({self.index} segments)"
