@@ -164,7 +164,6 @@ class RectNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -202,7 +201,6 @@ class RectNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -272,5 +270,9 @@ class RectNode(Node, Stroked):
             pass
 
     def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        geometry = self.as_geometry()
+        path = geometry.as_path()
+        path.stroke = self.stroke
+        path.fill = self.fill
+        path.stroke_width = self.stroke_width
+        return path
