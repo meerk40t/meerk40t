@@ -11,6 +11,7 @@ from meerk40t.svgelements import (
     Point,
     Rect,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class RectNode(Node, Stroked):
@@ -94,6 +95,48 @@ class RectNode(Node, Stroked):
             fill=self.fill,
             stroke_width=self.stroke_width,
         )
+
+    def as_geometry(self):
+        path = Geomstr()
+        x = self.x
+        y = self.y
+        width = self.width
+        height = self.height
+
+        rx = self.rx
+        ry = self.ry
+        if rx < 0 < width or ry < 0 < height:
+            rx = abs(rx)
+            ry = abs(ry)
+        if rx == ry == 0:
+            path.line(complex(x, y), complex(x + width, y)),
+            path.line(complex(x + width, y), complex(x + width, y + height)),
+            path.line(complex(x + width, y + height), complex(x, y + height)),
+            path.line(complex(x, y + height), complex(x, y)),
+        else:
+            path.line(complex(x + rx, y), complex(x + width - rx, y))
+            path.arc(
+                complex(x + width - rx, y),
+                complex(x + width, y),
+                complex(x + width, y + ry),
+            )
+            path.line((x + width, y + ry), (x + width, y + height - ry))
+            path.arc(
+                complex(x + width, y + height - ry),
+                complex(x + width, y + height),
+                complex(x + width - rx, y + height),
+            )
+            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
+            path.arc(
+                complex(x + rx, y + height),
+                complex(x, y + height),
+                complex(x, y + height - ry),
+            )
+            path.line(complex(x, y + height - ry), complex(x, y + ry))
+            path.arc(complex(x, y + ry), complex(x, y), complex(x + rx, y))
+            path.line(complex(x + rx, y), complex(x + rx, y))
+        path.transform(self.matrix)
+        return path
 
     def scaled(self, sx, sy, ox, oy):
         """
