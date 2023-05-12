@@ -469,10 +469,12 @@ class KerfPanel(wx.Panel):
             # operation_branch.add_node(instruction_op)
             operation_branch.add_node(text_op)
             operation_branch.add_node(cut_op)
+            operation_branch.add_node(engrave_op)
             x_offset = float(Length("1cm"))
             y_offset = float(Length("1cm"))
 
             # First the engraves
+            group_markers = element_branch.add(type="group", label="Markers")
 
             # The outer box
             wd = 2 * inner_border + (num_cuts - 1) * pattern_width
@@ -482,6 +484,7 @@ class KerfPanel(wx.Panel):
             node.stroke = engrave_op.color
             node.stroke_width = 500
             engrave_op.add_reference(node, 0)
+            group_markers.append_child(node)
 
             # The scales
             # 0.1 mm will be num_cuts x 0.1 mm
@@ -494,6 +497,12 @@ class KerfPanel(wx.Panel):
             tickdist = float(Length("0.02mm"))
             xfactor = tickdist * num_cuts / 2.0
             textsize = UNITS_PER_PIXEL / 5.0
+            group_upper = element_branch.add(type="group", label="Upper marks")
+            group_lower = element_branch.add(type="group", label="Lower marks")
+
+            group_markers.append_child(group_upper)
+            group_markers.append_child(group_lower)
+
             for idx in range(51):
                 if idx % 10 == 0:
                     yfactor = 1.0
@@ -509,20 +518,30 @@ class KerfPanel(wx.Panel):
                         (x_val - idx * xfactor, y_val),
                         (x_val - idx * xfactor, y_val + yfactor * ticklen),
                     )
-                    node = element_branch.add(shape=shape, type="elem polyline")
+                    node = element_branch.add(
+                        shape=shape,
+                        type="elem polyline",
+                        label=f"Lower Tick {shortened(Length(kerfval).mm, 3)}mm",
+                    )
                     node.stroke = engrave_op.color
                     node.stroke_width = 500
                     engrave_op.add_reference(node, 0)
+                    group_lower.append_child(node)
                 if zfactor != 0:
                     y = y_offset + inner_border
                     shape = Polyline(
                         (x_val - idx * xfactor, y),
                         (x_val - idx * xfactor, y - zfactor * ticklen),
                     )
-                    node = element_branch.add(shape=shape, type="elem polyline")
+                    node = element_branch.add(
+                        shape=shape,
+                        type="elem polyline",
+                        label=f"Upper Tick {shortened(Length(kerfval).mm, 3)}mm",
+                    )
                     node.stroke = engrave_op.color
                     node.stroke_width = 500
                     engrave_op.add_reference(node, 0)
+                    group_upper.append_child(node)
                 x = x_val - idx * xfactor
                 if idx % 10 == 0:
                     y = y_val + 1.25 * ticklen
@@ -534,6 +553,7 @@ class KerfPanel(wx.Panel):
                         type="elem text",
                     )
                     text_op.add_reference(node, 0)
+                    group_lower.append_child(node)
                 elif idx % 5 == 0:
                     y = y_offset + inner_border - 1.45 * ticklen
                     node = element_branch.add(
@@ -544,6 +564,7 @@ class KerfPanel(wx.Panel):
                         type="elem text",
                     )
                     text_op.add_reference(node, 0)
+                    group_upper.append_child(node)
 
                 idx += 1
                 kerfval += tickdist
@@ -556,6 +577,8 @@ class KerfPanel(wx.Panel):
                 type="elem text",
             )
             text_op.add_reference(node, 0)
+            group_upper.append_child(node)
+
             x = x_offset + inner_border + (num_cuts - 5) * pattern_width
             y = y_offset + 1.75 * inner_border + pattern_size
             node = element_branch.add(
@@ -565,6 +588,36 @@ class KerfPanel(wx.Panel):
                 type="elem text",
             )
             text_op.add_reference(node, 0)
+            group_lower.append_child(node)
+
+            x = x_offset + inner_border + 0.5 * pattern_width
+            y = x_offset + inner_border + 0.5 * pattern_size
+            shape = Polyline(
+                (x + 3 * pattern_width, y - 0.25 * pattern_size),
+                (x, y),
+                (x + 3 * pattern_width, y + 0.25 * pattern_size),
+            )
+            node = element_branch.add(
+                shape=shape, type="elem polyline", label="arrow_head"
+            )
+            node.stroke = engrave_op.color
+            node.stroke_width = 500
+            engrave_op.add_reference(node, 0)
+            group_markers.append_child(node)
+
+            shape = Polyline(
+                (x, y),
+                (x + (num_cuts - 2) * pattern_width, y),
+            )
+            node = element_branch.add(
+                shape=shape, type="elem polyline", label="arrow_body"
+            )
+            node.stroke = engrave_op.color
+            node.stroke_width = 500
+            engrave_op.add_reference(node, 0)
+            group_markers.append_child(node)
+
+            group_node = element_branch.add(type="group", label="Instructions")
 
             info = (
                 "1) Burn this design, so that all shapes are cut out.",
@@ -581,6 +634,7 @@ class KerfPanel(wx.Panel):
                     type="elem text",
                 )
                 text_op.add_reference(node, 0)
+                group_node.append_child(node)
 
             # wd = 2 * inner_border + num_cuts * pattern_width
             # ht = 2 * inner_border + pattern_size
@@ -593,6 +647,7 @@ class KerfPanel(wx.Panel):
 
             # Now the cuts
             # First all divider lines
+            group_node = element_branch.add(type="group", label="Cut-out")
             for i in range(1, num_cuts - 1):
                 shape = Polyline(
                     (
@@ -610,6 +665,7 @@ class KerfPanel(wx.Panel):
                 node.stroke = cut_op.color
                 node.stroke_width = 500
                 cut_op.add_reference(node, 0)
+                group_node.append_child(node)
 
             # The inner box as cut
             wd = (num_cuts - 1) * pattern_width
@@ -624,6 +680,7 @@ class KerfPanel(wx.Panel):
             node.stroke = cut_op.color
             node.stroke_width = 500
             cut_op.add_reference(node, 0)
+            group_node.append_child(node)
 
             # node = element_branch.add(
             #     text="Burn the displayed pattern on your laser and push the cut out shapes to the left,\n"
