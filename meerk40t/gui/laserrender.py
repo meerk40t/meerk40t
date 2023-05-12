@@ -29,7 +29,13 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr  # , TYPE_RAMP
+from ..tools.geomstr import (
+    TYPE_CUBIC,
+    TYPE_LINE,
+    TYPE_QUAD,
+    TYPE_ARC,
+    Geomstr,
+)  # , TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -227,12 +233,21 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                if node.type == "elem path":
+                if False:
+                    pass
+                # if node.type in (
+                #     "elem path",
+                #     "elem geomstr",
+                #     "elem ellipse",
+                #     "elem rect",
+                #     "elem line",
+                #     "elem polyline",
+                # ):
+                #     node.draw = self.draw_vector
+                #     node.make_cache = self.cache_geomstr
+                elif node.type == "elem path":
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_path
-                elif node.type == "elem geomstr":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_geomstr
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in place_nodes:
@@ -595,7 +610,8 @@ class LaserRender:
     def cache_geomstr(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
-        cache = self.make_geomstr(gc, node.path)
+        geom = node.as_geometry()
+        cache = self.make_geomstr(gc, geom)
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
