@@ -52,12 +52,15 @@ class TestElements(unittest.TestCase):
             kernel_root = kernel.get_context("/")
             kernel_root("circle 1in 1in 1in\n")
             for node in kernel_root.elements.elems():
-                # print(element)
+                shape = node.shape
                 self.assertEqual(
-                    node.shape,
+                    shape,
                     Circle(
                         center=(1000 * UNITS_PER_MIL, 1000 * UNITS_PER_MIL),
                         r=1000 * UNITS_PER_MIL,
+                        stroke_width=shape.stroke_width,
+                        fill=shape.fill,
+                        stroke=shape.stroke,
                     ),
                 )
                 self.assertEqual(node.stroke, "blue")
