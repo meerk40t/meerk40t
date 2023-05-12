@@ -20,7 +20,32 @@ class EllipseNode(Node, Stroked):
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        shape = kwargs.get("shape")
+        if shape is not None:
+            if "cx" not in kwargs:
+                kwargs["cx"] = shape.cx
+            if "cy" not in kwargs:
+                kwargs["cy"] = shape.cy
+            if "rx" not in kwargs:
+                kwargs["rx"] = shape.rx
+            if "ry" not in kwargs:
+                kwargs["ry"] = shape.ry
+            if "stroke" not in kwargs:
+                kwargs["stroke"] = shape.stroke
+            if "stroke_width" not in kwargs:
+                kwargs["stroke_width"] = shape.stroke_width
+            if "fill" not in kwargs:
+                kwargs["fill"] = shape.fill
+            if "matrix" not in kwargs:
+                kwargs["matrix"] = shape.transform
+            if "stroke_scale" not in kwargs:
+                kwargs["stroke_scale"] = (
+                        shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+                )
+        self.cx = None
+        self.cy = None
+        self.rx = None
+        self.ry = None
         self.matrix = None
         self.fill = None
         self.stroke = None
@@ -31,21 +56,7 @@ class EllipseNode(Node, Stroked):
 
         super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, (Ellipse, Circle))
 
-        if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
@@ -62,6 +73,19 @@ class EllipseNode(Node, Stroked):
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
         return EllipseNode(**nd)
+
+    @property
+    def shape(self):
+        return Ellipse(
+            cx=self.cx,
+            cy=self.cy,
+            rx=self.rx,
+            ry=self.ry,
+            transform=self.matrix,
+            stroke=self.stroke,
+            fill=self.fill,
+            stroke_width=self.stroke_width,
+        )
 
     def scaled(self, sx, sy, ox, oy):
         """
