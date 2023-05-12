@@ -1,16 +1,15 @@
 from copy import copy
-from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Matrix,
     Path,
     Polygon,
     Polyline,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class PolylineNode(Node, Stroked):
@@ -19,8 +18,27 @@ class PolylineNode(Node, Stroked):
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        shape = kwargs.get("shape")
+        if shape is not None:
+            if "stroke" not in kwargs:
+                kwargs["stroke"] = shape.stroke
+            if "stroke_width" not in kwargs:
+                kwargs["stroke_width"] = shape.stroke_width
+            if "fill" not in kwargs:
+                kwargs["fill"] = shape.fill
+            if "matrix" not in kwargs:
+                kwargs["matrix"] = shape.transform
+            if "stroke_scale" not in kwargs:
+                kwargs["stroke_scale"] = (
+                        shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+                )
+            if "closed" not in kwargs:
+                kwargs["closed"] = isinstance(shape, Polygon)
+            self.geometry = Geomstr.svg(Path(shape))
+        else:
+            self.geometry = Geomstr()
         self.matrix = None
+        self.closed = None
         self.fill = None
         self.stroke = None
         self.stroke_width = None
@@ -32,20 +50,6 @@ class PolylineNode(Node, Stroked):
 
         super().__init__(type="elem polyline", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, (Polyline, Polygon))
-        if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
@@ -62,6 +66,30 @@ class PolylineNode(Node, Stroked):
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+
+    @property
+    def shape(self):
+        if self.closed:
+            return Polygon(
+                points=list(self.geometry.as_points()),
+                transform=self.matrix,
+                stroke=self.stroke,
+                fill=self.fill,
+                stroke_width=self.stroke_width,
+            )
+        else:
+            return Polyline(
+                points=list(self.geometry.as_points()),
+                transform=self.matrix,
+                stroke=self.stroke,
+                fill=self.fill,
+                stroke_width=self.stroke_width,
+            )
+
+    def as_geometry(self):
+        g = Geomstr(self.geometry)
+        g.transform(self.matrix)
+        return g
 
     def scaled(self, sx, sy, ox, oy):
         """
@@ -89,7 +117,6 @@ class PolylineNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -101,11 +128,16 @@ class PolylineNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        # self._sync_svg()
+        # bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
+        # if bounds is None:
+        #     # degenerate paths can have no bounds.
+        #     return None
+        geometry = self.as_geometry()
+        if transformed:
+            bounds = geometry.bbox(mx=self.matrix)
+        else:
+            bounds = geometry.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -122,7 +154,6 @@ class PolylineNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -181,19 +212,12 @@ class PolylineNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
     def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        path = Path(
+            transform=self.matrix,
+            stroke=self.stroke,
+            fill=self.fill,
+            stroke_width=self.stroke_width,
+        )
+        path.move(list(self.geometry.as_points()))
+        return Path

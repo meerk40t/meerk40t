@@ -734,6 +734,15 @@ class Geomstr:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
         return obj
 
+    def as_points(self):
+        at_start = True
+        for start, c1, info, c2, end in self.segments[self.index:]:
+            if at_start:
+                yield start
+            else:
+                yield end
+            at_start = False
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
