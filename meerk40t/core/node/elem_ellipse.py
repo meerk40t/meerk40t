@@ -159,11 +159,11 @@ class EllipseNode(Node, Stroked):
         # if bounds is None:
         #     # degenerate paths can have no bounds.
         #     return None
-        path = self.as_path()
+        geometry = self.as_geometry()
         if transformed:
-            bounds = path.bbox(mx=self.matrix)
+            bounds = geometry.bbox(mx=self.matrix)
         else:
-            bounds = path.bbox()
+            bounds = geometry.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
