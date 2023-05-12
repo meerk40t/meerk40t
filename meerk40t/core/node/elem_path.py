@@ -29,7 +29,8 @@ class PathNode(Node, Stroked):
                 kwargs["matrix"] = shape.transform
             if "stroke_scale" not in kwargs:
                 kwargs["stroke_scale"] = (
-                        shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+                    shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                    != SVG_VALUE_NON_SCALING_STROKE
                 )
             self.geometry = Geomstr.svg(shape)
         else:

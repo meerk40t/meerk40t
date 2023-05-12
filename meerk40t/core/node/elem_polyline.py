@@ -30,7 +30,8 @@ class PolylineNode(Node, Stroked):
                 kwargs["matrix"] = shape.transform
             if "stroke_scale" not in kwargs:
                 kwargs["stroke_scale"] = (
-                        shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+                    shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                    != SVG_VALUE_NON_SCALING_STROKE
                 )
             if "closed" not in kwargs:
                 kwargs["closed"] = isinstance(shape, Polygon)
