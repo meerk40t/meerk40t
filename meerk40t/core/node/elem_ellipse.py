@@ -9,6 +9,7 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Ellipse,
     Point,
+    Matrix,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -42,20 +43,22 @@ class EllipseNode(Node, Stroked):
                     shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                     != SVG_VALUE_NON_SCALING_STROKE
                 )
-        self.cx = None
-        self.cy = None
-        self.rx = None
-        self.ry = None
+        self.cx = 0
+        self.cy = 0
+        self.rx = 0
+        self.ry = 0
         self.matrix = None
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_scale = False
         self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
+        if self.matrix is None:
+            self.matrix = Matrix()
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
