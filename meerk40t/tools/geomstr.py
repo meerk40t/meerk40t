@@ -1451,7 +1451,7 @@ class Geomstr:
         yield 1.0
 
         start, control, info, control2, end = e
-        t = np.array([float(k) * math.tau / 4.0 for k in range(-4, 5)])
+        t = np.array([float(k) * math.tau / 4.0 for k in range(-4 + v, 5, 2)])
 
         center = self.arc_center(line=e)
         start_t = self.angle(center, start)
