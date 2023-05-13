@@ -73,7 +73,7 @@ class KerfPanel(wx.Panel):
 
     def _set_logic(self):
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_generate)
-        self.spin_count.Bind(wx.EVT_SPIN, self.on_valid_values)
+        self.spin_count.Bind(wx.EVT_SPINCTRL, self.on_valid_values)
         self.text_delta.Bind(wx.EVT_TEXT, self.on_valid_values)
         self.text_min.Bind(wx.EVT_TEXT, self.on_valid_values)
         self.text_max.Bind(wx.EVT_TEXT, self.on_valid_values)
@@ -103,9 +103,11 @@ class KerfPanel(wx.Panel):
         hline_type.Add(self.radio_pattern, 0, wx.EXPAND, 0)
         hline_count = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
+        self.info_distance = wx.StaticText(self, wx.ID_ANY, "")
         size_it(mylbl, 85)
         hline_count.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count.Add(self.spin_count, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_count.Add(self.info_distance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
@@ -197,7 +199,8 @@ class KerfPanel(wx.Panel):
             return res
 
         is_valid = True
-        if self.spin_count.GetValue() < 1:
+        count = self.spin_count.GetValue()
+        if count < 1:
             is_valid = False
         if not valid_length(self.text_delta):
             is_valid = False
@@ -220,6 +223,13 @@ class KerfPanel(wx.Panel):
                     is_valid = False
             except ValueError:
                 is_valid = False
+        if is_valid:
+            delta = maxv - minv
+            if count > 1:
+                delta /= (count - 1)
+            self.info_distance.SetLabel(_("Every {dist}").format(dist=Length(delta , digits=3).length_mm))
+        else:
+             self.info_distance.SetLabel("---")
         self.button_create.Enable(is_valid)
 
     def on_button_generate(self, event):
@@ -276,13 +286,14 @@ class KerfPanel(wx.Panel):
             text_op = RasterOpNode()
             text_op.color = Color("black")
             text_op.label = "Descriptions"
+            operation_branch.add_node(text_op)
             x_offset = y_offset = float(Length("5mm"))
             xx = x_offset
             yy = y_offset
             textfactor = pattern_size / float(Length("20mm"))
             if textfactor > 2:
                 textfactor = 2
-            for idx in range(count - 1):
+            for idx in range(count):
                 kerlen = Length(kerf)
                 op_col_inner = make_color(idx, count, "g")
                 op_col_outer = make_color(idx, count, "r")
