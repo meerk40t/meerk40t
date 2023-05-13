@@ -727,10 +727,17 @@ class Geomstr:
             elif isinstance(seg, QuadraticBezier):
                 obj.quad(complex(seg.start), complex(seg.control), complex(seg.end))
             elif isinstance(seg, CubicBezier):
-                obj.cubic(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+                obj.cubic(
+                    complex(seg.start),
+                    complex(seg.control1),
+                    complex(seg.control2),
+                    complex(seg.end),
+                )
             elif isinstance(seg, Arc):
                 if seg.is_circular():
-                    obj.arc(complex(seg.start), complex(seg.point(0.5)), complex(seg.end))
+                    obj.arc(
+                        complex(seg.start), complex(seg.point(0.5)), complex(seg.end)
+                    )
                 else:
                     quads = seg.as_quad_curves(4)
                     for q in quads:
@@ -739,7 +746,7 @@ class Geomstr:
 
     def as_points(self):
         at_start = True
-        for start, c1, info, c2, end in self.segments[:self.index]:
+        for start, c1, info, c2, end in self.segments[: self.index]:
             if at_start:
                 yield start
             yield end
@@ -971,6 +978,56 @@ class Geomstr:
     #######################
     # Geometric Helpers
     #######################
+
+    def arc_as_quads(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12):
+        """
+        Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
+        out of approximate quads.
+
+        @param start_t: start_t for the arc
+        @param end_t: end_t for the arc
+        @param rx: rx of the ellipse
+        @param ry: ry of the ellipse
+        @param cx: center_x of the ellipse
+        @param cy: center_y of the ellipse
+        @param rotation: rotation of the ellipse
+        @param slices: number of quads to use in the approximation.
+
+        @return:
+        """
+        sweep = start_t - end_t
+        t_slice = sweep / float(slices)
+        alpha_mid = (4.0 - math.cos(t_slice)) / 3.0
+        current_t = start_t
+        theta = rotation
+
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+        a = rx
+        b = ry
+
+        def point_at_t(t, alpha=1.0):
+            cos_t = math.cos(t)
+            sin_t = math.sin(t)
+            px = cx + alpha * (a * cos_t * cos_theta - b * sin_t * sin_theta)
+            py = cy + alpha * (a * cos_t * sin_theta + b * sin_t * cos_theta)
+            return complex(px, py)
+
+        p_start = point_at_t(current_t)
+
+        for i in range(0, slices):
+            next_t = current_t + t_slice
+            mid_t = (next_t + current_t) / 2
+
+            # Calculate p_end.
+            p_end = point_at_t(next_t)
+
+            # Calculate p_mid
+            p_mid = point_at_t(mid_t, alpha_mid)
+
+            self.quad(p_start, p_mid, p_end)
+            p_start = p_end
+            current_t = next_t
 
     def polyline(self, points, settings=0):
         """
