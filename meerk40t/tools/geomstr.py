@@ -2337,9 +2337,9 @@ class Geomstr:
         if val == 0:
             return "linear"
         elif val > 0:
-            return "cw"
-        else:
             return "ccw"
+        else:
+            return "cw"
 
     def polar(self, p, angle, r):
         """
