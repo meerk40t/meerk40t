@@ -70,11 +70,10 @@ class RectNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
@@ -237,21 +236,18 @@ class RectNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
         npoints = [
-            Point(obj.x, obj.y),
-            Point(obj.x + obj.width, obj.y),
-            Point(obj.x + obj.width, obj.y + obj.height),
-            Point(obj.x, obj.y + obj.height),
+            Point(self.x, self.y),
+            Point(self.x + self.width, self.y),
+            Point(self.x + self.width, self.y + self.height),
+            Point(self.x, self.y + self.height),
         ]
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
+        if not self.matrix.is_identity():
+            points = list(map(self.matrix.point_in_matrix_space, npoints))
         else:
             points = npoints
-        if not self.matrix.is_identity():
-            points2 = list(map(self.matrix.point_in_matrix_space, npoints))
-        else:
-            points2 = npoints
+        for pt in points:
+            self._points.append([pt.x, pt.y, "point"])
         self._points_dirty = False
 
     def update_point(self, index, point):
