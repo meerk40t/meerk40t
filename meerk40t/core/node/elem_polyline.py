@@ -96,6 +96,10 @@ class PolylineNode(Node, Stroked):
                 stroke_width=self.stroke_width,
             )
 
+    @shape.setter
+    def shape(self, new_shape):
+        self.geometry = Geomstr.svg(Path(new_shape))
+
     def as_geometry(self):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)

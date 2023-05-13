@@ -84,6 +84,10 @@ class PathNode(Node, Stroked):
         )
         return path
 
+    @path.setter
+    def path(self, new_path):
+        self.geometry = Geomstr.svg(new_path)
+
     def as_geometry(self):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)
