@@ -17,7 +17,13 @@ class PolylineNode(Node, Stroked):
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            if isinstance(args[0], Geomstr):
+                kwargs["geometry"] = args[0]
+            else:
+                kwargs["shape"] = args[0]
+
         shape = kwargs.get("shape")
         if shape is not None:
             if "stroke" not in kwargs:
@@ -36,8 +42,6 @@ class PolylineNode(Node, Stroked):
             if "closed" not in kwargs:
                 kwargs["closed"] = isinstance(shape, Polygon)
             self.geometry = Geomstr.svg(Path(shape))
-        else:
-            self.geometry = Geomstr()
         self.matrix = None
         self.closed = None
         self.fill = None
@@ -50,6 +54,8 @@ class PolylineNode(Node, Stroked):
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem polyline", **kwargs)
+        if self.geometry is None:
+            self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
@@ -59,14 +65,14 @@ class PolylineNode(Node, Stroked):
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
+        nd["geometry"] = copy(self.geometry)
         nd["matrix"] = copy(self.matrix)
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
         return PolylineNode(**nd)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     @property
     def shape(self):
@@ -129,11 +135,6 @@ class PolylineNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        # self._sync_svg()
-        # bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        # if bounds is None:
-        #     # degenerate paths can have no bounds.
-        #     return None
         geometry = self.as_geometry()
         if transformed:
             bounds = geometry.bbox(mx=self.matrix)
@@ -187,17 +188,13 @@ class PolylineNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
-        lastpt = None
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, obj.points))
-        else:
-            points = obj.points
-        maxidx = len(points) - 1
+        points = list(self.as_geometry().as_points())
+
+        max_index = len(points) - 1
         for idx, pt in enumerate(points):
             if idx == 0:
                 self._points.append([pt.x, pt.y, "endpoint"])
-            elif idx == maxidx:
+            elif idx == max_index:
                 self._points.append([pt.x, pt.y, "endpoint"])
             else:
                 self._points.append([pt.x, pt.y, "point"])

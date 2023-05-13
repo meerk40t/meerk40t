@@ -16,25 +16,28 @@ class PathNode(Node, Stroked):
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
-            kwargs["path"] = args[0]
-        shape = kwargs.get("path")
-        if shape is not None:
-            if "stroke" not in kwargs:
-                kwargs["stroke"] = shape.stroke
-            if "stroke_width" not in kwargs:
-                kwargs["stroke_width"] = shape.stroke_width
-            if "fill" not in kwargs:
-                kwargs["fill"] = shape.fill
-            if "matrix" not in kwargs:
-                kwargs["matrix"] = shape.transform
-            if "stroke_scale" not in kwargs:
-                kwargs["stroke_scale"] = (
-                    shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                    != SVG_VALUE_NON_SCALING_STROKE
-                )
-            self.geometry = Geomstr.svg(shape)
-        else:
-            self.geometry = Geomstr()
+            if isinstance(args[0], Geomstr):
+                kwargs["geometry"] = args[0]
+            else:
+                kwargs["path"] = args[0]
+        if "geometry" not in kwargs:
+            shape = kwargs.get("path")
+            if shape is not None:
+                # path is type Path.
+                if "stroke" not in kwargs:
+                    kwargs["stroke"] = shape.stroke
+                if "stroke_width" not in kwargs:
+                    kwargs["stroke_width"] = shape.stroke_width
+                if "fill" not in kwargs:
+                    kwargs["fill"] = shape.fill
+                if "matrix" not in kwargs:
+                    kwargs["matrix"] = shape.transform
+                if "stroke_scale" not in kwargs:
+                    kwargs["stroke_scale"] = (
+                        shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                        != SVG_VALUE_NON_SCALING_STROKE
+                    )
+                self.geometry = Geomstr.svg(shape)
         self.matrix = None
         self.fill = None
         self.stroke = None
@@ -45,6 +48,8 @@ class PathNode(Node, Stroked):
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem path", **kwargs)
+        if self.geometry is None:
+            self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
 
         if self._stroke_zero is None:
@@ -53,12 +58,24 @@ class PathNode(Node, Stroked):
 
         self.set_dirty_bounds()
 
+    def __copy__(self):
+        nd = self.node_dict
+        nd["geometry"] = copy(self.geometry)
+        nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
+        nd["fill"] = copy(self.fill)
+        return PathNode(**nd)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
+
     @property
     def path(self):
         path = self.geometry.as_path()
         path.stroke = self.stroke
         path.fill = self.fill
         path.stroke_width = self.stroke_width
+        path.transform = self.matrix
         path.values[SVG_ATTR_VECTOR_EFFECT] = (
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
@@ -68,17 +85,6 @@ class PathNode(Node, Stroked):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)
         return g
-
-    def __copy__(self):
-        nd = self.node_dict
-        nd["path"] = copy(self.path)
-        nd["matrix"] = copy(self.matrix)
-        nd["stroke"] = copy(self.stroke)
-        nd["fill"] = copy(self.fill)
-        return PathNode(**nd)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
     def scaled(self, sx, sy, ox, oy):
         """
@@ -170,16 +176,8 @@ class PathNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.path
-        npoints = []
-        for seg in obj:
-            npoints.append(seg.end)
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
-        else:
-            points = npoints
-        for pt in points:
-            self._points.append([pt.x, pt.y, "point"])
+        for seg in self.as_geometry().as_points():
+            self._points.append([seg.real, seg.imag, "point"])
 
     def update_point(self, index, point):
         return False
