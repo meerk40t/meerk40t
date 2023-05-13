@@ -2236,7 +2236,11 @@ class Geomstr:
         end_t = self.angle(center, end)
         sweep = end_t - start_t
         if self.orientation(start, control, end) == "cw":
-            return sweep + math.tau
+            if sweep > 0:
+                return sweep - math.tau
+        else:
+            if sweep < 0:
+                return sweep + math.tau
         return sweep
 
     #######################
