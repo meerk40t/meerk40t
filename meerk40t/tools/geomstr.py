@@ -979,7 +979,7 @@ class Geomstr:
     # Geometric Helpers
     #######################
 
-    def arc_as_quads(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12):
+    def arc_as_quads(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
         out of approximate quads.
@@ -992,7 +992,7 @@ class Geomstr:
         @param cy: center_y of the ellipse
         @param rotation: rotation of the ellipse
         @param slices: number of quads to use in the approximation.
-
+        @param settings: index of settings for these segments
         @return:
         """
         sweep = start_t - end_t
@@ -1019,13 +1019,78 @@ class Geomstr:
             next_t = current_t + t_slice
             mid_t = (next_t + current_t) / 2
 
+            if i == slices - 1:
+                next_t = end_t
             # Calculate p_end.
             p_end = point_at_t(next_t)
 
             # Calculate p_mid
             p_mid = point_at_t(mid_t, alpha_mid)
 
-            self.quad(p_start, p_mid, p_end)
+            self.quad(p_start, p_mid, p_end, settings=settings)
+            p_start = p_end
+            current_t = next_t
+
+    def arc_as_cubics(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0):
+        """
+        Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
+        out of approximate quads.
+
+        @param start_t: start_t for the arc
+        @param end_t: end_t for the arc
+        @param rx: rx of the ellipse
+        @param ry: ry of the ellipse
+        @param cx: center_x of the ellipse
+        @param cy: center_y of the ellipse
+        @param rotation: rotation of the ellipse
+        @param slices: number of quads to use in the approximation.
+        @param settings: index of settings for these segments
+
+        @return:
+        """
+        sweep = start_t - end_t
+        t_slice = sweep / float(slices)
+        alpha = math.sin(t_slice) * (math.sqrt(4 + 3 * pow(math.tan(t_slice / 2.0), 2)) - 1) / 3.0
+
+        theta = rotation
+        current_t = start_t
+        cos_theta = math.cos(theta)
+        sin_theta = math.sin(theta)
+
+        def point_at_t(t, alpha=1.0):
+            cos_t = math.cos(t)
+            sin_t = math.sin(t)
+            px = cx + alpha * (rx * cos_t * cos_theta - ry * sin_t * sin_theta)
+            py = cy + alpha * (rx * cos_t * sin_theta + ry * sin_t * cos_theta)
+            return complex(px, py)
+
+        p_start = point_at_t(current_t)
+
+        for i in range(0, slices):
+            next_t = current_t + t_slice
+            if i == slices - 1:
+                next_t = end_t
+
+            cos_start_t = math.cos(current_t)
+            sin_start_t = math.sin(current_t)
+
+            ePrimen1x = -rx * cos_theta * sin_start_t - ry * sin_theta * cos_start_t
+            ePrimen1y = -rx * sin_theta * sin_start_t + ry * cos_theta * cos_start_t
+
+            cos_end_t = math.cos(next_t)
+            sin_end_t = math.sin(next_t)
+
+            p2En2x = cx + rx * cos_end_t * cos_theta - ry * sin_end_t * sin_theta
+            p2En2y = cy + rx * cos_end_t * sin_theta + ry * sin_end_t * cos_theta
+            p_end = complex(p2En2x, p2En2y)
+
+            ePrimen2x = -rx * cos_theta * sin_end_t - ry * sin_theta * cos_end_t
+            ePrimen2y = -rx * sin_theta * sin_end_t + ry * cos_theta * cos_end_t
+
+            p_c1 = complex(p_start.real + alpha * ePrimen1x, p_start.imag + alpha * ePrimen1y)
+            p_c2 = complex(p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y)
+
+            self.cubic(p_start, p_c1, p_c2, p_end)
             p_start = p_end
             current_t = next_t
 
