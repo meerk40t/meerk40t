@@ -356,7 +356,7 @@ class LaserRender:
                         radius,
                         start_t,
                         end_t,
-                        clockwise="cw" == Geomstr.orientation(None, start, c0, end),
+                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
                     )
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
