@@ -64,11 +64,10 @@ class EllipseNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
@@ -219,17 +218,16 @@ class EllipseNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
         npoints = [
-            Point(obj.cx - obj.rx, obj.cy),
-            Point(obj.cx, obj.cy - obj.ry),
-            Point(obj.cx + obj.rx, obj.cy),
-            Point(obj.cx, obj.cy + obj.ry),
+            Point(self.cx - self.rx, self.cy),
+            Point(self.cx, self.cy - self.ry),
+            Point(self.cx + self.rx, self.cy),
+            Point(self.cx, self.cy + self.ry),
         ]
-        p1 = Point(obj.cx, obj.cy)
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
-            p1 = obj.transform.point_in_matrix_space(p1)
+        p1 = Point(self.cx, self.cy)
+        if not self.matrix.is_identity():
+            points = list(map(self.matrix.point_in_matrix_space, npoints))
+            p1 = self.matrix.point_in_matrix_space(p1)
         else:
             points = npoints
         for pt in points:
