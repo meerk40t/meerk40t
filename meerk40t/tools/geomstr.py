@@ -679,7 +679,7 @@ class Geomstr:
 
             self.index = len(segments)
             self.capacity = self.index
-            self.segments = segments
+            self.segments = copy(segments)
         else:
             self.index = 0
             self.capacity = 12
