@@ -2393,7 +2393,7 @@ class Geomstr:
             else:
                 p2 = self.segments[p2][0]
         d = p2 - p1
-        return math.atan2(d.imag, d.real)
+        return np.arctan2(d.imag, d.real)
 
     def towards(self, p1, p2, amount):
         """
