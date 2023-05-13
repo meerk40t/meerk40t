@@ -675,11 +675,13 @@ class Geomstr:
         if segments is not None:
             if isinstance(segments, Geomstr):
                 self._settings.update(segments._settings)
+                self.index = segments.index
                 segments = segments.segments
-
-            self.index = len(segments)
-            self.capacity = self.index
+            else:
+                # Given raw segments, index is equal to count
+                self.index = len(segments)
             self.segments = copy(segments)
+            self.capacity = len(segments)
         else:
             self.index = 0
             self.capacity = 12
