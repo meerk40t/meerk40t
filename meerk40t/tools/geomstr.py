@@ -1437,21 +1437,22 @@ class Geomstr:
         """
         yield 0.0
         yield 1.0
-        t = np.array([float(k) * math.tau / 4.0 for k in range(0, 5)])
-        r = self.arc_radius(line=e)
+
+        start, control, info, control2, end = e
+        t = np.array([float(k) * math.tau / 4.0 for k in range(-4, 5)])
+
         center = self.arc_center(line=e)
-        cx = center.real
-        cy = center.imag
-        cos_t = np.cos(t)
-        sin_t = np.sin(t)
-        xy = np.empty((len(t), 2), dtype=float)
-        xy[:, 0] = cx + r * cos_t
-        xy[:, 1] = cy + r * sin_t
-        pts = xy[:, 0] + xy[:, 1] * 1j
-        t = self.arc_t_at_point(pts, line=e, center=center)
-        for t0 in t:
-            if 0 < t0 < 1.0:
-                yield t0
+        start_t = self.angle(center, start)
+        sweep = self.arc_sweep(line=e, center=center)
+        candidates = t - start_t
+        candidates /= sweep
+        q = np.dstack(
+            (
+                0.0 < candidates,
+                1.0 > candidates,
+            )
+        ).all(axis=2)
+        yield from candidates[q[0]]
 
     def length(self, e):
         """
