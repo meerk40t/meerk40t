@@ -118,7 +118,7 @@ class RectNode(Node, Stroked):
                 complex(x + width, y),
                 complex(x + width, y + ry),
             )
-            path.line((x + width, y + ry), (x + width, y + height - ry))
+            path.line(complex(x + width, y + ry), complex(x + width, y + height - ry))
             path.arc(
                 complex(x + width, y + height - ry),
                 complex(x + width, y + height),
