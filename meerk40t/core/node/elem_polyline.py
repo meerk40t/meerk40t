@@ -8,6 +8,7 @@ from meerk40t.svgelements import (
     Path,
     Polygon,
     Polyline,
+    Matrix,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -47,7 +48,7 @@ class PolylineNode(Node, Stroked):
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
@@ -57,6 +58,8 @@ class PolylineNode(Node, Stroked):
         if self.geometry is None:
             self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
+        if self.matrix is None:
+            self.matrix = Matrix()
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()

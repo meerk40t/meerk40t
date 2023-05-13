@@ -8,6 +8,7 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Point,
     Rect,
+    Matrix,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -45,24 +46,25 @@ class RectNode(Node, Stroked):
                     shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                     != SVG_VALUE_NON_SCALING_STROKE
                 )
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
-        self.rx = None
-        self.ry = None
+        self.x = 0
+        self.y = 0
+        self.width = 0
+        self.height = 0
+        self.rx = 0
+        self.ry = 0
 
         self.matrix = None
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem rect", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
-
+        if self.matrix is None:
+            self.matrix = Matrix()
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()

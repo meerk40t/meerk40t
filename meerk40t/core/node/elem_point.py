@@ -1,7 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import Point
+from meerk40t.svgelements import Point, Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -25,6 +25,8 @@ class PointNode(Node):
         self.stroke_width = None
         super().__init__(type="elem point", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
+        if self.matrix is None:
+            self.matrix = Matrix()
 
     def __copy__(self):
         nd = self.node_dict
