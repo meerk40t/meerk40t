@@ -979,7 +979,9 @@ class Geomstr:
     # Geometric Helpers
     #######################
 
-    def arc_as_quads(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0):
+    def arc_as_quads(
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+    ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
         out of approximate quads.
@@ -1031,7 +1033,9 @@ class Geomstr:
             p_start = p_end
             current_t = next_t
 
-    def arc_as_cubics(self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0):
+    def arc_as_cubics(
+        self, start_t, end_t, rx, ry, cx, cy, rotation=0, slices=12, settings=0
+    ):
         """
         Creates a rotated elliptical arc using quads. This is a helper for creating a more complex arc-like shape from
         out of approximate quads.
@@ -1050,7 +1054,11 @@ class Geomstr:
         """
         sweep = start_t - end_t
         t_slice = sweep / float(slices)
-        alpha = math.sin(t_slice) * (math.sqrt(4 + 3 * pow(math.tan(t_slice / 2.0), 2)) - 1) / 3.0
+        alpha = (
+            math.sin(t_slice)
+            * (math.sqrt(4 + 3 * pow(math.tan(t_slice / 2.0), 2)) - 1)
+            / 3.0
+        )
 
         theta = rotation
         current_t = start_t
@@ -1087,8 +1095,12 @@ class Geomstr:
             ePrimen2x = -rx * cos_theta * sin_end_t - ry * sin_theta * cos_end_t
             ePrimen2y = -rx * sin_theta * sin_end_t + ry * cos_theta * cos_end_t
 
-            p_c1 = complex(p_start.real + alpha * ePrimen1x, p_start.imag + alpha * ePrimen1y)
-            p_c2 = complex(p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y)
+            p_c1 = complex(
+                p_start.real + alpha * ePrimen1x, p_start.imag + alpha * ePrimen1y
+            )
+            p_c2 = complex(
+                p_end.real - alpha * ePrimen2x, p_end.imag - alpha * ePrimen2y
+            )
 
             self.cubic(p_start, p_c1, p_c2, p_end)
             p_start = p_end
@@ -2363,12 +2375,12 @@ class Geomstr:
         start_t = self.angle(center, start)
         end_t = self.angle(center, end)
         sweep = end_t - start_t
-        if self.orientation(start, control, end) == "cw":
-            if sweep > 0:
-                return sweep - math.tau
-        else:
-            if sweep < 0:
-                return sweep + math.tau
+        if sweep < 0:
+            # sweep is the now the positive value from start to reach end going clockwise.
+            sweep += math.tau
+        if self.orientation(start, control, end) != "cw":
+            # sweep is the negative value from start to reach end going counter-clockwise
+            return sweep - math.tau
         return sweep
 
     def arc_t_at_point(self, point, e=None, line=None, center=None):
@@ -2380,9 +2392,10 @@ class Geomstr:
         start_t = self.angle(center, start)
         sweep = self.arc_sweep(line=line, center=center)
         angle_at_point = self.angle(center, point) - start_t
+
         w = np.where(angle_at_point < 0)
-        angle_at_point[w] += math.tau
-        t_at_point = angle_at_point / abs(sweep)
+        angle_at_point[w] += math.tau  # ranged 0, tau
+        t_at_point = angle_at_point / sweep
 
         return t_at_point
 
