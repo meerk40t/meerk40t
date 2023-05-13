@@ -7,6 +7,7 @@ from meerk40t.svgelements import (
     SVG_VALUE_NON_SCALING_STROKE,
     Point,
     SimpleLine,
+    Matrix,
 )
 from meerk40t.tools.geomstr import Geomstr
 
@@ -40,21 +41,23 @@ class LineNode(Node, Stroked):
                     shape.values.get(SVG_ATTR_VECTOR_EFFECT)
                     != SVG_VALUE_NON_SCALING_STROKE
                 )
-        self.x1 = None
-        self.y1 = None
-        self.x2 = None
-        self.y2 = None
+        self.x1 = 0
+        self.y1 = 0
+        self.x2 = 0
+        self.y2 = 0
         self.matrix = None
         self.fill = None
         self.stroke = None
         self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem line", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
+        if self.matrix is None:
+            self.matrix = Matrix()
 
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
