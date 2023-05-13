@@ -29,9 +29,8 @@ class PointNode(Node):
     def __copy__(self):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
-        nd["fill"] = copy(self.fill)
         nd["stroke"] = copy(self.stroke)
-        nd["stroke_width"] = copy(self.stroke_width)
+        nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
     def as_geometry(self):

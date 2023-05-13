@@ -235,16 +235,16 @@ class LaserRender:
             except AttributeError:
                 if False:
                     pass
-                # if node.type in (
-                #     "elem path",
-                #     "elem geomstr",
-                #     "elem ellipse",
-                #     "elem rect",
-                #     "elem line",
-                #     "elem polyline",
-                # ):
-                #     node.draw = self.draw_vector
-                #     node.make_cache = self.cache_geomstr
+                if node.type in (
+                    "elem path",
+                    "elem geomstr",
+                    "elem ellipse",
+                    "elem rect",
+                    "elem line",
+                    "elem polyline",
+                ):
+                    node.draw = self.draw_vector
+                    node.make_cache = self.cache_geomstr
                 elif node.type == "elem path":
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_path

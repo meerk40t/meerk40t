@@ -61,8 +61,8 @@ class PolylineNode(Node, Stroked):
         nd = self.node_dict
         nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["stroke_width"] = copy(self.stroke_width)
         return PolylineNode(**nd)
 
     def __repr__(self):

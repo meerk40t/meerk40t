@@ -69,8 +69,8 @@ class EllipseNode(Node, Stroked):
     def __copy__(self):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["stroke_width"] = copy(self.stroke_width)
         return EllipseNode(**nd)
 
     @property

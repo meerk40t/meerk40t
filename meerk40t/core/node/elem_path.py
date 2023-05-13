@@ -73,8 +73,8 @@ class PathNode(Node, Stroked):
         nd = self.node_dict
         nd["path"] = copy(self.path)
         nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["stroke_width"] = copy(self.stroke_width)
         return PathNode(**nd)
 
     def __repr__(self):
