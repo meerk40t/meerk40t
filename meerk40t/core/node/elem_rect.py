@@ -1,3 +1,4 @@
+import math
 from copy import copy
 
 from meerk40t.core.node.mixins import Stroked
@@ -112,26 +113,31 @@ class RectNode(Node, Stroked):
             path.line(complex(x + width, y + height), complex(x, y + height)),
             path.line(complex(x, y + height), complex(x, y)),
         else:
+            offset = 1 - (1.0 / math.sqrt(2))
             path.line(complex(x + rx, y), complex(x + width - rx, y))
             path.arc(
                 complex(x + width - rx, y),
-                complex(x + width - rx + 1e-5, y),
+                complex(x + width - rx * offset, y + ry * offset),
                 complex(x + width, y + ry),
             )
             path.line(complex(x + width, y + ry), complex(x + width, y + height - ry))
             path.arc(
                 complex(x + width, y + height - ry),
-                complex(x + width, y + height - ry + 1e-5),
+                complex(x + width - rx * offset, y + height - ry * offset),
                 complex(x + width - rx, y + height),
             )
             path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
             path.arc(
                 complex(x + rx, y + height),
-                complex(x + rx - 1e-5, y + height),
+                complex(x + rx * offset, y + height - ry * offset),
                 complex(x, y + height - ry),
             )
             path.line(complex(x, y + height - ry), complex(x, y + ry))
-            path.arc(complex(x, y + ry), complex(x, y + ry - 1e-5), complex(x + rx, y))
+            path.arc(
+                complex(x, y + ry),
+                complex(x + rx * offset, y + ry * offset),
+                complex(x + rx, y),
+            )
             path.line(complex(x + rx, y), complex(x + rx, y))
         path.transform(self.matrix)
         return path
