@@ -1315,16 +1315,21 @@ class Geomstr:
         """
         yield 0.0
         yield 1.0
-        for k in range(0, 4):
-            # TODO: Correct
-            # Get t for positions located at circle extremes.
-            # If t is within 0-1 then this extreme exists in the arc.
-            pass
-            # self._arc_position()
-            # if 0 <= tx <= 1:
-            #     xtrema.append(self.position(line, tx).real)
-            # if 0 <= ty <= 1:
-            #     ytrema.append(self.position(line, ty).imag)
+        t = np.array([float(k) * math.tau / 4.0 for k in range(0, 5)])
+        r = self.arc_radius(line=e)
+        center = self.arc_center(line=e)
+        cx = center.real
+        cy = center.imag
+        cos_t = np.cos(t)
+        sin_t = np.sin(t)
+        xy = np.empty((len(t), 2), dtype=float)
+        xy[:, 0] = cx + r * cos_t
+        xy[:, 1] = cy + r * sin_t
+        pts = xy[:, 0] + xy[:, 1] * 1j
+        t = self.arc_t_at_point(pts, line=e, center=center)
+        for t0 in t:
+            if 0 < t0 < 1.0:
+                yield t0
 
     def length(self, e):
         """
@@ -2242,6 +2247,21 @@ class Geomstr:
             if sweep < 0:
                 return sweep + math.tau
         return sweep
+
+    def arc_t_at_point(self, point, e=None, line=None, center=None):
+        if line is None:
+            line = self.segments[e]
+        start, control, info, control2, end = line
+        if center is None:
+            center = self.arc_center(line=line)
+        start_t = self.angle(center, start)
+        sweep = self.arc_sweep(line=line, center=center)
+        angle_at_point = self.angle(center, point) - start_t
+        w = np.where(angle_at_point < 0)
+        angle_at_point[w] += math.tau
+        t_at_point = angle_at_point / abs(sweep)
+
+        return t_at_point
 
     #######################
     # Point/Endpoint Functions
