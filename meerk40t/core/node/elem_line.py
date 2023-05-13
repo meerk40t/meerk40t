@@ -5,7 +5,6 @@ from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Path,
     Point,
     SimpleLine,
 )
@@ -65,14 +64,13 @@ class LineNode(Node, Stroked):
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
         nd["fill"] = copy(self.fill)
         nd["stroke_width"] = copy(self.stroke_width)
         return LineNode(**nd)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     @property
     def shape(self):
@@ -190,14 +188,13 @@ class LineNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
-        p1 = Point(obj.x1, obj.y1)
-        p2 = Point(obj.x2, obj.y2)
-        p3 = Point(obj.x1 + obj.x2, obj.y1 + obj.y2)
-        if not obj.transform.is_identity():
-            p1 = obj.transform.point_in_matrix_space(p1)
-            p2 = obj.transform.point_in_matrix_space(p2)
-            p3 = obj.transform.point_in_matrix_space(p3)
+        p1 = Point(self.x1, self.y1)
+        p2 = Point(self.x2, self.y2)
+        p3 = Point(self.x1 + self.x2, self.y1 + self.y2)
+        if not self.matrix.is_identity():
+            p1 = self.matrix.point_in_matrix_space(p1)
+            p2 = self.matrix.point_in_matrix_space(p2)
+            p3 = self.matrix.point_in_matrix_space(p3)
 
         self._points.append([p1.x, p1.y, "endpoint"])
         self._points.append([p2.x, p2.y, "endpoint"])
@@ -208,19 +205,6 @@ class LineNode(Node, Stroked):
 
     def add_point(self, point, index=None):
         return False
-
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.shape.stroke = self.stroke
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
 
     def as_path(self):
         geometry = self.as_geometry()
