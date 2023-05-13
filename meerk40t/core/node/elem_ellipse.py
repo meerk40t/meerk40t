@@ -100,25 +100,25 @@ class EllipseNode(Node, Stroked):
 
     def as_geometry(self):
         path = Geomstr()
-        if abs(self.rx - self.ry) < 1e-12:
-            # Decompose as 4 circular arcs.
-            steps = 4
-            step_size = tau / steps
-            if self.matrix.determinant < 0:
-                step_size = -step_size
-
-            t_start = 0
-            t_end = step_size
-            for i in range(steps):
-                path.arc(
-                    self.point_at_t(t_start),
-                    self.point_at_t((t_start + t_end) / 2),
-                    self.point_at_t(t_end),
-                )
-                t_start = t_end
-                t_end += step_size
-            path.transform(self.matrix)
-            return path
+        # if abs(self.rx - self.ry) < 1e-12:
+        #     # Decompose as 4 circular arcs.
+        #     steps = 4
+        #     step_size = tau / steps
+        #     if self.matrix.determinant < 0:
+        #         step_size = -step_size
+        #
+        #     t_start = 0
+        #     t_end = step_size
+        #     for i in range(steps):
+        #         path.arc(
+        #             self.point_at_t(t_start),
+        #             self.point_at_t((t_start + t_end) / 2),
+        #             self.point_at_t(t_end),
+        #         )
+        #         t_start = t_end
+        #         t_end += step_size
+        #     path.transform(self.matrix)
+        #     return path
         # Decompose as 12 cubics, approximating an arc.
         path.arc_as_cubics(0, math.tau , rx=self.rx, ry=self.ry, cx=self.cx, cy=self.cy, rotation=0, slices=12)
         path.transform(self.matrix)
