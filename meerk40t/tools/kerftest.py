@@ -81,6 +81,7 @@ class KerfPanel(wx.Panel):
         self.text_dim.Bind(wx.EVT_TEXT, self.on_valid_values)
         self.text_speed.Bind(wx.EVT_TEXT, self.on_valid_values)
         self.text_power.Bind(wx.EVT_TEXT, self.on_valid_values)
+        self.radio_pattern.Bind(wx.EVT_RADIOBOX, self.on_method)
 
     def _set_layout(self):
         def size_it(ctrl, value):
@@ -170,6 +171,13 @@ class KerfPanel(wx.Panel):
         self.button_create.SetToolTip(_("Create a test-pattern with your values"))
 
         self.SetSizer(main_sizer)
+
+    def on_method(self, event):
+        slider = bool(self.radio_pattern.GetSelection() == 2)
+        self.text_delta.Enable(not slider)
+        self.text_min.Enable(not slider)
+        self.text_max.Enable(not slider)
+        self.spin_count.Enable(not slider)
 
     def on_button_close(self, event):
         self.context("window close Kerftest\n")
@@ -287,6 +295,7 @@ class KerfPanel(wx.Panel):
             text_op.color = Color("black")
             text_op.label = "Descriptions"
             operation_branch.add_node(text_op)
+
             x_offset = y_offset = float(Length("5mm"))
             xx = x_offset
             yy = y_offset
@@ -479,8 +488,8 @@ class KerfPanel(wx.Panel):
             # instruction_op.output = False
             # operation_branch.add_node(instruction_op)
             operation_branch.add_node(text_op)
-            operation_branch.add_node(cut_op)
             operation_branch.add_node(engrave_op)
+            operation_branch.add_node(cut_op)
             x_offset = float(Length("1cm"))
             y_offset = float(Length("1cm"))
 
@@ -748,6 +757,10 @@ class KerfPanel(wx.Panel):
 
         self.context.signal("rebuild_tree")
         self.context.signal("refresh_scene", "Scene")
+        # This is not really necessary if we have the sequence
+        # of raster - engrave - cut. It might be still appropriate
+        # in some other cases though
+        # self.context.signal("optimize", False)
 
     def pane_show(self):
         return
