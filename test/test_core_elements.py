@@ -41,6 +41,26 @@ class TestElements(unittest.TestCase):
         finally:
             kernel.shutdown()
 
+
+    def test_elements_frame(self):
+        """
+        Test frame command creates a rectangle of a rectangle
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            kernel.console("rect 2cm 2cm 1cm 1cm\n")
+            kernel.console("frame\n")
+            f = list(kernel.elements.elem_branch.flat(types="elem rect"))
+            self.assertAlmostEqual(f[0].x, f[1].x)
+            self.assertAlmostEqual(f[0].y, f[1].y)
+            self.assertAlmostEqual(f[0].width, f[1].width)
+            self.assertAlmostEqual(f[0].height, f[1].height)
+            self.assertAlmostEqual(f[0].rx, f[1].rx)
+            self.assertAlmostEqual(f[0].ry, f[1].ry)
+        finally:
+            kernel.shutdown()
+
+
     def test_elements_circle(self):
         """
         Intro test for elements
