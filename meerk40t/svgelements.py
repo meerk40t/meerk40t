@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.9.3"
+SVGELEMENTS_VERSION = "1.9.4"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -846,14 +846,16 @@ class Length(object):
         if self.amount == other.amount and self.units == other.units:
             return True
         if s is not None:
-            o = self.in_pixels()
-            if abs(s - o) <= ERROR:
-                return True
+            o = other.in_pixels()
+            if o is not None:
+                if abs(s - o) <= ERROR:
+                    return True
         s = self.in_inches()
         if s is not None:
-            o = self.in_inches()
-            if abs(s - o) <= ERROR:
-                return True
+            o = other.in_inches()
+            if o is not None:
+                if abs(s - o) <= ERROR:
+                    return True
         return False
 
     @property
@@ -2045,7 +2047,13 @@ class Point:
                 other = Point(other)
         except Exception:
             return NotImplemented
-
+        if (
+            isinstance(self.x, Length)
+            or isinstance(self.y, Length)
+            or isinstance(other.x, Length)
+            or isinstance(other.x, Length)
+        ):
+            return self.x == other.x and self.y == other.y
         return abs(self.x - other.x) <= ERROR and abs(self.y - other.y) <= ERROR
 
     def __ne__(self, other):
@@ -3001,6 +3009,28 @@ class Matrix:
         return v
 
     @classmethod
+    def affine(cls, p1, p2, p4):
+        """
+        Create a matrix which transforms these three ordered points to the clockwise points of the unit-square.
+
+        @param p1:
+        @param p2:
+        @param p4:
+        @return:
+        """
+        x1, y1 = p1
+        x2, y2 = p2
+        x4, y4 = p4
+
+        a = x4 - x1
+        b = x2 - x1
+        c = x1
+        d = y4 - y1
+        e = y2 - y1
+        f = y1
+        return cls(a, d, b, e, c, f)
+
+    @classmethod
     def perspective(cls, p1, p2, p3, p4):
         """
         Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
@@ -3019,38 +3049,32 @@ class Matrix:
         x3, y3 = p3
         x4, y4 = p4
 
-        j = x1 - x2 - x3 + x4
-        k = -x1 - x2 + x3 + x4
-        l = -x1 + x2 - x3 + x4
-        m = y1 - y2 - y3 + y4
-        n = -y1 - y2 + y3 + y4
-        o = -y1 + y2 - y3 + y4
-        i = 1.0
-
+        i = 1
         try:
-            h = (j * o - m * l) * i / (m * k - j * n)
+            j = (y1 - y2 + y3 - y4) / (y2 - y3)
+            k = (x1 - x2 + x3 - x4) / (x4 - x3)
+            m = (y4 - y3) / (y2 - y3)
+            n = (x2 - x3) / (x4 - x3)
+
+            h = i * (j - k * m) / (1 - m * n)
+            g = i * (k - j * n) / (1 - m * n)
         except ZeroDivisionError:
-            h = 0
+            h = 0.0
+            g = 0.0
 
-        try:
-            g = k * h + l * i
-        except ZeroDivisionError:
-            g = 0
+        c = x1 * i
+        f = y1 * i
+        a = x4 * (g + i) - x1 * i
+        b = x2 * (h + i) - x1 * i
+        d = y4 * (g + i) - y1 * i
+        e = y2 * (h + i) - y1 * i
 
-        f = (y1 * (g + h + i) + y3 * (-g - h + i)) / 2.0
-        e = (y1 * (g + h + i) - y2 * (g - h + i)) / 2.0
-        d = y1 * (g + h + i) - f - e
-        c = (x1 * (g + h + i) + x3 * (-g - h + i)) / 2.0
-        b = (x1 * (g + h + i) - x2 * (g - h + i)) / 2.0
-        a = x1 * (g + h + i) - c - b
-
-        matrix = Matrix(-2, 0, 0, -2, 1, 1)
-        return matrix * cls(a, d, b, e, c, f)
+        return cls(a, d, b, e, c, f)
 
     @classmethod
     def map(cls, p1, p2, p3, p4, p5, p6, p7, p8):
         """
-        Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
+        Create a matrix which transforms these four ordered points to equivalent points for the other 4 ordered points.
 
         If G and H are very close to 0, this is an affine transformation. If they are not, then the perspective
         transform requires g and h, but we do not support non-affine transformations.
@@ -3063,6 +3087,24 @@ class Matrix:
         """
         m1 = Matrix.perspective(p1, p2, p3, p4)
         m2 = Matrix.perspective(p5, p6, p7, p8)
+        return cls(~m1 * m2)
+
+    @classmethod
+    def map3(cls, p1, p2, p4, p5, p6, p8):
+        """
+        Create a matrix which transforms these three ordered points to map to 3 other ordered points. This does not
+        include p3 or p7 for the ordered squares.
+
+        @param p1:
+        @param p2:
+        @param p4:
+        @param p5:
+        @param p6:
+        @param p8:
+        @return:
+        """
+        m1 = Matrix.affine(p1, p2, p4)
+        m2 = Matrix.affine(p5, p6, p8)
         return cls(~m1 * m2)
 
     @classmethod
@@ -3425,8 +3467,8 @@ class SVGElement(object):
         self.values[key] = value
         return self
 
-    def write_xml(self, f):
-        write(self, f)
+    def write_xml(self, f, **kwargs):
+        write(self, f, **kwargs)
 
     def string_xml(self):
         return tostring(self)
@@ -9352,18 +9394,26 @@ def tostring(node):
     return tostring(_write_node(node), encoding="unicode")
 
 
-def write(node, f, pretty=True):
+def write(node, f, pretty=True, **kwargs):
+    """
+    Gets the write node and writes to the ElementTree.write() function, all options in Element.write() are passed
+    along via this method. encoding, xml_declaration, short_empty_elements, etc.
+    """
     from xml.etree.ElementTree import ElementTree
 
     root = _write_node(node)
     if pretty:
         _pretty_print(root)
     tree = ElementTree(root)
-    if f.lower().endswith("svgz"):
-        import gzip
+    try:
+        if f.lower().endswith("svgz"):
+            import gzip
 
-        f = gzip.open(f, "wb")
-    tree.write(f)
+            f = gzip.open(f, "wb")
+    except AttributeError:
+        # might be a pathlib.Path()
+        pass
+    tree.write(f, **kwargs)
 
 
 def _write_node(node, xml_tree=None, viewport_transform=None):
@@ -9412,13 +9462,15 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
             xml_tree.set(SVG_ATTR_HEIGHT, str(node.height))
         if node.viewbox:
             xml_tree.set(SVG_ATTR_VIEWBOX, str(node.viewbox))
-        vt = node.viewbox_transform
-        if vt:
-            m = Matrix(vt)
-            m.inverse()
-            vt = m
-        else:
-            vt = None
+        vt = None
+        try:
+            vt = node.viewbox_transform
+            if vt:
+                m = Matrix(vt)
+                m.inverse()
+                vt = m
+        except ValueError:
+            pass
         for child in node:
             _write_node(child, xml_tree, vt)
     elif isinstance(node, Ellipse):
