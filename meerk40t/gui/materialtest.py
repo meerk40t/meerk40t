@@ -23,6 +23,12 @@ _ = wx.GetTranslation
 
 class TemplatePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
+
+        def size_it(ctrl, value):
+            ctrl.SetMaxSize(wx.Size(int(value), -1))
+            ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
+            ctrl.SetSize(wx.Size(value, -1))
+
         # begin wxGlade: clsLasertools.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -101,6 +107,9 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.set_range(0, 50)
         self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
+        size_it(self.unit_param_1a, 85)
+        size_it(self.unit_param_1b, 85)
+
         self.combo_color_1 = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -121,6 +130,9 @@ class TemplatePanel(wx.Panel):
         self.text_delta_2.set_range(0, 50)
         self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
+        size_it(self.unit_param_2a, 85)
+        size_it(self.unit_param_2b, 85)
+
         self.combo_color_2 = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -139,6 +151,7 @@ class TemplatePanel(wx.Panel):
             self, wx.ID_ANY, _("Operation to test"), wx.VERTICAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
+        size_it(mylbl, 85)
         h1 = wx.BoxSizer(wx.HORIZONTAL)
         h1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h1.Add(self.combo_ops, 1, wx.EXPAND, 0)
@@ -161,28 +174,36 @@ class TemplatePanel(wx.Panel):
 
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
+        size_it(mylbl, 85)
         hline_param_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_1.Add(self.combo_param_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
+        size_it(mylbl, 85)
+        self.info_delta_1 = wx.StaticText(self, wx.ID_ANY, "")
+
         hline_count_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_1.Add(self.spin_count_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_count_1.Add(self.info_delta_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
+        size_it(mylbl, 85)
         hline_min_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.text_min_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_1.Add(self.unit_param_1a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
+        size_it(mylbl, 85)
         hline_max_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.text_max_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_1.Add(self.unit_param_1b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
+        size_it(mylbl, 85)
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.text_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -190,6 +211,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        size_it(mylbl, 85)
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_1.Add(self.text_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -197,6 +219,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
+        size_it(mylbl, 85)
         hline_color_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -215,28 +238,35 @@ class TemplatePanel(wx.Panel):
 
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
+        size_it(mylbl, 85)
         hline_param_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_param_2.Add(self.combo_param_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
+        size_it(mylbl, 85)
+        self.info_delta_2 = wx.StaticText(self, wx.ID_ANY, "")
         hline_count_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_count_2.Add(self.spin_count_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_count_2.Add(self.info_delta_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_min_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Minimum:"))
+        size_it(mylbl, 85)
         hline_min_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.text_min_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_min_2.Add(self.unit_param_2a, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_max_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Maximum:"))
+        size_it(mylbl, 85)
         hline_max_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.text_max_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_max_2.Add(self.unit_param_2b, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
+        size_it(mylbl, 85)
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.text_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -244,6 +274,7 @@ class TemplatePanel(wx.Panel):
 
         hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        size_it(mylbl, 85)
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_delta_2.Add(self.text_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
@@ -251,6 +282,7 @@ class TemplatePanel(wx.Panel):
 
         hline_color_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
+        size_it(mylbl, 85)
         hline_color_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -372,6 +404,8 @@ class TemplatePanel(wx.Panel):
         self.combo_param_1.Bind(wx.EVT_COMBOBOX, self.on_combo_1)
         self.combo_param_2.Bind(wx.EVT_COMBOBOX, self.on_combo_2)
         self.combo_images.Bind(wx.EVT_COMBOBOX, self.on_combo_image)
+        self.spin_count_1.Bind(wx.EVT_SPINCTRL, self.validate_input)
+        self.spin_count_2.Bind(wx.EVT_SPINCTRL, self.validate_input)
 
         self.SetSizer(sizer_main)
         self.Layout()
@@ -391,6 +425,18 @@ class TemplatePanel(wx.Panel):
         )
         # Make sure units appear properly
         self.on_combo_2(None)
+
+    def shortened(self, value, digits):
+        result = str(round(value, digits))
+        if "." in result:
+            while result.endswith("0"):
+                result = result[:-1]
+        if result.endswith("."):
+            if result == ".":
+                result = "0"
+            else:
+                result = result[:-1]
+        return result
 
     def on_combo_image(self, event):
         op = self.combo_ops.GetSelection()
@@ -660,6 +706,8 @@ class TemplatePanel(wx.Panel):
             return result
 
         active = True
+        valid_interval_1 = True
+        valid_interval_2 = True
         optype = self.combo_ops.GetSelection()
         if optype < 0:
             active = False
@@ -677,12 +725,16 @@ class TemplatePanel(wx.Panel):
             active = False
         if not valid_float(self.text_min_1):
             active = False
+            valid_interval_1 = False
         if not valid_float(self.text_max_1):
             active = False
+            valid_interval_1 = False
         if not valid_float(self.text_min_2):
             active = False
+            valid_interval_2 = False
         if not valid_float(self.text_max_2):
             active = False
+            valid_interval_2 = False
         if not valid_float(self.text_dim_1):
             active = False
         if not valid_float(self.text_delta_1):
@@ -691,6 +743,48 @@ class TemplatePanel(wx.Panel):
             active = False
         if not valid_float(self.text_delta_2):
             active = False
+        if valid_interval_1:
+            minv = float(self.text_min_1.GetValue())
+            maxv = float(self.text_max_1.GetValue())
+            count = self.spin_count_1.GetValue()
+            delta = maxv - minv
+            if count > 1:
+                delta /= (count - 1)
+            s_unit = ""
+            idx = self.combo_param_1.GetSelection()
+            # 0 = internal_attribute, 1 = secondary_attribute,
+            # 2 = Label, 3 = unit,
+            # 4 = keep_unit, 5 = needs_to_be_positive)
+            if idx >= 0 and idx < len(self.parameters):
+                s_unit = self.parameters[idx][3]
+            self.info_delta_1.SetLabel(
+                _("Every {dist}").format(
+                    dist=self.shortened(delta, 3) + s_unit
+                )
+            )
+        else:
+             self.info_delta_1.SetLabel("---")
+        if valid_interval_2:
+            minv = float(self.text_min_2.GetValue())
+            maxv = float(self.text_max_2.GetValue())
+            count = self.spin_count_2.GetValue()
+            delta = maxv - minv
+            if count > 1:
+                delta /= (count - 1)
+            s_unit = ""
+            idx = self.combo_param_2.GetSelection()
+            # 0 = internal_attribute, 1 = secondary_attribute,
+            # 2 = Label, 3 = unit,
+            # 4 = keep_unit, 5 = needs_to_be_positive)
+            if idx >= 0 and idx < len(self.parameters):
+                s_unit = self.parameters[idx][3]
+            self.info_delta_2.SetLabel(
+                _("Every {dist}").format(
+                    dist=self.shortened(delta, 3) + s_unit
+                )
+            )
+        else:
+             self.info_delta_2.SetLabel("---")
 
         self.button_create.Enable(active)
 
@@ -740,17 +834,6 @@ class TemplatePanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def create_operations():
-            def shortened(value, digits):
-                result = str(round(value, digits))
-                if "." in result:
-                    while result.endswith("0"):
-                        result = result[:-1]
-                if result.endswith("."):
-                    if result == ".":
-                        result = "0"
-                    else:
-                        result = result[:-1]
-                return result
 
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
             display_labels = self.check_labels.GetValue()
@@ -824,7 +907,7 @@ class TemplatePanel(wx.Panel):
 
             xx = start_x
             for idx1 in range(count_1):
-                pval1 = shortened(p_value_1, 3)
+                pval1 = self.shortened(p_value_1, 3)
 
                 p_value_2 = min_value_2
                 yy = start_y
@@ -847,7 +930,7 @@ class TemplatePanel(wx.Panel):
                     text_op_x.add_reference(node, 0)
 
                 for idx2 in range(count_2):
-                    pval2 = shortened(p_value_2, 3)
+                    pval2 = self.shortened(p_value_2, 3)
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if display_values and idx1 == 0:  # first row, so add a text above
