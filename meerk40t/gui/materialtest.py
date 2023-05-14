@@ -1,11 +1,9 @@
 from copy import copy
 from math import tau
 
-import PIL
 import wx
 from wx import aui
 
-from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
@@ -16,7 +14,7 @@ from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.kernel import signal_listener
-from meerk40t.svgelements import Circle, Color, Matrix, Rect
+from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
@@ -944,30 +942,24 @@ class TemplatePanel(wx.Panel):
                             elemnode.modified()
                             self.context.elements.elem_branch.add_node(elemnode)
                     elif shapetype == "rect":
-                        pattern = Rect(
+                        elemnode = self.context.elements.elem_branch.add(
                             x=xx,
                             y=yy,
                             width=size_x,
                             height=size_y,
                             stroke=set_color,
                             fill=fill_color,
-                        )
-                        elem_type = "elem rect"
-                        elemnode = self.context.elements.elem_branch.add(
-                            shape=pattern, type=elem_type
+                            type="elem rect",
                         )
                     elif shapetype == "circle":
-                        pattern = Circle(
+                        elemnode = self.context.elements.elem_branch.add(
                             cx=xx + size_x / 2,
                             cy=yy + size_y / 2,
                             rx=size_x / 2,
                             ry=size_y / 2,
                             stroke=set_color,
                             fill=fill_color,
-                        )
-                        elem_type = "elem ellipse"
-                        elemnode = self.context.elements.elem_branch.add(
-                            shape=pattern, type=elem_type
+                            type="elem ellipse",
                         )
                     elemnode.label = s_lbl
                     this_op.add_reference(elemnode, 0)
