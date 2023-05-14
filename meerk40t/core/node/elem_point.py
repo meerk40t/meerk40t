@@ -52,14 +52,19 @@ class PointNode(Node):
         self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
-        p = self.point
+        x = float(self.x)
+        y = float(self.y)
+        p = self.matrix.point_in_matrix_space((x, y))
         return p[0], p[1], p[0], p[1]
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Point"
-        default_map["x"] = self.point[0]
-        default_map["y"] = self.point[1]
+        x = float(self.x)
+        y = float(self.y)
+        p = self.matrix.point_in_matrix_space((x, y))
+        default_map["x"] = p[0]
+        default_map["y"] = p[1]
         default_map.update(self.__dict__)
         return default_map
 
@@ -75,7 +80,10 @@ class PointNode(Node):
         bounds = self.bounds
         if bounds is None:
             return
-        self._points.append([self.point.x, self.point.y, "point"])
+        x = float(self.x)
+        y = float(self.y)
+        p = self.matrix.point_in_matrix_space((x, y))
+        self._points.append([p[0], p[1], "point"])
 
     def update_point(self, index, point):
         return False
