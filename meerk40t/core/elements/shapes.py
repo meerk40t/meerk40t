@@ -1429,10 +1429,14 @@ def init_commands(kernel):
         y_pos -= y_offset
         width += x_offset * 2
         height += y_offset * 2
-        _element = Rect(x=x_pos, y=y_pos, width=width, height=height)
-        node = self.elem_branch.add(shape=_element, type="elem rect")
-        node.stroke = Color("red")
-        node.altered()
+        node = self.elem_branch.add(
+            x=x_pos,
+            y=y_pos,
+            width=width,
+            height=height,
+            stroke=Color("red"),
+            type="elem rect",
+        )
         self.set_emphasis([node])
         node.focus()
         if data is None:
