@@ -43,7 +43,7 @@ class PathNode(Node, Stroked):
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
+        self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
