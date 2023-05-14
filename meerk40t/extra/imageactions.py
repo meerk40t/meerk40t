@@ -7,7 +7,7 @@ from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH, Length
-from meerk40t.svgelements import Color, Matrix, Rect
+from meerk40t.svgelements import Color, Matrix
 
 
 def plugin(kernel, lifecycle):
@@ -272,13 +272,14 @@ def plugin(kernel, lifecycle):
             invert = bool(invert)
             # channel(f"will sort by {order}")
             total_bounds = Node.union_bounds(data, attr="paint_bounds")
-            emptyrec = Rect(
+            rectnode = RectNode(
                 x=total_bounds[0],
                 y=total_bounds[1],
                 width=total_bounds[2] - total_bounds[0],
                 height=total_bounds[3] - total_bounds[1],
+                stroke=None,
+                fill=None,
             )
-            rectnode = RectNode(shape=emptyrec, stroke=None, fill=None)
             bb, tempnode = prepare_data(order)
             masknode = copy(tempnode)
             if (
