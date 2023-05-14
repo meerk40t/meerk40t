@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.9.4"
+SVGELEMENTS_VERSION = "1.9.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -3801,6 +3801,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
             position_subset = (segment_start <= positions) & (positions < segment_end)
             v0 = positions[position_subset]
             if not len(v0):
+                segment_start = segment_end
                 continue  # Nothing matched.
             d = segment_end - segment_start
             if d == 0:  # This segment is 0 length.
