@@ -20,6 +20,8 @@ from os import times
 from time import time
 from typing import Optional
 
+import numpy as np
+
 from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode.cutcode import CutCode
@@ -697,18 +699,41 @@ def is_inside(inner, outer, tolerance=0):
     # a polygon more intelligently based on size and curvature
     # i.e. larger bboxes need more points and
     # tighter curves need more points (i.e. compare vector directions)
-    if not hasattr(outer, "vm"):
-        outer_path = Polygon(
-            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-        )
-        vm = VectorMontonizer()
-        vm.add_polyline(outer_path)
-        outer.vm = vm
-    for i in range(101):
-        p = inner_path.point(i / 100.0, error=1e4)
-        if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-            return False
-    return True
+
+    def vm_code(outer, outer_path, inner, inner_path):
+        if not hasattr(outer, "vm"):
+            outer_path = Polygon(
+                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+            )
+            vm = VectorMontonizer()
+            vm.add_polyline(outer_path)
+            outer.vm = vm
+        for i in range(101):
+            p = inner_path.point(i / 100.0, error=1e4)  # Point(4633.110682926033,1788.413481872459)
+            if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
+                return False
+        return True
+
+    def sb_code(outer, outer_path, inner, inner_path):
+        from ..tools.geomstr import Polygon as Gpoly
+        from ..tools.geomstr import Scanbeam
+
+        if not hasattr(outer, "sb"):
+            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
+            pg = pg[:, 0] + pg[:, 1] * 1j
+
+            outer_path = Gpoly(*pg)
+            sb = Scanbeam(outer_path.geomstr)
+            outer.sb = sb
+        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
+        points = p[:, 0] + p[:, 1] * 1j
+
+        q = outer.sb.points_in_polygon(points)
+        return q.all()
+
+
+    return sb_code(outer, outer_path, inner, inner_path)
+    # return vm_code(outer, outer_path, inner, inner_path)
 
 
 def reify_matrix(self):
