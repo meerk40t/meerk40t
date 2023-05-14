@@ -175,15 +175,18 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
-        rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-        if rect.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=rect, type="elem rect")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
-        node.altered()
+        node = self.elem_branch.add(
+            x=x_pos,
+            y=y_pos,
+            width=width,
+            height=height,
+            rx=rx,
+            ry=ry,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem rect",
+        )
         self.set_emphasis([node])
         node.focus()
         if data is None:
