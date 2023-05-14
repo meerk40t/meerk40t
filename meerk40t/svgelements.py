@@ -3801,6 +3801,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
             position_subset = (segment_start <= positions) & (positions < segment_end)
             v0 = positions[position_subset]
             if not len(v0):
+                segment_start = segment_end
                 continue  # Nothing matched.
             d = segment_end - segment_start
             if d == 0:  # This segment is 0 length.
