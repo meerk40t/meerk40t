@@ -57,6 +57,14 @@ class EllipseNode(Node, Stroked):
 
         super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
+        if self.cx is None:
+            self.cx = 0
+        if self.cy is None:
+            self.cy = 0
+        if self.rx is None:
+            self.rx = 0
+        if self.ry is None:
+            self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
 
