@@ -1399,31 +1399,6 @@ class Elemental(Service):
         self.signal("add_operation", items)
         return items
 
-    def add_elems(self, adding_elements, classify=False, branch_type="branch elems"):
-        """
-        Add multiple svg elements to the tree.
-
-        @param adding_elements:
-        @param classify:
-        @param branch_type:
-        @return:
-        """
-        branch = self._tree.get(type=branch_type)
-        items = []
-        ct = 0
-        for element in adding_elements:
-            ct += 1
-            node_type = get_type_from_element(element)
-            if node_type:
-                items.append(branch.add(element, type=node_type))
-        if branch_type == "branch elems":
-            self.signal("element_added", adding_elements)
-        elif branch_type == "branch reg":
-            self.signal("regmark_added", adding_elements)
-        if classify:
-            self.classify(adding_elements)
-        return items
-
     def clear_operations(self, fast=False):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children(fast=fast)
