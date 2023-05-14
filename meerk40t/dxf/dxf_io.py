@@ -25,10 +25,8 @@ from ..svgelements import (
     Matrix,
     Move,
     Path,
-    Point,
     Polygon,
     Polyline,
-    SimpleLine,
     Viewbox,
 )
 
@@ -213,22 +211,24 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "LINE":
             #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
-            element = SimpleLine(
+            m = Matrix()
+            m.post_scale(self.scale, -self.scale)
+            m.post_translate_y(self.elements.device.unit_height)
+            node = context_node.add(
                 x1=entity.dxf.start[0],
                 y1=entity.dxf.start[1],
                 x2=entity.dxf.end[0],
                 y2=entity.dxf.end[1],
+                stroke_scale=False,
+                matrix=m,
+                type="elem line",
             )
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-            node = context_node.add(shape=element, type="elem line")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
         elif entity.dxftype() == "POINT":
-            element = Point(entity.dxf.location)
-            node = context_node.add(point=element, matrix=Matrix(), type="elem point")
+            x, y = entity.dxf.location
+            node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
