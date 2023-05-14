@@ -19,6 +19,7 @@ class PolylineNode(Node, Stroked):
     """
 
     def __init__(self, *args, **kwargs):
+        self.geometry = None
         if len(args) == 1:
             if isinstance(args[0], Geomstr):
                 kwargs["geometry"] = args[0]
