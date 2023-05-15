@@ -601,7 +601,7 @@ class RDJob:
             desc = f"Cut Horizontal Relative ({dx} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x, self.y + dy, 0)
+            self.plot_location(self.x, self.y + dy, 1)
             desc = f"Cut Vertical Relative ({dy} units)"
         elif array[0] == 0xC7:
             v0 = parse_power(array[1:3])  # TODO: Check command fewer values.
