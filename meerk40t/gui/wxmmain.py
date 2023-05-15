@@ -561,7 +561,7 @@ class MeerK40t(MWindow):
                 "max": 75,
                 "label": _("Element-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the screen distance in pixels inside which the cursor will snap to the neearest element point"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -602,9 +602,9 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": True,
                 "type": bool,
-                "label": _("Clear magnets on File - New"),
+                "label": _("Clear magnets on File/New"),
                 "tip": _(
-                    "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                    "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
