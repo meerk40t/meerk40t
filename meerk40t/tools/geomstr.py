@@ -58,14 +58,14 @@ from copy import copy
 import numpy as np
 
 from meerk40t.svgelements import (
-    Matrix,
-    Path,
-    Line,
-    Move,
-    QuadraticBezier,
-    CubicBezier,
     Arc,
     Close,
+    CubicBezier,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    QuadraticBezier,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
@@ -724,10 +724,17 @@ class Geomstr:
             elif isinstance(seg, QuadraticBezier):
                 obj.quad(complex(seg.start), complex(seg.control), complex(seg.end))
             elif isinstance(seg, CubicBezier):
-                obj.cubic(complex(seg.start), complex(seg.control1), complex(seg.control2), complex(seg.end))
+                obj.cubic(
+                    complex(seg.start),
+                    complex(seg.control1),
+                    complex(seg.control2),
+                    complex(seg.end),
+                )
             elif isinstance(seg, Arc):
                 if seg.is_circular():
-                    obj.arc(complex(seg.start), complex(seg.point(0.5)), complex(seg.end))
+                    obj.arc(
+                        complex(seg.start), complex(seg.point(0.5)), complex(seg.end)
+                    )
                 else:
                     quads = seg.as_quad_curves(4)
                     for q in quads:

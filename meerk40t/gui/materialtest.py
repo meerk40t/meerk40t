@@ -23,7 +23,6 @@ _ = wx.GetTranslation
 
 class TemplatePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
-
         def size_it(ctrl, value):
             ctrl.SetMaxSize(wx.Size(int(value), -1))
             ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
@@ -749,7 +748,7 @@ class TemplatePanel(wx.Panel):
             count = self.spin_count_1.GetValue()
             delta = maxv - minv
             if count > 1:
-                delta /= (count - 1)
+                delta /= count - 1
             s_unit = ""
             idx = self.combo_param_1.GetSelection()
             # 0 = internal_attribute, 1 = secondary_attribute,
@@ -758,19 +757,17 @@ class TemplatePanel(wx.Panel):
             if idx >= 0 and idx < len(self.parameters):
                 s_unit = self.parameters[idx][3]
             self.info_delta_1.SetLabel(
-                _("Every {dist}").format(
-                    dist=self.shortened(delta, 3) + s_unit
-                )
+                _("Every {dist}").format(dist=self.shortened(delta, 3) + s_unit)
             )
         else:
-             self.info_delta_1.SetLabel("---")
+            self.info_delta_1.SetLabel("---")
         if valid_interval_2:
             minv = float(self.text_min_2.GetValue())
             maxv = float(self.text_max_2.GetValue())
             count = self.spin_count_2.GetValue()
             delta = maxv - minv
             if count > 1:
-                delta /= (count - 1)
+                delta /= count - 1
             s_unit = ""
             idx = self.combo_param_2.GetSelection()
             # 0 = internal_attribute, 1 = secondary_attribute,
@@ -779,12 +776,10 @@ class TemplatePanel(wx.Panel):
             if idx >= 0 and idx < len(self.parameters):
                 s_unit = self.parameters[idx][3]
             self.info_delta_2.SetLabel(
-                _("Every {dist}").format(
-                    dist=self.shortened(delta, 3) + s_unit
-                )
+                _("Every {dist}").format(dist=self.shortened(delta, 3) + s_unit)
             )
         else:
-             self.info_delta_2.SetLabel("---")
+            self.info_delta_2.SetLabel("---")
 
         self.button_create.Enable(active)
 

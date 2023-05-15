@@ -234,10 +234,12 @@ class KerfPanel(wx.Panel):
         if is_valid:
             delta = maxv - minv
             if count > 1:
-                delta /= (count - 1)
-            self.info_distance.SetLabel(_("Every {dist}").format(dist=Length(delta , digits=3).length_mm))
+                delta /= count - 1
+            self.info_distance.SetLabel(
+                _("Every {dist}").format(dist=Length(delta, digits=3).length_mm)
+            )
         else:
-             self.info_distance.SetLabel("---")
+            self.info_distance.SetLabel("---")
         self.button_create.Enable(is_valid)
 
     def on_button_generate(self, event):

@@ -29,7 +29,13 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_ARC, Geomstr  # , TYPE_RAMP
+from ..tools.geomstr import (  # , TYPE_RAMP
+    TYPE_ARC,
+    TYPE_CUBIC,
+    TYPE_LINE,
+    TYPE_QUAD,
+    Geomstr,
+)
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix

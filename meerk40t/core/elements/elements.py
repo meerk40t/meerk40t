@@ -36,6 +36,7 @@ def plugin(kernel, lifecycle=None):
             grid,
             materials,
             notes,
+            offset,
             placements,
             render,
             shapes,
@@ -43,7 +44,6 @@ def plugin(kernel, lifecycle=None):
             tree_commands,
             undo_redo,
             wordlist,
-            offset,
         )
 
         return [
