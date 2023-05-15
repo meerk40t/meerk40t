@@ -532,7 +532,7 @@ class MeerK40t(MWindow):
                 "max": 75,
                 "label": _("Display-Distance"),
                 "tip": _(
-                    "Defines until which distance snap points will be highlighted"
+                    "The screen distance in pixels inside which snap points will be highlighted"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -542,8 +542,10 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": False,
                 "type": bool,
-                "label": _("Snap to element"),
-                "tip": _("Shall the cursor snap to the next element point?"),
+                "label": _("Snap to Element"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest element point within the specified threshold"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Element-Points",
@@ -557,9 +559,9 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Element-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next element point"
+                    "Set the screen distance in pixels inside which the cursor will snap to the neearest element point"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -571,7 +573,9 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Snap to Grid"),
-                "tip": _("Shall the cursor snap to the next grid intersection?"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest grid intersection"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Grid",
@@ -585,9 +589,9 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Grid-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next grid intersection"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
