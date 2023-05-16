@@ -1796,6 +1796,60 @@ class BalorDevice(Service, ViewPort):
                 points_list.append(list(ant_points(points, int(quantization / 2))))
             return "shapes", [Polygon(*p) for p in points_list]
 
+        @self.console_option(
+            "port", "p", type=int, default=25978, help=_("port to listen on.")
+        )
+        @kernel.console_option(
+            "verbose",
+            "v",
+            type=bool,
+            action="store_true",
+            help=_("watch server channels"),
+        )
+        @self.console_option(
+            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
+        )
+        @self.console_option(
+            "quit",
+            "q",
+            type=bool,
+            action="store_true",
+            help=_("shutdown current galvoserver"),
+        )
+        @self.console_command("galvoserver", help=_("activate the galvoserver."))
+        def galvoserver(
+            channel, _, port=25978, verbose=False, watch=False, quit=False, **kwargs
+        ):
+            """
+            The galvoserver provides for an open TCP on a specific port. Any data sent to this port will be sent directly
+            to the galvo laser. This is how the tcp-connection sends data to the laser if that option is used. This
+            requires an additional computer such a raspberry pi doing the interfacing.
+            """
+            try:
+                server_name = f"galvoserver{self.path}"
+                output = self.driver.connection
+                galvoserve = GalvoServer(output)
+                server = self.open_as("module/TCPServer", server_name, port=port)
+                if quit:
+                    self.close(server_name)
+                    return
+                channel(_("TCP Server for galvo on port: {port}").format(port=port))
+                if verbose:
+                    console = kernel.channel("console")
+                    server.events_channel.watch(console)
+                    if watch:
+                        server.data_channel.watch(console)
+                channel(_("Watching Channel: {channel}").format(channel="server"))
+                self.channel(f"{server_name}/recv").watch(galvoserve.read)
+                self.channel(f"{server_name}/send").watch(galvoserve.write)
+                channel(_("Attached: {output}").format(output=repr(output)))
+
+            except OSError:
+                channel(_("Server failed on port: {port}").format(port=port))
+            except KeyError:
+                channel(_("Server cannot be attached to any device."))
+            return
+
         @self.console_command(
             "viewport_update",
             hidden=True,
@@ -1836,3 +1890,16 @@ class BalorDevice(Service, ViewPort):
     @property
     def calibration_file(self):
         return None
+
+
+class GalvoServer:
+    def __init__(self, connection):
+        self.connection = connection
+        self._buffer = bytearray()
+
+    def write(self, data):
+        self._buffer += data
+
+    def read(self, data):
+        print(data)
+
