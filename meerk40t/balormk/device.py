@@ -29,6 +29,11 @@ class BalorDevice(Service, ViewPort):
 
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
+        self.permit_usb = True
+        self.permit_tcp = True
+        self.interface = "tcp"
+        self.address = "localhost"
+        self.port = 25978
         self.name = "balor"
         self.extension = "lmc"
         self.job = None

@@ -10,7 +10,7 @@ import struct
 
 
 class MockConnection:
-    def __init__(self, channel):
+    def __init__(self, service, channel):
         self.channel = channel
         self.send = None
         self.recv = None

@@ -24,7 +24,7 @@ READ_ENDPOINT = 0x88
 
 
 class USBConnection:
-    def __init__(self, channel):
+    def __init__(self, service, channel):
         self.channel = channel
         self.devices = {}
         self.interface = {}

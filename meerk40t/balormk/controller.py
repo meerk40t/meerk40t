@@ -10,8 +10,10 @@ import time
 from copy import copy
 
 from meerk40t.balormk.mock_connection import MockConnection
+from meerk40t.balormk.tcp_connection import TCPConnection
 from meerk40t.balormk.usb_connection import USBConnection
 from meerk40t.fill.fills import Wobble
+from meerk40t.kernel import signal_listener
 
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
@@ -281,6 +283,15 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.paused = False
 
+    @signal_listener("update_interface")
+    def update_connection(self, origin=None, *args):
+        if self.service.permit_usb and self.service.interface == "usb":
+            self.connection = USBConnection(self.service, self.usb_log)
+        elif self.service.permit_tcp and self.service.interface == "tcp":
+            self.connection = TCPConnection(self.service, self.usb_log)
+        else:
+            self.connection = MockConnection(self.service, self.usb_log)
+
     @property
     def state(self):
         if self.mode == DRIVER_STATE_RAPID:
@@ -340,13 +351,7 @@ class GalvoController:
                 "LMC was unreachable. Explicit connect required."
             )
         if self.connection is None:
-            if self.service.setting(bool, "mock", False) or self.force_mock:
-                self.connection = MockConnection(self.usb_log)
-                name = self.service.label
-                self.connection.send = self.service.channel(f"{name}/send")
-                self.connection.recv = self.service.channel(f"{name}/recv")
-            else:
-                self.connection = USBConnection(self.usb_log)
+            self.update_connection()
         self._is_opening = True
         self._abort_open = False
         count = 0
