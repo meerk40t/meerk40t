@@ -6,6 +6,7 @@ Defines how the balor device interacts with the scene, and accepts data via the 
 import os
 import re
 import struct
+import threading
 import time
 
 from meerk40t.balormk.driver import BalorDriver
@@ -1896,9 +1897,31 @@ class GalvoServer:
     def __init__(self, connection):
         self.connection = connection
         self._buffer = bytearray()
+        self._block_size = 0
+        self._lock = threading.Lock()
+
+    def send(self, block):
+        self.connection.write(block)
 
     def write(self, data):
         self._buffer += data
+        while self._buffer:
+            if len(self._buffer) >= self._block_size:
+                block = self._buffer[:self._block_size]
+                del self._buffer[self._block_size:]
+
+                self._block_size = 0
+                self.send(block)
+
+            if self._block_size == 0:
+                if len(self._buffer) >= 4:
+                    self._block_size = struct.unpack(">h", self._buffer[:4])[0]
+                else:
+                    # Insufficient buffer.
+                    return
+            else:
+                # Incomplete read.
+                return
 
     def read(self, data):
         print(data)
