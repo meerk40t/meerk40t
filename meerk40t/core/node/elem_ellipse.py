@@ -1,6 +1,6 @@
 import math
 from copy import copy
-from math import tau, cos, sin
+from math import cos, sin, tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
@@ -8,8 +8,8 @@ from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Ellipse,
-    Point,
     Matrix,
+    Point,
 )
 from meerk40t.tools.geomstr import Geomstr
 

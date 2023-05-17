@@ -13,9 +13,9 @@ from meerk40t.svgelements import (
     Angle,
     Color,
     Matrix,
+    Path,
     Polygon,
     Polyline,
-    Path,
 )
 
 

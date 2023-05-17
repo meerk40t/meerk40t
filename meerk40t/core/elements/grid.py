@@ -6,16 +6,9 @@ from copy import copy
 from math import cos, gcd, pi, sin, tau
 
 from meerk40t.core.node.node import Node
-
-from meerk40t.core.units import (
-    Length,
-)
+from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import (
-    Angle,
-    Matrix,
-    Polygon,
-)
+from meerk40t.svgelements import Angle, Matrix, Polygon
 
 from .element_types import *
 

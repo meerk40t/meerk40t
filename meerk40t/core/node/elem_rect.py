@@ -6,9 +6,9 @@ from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
+    Matrix,
     Point,
     Rect,
-    Matrix,
 )
 from meerk40t.tools.geomstr import Geomstr
 
