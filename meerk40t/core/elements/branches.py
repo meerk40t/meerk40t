@@ -71,13 +71,13 @@ def init_commands(kernel):
     @self.console_command(
         "operation.*", help=_("operation.*: selected operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_select(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
         "operation*", help=_("operation*: all operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_all(**kwargs):
         return "ops", list(self.ops())
 
     @self.console_command(
@@ -85,13 +85,13 @@ def init_commands(kernel):
         help=_("operation~: non selected operations."),
         output_type="ops",
     )
-    def operation(**kwargs):
+    def operation_invert(**kwargs):
         return "ops", list(self.ops(emphasized=False))
 
     @self.console_command(
         "operation", help=_("operation: selected operations."), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_base(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
@@ -100,7 +100,7 @@ def init_commands(kernel):
         regex=True,
         output_type="ops",
     )
-    def operation(command, channel, _, **kwargs):
+    def operation_re(command, channel, _, **kwargs):
         arg = command[9:]
         op_values = []
         for value in arg.split(","):
