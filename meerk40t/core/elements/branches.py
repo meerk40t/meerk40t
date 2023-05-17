@@ -1474,25 +1474,29 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_subpath(data=None, post=None, **kwargs):
+        """
+        Subpath is the opposite of merge. It divides non-attached paths into different node objects.
+        """
         if not isinstance(data, list):
             data = list(data)
         elements_nodes = []
         elements = []
         for node in data:
-            oldstuff = []
+            node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    oldstuff.append([attrib, oldval])
+                    node_attributes.append([attrib, oldval])
             group_node = node.replace_node(type="group", label=node.label)
+
             try:
-                p = node.as_path()
+                geometry = node.as_geometry()
             except AttributeError:
                 continue
-            for subpath in p.as_subpaths():
-                subelement = Path(subpath)
-                subnode = group_node.add(path=subelement, type="elem path")
-                for item in oldstuff:
+
+            for subpath in geometry.as_subpaths():
+                subnode = group_node.add(geometry=subpath, type="elem path")
+                for item in node_attributes:
                     setattr(subnode, item[0], item[1])
                 elements.append(subnode)
             elements_nodes.append(group_node)
