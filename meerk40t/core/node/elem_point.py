@@ -22,9 +22,13 @@ class PointNode(Node):
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
+        self.stroke_width = 1000.0
         super().__init__(type="elem point", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
+        if self.x is None:
+            self.x = 0
+        if self.y is None:
+            self.y = 0
         if self.matrix is None:
             self.matrix = Matrix()
 

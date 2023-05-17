@@ -56,13 +56,25 @@ class RectNode(Node, Stroked):
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
+        self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem rect", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
+        if self.x is None:
+            self.x = 0
+        if self.y is None:
+            self.y = 0
+        if self.width is None:
+            self.width = 0
+        if self.height is None:
+            self.height = 0
+        if self.rx is None:
+            self.rx = 0
+        if self.ry is None:
+            self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
         if self._stroke_zero is None:

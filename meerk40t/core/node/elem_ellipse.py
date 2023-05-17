@@ -50,13 +50,21 @@ class EllipseNode(Node, Stroked):
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
+        self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
+        if self.cx is None:
+            self.cx = 0
+        if self.cy is None:
+            self.cy = 0
+        if self.rx is None:
+            self.rx = 0
+        if self.ry is None:
+            self.ry = 0
         if self.matrix is None:
             self.matrix = Matrix()
 

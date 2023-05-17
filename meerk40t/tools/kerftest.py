@@ -12,7 +12,7 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_detective_50, icons8_hinges_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.svgelements import Circle, Color, Matrix, Polyline, Rect
+from meerk40t.svgelements import Color, Matrix, Polyline
 
 _ = wx.GetTranslation
 
@@ -391,24 +391,27 @@ class KerfPanel(wx.Panel):
                 else:
                     operation_branch.add_node(outer_op)
                     operation_branch.add_node(inner_op)
-                    shape0 = Rect(x=xx, y=yy, width=pattern_size, height=pattern_size)
-                    elem0 = "elem rect"
-                    node = element_branch.add(shape=shape0, type=elem0)
-                    node.stroke = op_col_outer
-                    node.stroke_width = 500
+                    node = element_branch.add(
+                        x=xx,
+                        y=yy,
+                        width=pattern_size,
+                        height=pattern_size,
+                        stroke=op_col_outer,
+                        stroke_width=500,
+                        type="elem rect",
+                    )
                     # Needs to be outer
                     outer_op.add_reference(node, 0)
 
-                    shape1 = Circle(
+                    node = element_branch.add(
                         cx=xx + 0.5 * pattern_size,
                         cy=yy + 0.5 * pattern_size,
                         rx=0.3 * pattern_size,
                         ry=0.3 * pattern_size,
+                        stroke=op_col_inner,
+                        stroke_width=500,
+                        type="elem ellipse",
                     )
-                    elem1 = "elem ellipse"
-                    node = element_branch.add(shape=shape1, type=elem1)
-                    node.stroke = op_col_inner
-                    node.stroke_width = 500
                     inner_op.add_reference(node, 0)
 
                     node = element_branch.add(
@@ -423,16 +426,15 @@ class KerfPanel(wx.Panel):
                     )
                     text_op.add_reference(node, 0)
 
-                    shape2 = Circle(
+                    node = element_branch.add(
                         cx=xx + 0.5 * pattern_size,
                         cy=yy + (1.1 + 0.5) * pattern_size,
                         rx=0.3 * pattern_size,
                         ry=0.3 * pattern_size,
+                        stroke=op_col_outer,
+                        stroke_width=500,
+                        type="elem ellipse",
                     )
-                    elem2 = "elem ellipse"
-                    node = element_branch.add(shape=shape2, type=elem2)
-                    node.stroke = op_col_outer
-                    node.stroke_width = 500
                     outer_op.add_reference(node, 0)
 
                     node = element_branch.add(
@@ -501,10 +503,16 @@ class KerfPanel(wx.Panel):
             # The outer box
             wd = 2 * inner_border + (num_cuts - 1) * pattern_width
             ht = 2 * inner_border + pattern_size
-            shape = Rect(x=x_offset, y=y_offset, width=wd, height=ht)
-            node = element_branch.add(shape=shape, type="elem rect", label="Outer box")
-            node.stroke = engrave_op.color
-            node.stroke_width = 500
+            node = element_branch.add(
+                x=x_offset,
+                y=y_offset,
+                width=wd,
+                height=ht,
+                stroke=engrave_op.color,
+                stroke_width=500,
+                type="elem rect",
+                label="Outer box",
+            )
             engrave_op.add_reference(node, 0)
             group_markers.append_child(node)
 
@@ -692,15 +700,16 @@ class KerfPanel(wx.Panel):
             # The inner box as cut
             wd = (num_cuts - 1) * pattern_width
             ht = pattern_size
-            shape = Rect(
+            node = element_branch.add(
                 x=x_offset + inner_border,
                 y=y_offset + inner_border,
                 width=wd,
                 height=ht,
+                stroke=cut_op.color,
+                stroke_width=500,
+                type="elem rect",
+                label="Inner box",
             )
-            node = element_branch.add(shape=shape, type="elem rect", label="Inner box")
-            node.stroke = cut_op.color
-            node.stroke_width = 500
             cut_op.add_reference(node, 0)
             group_node.append_child(node)
 

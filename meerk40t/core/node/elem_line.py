@@ -48,13 +48,21 @@ class LineNode(Node, Stroked):
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
+        self.stroke_width = 1000.0
         self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem line", **kwargs)
+        if self.x1 is None:
+            self.x1 = 0
+        if self.y1 is None:
+            self.y1 = 0
+        if self.x2 is None:
+            self.x2 = 0
+        if self.y2 is None:
+            self.y2 = 0
         self._formatter = "{element_type} {id} {stroke}"
         if self.matrix is None:
             self.matrix = Matrix()

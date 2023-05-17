@@ -59,6 +59,8 @@ class PolylineNode(Node, Stroked):
         if self.geometry is None:
             self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
+        if self.stroke_width is None:
+            self.stroke_width = 1000.0
         if self.matrix is None:
             self.matrix = Matrix()
         if self._stroke_zero is None:

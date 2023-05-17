@@ -178,30 +178,34 @@ class CircleTool(ToolWidget):
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
                 if self.creation_mode == 1:
-                    ellipse = Ellipse(
-                        cx=cx,
-                        cy=cy,
-                        r=radius,
-                    )
-                else:
-                    ellipse = Ellipse(
-                        cx=(x1 + x0) / 2.0,
-                        cy=(y1 + y0) / 2.0,
-                        r=abs(self.p1 - self.p2) / 2,
-                    )
-
-                if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(
-                        shape=ellipse,
-                        type="elem ellipse",
+                        cx=cx,
+                        cy=cy,
+                        rx=radius,
+                        ry=radius,
                         stroke_width=elements.default_strokewidth,
                         stroke=elements.default_stroke,
                         fill=elements.default_fill,
+                        type="elem ellipse",
+
                     )
-                    if elements.classify_new:
-                        elements.classify([node])
-                    self.notify_created(node)
+                else:
+                    elements = self.scene.context.elements
+                    r = abs(self.p1 - self.p2) / 2
+                    node = elements.elem_branch.add(
+                        cx=(x1 + x0) / 2.0,
+                        cy=(y1 + y0) / 2.0,
+                        rx=r,
+                        ry=r,
+                        stroke_width=elements.default_strokewidth,
+                        stroke=elements.default_stroke,
+                        fill=elements.default_fill,
+                        type="elem ellipse",
+                    )
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

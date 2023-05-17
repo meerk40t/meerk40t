@@ -170,7 +170,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_input import InputOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -203,21 +202,17 @@ class FormatterPanel(wx.Panel):
             # print (f"Try to get an instance of {nodetype}")
             if nodetype.startswith("elem"):
                 if nodetype == "elem rect":
-                    shape = Rect(0, 0, 10, 10)
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype](x=0, y=0, width=10, height=10)
                 elif nodetype == "elem ellipse":
-                    shape = Ellipse(0, 0, 10, 10)
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
-                    path = Path(Ellipse(0, 0, 10, 10))
-                    node = bootstrap[nodetype](path=path)
+                    node = bootstrap[nodetype]()
                 elif nodetype == "elem image":
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                     node = bootstrap[nodetype](image=image)
                 elif nodetype == "elem polyline":
-                    shape = Polyline()
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype]()
                 else:
                     node = bootstrap[nodetype]()
             else:
