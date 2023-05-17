@@ -2,12 +2,12 @@ name: Unittest
 
 on:
   push:
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/unittests.yml'
   pull_request:
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/unittests.yml'
