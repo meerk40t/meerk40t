@@ -750,6 +750,21 @@ class Geomstr:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
         return obj
 
+    @classmethod
+    def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12):
+        obj = cls()
+        obj.arc_as_cubics(
+            0,
+            math.tau,
+            rx=rx,
+            ry=ry,
+            cx=cx,
+            cy=cy,
+            rotation=rotation,
+            slices=slices,
+        )
+        return obj
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:
