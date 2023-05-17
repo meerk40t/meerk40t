@@ -2750,7 +2750,8 @@ class Geomstr:
         q = np.where(types.real == TYPE_END)[0]
         last = 0
         for m in q:
-            yield Geomstr(self.segments[last:m])
+            if m != last:
+                yield Geomstr(self.segments[last:m])
             last = m + 1
         if last != self.index:
             yield Geomstr(self.segments[last : self.index])
