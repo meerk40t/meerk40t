@@ -11,15 +11,12 @@ from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
     Angle,
-    Close,
     Color,
-    CubicBezier,
-    Line,
     Matrix,
-    QuadraticBezier,
+    Path,
+    Polygon,
+    Polyline,
 )
-
-from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
@@ -49,16 +46,15 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
-        circ = Ellipse(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
-        if circ.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
         node = self.elem_branch.add(
-            shape=circ,
-            type="elem ellipse",
+            cx=float(x_pos),
+            cy=float(y_pos),
+            rx=float(r_pos),
+            ry=float(r_pos),
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
+            type="elem ellipse",
         )
         self.set_emphasis([node])
         node.focus()
@@ -78,14 +74,16 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
-        circ = Ellipse(r=float(r_pos))
-        if circ.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=circ, type="elem ellipse")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
+        node = self.elem_branch.add(
+            cx=0,
+            cy=0,
+            rx=float(r_pos),
+            ry=float(r_pos),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem ellipse",
+        )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -110,16 +108,16 @@ def init_commands(kernel):
     def element_ellipse(
         channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
     ):
-        ellip = Ellipse(
-            cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
+        node = self.elem_branch.add(
+            cx=float(x_pos),
+            cy=float(y_pos),
+            rx=float(rx_pos),
+            ry=float(ry_pos),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem ellipse",
         )
-        if ellip.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=ellip, type="elem ellipse")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -175,15 +173,18 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
-        rect = Rect(x=x_pos, y=y_pos, width=width, height=height, rx=rx, ry=ry)
-        if rect.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=rect, type="elem rect")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
-        node.altered()
+        node = self.elem_branch.add(
+            x=x_pos,
+            y=y_pos,
+            width=width,
+            height=height,
+            rx=rx,
+            ry=ry,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem rect",
+        )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -208,10 +209,15 @@ def init_commands(kernel):
         """
         Draws a svg line in the scene.
         """
-        simple_line = SimpleLine(x0, y0, x1, y1)
-        node = self.elem_branch.add(shape=simple_line, type="elem line")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
+        node = self.elem_branch.add(
+            x1=x0,
+            y1=y0,
+            x2=x1,
+            y2=y1,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            type="elem line",
+        )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -569,7 +575,7 @@ def init_commands(kernel):
             return None
         for node in data:
             try:
-                sub_before = len(list(node.as_path().as_subpaths()))
+                sub_before = len(list(node.as_geometry().as_subpaths()))
             except AttributeError:
                 sub_before = 0
 
@@ -577,7 +583,7 @@ def init_commands(kernel):
             if changed:
                 node.altered()
                 try:
-                    sub_after = len(list(node.as_path().as_subpaths()))
+                    sub_after = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
                     sub_after = 0
                 channel(
@@ -679,72 +685,6 @@ def init_commands(kernel):
         for e in data:
             paths.append(abs(Path(e)))
         return "shapes", paths
-
-    @self.console_command(
-        "geomstr",
-        help=_("Convert any element nodes to geomstr nodes"),
-        input_type="elements",
-        output_type="elements",
-    )
-    def element_path_convert(data, **kwargs):
-        if data is None:
-            return "elements", data
-        if len(data) == 0:
-            return "elements", data
-
-        from meerk40t.tools.geomstr import Geomstr
-
-        geomstr = Geomstr()
-        for node in data:
-            try:
-                e = node.as_path()
-            except AttributeError:
-                continue
-            for seg in e:
-                if isinstance(seg, Line):
-                    geomstr.line(complex(seg.start), complex(seg.end))
-                elif isinstance(seg, QuadraticBezier):
-                    geomstr.quad(
-                        complex(seg.start), complex(seg.control), complex(seg.end)
-                    )
-                elif isinstance(seg, CubicBezier):
-                    geomstr.cubic(
-                        complex(seg.start),
-                        complex(seg.control1),
-                        complex(seg.control2),
-                        complex(seg.end),
-                    )
-                elif isinstance(seg, Close):
-                    geomstr.close()
-                    geomstr.end()
-            geomstr.end()
-        if len(geomstr) == 0:
-            return "elements", data
-        try:
-            fillrule = data[0].fillrule
-        except AttributeError:
-            fillrule = None
-        try:
-            cap = data[0].linecap
-        except AttributeError:
-            cap = None
-        try:
-            join = data[0].linejoin
-        except AttributeError:
-            join = None
-        node = self.elem_branch.add(
-            path=geomstr,
-            type="elem geomstr",
-            stroke=data[0].stroke,
-            fill=data[0].fill,
-            fillrule=fillrule,
-            linecap=cap,
-            linejoin=join,
-        )
-        self.set_emphasis([node])
-        node.focus()
-        data.append(node)
-        return "elements", data
 
     @self.console_command(
         "path",
@@ -1429,10 +1369,14 @@ def init_commands(kernel):
         y_pos -= y_offset
         width += x_offset * 2
         height += y_offset * 2
-        _element = Rect(x=x_pos, y=y_pos, width=width, height=height)
-        node = self.elem_branch.add(shape=_element, type="elem rect")
-        node.stroke = Color("red")
-        node.altered()
+        node = self.elem_branch.add(
+            x=x_pos,
+            y=y_pos,
+            width=width,
+            height=height,
+            stroke=Color("red"),
+            type="elem rect",
+        )
         self.set_emphasis([node])
         node.focus()
         if data is None:
@@ -1686,7 +1630,12 @@ def init_commands(kernel):
 
         i = 0
         for elem in data:
-            this_area, this_length = self.get_information(elem, density=density)
+            try:
+                geometry = elem.as_geometry()
+            except AttributeError:
+                continue
+            # this_length = geometry.length()
+            this_area = geometry.area(density=density)
 
             if display_only:
                 name = str(elem)

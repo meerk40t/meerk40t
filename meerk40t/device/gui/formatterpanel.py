@@ -61,7 +61,6 @@ class FormatterPanel(wx.Panel):
             "elem ellipse": icons8_oval_50,
             "elem image": icons8_image_50,
             "elem path": icons8_vector_50,
-            "elem geomstr": icons8_vector_50,
             "elem polyline": icons8_polyline_50,
             "elem rect": icons8_rectangular_50,
             "elem line": icons8_polyline_50,
@@ -69,7 +68,7 @@ class FormatterPanel(wx.Panel):
             "place current": icons8_home_location_20,
             "place point": icons8_home_location_20,
         }
-        omit = ("elem geomstr", "elem line")
+        omit = ("elem line",)
         self.node_list = list(elem_group_nodes + op_nodes)
         for node in omit:
             try:
@@ -170,7 +169,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_input import InputOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -203,21 +201,17 @@ class FormatterPanel(wx.Panel):
             # print (f"Try to get an instance of {nodetype}")
             if nodetype.startswith("elem"):
                 if nodetype == "elem rect":
-                    shape = Rect(0, 0, 10, 10)
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype](x=0, y=0, width=10, height=10)
                 elif nodetype == "elem ellipse":
-                    shape = Ellipse(0, 0, 10, 10)
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype](cx=0, cy=0, rx=10, ry=10)
                 elif nodetype == "elem path":
-                    path = Path(Ellipse(0, 0, 10, 10))
-                    node = bootstrap[nodetype](path=path)
+                    node = bootstrap[nodetype]()
                 elif nodetype == "elem image":
                     # Let's use an arbitrary image
                     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                     node = bootstrap[nodetype](image=image)
                 elif nodetype == "elem polyline":
-                    shape = Polyline()
-                    node = bootstrap[nodetype](shape=shape)
+                    node = bootstrap[nodetype]()
                 else:
                     node = bootstrap[nodetype]()
             else:

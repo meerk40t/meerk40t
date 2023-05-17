@@ -5,8 +5,9 @@ from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Path,
+    Matrix,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class PathNode(Node, Stroked):
@@ -15,35 +16,46 @@ class PathNode(Node, Stroked):
     """
 
     def __init__(self, *args, **kwargs):
+        self.geometry = None
         if len(args) == 1:
-            kwargs["path"] = args[0]
-        self.path = None
+            if isinstance(args[0], Geomstr):
+                kwargs["geometry"] = args[0]
+            else:
+                kwargs["path"] = args[0]
+        if "geometry" not in kwargs:
+            shape = kwargs.get("path")
+            if shape is not None:
+                # path is type Path.
+                if "stroke" not in kwargs:
+                    kwargs["stroke"] = shape.stroke
+                if "stroke_width" not in kwargs:
+                    kwargs["stroke_width"] = shape.stroke_width
+                if "fill" not in kwargs:
+                    kwargs["fill"] = shape.fill
+                if "matrix" not in kwargs:
+                    kwargs["matrix"] = shape.transform
+                if "stroke_scale" not in kwargs:
+                    kwargs["stroke_scale"] = (
+                        shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                        != SVG_VALUE_NON_SCALING_STROKE
+                    )
+                self.geometry = Geomstr.svg(shape)
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_width = 1000.0
+        self.stroke_scale = False
         self._stroke_zero = None
         self.linecap = Linecap.CAP_BUTT
         self.linejoin = Linejoin.JOIN_MITER
         self.fillrule = Fillrule.FILLRULE_EVENODD
         super().__init__(type="elem path", **kwargs)
+        if self.geometry is None:
+            self.geometry = Geomstr()
         self._formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.path, Path)
-
         if self.matrix is None:
-            self.matrix = self.path.transform
-        if self.fill is None:
-            self.fill = self.path.fill
-        if self.stroke is None:
-            self.stroke = self.path.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.path.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.path.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
+            self.matrix = Matrix()
+
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
@@ -52,14 +64,35 @@ class PathNode(Node, Stroked):
 
     def __copy__(self):
         nd = self.node_dict
-        nd["path"] = copy(self.path)
+        nd["geometry"] = copy(self.geometry)
         nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["stroke_width"] = copy(self.stroke_width)
         return PathNode(**nd)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
+
+    @property
+    def path(self):
+        path = self.geometry.as_path()
+        path.stroke = self.stroke
+        path.fill = self.fill
+        path.stroke_width = self.stroke_width
+        path.transform = self.matrix
+        path.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
+        )
+        return path
+
+    @path.setter
+    def path(self, new_path):
+        self.geometry = Geomstr.svg(new_path)
+
+    def as_geometry(self):
+        g = Geomstr(self.geometry)
+        g.transform(self.matrix)
+        return g
 
     def scaled(self, sx, sy, ox, oy):
         """
@@ -87,7 +120,6 @@ class PathNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -99,11 +131,11 @@ class PathNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.path.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        geometry = self.as_geometry()
+        if transformed:
+            bounds = geometry.bbox(mx=self.matrix)
+        else:
+            bounds = geometry.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -120,7 +152,6 @@ class PathNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -153,16 +184,8 @@ class PathNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.path
-        npoints = []
-        for seg in obj:
-            npoints.append(seg.end)
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
-        else:
-            points = npoints
-        for pt in points:
-            self._points.append([pt.x, pt.y, "point"])
+        for seg in self.as_geometry().as_points():
+            self._points.append([seg.real, seg.imag, "point"])
 
     def update_point(self, index, point):
         return False
@@ -170,19 +193,5 @@ class PathNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.path.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
-        )
-        self.path.transform = self.matrix
-        self.path.stroke_width = self.stroke_width
-        self.path.stroke = self.stroke
-        try:
-            del self.path.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
     def as_path(self):
-        self._sync_svg()
-        return abs(self.path)
+        return self.path

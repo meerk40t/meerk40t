@@ -683,6 +683,7 @@ def init_commands(kernel):
                 p = abs(node.as_path())
             else:
                 bb = node.bounds
+                # TODO: Internal uses of Rect and Path.
                 r = Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1])
                 p = Path(r)
 

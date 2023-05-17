@@ -7,7 +7,7 @@ from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Color, Path
+from meerk40t.svgelements import Color, Path, Polyline
 
 
 class HatchOpNode(Node, Parameters):

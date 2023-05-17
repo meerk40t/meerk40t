@@ -73,9 +73,9 @@ class LihuiyuParser:
         self.write(data)
         self.path.uscale(UNITS_PER_MIL)
         elements.elem_branch.add(
-            type="elem geomstr",
-            path=self.path,
+            geometry=self.path,
             stroke=Color("black"),
+            type="elem path",
             **self.settings.settings,
         )
         elements.signal("refresh_scene", 0)

@@ -15,7 +15,7 @@ from io import BytesIO
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
-from meerk40t.svgelements import Circle, Color, Ellipse, Matrix, Path, Polygon, Rect
+from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle):
@@ -919,13 +919,15 @@ class EZProcessor:
             m = element.matrix
             mx = Matrix(m[0], m[1], m[3], m[4], m[6], m[7])
             mx *= self.matrix
-            shape = Circle(
-                center=element.center, r=element.radius, transform=mx, stroke="black"
-            )
             node = elem.add(
-                type="elem ellipse",
-                shape=shape,
+                cx=element.center[0],
+                cy=element.center[1],
+                rx=element.radius,
+                ry=element.radius,
+                stroke=Color("black"),
+                matrix=mx,
                 stroke_width=self.elements.default_strokewidth,
+                type="elem ellipse",
             )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
@@ -936,15 +938,16 @@ class EZProcessor:
             mx *= self.matrix
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
-            shape = Ellipse(
-                center=((x0 + x1) / 2.0, (y0 + y1) / 2.0),
+            node = elem.add(
+                cx=(x0 + x1) / 2.0,
+                cy=(y0 + y1) / 2.0,
                 rx=(x1 - x0) / 2.0,
                 ry=(y1 - y0) / 2.0,
-                transform=mx,
-                stroke="black",
+                matrix=mx,
+                stroke=Color("black"),
                 stroke_width=self.elements.default_strokewidth,
+                type="elem ellipse",
             )
-            node = elem.add(type="elem ellipse", shape=shape)
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)
             op_add.add_reference(node)
@@ -954,11 +957,15 @@ class EZProcessor:
             mx *= self.matrix
             x0, y0 = element.corner_upper_left
             x1, y1 = element.corner_bottom_right
-            rect = Rect(x0, y0, x1 - x0, y1 - y0, transform=mx, stroke="black")
             node = elem.add(
-                type="elem rect",
-                shape=rect,
+                x=x0,
+                y=y0,
+                width=x1 - x0,
+                height=y1 - y0,
+                matrix=mx,
+                stroke=Color("black"),
                 stroke_width=self.elements.default_strokewidth,
+                type="elem rect",
             )
             p = ez.pens[element.pen]
             op_add = op.add(type="op engrave", **p.__dict__)

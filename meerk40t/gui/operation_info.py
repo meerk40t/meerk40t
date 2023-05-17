@@ -125,7 +125,6 @@ class OpInfoPanel(ScrolledPanel):
             "elem ellipse": 0,
             "elem image": 0,
             "elem path": 0,
-            "elem geomstr": 0,
             "elem point": 0,
             "elem polyline": 0,
             "elem rect": 0,

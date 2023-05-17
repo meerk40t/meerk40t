@@ -233,12 +233,20 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                if node.type == "elem path":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_path
-                elif node.type == "elem geomstr":
+                if False:
+                    pass
+                if node.type in (
+                    "elem path",
+                    "elem ellipse",
+                    "elem rect",
+                    "elem line",
+                    "elem polyline",
+                ):
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_geomstr
+                elif node.type == "elem path":
+                    node.draw = self.draw_vector
+                    node.make_cache = self.cache_path
                 elif node.type == "elem point":
                     node.draw = self.draw_point_node
                 elif node.type in place_nodes:
@@ -347,7 +355,7 @@ class LaserRender:
                         radius,
                         start_t,
                         end_t,
-                        clockwise="cw" == Geomstr.orientation(None, start, c0, end),
+                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
                     )
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
@@ -601,7 +609,8 @@ class LaserRender:
     def cache_geomstr(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
-        cache = self.make_geomstr(gc, node.path)
+        geom = node.as_geometry()
+        cache = self.make_geomstr(gc, geom)
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -768,13 +777,6 @@ class LaserRender:
         if draw_mode & DRAW_MODE_POINTS:
             return
         point = node.point
-        if point is None:
-            return
-        matrix = node.matrix
-        if matrix is not None and not matrix.is_identity():
-            point = matrix.point_in_matrix_space(point)
-            node.point = point
-            matrix.reset()
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         dif = 5 * zoomscale
