@@ -365,20 +365,17 @@ class GRBLEmulator:
             # View saved start up code.
             return 3
         elif data == "$H":
-            if self.settings["homing_cycle_enable"]:
-                try:
-                    self.device.driver.physical_home()
-                except AttributeError:
-                    pass
-                try:
-                    self.device.driver.move_abs(0, 0)
-                except AttributeError:
-                    pass
-                self.x = 0
-                self.y = 0
-                return 0
-            else:
+            if not self.settings["homing_cycle_enable"]:
                 return 5  # Homing cycle not enabled by settings.
+            try:
+                self.device.driver.physical_home()
+            except AttributeError:
+                pass
+            try:
+                self.device.driver.move_abs(0, 0)
+            except AttributeError:
+                pass
+            return 0
         elif data.startswith("$J="):
             """
             $Jx=line - Run jogging motion
