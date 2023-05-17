@@ -39,7 +39,6 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_type_50,
-    icons8_visit_20,
     icons8_warning_shield_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
