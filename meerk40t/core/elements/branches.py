@@ -1434,25 +1434,33 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_merge(data=None, post=None, **kwargs):
-        super_element = Path()
+        """
+        Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
+        nested circles forms a toroid rather two independent circles.
+        """
+        node = self.elem_branch.add(type="elem path")
         for e in data:
             try:
-                path = e.as_path()
+                path = e.as_geometry()
             except AttributeError:
                 continue
             try:
-                if super_element.stroke is None:
-                    super_element.stroke = e.stroke
+                if node.stroke is None:
+                    node.stroke = e.stroke
             except AttributeError:
                 pass
             try:
-                if super_element.fill is None:
-                    super_element.fill = e.fill
+                if node.fill is None:
+                    node.fill = e.fill
             except AttributeError:
                 pass
-            super_element += path
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
         self.remove_elements(data)
-        node = self.elem_branch.add(path=super_element, type="elem path")
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
         data = [node]
