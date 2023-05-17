@@ -237,7 +237,6 @@ class LaserRender:
                     pass
                 if node.type in (
                     "elem path",
-                    "elem geomstr",
                     "elem ellipse",
                     "elem rect",
                     "elem line",
