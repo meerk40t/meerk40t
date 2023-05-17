@@ -69,7 +69,7 @@ def init_commands(kernel):
         input_type="materials",
         output_type="materials",
     )
-    def load_materials(name=None, **kwargs):
+    def delete_materials(name=None, **kwargs):
         if name is None:
             raise CommandSyntaxError
         self.clear_persistent_operations(name)
