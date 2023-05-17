@@ -632,7 +632,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def waitop(
         command,
         time=None,
         **kwargs,
@@ -658,7 +658,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def io_op(
         command,
         mask=None,
         value=None,
@@ -678,7 +678,7 @@ def init_commands(kernel):
         "consoleop",
         help=_("<consoleop> - Create new utility operation"),
     )
-    def makeop(
+    def consoleop(
         command,
         remainder=None,
         **kwargs,
