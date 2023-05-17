@@ -49,16 +49,15 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
-        circ = Ellipse(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
-        if circ.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
         node = self.elem_branch.add(
-            shape=circ,
-            type="elem ellipse",
+            cx=float(x_pos),
+            cy=float(y_pos),
+            rx=float(r_pos),
+            ry=float(r_pos),
             stroke=self.default_stroke,
             stroke_width=self.default_strokewidth,
             fill=self.default_fill,
+            type="elem ellipse",
         )
         self.set_emphasis([node])
         node.focus()
