@@ -131,7 +131,16 @@ class EllipseNode(Node, Stroked):
         #     path.transform(self.matrix)
         #     return path
         # Decompose as 12 cubics, approximating an arc.
-        path.arc_as_cubics(0, math.tau , rx=self.rx, ry=self.ry, cx=self.cx, cy=self.cy, rotation=0, slices=12)
+        path.arc_as_cubics(
+            0,
+            math.tau,
+            rx=self.rx,
+            ry=self.ry,
+            cx=self.cx,
+            cy=self.cy,
+            rotation=0,
+            slices=12,
+        )
         path.transform(self.matrix)
         return path
 

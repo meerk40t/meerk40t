@@ -2215,7 +2215,11 @@ def init_tree(kernel):
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
 
-    @tree_conditional(lambda node: not is_regmark(node) and hasattr(node, "as_geometry") and node.type != "elem path")
+    @tree_conditional(
+        lambda node: not is_regmark(node)
+        and hasattr(node, "as_geometry")
+        and node.type != "elem path"
+    )
     @tree_operation(
         _("Convert to path"),
         node_type=elem_nodes,

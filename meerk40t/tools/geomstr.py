@@ -3175,7 +3175,6 @@ class Geomstr:
                 pt_old = pt
             return removed
 
-
         # Get self as path object.
         obj = self.as_path()
         before = len(obj._segments)
@@ -3225,7 +3224,6 @@ class Geomstr:
         # TODO: Perform simplification steps directly on geomstr objects.
 
         return changed, before, after
-
 
     #######################
     # Global Functions

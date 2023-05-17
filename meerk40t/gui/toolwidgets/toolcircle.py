@@ -188,7 +188,6 @@ class CircleTool(ToolWidget):
                         stroke=elements.default_stroke,
                         fill=elements.default_fill,
                         type="elem ellipse",
-
                     )
                 else:
                     elements = self.scene.context.elements

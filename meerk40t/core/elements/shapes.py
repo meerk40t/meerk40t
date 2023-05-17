@@ -108,16 +108,16 @@ def init_commands(kernel):
     def element_ellipse(
         channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, post=None, **kwargs
     ):
-        ellip = Ellipse(
-            cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
+        node = self.elem_branch.add(
+            cx=float(x_pos),
+            cy=float(y_pos),
+            rx=float(rx_pos),
+            ry=float(ry_pos),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem ellipse",
         )
-        if ellip.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=ellip, type="elem ellipse")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
         node.altered()
         self.set_emphasis([node])
         node.focus()

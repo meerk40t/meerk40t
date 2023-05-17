@@ -789,7 +789,6 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-
     def condense_elements(self, data, expand_at_end=True):
         """
         This routine looks at a given dataset and will condense
