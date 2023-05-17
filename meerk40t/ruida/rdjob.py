@@ -1009,16 +1009,7 @@ class RDJob:
                 self.plot_commit()
                 desc = "Block End"
             elif array[1] == 0x01:
-                self.filename = ""
-                for a in array[2:]:
-                    if a == 0x00:
-                        break
-                    self.filename += chr(a)
-                desc = f"Filename: {self.filename}"
-                if self.saving:
-                    pass
-                    # TODO: We cannot actually save the file within this type of job.
-                    # self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
+                pass # Set filename for job (only realtime, see emulator)
             elif array[1] == 0x03:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM
