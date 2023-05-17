@@ -1216,7 +1216,7 @@ def init_commands(kernel):
         "elements",
         help=_("Show information about elements"),
     )
-    def element(**kwargs):
+    def elements(**kwargs):
         self(".element* list\n")
 
     @self.console_command(
