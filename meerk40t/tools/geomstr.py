@@ -1521,6 +1521,50 @@ class Geomstr:
             pen_ups = positions[q + 1]  # values 1-50
             return np.sum(np.abs(pen_ups - pen_downs))
 
+    def area(self, density=None):
+        """
+        Gives the area of a particular geometry.
+
+        @param density: the interpolation density
+        @return:
+        """
+        path = self.as_path()
+
+        if density is None:
+            interpolation = 100
+        else:
+            interpolation = density
+
+        subject_polygons = []
+
+        from numpy import linspace
+
+        # TODO: This should run an npoints within geomstr for the segmentized values
+        for subpath in path.as_subpaths():
+            subj = Path(subpath)
+            subj.closed()
+            subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
+
+        if not subject_polygons:
+            return
+        idx = -1
+        last_x = 0
+        last_y = 0
+        area_x_y = 0
+        area_y_x = 0
+        # TODO: This should use the numpy multiplication of all columns with n-1 of the previous
+        for pt in subject_polygons[0]:
+            idx += 1
+            if idx > 0:
+                # dx = pt.x - last_x
+                # dy = pt.y - last_y
+                area_x_y += last_x * pt[1]
+                area_y_x += last_y * pt[0]
+            last_x = pt[0]
+            last_y = pt[1]
+        this_area = 0.5 * abs(area_x_y - area_y_x)
+        return this_area
+
     def _cubic_length_via_quad(self, line):
         """
         If we have scipy.integrate availible, use quad from that to solve this.

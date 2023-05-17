@@ -1686,7 +1686,12 @@ def init_commands(kernel):
 
         i = 0
         for elem in data:
-            this_area, this_length = self.get_information(elem, density=density)
+            try:
+                geometry = elem.as_geometry()
+            except AttributeError:
+                continue
+            # this_length = geometry.length()
+            this_area = geometry.area(density=density)
 
             if display_only:
                 name = str(elem)
