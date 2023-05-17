@@ -519,8 +519,6 @@ class DefaultActionPanel(wx.Panel):
                 entry[1] = ""
             display_name = entry[0]
             for def_entry in self.standards:
-                if def_entry[2] is None:
-                    def_entry[2] = ""
                 if def_entry[1] == entry[0] and def_entry[2] == entry[1]:
                     display_name = def_entry[0]
                     break
