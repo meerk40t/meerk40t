@@ -24,6 +24,7 @@ from meerk40t.svgelements import (
     Polyline,
     QuadraticBezier,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 _ = wx.GetTranslation
 
@@ -378,6 +379,8 @@ class EditTool(ToolWidget):
         self._listener_active = False
         self.nodes = None
         self.element = None
+        self.geometry = None  # Stores the geomstr value
+        self.path = None  # Stores the path value.
         self.selected_index = None
         self.move_type = "node"
         self.node_type = "path"
@@ -433,6 +436,8 @@ class EditTool(ToolWidget):
             self.scene.context("window close NodeEditToolbar\n")
         except (AssertionError, RuntimeError, KeyError):
             pass
+        self.element.geometry = Geomstr.svg(self.path.d())
+        self.element.altered()
 
     def init(self, context):
         """
@@ -549,6 +554,8 @@ class EditTool(ToolWidget):
         """
         self.message = ""
         self.element = selected_node
+        self.geometry = selected_node.geometry
+        self.path = self.geometry.as_path()
         self.selected_index = None
         self.nodes = []
         # print ("After load:")
@@ -579,10 +586,7 @@ class EditTool(ToolWidget):
                 )
         else:
             self.node_type = "path"
-            try:
-                path = selected_node.path
-            except AttributeError:
-                return
+            path = self.path
             # print (f"Path: {str(path)}")
             prev_seg = None
             start = 0
@@ -999,26 +1003,28 @@ class EditTool(ToolWidget):
         """
         Provides the first non-move/close segment in the subpath to which the segment at location index belongs to
         """
+        if not self.path:
+            return None
         result = None
-        if not self.element is None and hasattr(self.element, "path"):
-            for idx in range(index, -1, -1):
-                seg = self.element.path[idx]
-                if isinstance(seg, (Move, Close)):
-                    break
-                result = seg
+        for idx in range(index, -1, -1):
+            seg = self.path[idx]
+            if isinstance(seg, (Move, Close)):
+                break
+            result = seg
         return result
 
     def last_segment_in_subpath(self, index):
         """
         Provides the last non-move/close segment in the subpath to which the segment at location index belongs to
         """
+        if not self.path:
+            return None
         result = None
-        if not self.element is None and hasattr(self.element, "path"):
-            for idx in range(index, len(self.element.path)):
-                seg = self.element.path[idx]
-                if isinstance(seg, (Move, Close)):
-                    break
-                result = seg
+        for idx in range(index, len(self.path)):
+            seg = self.path[idx]
+            if isinstance(seg, (Move, Close)):
+                break
+            result = seg
         return result
 
     def is_closed_subpath(self, index):
@@ -1027,8 +1033,8 @@ class EditTool(ToolWidget):
         """
         result = False
         if not self.element is None and hasattr(self.element, "path"):
-            for idx in range(index, len(self.element.path)):
-                seg = self.element.path[idx]
+            for idx in range(index, len(self.path)):
+                seg = self.path[idx]
                 if isinstance(seg, Move):
                     break
                 if isinstance(seg, Close):
@@ -1104,8 +1110,8 @@ class EditTool(ToolWidget):
                     # Lets establish the last segment in the path
                     prevseg = None
                     is_closed = False
-                    for sidx in range(segstart, len(self.element.path), 1):
-                        seg = self.element.path[sidx]
+                    for sidx in range(segstart, len(self.path), 1):
+                        seg = self.path[sidx]
                         if isinstance(seg, Move) and prevseg is None:
                             # Not the one at the very beginning!
                             continue
@@ -1120,7 +1126,7 @@ class EditTool(ToolWidget):
                         prevseg = seg
                     if is_closed:
                         # it's enough just to delete it...
-                        del self.element.path[lastidx + 1]
+                        del self.path[lastidx + 1]
                         modified = True
                     else:
                         # Need to insert a Close segment
@@ -1128,7 +1134,7 @@ class EditTool(ToolWidget):
                             start=Point(prevseg.end.x, prevseg.end.y),
                             end=Point(prevseg.end.x, prevseg.end.y),
                         )
-                        self.element.path.insert(lastidx + 1, newseg)
+                        self.path.insert(lastidx + 1, newseg)
                         modified = True
 
         if modified:
@@ -1296,7 +1302,7 @@ class EditTool(ToolWidget):
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
         # Pass 1 - make all lines a cubic bezier
-        for idx, segment in enumerate(self.element.path):
+        for idx, segment in enumerate(self.path):
             if isinstance(segment, Line):
                 startpt = copy(segment.start)
                 endpt = copy(segment.end)
@@ -1311,7 +1317,7 @@ class EditTool(ToolWidget):
                 newsegment = CubicBezier(
                     start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
                 )
-                self.element.path[idx] = newsegment
+                self.path[idx] = newsegment
                 modified = True
             elif isinstance(segment, QuadraticBezier):
                 # The cubic control - points lie on 2/3 of the way of the
@@ -1327,20 +1333,20 @@ class EditTool(ToolWidget):
                 newsegment = CubicBezier(
                     start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
                 )
-                self.element.path[idx] = newsegment
+                self.path[idx] = newsegment
                 modified = True
             elif isinstance(segment, Arc):
                 for newsegment in list(segment.as_cubic_curves(1)):
-                    self.element.path[idx] = newsegment
+                    self.path[idx] = newsegment
                     break
                 modified = True
         # Pass 2 - make all control lines align
         prevseg = None
-        lastidx = len(self.element.path) - 1
-        for idx, segment in enumerate(self.element.path):
+        lastidx = len(self.path) - 1
+        for idx, segment in enumerate(self.path):
             nextseg = None
             if idx < lastidx:
-                nextseg = self.element.path[idx + 1]
+                nextseg = self.path[idx + 1]
                 if isinstance(nextseg, (Move, Close)):
                     nextseg = None
             if isinstance(segment, CubicBezier):
@@ -1456,18 +1462,18 @@ class EditTool(ToolWidget):
                     idx = entry["pathindex"]
                     prevseg = None
                     nextseg = None
-                    seg = self.element.path[idx]
+                    seg = self.path[idx]
                     if idx > 0:
-                        prevseg = self.element.path[idx - 1]
-                    if idx < len(self.element.path) - 1:
-                        nextseg = self.element.path[idx + 1]
+                        prevseg = self.path[idx - 1]
+                    if idx < len(self.path) - 1:
+                        nextseg = self.path[idx + 1]
                     if nextseg is None:
                         # Last point of the path
                         # Can just be deleted, provided we have something
                         # in front...
                         if prevseg is None or isinstance(prevseg, (Move, Close)):
                             continue
-                        del self.element.path[idx]
+                        del self.path[idx]
                         modified = True
                     elif isinstance(nextseg, (Move, Close)):
                         # last point of the subsegment...
@@ -1481,7 +1487,7 @@ class EditTool(ToolWidget):
                             nextseg.end.x = seg.start.x
                             nextseg.end.y = seg.start.y
 
-                        del self.element.path[idx]
+                        del self.path[idx]
                         modified = True
                     else:
                         # Could be the first point...
@@ -1491,16 +1497,16 @@ class EditTool(ToolWidget):
                             continue
                         if prevseg is None:  # # Move
                             seg.end = Point(nextseg.end.x, nextseg.end.y)
-                            del self.element.path[idx + 1]
+                            del self.path[idx + 1]
                             modified = True
                         elif isinstance(seg, Move):  # # Move
                             seg.end = Point(nextseg.end.x, nextseg.end.y)
-                            del self.element.path[idx + 1]
+                            del self.path[idx + 1]
                             modified = True
                         else:
                             nextseg.start.x = prevseg.end.x
                             nextseg.start.y = prevseg.end.y
-                            del self.element.path[idx]
+                            del self.path[idx]
                             modified = True
 
         if modified:
@@ -1524,7 +1530,7 @@ class EditTool(ToolWidget):
                 if entry["segtype"] not in ("C", "Q", "A"):
                     continue
                 newsegment = Line(start=startpt, end=endpt)
-                self.element.path[idx] = newsegment
+                self.path[idx] = newsegment
                 modified = True
         if modified:
             self.modify_element(True)
@@ -1537,13 +1543,13 @@ class EditTool(ToolWidget):
         if self.node_type == "polyline":
             # Not valid for a polyline Could make a path now but that might be more than the user expected...
             return
-        for idx, segment in enumerate(self.element.path):
+        for idx, segment in enumerate(self.path):
             if isinstance(segment, (Close, Move, Line)):
                 continue
             startpt = Point(segment.start.x, segment.start.y)
             endpt = Point(segment.end.x, segment.end.y)
             newsegment = Line(start=startpt, end=endpt)
-            self.element.path[idx] = newsegment
+            self.path[idx] = newsegment
             modified = True
 
         if modified:
@@ -1593,7 +1599,7 @@ class EditTool(ToolWidget):
                 newsegment = CubicBezier(
                     start=startpt, end=endpt, control1=ctrl1pt, control2=ctrl2pt
                 )
-                self.element.path[idx] = newsegment
+                self.path[idx] = newsegment
                 modified = True
         if modified:
             self.modify_element(True)
@@ -1616,14 +1622,14 @@ class EditTool(ToolWidget):
                     continue
                 # Is this the last point? Then no use to break the path
                 nextseg = None
-                if idx in (0, len(self.element.path) - 1):
-                    # Dont break at the first or last point
+                if idx in (0, len(self.path) - 1):
+                    # Don't break at the first or last point
                     continue
-                nextseg = self.element.path[idx + 1]
+                nextseg = self.path[idx + 1]
                 if isinstance(nextseg, (Move, Close)):
                     # Not at end of subpath
                     continue
-                prevseg = self.element.path[idx - 1]
+                prevseg = self.path[idx - 1]
                 if isinstance(prevseg, (Move, Close)):
                     # We could still be at the end point of the first segment...
                     if entry["point"] == seg.start:
@@ -1633,14 +1639,14 @@ class EditTool(ToolWidget):
                     start=Point(seg.end.x, seg.end.y),
                     end=Point(nextseg.start.x, nextseg.start.y),
                 )
-                self.element.path.insert(idx + 1, newseg)
+                self.path.insert(idx + 1, newseg)
                 # Now let's validate whether the 'right' path still has a
                 # close segment at it's end. That will be removed as this would
                 # create an unwanted behaviour
                 prevseg = None
                 is_closed = False
-                for sidx in range(idx + 1, len(self.element.path), 1):
-                    seg = self.element.path[sidx]
+                for sidx in range(idx + 1, len(self.path), 1):
+                    seg = self.path[sidx]
                     if isinstance(seg, Move) and prevseg is None:
                         # Not the one at the very beginning!
                         continue
@@ -1655,7 +1661,7 @@ class EditTool(ToolWidget):
                     prevseg = seg
                 if is_closed:
                     # it's enough just to delete it...
-                    del self.element.path[lastidx + 1]
+                    del self.path[lastidx + 1]
 
                 modified = True
         if modified:
@@ -1677,9 +1683,9 @@ class EditTool(ToolWidget):
                 prevseg = None
                 nextseg = None
                 if idx > 0:
-                    prevseg = self.element.path[idx - 1]
-                if idx < len(self.element.path) - 1:
-                    nextseg = self.element.path[idx + 1]
+                    prevseg = self.path[idx - 1]
+                if idx < len(self.path) - 1:
+                    nextseg = self.path[idx + 1]
                 if isinstance(seg, (Move, Close)):
                     # Beginning of path
                     if prevseg is None:
@@ -1692,7 +1698,7 @@ class EditTool(ToolWidget):
                         continue
                     nextseg.start.x = seg.start.x
                     nextseg.start.y = seg.start.y
-                    del self.element.path[idx]
+                    del self.path[idx]
                     modified = True
                 else:
                     # Let's look at the next segment
@@ -1702,7 +1708,7 @@ class EditTool(ToolWidget):
                         continue
                     seg.end.x = nextseg.end.x
                     seg.end.y = nextseg.end.y
-                    del self.element.path[idx + 1]
+                    del self.path[idx + 1]
                     modified = True
 
         if modified:
@@ -1754,7 +1760,7 @@ class EditTool(ToolWidget):
                             start=Point(mid_x, mid_y),
                             end=Point(segment.end.x, segment.end.y),
                         )
-                        self.element.path.insert(idx + 1, newsegment)
+                        self.path.insert(idx + 1, newsegment)
                         segment.end.x = mid_x
                         segment.end.y = mid_y
                         modified = True
@@ -1768,7 +1774,7 @@ class EditTool(ToolWidget):
                             control1=Point(mid_x, mid_y),
                             control2=Point(segment.control2.x, segment.control2.y),
                         )
-                        self.element.path.insert(idx + 1, newsegment)
+                        self.path.insert(idx + 1, newsegment)
                         segment.end.x = mid_x
                         segment.end.y = mid_y
                         segment.control2.x = mid_x
@@ -1786,7 +1792,7 @@ class EditTool(ToolWidget):
                         newsegment = copy(segment)
                         newsegment.start.x = mid_x
                         newsegment.start.y = mid_y
-                        self.element.path.insert(idx + 1, newsegment)
+                        self.path.insert(idx + 1, newsegment)
                         segment.end.x = mid_x
                         segment.end.y = mid_y
                         modified = True
@@ -1799,7 +1805,7 @@ class EditTool(ToolWidget):
                             end=Point(segment.end.x, segment.end.y),
                             control=Point(segment.control.x, segment.control.y),
                         )
-                        self.element.path.insert(idx + 1, newsegment)
+                        self.path.insert(idx + 1, newsegment)
                         segment.end.x = mid_x
                         segment.end.y = mid_y
                         segment.control.x = mid_x
@@ -1819,16 +1825,16 @@ class EditTool(ToolWidget):
                         pt1 = Point((p1x + p2x) / 2, (p1y + p2y) / 2)
                         pt2 = copy(nextseg.start)
                         newsegment = Line(start=pt1, end=pt2)
-                        self.element.path.insert(idx + 1, newsegment)
+                        self.path.insert(idx + 1, newsegment)
                         segment.end = pt1
                         # We need to step forward to assess whether there is a close segment
-                        for idx2 in range(idx + 1, len(self.element.path)):
-                            if isinstance(self.element.path[idx2], Move):
+                        for idx2 in range(idx + 1, len(self.path)):
+                            if isinstance(self.path[idx2], Move):
                                 break
-                            if isinstance(self.element.path[idx2], Close):
+                            if isinstance(self.path[idx2], Close):
                                 # Adjust the close segment to that it points again
                                 # to the first move end
-                                self.element.path[idx2].end = Point(pt1.x, pt1.y)
+                                self.path[idx2].end = Point(pt1.x, pt1.y)
                                 break
 
                         modified = True
@@ -1851,31 +1857,31 @@ class EditTool(ToolWidget):
         else:
             # path
             try:
-                valididx = len(self.element.path) - 1
+                valididx = len(self.path) - 1
             except AttributeError:
                 # Shape
                 return
             while valididx >= 0 and isinstance(
-                self.element.path[valididx], (Close, Move)
+                self.path[valididx], (Close, Move)
             ):
                 valididx -= 1
             if valididx >= 0:
-                seg = self.element.path[valididx]
+                seg = self.path[valididx]
                 pt1 = seg.start
                 pt2 = seg.end
                 newpt = Point(pt2.x + (pt2.x - pt1.x), pt2.y + (pt2.y - pt1.y))
                 newsegment = Line(start=Point(seg.end.x, seg.end.y), end=newpt)
-                if valididx < len(self.element.path) - 1:
+                if valididx < len(self.path) - 1:
                     if (
-                        self.element.path[valididx + 1].end
-                        == self.element.path[valididx + 1].start
+                        self.path[valididx + 1].end
+                        == self.path[valididx + 1].start
                     ):
-                        self.element.path[valididx + 1].end.x = newpt.x
-                        self.element.path[valididx + 1].end.y = newpt.y
-                    self.element.path[valididx + 1].start.x = newpt.x
-                    self.element.path[valididx + 1].start.y = newpt.y
+                        self.path[valididx + 1].end.x = newpt.x
+                        self.path[valididx + 1].end.y = newpt.y
+                    self.path[valididx + 1].start.x = newpt.x
+                    self.path[valididx + 1].start.y = newpt.y
 
-                self.element.path.insert(valididx + 1, newsegment)
+                self.path.insert(valididx + 1, newsegment)
                 modified = True
 
         if modified:
@@ -2047,9 +2053,9 @@ class EditTool(ToolWidget):
                         # We changed the end, let's check whether the last segment in
                         # the subpath is a Close then we need to change this .end as well
                         for nidx in range(
-                            self.selected_index + 1, len(self.element.path), 1
+                            self.selected_index + 1, len(self.path), 1
                         ):
-                            nextseg = self.element.path[nidx]
+                            nextseg = self.path[nidx]
                             if isinstance(nextseg, Move):
                                 break
                             if isinstance(nextseg, Close):
