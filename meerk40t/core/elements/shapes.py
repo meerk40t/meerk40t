@@ -11,15 +11,12 @@ from meerk40t.svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
     Angle,
-    Close,
     Color,
-    CubicBezier,
-    Line,
     Matrix,
-    QuadraticBezier,
+    Polygon,
+    Polyline,
+    Path,
 )
-
-from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):
@@ -77,14 +74,16 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle_r(channel, _, r_pos, data=None, post=None, **kwargs):
-        circ = Ellipse(r=float(r_pos))
-        if circ.is_degenerate():
-            channel(_("Shape is degenerate."))
-            return "elements", data
-        node = self.elem_branch.add(shape=circ, type="elem ellipse")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
-        node.fill = self.default_fill
+        node = self.elem_branch.add(
+            cx=0,
+            cy=0,
+            rx=float(r_pos),
+            ry=float(r_pos),
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            fill=self.default_fill,
+            type="elem ellipse",
+        )
         node.altered()
         self.set_emphasis([node])
         node.focus()
@@ -210,10 +209,15 @@ def init_commands(kernel):
         """
         Draws a svg line in the scene.
         """
-        simple_line = SimpleLine(x0, y0, x1, y1)
-        node = self.elem_branch.add(shape=simple_line, type="elem line")
-        node.stroke = self.default_stroke
-        node.stroke_width = self.default_strokewidth
+        node = self.elem_branch.add(
+            x1=x0,
+            y1=y0,
+            x2=x1,
+            y2=y1,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            type="elem line",
+        )
         node.altered()
         self.set_emphasis([node])
         node.focus()
