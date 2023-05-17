@@ -761,6 +761,29 @@ class Geomstr:
         )
         return obj
 
+    @classmethod
+    def circle(cls, r, cx, cy, slices=4):
+        rx = r
+        ry = r
+
+        def point_at_t(t):
+            return complex(cx + rx * math.cos(t), cy + ry * math.sin(t))
+
+        obj = cls()
+        step_size = math.tau / slices
+
+        t_start = 0
+        t_end = step_size
+        for i in range(slices):
+            obj.arc(
+                point_at_t(t_start),
+                point_at_t((t_start + t_end) / 2),
+                point_at_t(t_end),
+            )
+            t_start = t_end
+            t_end += step_size
+        return obj
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:
