@@ -572,7 +572,7 @@ def init_commands(kernel):
             return None
         for node in data:
             try:
-                sub_before = len(list(node.as_path().as_subpaths()))
+                sub_before = len(list(node.as_geometry().as_subpaths()))
             except AttributeError:
                 sub_before = 0
 
@@ -580,7 +580,7 @@ def init_commands(kernel):
             if changed:
                 node.altered()
                 try:
-                    sub_after = len(list(node.as_path().as_subpaths()))
+                    sub_after = len(list(node.as_geometry().as_subpaths()))
                 except AttributeError:
                     sub_after = 0
                 channel(
@@ -1627,7 +1627,12 @@ def init_commands(kernel):
 
         i = 0
         for elem in data:
-            this_area, this_length = self.get_information(elem, density=density)
+            try:
+                geometry = elem.as_geometry()
+            except AttributeError:
+                continue
+            # this_length = geometry.length()
+            this_area = geometry.area(density=density)
 
             if display_only:
                 name = str(elem)

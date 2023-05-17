@@ -2215,45 +2215,24 @@ def init_tree(kernel):
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
 
-    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_conditional(lambda node: not is_regmark(node) and hasattr(node, "as_geometry") and node.type != "elem path")
     @tree_operation(
         _("Convert to path"),
-        node_type=(
-            "elem ellipse",
-            "elem path",
-            "elem polyline",
-            "elem rect",
-            "elem line",
-        ),
-        help="",
+        node_type=elem_nodes,
+        help="Convert node to path",
     )
     def convert_to_path(singlenode, **kwargs):
         for node in list(self.elems(emphasized=True)):
-            if not node not in (
-                "elem ellipse",
-                "elem path",
-                "elem polyline",
-                "elem rect",
-                "elem line",
-            ):
+            if not hasattr(node, "as_geometry"):
                 continue
-            oldstuff = []
+            node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    oldstuff.append([attrib, oldval])
-            try:
-                path = node.as_path()
-                # There are some challenges around the treatment
-                # of arcs within svgelements, so let's circumvent
-                # them for the time being (until resolved)
-                # by replacing arc segments with cubic beziers
-                if node.type in ("elem path", "elem ellipse"):
-                    path.approximate_arcs_with_cubics()
-            except AttributeError:
-                return
-            newnode = node.replace_node(path=path, type="elem path")
-            for item in oldstuff:
+                    node_attributes.append([attrib, oldval])
+            geometry = node.as_geometry()
+            newnode = node.replace_node(geometry=geometry, type="elem path")
+            for item in node_attributes:
                 setattr(newnode, item[0], item[1])
             newnode.altered()
 
