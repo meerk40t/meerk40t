@@ -581,16 +581,23 @@ class PassesPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.sizer_kerf = StaticBoxSizer(self, wx.ID_ANY, _("Kerf compensation:"), wx.HORIZONTAL)
+        self.sizer_kerf = StaticBoxSizer(
+            self, wx.ID_ANY, _("Kerf compensation:"), wx.HORIZONTAL
+        )
         self.text_kerf = TextCtrl(
-            self, wx.ID_ANY, "0", limited=True, check="length", style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "0",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
         )
         self.text_kerf.SetToolTip(
             _(
                 "Enter half the width of your laserbeam (kerf)\n"
-              + "if you want to have a shape with an exact size.\n"
-              + "Use the negative value if you are using the cutout\n"
-              + "as a placeholder for another part (eg inlays)."
+                + "if you want to have a shape with an exact size.\n"
+                + "Use the negative value if you are using the cutout\n"
+                + "as a placeholder for another part (eg inlays)."
             )
         )
         self.kerf_label = wx.StaticText(self, wx.ID_ANY, "")

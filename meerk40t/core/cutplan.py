@@ -709,7 +709,9 @@ def is_inside(inner, outer, tolerance=0):
             vm.add_polyline(outer_path)
             outer.vm = vm
         for i in range(101):
-            p = inner_path.point(i / 100.0, error=1e4)  # Point(4633.110682926033,1788.413481872459)
+            p = inner_path.point(
+                i / 100.0, error=1e4
+            )  # Point(4633.110682926033,1788.413481872459)
             if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
                 return False
         return True
@@ -730,7 +732,6 @@ def is_inside(inner, outer, tolerance=0):
 
         q = outer.sb.points_in_polygon(points)
         return q.all()
-
 
     return sb_code(outer, outer_path, inner, inner_path)
     # return vm_code(outer, outer_path, inner, inner_path)

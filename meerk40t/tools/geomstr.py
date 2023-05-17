@@ -58,14 +58,14 @@ from copy import copy
 import numpy as np
 
 from meerk40t.svgelements import (
-    Matrix,
-    Path,
-    Line,
-    Move,
-    QuadraticBezier,
-    CubicBezier,
     Arc,
     Close,
+    CubicBezier,
+    Line,
+    Matrix,
+    Move,
+    Path,
+    QuadraticBezier,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 

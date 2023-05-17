@@ -86,7 +86,11 @@ class CutOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
-        default_map["kerf"] = f"{Length(self.kerf, digits=2, preferred_units='mm').preferred_length}" if self.kerf != 0 else ""
+        default_map["kerf"] = (
+            f"{Length(self.kerf, digits=2, preferred_units='mm').preferred_length}"
+            if self.kerf != 0
+            else ""
+        )
         ct = 0
         t = ""
         s = ""
@@ -285,7 +289,9 @@ class CutOpNode(Node, Parameters):
         # We need to establish the native device resolution,
         # as kerf is given in scene space but needs to be passed on in device space
         device = context.device
-        self._device_factor = 1/abs(complex(device.native_scale_x, device.native_scale_y))
+        self._device_factor = 1 / abs(
+            complex(device.native_scale_x, device.native_scale_y)
+        )
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""

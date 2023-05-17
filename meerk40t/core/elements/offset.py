@@ -67,15 +67,15 @@ def norm_vector(p1, p2, target_len):
     return normal_vector
 
 
-
-
 def is_clockwise(path):
     def poly_clockwise(poly):
         """
         returns True if the polygon is clockwise ordered, false if not
         """
 
-        total = poly[-1].x * poly[0].y - poly[0].x * poly[-1].y  # last point to first point
+        total = (
+            poly[-1].x * poly[0].y - poly[0].x * poly[-1].y
+        )  # last point to first point
         for i in range(len(poly) - 1):
             total += poly[i].x * poly[i + 1].y - poly[i + 1].x * poly[i].y
 
@@ -92,6 +92,7 @@ def is_clockwise(path):
             poly.append(seg.end)
     res = poly_clockwise(poly)
     return res
+
 
 def linearize_segment(segment, interpolation=500, reduce=True):
     slope_tolerance = 0.001
@@ -165,16 +166,18 @@ def offset_arc(segment, offset=0, linearize=False, interpolation=500):
     else:
         centerpt = Point(segment.center)
         startpt = centerpt.polar_to(
-            angle = centerpt.angle_to(segment.start),
-            distance = centerpt.distance_to(segment.start) + offset,
+            angle=centerpt.angle_to(segment.start),
+            distance=centerpt.distance_to(segment.start) + offset,
         )
         endpt = centerpt.polar_to(
-            angle = centerpt.angle_to(segment.end),
-            distance = centerpt.distance_to(segment.end) + offset,
+            angle=centerpt.angle_to(segment.end),
+            distance=centerpt.distance_to(segment.end) + offset,
         )
         newseg = Arc(
-                 startpt, endpt, centerpt,
-        #         ccw=ccw,
+            startpt,
+            endpt,
+            centerpt,
+            #         ccw=ccw,
         )
         newsegments.append(newseg)
     return newsegments
@@ -354,7 +357,8 @@ def offset_path(
             # Look for the first segment
             right_start = right_start % lp
             while not isinstance(
-                stitchpath._segments[right_start], (Arc, Line, QuadraticBezier, CubicBezier)
+                stitchpath._segments[right_start],
+                (Arc, Line, QuadraticBezier, CubicBezier),
             ):
                 right_start += 1
         seg1 = stitchpath._segments[left_end]
@@ -502,7 +506,7 @@ def offset_path(
         ):
             idx -= 1
         lastp = Point(p._segments[idx].end)
-        if firstp_start.distance_to(lastp) < 1E-3:
+        if firstp_start.distance_to(lastp) < 1e-3:
             remember = True
             remember_helper = Point(lastp)
             is_closed = True
@@ -578,7 +582,9 @@ def offset_path(
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
-            stitch_segments_at_index(offset, p, left_end, helper, radial=radial_connector)
+            stitch_segments_at_index(
+                offset, p, left_end, helper, radial=radial_connector
+            )
         if remember:
             helper = remember_helper
             left_end = len(p._segments) - 1

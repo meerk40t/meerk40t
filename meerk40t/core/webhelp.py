@@ -12,7 +12,7 @@ FACEBOOK_MEERK40T = "https://www.facebook.com/groups/716000085655097"
 DISCORD_MEERK40T = "https://discord.gg/vkDD3HdQq6"
 MAKERS_FORUM_MEERK40T = "https://forum.makerforums.info/c/k40/meerk40t/120"
 IRC_CLIENT = "http://kiwiirc.com/client/irc.libera.chat/meerk40t"
-MEERK40T_FEATURE = "https://github.com/meerk40t/meerk40t/discussions/1318"
+MEERK40T_FEATURE = "https://github.com/meerk40t/meerk40t/discussions/new/choose"
 
 
 def plugin(kernel, lifecycle):
