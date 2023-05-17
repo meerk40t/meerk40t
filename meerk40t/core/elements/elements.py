@@ -17,10 +17,10 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.rootnode import RootNode
 from meerk40t.core.undos import Undo
-from meerk40t.core.units import UNITS_PER_MIL, Length
+from meerk40t.core.units import Length
 from meerk40t.core.wordlist import Wordlist
 from meerk40t.kernel import ConsoleFunction, Service, Settings
-from meerk40t.svgelements import Close, Color, Line, Move, SVGElement
+from meerk40t.svgelements import Color, SVGElement, Point, Path
 
 from .element_types import *
 

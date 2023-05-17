@@ -2,7 +2,7 @@
 This adds console commands that deal with the creation of an offset
 """
 from copy import copy
-from math import atan2, sqrt, tau
+from math import atan2, tau
 
 from meerk40t.core.node.node import Linejoin
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -11,7 +11,6 @@ from meerk40t.svgelements import (
     Close,
     CubicBezier,
     Line,
-    Matrix,
     Move,
     Path,
     Point,
@@ -653,8 +652,6 @@ def init_commands(kernel):
         post=None,
         **kwargs,
     ):
-        import numpy as np
-
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:

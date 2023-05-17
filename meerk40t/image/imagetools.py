@@ -910,7 +910,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
-        from PIL import Image, ImageOps
+        from PIL import ImageOps
 
         for inode in data:
             if inode.lock:

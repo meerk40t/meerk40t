@@ -47,7 +47,6 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.kernel.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation

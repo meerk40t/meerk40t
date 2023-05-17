@@ -7,7 +7,6 @@ from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.core.elements.offset import offset_path
-from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
 
 

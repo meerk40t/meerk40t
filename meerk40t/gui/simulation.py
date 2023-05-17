@@ -40,7 +40,6 @@ from .icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow

@@ -1,6 +1,6 @@
 import math
 from copy import copy
-from math import cos, sin, tau
+from math import cos, sin
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node

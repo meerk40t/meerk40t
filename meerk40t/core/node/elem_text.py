@@ -1,6 +1,6 @@
 import re
 from copy import copy
-from math import sqrt, tau
+from math import tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node

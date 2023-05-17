@@ -69,7 +69,6 @@ from ..svgelements import (
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
     Circle,
-    Close,
     Color,
     Ellipse,
     Group,

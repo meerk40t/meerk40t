@@ -1,6 +1,5 @@
 import wx
 
-from meerk40t.core.units import Length
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel

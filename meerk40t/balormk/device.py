@@ -958,10 +958,7 @@ class BalorDevice(Service, ViewPort):
                 with open(filename, "w") as f:
                     driver = BalorDriver(self, force_mock=True)
                     job = LaserJob(filename, list(data.plan), driver=driver)
-                    from meerk40t.balormk.controller import (
-                        list_command_lookup,
-                        single_command_lookup,
-                    )
+                    from meerk40t.balormk.controller import list_command_lookup
 
                     def write(index, cmd):
                         cmds = [

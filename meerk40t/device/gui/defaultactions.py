@@ -13,7 +13,6 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
-    icons8_visit_20,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer
 
