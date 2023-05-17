@@ -1091,7 +1091,7 @@ class EditTool(ToolWidget):
                     anyselected = True
                     break
             if not anyselected:
-                # Lets select the last point, so the last segment will be closed/opened
+                # Let's select the last point, so the last segment will be closed/opened
                 for idx in range(len(self.nodes) - 1, -1, -1):
                     entry = self.nodes[idx]
                     if entry["type"] == "point":
@@ -1107,7 +1107,7 @@ class EditTool(ToolWidget):
                     if segstart in dealt_with:
                         continue
                     dealt_with.append(segstart)
-                    # Lets establish the last segment in the path
+                    # Let's establish the last segment in the path
                     prevseg = None
                     is_closed = False
                     for sidx in range(segstart, len(self.path), 1):
@@ -1641,7 +1641,7 @@ class EditTool(ToolWidget):
                 )
                 self.path.insert(idx + 1, newseg)
                 # Now let's validate whether the 'right' path still has a
-                # close segment at it's end. That will be removed as this would
+                # close segment at its end. That will be removed as this would
                 # create an unwanted behaviour
                 prevseg = None
                 is_closed = False
