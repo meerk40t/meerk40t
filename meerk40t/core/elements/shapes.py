@@ -680,7 +680,7 @@ def init_commands(kernel):
         input_type="shapes",
         output_type="shapes",
     )
-    def element_path_convert(data, **kwargs):
+    def element_shape_convert(data, **kwargs):
         paths = []
         for e in data:
             paths.append(abs(Path(e)))
