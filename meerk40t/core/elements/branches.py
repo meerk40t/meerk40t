@@ -121,7 +121,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def operation_select(data=None, **kwargs):
+    def operation_select_emphasis(data=None, **kwargs):
         self.set_emphasis(data)
         return "ops", data
 
