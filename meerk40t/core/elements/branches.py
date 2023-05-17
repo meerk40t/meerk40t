@@ -1018,7 +1018,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def op_hatch_distance(
+    def op_hatch_angle(
         command,
         channel,
         _,
