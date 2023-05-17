@@ -28,7 +28,7 @@ from meerk40t.core.treeop import (
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix, Point, Polygon
 
 from .element_types import *
 

@@ -6,8 +6,7 @@ from math import cos, isinf, sin, sqrt, tau
 from random import randint, shuffle
 
 from meerk40t.core.units import Length
-
-from .element_types import *
+from meerk40t.svgelements import Point, Path, Polyline, Circle
 
 
 def plugin(kernel, lifecycle=None):
