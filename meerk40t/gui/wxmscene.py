@@ -1141,14 +1141,14 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh(origin)
 
     @signal_listener("magnet-attraction")
-    def on_magnet(self, origin, strength, *args):
+    def on_magnet_attract(self, origin, strength, *args):
         strength = int(strength)
         if strength < 0:
             strength = 0
         self.magnet_attraction = strength
 
     @signal_listener("magnet_gen")
-    def on_magnet(self, origin, *args):
+    def on_magnet_generate(self, origin, *args):
         candidate = args[0]
         if candidate is None:
             return
