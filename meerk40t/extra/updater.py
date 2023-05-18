@@ -63,7 +63,7 @@ def plugin(kernel, lifecycle):
             def comparable_version(version):
                 """
                 Return a comparable sequence from a version string
-                Major, Minor, Release, Beta
+                "Major", "Minor", "Release", "Beta"
                 Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
                 src = beta = False

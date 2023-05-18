@@ -421,7 +421,7 @@ class EditTool(ToolWidget):
         """
         Shutdown routine for widget that unregisters the listener routines
         and closes the toolbar window.
-        This could be called more than once, which if not dealt with, will
+        This could be called more than once which, if not dealt with, will
         cause a console warning message
         """
         if self._listener_active:
@@ -1710,7 +1710,7 @@ class EditTool(ToolWidget):
 
     def insert_midpoint(self):
         """
-        Insert a point on the middle of a selected segment
+        Insert a point in the middle of a selected segment
         """
         modified = False
         # Move backwards as len will change

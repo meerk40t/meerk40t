@@ -990,7 +990,7 @@ class ImageVectorisationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        # Changing the staticmethod into a regular method will cause a crash, so therefore this circumvention
+        # Changing the staticmethod into a regular method will cause a crash
         # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
         global HAS_VECTOR_ENGINE
         if node.type == "elem image" and HAS_VECTOR_ENGINE:
@@ -1276,7 +1276,8 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def on_dither(self, event=None):
         # Dither can be set by two different means:
-        # a) directly b) via a script
+        # a. directly
+        # b. via a script
         dither_op = None
         for op in self.node.operations:
             if op["name"] == "dither":
