@@ -30,7 +30,7 @@ def create_preview_image(context, fontfile):
             context, 0, 0, pattern, font=simplefont, font_size=Length("12pt")
         )
     except:
-        # We my encounter an IndexError, a ValueError or an error thrown by struct
+        # We may encounter an IndexError, a ValueError or an error thrown by struct
         # The latter cannot be named? So a global except...
         return False
     if node is None:
@@ -173,7 +173,7 @@ class LineTextPropertyPanel(wx.Panel):
             and hasattr(node, "mkfontsize")
             and hasattr(node, "mktext")
         ):
-            # Let's us the opportunity to check for incorrept types and fix them...
+            # Let's take the opportunity to check for incorrect types and fix them...
             validate_node(node)
             return True
         else:
@@ -424,7 +424,7 @@ class HersheyFontSelector(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Font-Selector", True)
+        return "", "Font-Selector", True
 
 
 class PanelFontManager(wx.Panel):
@@ -737,7 +737,7 @@ class PanelFontManager(wx.Panel):
                     webbrowser.open(url, new=0, autoraise=True)
             else:
                 # This is a local directory with existing font-files,
-                # eg the Windows-Font-Directory
+                # e.g. the Windows-Font-Directory
                 self.import_files(url, "ttf")
 
     def import_files(self, import_directory, extension):
@@ -829,7 +829,7 @@ class HersheyFontManager(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Font-Manager", True)
+        return "", "Font-Manager", True
 
 
 def register_hershey_stuff(kernel):

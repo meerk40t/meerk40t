@@ -6,7 +6,7 @@ This is similar to other widget/scene UI visual libraries and includes affine tr
 
 The scene contains two primary layers defined in the `SceneSpaceWidget` these are the scene widgets which are affected by the root matrix of the scene. And the interface widgets which are drawn at 1:1 within the interface space. The interface widgets are intended to be widgets occupying the window you are using to view the scene and the scene widgets are the matrix-modified space we are interacting with. 
 
-The scene is organized into a tree with the root widget being a SceneSpaceWidget for the scene and all other widgets located somewhere in the tree. When events affecting the structure of the tree occur the widgets are notified through notify events. These are intended to be utilized to perform actions when child widgets are changed by the code or signals are sent as a broadcast to all widgets.
+The scene is organized into a tree with the root widget being a SceneSpaceWidget for the scene and all other widgets located somewhere in the tree. When events affecting the structure of the tree occur the widgets are notified through notify events. These are intended to perform actions when child widgets are changed by the code or when signals are broadcast to all widgets.
 
 
 # Widget

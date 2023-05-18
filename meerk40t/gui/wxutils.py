@@ -426,7 +426,7 @@ class TextCtrl(wx.TextCtrl):
         maxw = 100
         minpattern = "0000"
         maxpattern = "999999999.99mm"
-        # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
+        # Let's be a bit more specific: what is the minimum size of the textcontrol fonts
         # to hold these patterns
         tfont = self.GetFont()
         xsize = 15

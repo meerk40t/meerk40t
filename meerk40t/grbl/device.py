@@ -596,7 +596,7 @@ class GRBLDevice(Service, ViewPort):
                 channel("Won't interfere with a running job, abort...")
                 return
             if strength is not None:
-                if strength >= 0 and strength <= 1000:
+                if 0 <= strength <= 1000:
                     self.red_dot_level = strength
                     channel(
                         f"Laser strength for red dot is now: {self.red_dot_level/10.0}%"
@@ -613,7 +613,7 @@ class GRBLDevice(Service, ViewPort):
                 # self.driver.set("power", int(self.red_dot_level / 100 * 1000))
                 self.driver._clean()
                 self.driver.laser_on(power=int(self.red_dot_level), speed=1000)
-                # By default any move is a G0 move which will not activate the laser,
+                # By default, any move is a G0 move which will not activate the laser,
                 # so we need to switch to G1 mode:
                 self.driver.move_mode = 1
                 # An arbitrary move to turn the laser really on!

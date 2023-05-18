@@ -1066,7 +1066,7 @@ class GalvoController:
 
     def list_mark_frequency(self, frequency):
         """
-        This command is used in some machines but it's not clear given the amount of reverse engineering how those
+        This command is used in some machines but, it's not clear given the amount of reverse engineering how those
         values are set. This is done for laser_type = 4.
 
         @param frequency:

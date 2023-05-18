@@ -2092,4 +2092,4 @@ class Simulation(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Burning", "Simulation")
+        return "Burning", "Simulation"

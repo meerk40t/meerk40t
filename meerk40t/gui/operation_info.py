@@ -297,4 +297,4 @@ class OperationInformation(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Operations", "Operation Information")
+        return "Operations", "Operation Information"

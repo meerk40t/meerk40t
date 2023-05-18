@@ -7,7 +7,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 *   Sort burns for all operations at the same time rather than operation by operation
 *   Ensure that elements inside closed cut paths are burned before the outside path
 *   Group these inner burns so that one component on a sheet is completed before the next one is started
-*   Ensure that non-closed paths are started from one of the ends and burned in one continuous burn
+*   Ensure that non-closed paths start from one of the ends and burned in one continuous burn
     rather than being burned in 2 or more separate parts
 *   Split raster images in to self-contained areas to avoid sweeping over large empty areas
     including splitting into individual small areas if burn inner first is set and then recombining
@@ -238,7 +238,7 @@ class CutPlan:
             )
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
-                    # This is not able to be merged
+                    # This cannot merge
                     yield group
                     group = list()
             group.append(c)
@@ -644,6 +644,7 @@ def is_inside(inner, outer, tolerance=0):
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
+    @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
     # We still consider a path to be inside another path if it is

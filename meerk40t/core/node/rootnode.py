@@ -116,6 +116,8 @@ class RootNode(Node):
         Notifies any listeners that a value in the tree has been changed such that the matrix or other property
         values have changed. But that the underlying data object itself remains intact.
         @param node: node that was modified.
+        @param dx: translation change for node
+        @param dy: translation change for node
         @param kwargs:
         @return:
         """
@@ -136,7 +138,12 @@ class RootNode(Node):
         """
         Notifies any listeners that a value in the tree has been changed such that the matrix or other property
         values have changed. But that the underlying data object itself remains intact.
+
         @param node: node that was modified.
+        @param sx: scale_x value
+        @param sy: scale_y value
+        @param ox: offset_x value
+        @param oy: offset_y value
         @param kwargs:
         @return:
         """

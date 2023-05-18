@@ -779,8 +779,7 @@ class KerfPanel(wx.Panel):
 
 class KerfTool(MWindow):
     """
-    KerfTool is the wrapper class to setup the
-    required calls to open the KerfPanel window
+    KerfTool is the wrapper class to set up the required calls to open the KerfPanel window
     """
 
     def __init__(self, *args, **kwds):
@@ -805,4 +804,4 @@ class KerfTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Kerf-Test")
+        return "Laser-Tools", "Kerf-Test"

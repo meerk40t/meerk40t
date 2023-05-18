@@ -217,7 +217,7 @@ class GRBLConfiguration(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "GRBL-Configuration")
+        return "Device-Settings", "GRBL-Configuration"
 
     @property
     def aquire_properties(self):

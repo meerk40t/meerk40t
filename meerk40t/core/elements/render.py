@@ -9,9 +9,7 @@ from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import Color, Matrix
-
-from .element_types import *
+from meerk40t.svgelements import Color, Matrix, Path
 
 
 def plugin(kernel, lifecycle=None):
@@ -367,8 +365,8 @@ def init_commands(kernel):
         the first outline and fill the subpaths, This will effectively deal with
         donut-type shapes
 
-        The need for --inner was't high on my priority list (as it is somwhat
-        difficult to implement, --outer just uses a clever hack to deal with
+        The need for --inner wasn't high on my priority list, as it is somwhat
+        difficult to implement. --outer just uses a clever hack to deal with
         topology edge cases. So if we are in need of inner we need to create
         the outline shape, break it in subpaths and delete the outer shapes
         manually. Sorry.
