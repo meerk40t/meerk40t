@@ -58,7 +58,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             "combosmall": Available for str, int, float will fill the combo
                 with values defined in "choices" (additional parameter)
             "binary": uses two additional settings "mask" and "bit" to
-                allow the bitwise manipulation of a int data type
+                allow the bitwise manipulation of an int data type
         "weight": only valid in subsections, default value 1, i.e. equal width
             allocation, can be changed to force a different sizing behaviour
     UI-Appearance

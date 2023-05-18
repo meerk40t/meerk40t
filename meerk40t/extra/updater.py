@@ -1,5 +1,5 @@
 """
-The code inside this module provides routines to look for newer versions of meerk40t on github
+The code inside this module provides routines to look for newer versions of meerk40t on GitHub
 """
 import json
 from urllib.error import HTTPError, URLError

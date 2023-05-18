@@ -205,11 +205,11 @@ def init_commands(kernel):
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
         Valid string operators are startswith, endswith, contains.
         String values require single-quotes ', because the console interface requires double-quotes.
-        eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
-        eg. filter engrave=op&speed=35|cut=op&speed=10
-        eg. filter len=0
-        eg. operation* filter "type='op image'" list
-        eg. element* filter "id startswith 'p'" list
+        e.g. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+        e.g. filter engrave=op&speed=35|cut=op&speed=10
+        e.g. filter len=0
+        e.g. operation* filter "type='op image'" list
+        e.g. element* filter "id startswith 'p'" list
         """
         sublist = list()
         _filter_parse = [

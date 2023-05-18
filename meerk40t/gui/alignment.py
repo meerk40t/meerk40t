@@ -800,7 +800,7 @@ class DistributionPanel(wx.Panel):
                     # Quadrant 1: angle between 0 und 90 (0 - tau / 4)
                     c_angle = atan(dy / dx)
                     quadrant = 1
-                elif dx < 0 and dy >= 0:
+                elif dx < 0 <= dy:
                     # Quadrant 2: angle between 90 und 180 (1/4 tau - 2/4 tau)
                     c_angle = atan(dy / dx) + tau / 2
                     quadrant = 2
@@ -808,7 +808,7 @@ class DistributionPanel(wx.Panel):
                     # Quadrant 3: angle between 180 und 270 (2/4 tau - 3/4 tau)
                     c_angle = atan(dy / dx) + tau / 2
                     quadrant = 3
-                elif dx > 0 and dy < 0:
+                elif dx > 0 > dy:
                     # Quadrant 4: angle between 270 und 360 (2/4 tau - 3/4 tau)
                     c_angle = atan(dy / dx)
                     quadrant = 4

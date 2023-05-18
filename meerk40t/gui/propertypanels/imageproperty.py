@@ -389,8 +389,7 @@ class ImageModificationPanel(ScrolledPanel):
         self.context = context
         self.node = node
         self.scripts = []
-        choices = []
-        choices.append(_("Set to None"))
+        choices = [_("Set to None")]
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))

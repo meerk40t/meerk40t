@@ -570,7 +570,7 @@ class Elemental(Service):
 
     @property
     def default_stroke(self):
-        # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
+        # We don't allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
         if self._default_stroke is not None:
             return self._default_stroke
         return Color("blue")
@@ -1592,7 +1592,7 @@ class Elemental(Service):
         """
         If any operation is selected, all sub-operations are highlighted.
         If any element is emphasized, all references are highlighted.
-        If any element is emphasized, all operations a references to that element are targeted.
+        If any element is emphasized, all operations a references to that element are 'targeted'.
         """
         for s in self._tree.flat():
             if s.highlighted:
@@ -1909,7 +1909,7 @@ class Elemental(Service):
                     if should_break:
                         break
                 # So we are the end of the first pass, if there was already a classification
-                # then we call it a day and dont call the fuzzy part
+                # then we call it a day and don't call the fuzzy part
                 if was_classified or should_break:
                     break
 
@@ -1918,7 +1918,7 @@ class Elemental(Service):
             ######################
             if was_classified and debug:
                 debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
-            # Lets make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, ie existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
@@ -1999,7 +1999,7 @@ class Elemental(Service):
                             )
                     if should_break:
                         break
-            # Lets make sure we only consider relevant, ie existing attributes...
+            # Let's make sure we only consider relevant, ie existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
@@ -2089,7 +2089,7 @@ class Elemental(Service):
                     if debug:
                         debug("add an op raster due to fill")
                 for op in stdops:
-                    # Lets make sure we don't have something like that already
+                    # Let's make sure we don't have something like that already
                     if debug:
                         debug(f"Check for existence of {op.type}")
                     already_found = False
@@ -2886,7 +2886,7 @@ class Elemental(Service):
         kernel = self.kernel
         _ = kernel.translation
         filename_to_process = pathname
-        # Lets check first if we have a preprocessor
+        # Let's check first if we have a preprocessor
         # Use-case: if we identify functionalities in the file
         # which aren't supported by mk yet, we could ask a program
         # to convert these elements into supported artifacts

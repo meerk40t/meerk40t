@@ -625,7 +625,7 @@ class SVGProcessor:
         self.operation_list = list()
 
         # Setting this is bringing as much benefit as anticipated
-        # Both the time to load the file (unexpectedly) as well as the time
+        # Both the time to load the file (unexpectedly) and the time
         # for the first emphasis when all the nonpopulated bounding
         # boxes will be calculated are benefitting from this precalculation:
         # (All values as average over three consecutive loads)
@@ -713,7 +713,7 @@ class SVGProcessor:
     @staticmethod
     def is_dot(element):
         """
-        Check for the degenerate shape dots. This could by a Path that consisting of a Move + Close, Move, or Move any
+        Check for the degenerate shape dots. This could be a Path that consisting of a Move + Close, Move, or Move any
         path-segment that has a distance of 0 units. It could be a simple line to the same spot. It could be a polyline
         which has a single point.
 
@@ -1056,7 +1056,7 @@ class SVGProcessor:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, Group):
             if _label == "regmarks" or ident == "regmarks":
-                # We don't need a top-level group here, the regmarks node is a kind of a group...
+                # We don't need a top-level group here, the regmarks node is a group...
                 context_node = self.regmark
                 e_list = self.regmark_list
             else:
@@ -1148,7 +1148,7 @@ class SVGProcessor:
                 if "settings" in attrs:
                     del attrs[
                         "settings"
-                    ]  # If settings was set, delete it or it will mess things up
+                    ]  # If settings was set, delete it, or it will mess things up
                 elem = context_node.add(type=node_type, **attrs)
                 try:
                     elem.validate()

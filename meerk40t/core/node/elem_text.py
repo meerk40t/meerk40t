@@ -73,7 +73,7 @@ class TextNode(Node, Stroked):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
-        # Offset values to allow to fix the drawing of slanted fonts outside of the GetTextExtentBoundaries
+        # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
         if "font" in kwargs:

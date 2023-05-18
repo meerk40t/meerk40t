@@ -188,8 +188,8 @@ class LaserRender:
 
         @param nodes: Node types to render.
         @param gc: graphics context
-        @param draw_mode: draw_mode set
-        @param zoomscale: set zoomscale at which this is drawn at
+        @param draw_mode: draw mode flags for rendering
+        @param zoomscale: zoomscale at which to render nodes
         @param alpha: render transparency
         @return:
         """
@@ -234,8 +234,6 @@ class LaserRender:
             try:
                 node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                if False:
-                    pass
                 if node.type in (
                     "elem path",
                     "elem ellipse",

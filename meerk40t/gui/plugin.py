@@ -38,7 +38,7 @@ def plugin(kernel, lifecycle):
         except ImportError:
             print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
-        # Lets check whether we have an incompatible version of wxpython and python
+        # Let's check whether we have an incompatible version of wxpython and python.
         # Python 3.10 onwards no longer supports automatic casts of decimals to ints:
         # Builtin and extension functions that take integer arguments no longer accept
         # Decimals, Fractions and other objects that can be converted to integers only

@@ -1599,7 +1599,7 @@ class Kernel(Settings):
         Register an element at a given subpath.
         If this Kernel is not root, then it is registered relative to this location.
 
-        @param path: a "/" separated hierarchical index to the object
+        @param path: a "/" separated hierarchical index
         @param obj: object to be registered
         @return:
         """

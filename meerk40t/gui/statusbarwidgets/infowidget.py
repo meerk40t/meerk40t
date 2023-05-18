@@ -325,7 +325,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._job_estimate = 0
         self._job_elapsed = 0
         self._job_remaining = 0
-        # How often do i want to have an update?
+        # How often do I want to have an update?
         self._last_invokation = 0
         self._invokation_delta = 2  # Every 2 seconds max
         self._driver = None

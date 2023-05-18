@@ -12,7 +12,7 @@ class Settings:
     dictionary of dictionaries. The first dictionary key are called sections, and the sub-
     section are attributes. To save a list of related settings we add a space within the
     section name. E.g. `operation 0001` or `operation 0002` etc. The first element can be
-    divided up with various layers of `/` to make derivable sub-directories of settings.
+    divided up with various layers of `/` to make derivable subdirectories of settings.
 
     Reading/writing and deleting are performed on the config_dict which stores a set of values
     these are loaded during the `read_configuration` step and are committed to disk when
@@ -120,8 +120,8 @@ class Settings:
         Directly read from persistent storage the value of an item.
 
         @param t: datatype.
-        @param section: section in which to store the key
-        @param key: key used to reference item.
+        @param section: storing section
+        @param key: reference item
         @param default: default value if item does not exist.
         @return: value
         """

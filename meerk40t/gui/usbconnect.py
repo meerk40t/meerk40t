@@ -88,4 +88,4 @@ class UsbConnect(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "USB-Connection")
+        return "Device-Control", "USB-Connection"

@@ -866,12 +866,12 @@ class Geomstr:
 
     def cubic(self, start, control0, control1, end, settings=0):
         """
-        Add in a cubic bezier curve
+        Add in a cubic Bézier curve
         @param start: (complex) start point
         @param control0: (complex) first control point
         @param control1: (complex) second control point
         @param end: (complex) end point
-        @param settings: optional settings level for the cubic bezier curve
+        @param settings: optional settings level for the cubic Bézier curve
         @return:
         """
         self._ensure_capacity(self.index + 1)
@@ -2981,7 +2981,7 @@ class Geomstr:
             maxiterations = 20
             redo = True
             while redo:
-                # Dont do it again unless indicated...
+                # Don't do it again unless indicated...
                 redo = False
                 reason = ""
                 results = list_subpath_bounds(obj)
@@ -3000,7 +3000,7 @@ class Geomstr:
                     #    the two chains can be joined (regardless of the type of the two path
                     #    segments at the end / start)
                     # b) if the last segment of the first chain and the first segment of the second chain
-                    #    are lines the we establish whether they overlap
+                    #    are lines, we establish whether they overlap
                     for idx2 in range(idx + 1, len(results)):
                         other_entry = results[idx2]
                         other_start = other_entry[0]

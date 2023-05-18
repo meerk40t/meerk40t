@@ -546,7 +546,7 @@ def plugin(kernel, lifecycle):
                 return pathname
 
         kernel.register("preprocessor/.svg", check_for_features)
-        # Lets establish some settings too
+        # Let's establish some settings too
         stip = (
             _("Meerk40t does not support all svg-features, so you might want")
             + "\n"

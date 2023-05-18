@@ -363,7 +363,7 @@ class NodeEditToolbar(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Node-Editor", True)
+        return "", "Node-Editor", True
 
 
 class EditTool(ToolWidget):
@@ -421,7 +421,7 @@ class EditTool(ToolWidget):
         """
         Shutdown routine for widget that unregisters the listener routines
         and closes the toolbar window.
-        This could be called more than once which if not dealt with will
+        This could be called more than once, which if not dealt with, will
         cause a console warning message
         """
         if self._listener_active:
@@ -456,7 +456,7 @@ class EditTool(ToolWidget):
     def set_pen_widths(self):
         """
         Calculate the pen widths according to the current scene zoom levels,
-        so that they always appear 1 pixel wide - with the exception of the
+        so that they always appear 1 pixel wide - except for the
         pen associated to the path segment outline that gets a 2 pixel wide 'halo'
         """
 
@@ -544,8 +544,7 @@ class EditTool(ToolWidget):
 
     def calculate_points(self, selected_node):
         """
-        Parse the element and create a list of dictionaries with relevant
-        informations required for display and logic
+        Parse the element and create a list of dictionaries with relevant information required for display and logic
         """
         self.message = ""
         self.element = selected_node
@@ -970,7 +969,7 @@ class EditTool(ToolWidget):
         """
         Central routine that tells the system that the node was
         changed, if 'reload' is set to True then it requires
-        reload/recalculation of the properties (eg after the
+        reload/recalculation of the properties (e.g. after the
         segement structure of a path was changed)
         """
         if self.element is None:
@@ -1053,7 +1052,7 @@ class EditTool(ToolWidget):
             # There are some challenges around the treatment
             # of arcs within svgelements, so let's circumvent
             # them for the time being (until resolved)
-            # by replacing arc segments with cubic beziers
+            # by replacing arc segments with cubic Béziers
             if node.type in ("elem path", "elem ellipse"):
                 path.approximate_arcs_with_cubics()
         except AttributeError:
@@ -1085,7 +1084,7 @@ class EditTool(ToolWidget):
                     anyselected = True
                     break
             if not anyselected:
-                # Lets select the last point, so the last segment will be closed/opened
+                # Let's select the last point, so the last segment will be closed/opened
                 for idx in range(len(self.nodes) - 1, -1, -1):
                     entry = self.nodes[idx]
                     if entry["type"] == "point":
@@ -1101,7 +1100,7 @@ class EditTool(ToolWidget):
                     if segstart in dealt_with:
                         continue
                     dealt_with.append(segstart)
-                    # Lets establish the last segment in the path
+                    # Let's establish the last segment in the path
                     prevseg = None
                     is_closed = False
                     for sidx in range(segstart, len(self.element.path), 1):
@@ -1158,8 +1157,8 @@ class EditTool(ToolWidget):
     @staticmethod
     def revise_bezier_to_point(segment, midpoint, change_2nd_control=False):
         """
-        Adjust the two control points for a cubic bezier segment,
-        so that the given point will lie on the cubic bezier curve for t=0.5
+        Adjust the two control points for a cubic Bézier segment,
+        so that the given point will lie on the cubic Bézier curve for t=0.5
         Args:
             segment (PathSegment): a cubic bezier segment to be amended
             midpoint (Point): the new point
@@ -1285,7 +1284,7 @@ class EditTool(ToolWidget):
 
     def smoothen_all(self):
         """
-        Convert all segments of the path that are not cubic beziers into
+        Convert all segments of the path that are not cubic Béziers into
         such segments and apply the same smoothen logic as in smoothen(),
         ie adjust the control points of two neighbouring segemnts
         so that the three points
@@ -1618,7 +1617,7 @@ class EditTool(ToolWidget):
                 # Is this the last point? Then no use to break the path
                 nextseg = None
                 if idx in (0, len(self.element.path) - 1):
-                    # Dont break at the first or last point
+                    # Don't break at the first or last point
                     continue
                 nextseg = self.element.path[idx + 1]
                 if isinstance(nextseg, (Move, Close)):
@@ -1636,7 +1635,7 @@ class EditTool(ToolWidget):
                 )
                 self.element.path.insert(idx + 1, newseg)
                 # Now let's validate whether the 'right' path still has a
-                # close segment at it's end. That will be removed as this would
+                # close segment at its end. That will be removed as this would
                 # create an unwanted behaviour
                 prevseg = None
                 is_closed = False

@@ -78,7 +78,7 @@ class BasicHSizer:
             min_size = wind.GetMinSize()
             curr_size = wind.GetSize()
             if self.flags[idx] == 0:
-                # dont touch the vertical value
+                # don't touch the vertical value
                 new_h = curr_size[1]
             else:
                 new_h = self.height - 2
@@ -115,7 +115,7 @@ class BasicHSizer:
         # Second iteration, assign remaining space
         if total_proportions > 0:
             for idx, wind in enumerate(self.windows):
-                # Dont touch already assigned ones...
+                # Don't touch already assigned ones...
                 if (
                     self.proportions[idx] > 0
                     and self.activectrl[idx]

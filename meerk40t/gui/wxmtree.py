@@ -900,7 +900,7 @@ class ShadowTree:
         self._freeze = True
         self.reset_expanded()
         # Safety net - if we have too many elements it will
-        # take too log to create all preview icons...
+        # take too long to create all preview icons...
         count = self.elements.count_elems() + self.elements.count_op()
         self._too_big = bool(count > 1000)
         # print(f"Was too big?! {count} -> {self._too_big}")
@@ -1622,7 +1622,7 @@ class ShadowTree:
             node = self.wxtree.GetItemData(item)
             if node is not None:
                 if hasattr(node, "_tooltip"):
-                    # That has precedence and will displayed in all cases
+                    # That has precedence and will be displayed in all cases
                     ttip = node._tooltip
                 elif not self.context.disable_tree_tool_tips:
                     if node.type == "blob":

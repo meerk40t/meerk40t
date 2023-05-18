@@ -477,7 +477,7 @@ class Wordlist:
                 toreplace.append(item)
 
         # Then sort the list according to the direction,
-        # as we dont want to replace the same pattern again and again
+        # as we don't want to replace the same pattern again and again
         if increase >= 0:
             toreplace.sort(key=lambda n: n[0])
         else:

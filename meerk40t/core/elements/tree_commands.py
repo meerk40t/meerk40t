@@ -264,7 +264,7 @@ def init_commands(kernel):
     def delete(channel, _, data=None, **kwargs):
         """
         Delete nodes.
-        Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+        Structural nodes such as root, elements branch, and operations branch cannot be deleted
         """
         # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
@@ -381,7 +381,7 @@ def init_commands(kernel):
     def remove(channel, _, data=None, **kwargs):
         """
         Delete nodes.
-        Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+        Structural nodes such as root, elements branch, and operations branch cannot be deleted
         """
         # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
         # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements

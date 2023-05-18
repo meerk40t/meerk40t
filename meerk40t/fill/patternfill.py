@@ -652,7 +652,7 @@ class LivingHinges:
         while flag:
             flag = False
             if len(newpath) > 0 and isinstance(newpath[-1], Move):
-                # We dont need a move at the end of the path...
+                # We don't need a move at the end of the path...
                 del newpath[-1]
                 flag = True
 
