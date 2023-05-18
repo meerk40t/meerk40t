@@ -212,6 +212,7 @@ and a wxpython version <= 4.1.1."""
             @param prompt: question asked of the user.
             @param option_yes: input to be interpreted as yes (first letter is okay too).
             @param option_no: input to be interpreted as no (first letter is okay too).
+            @param caption: caption for popup
             """
             import wx
 

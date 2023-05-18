@@ -298,7 +298,7 @@ class LihuiyuDriver(Parameters):
         To work this command should usually be put into the realtime work queue for the laser, without that it will
         be paused and unable to process the resume.
 
-        @param args:
+        @param values:
         @return:
         """
         self(b"~PN&\n~")
@@ -480,6 +480,8 @@ class LihuiyuDriver(Parameters):
         vertical rastering, usually at a high speed. Accel twitches are required for this mode.
 
         @param values:
+        @param dx: movement during raster mode switch
+        @param dy: movement during raster mode switch
         @return:
         """
         if self.raster_step_y == 0 and self.raster_step_x == 0:

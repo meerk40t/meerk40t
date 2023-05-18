@@ -297,6 +297,7 @@ class ViewPort:
         @param relative_length:
         @param as_float:
         @param unitless: factor for units with no units sets.
+        @param digits: number of digits
         @param scale: scale length by given factor.
         @return:
         """

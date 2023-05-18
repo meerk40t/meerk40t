@@ -77,7 +77,7 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         """
         Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
 
-        :param `event`: a :class:`PaintEvent` event to be processed.
+        :param event: a :class:`PaintEvent` event to be processed.
         """
         if self.screen_refresh_lock.acquire(timeout=0.2):
 
@@ -366,7 +366,7 @@ class RibbonPanel(wx.Panel):
     def button_click_right(self, event):
         """
         Handles the ``wx.EVT_RIGHT_DOWN`` event
-        :param `event`: a :class:`MouseEvent` event to be processed.
+        :param event: a :class:`MouseEvent` event to be processed.
         """
         evt_id = event.GetId()
         bar = None

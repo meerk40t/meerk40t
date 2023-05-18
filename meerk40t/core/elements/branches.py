@@ -18,8 +18,6 @@ from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Angle, Color, Matrix
 
-from .element_types import *
-
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation

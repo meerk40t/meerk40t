@@ -200,6 +200,10 @@ class Pattern:
         Write the pattern to the pattern in patterning format.
 
         @param pattern: generator of pattern format.
+        @param a: pattern a value (differs)
+        @param b: pattern b value (differs)
+        @param args:
+        @param kwargs:
         @return:
         """
         self.offset_x = 0
@@ -823,6 +827,8 @@ class Geomstr:
         @param start: complex: start point
         @param end: complex: end point
         @param settings: settings level to assign this particular line.
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -903,6 +909,8 @@ class Geomstr:
 
         @param position: Position at which add point
         @param settings: optional settings level for the point
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -2231,6 +2239,7 @@ class Geomstr:
         """
         Affine Transformation by an arbitrary matrix.
         @param mx: Matrix to transform by
+        @param e: index, line values
         @return:
         """
         if e is not None:
@@ -2283,6 +2292,7 @@ class Geomstr:
 
         @param dx: change in x
         @param dy: change in y
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2310,6 +2320,7 @@ class Geomstr:
         Uniform scaling operation
 
         @param scale: uniform scaling factor
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2336,6 +2347,7 @@ class Geomstr:
         """
         Rotate segments around the origin.
         @param angle: angle in radians
+        @param e: index, line values
         @return:
         """
         rotation = complex(math.cos(angle), math.sin(angle))

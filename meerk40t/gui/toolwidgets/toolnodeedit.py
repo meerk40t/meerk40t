@@ -1141,7 +1141,7 @@ class EditTool(ToolWidget):
         Args:
             segment (PathSegment): a cubic bezier
             t (float): (0 <= t <= 1)
-            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+        Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
         """
         p0 = segment.start
         p1 = segment.control1
@@ -1163,7 +1163,8 @@ class EditTool(ToolWidget):
         Args:
             segment (PathSegment): a cubic bezier segment to be amended
             midpoint (Point): the new point
-            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+            change_2nd_control: modify the 2nd control point, rather than the first
+        Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
         """
         t = 0.5
         p0 = segment.start

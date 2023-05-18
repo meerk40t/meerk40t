@@ -9,9 +9,7 @@ from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.node import Fillrule, Linejoin, Node
 from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import Color, Matrix
-
-from .element_types import *
+from meerk40t.svgelements import Color, Matrix, Path
 
 
 def plugin(kernel, lifecycle=None):

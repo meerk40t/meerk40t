@@ -644,6 +644,7 @@ def is_inside(inner, outer, tolerance=0):
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
+    @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
     # We still consider a path to be inside another path if it is

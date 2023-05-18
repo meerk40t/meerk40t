@@ -190,6 +190,7 @@ class LaserRender:
         @param gc: graphics context
         @param draw_mode: draw_mode set
         @param zoomscale: set zoomscale at which this is drawn at
+        @param alpha: render transparency
         @return:
         """
         if draw_mode is None:

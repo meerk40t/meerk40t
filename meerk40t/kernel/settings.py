@@ -235,7 +235,7 @@ class Settings:
         Write all valid attribute values of this object to the section provided.
 
         @param section: section to write to
-        @param obj: object whose attributes should be written
+        @param write_dict: dict whose attributes should be written
         @return:
         """
         for key, value in write_dict.items():

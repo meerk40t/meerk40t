@@ -589,6 +589,7 @@ class Node:
         Should be overloaded by subclasses.
 
         @param point: point to be added
+        @param index: index for point insertion
         @return: Whether append was successful
         """
         # return self._insert_point(point, index)

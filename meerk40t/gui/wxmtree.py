@@ -226,6 +226,7 @@ class TreePanel(wx.Panel):
         Called by 'rebuild_tree' signal. To rebuild the tree directly
 
         @param origin: the path of the originating signal
+        @param target: target device
         @param args:
         @return:
         """
@@ -297,7 +298,7 @@ class TreePanel(wx.Panel):
         Called by 'rebuild_tree' signal. Halts any updates like set_decorations and others
 
         @param origin: the path of the originating signal
-        @param: status: true, false (evident what they do), None: to toggle
+        @param status: true, false (evident what they do), None: to toggle
         @param args:
         @return:
         """
@@ -1243,6 +1244,7 @@ class ShadowTree:
 
         @param node: Node to have the icon set.
         @param icon: overriding icon to be forcibly set, rather than a default.
+        @param force: force the icon setting
         @return: item_id if newly created / update
         """
         root = self
@@ -1320,6 +1322,7 @@ class ShadowTree:
         Updates the decorations for a particular node/tree item
 
         @param node:
+        @param force: force updating decorations
         @return:
         """
 
