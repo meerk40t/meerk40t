@@ -172,13 +172,23 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_stroke",
     ),
-    "ctrl+v": ("clipboard paste",),
-    "ctrl+x": ("clipboard cut",),
+    "ctrl+v": (
+        "",
+        "clipboard paste",
+    ),
+    "ctrl+x": (
+        "",
+        "clipboard cut",
+    ),
     "ctrl+z": (
+        "",
         "undo",
         "reset",
     ),
-    "ctrl+shift+z": ("redo",),
+    "ctrl+shift+z": (
+        "",
+        "redo",
+    ),
     "ctrl+1": ("bind 1 move $x $y",),
     "ctrl+2": ("bind 2 move $x $y",),
     "ctrl+3": ("bind 3 move $x $y",),
