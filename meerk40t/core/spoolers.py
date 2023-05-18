@@ -412,7 +412,7 @@ class Spooler:
     `execute()` function passing the relevant driver as the one variable. The job itself is agnostic, and will
     execute whatever it wants calling the driver-like functions that may or may not exist on the driver.
 
-    If execute() returns true then it is fully executed and will be removed. Otherwise it will be repeatedly
+    If execute() returns true then it is fully executed and will be removed. Otherwise, it will be repeatedly
     called until whatever work it is doing is finished. This also means the driver itself is checked for holds
     (usually pausing or busy) each cycle.
     """

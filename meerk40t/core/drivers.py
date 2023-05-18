@@ -170,7 +170,7 @@ class Driver:
         bunch of .rd code, or Lihuiyu device it could be .egv code. It's a method of sending pre-chewed data to the
         device.
 
-        @param type:
+        @param data_type:
         @param data:
         @return:
         """

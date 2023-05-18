@@ -104,7 +104,7 @@ ERROR_UNUSED_AXIS_WORDS = 31
 ERROR_ARC_WITHOUT_WORDS = 32
 # The motion command has an invalid target. G2, G3, and G38.2 generates this error, if the arc is impossible to generate or if the probe target is the current position.
 ERROR_INVALID_TARGET = 33
-# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semi-circles or quadrants, or redefine them with the arc offset definition.
+# A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into semicircles or quadrants, or redefine them with the arc offset definition.
 ERROR_ARC_COMPUTATION = 34
 # A G2 or G3 arc, traced with the offset definition, is missing the IJK offset word in the selected plane to trace the arc.
 ERROR_ARC_OFFSET_WORDS_MISSING = 35

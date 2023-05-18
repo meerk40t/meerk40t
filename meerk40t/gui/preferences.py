@@ -448,7 +448,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Classification"),
+            constraint="Classification",
             injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
@@ -458,7 +458,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Gui"),
+            constraint="Gui",
         )
         self.panel_gui.SetupScrolling()
 
@@ -467,7 +467,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
-            constraint=("Scene"),
+            constraint="Scene",
         )
         self.panel_scene.SetupScrolling()
 
@@ -634,4 +634,4 @@ class Preferences(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Preferences", True)
+        return "", "Preferences", True

@@ -496,4 +496,4 @@ class RenderSplit(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Editing", "Image Splitting")
+        return "Editing", "Image Splitting"

@@ -272,7 +272,7 @@ class CutOpNode(Node, Parameters):
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan: Plan value during preprocessor call
         @return:
         """
         if isinstance(self.speed, str):

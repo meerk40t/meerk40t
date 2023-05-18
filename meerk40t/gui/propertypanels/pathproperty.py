@@ -31,7 +31,7 @@ class PathPropertyPanel(ScrolledPanel):
         )
         self.node = node
         self.panels = []
-        # Id at top in all cases...
+        # `Id` at top in all cases...
         panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         self.panels.append(panel_id)
 

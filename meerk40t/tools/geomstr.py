@@ -200,6 +200,10 @@ class Pattern:
         Write the pattern to the pattern in patterning format.
 
         @param pattern: generator of pattern format.
+        @param a: pattern a value (differs)
+        @param b: pattern b value (differs)
+        @param args:
+        @param kwargs:
         @return:
         """
         self.offset_x = 0
@@ -823,6 +827,8 @@ class Geomstr:
         @param start: complex: start point
         @param end: complex: end point
         @param settings: settings level to assign this particular line.
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -860,12 +866,12 @@ class Geomstr:
 
     def cubic(self, start, control0, control1, end, settings=0):
         """
-        Add in a cubic bezier curve
+        Add in a cubic Bézier curve
         @param start: (complex) start point
         @param control0: (complex) first control point
         @param control1: (complex) second control point
         @param end: (complex) end point
-        @param settings: optional settings level for the cubic bezier curve
+        @param settings: optional settings level for the cubic Bézier curve
         @return:
         """
         self._ensure_capacity(self.index + 1)
@@ -903,6 +909,8 @@ class Geomstr:
 
         @param position: Position at which add point
         @param settings: optional settings level for the point
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -2231,6 +2239,7 @@ class Geomstr:
         """
         Affine Transformation by an arbitrary matrix.
         @param mx: Matrix to transform by
+        @param e: index, line values
         @return:
         """
         if e is not None:
@@ -2283,6 +2292,7 @@ class Geomstr:
 
         @param dx: change in x
         @param dy: change in y
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2310,6 +2320,7 @@ class Geomstr:
         Uniform scaling operation
 
         @param scale: uniform scaling factor
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2336,6 +2347,7 @@ class Geomstr:
         """
         Rotate segments around the origin.
         @param angle: angle in radians
+        @param e: index, line values
         @return:
         """
         rotation = complex(math.cos(angle), math.sin(angle))
@@ -2969,7 +2981,7 @@ class Geomstr:
             maxiterations = 20
             redo = True
             while redo:
-                # Dont do it again unless indicated...
+                # Don't do it again unless indicated...
                 redo = False
                 reason = ""
                 results = list_subpath_bounds(obj)
@@ -2988,7 +3000,7 @@ class Geomstr:
                     #    the two chains can be joined (regardless of the type of the two path
                     #    segments at the end / start)
                     # b) if the last segment of the first chain and the first segment of the second chain
-                    #    are lines the we establish whether they overlap
+                    #    are lines, we establish whether they overlap
                     for idx2 in range(idx + 1, len(results)):
                         other_entry = results[idx2]
                         other_start = other_entry[0]

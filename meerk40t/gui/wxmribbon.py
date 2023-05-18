@@ -1,5 +1,5 @@
 """
-The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All of the buttons are dynmically generated but the
+The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All the buttons are dynmically generated but the
 panels themselves are created in a static fashion. But the contents of those individual ribbon panels are defined
 in the kernel lookup.
 
@@ -21,11 +21,11 @@ in the kernel lookup.
         )
 
 For example would register a button in the control panel with a discrete name "Redlight" the definitions for label,
-icon, tip, action are all pretty standard to setup a button. This can often be registered as part of a service such
+icon, tip, action are all pretty standard to set up a button. This can often be registered as part of a service such
 that if you switch the service it will change the lookup and that change will be detected here and rebuilt the buttons.
 
 The toggle defines an alternative set of values for the toggle state of the button.
-The multi defines a series of alternative states, and creates a hybrid button with a drop down to select the state
+The multi defines a series of alternative states, and creates a hybrid button with a drop-down to select the state
     desired.
 Other properties like `rule_enabled` provides a check for whether this button should be enabled or not.
 
@@ -77,7 +77,7 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         """
         Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
 
-        :param `event`: a :class:`PaintEvent` event to be processed.
+        :param event: a :class:`PaintEvent` event to be processed.
         """
         if self.screen_refresh_lock.acquire(timeout=0.2):
 
@@ -229,7 +229,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         if not self.IsMinimised():
             return False
 
-        if self._expanded_dummy is not None or self._expanded_panel != None:
+        if self._expanded_dummy is not None or self._expanded_panel is not None:
             return False
 
         size = self.GetBestSize()
@@ -268,7 +268,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         # This approach has a problem though - when the panel is reinserted into
         # its original parent, it'll be at a different position in the child list
         # and thus assume a new position.
-        # NB: Children iterators not used as behaviour is not well defined
+        # NB: Children iterators not used as behaviour is not well-defined
         # when iterating over a container which is being emptied
 
         for child in self.GetChildren():
@@ -366,7 +366,7 @@ class RibbonPanel(wx.Panel):
     def button_click_right(self, event):
         """
         Handles the ``wx.EVT_RIGHT_DOWN`` event
-        :param `event`: a :class:`MouseEvent` event to be processed.
+        :param event: a :class:`MouseEvent` event to be processed.
         """
         evt_id = event.GetId()
         bar = None
@@ -1308,7 +1308,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=False):
                 provider.SetColour(id_, colour)
             except:
                 # Not all colorcodes are supported by all providers.
-                # So lets ignore it
+                # So let's ignore it
                 pass
 
     TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
