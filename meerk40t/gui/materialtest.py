@@ -1392,4 +1392,4 @@ class TemplateTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Parameter-Test")
+        return "Laser-Tools", "Parameter-Test"
