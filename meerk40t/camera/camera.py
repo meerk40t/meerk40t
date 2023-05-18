@@ -382,7 +382,7 @@ class Camera(Service):
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("background", (self.image_width, self.image_height, frame))
-            return (self.image_width, self.image_height, frame)
+            return self.image_width, self.image_height, frame
         return None
 
     def export(self):
@@ -393,5 +393,5 @@ class Camera(Service):
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("export-image", (self.image_width, self.image_height, frame))
-            return (self.image_width, self.image_height, frame)
+            return self.image_width, self.image_height, frame
         return None

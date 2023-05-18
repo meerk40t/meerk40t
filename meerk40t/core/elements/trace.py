@@ -459,10 +459,10 @@ def init_commands(kernel):
                     pass
                 elif startmethod == 1:
                     # Dialog
-                    yield ("console", 'interrupt "Trace is about to start"')
+                    yield "console", 'interrupt "Trace is about to start"'
                 elif startmethod == 2:
                     # Wait for some seconds
-                    yield ("wait", 5000)
+                    yield "wait", 5000
 
                 yield "wait_finish"
                 yield "rapid_mode"

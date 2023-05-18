@@ -908,7 +908,7 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Camera", "Camera")
+        return "Camera", "Camera"
 
 
 class CameraURIPanel(wx.Panel):
@@ -1083,4 +1083,4 @@ class CameraURI(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Camera", "Sources")
+        return "Camera", "Sources"

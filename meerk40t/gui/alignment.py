@@ -1629,4 +1629,4 @@ class Alignment(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Editing", "Element Alignment")
+        return "Editing", "Element Alignment"

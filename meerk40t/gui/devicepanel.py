@@ -541,4 +541,4 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Device Manager")
+        return "Device-Settings", "Device Manager"

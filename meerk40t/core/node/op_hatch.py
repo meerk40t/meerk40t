@@ -288,7 +288,7 @@ class HatchOpNode(Node, Parameters):
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan:
         @return:
         """
         if isinstance(self.speed, str):

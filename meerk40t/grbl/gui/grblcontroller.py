@@ -246,4 +246,4 @@ class GRBLController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "GRBL Controller")
+        return "Device-Control", "GRBL Controller"

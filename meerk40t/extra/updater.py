@@ -42,7 +42,7 @@ def plugin(kernel, lifecycle):
             "verbosity",
             "p",
             type=int,
-            help=("Show Info: 0 never, 1 console only, 2 if version found, 3 always"),
+            help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
         )
         @kernel.console_command(
             "check_for_updates",

@@ -424,7 +424,7 @@ class HersheyFontSelector(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Font-Selector", True)
+        return "", "Font-Selector", True
 
 
 class PanelFontManager(wx.Panel):
@@ -829,7 +829,7 @@ class HersheyFontManager(MWindow):
     @staticmethod
     def submenu():
         # suppress in tool-menu
-        return ("", "Font-Manager", True)
+        return "", "Font-Manager", True
 
 
 def register_hershey_stuff(kernel):
