@@ -751,6 +751,25 @@ class Geomstr:
         return obj
 
     @classmethod
+    def lines(cls, *points):
+        path = cls()
+        if not points:
+            return path
+        first_point = points[0]
+        if isinstance(first_point, (float, int)):
+            if len(points) < 2:
+                return path
+            points = list(zip(*[iter(points)] * 2))
+            first_point = points[0]
+        if isinstance(first_point, (list, tuple)):
+            points = [pts[0] + pts[1] * 1j for pts in points]
+            first_point = points[0]
+        if isinstance(first_point, complex):
+            for i in range(1, len(points)):
+                path.line(points[i-1], points[i])
+        return path
+
+    @classmethod
     def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12):
         obj = cls()
         obj.arc_as_cubics(

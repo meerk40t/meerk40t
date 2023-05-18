@@ -97,8 +97,7 @@ class LineNode(Node, Stroked):
         )
 
     def as_geometry(self):
-        path = Geomstr()
-        path.line(complex(self.x1, self.y1), complex(self.x2, self.y2))
+        path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
         return path
 
