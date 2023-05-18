@@ -19,15 +19,26 @@ class PolylineNode(Node, Stroked):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        If args contains 1 object it is expected to be a Geomstr or a Polyline Shape.
+        If args contains 2+ objects these are expected to be points within the polyline.
+
+        @param args:
+        @param kwargs:
+        """
         self.geometry = None
         if len(args) == 1:
+            # Single value args.
             if isinstance(args[0], Geomstr):
                 kwargs["geometry"] = args[0]
             else:
                 kwargs["shape"] = args[0]
-
+        if len(args) >= 2:
+            # This is a points args.
+            kwargs["geometry"] = Geomstr.lines(*args)
         shape = kwargs.get("shape")
         if shape is not None:
+            # We have a polyline shape.
             if "stroke" not in kwargs:
                 kwargs["stroke"] = shape.stroke
             if "stroke_width" not in kwargs:
