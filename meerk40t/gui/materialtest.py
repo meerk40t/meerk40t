@@ -440,7 +440,7 @@ class TemplatePanel(wx.Panel):
         if op != 3:  # No Image?
             return
         idx = self.combo_images.GetSelection() - 1
-        if idx >= 0 and idx < len(self.images):
+        if 0 <= idx < len(self.images):
             bb = self.images[idx].bounds
             if bb is not None:
                 wd = Length(amount=bb[2] - bb[0], preferred_units="mm")
@@ -669,7 +669,7 @@ class TemplatePanel(wx.Panel):
         # 0 = internal_attribute, 1 = secondary_attribute,
         # 2 = Label, 3 = unit,
         # 4 = keep_unit, 5 = needs_to_be_positive)
-        if idx >= 0 and idx < len(self.parameters):
+        if 0 <= idx < len(self.parameters):
             s_unit = self.parameters[idx][3]
             b_positive = self.parameters[idx][5]
         self.unit_param_1a.SetLabel(s_unit)
@@ -683,7 +683,7 @@ class TemplatePanel(wx.Panel):
         # 0 = internal_attribute, 1 = secondary_attribute,
         # 2 = Label, 3 = unit,
         # 4 = keep_unit, 5 = needs_to_be_positive)
-        if idx >= 0 and idx < len(self.parameters):
+        if 0 <= idx < len(self.parameters):
             s_unit = self.parameters[idx][3]
         self.unit_param_2a.SetLabel(s_unit)
         self.unit_param_2b.SetLabel(s_unit)
@@ -752,7 +752,7 @@ class TemplatePanel(wx.Panel):
             # 0 = internal_attribute, 1 = secondary_attribute,
             # 2 = Label, 3 = unit,
             # 4 = keep_unit, 5 = needs_to_be_positive)
-            if idx >= 0 and idx < len(self.parameters):
+            if 0 <= idx < len(self.parameters):
                 s_unit = self.parameters[idx][3]
             self.info_delta_1.SetLabel(
                 _("Every {dist}").format(dist=self.shortened(delta, 3) + s_unit)
@@ -771,7 +771,7 @@ class TemplatePanel(wx.Panel):
             # 0 = internal_attribute, 1 = secondary_attribute,
             # 2 = Label, 3 = unit,
             # 4 = keep_unit, 5 = needs_to_be_positive)
-            if idx >= 0 and idx < len(self.parameters):
+            if 0 <= idx < len(self.parameters):
                 s_unit = self.parameters[idx][3]
             self.info_delta_2.SetLabel(
                 _("Every {dist}").format(dist=self.shortened(delta, 3) + s_unit)
@@ -1014,7 +1014,7 @@ class TemplatePanel(wx.Panel):
                         fill_color = None
                     if shapetype == "image":
                         idx = self.combo_images.GetSelection() - 1
-                        if idx >= 0 and idx < len(self.images):
+                        if 0 <= idx < len(self.images):
                             elemnode = copy(self.images[idx])
                             elemnode.matrix.post_translate(xx, yy)
                             elemnode.modified()
