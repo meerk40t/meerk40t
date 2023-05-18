@@ -143,7 +143,7 @@ DEFAULT_KEYMAP = {
         "",
         "rotaryscale",
     ),
-    "ctrl+a": ("element* select",),
+    "ctrl+a": ("", "element* select",),
     "ctrl+c": ("", "clipboard copy",),
     "ctrl+shift+c": ("align bed group xy center center",),
     "ctrl+e": (
