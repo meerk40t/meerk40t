@@ -1684,7 +1684,7 @@ class BalorDevice(Service, ViewPort):
             channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
             geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
             if count > 1:
-                geometry.duplicate(count)
+                geometry.copies(count)
             return "geometry", geometry
 
         @self.console_command(
