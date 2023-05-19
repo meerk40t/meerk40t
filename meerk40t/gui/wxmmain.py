@@ -555,7 +555,7 @@ class MeerK40t(MWindow):
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
-        self._update_status_edit_menu()
+        self._update_status_edit_menu()(None)
         if not self.context.show_colorbar or not self.widgets_created:
             return
 
@@ -2714,7 +2714,8 @@ class MeerK40t(MWindow):
                         if menu_id != wx.NOT_FOUND:
                             menu_item = self.edit_menu.FindItemById(menu_id)
                             menu_item.Enable(flag)
-            event.Skip()
+            if event:
+                event.Skip()
 
         return handler
 
@@ -2731,7 +2732,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu)
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu())
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
