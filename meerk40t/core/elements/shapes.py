@@ -679,7 +679,7 @@ def init_commands(kernel):
         "path",
         help=_("Convert any element nodes to paths"),
         input_type="elements",
-        output_type="shapes",
+        output_type="geometry",
     )
     def element_path_convert(data, **kwargs):
         path = Geomstr()
@@ -689,7 +689,7 @@ def init_commands(kernel):
             except AttributeError:
                 continue
             path.append(e)
-        return "shapes", path
+        return "geometry", path
 
     @self.console_option(
         "real",
