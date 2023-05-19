@@ -2415,7 +2415,8 @@ class MeerK40t(MWindow):
                         flag = bool(c_enabled())
                     except (AttributeError, TypeError):
                         pass
-                menu_item.Enable(flag)
+                if not flag:
+                    menu_item.Enable(flag)
 
                 def deal_with(routine, parameter=None):
                     def done(event):
@@ -2762,7 +2763,6 @@ class MeerK40t(MWindow):
             return handler
 
         self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_status(choices))
-        self.SetAcceleratorTable(self.AcceleratorTable)
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
