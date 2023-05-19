@@ -2318,6 +2318,7 @@ class MeerK40t(MWindow):
             c_enabled = choice.get("enabled")
             c_segment = choice.get("segment", "")
             c_param = choice.get("parameter")
+            c_text_color = choice.get("text_color")
             c_id = choice.get("id", wx.ID_ANY)
             if c_segment != current_segment:
                 current_segment = c_segment
@@ -2370,14 +2371,16 @@ class MeerK40t(MWindow):
                     )
                     menu_item.Check(c_criteria)
                 choice["menu_item"] = menu_item
-                flag = True
-                if c_enabled is not None:
-                    try:
-                        flag = bool(c_enabled())
-                    except (AttributeError, TypeError):
-                        pass
-                if not flag:
-                    menu_item.Enable(flag)
+                if c_text_color:
+                    menu_item.SetTextColour(c_text_color)
+                # flag = True
+                # if c_enabled is not None:
+                #     try:
+                #         flag = bool(c_enabled())
+                #     except (AttributeError, TypeError):
+                #         pass
+                # if not flag:
+                #     menu_item.Enable(flag)
 
                 def deal_with(routine, parameter=None):
                     def done(event):
