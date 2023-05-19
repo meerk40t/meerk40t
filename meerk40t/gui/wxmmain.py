@@ -2721,6 +2721,7 @@ class MeerK40t(MWindow):
                             if menu_id != wx.NOT_FOUND:
                                 menu_item = self.edit_menu.FindItemById(menu_id)
                                 menu_item.Enable(flag)
+                                menu_item.SetItemLabel(menu_item.GetItemLabel())
                         # print (entry["label"], entry["enabled"](), flag)
                 event.Skip()
 
