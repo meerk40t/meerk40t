@@ -402,7 +402,7 @@ def init_commands(kernel):
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
-        input_type=("elements", "shapes", None),
+        input_type=("elements", None),
     )
     def trace_trace_spooler(
         command,
@@ -491,7 +491,7 @@ def init_commands(kernel):
     @self.console_command(
         "tracegen",
         help=_("create the trace around the given elements"),
-        input_type=("elements", "shapes", None),
+        input_type=("elements", None),
         output_type="elements",
     )
     def trace_trace_generator(
