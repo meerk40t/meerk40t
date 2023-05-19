@@ -2697,6 +2697,7 @@ class MeerK40t(MWindow):
             },
         ]
         self.edit_menu = wx.Menu()
+        self._create_menu_from_choices(self.edit_menu, choices)
 
         label = _("Edit")
         index = self.main_menubar.FindMenu(label)
@@ -2705,7 +2706,6 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        self._create_menu_from_choices(self.edit_menu, choices)
         def update_status(choices):
             def handler(event):
                 for entry in choices:
