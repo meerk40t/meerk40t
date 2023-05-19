@@ -203,15 +203,14 @@ class PolylineNode(Node, Stroked):
         max_index = len(points) - 1
         for idx, pt in enumerate(points):
             if idx == 0:
-                self._points.append([pt.x, pt.y, "endpoint"])
+                self._points.append([pt.real, pt.imag, "endpoint"])
             elif idx == max_index:
-                self._points.append([pt.x, pt.y, "endpoint"])
+                self._points.append([pt.real, pt.imag, "endpoint"])
             else:
-                self._points.append([pt.x, pt.y, "point"])
+                self._points.append([pt.real, pt.imag, "point"])
             if idx > 0:
-                self._points.append(
-                    [0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"]
-                )
+                midpoint = (pt + lastpt) / 2
+                self._points.append([midpoint.real, midpoint.imag, "midpoint"])
             lastpt = pt
 
     def update_point(self, index, point):
