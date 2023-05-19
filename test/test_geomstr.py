@@ -1,3 +1,4 @@
+import math
 import random
 import time
 import unittest
@@ -260,6 +261,36 @@ class TestGeomstr(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
+
+    def test_geomstr_classmethods(self):
+        """
+        Test various classmethods for making defined geomstr shapes.
+        @return:
+        """
+        path = Geomstr.lines(0, 1, 0, 101)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), 100)
+        path = Geomstr.lines(100, 100, 0, 100)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), 100)
+        path = Geomstr.lines(0, 0, 1, 1)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), math.sqrt(2))
+
+        path = Geomstr.lines(0, 0, 1, 1, 2, 2)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        path = Geomstr.lines((0, 0), (1, 1), (2, 2))
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
 
     def test_geomstr_arc_center(self):
         for i in range(1000):
