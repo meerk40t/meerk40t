@@ -2409,6 +2409,7 @@ class MeerK40t(MWindow):
                         wx.ITEM_CHECK,
                     )
                     menu_item.Check(c_criteria)
+                current_menu.SetLabel(c_id, c_label)
                 flag = True
                 if c_enabled is not None:
                     try:
