@@ -51,13 +51,13 @@ _ = wx.GetTranslation
 
 def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
-    minwd = 75
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
         .Left()
-        .MinSize(minwd, -1)
-        .BestSize(300, 500)
+        .MinSize(200, 180)
+        .BestSize(300, 270)
+        .FloatingSize(300, 270)
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
