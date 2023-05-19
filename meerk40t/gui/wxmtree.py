@@ -65,7 +65,7 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
-    pane.dock_proportion = 270
+    pane.dock_proportion = 500
     pane.control = wxtree
     window.on_pane_create(pane)
     context.register("pane/tree", pane)
