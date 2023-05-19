@@ -787,7 +787,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             ("light", "light-simulate"),
-            input_type="shapes",
+            input_type="geometry",
             help=_("runs light on events."),
         )
         def light(
@@ -807,26 +807,15 @@ class BalorDevice(Service, ViewPort):
             if data is None:
                 channel("Nothing sent")
                 return
-            if command == "light":
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=False,
-                )
-            else:
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=True,
-                )
+            self.job = ElementLightJob(
+                self,
+                data,
+                travel_speed=travel_speed,
+                jump_delay=jump_delay,
+                simulation_speed=simulation_speed,
+                quantization=quantization,
+                simulate=bool(command != "light"),
+            )
             self.spooler.send(self.job)
 
         @self.console_command(
