@@ -299,6 +299,13 @@ class TestGeomstr(unittest.TestCase):
         self.assertTrue(np.all(path.segments[:][0] == path.segments[:][2]))
         self.assertTrue(np.all(path.segments[:][1] == path.segments[:][3]))
 
+    def test_geomstr_interpolated_points(self):
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        path.quad(complex(2, 2), complex(5, 0), complex(4, 4))
+        self.assertEqual(len(path), 3)
+        pts = list(path.as_interpolated_points(interpolate=100))
+        self.assertEqual(102, len(pts))
+
     def test_geomstr_arc_center(self):
         for i in range(1000):
             start = random_point()
