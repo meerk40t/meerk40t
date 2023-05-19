@@ -2699,7 +2699,7 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
-    def _update_status_edit_menu(self):
+    def _update_status_edit_menu(self, *args):
         choices = self.edit_menu_choice
 
         def handler(event):
