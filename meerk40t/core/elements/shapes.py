@@ -676,18 +676,6 @@ def init_commands(kernel):
 
     @self.console_command(
         "path",
-        help=_("Convert any shapes to paths"),
-        input_type="shapes",
-        output_type="shapes",
-    )
-    def element_shape_convert(data, **kwargs):
-        paths = []
-        for e in data:
-            paths.append(abs(Path(e)))
-        return "shapes", paths
-
-    @self.console_command(
-        "path",
         help=_("Convert any element nodes to paths"),
         input_type="elements",
         output_type="shapes",
