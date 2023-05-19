@@ -2409,7 +2409,7 @@ class MeerK40t(MWindow):
                         wx.ITEM_CHECK,
                     )
                     menu_item.Check(c_criteria)
-                menu_item.SetAccel(menu_item.GetAccel())
+                choice["menu_item"] = menu_item
                 flag = True
                 if c_enabled is not None:
                     try:
@@ -2764,6 +2764,11 @@ class MeerK40t(MWindow):
             return handler
 
         self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_status(choices))
+        for entry in choices:
+            menu_item = entry.get("menu_item")
+            if not menu_item:
+                continue
+            menu_item.SetItemLabel(menu_item.GetItemLabel())
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):
