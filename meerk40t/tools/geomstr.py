@@ -751,6 +751,25 @@ class Geomstr:
         return obj
 
     @classmethod
+    def lines(cls, *points):
+        path = cls()
+        if not points:
+            return path
+        first_point = points[0]
+        if isinstance(first_point, (float, int)):
+            if len(points) < 2:
+                return path
+            points = list(zip(*[iter(points)] * 2))
+            first_point = points[0]
+        if isinstance(first_point, (list, tuple)):
+            points = [pts[0] + pts[1] * 1j for pts in points]
+            first_point = points[0]
+        if isinstance(first_point, complex):
+            for i in range(1, len(points)):
+                path.line(points[i-1], points[i])
+        return path
+
+    @classmethod
     def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12):
         obj = cls()
         obj.arc_as_cubics(
@@ -787,6 +806,46 @@ class Geomstr:
             t_start = t_end
             t_end += step_size
         return obj
+
+    @classmethod
+    def rect(cls, x, y, width, height, rx=0, ry=0):
+        path = cls()
+        if rx < 0 < width or ry < 0 < height:
+            rx = abs(rx)
+            ry = abs(ry)
+        if rx == ry == 0:
+            path.line(complex(x, y), complex(x + width, y)),
+            path.line(complex(x + width, y), complex(x + width, y + height)),
+            path.line(complex(x + width, y + height), complex(x, y + height)),
+            path.line(complex(x, y + height), complex(x, y)),
+        else:
+            offset = 1 - (1.0 / math.sqrt(2))
+            path.line(complex(x + rx, y), complex(x + width - rx, y))
+            path.arc(
+                complex(x + width - rx, y),
+                complex(x + width - rx * offset, y + ry * offset),
+                complex(x + width, y + ry),
+            )
+            path.line(complex(x + width, y + ry), complex(x + width, y + height - ry))
+            path.arc(
+                complex(x + width, y + height - ry),
+                complex(x + width - rx * offset, y + height - ry * offset),
+                complex(x + width - rx, y + height),
+            )
+            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
+            path.arc(
+                complex(x + rx, y + height),
+                complex(x + rx * offset, y + height - ry * offset),
+                complex(x, y + height - ry),
+            )
+            path.line(complex(x, y + height - ry), complex(x, y + ry))
+            path.arc(
+                complex(x, y + ry),
+                complex(x + rx * offset, y + ry * offset),
+                complex(x + rx, y),
+            )
+            path.line(complex(x + rx, y), complex(x + rx, y))
+        return path
 
     def as_points(self):
         at_start = True
