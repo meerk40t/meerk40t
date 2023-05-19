@@ -861,6 +861,45 @@ class Geomstr:
             yield end
             at_start = False
 
+    def as_interpolated_points(self, interpolate=100):
+        """
+        Interpolated points gives all the points for the geomstr data. The arc, quad, and cubic are interpolated.
+
+        Non-connected data yields a None object.
+
+        Points are not connected to either side.
+
+        @param interpolate:
+        @return:
+        """
+        at_start = True
+        end = None
+        for e in self.segments[: self.index]:
+            seg_type = int(e[2].real)
+            start = e[0]
+            if end != start and not at_start:
+                # Start point does not equal previous end point.
+                yield None
+            end = e[4]
+            if at_start:
+                yield start
+            at_start = False
+            if seg_type == TYPE_LINE:
+                yield end
+                continue
+            if seg_type == TYPE_QUAD:
+                quads = self._quad_position(e, np.linspace(0,1,interpolate))
+                for q in quads[1:]:
+                    yield q
+            elif seg_type == TYPE_CUBIC:
+                cubics = self._cubic_position(e, np.linspace(0, 1, interpolate))
+                for c in cubics[1:]:
+                    yield c
+            elif seg_type == TYPE_ARC:
+                arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
+                for a in arcs[1:]:
+                    yield a
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
