@@ -17,6 +17,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -681,14 +682,14 @@ def init_commands(kernel):
         output_type="shapes",
     )
     def element_path_convert(data, **kwargs):
-        paths = []
+        path = Geomstr()
         for node in data:
             try:
-                e = node.as_path()
+                e = node.as_geometry()
             except AttributeError:
                 continue
-            paths.append(e)
-        return "shapes", paths
+            path.append(e)
+        return "shapes", path
 
     @self.console_option(
         "real",
