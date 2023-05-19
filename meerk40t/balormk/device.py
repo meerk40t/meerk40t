@@ -1725,7 +1725,9 @@ class BalorDevice(Service, ViewPort):
                 channel(_("No elements bounds to trace."))
                 return
             hull.append(hull[0])  # loop
-            return "geometry", Geomstr.polyline(*hull)
+            hull = list(map(complex, hull))
+            geometry = Geomstr.lines(hull)
+            return "geometry", geometry
 
         def ant_points(points, steps):
             points = list(points)

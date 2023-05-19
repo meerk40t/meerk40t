@@ -7,6 +7,8 @@ elements.
 """
 import time
 
+import numpy as np
+
 from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
@@ -140,6 +142,9 @@ class ElementLightJob:
                 move = True
                 continue
             x, y = e.real, e.imag
+            if np.isnan(x) or np.isnan(y):
+                move = True
+                continue
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             if move:
