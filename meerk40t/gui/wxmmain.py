@@ -2309,56 +2309,16 @@ class MeerK40t(MWindow):
             except KeyError:
                 c_level = 1
 
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_subsegment = choice["subsegment"]
-            except KeyError:
-                c_subsegment = ""
-
-            try:
-                c_label = choice["label"]
-            except KeyError:
-                c_label = ""
-
-            try:
-                c_help = choice["help"]
-            except KeyError:
-                c_help = ""
-
-            try:
-                c_action = choice["action"]
-            except KeyError:
-                c_action = None
-
-            try:
-                c_criteria = choice["criteria"]
-            except KeyError:
-                c_criteria = None
-
-            try:
-                c_enabled = choice["enabled"]
-            except KeyError:
-                c_enabled = None
-
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_param = choice["parameter"]
-            except KeyError:
-                c_param = None
-
-            try:
-                c_id = choice["id"]
-            except KeyError:
-                c_id = wx.ID_ANY
-            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
+            c_segment = choice.get("segment", "")
+            c_subsegment = choice.get("subsegment", "")
+            c_label = choice.get("label", "")
+            c_help = choice.get("help", "")
+            c_action = choice.get("action")
+            c_criteria = choice.get("criteria")
+            c_enabled = choice.get("enabled")
+            c_segment = choice.get("segment", "")
+            c_param = choice.get("parameter")
+            c_id = choice.get("id", wx.ID_ANY)
             if c_segment != current_segment:
                 current_segment = c_segment
                 current_subsegment = ""
