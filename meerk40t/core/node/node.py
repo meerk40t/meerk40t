@@ -64,7 +64,7 @@ class Node:
 
     Type is a string value of the given node type and is used to delineate nodes.
     Label is a string value that will often describe the node.
-    Id is a string value, during saving, we make sure this is a unique id.
+    `Id` is a string value, during saving, we make sure this is a unique id.
 
 
     Node bounds exist, but not all nodes are have geometric bounds.
@@ -576,7 +576,7 @@ class Node:
 
         Should be overloaded by subclasses.
 
-        @param index: index of the updating point
+        @param index: updating point index
         @param point: Point to be updated
         @return: Whether update was successful
         """
@@ -589,6 +589,7 @@ class Node:
         Should be overloaded by subclasses.
 
         @param point: point to be added
+        @param index: index for point insertion
         @return: Whether append was successful
         """
         # return self._insert_point(point, index)
@@ -765,7 +766,7 @@ class Node:
     def translated(self, dx, dy):
         """
         This is a special case of the modified call, we are translating
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -800,7 +801,7 @@ class Node:
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -815,7 +816,7 @@ class Node:
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data

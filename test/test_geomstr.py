@@ -1,3 +1,4 @@
+import math
 import random
 import time
 import unittest
@@ -260,6 +261,50 @@ class TestGeomstr(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
+
+    def test_geomstr_classmethods(self):
+        """
+        Test various classmethods for making defined geomstr shapes.
+        @return:
+        """
+        path = Geomstr.lines(0, 1, 0, 101)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), 100)
+        path = Geomstr.lines(100, 100, 0, 100)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), 100)
+        path = Geomstr.lines(0, 0, 1, 1)
+        self.assertEqual(len(path), 1)
+        self.assertEqual(path.length(0), math.sqrt(2))
+
+        path = Geomstr.lines(0, 0, 1, 1, 2, 2)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        path = Geomstr.lines((0, 0), (1, 1), (2, 2))
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+    def test_geomstr_copies(self):
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        path.copies(2)
+        self.assertEqual(len(path), 4)
+        self.assertTrue(np.all(path.segments[:][0] == path.segments[:][2]))
+        self.assertTrue(np.all(path.segments[:][1] == path.segments[:][3]))
+
+    def test_geomstr_interpolated_points(self):
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        path.quad(complex(2, 2), complex(5, 0), complex(4, 4))
+        self.assertEqual(len(path), 3)
+        pts = list(path.as_interpolated_points(interpolate=100))
+        self.assertEqual(102, len(pts))
 
     def test_geomstr_arc_center(self):
         for i in range(1000):

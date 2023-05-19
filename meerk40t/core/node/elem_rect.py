@@ -109,56 +109,20 @@ class RectNode(Node, Stroked):
         )
 
     def as_geometry(self):
-        path = Geomstr()
         x = self.x
         y = self.y
         width = self.width
         height = self.height
-
         rx = self.rx
         ry = self.ry
-        if rx < 0 < width or ry < 0 < height:
-            rx = abs(rx)
-            ry = abs(ry)
-        if rx == ry == 0:
-            path.line(complex(x, y), complex(x + width, y)),
-            path.line(complex(x + width, y), complex(x + width, y + height)),
-            path.line(complex(x + width, y + height), complex(x, y + height)),
-            path.line(complex(x, y + height), complex(x, y)),
-        else:
-            offset = 1 - (1.0 / math.sqrt(2))
-            path.line(complex(x + rx, y), complex(x + width - rx, y))
-            path.arc(
-                complex(x + width - rx, y),
-                complex(x + width - rx * offset, y + ry * offset),
-                complex(x + width, y + ry),
-            )
-            path.line(complex(x + width, y + ry), complex(x + width, y + height - ry))
-            path.arc(
-                complex(x + width, y + height - ry),
-                complex(x + width - rx * offset, y + height - ry * offset),
-                complex(x + width - rx, y + height),
-            )
-            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
-            path.arc(
-                complex(x + rx, y + height),
-                complex(x + rx * offset, y + height - ry * offset),
-                complex(x, y + height - ry),
-            )
-            path.line(complex(x, y + height - ry), complex(x, y + ry))
-            path.arc(
-                complex(x, y + ry),
-                complex(x + rx * offset, y + ry * offset),
-                complex(x + rx, y),
-            )
-            path.line(complex(x + rx, y), complex(x + rx, y))
+        path = Geomstr.rect(x, y, width, height, rx=rx, ry=ry)
         path.transform(self.matrix)
         return path
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -173,7 +137,7 @@ class RectNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data

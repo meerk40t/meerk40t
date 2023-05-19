@@ -4,6 +4,7 @@ setup(
     install_requires=[
         "pyusb>=1.0.0",
         "pyserial",
+        "numpy",
     ],
     extras_require={
         "all": [

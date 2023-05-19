@@ -105,4 +105,4 @@ class BalorConfiguration(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Configuration")
+        return "Device-Settings", "Configuration"

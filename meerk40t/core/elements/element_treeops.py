@@ -28,7 +28,7 @@ from meerk40t.core.treeop import (
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix, Point, Polygon
 
 from .element_types import *
 
@@ -2039,7 +2039,7 @@ def init_tree(kernel):
     )
     def set_assign_option_stroke(node, **kwargs):
         self.classify_inherit_stroke = not self.classify_inherit_stroke
-        # Poor mans radio
+        # Poor man's radio
         if self.classify_inherit_stroke:
             self.classify_inherit_fill = False
 
@@ -2055,7 +2055,7 @@ def init_tree(kernel):
     )
     def set_assign_option_fill(node, **kwargs):
         self.classify_inherit_fill = not self.classify_inherit_fill
-        # Poor mans radio
+        # Poor man's radio
         if self.classify_inherit_fill:
             self.classify_inherit_stroke = False
 

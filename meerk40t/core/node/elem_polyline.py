@@ -19,15 +19,26 @@ class PolylineNode(Node, Stroked):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        If args contains 1 object it is expected to be a Geomstr or a Polyline Shape.
+        If args contains 2+ objects these are expected to be points within the polyline.
+
+        @param args:
+        @param kwargs:
+        """
         self.geometry = None
         if len(args) == 1:
+            # Single value args.
             if isinstance(args[0], Geomstr):
                 kwargs["geometry"] = args[0]
             else:
                 kwargs["shape"] = args[0]
-
+        if len(args) >= 2:
+            # This is a points args.
+            kwargs["geometry"] = Geomstr.lines(*args)
         shape = kwargs.get("shape")
         if shape is not None:
+            # We have a polyline shape.
             if "stroke" not in kwargs:
                 kwargs["stroke"] = shape.stroke
             if "stroke_width" not in kwargs:
@@ -111,7 +122,7 @@ class PolylineNode(Node, Stroked):
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -126,7 +137,7 @@ class PolylineNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -203,15 +214,14 @@ class PolylineNode(Node, Stroked):
         max_index = len(points) - 1
         for idx, pt in enumerate(points):
             if idx == 0:
-                self._points.append([pt.x, pt.y, "endpoint"])
+                self._points.append([pt.real, pt.imag, "endpoint"])
             elif idx == max_index:
-                self._points.append([pt.x, pt.y, "endpoint"])
+                self._points.append([pt.real, pt.imag, "endpoint"])
             else:
-                self._points.append([pt.x, pt.y, "point"])
+                self._points.append([pt.real, pt.imag, "point"])
             if idx > 0:
-                self._points.append(
-                    [0.5 * (pt.x + lastpt.x), 0.5 * (pt.y + lastpt.y), "midpoint"]
-                )
+                midpoint = (pt + lastpt) / 2
+                self._points.append([midpoint.real, midpoint.imag, "midpoint"])
             lastpt = pt
 
     def update_point(self, index, point):

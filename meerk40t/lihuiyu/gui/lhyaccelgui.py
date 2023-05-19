@@ -361,4 +361,4 @@ class LihuiyuAccelerationChart(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Acceleration Chart")
+        return "Device-Settings", "Acceleration Chart"

@@ -980,7 +980,7 @@ class HingePanel(wx.Panel):
 
 class LivingHingeTool(MWindow):
     """
-    LivingHingeTool is the wrapper class to setup the
+    LivingHingeTool is the wrapper class to set up the
     required calls to open the HingePanel window
     In addition it listens to element selection and passes this
     information to HingePanel
@@ -1016,7 +1016,7 @@ class LivingHingeTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Living-Hinges")
+        return "Laser-Tools", "Living-Hinges"
 
     @staticmethod
     def sub_register(kernel):

@@ -212,7 +212,6 @@ class View:
         Note, steps size can be negative if our driver is x or y flipped.
 
         @param dpi:
-        @param matrix: matrix to use rather than the scene to device matrix if supplied.
         @return:
         """
         # We require vectors so any positional offsets are non-contributing.

@@ -1,7 +1,7 @@
 """
 Element Light Job
 
-The element light job accepts elements (svg, etc) and processes a light job based on those elements. This comes in two
+The element light job accepts elements (svg, etc.) and processes a light job based on those elements. This comes in two
 forms. Simulate which does the light job at the speeds the laser job will run and light which will simply draw the given
 elements.
 """

@@ -364,7 +364,7 @@ class NodeEditToolbar(MWindow):
     @staticmethod
     def submenu():
         # Suppress = True
-        return ("", "Node-Editor", True)
+        return "", "Node-Editor", True
 
 
 class EditTool(ToolWidget):
@@ -424,7 +424,7 @@ class EditTool(ToolWidget):
         """
         Shutdown routine for widget that unregisters the listener routines
         and closes the toolbar window.
-        This could be called more than once which if not dealt with will
+        This could be called more than once which, if not dealt with, will
         cause a console warning message
         """
         if self._listener_active:
@@ -461,7 +461,7 @@ class EditTool(ToolWidget):
     def set_pen_widths(self):
         """
         Calculate the pen widths according to the current scene zoom levels,
-        so that they always appear 1 pixel wide - with the exception of the
+        so that they always appear 1 pixel wide - except for the
         pen associated to the path segment outline that gets a 2 pixel wide 'halo'
         """
 
@@ -549,8 +549,7 @@ class EditTool(ToolWidget):
 
     def calculate_points(self, selected_node):
         """
-        Parse the element and create a list of dictionaries with relevant
-        informations required for display and logic
+        Parse the element and create a list of dictionaries with relevant information required for display and logic
         """
         self.message = ""
         self.element = selected_node
@@ -974,7 +973,7 @@ class EditTool(ToolWidget):
         """
         Central routine that tells the system that the node was
         changed, if 'reload' is set to True then it requires
-        reload/recalculation of the properties (eg after the
+        reload/recalculation of the properties (e.g. after the
         segement structure of a path was changed)
         """
         if self.element is None:
@@ -1059,7 +1058,7 @@ class EditTool(ToolWidget):
             # There are some challenges around the treatment
             # of arcs within svgelements, so let's circumvent
             # them for the time being (until resolved)
-            # by replacing arc segments with cubic beziers
+            # by replacing arc segments with cubic Béziers
             if node.type in ("elem path", "elem ellipse"):
                 path.approximate_arcs_with_cubics()
         except AttributeError:
@@ -1147,7 +1146,7 @@ class EditTool(ToolWidget):
         Args:
             segment (PathSegment): a cubic bezier
             t (float): (0 <= t <= 1)
-            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+        Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
         """
         p0 = segment.start
         p1 = segment.control1
@@ -1164,12 +1163,13 @@ class EditTool(ToolWidget):
     @staticmethod
     def revise_bezier_to_point(segment, midpoint, change_2nd_control=False):
         """
-        Adjust the two control points for a cubic bezier segment,
-        so that the given point will lie on the cubic bezier curve for t=0.5
+        Adjust the two control points for a cubic Bézier segment,
+        so that the given point will lie on the cubic Bézier curve for t=0.5
         Args:
             segment (PathSegment): a cubic bezier segment to be amended
             midpoint (Point): the new point
-            Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
+            change_2nd_control: modify the 2nd control point, rather than the first
+        Computation: b(t) = (1-t)^3 * P0 + 3*(1-t)^2*t*P1 + 3*(1-t)*t^2*P2 + t^3 * P3
         """
         t = 0.5
         p0 = segment.start
@@ -1290,7 +1290,7 @@ class EditTool(ToolWidget):
 
     def smoothen_all(self):
         """
-        Convert all segments of the path that are not cubic beziers into
+        Convert all segments of the path that are not cubic Béziers into
         such segments and apply the same smoothen logic as in smoothen(),
         ie adjust the control points of two neighbouring segemnts
         so that the three points
@@ -1716,7 +1716,7 @@ class EditTool(ToolWidget):
 
     def insert_midpoint(self):
         """
-        Insert a point on the middle of a selected segment
+        Insert a point in the middle of a selected segment
         """
         modified = False
         # Move backwards as len will change

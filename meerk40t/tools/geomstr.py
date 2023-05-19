@@ -200,6 +200,10 @@ class Pattern:
         Write the pattern to the pattern in patterning format.
 
         @param pattern: generator of pattern format.
+        @param a: pattern a value (differs)
+        @param b: pattern b value (differs)
+        @param args:
+        @param kwargs:
         @return:
         """
         self.offset_x = 0
@@ -746,6 +750,109 @@ class Geomstr:
                         obj.quad(complex(q.start), complex(q.control), complex(q.end))
         return obj
 
+    @classmethod
+    def lines(cls, *points):
+        path = cls()
+        if not points:
+            return path
+        first_point = points[0]
+        if isinstance(first_point, (float, int)):
+            if len(points) < 2:
+                return path
+            points = list(zip(*[iter(points)] * 2))
+            first_point = points[0]
+        if isinstance(first_point, (list, tuple)):
+            points = [pts[0] + pts[1] * 1j for pts in points]
+            first_point = points[0]
+        if isinstance(first_point, complex):
+            for i in range(1, len(points)):
+                path.line(points[i-1], points[i])
+        return path
+
+    @classmethod
+    def ellipse(cls, rx, ry, cx, cy, rotation=0, slices=12):
+        obj = cls()
+        obj.arc_as_cubics(
+            0,
+            math.tau,
+            rx=rx,
+            ry=ry,
+            cx=cx,
+            cy=cy,
+            rotation=rotation,
+            slices=slices,
+        )
+        return obj
+
+    @classmethod
+    def circle(cls, r, cx, cy, slices=4):
+        rx = r
+        ry = r
+
+        def point_at_t(t):
+            return complex(cx + rx * math.cos(t), cy + ry * math.sin(t))
+
+        obj = cls()
+        step_size = math.tau / slices
+
+        t_start = 0
+        t_end = step_size
+        for i in range(slices):
+            obj.arc(
+                point_at_t(t_start),
+                point_at_t((t_start + t_end) / 2),
+                point_at_t(t_end),
+            )
+            t_start = t_end
+            t_end += step_size
+        return obj
+
+    @classmethod
+    def rect(cls, x, y, width, height, rx=0, ry=0):
+        path = cls()
+        if rx < 0 < width or ry < 0 < height:
+            rx = abs(rx)
+            ry = abs(ry)
+        if rx == ry == 0:
+            path.line(complex(x, y), complex(x + width, y)),
+            path.line(complex(x + width, y), complex(x + width, y + height)),
+            path.line(complex(x + width, y + height), complex(x, y + height)),
+            path.line(complex(x, y + height), complex(x, y)),
+        else:
+            offset = 1 - (1.0 / math.sqrt(2))
+            path.line(complex(x + rx, y), complex(x + width - rx, y))
+            path.arc(
+                complex(x + width - rx, y),
+                complex(x + width - rx * offset, y + ry * offset),
+                complex(x + width, y + ry),
+            )
+            path.line(complex(x + width, y + ry), complex(x + width, y + height - ry))
+            path.arc(
+                complex(x + width, y + height - ry),
+                complex(x + width - rx * offset, y + height - ry * offset),
+                complex(x + width - rx, y + height),
+            )
+            path.line(complex(x + width - rx, y + height), complex(x + rx, y + height))
+            path.arc(
+                complex(x + rx, y + height),
+                complex(x + rx * offset, y + height - ry * offset),
+                complex(x, y + height - ry),
+            )
+            path.line(complex(x, y + height - ry), complex(x, y + ry))
+            path.arc(
+                complex(x, y + ry),
+                complex(x + rx * offset, y + ry * offset),
+                complex(x + rx, y),
+            )
+            path.line(complex(x + rx, y), complex(x + rx, y))
+        return path
+
+    def copies(self, n):
+        segs = self.segments[:self.index]
+        self.segments = np.vstack([segs] * n)
+        self.capacity = len(self.segments)
+        self.index = self.capacity
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:
@@ -753,6 +860,45 @@ class Geomstr:
                 yield start
             yield end
             at_start = False
+
+    def as_interpolated_points(self, interpolate=100):
+        """
+        Interpolated points gives all the points for the geomstr data. The arc, quad, and cubic are interpolated.
+
+        Non-connected data yields a None object.
+
+        Points are not connected to either side.
+
+        @param interpolate:
+        @return:
+        """
+        at_start = True
+        end = None
+        for e in self.segments[: self.index]:
+            seg_type = int(e[2].real)
+            start = e[0]
+            if end != start and not at_start:
+                # Start point does not equal previous end point.
+                yield None
+            end = e[4]
+            if at_start:
+                yield start
+            at_start = False
+            if seg_type == TYPE_LINE:
+                yield end
+                continue
+            if seg_type == TYPE_QUAD:
+                quads = self._quad_position(e, np.linspace(0,1,interpolate))
+                for q in quads[1:]:
+                    yield q
+            elif seg_type == TYPE_CUBIC:
+                cubics = self._cubic_position(e, np.linspace(0, 1, interpolate))
+                for c in cubics[1:]:
+                    yield c
+            elif seg_type == TYPE_ARC:
+                arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
+                for a in arcs[1:]:
+                    yield a
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -823,6 +969,8 @@ class Geomstr:
         @param start: complex: start point
         @param end: complex: end point
         @param settings: settings level to assign this particular line.
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -860,12 +1008,12 @@ class Geomstr:
 
     def cubic(self, start, control0, control1, end, settings=0):
         """
-        Add in a cubic bezier curve
+        Add in a cubic Bézier curve
         @param start: (complex) start point
         @param control0: (complex) first control point
         @param control1: (complex) second control point
         @param end: (complex) end point
-        @param settings: optional settings level for the cubic bezier curve
+        @param settings: optional settings level for the cubic Bézier curve
         @return:
         """
         self._ensure_capacity(self.index + 1)
@@ -903,6 +1051,8 @@ class Geomstr:
 
         @param position: Position at which add point
         @param settings: optional settings level for the point
+        @param a: unused control1 value
+        @param b: unused control2 value
         @return:
         """
         if a is None:
@@ -2231,6 +2381,7 @@ class Geomstr:
         """
         Affine Transformation by an arbitrary matrix.
         @param mx: Matrix to transform by
+        @param e: index, line values
         @return:
         """
         if e is not None:
@@ -2283,6 +2434,7 @@ class Geomstr:
 
         @param dx: change in x
         @param dy: change in y
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2310,6 +2462,7 @@ class Geomstr:
         Uniform scaling operation
 
         @param scale: uniform scaling factor
+        @param e: index, line values
         @return:
         """
         if e is None:
@@ -2336,6 +2489,7 @@ class Geomstr:
         """
         Rotate segments around the origin.
         @param angle: angle in radians
+        @param e: index, line values
         @return:
         """
         rotation = complex(math.cos(angle), math.sin(angle))
@@ -2969,7 +3123,7 @@ class Geomstr:
             maxiterations = 20
             redo = True
             while redo:
-                # Dont do it again unless indicated...
+                # Don't do it again unless indicated...
                 redo = False
                 reason = ""
                 results = list_subpath_bounds(obj)
@@ -2988,7 +3142,7 @@ class Geomstr:
                     #    the two chains can be joined (regardless of the type of the two path
                     #    segments at the end / start)
                     # b) if the last segment of the first chain and the first segment of the second chain
-                    #    are lines the we establish whether they overlap
+                    #    are lines, we establish whether they overlap
                     for idx2 in range(idx + 1, len(results)):
                         other_entry = results[idx2]
                         other_start = other_entry[0]

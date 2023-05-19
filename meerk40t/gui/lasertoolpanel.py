@@ -450,12 +450,12 @@ class LaserToolPanel(wx.Panel):
         sx21 = pow(self.coord_b[0], 2) - pow(self.coord_a[0], 2)
         sy21 = pow(self.coord_b[1], 2) - pow(self.coord_a[1], 2)
         try:
-            f = ((sx13) * (x12) + (sy13) * (x12) + (sx21) * (x13) + (sy21) * (x13)) // (
-                2 * ((y31) * (x12) - (y21) * (x13))
+            f = (sx13 * x12 + sy13 * x12 + sx21 * x13 + sy21 * x13) // (
+                2 * (y31 * x12 - y21 * x13)
             )
 
-            g = ((sx13) * (y12) + (sy13) * (y12) + (sx21) * (y13) + (sy21) * (y13)) // (
-                2 * ((x31) * (y12) - (x21) * (y13))
+            g = (sx13 * y12 + sy13 * y12 + sx21 * y13 + sy21 * y13) // (
+                2 * (x31 * y12 - x21 * y13)
             )
         except (ZeroDivisionError, ArithmeticError):
             return False, None, None
@@ -769,4 +769,4 @@ class LaserTool(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Laser-Tools", "Place Template")
+        return "Laser-Tools", "Place Template"

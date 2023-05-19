@@ -97,15 +97,14 @@ class LineNode(Node, Stroked):
         )
 
     def as_geometry(self):
-        path = Geomstr()
-        path.line(complex(self.x1, self.y1), complex(self.x2, self.y2))
+        path = Geomstr.lines(self.x1, self.y1, self.x2, self.y2)
         path.transform(self.matrix)
         return path
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -120,7 +119,7 @@ class LineNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data

@@ -168,7 +168,7 @@ class Context:
         The attribute type of the value depends on the provided object value default values.
 
         @param t: type of value
-        @param key: relative key for the value
+        @param key: relative key
         @return: the value associated with the key otherwise None
         """
         return self._kernel.read_persistent(t, self._path, key)

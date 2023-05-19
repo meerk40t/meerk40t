@@ -227,6 +227,7 @@ class RDJob:
         and send those to the command routine.
 
         @param data:
+        @param magic: magic number for unswizzling
         @return:
         """
         if magic is None:

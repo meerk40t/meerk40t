@@ -6,8 +6,7 @@ from math import cos, isinf, sin, sqrt, tau
 from random import randint, shuffle
 
 from meerk40t.core.units import Length
-
-from .element_types import *
+from meerk40t.svgelements import Point, Path, Polyline, Circle
 
 
 def plugin(kernel, lifecycle=None):
@@ -460,10 +459,10 @@ def init_commands(kernel):
                     pass
                 elif startmethod == 1:
                     # Dialog
-                    yield ("console", 'interrupt "Trace is about to start"')
+                    yield "console", 'interrupt "Trace is about to start"'
                 elif startmethod == 2:
                     # Wait for some seconds
-                    yield ("wait", 5000)
+                    yield "wait", 5000
 
                 yield "wait_finish"
                 yield "rapid_mode"

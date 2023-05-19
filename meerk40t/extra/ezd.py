@@ -5,7 +5,7 @@ These are a working type file produced by EZCad2™. They contain several pens a
 the program when the file was saved. The vector objects consist of a series of laser-ready commands/shapes which refer
 to the required pen. Some modification objects like hatch and spiral work like a group containing other sub-elements
 and also contain the cached curve/path data. The image objects contain a standard 24 bit bitmap image. All elements
-are coordinated relative to the center of the working area and it is much more common to be given the center point than
+are coordinated relative to the center of the working area and, it is much more common to be given the center point than
 a specific corner. Nearly all coordinates are in mm, and denote the deviation from the center point.
 
 """

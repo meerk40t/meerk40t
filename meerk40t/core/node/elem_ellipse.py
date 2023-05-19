@@ -110,44 +110,14 @@ class EllipseNode(Node, Stroked):
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
     def as_geometry(self):
-        path = Geomstr()
-        # if abs(self.rx - self.ry) < 1e-12:
-        #     # Decompose as 4 circular arcs.
-        #     steps = 4
-        #     step_size = tau / steps
-        #     if self.matrix.determinant < 0:
-        #         step_size = -step_size
-        #
-        #     t_start = 0
-        #     t_end = step_size
-        #     for i in range(steps):
-        #         path.arc(
-        #             self.point_at_t(t_start),
-        #             self.point_at_t((t_start + t_end) / 2),
-        #             self.point_at_t(t_end),
-        #         )
-        #         t_start = t_end
-        #         t_end += step_size
-        #     path.transform(self.matrix)
-        #     return path
-        # Decompose as 12 cubics, approximating an arc.
-        path.arc_as_cubics(
-            0,
-            math.tau,
-            rx=self.rx,
-            ry=self.ry,
-            cx=self.cx,
-            cy=self.cy,
-            rotation=0,
-            slices=12,
-        )
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
         return path
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -162,7 +132,7 @@ class EllipseNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data

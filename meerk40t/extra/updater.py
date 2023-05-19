@@ -1,5 +1,5 @@
 """
-The code inside this module provides routines to look for newer versions of meerk40t on github
+The code inside this module provides routines to look for newer versions of meerk40t on GitHub
 """
 import json
 from urllib.error import HTTPError, URLError
@@ -42,7 +42,7 @@ def plugin(kernel, lifecycle):
             "verbosity",
             "p",
             type=int,
-            help=("Show Info: 0 never, 1 console only, 2 if version found, 3 always"),
+            help="Show Info: 0 never, 1 console only, 2 if version found, 3 always",
         )
         @kernel.console_command(
             "check_for_updates",
@@ -63,7 +63,7 @@ def plugin(kernel, lifecycle):
             def comparable_version(version):
                 """
                 Return a comparable sequence from a version string
-                Major, Minor, Release, Beta
+                "Major", "Minor", "Release", "Beta"
                 Beta is derived from Release by default if release > 100 and last two digits != 0
                 """
                 src = beta = False

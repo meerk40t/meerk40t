@@ -225,7 +225,7 @@ def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
         the intersections between helper 1 and helper 2 is our new control point C1-new
         the intersections between helper 2 and helper 3 is our new control point C2-new
 
-        Beware, this has limitations! Its not dealing well with curves that have cusps
+        Beware, this has limitations! It's not dealing well with curves that have cusps
     """
 
     if not isinstance(segment, CubicBezier):
@@ -328,7 +328,7 @@ def intersect_line_segments(w, z, x, y):
     """
     deter = a * d - b * c
     if abs(deter) < 1.0e-8:
-        # They dont have an interference
+        # They don't have an interference
         return None, None, None
 
     s = 1 / deter * (d * (w.x - x.x) + -b * (w.y - x.y))
@@ -487,7 +487,7 @@ def offset_path(
         is_closed_by_pts = False
         remember = False
         remember_helper = None
-        # Lets check the first and last valid point. If they are identical
+        # Let's check the first and last valid point. If they are identical
         # we consider this to be a closed path even if it has no closed indicator.
         firstp_start = None
         firstp_end = None
@@ -534,7 +534,7 @@ def offset_path(
                     remember_helper = None
                     continue
                 remember = True
-                # Lets add an additional line and replace the closed segment by this new segment
+                # Let's add a line and replace the closed segment by this new segment
                 idx1 = idx
                 while (idx1 >= 0) and not isinstance(
                     p._segments[idx1], (Arc, Line, QuadraticBezier, CubicBezier)
