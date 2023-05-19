@@ -555,7 +555,7 @@ class MeerK40t(MWindow):
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
-        self.__set_edit_menu()
+        self._update_status_edit_menu()
         if not self.context.show_colorbar or not self.widgets_created:
             return
 
