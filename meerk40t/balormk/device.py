@@ -1691,7 +1691,7 @@ class BalorDevice(Service, ViewPort):
             "hull",
             help=_("convex hull of the current selected elements"),
             input_type=(None, "elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
             """
@@ -1725,7 +1725,7 @@ class BalorDevice(Service, ViewPort):
                 channel(_("No elements bounds to trace."))
                 return
             hull.append(hull[0])  # loop
-            return "shapes", [Polygon(*hull)]
+            return "geometry", Geomstr.polyline(*hull)
 
         def ant_points(points, steps):
             points = list(points)
