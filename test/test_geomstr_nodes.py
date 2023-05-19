@@ -12,3 +12,7 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(len(node.geometry), 4)
         node = PolylineNode(0, 0, 1, 1, 2, 2, 3, 3, 4, 4)
         self.assertEqual(len(node.geometry), 4)
+
+    def test_polynode_revalidate(self):
+        node = PolylineNode(Geomstr.lines(0, 0, 1, 1, 2, 2, 3, 3, 4, 4))
+        node.revalidate_points()
