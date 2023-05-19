@@ -847,6 +847,12 @@ class Geomstr:
             path.line(complex(x + rx, y), complex(x + rx, y))
         return path
 
+    def copies(self, n):
+        segs = self.segments[:self.index]
+        self.segments = np.vstack([segs] * n)
+        self.capacity = len(self.segments)
+        self.index = self.capacity
+
     def as_points(self):
         at_start = True
         for start, c1, info, c2, end in self.segments[: self.index]:

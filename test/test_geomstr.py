@@ -292,6 +292,13 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.length(0), math.sqrt(2))
         self.assertEqual(path.length(1), math.sqrt(2))
 
+    def test_geomstr_copies(self):
+        path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
+        path.copies(2)
+        self.assertEqual(len(path), 4)
+        self.assertTrue(np.all(path.segments[:][0] == path.segments[:][2]))
+        self.assertTrue(np.all(path.segments[:][1] == path.segments[:][3]))
+
     def test_geomstr_arc_center(self):
         for i in range(1000):
             start = random_point()
