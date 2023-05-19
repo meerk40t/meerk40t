@@ -17,6 +17,7 @@ from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.tools.geomstr import Geomstr
 
 
 class BalorDevice(Service, ViewPort):
@@ -1678,7 +1679,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
@@ -1692,15 +1693,10 @@ class BalorDevice(Service, ViewPort):
                 return
             xmin, ymin, xmax, ymax = bounds
             channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-            points = [
-                (xmin, ymin),
-                (xmax, ymin),
-                (xmax, ymax),
-                (xmin, ymax),
-            ]
+            geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
             if count > 1:
-                points *= count
-            return "shapes", [Polygon(*points)]
+                geometry.duplicate(count)
+            return "geometry", geometry
 
         @self.console_command(
             "hull",
