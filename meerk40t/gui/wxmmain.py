@@ -2700,10 +2700,8 @@ class MeerK40t(MWindow):
         self.main_menubar.Append(self.file_menu, _("File"))
 
     def _update_status_edit_menu(self, *args):
-        choices = self.edit_menu_choice
-
         def handler(event):
-            for entry in choices:
+            for entry in self.edit_menu_choice:
                 if "label" in entry and "enabled" in entry:
                     flag = True
                     label = entry["label"]
@@ -2725,15 +2723,13 @@ class MeerK40t(MWindow):
         Edit MENU
         """
         self.edit_menu = wx.Menu()
-        choices = self.edit_menu_choice
-        self._create_menu_from_choices(self.edit_menu, choices)
+        self._create_menu_from_choices(self.edit_menu, self.edit_menu_choice)
         label = _("Edit")
         index = self.main_menubar.FindMenu(label)
         if index != -1:
             self.main_menubar.Replace(index, self.edit_menu, label)
         else:
             self.main_menubar.Append(self.edit_menu, label)
-
 
         self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu)
 
