@@ -847,6 +847,14 @@ class Geomstr:
             path.line(complex(x + rx, y), complex(x + rx, y))
         return path
 
+    @classmethod
+    def hull(cls, geom):
+        ipts = list(geom.as_interpolated_points(interpolate=50))
+        pts = list(Geomstr.convex_hull(None, ipts))
+        if pts:
+            pts.append(pts[0])
+        return Geomstr.lines(*pts)
+
     def copies(self, n):
         segs = self.segments[:self.index]
         self.segments = np.vstack([segs] * n)
