@@ -7,8 +7,11 @@ elements change.
 
 import time
 
+import numpy as np
+
 from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import Matrix, Polygon, Polyline
+from meerk40t.tools.geomstr import Geomstr
 
 
 class LiveFullLightJob:
@@ -155,8 +158,8 @@ class LiveFullLightJob:
             first_y = 0x8000
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-        jump_delay = self.service.delay_jump_long
-        dark_delay = self.service.delay_jump_short
+        delay_between = self.service.delay_jump_long
+        delay_dark = self.service.delay_jump_short
 
         con._light_speed = self.service.redlight_speed
         con._dark_speed = self.service.redlight_speed
@@ -185,56 +188,38 @@ class LiveFullLightJob:
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
 
-        def mx_rotate(pt):
-            if pt is None:
-                return None
-            return (
-                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-            )
-
         for node in elements:
             if self.stopped:
                 return False
             if self.changed:
                 return True
-            try:
-                e = node.as_path()
-            except AttributeError:
-                continue
-            if not e:
-                continue
-            x, y = e.point(0)
-            x, y = self.service.scene_to_device_position(x, y)
-            x, y = mx_rotate((x, y))
-            x = int(x) & 0xFFFF
-            y = int(y) & 0xFFFF
-            if isinstance(e, (Polygon, Polyline)):
-                con.dark(x, y, long=jump_delay, short=jump_delay)
-                for pt in e:
-                    if self.stopped:
-                        return False
-                    if self.changed:
-                        return True
-                    x, y = self.service.scene_to_device_position(*pt)
-                    x, y = mx_rotate((x, y))
-                    x = int(x) & 0xFFFF
-                    y = int(y) & 0xFFFF
-                    con.light(x, y, long=dark_delay, short=dark_delay)
-                continue
+            geometry = Geomstr(node.as_geometry())
 
-            con.dark(x, y, long=jump_delay, short=jump_delay)
-            for i in range(1, quantization + 1):
+            # Move to device space.
+            geometry.transform(self.service.scene_to_device_matrix())
+
+            # Add redlight adjustments within device space.
+            geometry.transform(rotate)
+
+            points = list(geometry.as_interpolated_points(interpolate=quantization))
+            move = True
+            for i, e in enumerate(points):
                 if self.stopped:
                     return False
-                if self.changed:
-                    return True
-                x, y = e.point(i / float(quantization))
-                x, y = self.service.scene_to_device_position(x, y)
-                x, y = mx_rotate((x, y))
+                if e is None:
+                    move = True
+                    continue
+                x, y = e.real, e.imag
+                if np.isnan(x) or np.isnan(y):
+                    move = True
+                    continue
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                con.light(x, y, long=dark_delay, short=dark_delay)
+                if move:
+                    con.dark(x, y, long=delay_dark, short=delay_dark)
+                    move = False
+                    continue
+                con.light(x, y, long=delay_between, short=delay_between)
         if con.light_off():
             con.list_write_port()
         return True
