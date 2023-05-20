@@ -717,6 +717,17 @@ def init_commands(kernel):
         data.copies(copies)
         return "geometry", data
 
+
+    @self.console_command(
+        "geometry",
+        help=_("Convert any element nodes to paths"),
+        input_type=None,
+        output_type="geometry",
+    )
+    def element_path_convert(**kwargs):
+        return "geometry", Geomstr()
+
+
     @self.console_argument("x_pos", type=Length)
     @self.console_argument("y_pos", type=Length)
     @self.console_argument("r_pos", type=Length)
