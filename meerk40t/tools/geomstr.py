@@ -848,20 +848,17 @@ class Geomstr:
         return path
 
     @classmethod
-    def regular_polygon(cls, number_of_vertex, point_center=None, radius=None, radius_inner=None, side_length=False,
-                        start_angle=0, inscribed=False, alt_seq=0, density=None):
+    def regular_polygon(cls, number_of_vertex, point_center=None, radius=0, radius_inner=0, side_length=False,
+                        start_angle=0, inscribed=False, alt_seq=0, density=1):
+        if number_of_vertex < 2:
+            return cls()
         if point_center is None:
             point_center = 0j
         if radius is None:
             radius = 0
-        if start_angle is None:
-            start_angle = 0
 
-        if alt_seq is None:
-            if radius_inner is None:
-                alt_seq = 0
-            else:
-                alt_seq = 1
+        if alt_seq == 0 and radius_inner != 0:
+            alt_seq = 1
 
         if density is None:
             density = 1
@@ -869,7 +866,7 @@ class Geomstr:
             density = 1
 
         # Do we have to consider the radius value as the length of one corner?
-        if side_length is not None:
+        if side_length:
             # Let's recalculate the radius then...
             # d_oc = s * csc( pi / n)
             radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
@@ -914,7 +911,8 @@ class Geomstr:
             idx += density
             if idx >= number_of_vertex:
                 idx -= number_of_vertex
-        return Geomstr.lines(cls, *star_points)
+        star_points.append(star_points[0])
+        return Geomstr.lines(*star_points)
 
     def copies(self, n):
         segs = self.segments[:self.index]
