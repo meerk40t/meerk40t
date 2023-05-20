@@ -839,6 +839,15 @@ class BalorDevice(Service, ViewPort):
             self.spooler.send(self.job)
 
         @self.console_command(
+            "regmark-light", help=_("Execute regmark live light idle job")
+        )
+        def reg_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveFullLightJob(self, regmarks=True)
+            self.spooler.send(self.job)
+
+        @self.console_command(
             "stop",
             help=_("stops the idle running job"),
         )
