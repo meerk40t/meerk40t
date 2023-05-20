@@ -82,7 +82,7 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
-                        "action": lambda e: service("element* hull light\n"),
+                        "action": lambda e: service("element* geometry hull light\n"),
                     },
                     {
                         "identifier": "box",
