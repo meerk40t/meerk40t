@@ -706,6 +706,17 @@ def init_commands(kernel):
             path.append(e)
         return "geometry", path
 
+    @self.console_argument("copies", type=int)
+    @self.console_command(
+        "copies",
+        help=_("Convert any element nodes to paths"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_path_convert(data: Geomstr, copies, **kwargs):
+        data.copies(copies)
+        return "geometry", data
+
     @self.console_option(
         "real",
         "r",
