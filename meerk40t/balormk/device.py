@@ -1734,7 +1734,7 @@ class BalorDevice(Service, ViewPort):
                 return
             hull.append(hull[0])  # loop
             hull = list(map(complex, hull))
-            geometry = Geomstr.lines(hull)
+            geometry = Geomstr.lines(*hull)
             return "geometry", geometry
 
         def ant_points(points, steps):
