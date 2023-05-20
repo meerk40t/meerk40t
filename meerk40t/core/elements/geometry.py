@@ -46,7 +46,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_path_convert(data: Geomstr, copies, **kwargs):
+    def geometry_copies(data: Geomstr, copies, **kwargs):
         data.copies(copies)
         return "geometry", data
 
@@ -56,7 +56,7 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="geometry",
     )
-    def element_path_convert(data=None, **kwargs):
+    def geometry_base(data=None, **kwargs):
         path = Geomstr()
         if data:
             for node in data:
