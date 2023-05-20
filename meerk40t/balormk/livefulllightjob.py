@@ -20,7 +20,7 @@ class LiveFullLightJob:
     def __init__(
         self,
         service,
-        regmarks=False,
+        mode="full",
     ):
         self.service = service
         self.stopped = False
@@ -28,12 +28,25 @@ class LiveFullLightJob:
         self.changed = False
         self._last_bounds = None
         self.priority = -1
-        self.label = "Live Full Light Job"
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
         self.quantization = 50
-        self.regmarks = regmarks
+        self.mode = mode
+        if self.mode == "full":
+            self.label = "Live Full Light Job"
+            self._mode_light = self._full
+        elif self.mode == "bounds":
+            self.label = "Live Selection Light Job"
+            self._mode_light = self._bounds
+        elif self.mode == "crosshair":
+            self.label = "Simple Crosshairs"
+            self._mode_light = self._crosshairs
+        elif self.mode == "regmarks":
+            self.label = "Live Regmark Light Job"
+            self._mode_light = self._regmarks
+        else:
+            raise ValueError("Invalid mode.")
 
     @property
     def status(self):
@@ -114,7 +127,16 @@ class LiveFullLightJob:
         """
         self.changed = True
 
-    def _light_geometry(self, geometry, con):
+    def _light_geometry(self, con, geometry):
+        """
+        Light the current geometry.
+
+        We abort quickly if self.stopped or self.changed is set.
+
+        @param geometry:
+        @param con:
+        @return: True if we should continue, False if we should not.
+        """
         delay_dark = self.service.delay_jump_long
         delay_between = self.service.delay_jump_short
 
@@ -141,8 +163,19 @@ class LiveFullLightJob:
                 move = False
                 continue
             con.light(x, y, long=delay_between, short=delay_between)
+        return True
 
-    def crosshairs(self, con):
+    def _regmarks(self, con):
+        # Regmarks were requested.
+        elements = list(self.service.elements.regmarks())
+        self._light_elements(con, elements)
+
+    def _full(self, con):
+        # Full was requested.
+        elements = list(self.service.elements.elems(emphasized=True))
+        self._light_elements(con, elements)
+
+    def _crosshairs(self, con):
         # Calculate rotate matrix.
         margin = 5000
 
@@ -160,9 +193,39 @@ class LiveFullLightJob:
         rotate = self._redlight_adjust_matrix()
         geometry.transform(rotate)
 
-        return self._light_geometry(geometry, con)
+        return self._light_geometry(con, geometry)
+
+    def _bounds(self, con):
+        """
+        Light the bounds geometry.
+
+        @param con:
+        @param bounds:
+        @return:
+        """
+        bounds = self._last_bounds
+        if not bounds:
+            return self._crosshairs(con)
+        xmin, ymin, xmax, ymax = bounds
+        geometry = Geomstr.lines(
+            (xmin, ymin),
+            (xmax, ymin),
+            (xmax, ymax),
+            (xmin, ymax),
+            (xmin, ymin),
+        )
+        rotate = self._redlight_adjust_matrix()
+        geometry.transform(self.service.scene_to_device_matrix())
+        geometry.transform(rotate)
+        return self._light_geometry(con, geometry)
 
     def _redlight_adjust_matrix(self):
+        """
+        Calculate the redlight adjustment matrix which is the product of the redlight offset values and the
+        redlight rotation value.
+
+        @return:
+        """
         x_offset = self.service.length(
             self.service.redlight_offset_x,
             axis=0,
@@ -208,17 +271,14 @@ class LiveFullLightJob:
         con._dark_speed = self.service.redlight_speed
         con._goto_speed = self.service.redlight_speed
         con.light_mode()
+        self._mode_light(con)
 
-        if self.regmarks:
-            elements = list(self.service.elements.regmarks())
-        else:
-            elements = list(self.service.elements.elems(emphasized=True))
-
+    def _light_elements(self, con, elements):
         if not elements:
-            return self.crosshairs(con)
+            # There are no elements, return a default crosshair.
+            return self._crosshairs(con)
 
         rotate = self._redlight_adjust_matrix()
-
         for node in elements:
             if self.stopped:
                 return False
@@ -232,7 +292,7 @@ class LiveFullLightJob:
             # Add redlight adjustments within device space.
             geometry.transform(rotate)
 
-            self._light_geometry(geometry, con)
+            self._light_geometry(con, geometry)
         if con.light_off():
             con.list_write_port()
         return True
