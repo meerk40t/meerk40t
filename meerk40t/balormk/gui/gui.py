@@ -63,11 +63,6 @@ def plugin(service, lifecycle):
                 "identifier": "light_default",
                 "multi": [
                     {
-                        "identifier": "live",
-                        "label": _("Live Bounds"),
-                        "action": lambda e: service("select-light\n"),
-                    },
-                    {
                         "identifier": "live-full",
                         "label": _("Live Full"),
                         "icon": icons8_computer_support_50,
@@ -78,6 +73,11 @@ def plugin(service, lifecycle):
                         "label": _("Live Regmarks"),
                         "icon": icons8_computer_support_50,
                         "action": lambda e: service("regmark-light\n"),
+                    },
+                    {
+                        "identifier": "live",
+                        "label": _("Live Bounds"),
+                        "action": lambda e: service("select-light\n"),
                     },
                     {
                         "identifier": "live-hull",
