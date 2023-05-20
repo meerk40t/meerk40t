@@ -2620,6 +2620,8 @@ class Geomstr:
         points = []
         for i in range(len(pts)):
             p = pts[i]
+            if p is None or np.isnan(p.real):
+                continue
             if isinstance(p, int):
                 if p < 0:
                     p = self.segments[~p][-1]

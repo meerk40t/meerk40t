@@ -1701,7 +1701,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="geometry",
         )
-        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(channel, _, data=None, **kwargs):
             """
             Draws an outline of the current shape.
             """

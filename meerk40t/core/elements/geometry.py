@@ -148,6 +148,21 @@ def init_commands(kernel):
         ))
         return "geometry", data
 
+    @self.console_command(
+        "hull",
+        help=_("convex hull of the current selected elements"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_hull(channel, _, data:Geomstr, **kwargs):
+        """
+        Provides the convex hull of the given geometry.
+        """
+        pts = list(Geomstr.convex_hull(None, list(data.as_interpolated_points(interpolate=50))))
+        if pts:
+            pts.append(pts[0])
+        return "geometry", Geomstr.lines(*pts)
+
     @self.console_argument("tx", type=Length, help=_("translate x value"))
     @self.console_argument("ty", type=Length, help=_("translate y value"))
     @self.console_command(
