@@ -676,7 +676,7 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_command(
-        "shape_node",
+        "node",
         help=_("Convert any shapes to pathnodes"),
         input_type="geometry",
         output_type="elements",
