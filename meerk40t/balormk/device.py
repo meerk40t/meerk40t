@@ -846,13 +846,14 @@ class BalorDevice(Service, ViewPort):
             self.job = LiveLightJob(self, mode="regmarks")
             self.spooler.send(self.job)
 
-        @self.console_command("hull-light", help=_("Execute convex hull light idle job"))
+        @self.console_command(
+            "hull-light", help=_("Execute convex hull light idle job")
+        )
         def hull_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveLightJob(self, mode="hull")
             self.spooler.send(self.job)
-
 
         @self.console_command(
             "stop",
@@ -1789,7 +1790,12 @@ class BalorDevice(Service, ViewPort):
                     path = e.as_geometry()
                 except AttributeError:
                     continue
-                ants = list(ant_points(path.as_interpolated_points(interpolate=quantization), int(quantization/2)))
+                ants = list(
+                    ant_points(
+                        path.as_interpolated_points(interpolate=quantization),
+                        int(quantization / 2),
+                    )
+                )
                 geom.polyline(ants)
                 geom.end()
             return "geometry", geom

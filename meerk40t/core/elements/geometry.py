@@ -2,8 +2,7 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from meerk40t.core.units import Length, Angle
-
+from meerk40t.core.units import Angle, Length
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -78,7 +77,7 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
-        data.append(Geomstr.circle(r_pos,x_pos,y_pos, slices=4))
+        data.append(Geomstr.circle(r_pos, x_pos, y_pos, slices=4))
         return "geometry", data
 
     @self.console_argument(
@@ -91,18 +90,10 @@ def init_commands(kernel):
         type=Length,
         help=_("y position for top left corner of rectangle."),
     )
-    @self.console_argument(
-        "width", type=Length, help=_("width of the rectangle.")
-    )
-    @self.console_argument(
-        "height", type=Length, help=_("height of the rectangle.")
-    )
-    @self.console_option(
-        "rx", "x", type=Length, help=_("rounded rx corner value.")
-    )
-    @self.console_option(
-        "ry", "y", type=Length, help=_("rounded ry corner value.")
-    )
+    @self.console_argument("width", type=Length, help=_("width of the rectangle."))
+    @self.console_argument("height", type=Length, help=_("height of the rectangle."))
+    @self.console_option("rx", "x", type=Length, help=_("rounded rx corner value."))
+    @self.console_option("ry", "y", type=Length, help=_("rounded ry corner value."))
     @self.console_command(
         "rect",
         help=_("adds rectangle to geometry"),
@@ -130,14 +121,16 @@ def init_commands(kernel):
             rx = 0
         if ry is None:
             ry = 0
-        data.append(Geomstr.rect(
-            x=x_pos,
-            y=y_pos,
-            width=width,
-            height=height,
-            rx=rx,
-            ry=ry,
-        ))
+        data.append(
+            Geomstr.rect(
+                x=x_pos,
+                y=y_pos,
+                width=width,
+                height=height,
+                rx=rx,
+                ry=ry,
+            )
+        )
         return "geometry", data
 
     @self.console_command(
@@ -146,7 +139,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def geometry_hull(channel, _, data:Geomstr, **kwargs):
+    def geometry_hull(channel, _, data: Geomstr, **kwargs):
         """
         Provides the convex hull of the given geometry.
         """
@@ -160,9 +153,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(
-        tx, ty, data: Geomstr, **kwargs
-    ):
+    def element_translate(tx, ty, data: Geomstr, **kwargs):
         data.translate(tx, ty)
         return "geometry", data
 
@@ -173,9 +164,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(
-        scale, data: Geomstr, **kwargs
-    ):
+    def element_translate(scale, data: Geomstr, **kwargs):
         data.uscale(scale)
         return "geometry", data
 
@@ -186,9 +175,7 @@ def init_commands(kernel):
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(
-            angle: Angle, data: Geomstr, **kwargs
-    ):
+    def element_translate(angle: Angle, data: Geomstr, **kwargs):
         data.rotate(angle.radians)
         return "geometry", data
 

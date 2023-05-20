@@ -262,7 +262,6 @@ class MeerK40t(MWindow):
         self.assign_button_panel.show_stuff(False)
 
     def _setup_edit_menu_choice(self):
-
         def on_click_undo():
             self.context("undo\n")
 

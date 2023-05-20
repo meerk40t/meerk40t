@@ -766,7 +766,7 @@ class Geomstr:
             first_point = points[0]
         if isinstance(first_point, complex):
             for i in range(1, len(points)):
-                path.line(points[i-1], points[i])
+                path.line(points[i - 1], points[i])
         return path
 
     @classmethod
@@ -923,7 +923,7 @@ class Geomstr:
         return Geomstr.lines(*star_points)
 
     def copies(self, n):
-        segs = self.segments[:self.index]
+        segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
         self.capacity = len(self.segments)
         self.index = self.capacity
@@ -963,7 +963,7 @@ class Geomstr:
                 yield end
                 continue
             if seg_type == TYPE_QUAD:
-                quads = self._quad_position(e, np.linspace(0,1,interpolate))
+                quads = self._quad_position(e, np.linspace(0, 1, interpolate))
                 for q in quads[1:]:
                     yield q
             elif seg_type == TYPE_CUBIC:

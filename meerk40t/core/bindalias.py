@@ -143,8 +143,14 @@ DEFAULT_KEYMAP = {
         "",
         "rotaryscale",
     ),
-    "ctrl+a": ("", "element* select",),
-    "ctrl+c": ("", "clipboard copy",),
+    "ctrl+a": (
+        "",
+        "element* select",
+    ),
+    "ctrl+c": (
+        "",
+        "clipboard copy",
+    ),
     "ctrl+shift+c": ("align bed group xy center center",),
     "ctrl+e": (
         "circle 0.5in 0.5in 0.5in stroke red classify",

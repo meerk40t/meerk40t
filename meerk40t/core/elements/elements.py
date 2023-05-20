@@ -20,7 +20,7 @@ from meerk40t.core.undos import Undo
 from meerk40t.core.units import Length
 from meerk40t.core.wordlist import Wordlist
 from meerk40t.kernel import ConsoleFunction, Service, Settings
-from meerk40t.svgelements import Color, SVGElement, Point, Path
+from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from .element_types import *
 
@@ -33,6 +33,7 @@ def plugin(kernel, lifecycle=None):
             branches,
             clipboard,
             element_treeops,
+            geometry,
             grid,
             materials,
             notes,
@@ -40,7 +41,6 @@ def plugin(kernel, lifecycle=None):
             placements,
             render,
             shapes,
-            geometry,
             trace,
             tree_commands,
             undo_redo,
