@@ -71,13 +71,13 @@ def init_commands(kernel):
     @self.console_command(
         "operation.*", help=_("operation.*: selected operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_select(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
         "operation*", help=_("operation*: all operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_all(**kwargs):
         return "ops", list(self.ops())
 
     @self.console_command(
@@ -85,13 +85,13 @@ def init_commands(kernel):
         help=_("operation~: non selected operations."),
         output_type="ops",
     )
-    def operation(**kwargs):
+    def operation_invert(**kwargs):
         return "ops", list(self.ops(emphasized=False))
 
     @self.console_command(
         "operation", help=_("operation: selected operations."), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_base(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
@@ -100,7 +100,7 @@ def init_commands(kernel):
         regex=True,
         output_type="ops",
     )
-    def operation(command, channel, _, **kwargs):
+    def operation_re(command, channel, _, **kwargs):
         arg = command[9:]
         op_values = []
         for value in arg.split(","):
@@ -121,7 +121,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def operation_select(data=None, **kwargs):
+    def operation_select_emphasis(data=None, **kwargs):
         self.set_emphasis(data)
         return "ops", data
 
@@ -632,7 +632,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def waitop(
         command,
         time=None,
         **kwargs,
@@ -658,7 +658,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def io_op(
         command,
         mask=None,
         value=None,
@@ -678,7 +678,7 @@ def init_commands(kernel):
         "consoleop",
         help=_("<consoleop> - Create new utility operation"),
     )
-    def makeop(
+    def consoleop(
         command,
         remainder=None,
         **kwargs,
@@ -1018,7 +1018,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def op_hatch_distance(
+    def op_hatch_angle(
         command,
         channel,
         _,
@@ -1216,7 +1216,7 @@ def init_commands(kernel):
         "elements",
         help=_("Show information about elements"),
     )
-    def element(**kwargs):
+    def elements(**kwargs):
         self(".element* list\n")
 
     @self.console_command(

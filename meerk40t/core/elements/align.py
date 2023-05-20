@@ -146,7 +146,7 @@ def init_commands(kernel):
         input_type="align",
         output_type="align",
     )
-    def alignmode_first(command, channel, _, data, **kwargs):
+    def alignmode_group(command, channel, _, data, **kwargs):
         mode, group, bound, elements = data
         group = True
         return "align", (mode, group, bound, elements)
@@ -157,7 +157,7 @@ def init_commands(kernel):
         input_type="align",
         output_type="align",
     )
-    def alignmode_first(command, channel, _, data, **kwargs):
+    def alignmode_individual(command, channel, _, data, **kwargs):
         mode, group, bound, elements = data
         group = False
         return "align", (mode, group, bound, elements)
