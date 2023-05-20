@@ -675,37 +675,6 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
-    @self.console_command(
-        "shape_node",
-        help=_("Convert any shapes to pathnodes"),
-        input_type="geometry",
-        output_type="elements",
-    )
-    def element_shape_convert(data, **kwargs):
-        node = self.elem_branch.add(
-            geometry=data,
-            stroke=self.default_stroke,
-            stroke_width=self.default_strokewidth,
-            type="elem path",
-        )
-        return "elements", [node]
-
-    @self.console_command(
-        "path",
-        help=_("Convert any element nodes to paths"),
-        input_type="elements",
-        output_type="geometry",
-    )
-    def element_path_convert(data, **kwargs):
-        path = Geomstr()
-        for node in data:
-            try:
-                e = node.as_geometry()
-            except AttributeError:
-                continue
-            path.append(e)
-        return "geometry", path
-
     @self.console_option(
         "real",
         "r",

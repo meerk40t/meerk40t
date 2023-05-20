@@ -10,13 +10,12 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
-from meerk40t.balormk.livefulllightjob import LiveFullLightJob
-from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -828,15 +827,32 @@ class BalorDevice(Service, ViewPort):
             # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveSelectionLightJob(self)
+            self.job = LiveLightJob(self, mode="bounds")
             self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self)
+            self.job = LiveLightJob(self)
             self.spooler.send(self.job)
+
+        @self.console_command(
+            "regmark-light", help=_("Execute regmark live light idle job")
+        )
+        def reg_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="regmarks")
+            self.spooler.send(self.job)
+
+        @self.console_command("hull-light", help=_("Execute convex hull light idle job"))
+        def hull_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="hull")
+            self.spooler.send(self.job)
+
 
         @self.console_command(
             "stop",
@@ -1693,7 +1709,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="geometry",
         )
-        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(channel, _, data=None, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1726,7 +1742,7 @@ class BalorDevice(Service, ViewPort):
                 return
             hull.append(hull[0])  # loop
             hull = list(map(complex, hull))
-            geometry = Geomstr.lines(hull)
+            geometry = Geomstr.lines(*hull)
             return "geometry", geometry
 
         def ant_points(points, steps):
