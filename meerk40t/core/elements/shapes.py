@@ -717,6 +717,20 @@ def init_commands(kernel):
         data.copies(copies)
         return "geometry", data
 
+    @self.console_argument("x_pos", type=Length)
+    @self.console_argument("y_pos", type=Length)
+    @self.console_argument("r_pos", type=Length)
+    @self.console_command(
+        "circle",
+        help=_("circle <x> <y> <r>"),
+        input_type="geometry",
+        output_type="geometry",
+        all_arguments_required=True,
+    )
+    def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
+        data.append(Geomstr.circle(r_pos,x_pos,y_pos, slices=4))
+        return "geometry", data
+
     @self.console_option(
         "real",
         "r",
