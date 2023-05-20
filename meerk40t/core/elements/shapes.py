@@ -804,8 +804,8 @@ def init_commands(kernel):
     @self.console_command(
         "translate",
         help=_("translate <tx> <ty>"),
-        input_type=(None, "elements"),
-        output_type="elements",
+        input_type="geometry",
+        output_type="geometry",
     )
     def element_translate(
         tx, ty, data: Geomstr, **kwargs
