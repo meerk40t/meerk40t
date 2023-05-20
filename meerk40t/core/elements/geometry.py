@@ -175,4 +175,17 @@ def init_commands(kernel):
         data.translate(tx, ty)
         return "geometry", data
 
+    @self.console_argument("scale", type=float, help=_("uniform scale value"))
+    @self.console_command(
+        "scale",
+        help=_("scale <scale-factor>"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_translate(
+        scale, data: Geomstr, **kwargs
+    ):
+        data.uscale(scale)
+        return "geometry", data
+
     # --------------------------- END COMMANDS ------------------------------
