@@ -39,22 +39,6 @@ def init_commands(kernel):
         )
         return "elements", [node]
 
-    @self.console_command(
-        "path",
-        help=_("Convert any element nodes to paths"),
-        input_type="elements",
-        output_type="geometry",
-    )
-    def element_path_convert(data, **kwargs):
-        path = Geomstr()
-        for node in data:
-            try:
-                e = node.as_geometry()
-            except AttributeError:
-                continue
-            path.append(e)
-        return "geometry", path
-
     @self.console_argument("copies", type=int)
     @self.console_command(
         "copies",
@@ -69,11 +53,19 @@ def init_commands(kernel):
     @self.console_command(
         "geometry",
         help=_("Convert any element nodes to paths"),
-        input_type=None,
+        input_type=(None, "elements"),
         output_type="geometry",
     )
-    def element_path_convert(**kwargs):
-        return "geometry", Geomstr()
+    def element_path_convert(data=None, **kwargs):
+        path = Geomstr()
+        if data:
+            for node in data:
+                try:
+                    e = node.as_geometry()
+                except AttributeError:
+                    continue
+                path.append(e)
+        return "geometry", path
 
     @self.console_argument("x_pos", type=Length)
     @self.console_argument("y_pos", type=Length)
