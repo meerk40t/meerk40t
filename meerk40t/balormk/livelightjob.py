@@ -140,7 +140,8 @@ class LiveLightJob:
         if self._last_bounds is not None and bounds != self._last_bounds:
             # Emphasis did not change but the bounds did. We dragged something.
             self.changed = True
-        self._last_bounds = copy(bounds)
+        if bounds is not None:
+            self._last_bounds = copy(bounds)
 
         if self.changed:
             # The emphasis selection has changed.
