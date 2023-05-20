@@ -16,7 +16,7 @@ from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 
-class LiveFullLightJob:
+class LiveLightJob:
     def __init__(
         self,
         service,

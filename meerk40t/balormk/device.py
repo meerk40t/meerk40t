@@ -10,12 +10,12 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
-from meerk40t.balormk.livefulllightjob import LiveFullLightJob
+from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Point
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -827,14 +827,14 @@ class BalorDevice(Service, ViewPort):
             # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self, mode="bounds")
+            self.job = LiveLightJob(self, mode="bounds")
             self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self)
+            self.job = LiveLightJob(self)
             self.spooler.send(self.job)
 
         @self.console_command(
@@ -843,7 +843,7 @@ class BalorDevice(Service, ViewPort):
         def reg_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self, mode="regmarks")
+            self.job = LiveLightJob(self, mode="regmarks")
             self.spooler.send(self.job)
 
         @self.console_command(
