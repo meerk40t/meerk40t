@@ -10,7 +10,7 @@ import time
 import numpy as np
 
 from meerk40t.core.units import UNITS_PER_PIXEL
-from meerk40t.svgelements import Matrix, Polygon, Polyline
+from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -18,6 +18,7 @@ class LiveFullLightJob:
     def __init__(
         self,
         service,
+        regmarks=False,
     ):
         self.service = service
         self.stopped = False
@@ -29,6 +30,7 @@ class LiveFullLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+        self.regmarks = regmarks
 
     @property
     def status(self):
@@ -166,7 +168,10 @@ class LiveFullLightJob:
         con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
-        elements = list(self.service.elements.elems(emphasized=True))
+        if self.regmarks:
+            elements = list(self.service.elements.regmarks())
+        else:
+            elements = list(self.service.elements.elems(emphasized=True))
 
         if not elements:
             return self.crosshairs(con)
