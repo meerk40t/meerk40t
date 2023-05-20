@@ -785,6 +785,10 @@ def init_commands(kernel):
         """
         Draws a svg rectangle with optional rounded corners.
         """
+        if rx is None:
+            rx = 0
+        if ry is None:
+            ry = 0
         data.append(Geomstr.rect(
             x=x_pos,
             y=y_pos,
