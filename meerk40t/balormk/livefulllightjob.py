@@ -1,8 +1,10 @@
 """
 Live Full Light Job
 
-This light job is full live because it syncs with the elements to run the current elements. This can change when the
-elements change.
+This light job is full live because it syncs with the elements to run the current elements. The lighting can change
+when the elements change. It will show the updated job.
+
+This job works as a spoolerjob. Implementing all the regular calls for being a spooled job.
 """
 
 import time
@@ -45,6 +47,12 @@ class LiveFullLightJob:
         return not self.stopped
 
     def execute(self, driver):
+        """
+        Spooler job execute.
+
+        @param driver: driver-like object
+        @return:
+        """
         if self.stopped:
             return True
         self.service.listen("emphasized", self.on_emphasis_changed)
@@ -54,6 +62,7 @@ class LiveFullLightJob:
         connection.rapid_mode()
         connection.light_mode()
         while self.process(connection):
+            # Calls process while execute() is running.
             if self.stopped:
                 break
         connection.abort()
@@ -70,6 +79,10 @@ class LiveFullLightJob:
         return True
 
     def stop(self):
+        """
+        Called in order to kill the spooler-job.
+        @return:
+        """
         self.stopped = True
 
     def elapsed_time(self):
@@ -85,9 +98,19 @@ class LiveFullLightJob:
         return result
 
     def estimate_time(self):
+        """
+        Estimate how long this spooler job will require to complete.
+        @return:
+        """
         return 0
 
     def on_emphasis_changed(self, *args):
+        """
+        During execute the emphasis signal will call this function.
+
+        @param args:
+        @return:
+        """
         self.changed = True
 
     def crosshairs(self, con):
@@ -145,6 +168,11 @@ class LiveFullLightJob:
         return True
 
     def process(self, con):
+        """
+        Called repeatedly by `execute()`
+        @param con:
+        @return:
+        """
         if self.stopped:
             return False
         bounds = self.service.elements.selected_area()
@@ -154,6 +182,7 @@ class LiveFullLightJob:
         self._last_bounds = bounds
 
         if self.changed:
+            # The emphasis selection has changed.
             self.changed = False
             con.abort()
             first_x = 0x8000
