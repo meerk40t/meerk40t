@@ -848,6 +848,14 @@ class Geomstr:
         return path
 
     @classmethod
+    def hull(cls, geom):
+        ipts = list(geom.as_interpolated_points(interpolate=50))
+        pts = list(Geomstr.convex_hull(None, ipts))
+        if pts:
+            pts.append(pts[0])
+        return Geomstr.lines(*pts)
+
+    @classmethod
     def regular_polygon(cls, number_of_vertex, point_center=None, radius=0, radius_inner=0, side_length=False,
                         start_angle=0, inscribed=False, alt_seq=0, density=1):
         if number_of_vertex < 2:
@@ -2687,6 +2695,8 @@ class Geomstr:
         points = []
         for i in range(len(pts)):
             p = pts[i]
+            if p is None or np.isnan(p.real):
+                continue
             if isinstance(p, int):
                 if p < 0:
                     p = self.segments[~p][-1]

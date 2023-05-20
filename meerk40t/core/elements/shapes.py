@@ -17,6 +17,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -673,34 +674,6 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         post.append(classify_new(data))
         return "elements", data
-
-    @self.console_command(
-        "path",
-        help=_("Convert any shapes to paths"),
-        input_type="shapes",
-        output_type="shapes",
-    )
-    def element_shape_convert(data, **kwargs):
-        paths = []
-        for e in data:
-            paths.append(abs(Path(e)))
-        return "shapes", paths
-
-    @self.console_command(
-        "path",
-        help=_("Convert any element nodes to paths"),
-        input_type="elements",
-        output_type="shapes",
-    )
-    def element_path_convert(data, **kwargs):
-        paths = []
-        for node in data:
-            try:
-                e = node.as_path()
-            except AttributeError:
-                continue
-            paths.append(e)
-        return "shapes", paths
 
     @self.console_option(
         "real",

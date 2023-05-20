@@ -10,13 +10,13 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
-from meerk40t.balormk.livefulllightjob import LiveFullLightJob
-from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
+from meerk40t.balormk.livelightjob import LiveLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Point
+from meerk40t.tools.geomstr import Geomstr
 
 
 class BalorDevice(Service, ViewPort):
@@ -786,7 +786,7 @@ class BalorDevice(Service, ViewPort):
         )
         @self.console_command(
             ("light", "light-simulate"),
-            input_type="shapes",
+            input_type="geometry",
             help=_("runs light on events."),
         )
         def light(
@@ -806,26 +806,15 @@ class BalorDevice(Service, ViewPort):
             if data is None:
                 channel("Nothing sent")
                 return
-            if command == "light":
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=False,
-                )
-            else:
-                self.job = ElementLightJob(
-                    self,
-                    data,
-                    travel_speed=travel_speed,
-                    jump_delay=jump_delay,
-                    simulation_speed=simulation_speed,
-                    quantization=quantization,
-                    simulate=True,
-                )
+            self.job = ElementLightJob(
+                self,
+                data,
+                travel_speed=travel_speed,
+                jump_delay=jump_delay,
+                simulation_speed=simulation_speed,
+                quantization=quantization,
+                simulate=bool(command != "light"),
+            )
             self.spooler.send(self.job)
 
         @self.console_command(
@@ -838,15 +827,32 @@ class BalorDevice(Service, ViewPort):
             # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveSelectionLightJob(self)
+            self.job = LiveLightJob(self, mode="bounds")
             self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self)
+            self.job = LiveLightJob(self)
             self.spooler.send(self.job)
+
+        @self.console_command(
+            "regmark-light", help=_("Execute regmark live light idle job")
+        )
+        def reg_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="regmarks")
+            self.spooler.send(self.job)
+
+        @self.console_command("hull-light", help=_("Execute convex hull light idle job"))
+        def hull_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveLightJob(self, mode="hull")
+            self.spooler.send(self.job)
+
 
         @self.console_command(
             "stop",
@@ -1678,7 +1684,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "box",
             help=_("outline the current selected elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
@@ -1692,23 +1698,18 @@ class BalorDevice(Service, ViewPort):
                 return
             xmin, ymin, xmax, ymax = bounds
             channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
-            points = [
-                (xmin, ymin),
-                (xmax, ymin),
-                (xmax, ymax),
-                (xmin, ymax),
-            ]
+            geometry = Geomstr.rect(xmin, ymin, xmax - xmin, ymin - ymax)
             if count > 1:
-                points *= count
-            return "shapes", [Polygon(*points)]
+                geometry.copies(count)
+            return "geometry", geometry
 
         @self.console_command(
             "hull",
             help=_("convex hull of the current selected elements"),
             input_type=(None, "elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
-        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(channel, _, data=None, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1740,7 +1741,9 @@ class BalorDevice(Service, ViewPort):
                 channel(_("No elements bounds to trace."))
                 return
             hull.append(hull[0])  # loop
-            return "shapes", [Polygon(*hull)]
+            hull = list(map(complex, hull))
+            geometry = Geomstr.lines(*hull)
+            return "geometry", geometry
 
         def ant_points(points, steps):
             points = list(points)
@@ -1772,7 +1775,7 @@ class BalorDevice(Service, ViewPort):
             "ants",
             help=_("Marching ants of the given element path."),
             input_type=(None, "elements"),
-            output_type="shapes",
+            output_type="geometry",
         )
         def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
             """
@@ -1780,18 +1783,16 @@ class BalorDevice(Service, ViewPort):
             """
             if data is None:
                 data = list(self.elements.elems(emphasized=True))
-            points_list = []
-            points = list()
+            geom = Geomstr()
             for e in data:
                 try:
-                    path = e.as_path()
+                    path = e.as_geometry()
                 except AttributeError:
                     continue
-                for i in range(0, quantization + 1):
-                    x, y = path.point(i / float(quantization))
-                    points.append((x, y))
-                points_list.append(list(ant_points(points, int(quantization / 2))))
-            return "shapes", [Polygon(*p) for p in points_list]
+                ants = list(ant_points(path.as_interpolated_points(interpolate=quantization), int(quantization/2)))
+                geom.polyline(ants)
+                geom.end()
+            return "geometry", geom
 
         @self.console_command(
             "viewport_update",
