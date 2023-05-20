@@ -294,8 +294,8 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.length(0), math.sqrt(2))
         self.assertEqual(path.length(1), math.sqrt(2))
 
-        for i in range(20):
-            path = Geomstr.regular_polygon(i, 100 + 100j, radius=50)
+        for i in range(50):
+            path = Geomstr.regular_polygon(i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5)
             # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
 
     def test_geomstr_copies(self):

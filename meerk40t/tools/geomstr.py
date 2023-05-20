@@ -856,69 +856,52 @@ class Geomstr:
         return Geomstr.lines(*pts)
 
     @classmethod
-    def regular_polygon(cls, number_of_vertex, point_center=None, radius=0, radius_inner=0, side_length=False,
-                        start_angle=0, inscribed=False, alt_seq=0, density=1):
+    def regular_polygon(
+        cls,
+        number_of_vertex,
+        point_center=0j,
+        radius=0,
+        radius_inner=0,
+        alt_seq=1,
+        density=1,
+        start_angle=0,
+    ):
         if number_of_vertex < 2:
             return cls()
-        if point_center is None:
-            point_center = 0j
-        if radius is None:
-            radius = 0
-
         if alt_seq == 0 and radius_inner != 0:
             alt_seq = 1
-
-        if density is None:
-            density = 1
-        if density < 1 or density > number_of_vertex:
-            density = 1
-
         # Do we have to consider the radius value as the length of one corner?
-        if side_length:
-            # Let's recalculate the radius then...
-            # d_oc = s * csc( pi / n)
-            radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
-
-        if radius_inner is None:
-            radius_inner = radius
-
-        if inscribed and side_length is None:
-            # Inscribed requires side_length be undefined.
-            # You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored
-            radius = radius / math.cos(math.pi / number_of_vertex)
+        # if side_length:
+        #     # Let's recalculate the radius then...
+        #     # d_oc = s * csc( pi / n)
+        #     radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
+        # if inscribed and side_length is None:
+        #     # Inscribed requires side_length be undefined.
+        #     # You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored
+        #     radius = radius / math.cos(math.pi / number_of_vertex)
 
         if alt_seq < 1:
             radius_inner = radius
 
         i_angle = start_angle
         delta_angle = math.tau / number_of_vertex
-        ct = 0
-        first = None
         pts = []
         for j in range(number_of_vertex):
-            if ct < alt_seq:
-                r = radius
-            else:
-                r = radius_inner
+            r = radius if j % (2 * alt_seq) < alt_seq else radius_inner
             current = point_center + r * complex(math.cos(i_angle), math.sin(i_angle))
-
-            ct += 1
-            if ct >= 2 * alt_seq:
-                ct = 0
-            if j == 0:
-                first = current
             i_angle += delta_angle
             pts.append(current)
-        # Close the path
-        pts.append(first)
 
+        # Close the path
+        pts.append(pts[0])
+        if density <= 1 or number_of_vertex > density:
+            return Geomstr.lines(*pts)
+
+        # Process star-like qualities.
         star_points = [pts[0]]
-        idx = density
-        while idx != 0:
+        for i in range(number_of_vertex):
+            idx = (density * i) % number_of_vertex
             star_points.append(pts[idx])
-            idx += density
-            if idx >= number_of_vertex:
-                idx -= number_of_vertex
         star_points.append(star_points[0])
         return Geomstr.lines(*star_points)
 
