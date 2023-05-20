@@ -8,7 +8,6 @@ This job works as a spoolerjob. Implementing all the regular calls for being a s
 """
 
 import time
-from copy import copy
 
 import numpy as np
 
@@ -46,6 +45,9 @@ class LiveLightJob:
         elif self.mode == "regmarks":
             self.label = "Live Regmark Light Job"
             self._mode_light = self._regmarks
+        elif self.mode == "hull":
+            self.label = "Live Hull Light Job"
+            self._mode_light = self._hull
         else:
             raise ValueError("Invalid mode.")
 
@@ -176,6 +178,16 @@ class LiveLightJob:
         # Full was requested.
         elements = list(self.service.elements.elems(emphasized=True))
         return self._light_elements(con, elements)
+
+    def _hull(self, con):
+        """
+        Mode light hull gets the convex hull. Sends to light hull.
+
+        @param con: connection
+        @return:
+        """
+        elements = list(self.service.elements.elems(emphasized=True))
+        return self._light_hull(con, elements)
 
     def _crosshairs(self, con, margin=5000):
         """
@@ -328,3 +340,32 @@ class LiveLightJob:
         if con.light_off():
             con.list_write_port()
         return True
+
+    def _light_hull(self, con, elements):
+        """
+        Light the given elements convex hull.
+
+        @param con:
+        @param elements:
+        @return:
+        """
+        if not elements:
+            # There are no elements, return a default crosshair.
+            return self._crosshairs(con)
+
+        # Convert elements to geomstr
+        geometry = Geomstr()
+        for node in elements:
+            try:
+                e = node.as_geometry()
+            except AttributeError:
+                continue
+            geometry.append(e)
+
+        # Convert to hull.
+        hull = Geomstr.hull(geometry)
+        hull.transform(self.service.scene_to_device_matrix())
+        hull.transform(self._redlight_adjust_matrix())
+
+        # Light geometry.
+        return self._light_geometry(con, hull)
