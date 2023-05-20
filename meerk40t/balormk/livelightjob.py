@@ -8,6 +8,7 @@ This job works as a spoolerjob. Implementing all the regular calls for being a s
 """
 
 import time
+from copy import copy
 
 import numpy as np
 
@@ -139,7 +140,7 @@ class LiveLightJob:
         if self._last_bounds is not None and bounds != self._last_bounds:
             # Emphasis did not change but the bounds did. We dragged something.
             self.changed = True
-        self._last_bounds = bounds
+        self._last_bounds = copy(bounds)
 
         if self.changed:
             # The emphasis selection has changed.
