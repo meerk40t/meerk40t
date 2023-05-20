@@ -154,7 +154,7 @@ class LiveLightJob:
         con._goto_speed = self.service.redlight_speed
         con.light_mode()
         # Calls light based on the set mode.
-        self._mode_light(con)
+        return self._mode_light(con)
 
     def _regmarks(self, con):
         """
