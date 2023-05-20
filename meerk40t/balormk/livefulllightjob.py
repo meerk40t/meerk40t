@@ -206,6 +206,8 @@ class LiveFullLightJob:
             for i, e in enumerate(points):
                 if self.stopped:
                     return False
+                if self.changed:
+                    return True
                 if e is None:
                     move = True
                     continue
