@@ -2,21 +2,8 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-from math import sqrt
+from meerk40t.core.units import Length, Angle
 
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_PIXEL, UNITS_PER_POINT, Length
-from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import (
-    SVG_RULE_EVENODD,
-    SVG_RULE_NONZERO,
-    Angle,
-    Color,
-    Matrix,
-    Path,
-    Polygon,
-    Polyline,
-)
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -186,6 +173,19 @@ def init_commands(kernel):
         scale, data: Geomstr, **kwargs
     ):
         data.uscale(scale)
+        return "geometry", data
+
+    @self.console_argument("angle", type=Angle, help=_("rotation angle"))
+    @self.console_command(
+        "rotate",
+        help=_("scale <scale-factor>"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_translate(
+            angle: Angle, data: Geomstr, **kwargs
+    ):
+        data.rotate(angle.radians)
         return "geometry", data
 
     # --------------------------- END COMMANDS ------------------------------
