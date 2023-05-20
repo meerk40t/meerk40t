@@ -32,6 +32,7 @@ class LiveFullLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+        self.quantization = 50
         self.regmarks = regmarks
 
     @property
@@ -143,33 +144,9 @@ class LiveFullLightJob:
 
     def crosshairs(self, con):
         # Calculate rotate matrix.
-        rotate = Matrix()
-        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
-        x_offset = self.service.length(
-            self.service.redlight_offset_x,
-            axis=0,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y,
-            axis=1,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
-        rotate.post_translate(x_offset, y_offset)
-
-        # Function for using rotate
-        def mx_rotate(pt):
-            if pt is None:
-                return None
-            return (
-                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-            )
-
         margin = 5000
-        points = [
+
+        geometry = Geomstr.lines(
             (0x8000, 0x8000),
             (0x8000 - margin, 0x8000),
             (0x8000, 0x8000),
@@ -179,21 +156,11 @@ class LiveFullLightJob:
             (0x8000, 0x8000),
             (0x8000, 0x8000 + margin),
             (0x8000, 0x8000),
-        ]
-        for i in range(len(points)):
-            pt = points[i]
-            x, y = mx_rotate(pt)
-            x = int(x)
-            y = int(y)
-            points[i] = x, y
+        )
+        rotate = self._redlight_adjust_matrix()
+        geometry.transform(rotate)
 
-        jump_delay = self.service.delay_jump_long
-        dark_delay = self.service.delay_jump_short
-        for pt in points:
-            if self.stopped:
-                return False
-            con.light(*pt, long=jump_delay, short=dark_delay)
-        return True
+        return self._light_geometry(geometry, con)
 
     def _redlight_adjust_matrix(self):
         x_offset = self.service.length(
@@ -209,7 +176,9 @@ class LiveFullLightJob:
             unitless=UNITS_PER_PIXEL,
         )
         redlight_adjust_matrix = Matrix()
-        redlight_adjust_matrix.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        redlight_adjust_matrix.post_rotate(
+            self.service.redlight_angle.radians, 0x8000, 0x8000
+        )
         redlight_adjust_matrix.post_translate(x_offset, y_offset)
         return redlight_adjust_matrix
 
@@ -235,9 +204,6 @@ class LiveFullLightJob:
             first_y = 0x8000
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-        delay_dark = self.service.delay_jump_long
-        delay_between = self.service.delay_jump_short
-
         con._light_speed = self.service.redlight_speed
         con._dark_speed = self.service.redlight_speed
         con._goto_speed = self.service.redlight_speed
