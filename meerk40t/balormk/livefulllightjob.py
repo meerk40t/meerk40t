@@ -113,6 +113,34 @@ class LiveFullLightJob:
         """
         self.changed = True
 
+    def _light_geometry(self, geometry, con):
+        delay_dark = self.service.delay_jump_long
+        delay_between = self.service.delay_jump_short
+
+        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
+        move = True
+        for i, e in enumerate(points):
+            if self.stopped:
+                # Abort due to stoppage.
+                return False
+            if self.changed:
+                # Abort due to change.
+                return True
+            if e is None:
+                move = True
+                continue
+            x, y = e.real, e.imag
+            if np.isnan(x) or np.isnan(y):
+                move = True
+                continue
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            if move:
+                con.dark(x, y, long=delay_dark, short=delay_dark)
+                move = False
+                continue
+            con.light(x, y, long=delay_between, short=delay_between)
+
     def crosshairs(self, con):
         # Calculate rotate matrix.
         rotate = Matrix()
@@ -167,6 +195,24 @@ class LiveFullLightJob:
             con.light(*pt, long=jump_delay, short=dark_delay)
         return True
 
+    def _redlight_adjust_matrix(self):
+        x_offset = self.service.length(
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
+        )
+        redlight_adjust_matrix = Matrix()
+        redlight_adjust_matrix.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        redlight_adjust_matrix.post_translate(x_offset, y_offset)
+        return redlight_adjust_matrix
+
     def process(self, con):
         """
         Called repeatedly by `execute()`
@@ -205,22 +251,7 @@ class LiveFullLightJob:
         if not elements:
             return self.crosshairs(con)
 
-        x_offset = self.service.length(
-            self.service.redlight_offset_x,
-            axis=0,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y,
-            axis=1,
-            as_float=True,
-            unitless=UNITS_PER_PIXEL,
-        )
-        quantization = 50
-        rotate = Matrix()
-        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
-        rotate.post_translate(x_offset, y_offset)
+        rotate = self._redlight_adjust_matrix()
 
         for node in elements:
             if self.stopped:
@@ -235,27 +266,7 @@ class LiveFullLightJob:
             # Add redlight adjustments within device space.
             geometry.transform(rotate)
 
-            points = list(geometry.as_interpolated_points(interpolate=quantization))
-            move = True
-            for i, e in enumerate(points):
-                if self.stopped:
-                    return False
-                if self.changed:
-                    return True
-                if e is None:
-                    move = True
-                    continue
-                x, y = e.real, e.imag
-                if np.isnan(x) or np.isnan(y):
-                    move = True
-                    continue
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                if move:
-                    con.dark(x, y, long=delay_dark, short=delay_dark)
-                    move = False
-                    continue
-                con.light(x, y, long=delay_between, short=delay_between)
+            self._light_geometry(geometry, con)
         if con.light_off():
             con.list_write_port()
         return True
