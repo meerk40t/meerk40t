@@ -17,6 +17,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -675,32 +676,35 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_command(
-        "path",
-        help=_("Convert any shapes to paths"),
-        input_type="shapes",
-        output_type="shapes",
+        "shape_node",
+        help=_("Convert any shapes to pathnodes"),
+        input_type="geometry",
+        output_type="elements",
     )
     def element_shape_convert(data, **kwargs):
-        paths = []
-        for e in data:
-            paths.append(abs(Path(e)))
-        return "shapes", paths
+        node = self.elem_branch.add(
+            geometry=data,
+            stroke=self.default_stroke,
+            stroke_width=self.default_strokewidth,
+            type="elem path",
+        )
+        return "elements", [node]
 
     @self.console_command(
         "path",
         help=_("Convert any element nodes to paths"),
         input_type="elements",
-        output_type="shapes",
+        output_type="geometry",
     )
     def element_path_convert(data, **kwargs):
-        paths = []
+        path = Geomstr()
         for node in data:
             try:
-                e = node.as_path()
+                e = node.as_geometry()
             except AttributeError:
                 continue
-            paths.append(e)
-        return "shapes", paths
+            path.append(e)
+        return "geometry", path
 
     @self.console_option(
         "real",
