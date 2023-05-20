@@ -74,6 +74,12 @@ def plugin(service, lifecycle):
                         "action": lambda e: service("full-light\n"),
                     },
                     {
+                        "identifier": "live-regmark",
+                        "label": _("Live Regmarks"),
+                        "icon": icons8_computer_support_50,
+                        "action": lambda e: service("regmark-light\n"),
+                    },
+                    {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
                         "action": lambda e: service("element* hull light\n"),
