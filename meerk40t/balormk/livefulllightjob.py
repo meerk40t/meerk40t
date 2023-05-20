@@ -127,58 +127,62 @@ class LiveFullLightJob:
         """
         self.changed = True
 
-    def _light_geometry(self, con, geometry):
+    def process(self, con):
         """
-        Light the current geometry.
-
-        We abort quickly if self.stopped or self.changed is set.
-
-        @param geometry:
+        Called repeatedly by `execute()`
         @param con:
-        @return: True if we should continue, False if we should not.
+        @return:
         """
-        delay_dark = self.service.delay_jump_long
-        delay_between = self.service.delay_jump_short
+        if self.stopped:
+            return False
+        bounds = self.service.elements.selected_area()
+        if self._last_bounds is not None and bounds != self._last_bounds:
+            # Emphasis did not change but the bounds did. We dragged something.
+            self.changed = True
+        self._last_bounds = bounds
 
-        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
-        move = True
-        for i, e in enumerate(points):
-            if self.stopped:
-                # Abort due to stoppage.
-                return False
-            if self.changed:
-                # Abort due to change.
-                return True
-            if e is None:
-                move = True
-                continue
-            x, y = e.real, e.imag
-            if np.isnan(x) or np.isnan(y):
-                move = True
-                continue
-            x = int(x) & 0xFFFF
-            y = int(y) & 0xFFFF
-            if move:
-                con.dark(x, y, long=delay_dark, short=delay_dark)
-                move = False
-                continue
-            con.light(x, y, long=delay_between, short=delay_between)
-        return True
+        if self.changed:
+            # The emphasis selection has changed.
+            self.changed = False
+            con.abort()
+            first_x = 0x8000
+            first_y = 0x8000
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
+            con.light_mode()
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
+        con.light_mode()
+        # Calls light based on the set mode.
+        self._mode_light(con)
 
     def _regmarks(self, con):
-        # Regmarks were requested.
+        """
+        Mode light regmarks gets the elements for regmarks. Sends to light elements.
+
+        @param con: connection
+        @return:
+        """
         elements = list(self.service.elements.regmarks())
-        self._light_elements(con, elements)
+        return self._light_elements(con, elements)
 
     def _full(self, con):
+        """
+        Mode light full gets the elements from the emphasized primary elements. Sends to light elements.
+        @param con: connection
+        @return:
+        """
         # Full was requested.
         elements = list(self.service.elements.elems(emphasized=True))
-        self._light_elements(con, elements)
+        return self._light_elements(con, elements)
 
-    def _crosshairs(self, con):
-        # Calculate rotate matrix.
-        margin = 5000
+    def _crosshairs(self, con, margin=5000):
+        """
+        Mode light crosshairs draws crosshairs. Sends to light geometry.
 
+        @param con: connection
+        @return:
+        """
         geometry = Geomstr.lines(
             (0x8000, 0x8000),
             (0x8000 - margin, 0x8000),
@@ -197,7 +201,7 @@ class LiveFullLightJob:
 
     def _bounds(self, con):
         """
-        Light the bounds geometry.
+        Light the bounds geometry. Sends to light geometry.
 
         @param con:
         @param bounds:
@@ -205,6 +209,7 @@ class LiveFullLightJob:
         """
         bounds = self._last_bounds
         if not bounds:
+            # If no bounds give crosshairs.
             return self._crosshairs(con)
         xmin, ymin, xmax, ymax = bounds
         geometry = Geomstr.lines(
@@ -217,7 +222,7 @@ class LiveFullLightJob:
         rotate = self._redlight_adjust_matrix()
         geometry.transform(self.service.scene_to_device_matrix())
         geometry.transform(rotate)
-        return self._light_geometry(con, geometry)
+        return self._light_geometry(con, geometry, bounded=True)
 
     def _redlight_adjust_matrix(self):
         """
@@ -245,35 +250,63 @@ class LiveFullLightJob:
         redlight_adjust_matrix.post_translate(x_offset, y_offset)
         return redlight_adjust_matrix
 
-    def process(self, con):
+    def _light_geometry(self, con, geometry, bounded=False):
         """
-        Called repeatedly by `execute()`
-        @param con:
-        @return:
-        """
-        if self.stopped:
-            return False
-        bounds = self.service.elements.selected_area()
-        if self._last_bounds is not None and bounds != self._last_bounds:
-            # Emphasis did not change but the bounds did. We dragged something.
-            self.changed = True
-        self._last_bounds = bounds
+        Light the current geometry.
 
-        if self.changed:
-            # The emphasis selection has changed.
-            self.changed = False
-            con.abort()
-            first_x = 0x8000
-            first_y = 0x8000
-            con.goto_xy(first_x, first_y, distance=0xFFFF)
-            con.light_mode()
-        con._light_speed = self.service.redlight_speed
-        con._dark_speed = self.service.redlight_speed
-        con._goto_speed = self.service.redlight_speed
-        con.light_mode()
-        self._mode_light(con)
+        We abort quickly if self.stopped or self.changed is set.
+
+        @param con: connection
+        @param geometry: geometry to light
+        @param bounded: Require the geometry to be properly bounded.
+        @return: True if we should continue, False if we should not.
+        """
+        delay_dark = self.service.delay_jump_long
+        delay_between = self.service.delay_jump_short
+
+        points = list(geometry.as_interpolated_points(interpolate=self.quantization))
+        move = True
+        for i, e in enumerate(points):
+            if self.stopped:
+                # Abort due to stoppage.
+                return False
+            if self.changed:
+                # Abort due to change.
+                return True
+            if e is None:
+                move = True
+                continue
+            x, y = e.real, e.imag
+            if np.isnan(x) or np.isnan(y):
+                move = True
+                continue
+            x = int(x)
+            y = int(y)
+            if 0 <= x <= 0xFFFF and 0 <= y <= 0xFFFF:
+                pass
+            else:
+                # Our bounds are not in frame.
+                if bounded:
+                    # We required them in frame.
+                    return self._crosshairs(con)
+                else:
+                    # Fix them.
+                    x = x & 0xFFFF
+                    y = y & 0xFFFF
+            if move:
+                con.dark(x, y, long=delay_dark, short=delay_dark)
+                move = False
+                continue
+            con.light(x, y, long=delay_between, short=delay_between)
+        return True
 
     def _light_elements(self, con, elements):
+        """
+        Light the given elements. The elements should be a node list with `as_geometry()` objects
+        @param con:
+        @param elements:
+        @return:
+        """
         if not elements:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
