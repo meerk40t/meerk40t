@@ -158,10 +158,8 @@ class LiveFullLightJob:
             first_y = 0x8000
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-        # delay_between = self.service.delay_jump_long
-        # delay_dark = self.service.delay_jump_short
-        delay_dark = 200.0
-        delay_between = 8
+        delay_dark = self.service.delay_jump_long
+        delay_between = self.service.delay_jump_short
 
         con._light_speed = self.service.redlight_speed
         con._dark_speed = self.service.redlight_speed
