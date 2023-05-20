@@ -11,7 +11,6 @@ import time
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.balormk.elementlightjob import ElementLightJob
 from meerk40t.balormk.livefulllightjob import LiveFullLightJob
-from meerk40t.balormk.liveselectionlightjob import LiveSelectionLightJob
 from meerk40t.core.laserjob import LaserJob
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
@@ -828,7 +827,7 @@ class BalorDevice(Service, ViewPort):
             # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveSelectionLightJob(self)
+            self.job = LiveFullLightJob(self, mode="bounds")
             self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
@@ -844,7 +843,7 @@ class BalorDevice(Service, ViewPort):
         def reg_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
-            self.job = LiveFullLightJob(self, regmarks=True)
+            self.job = LiveFullLightJob(self, mode="regmarks")
             self.spooler.send(self.job)
 
         @self.console_command(
