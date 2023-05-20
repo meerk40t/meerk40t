@@ -847,6 +847,75 @@ class Geomstr:
             path.line(complex(x + rx, y), complex(x + rx, y))
         return path
 
+    @classmethod
+    def regular_polygon(cls, number_of_vertex, point_center=None, radius=None, radius_inner=None, side_length=False,
+                        start_angle=0, inscribed=False, alt_seq=0, density=None):
+        if point_center is None:
+            point_center = 0j
+        if radius is None:
+            radius = 0
+        if start_angle is None:
+            start_angle = 0
+
+        if alt_seq is None:
+            if radius_inner is None:
+                alt_seq = 0
+            else:
+                alt_seq = 1
+
+        if density is None:
+            density = 1
+        if density < 1 or density > number_of_vertex:
+            density = 1
+
+        # Do we have to consider the radius value as the length of one corner?
+        if side_length is not None:
+            # Let's recalculate the radius then...
+            # d_oc = s * csc( pi / n)
+            radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
+
+        if radius_inner is None:
+            radius_inner = radius
+
+        if inscribed and side_length is None:
+            # Inscribed requires side_length be undefined.
+            # You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored
+            radius = radius / math.cos(math.pi / number_of_vertex)
+
+        if alt_seq < 1:
+            radius_inner = radius
+
+        i_angle = start_angle
+        delta_angle = math.tau / number_of_vertex
+        ct = 0
+        first = None
+        pts = []
+        for j in range(number_of_vertex):
+            if ct < alt_seq:
+                r = radius
+            else:
+                r = radius_inner
+            current = point_center + r * complex(math.cos(i_angle), math.sin(i_angle))
+
+            ct += 1
+            if ct >= 2 * alt_seq:
+                ct = 0
+            if j == 0:
+                first = current
+            i_angle += delta_angle
+            pts.append(current)
+        # Close the path
+        pts.append(first)
+
+        star_points = [pts[0]]
+        idx = density
+        while idx != 0:
+            star_points.append(pts[idx])
+            idx += density
+            if idx >= number_of_vertex:
+                idx -= number_of_vertex
+        return Geomstr.lines(cls, *star_points)
+
     def copies(self, n):
         segs = self.segments[:self.index]
         self.segments = np.vstack([segs] * n)
