@@ -41,7 +41,6 @@ class TestElements(unittest.TestCase):
         finally:
             kernel.shutdown()
 
-
     def test_elements_frame(self):
         """
         Test frame command creates a rectangle of a rectangle
@@ -59,7 +58,6 @@ class TestElements(unittest.TestCase):
             self.assertAlmostEqual(f[0].ry, f[1].ry)
         finally:
             kernel.shutdown()
-
 
     def test_elements_circle(self):
         """

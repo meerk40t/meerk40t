@@ -3,8 +3,8 @@ This is a giant list of console commands that deal with and often implement the 
 """
 
 import re
-from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
+from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
 
 def plugin(kernel, lifecycle=None):
