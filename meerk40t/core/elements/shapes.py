@@ -799,6 +799,20 @@ def init_commands(kernel):
         ))
         return "geometry", data
 
+    @self.console_argument("tx", type=Length, help=_("translate x value"))
+    @self.console_argument("ty", type=Length, help=_("translate y value"))
+    @self.console_command(
+        "translate",
+        help=_("translate <tx> <ty>"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_translate(
+        tx, ty, data: Geomstr, **kwargs
+    ):
+        data.translate(tx, ty)
+        return "geometry", data
+
     @self.console_option(
         "real",
         "r",
