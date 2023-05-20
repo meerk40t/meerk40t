@@ -717,7 +717,6 @@ def init_commands(kernel):
         data.copies(copies)
         return "geometry", data
 
-
     @self.console_command(
         "geometry",
         help=_("Convert any element nodes to paths"),
@@ -726,7 +725,6 @@ def init_commands(kernel):
     )
     def element_path_convert(**kwargs):
         return "geometry", Geomstr()
-
 
     @self.console_argument("x_pos", type=Length)
     @self.console_argument("y_pos", type=Length)
@@ -740,6 +738,61 @@ def init_commands(kernel):
     )
     def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, post=None, **kwargs):
         data.append(Geomstr.circle(r_pos,x_pos,y_pos, slices=4))
+        return "geometry", data
+
+    @self.console_argument(
+        "x_pos",
+        type=Length,
+        help=_("x position for top left corner of rectangle."),
+    )
+    @self.console_argument(
+        "y_pos",
+        type=Length,
+        help=_("y position for top left corner of rectangle."),
+    )
+    @self.console_argument(
+        "width", type=Length, help=_("width of the rectangle.")
+    )
+    @self.console_argument(
+        "height", type=Length, help=_("height of the rectangle.")
+    )
+    @self.console_option(
+        "rx", "x", type=Length, help=_("rounded rx corner value.")
+    )
+    @self.console_option(
+        "ry", "y", type=Length, help=_("rounded ry corner value.")
+    )
+    @self.console_command(
+        "rect",
+        help=_("adds rectangle to geometry"),
+        input_type="geometry",
+        output_type="geometry",
+        all_arguments_required=True,
+    )
+    def element_rect(
+        channel,
+        _,
+        x_pos,
+        y_pos,
+        width,
+        height,
+        rx=None,
+        ry=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+        """
+        Draws a svg rectangle with optional rounded corners.
+        """
+        data.append(Geomstr.rect(
+            x=x_pos,
+            y=y_pos,
+            width=width,
+            height=height,
+            rx=rx,
+            ry=ry,
+        ))
         return "geometry", data
 
     @self.console_option(
