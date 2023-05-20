@@ -33,6 +33,7 @@ class LiveLightJob:
         self.runtime = 0
         self.quantization = 50
         self.mode = mode
+        self.points = None
         if self.mode == "full":
             self.label = "Live Full Light Job"
             self._mode_light = self._full
@@ -129,6 +130,7 @@ class LiveLightJob:
         @return:
         """
         self.changed = True
+        self.points = None
 
     def process(self, con):
         """
@@ -142,6 +144,7 @@ class LiveLightJob:
         if self._last_bounds is not None and bounds != self._last_bounds:
             # Emphasis did not change but the bounds did. We dragged something.
             self.changed = True
+            self.points = None
         self._last_bounds = bounds
 
         if self.changed:
@@ -352,20 +355,21 @@ class LiveLightJob:
         if not elements:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
+        if self.points is None:
+            # Convert elements to geomstr
+            geometry = Geomstr()
+            for node in elements:
+                try:
+                    e = node.as_geometry()
+                except AttributeError:
+                    continue
+                geometry.append(e)
 
-        # Convert elements to geomstr
-        geometry = Geomstr()
-        for node in elements:
-            try:
-                e = node.as_geometry()
-            except AttributeError:
-                continue
-            geometry.append(e)
-
-        # Convert to hull.
-        hull = Geomstr.hull(geometry)
-        hull.transform(self.service.scene_to_device_matrix())
-        hull.transform(self._redlight_adjust_matrix())
+            # Convert to hull.
+            hull = Geomstr.hull(geometry)
+            hull.transform(self.service.scene_to_device_matrix())
+            hull.transform(self._redlight_adjust_matrix())
+            self.points = hull
 
         # Light geometry.
-        return self._light_geometry(con, hull)
+        return self._light_geometry(con, self.points)
