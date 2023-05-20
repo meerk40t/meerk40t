@@ -282,9 +282,7 @@ class LiveLightJob:
                 continue
             x = int(x)
             y = int(y)
-            if 0 <= x <= 0xFFFF and 0 <= y <= 0xFFFF:
-                pass
-            else:
+            if (0 > x or x > 0xFFFF) or (0 > y or y > 0xFFFF):
                 # Our bounds are not in frame.
                 if bounded:
                     # We required them in frame.
