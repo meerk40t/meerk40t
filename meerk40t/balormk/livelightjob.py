@@ -369,7 +369,7 @@ class LiveLightJob:
             hull = Geomstr.hull(geometry)
             hull.transform(self.service.scene_to_device_matrix())
             hull.transform(self._redlight_adjust_matrix())
-            hull.copies(50)
+            hull.copies(255)
             self.points = hull
 
         # Light geometry.
