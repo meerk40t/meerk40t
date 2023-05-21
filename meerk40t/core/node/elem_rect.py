@@ -36,7 +36,7 @@ class RectNode(Node, Stroked):
             if "stroke" not in kwargs:
                 kwargs["stroke"] = shape.stroke
             if "stroke_width" not in kwargs:
-                kwargs["stroke_width"] = shape.stroke_width
+                kwargs["stroke_width"] = shape.implicit_stroke_width
             if "fill" not in kwargs:
                 kwargs["fill"] = shape.fill
             if "matrix" not in kwargs:
