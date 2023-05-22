@@ -290,23 +290,24 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             "server", input_type="camera", all_arguments_required=True
         )
-        def camera_server(
-            _, channel, data, port, **kwgs
-        ):
+        def camera_server(_, channel, data, port, **kwgs):
             import time
             from http.server import HTTPServer, BaseHTTPRequestHandler
             from socketserver import ThreadingMixIn
 
             class MJPEGHandler(BaseHTTPRequestHandler):
-
                 def do_GET(self):
                     import cv2
+
                     # Set the response code to 200 (OK)
                     self.send_response(200)
 
                     # Set the content type to multipart/x-mixed-replace
                     # This tells the browser to treat the content as a stream and display it as it is received
-                    self.send_header('Content-type', 'multipart/x-mixed-replace; boundary=--mkboundary')
+                    self.send_header(
+                        "Content-type",
+                        "multipart/x-mixed-replace; boundary=--mkboundary",
+                    )
                     self.end_headers()
 
                     while True:
@@ -314,12 +315,12 @@ def plugin(kernel, lifecycle=None):
                         is_success, buffer = cv2.imencode(".jpg", frame)
 
                         # Send the JPEG image to the browser with the appropriate HTTP headers
-                        self.wfile.write(b'--mkboundary\r\n')
-                        self.send_header('Content-type', 'image/jpeg')
-                        self.send_header('Content-length', len(buffer))
+                        self.wfile.write(b"--mkboundary\r\n")
+                        self.send_header("Content-type", "image/jpeg")
+                        self.send_header("Content-length", len(buffer))
                         self.end_headers()
                         self.wfile.write(buffer)
-                        self.wfile.write(b'\r\n')
+                        self.wfile.write(b"\r\n")
 
                         # Pause for a short time before sending the next image
                         time.sleep(0.1)
@@ -328,7 +329,7 @@ def plugin(kernel, lifecycle=None):
                 """Handle requests in a separate thread."""
 
             def serve_forever():
-                server = ThreadedHTTPServer(('localhost', port), MJPEGHandler)
+                server = ThreadedHTTPServer(("localhost", port), MJPEGHandler)
                 server.serve_forever()
 
             kernel.threaded(serve_forever, thread_name=f"cam-server{port}", daemon=True)
