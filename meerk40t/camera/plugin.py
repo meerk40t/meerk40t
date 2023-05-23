@@ -314,13 +314,16 @@ def plugin(kernel, lifecycle=None):
                         frame = data.get_frame()
                         is_success, buffer = cv2.imencode(".jpg", frame)
 
-                        # Send the JPEG image to the browser with the appropriate HTTP headers
-                        self.wfile.write(b"--mkboundary\r\n")
-                        self.send_header("Content-type", "image/jpeg")
-                        self.send_header("Content-length", len(buffer))
-                        self.end_headers()
-                        self.wfile.write(buffer)
-                        self.wfile.write(b"\r\n")
+                        try:
+                            # Send the JPEG image to the browser with the appropriate HTTP headers
+                            self.wfile.write(b"--mkboundary\r\n")
+                            self.send_header("Content-type", "image/jpeg")
+                            self.send_header("Content-length", len(buffer))
+                            self.end_headers()
+                            self.wfile.write(buffer)
+                            self.wfile.write(b"\r\n")
+                        except ConnectionAbortedError:
+                            break
 
                         # Pause for a short time before sending the next image
                         time.sleep(0.1)
