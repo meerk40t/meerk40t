@@ -113,19 +113,11 @@ class WinCH341Driver:
         @param packet: 1 byte of data to be written to the CH341.
         @return:
         """
-        pass
-
-        # if not self.is_connected():
-        #     raise ConnectionError("Not connected.")
-        # length = len(packet)
-        # obuf = (c_byte * length)()
-        # for i in range(length):
-        #     obuf[i] = packet[i]
-        # length = (c_byte * 1)()
-        # length[0] = len(packet)
-        # success = self.driver.CH341EppWriteAddr(self.driver_index, packet, length)
-        # if not success:
-        #     raise ConnectionError("Failed to write_addr to CH341:Windll.")
+        if not self.is_connected():
+            raise ConnectionError("Not connected.")
+        success = self.driver.CH341EppWriteAddr(packet)
+        if not success:
+            raise ConnectionError("Failed to write to CH341:Windll.")
 
     def get_status(self):
         """
@@ -149,11 +141,11 @@ class WinCH341Driver:
         """
         if not self.is_connected():
             raise ConnectionRefusedError("Not connected.")
-        # if self.bulk:
-        #     write_buffer = bytes([mCH341_PARA_CMD_STS])
-        #     self.driver.CH341EppWrite(write_buffer)
-        #     # self.driver.CH341ReadData(read_buffer, length)
-        #     return self.driver.CH341GetStatus()
+        if self.bulk:
+            # write_buffer = bytes([mCH341_PARA_CMD_STS])
+            self.driver.CH341WriteData(b"\xA0")
+            # self.driver.CH341Write(write_buffer)
+            return self.driver.CH341ReadData(8)
         return self.driver.CH341GetStatus()
 
     def get_chip_version(self):

@@ -385,7 +385,7 @@ class CH341Device:
         status, bytes_returned = self.ioctl(
             CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
         )
-        return bytes_returned
+        return status
 
 
 if __name__ == "__main__":
@@ -396,8 +396,8 @@ if __name__ == "__main__":
         # with ch341 as device:
         device.open()
         device.CH341WriteData(b"\xA0")
-        # data = device.CH341ReadData(8)
-        # print(data)
+        data = device.CH341ReadData(8)
+        print(data)
         device.CH341InitParallel()
         status = device.CH341GetStatus()
         print(status)
