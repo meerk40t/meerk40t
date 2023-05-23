@@ -134,10 +134,20 @@ class _CH341_BULK_OUT(ctypes.Structure):
         ("packet", ctypes.c_byte * 31),
     ]
 
-    def __init__(self, packet: bytes):
-        self.command = 0x12
+    def __init__(self, packet: bytes, cmd=0x07):
+        self.command = cmd
         self.size = len(packet)
         ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
+
+class _CH341_BULK_IN(ctypes.Structure):
+    _fields_ = [
+        ("command", ctypes.c_int),
+        ("size", ctypes.c_int),
+    ]
+
+    def __init__(self, length, cmd=0x06):
+        self.command = cmd
+        self.size = length
 
 
 def _get_required_size(handle, key, dev_info):
@@ -218,7 +228,7 @@ class CH341Device:
                 yield CH341Device(pdo_name, desc)
 
             err_no = ctypes.GetLastError()
-            if err_no not in (ERROR_STILL_ACTIVE, 0):
+            if err_no != ERROR_STILL_ACTIVE:
                 raise WindowsError(err_no, ctypes.FormatError(err_no), (None, None, 2))
 
         finally:
@@ -292,19 +302,39 @@ class CH341Device:
     def __exit__(self, typ, val, tb):
         self.close()
 
-    def CH341EppWriteData(self, buffer):
+    def CH341ReadData(self, length, cmd=0x06):
+        bi = _CH341_BULK_IN(length, cmd=cmd)
+        point_bi = ctypes.pointer(bi)
+        status, bytes_returned = self.ioctl(
+            CH341_DEVICE_IO, point_bi, 0x8, self.point_buffer, length
+        )
+        return self.buffer[8:bytes_returned.value]
+
+    def CH341ReadData0(self, length):
+        self.CH341ReadData(length, cmd=0x10)
+
+    def CH341ReadData0(self, length):
+        self.CH341ReadData(length, cmd=0x11)
+
+    def CH341WriteData(self, buffer, cmd=0x07):
         if buffer is None:
             return
         status = True
         while len(buffer) > 0:
             packet = buffer[:31]
             buffer = buffer[31:]
-            bo = _CH341_BULK_OUT(packet)
+            bo = _CH341_BULK_OUT(packet, cmd=cmd)
             point_bo = ctypes.pointer(bo)
             status, bytes_returned = self.ioctl(
                 CH341_DEVICE_IO, point_bo, 0x28, self.point_buffer, 0x8
             )
         return status
+
+    def CH341EppWriteData(self, buffer):
+        return self.CH341WriteData(buffer, cmd=0x12)
+
+    def CH341EppWriteAddr(self, buffer):
+        return self.CH341WriteData(buffer, cmd=0x13)
 
     def CH341InitParallel(self, mode=CH341_PARA_MODE_EPP19):
         value = mode << 8
@@ -319,6 +349,12 @@ class CH341Device:
         )
         return status
 
+    def CH341SetDelayMS(self, delay):
+        if delay > 0x0F:
+            delay = 0x0F
+        data = bytes([0xAA, 0x50 | delay, 0x00])
+        self.CH341WriteData(data)
+
     def CH341GetStatus(self):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
         ct = _CH341_CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_STATUS, 0, 0, 0x8)
@@ -326,7 +362,7 @@ class CH341Device:
         status, bytes_returned = self.ioctl(
             CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
         )
-        return struct.unpack("6B", self.buffer[8:14])
+        return tuple(self.buffer[8:bytes_returned.value])
 
     def CH341GetVerIC(self):
         ct = _CH341_CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_GET_VER, 0, 0, 0x2)
@@ -334,7 +370,7 @@ class CH341Device:
         status, bytes_returned = self.ioctl(
             CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
         )
-        return struct.unpack("<h", self.buffer[8:10])[0]
+        return struct.unpack("<h", self.buffer[8:bytes_returned.value])[0]
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         value = 0x2525
@@ -359,10 +395,13 @@ if __name__ == "__main__":
 
         # with ch341 as device:
         device.open()
+        device.CH341WriteData(b"\xA0")
+        # data = device.CH341ReadData(8)
+        # print(data)
         device.CH341InitParallel()
         status = device.CH341GetStatus()
         print(status)
         status = device.CH341GetVerIC()
-        print(status)
+        # print(status)
         device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
         device.close()
