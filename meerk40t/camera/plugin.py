@@ -85,11 +85,19 @@ def plugin(kernel, lifecycle=None):
             "uri", help="Set camera uri", output_type="camera", input_type="camera"
         )
         def camera_uri(
+            _,
+            channel,
             data=None,
             uri=None,
             **kwargs,
         ):
-            if uri is not None:
+            if uri is None:
+                channel(_("Known camera URIs:"))
+                camera_context = kernel.get_context("camera")
+                camera_context.setting(list, "uris", [])
+                for i, uri in enumerate(camera_context.uris):
+                    channel(f"{i}: {uri}")
+            else:
                 data.set_uri(uri)
             return "camera", data
 
