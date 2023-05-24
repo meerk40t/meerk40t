@@ -348,15 +348,15 @@ class BULK_OUT(ctypes.Structure):
         ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
 
 
-class BULK_IN(ctypes.Structure):
+class CH341_DEFAULT(ctypes.Structure):
     _fields_ = [
         ("command", ctypes.c_int),
-        ("size", ctypes.c_int),
+        ("data", ctypes.c_int),
     ]
 
-    def __init__(self, length, cmd=0x06):
-        self.command = cmd
-        self.size = length
+    def __init__(self, command, data):
+        self.command = command
+        self.data = data
 
 
 def _get_required_size(handle, key, dev_info):
@@ -406,6 +406,10 @@ class CH341Device:
     @property
     def bytes_returned(self):
         return dwBytesReturned.value
+
+    @property
+    def buffer(self):
+        return self._buffer[8 : self.bytes_returned]
 
     @staticmethod
     def enumerate_devices():
@@ -481,7 +485,7 @@ class CH341Device:
     def CH341ReadData(self, length, cmd=0x06):
         self.ioctl(
             CH341_DEVICE_IO,
-            ctypes.pointer(BULK_IN(length, cmd=cmd)),
+            ctypes.pointer(CH341_DEFAULT(command=cmd, data=length)),
             0x8,
             self._pointer_buffer,
             length,
@@ -530,11 +534,19 @@ class CH341Device:
             0x28,
         )
 
+    def CH341ResetDevice(self):
+        return self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(CH341_DEFAULT(command=0xC, data=0)),
+            0x28,
+            self._pointer_buffer,
+            0x28,
+        )
+
     def CH341SetDelayMS(self, delay):
         if delay > 0x0F:
             delay = 0x0F
-        data = bytes([0xAA, 0x50 | delay, 0x00])
-        return self.CH341WriteData(data)
+        return self.CH341WriteData(bytes([0xAA, 0x50 | delay, 0x00]))
 
     def CH341GetStatus(self):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
@@ -547,7 +559,7 @@ class CH341Device:
             self._pointer_buffer,
             0x28,
         )
-        return tuple(self._buffer[8 : self.bytes_returned])
+        return tuple(self.buffer)
 
     def CH341GetVerIC(self):
         self.ioctl(
@@ -559,7 +571,7 @@ class CH341Device:
             self._pointer_buffer,
             0x28,
         )
-        return struct.unpack("<h", self._buffer[8 : self.bytes_returned])[0]
+        return struct.unpack("<h", self.buffer)[0]
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         value = 0x2525
@@ -595,4 +607,4 @@ if __name__ == "__main__":
             status = device.CH341GetVerIC()
             print(status)
             device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
-            # device.close()
+
