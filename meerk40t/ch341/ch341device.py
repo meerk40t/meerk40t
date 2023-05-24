@@ -1,10 +1,291 @@
-import struct
+"""
+There are 2 primary parts of this code, the first is divided into three sections.
+
+Kernel is needed to open files namely the usb device.
+Ole32 is needed briefly to convert the GUID name.
+Setupaapi is needed in places to query the devices.
+
+Most of these are taken from pySerial, since that's a lot safer. It is very easy to mess this up and lose compatibility
+with various versions of windows.
+
+---
+https://github.com/pyserial/pyserial
+(C) 2001-2016 Chris Liechti <cliechti@gmx.net>
+
+SPDX-License-Identifier:    BSD-3-Clause
+---
+
+The gwangyi library was also highly useful, and largely gave rise to the Ole32 functions.
+--
+https://github.com/gwangyi/pysetupdi
+MIT License
+Copyright (c) 2016 gwangyi
+---
+
+The second part is largely just mimicking the functionality of the CH341DLL.dll driver. The inclusion of that file
+was always a bit iffy and error prone.
+"""
+
+
 import ctypes
-from ctypes import windll, wintypes
+import struct
+from ctypes import (
+    POINTER,
+    Structure,
+    WinDLL,
+    c_int64,
+    c_ulong,
+    c_void_p,
+    sizeof,
+    wintypes,
+)
+from ctypes.wintypes import (
+    BOOL,
+    BYTE,
+    DWORD,
+    HANDLE,
+    HWND,
+    LPCWSTR,
+    WORD,
+)
 
-_setupapi = ctypes.windll.setupapi
-_ole32 = ctypes.windll.ole32
 
+_stdcall_libraries = {}
+_stdcall_libraries["kernel32"] = WinDLL("kernel32")
+
+# some details of the windows API differ between 32 and 64 bit systems..
+def is_64bit():
+    """Returns true when running on a 64 bit system"""
+    return sizeof(c_ulong) != sizeof(c_void_p)
+
+
+# ULONG_PTR is a an ordinary number, not a pointer and contrary to the name it
+# is either 32 or 64 bits, depending on the type of windows...
+# so test if this a 32 bit windows...
+if is_64bit():
+    ULONG_PTR = c_int64
+else:
+    ULONG_PTR = c_ulong
+
+
+class _SECURITY_ATTRIBUTES(Structure):
+    pass
+
+
+LPSECURITY_ATTRIBUTES = POINTER(_SECURITY_ATTRIBUTES)
+
+
+class _OVERLAPPED(Structure):
+    pass
+
+
+OVERLAPPED = _OVERLAPPED
+LPOVERLAPPED = POINTER(_OVERLAPPED)
+LPDWORD = POINTER(DWORD)
+LPVOID = c_void_p
+
+
+try:
+    CreateEventW = _stdcall_libraries["kernel32"].CreateEventW
+except AttributeError:
+    # Fallback to non-wide char version for old OS...
+    from ctypes.wintypes import LPCSTR
+
+    CreateEventA = _stdcall_libraries["kernel32"].CreateEventA
+    CreateEventA.restype = HANDLE
+    CreateEventA.argtypes = [LPSECURITY_ATTRIBUTES, BOOL, BOOL, LPCSTR]
+    CreateEvent = CreateEventA
+
+    CreateFileA = _stdcall_libraries["kernel32"].CreateFileA
+    CreateFileA.restype = HANDLE
+    CreateFileA.argtypes = [
+        LPCSTR,
+        DWORD,
+        DWORD,
+        LPSECURITY_ATTRIBUTES,
+        DWORD,
+        DWORD,
+        HANDLE,
+    ]
+    CreateFile = CreateFileA
+else:
+    CreateEventW.restype = HANDLE
+    CreateEventW.argtypes = [LPSECURITY_ATTRIBUTES, BOOL, BOOL, LPCWSTR]
+    CreateEvent = CreateEventW  # alias
+
+    CreateFileW = _stdcall_libraries["kernel32"].CreateFileW
+    CreateFileW.restype = HANDLE
+    CreateFileW.argtypes = [
+        LPCWSTR,
+        DWORD,
+        DWORD,
+        LPSECURITY_ATTRIBUTES,
+        DWORD,
+        DWORD,
+        HANDLE,
+    ]
+    CreateFile = CreateFileW  # alias
+
+
+def validate_handle(handle, function, args):
+    handle = HANDLE(handle)
+    if handle.value == HANDLE(-1).value:
+        raise ConnectionError(f"Error {GetLastError()}. Failed to open.")
+    return handle
+
+
+CreateFile.errcheck = validate_handle
+
+
+GetLastError = _stdcall_libraries["kernel32"].GetLastError
+GetLastError.restype = DWORD
+GetLastError.argtypes = []
+
+CloseHandle = _stdcall_libraries["kernel32"].CloseHandle
+CloseHandle.restype = BOOL
+CloseHandle.argtypes = [HANDLE]
+
+DeviceIoControl = _stdcall_libraries["kernel32"].DeviceIoControl
+DeviceIoControl.argtypes = [
+    HANDLE,
+    DWORD,
+    LPVOID,
+    DWORD,
+    LPVOID,
+    DWORD,
+    LPDWORD,
+    LPOVERLAPPED,
+]
+DeviceIoControl.restype = BOOL
+dwBytesReturned = DWORD(0)
+lpBytesReturned = ctypes.byref(dwBytesReturned)
+
+
+ERROR_SUCCESS = 0
+ERROR_INSUFFICIENT_BUFFER = 122
+ERROR_STILL_ACTIVE = 259
+
+GENERIC_READ = 0x80000000
+GENERIC_WRITE = 0x40000000
+GENERIC_EXECUTE = 0x20000000
+GENERIC_ALL = 0x10000000
+
+FILE_ATTRIBUTE_NORMAL = 0x00000080
+
+CREATE_NEW = 1
+CREATE_ALWAYS = 2
+OPEN_EXISTING = 3
+OPEN_ALWAYS = 4
+TRUNCATE_EXISTING = 5
+
+
+################################
+# ole32 Section.
+# Allows creations of GUID structures from strings.
+################################
+
+ole32 = ctypes.windll.LoadLibrary("ole32")
+CLSIDFromString = ole32.CLSIDFromString
+
+################################
+# SetupApi Section.
+################################
+
+setupapi = ctypes.windll.LoadLibrary("setupapi")
+
+
+class GUID(ctypes.Structure):
+    _fields_ = [
+        ("Data1", DWORD),
+        ("Data2", WORD),
+        ("Data3", WORD),
+        ("Data4", BYTE * 8),
+    ]
+
+    def __init__(self, guid):
+        super().__init__()
+        ret = CLSIDFromString(ctypes.create_unicode_buffer(guid), ctypes.byref(self))
+        if ret < 0:
+            err_no = GetLastError()
+            raise WindowsError(err_no, ctypes.FormatError(err_no), guid)
+
+    def __str__(self):
+        return "{{{:08x}-{:04x}-{:04x}-{}-{}}}".format(
+            self.Data1,
+            self.Data2,
+            self.Data3,
+            "".join(["{:02x}".format(d) for d in self.Data4[:2]]),
+            "".join(["{:02x}".format(d) for d in self.Data4[2:]]),
+        )
+
+
+class SP_DEVINFO_DATA(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", DWORD),
+        ("ClassGuid", GUID),
+        ("DevInst", DWORD),
+        ("Reserved", ULONG_PTR),
+    ]
+
+    def __str__(self):
+        return "ClassGuid:{} DevInst:{}".format(self.ClassGuid, self.DevInst)
+
+
+class DEVPROP_KEY(ctypes.Structure):
+    _fields_ = [("fmtid", GUID), ("pid", ctypes.c_ulong)]
+
+    def __init__(self, guid, pid):
+        super().__init__()
+        self.fmtid.__init__(guid)
+        self.pid = pid
+
+
+HDEVINFO = ctypes.c_void_p
+PCTSTR = ctypes.c_wchar_p
+
+PSP_DEVINFO_DATA = ctypes.POINTER(SP_DEVINFO_DATA)
+
+PSP_DEVICE_INTERFACE_DETAIL_DATA = ctypes.c_void_p
+
+SetupDiDestroyDeviceInfoList = setupapi.SetupDiDestroyDeviceInfoList
+SetupDiDestroyDeviceInfoList.argtypes = [HDEVINFO]
+SetupDiDestroyDeviceInfoList.restype = BOOL
+
+SetupDiEnumDeviceInfo = setupapi.SetupDiEnumDeviceInfo
+SetupDiEnumDeviceInfo.argtypes = [HDEVINFO, DWORD, PSP_DEVINFO_DATA]
+SetupDiEnumDeviceInfo.restype = BOOL
+
+SetupDiGetClassDevs = setupapi.SetupDiGetClassDevsW
+SetupDiGetClassDevs.argtypes = [ctypes.POINTER(GUID), PCTSTR, HWND, DWORD]
+SetupDiGetClassDevs.restype = HDEVINFO
+
+
+def valid_hdevinfo(value, func, arguments):
+    if value in (-1, 0):
+        err_no = GetLastError()
+        raise WindowsError(err_no, ctypes.FormatError(err_no))
+    return value
+
+
+SetupDiGetClassDevs.errcheck = valid_hdevinfo
+
+SetupDiGetDeviceProperty = setupapi.SetupDiGetDevicePropertyW
+
+
+def valid_property(value, func, arguments):
+    err_no = GetLastError()
+    if err_no in (ERROR_SUCCESS, ERROR_INSUFFICIENT_BUFFER):
+        return value
+    raise WindowsError(err_no, ctypes.FormatError(err_no))
+
+
+SetupDiGetDeviceProperty.errcheck = valid_property
+
+DIGCF_PRESENT = 2
+
+################
+# CH341 Section
+################
 
 USB_LOCK_VENDOR = 0x1A86  # Dev : (1a86) QinHeng Electronics
 USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
@@ -31,81 +312,8 @@ mCH341A_STATUS = 0x52
 
 CH341_DEVICE_IO = 0x223CD0
 
-LPDWORD = ctypes.POINTER(wintypes.DWORD)
-LPOVERLAPPED = wintypes.LPVOID
-LPSECURITY_ATTRIBUTES = wintypes.LPVOID
 
-ERROR_INSUFFICIENT_BUFFER = 122
-ERROR_STILL_ACTIVE = 259
-GENERIC_READ = 0x80000000
-GENERIC_WRITE = 0x40000000
-GENERIC_EXECUTE = 0x20000000
-GENERIC_ALL = 0x10000000
-
-CREATE_NEW = 1
-CREATE_ALWAYS = 2
-OPEN_EXISTING = 3
-OPEN_ALWAYS = 4
-TRUNCATE_EXISTING = 5
-
-FILE_ATTRIBUTE_NORMAL = 0x00000080
-
-INVALID_HANDLE_VALUE = -1
-
-NULL = 0
-
-
-class _GUID(ctypes.Structure):
-    _fields_ = [
-        ("Data1", ctypes.c_ulong),
-        ("Data2", ctypes.c_ushort),
-        ("Data3", ctypes.c_ushort),
-        ("Data4", ctypes.c_ubyte * 8),
-    ]
-
-    def __init__(self, guid):
-        super().__init__()
-        ret = _ole32.CLSIDFromString(
-            ctypes.create_unicode_buffer(guid), ctypes.byref(self)
-        )
-        if ret < 0:
-            err_no = ctypes.GetLastError()
-            raise WindowsError(err_no, ctypes.FormatError(err_no), guid)
-
-    def __str__(self):
-        s = ctypes.c_wchar_p()
-        ret = _ole32.StringFromCLSID(ctypes.byref(self), ctypes.byref(s))
-        if ret < 0:
-            err_no = ctypes.GetLastError()
-            raise WindowsError(err_no, ctypes.FormatError(err_no))
-        ret = str(s.value)
-        _ole32.CoTaskMemFree(s)
-        return ret
-
-
-class _DEV_INFO_DATA(ctypes.Structure):
-    _fields_ = [
-        ("cbSize", ctypes.c_ulong),
-        ("ClassGuid", _GUID),
-        ("DevInst", ctypes.c_ulong),
-        ("Reserved", ctypes.c_void_p),
-    ]
-
-    def __init__(self):
-        super().__init__()
-        self.cbSize = ctypes.sizeof(self)
-
-
-class _DEV_PROP_KEY(ctypes.Structure):
-    _fields_ = [("fmtid", _GUID), ("pid", ctypes.c_ulong)]
-
-    def __init__(self, guid, pid):
-        super().__init__()
-        self.fmtid.__init__(guid)
-        self.pid = pid
-
-
-class _CH341_CONTROL_TRANSFER(ctypes.Structure):
+class CONTROL_TRANSFER(ctypes.Structure):
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -127,7 +335,7 @@ class _CH341_CONTROL_TRANSFER(ctypes.Structure):
         self.wLength = wLength
 
 
-class _CH341_BULK_OUT(ctypes.Structure):
+class BULK_OUT(ctypes.Structure):
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -139,7 +347,8 @@ class _CH341_BULK_OUT(ctypes.Structure):
         self.size = len(packet)
         ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
 
-class _CH341_BULK_IN(ctypes.Structure):
+
+class BULK_IN(ctypes.Structure):
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -154,7 +363,7 @@ def _get_required_size(handle, key, dev_info):
     prop_type = ctypes.c_ulong()
     required_size = ctypes.c_ulong()
 
-    if _setupapi.SetupDiGetDevicePropertyW(
+    if SetupDiGetDeviceProperty(
         handle,
         ctypes.byref(dev_info),
         ctypes.byref(key),
@@ -165,9 +374,6 @@ def _get_required_size(handle, key, dev_info):
         0,
     ):
         raise WindowsError()
-    err_no = ctypes.GetLastError()
-    if err_no != ERROR_INSUFFICIENT_BUFFER:
-        raise WindowsError()
     return required_size
 
 
@@ -175,7 +381,7 @@ def _get_prop(handle, key, dev_info):
     prop_type = ctypes.c_ulong()
     required_size = _get_required_size(handle, key, dev_info)
     value_buffer = ctypes.create_string_buffer(required_size.value)
-    if _setupapi.SetupDiGetDevicePropertyW(
+    if SetupDiGetDeviceProperty(
         handle,
         ctypes.byref(dev_info),
         ctypes.byref(key),
@@ -186,114 +392,84 @@ def _get_prop(handle, key, dev_info):
         0,
     ):
         return bytes(value_buffer).decode("utf-16").split("\0", 1)[0]
-    err_no = ctypes.GetLastError()
-    if err_no == 0:
-        return
-    raise WindowsError(err_no, ctypes.FormatError(err_no))
 
 
 class CH341Device:
     def __init__(self, pdo_name, desc):
         self._handle = None
-        self._file_handle = None
+        self._handle = None
         self.buffer = (ctypes.c_char * 0x28)()
         self.point_buffer = ctypes.pointer(self.buffer)
         self.path = r"\\?\GLOBALROOT" + pdo_name
         self.name = desc
+        self.success = True
+
+    @property
+    def bytes_returned(self):
+        return dwBytesReturned.value
 
     @staticmethod
     def enumerate_devices():
-        GUID = "{77989adf-06db-4025-92e8-40d902c03b0a}"
-        _guid = _GUID(GUID)
-        handle = _setupapi.SetupDiGetClassDevsW(_guid, None, None, 2)
-        if handle == -1:
-            err_no = ctypes.GetLastError()
-            raise WindowsError(err_no, ctypes.FormatError(err_no), (None, None, 2))
-
+        handle = SetupDiGetClassDevs(
+            GUID("{77989adf-06db-4025-92e8-40d902c03b0a}"), None, None, DIGCF_PRESENT
+        )
         try:
-            idx = 0
-            dev_info = _DEV_INFO_DATA()
-            while _setupapi.SetupDiEnumDeviceInfo(handle, idx, ctypes.byref(dev_info)):
-                idx += 1
+            devinfo = SP_DEVINFO_DATA()
+            devinfo.cbSize = ctypes.sizeof(devinfo)
+            index = 0
+            while SetupDiEnumDeviceInfo(handle, index, ctypes.byref(devinfo)):
+                index += 1
                 pdo_name = _get_prop(
                     handle,
-                    _DEV_PROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 16),
-                    dev_info,
+                    DEVPROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 16),
+                    devinfo,
                 )
                 desc = _get_prop(
                     handle,
-                    _DEV_PROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 2),
-                    dev_info,
+                    DEVPROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 2),
+                    devinfo,
                 )
                 yield CH341Device(pdo_name, desc)
 
-            err_no = ctypes.GetLastError()
-            if err_no != ERROR_STILL_ACTIVE:
-                raise WindowsError(err_no, ctypes.FormatError(err_no), (None, None, 2))
+            err_no = GetLastError()
+            if err_no not in (ERROR_STILL_ACTIVE, ERROR_SUCCESS):
+                raise WindowsError(err_no, ctypes.FormatError(err_no))
 
         finally:
-            _setupapi.SetupDiDestroyDeviceInfoList(handle)
+            SetupDiDestroyDeviceInfoList(handle)
 
-    def _validate(self):
-        if self._file_handle is None:
-            raise ConnectionError("Not connected.")
-        if self._file_handle.value == wintypes.HANDLE(INVALID_HANDLE_VALUE).value:
-            raise ConnectionError(f"Error {ctypes.GetLastError()}. Failed to open.")
-
-    def ioctl(self, ctl, inbuf, inbufsiz, outbuf, outbufsiz):
-        self._validate()
-        DeviceIoControl = windll.kernel32.DeviceIoControl
-        DeviceIoControl.argtypes = [
-            wintypes.HANDLE,
-            wintypes.DWORD,
-            wintypes.LPVOID,
-            wintypes.DWORD,
-            wintypes.LPVOID,
-            wintypes.DWORD,
-            LPDWORD,
-            LPOVERLAPPED,
-        ]
-        DeviceIoControl.restype = wintypes.BOOL
-        dwBytesReturned = wintypes.DWORD(0)
-        lpBytesReturned = ctypes.byref(dwBytesReturned)
-        status = DeviceIoControl(
-            self._file_handle,
-            ctl,
-            inbuf,
-            inbufsiz,
-            outbuf,
-            outbufsiz,
+    def ioctl(
+        self, io_control_code, in_buffer, in_buffer_size, out_buffer, out_buffer_size
+    ):
+        return DeviceIoControl(
+            self._handle,
+            io_control_code,
+            in_buffer,
+            in_buffer_size,
+            out_buffer,
+            out_buffer_size,
             lpBytesReturned,
             None,
         )
-        return status, dwBytesReturned
 
     def open(self):
-        access = GENERIC_READ | GENERIC_WRITE
-        CreateFileW = windll.kernel32.CreateFileW
-        CreateFileW.argtypes = [
-            wintypes.LPWSTR,
-            wintypes.DWORD,
-            wintypes.DWORD,
-            LPSECURITY_ATTRIBUTES,
-            wintypes.DWORD,
-            wintypes.DWORD,
-            wintypes.HANDLE,
-        ]
-        CreateFileW.restype = wintypes.HANDLE
-        self._file_handle = wintypes.HANDLE(
-            CreateFileW(
-                self.path, access, 3, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
-            )
+        self._handle = CreateFile(
+            self.path,
+            GENERIC_READ | GENERIC_WRITE,
+            3,
+            None,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            0,
         )
-        self._validate()
 
     def close(self):
-        try:
-            self._validate()
-            windll.kernel32.CloseHandle(self._file_handle)
-        except ConnectionError:
-            pass
+        if self._handle is not None:
+            CloseHandle(self._handle)
+            self._handle = None
+
+    def is_connected(self):
+        return self._handle is not None
 
     def __enter__(self):
         self.open()
@@ -303,12 +479,14 @@ class CH341Device:
         self.close()
 
     def CH341ReadData(self, length, cmd=0x06):
-        bi = _CH341_BULK_IN(length, cmd=cmd)
-        point_bi = ctypes.pointer(bi)
-        status, bytes_returned = self.ioctl(
-            CH341_DEVICE_IO, point_bi, 0x8, self.point_buffer, length
+        self.success = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(BULK_IN(length, cmd=cmd)),
+            0x8,
+            self.point_buffer,
+            length,
         )
-        return self.buffer[8:bytes_returned.value]
+        return self.buffer[8 : self.bytes_returned]
 
     def CH341ReadData0(self, length):
         self.CH341ReadData(length, cmd=0x10)
@@ -319,16 +497,18 @@ class CH341Device:
     def CH341WriteData(self, buffer, cmd=0x07):
         if buffer is None:
             return
-        status = True
+        self.success = True
         while len(buffer) > 0:
             packet = buffer[:31]
             buffer = buffer[31:]
-            bo = _CH341_BULK_OUT(packet, cmd=cmd)
-            point_bo = ctypes.pointer(bo)
-            status, bytes_returned = self.ioctl(
-                CH341_DEVICE_IO, point_bo, 0x28, self.point_buffer, 0x8
+            self.success = self.ioctl(
+                CH341_DEVICE_IO,
+                ctypes.pointer(BULK_OUT(packet, cmd=cmd)),
+                0x28,
+                self.point_buffer,
+                0x8,
             )
-        return status
+        return self.success
 
     def CH341EppWriteData(self, buffer):
         return self.CH341WriteData(buffer, cmd=0x12)
@@ -340,68 +520,81 @@ class CH341Device:
         value = mode << 8
         if mode < 256:
             value |= 2
-        ct = _CH341_CONTROL_TRANSFER(
-            mCH341_VENDOR_WRITE, mCH341_PARA_INIT, value, 0, 0x0
+        self.success = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(
+                CONTROL_TRANSFER(mCH341_VENDOR_WRITE, mCH341_PARA_INIT, value, 0, 0x0)
+            ),
+            0x28,
+            self.point_buffer,
+            0x28,
         )
-        point_ct = ctypes.pointer(ct)
-        status, bytes_returned = self.ioctl(
-            CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
-        )
-        return status
+        return self.success
 
     def CH341SetDelayMS(self, delay):
         if delay > 0x0F:
             delay = 0x0F
         data = bytes([0xAA, 0x50 | delay, 0x00])
-        self.CH341WriteData(data)
+        return self.CH341WriteData(data)
 
     def CH341GetStatus(self):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
-        ct = _CH341_CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_STATUS, 0, 0, 0x8)
-        point_ct = ctypes.pointer(ct)
-        status, bytes_returned = self.ioctl(
-            CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
+        self.success = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(
+                CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_STATUS, 0, 0, 0x8)
+            ),
+            0x28,
+            self.point_buffer,
+            0x28,
         )
-        return tuple(self.buffer[8:bytes_returned.value])
+        return tuple(self.buffer[8 : self.bytes_returned])
 
     def CH341GetVerIC(self):
-        ct = _CH341_CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_GET_VER, 0, 0, 0x2)
-        point_ct = ctypes.pointer(ct)
-        status, bytes_returned = self.ioctl(
-            CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
+        self.success = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(
+                CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_GET_VER, 0, 0, 0x2)
+            ),
+            0x28,
+            self.point_buffer,
+            0x28,
         )
-        return struct.unpack("<h", self.buffer[8:bytes_returned.value])[0]
+        return struct.unpack("<h", self.buffer[8 : self.bytes_returned])[0]
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         value = 0x2525
-        ct = _CH341_CONTROL_TRANSFER(
-            mCH341_VENDOR_WRITE,
-            mCH341_SET_PARA_MODE,
-            value,
-            index,
-            mode << 8 | mode,
+        self.success = self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(
+                CONTROL_TRANSFER(
+                    mCH341_VENDOR_WRITE,
+                    mCH341_SET_PARA_MODE,
+                    value,
+                    index,
+                    mode << 8 | mode,
+                )
+            ),
+            0x28,
+            self.point_buffer,
+            0x28,
         )
-        point_ct = ctypes.pointer(ct)
-        status, bytes_returned = self.ioctl(
-            CH341_DEVICE_IO, point_ct, 0x28, self.point_buffer, 0x28
-        )
-        return status
+        return self.success
 
 
 if __name__ == "__main__":
     for device in CH341Device.enumerate_devices():
         print(device)
         print(device.name)
-
-        # with ch341 as device:
-        device.open()
-        device.CH341WriteData(b"\xA0")
-        data = device.CH341ReadData(8)
-        print(data)
-        device.CH341InitParallel()
-        status = device.CH341GetStatus()
-        print(status)
-        status = device.CH341GetVerIC()
-        # print(status)
-        device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
-        device.close()
+        # device.open()
+        with device:
+            device.CH341WriteData(b"\xA0")
+            data = device.CH341ReadData(8)
+            print(data)
+            device.CH341InitParallel()
+            status = device.CH341GetStatus()
+            print(status)
+            status = device.CH341GetVerIC()
+            print(status)
+            device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
+            # device.close()
