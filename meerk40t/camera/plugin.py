@@ -102,6 +102,22 @@ def plugin(kernel, lifecycle=None):
             return "camera", data
 
         @kernel.console_command(
+            "info", help="list camera info", output_type="camera", input_type="camera"
+        )
+        def camera_info(
+            _,
+            channel,
+            data=None,
+            **kwargs,
+        ):
+            channel(_("Camera Information:"))
+            camera_context = kernel.get_context("camera")
+            for d in camera_context.derivable():
+                channel(d)
+            return "camera", data
+
+
+        @kernel.console_command(
             "contrast",
             help="Turn on AutoContrast",
             output_type="camera",
