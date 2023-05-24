@@ -357,6 +357,7 @@ def plugin(kernel, lifecycle=None):
 
                         # Pause for a short time before sending the next image
                         time.sleep(0.1)
+                    channel(_("MJPEG-SERVER: Connection closing"))
 
             def do_shutdown(*args):
                 server.shutting_down = True
