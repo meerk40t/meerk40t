@@ -855,6 +855,56 @@ class Geomstr:
             pts.append(pts[0])
         return Geomstr.lines(*pts)
 
+    @classmethod
+    def regular_polygon(
+        cls,
+        number_of_vertex,
+        point_center=0j,
+        radius=0,
+        radius_inner=0,
+        alt_seq=1,
+        density=1,
+        start_angle=0,
+    ):
+        if number_of_vertex < 2:
+            return cls()
+        if alt_seq == 0 and radius_inner != 0:
+            alt_seq = 1
+        # Do we have to consider the radius value as the length of one corner?
+        # if side_length:
+        #     # Let's recalculate the radius then...
+        #     # d_oc = s * csc( pi / n)
+        #     radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
+        # if inscribed and side_length is None:
+        #     # Inscribed requires side_length be undefined.
+        #     # You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored
+        #     radius = radius / math.cos(math.pi / number_of_vertex)
+
+        if alt_seq < 1:
+            radius_inner = radius
+
+        i_angle = start_angle
+        delta_angle = math.tau / number_of_vertex
+        pts = []
+        for j in range(number_of_vertex):
+            r = radius if j % (2 * alt_seq) < alt_seq else radius_inner
+            current = point_center + r * complex(math.cos(i_angle), math.sin(i_angle))
+            i_angle += delta_angle
+            pts.append(current)
+
+        # Close the path
+        pts.append(pts[0])
+        if density <= 1 or number_of_vertex > density:
+            return Geomstr.lines(*pts)
+
+        # Process star-like qualities.
+        star_points = [pts[0]]
+        for i in range(number_of_vertex):
+            idx = (density * i) % number_of_vertex
+            star_points.append(pts[idx])
+        star_points.append(star_points[0])
+        return Geomstr.lines(*star_points)
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)

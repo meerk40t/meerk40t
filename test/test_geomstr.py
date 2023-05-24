@@ -26,10 +26,12 @@ def draw(segments, w, h, filename="test.png"):
     im = Image.new("RGBA", (w, h), "white")
     draw = ImageDraw.Draw(im)
     for segment in segments:
+        # Draw raw segments.
         f = segment[0]
         t = segment[-1]
         draw.line(((f.real, f.imag), (t.real, t.imag)), fill="#000000")
     for segment in segments:
+        # Draw end points.
         f = segment[0]
         t = segment[-1]
         draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
@@ -291,6 +293,10 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(len(path), 2)
         self.assertEqual(path.length(0), math.sqrt(2))
         self.assertEqual(path.length(1), math.sqrt(2))
+
+        for i in range(50):
+            path = Geomstr.regular_polygon(i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5)
+            # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
 
     def test_geomstr_copies(self):
         path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
