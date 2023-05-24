@@ -113,9 +113,11 @@ def plugin(kernel, lifecycle=None):
             channel(_("Camera Information:"))
             camera_context = kernel.get_context("camera")
             for d in camera_context.derivable():
-                channel(d)
+                if d == "camera":
+                    continue
+                context = kernel.get_context(d)
+                channel(f"{d}: {getattr(context, 'uri', '---')}")
             return "camera", data
-
 
         @kernel.console_command(
             "contrast",
