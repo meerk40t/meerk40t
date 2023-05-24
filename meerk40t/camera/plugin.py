@@ -362,6 +362,7 @@ def plugin(kernel, lifecycle=None):
             def do_shutdown(*args):
                 server.shutting_down = True
                 server.shutdown()
+                server.server_close()
                 channel(_("MJPEG-SERVER: Closed"))
 
             server = ThreadedHTTPServer(("localhost", port), MJPEGHandler)
