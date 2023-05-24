@@ -14,7 +14,6 @@ class WinCH341Driver:
         self.channel = channel
         self.state = state
         self.bulk = True
-
         self.driver = None
 
     def is_connected(self):
@@ -70,14 +69,12 @@ class WinCH341Driver:
         """
         Closes the driver for the stated device index.
         """
-        if self.driver is None:
-            return
         _ = self.channel._
-        self.state("STATE_USB_SET_DISCONNECTING")
-        self.channel(_("Attempting disconnection from USB."))
         if self.driver is None:
             self.channel(_("USB connection did not exist."))
-            raise ConnectionError
+            return
+        self.state("STATE_USB_SET_DISCONNECTING")
+        self.channel(_("Attempting disconnection from USB."))
         self.driver.close()
         self.state("STATE_USB_DISCONNECTED")
         self.channel(_("USB Disconnection Successful.\n"))
@@ -142,9 +139,8 @@ class WinCH341Driver:
         if not self.is_connected():
             raise ConnectionRefusedError("Not connected.")
         if self.bulk:
-            # write_buffer = bytes([mCH341_PARA_CMD_STS])
-            self.driver.CH341WriteData(b"\xA0")
-            # self.driver.CH341Write(write_buffer)
+            write_buffer = bytes([mCH341_PARA_CMD_STS])
+            self.driver.CH341WriteData(write_buffer)
             return self.driver.CH341ReadData(8)
         return self.driver.CH341GetStatus()
 
