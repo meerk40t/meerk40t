@@ -286,17 +286,42 @@ def plugin(kernel, lifecycle=None):
                 except:
                     pass
 
+        @kernel.console_option("quit", "q", type=bool, action="store_true")
         @kernel.console_argument("port", type=int, help="port to start server on")
         @kernel.console_command(
-            "server", input_type="camera", all_arguments_required=True
+            "server", input_type="camera"
         )
-        def camera_server(_, channel, data, port, **kwgs):
+        def camera_server(_, channel, data, port=None, quit=False, **kwgs):
+            if port is None:
+                channel(_("MJPEG-SERVER: Listing Servers."))
+                for key, value in kernel.threads.items():
+                    if key.startswith("cam-server"):
+                        channel(key)
+                channel(_("MJPEG-SERVER: End of List"))
+                return
+            if quit:
+                thread = kernel.threads.get(f"cam-server{port}")
+                if not thread:
+                    channel(_("MJPEG-SERVER: No server found."))
+                    return
+                channel(_("MJPEG-SERVER: Instructing Server to Close"))
+                thread.stop()
+                return
+
             import time
             from http.server import HTTPServer, BaseHTTPRequestHandler
             from socketserver import ThreadingMixIn
 
+            server = None
+
+            class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+                """Handle requests in a separate thread."""
+
             class MJPEGHandler(BaseHTTPRequestHandler):
+
                 def do_GET(self):
+                    channel(_("MJPEG-SERVER: New Connection"))
+
                     import cv2
 
                     # Set the response code to 200 (OK)
@@ -310,8 +335,12 @@ def plugin(kernel, lifecycle=None):
                     )
                     self.end_headers()
 
-                    while True:
+                    while not server.shutting_down:
                         frame = data.get_frame()
+                        if frame is None:
+                            time.sleep(1)
+                            continue
+
                         is_success, buffer = cv2.imencode(".jpg", frame)
 
                         try:
@@ -323,16 +352,19 @@ def plugin(kernel, lifecycle=None):
                             self.wfile.write(buffer)
                             self.wfile.write(b"\r\n")
                         except ConnectionAbortedError:
+                            channel(_("MJPEG-SERVER: Connection aborted"))
                             break
 
                         # Pause for a short time before sending the next image
                         time.sleep(0.1)
 
-            class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-                """Handle requests in a separate thread."""
+            def do_shutdown(*args):
+                server.shutting_down = True
+                server.shutdown()
 
-            def serve_forever():
-                server = ThreadedHTTPServer(("localhost", port), MJPEGHandler)
-                server.serve_forever()
+            server = ThreadedHTTPServer(("localhost", port), MJPEGHandler)
+            server.shutting_down = False
+            thread = kernel.threaded(server.serve_forever, thread_name=f"cam-server{port}", daemon=True)
+            thread.stop = do_shutdown
 
-            kernel.threaded(serve_forever, thread_name=f"cam-server{port}", daemon=True)
+            channel(_("MJPEG-SERVER: Launching"))
