@@ -491,7 +491,7 @@ class CH341Device:
     def CH341ReadData0(self, length):
         self.CH341ReadData(length, cmd=0x10)
 
-    def CH341ReadData0(self, length):
+    def CH341ReadData1(self, length):
         self.CH341ReadData(length, cmd=0x11)
 
     def CH341WriteData(self, buffer, cmd=0x07):
