@@ -397,9 +397,8 @@ def _get_prop(handle, key, dev_info):
 class CH341Device:
     def __init__(self, pdo_name, desc):
         self._handle = None
-        self._handle = None
-        self.buffer = (ctypes.c_char * 0x28)()
-        self.point_buffer = ctypes.pointer(self.buffer)
+        self._buffer = (ctypes.c_char * 0x28)()
+        self._pointer_buffer = ctypes.pointer(self._buffer)
         self.path = r"\\?\GLOBALROOT" + pdo_name
         self.name = desc
         self.success = True
@@ -441,7 +440,7 @@ class CH341Device:
     def ioctl(
         self, io_control_code, in_buffer, in_buffer_size, out_buffer, out_buffer_size
     ):
-        return DeviceIoControl(
+        self.success = DeviceIoControl(
             self._handle,
             io_control_code,
             in_buffer,
@@ -451,6 +450,7 @@ class CH341Device:
             lpBytesReturned,
             None,
         )
+        return self.success
 
     def open(self):
         self._handle = CreateFile(
@@ -479,14 +479,14 @@ class CH341Device:
         self.close()
 
     def CH341ReadData(self, length, cmd=0x06):
-        self.success = self.ioctl(
+        self.ioctl(
             CH341_DEVICE_IO,
             ctypes.pointer(BULK_IN(length, cmd=cmd)),
             0x8,
-            self.point_buffer,
+            self._pointer_buffer,
             length,
         )
-        return self.buffer[8 : self.bytes_returned]
+        return self._buffer[8 : self.bytes_returned]
 
     def CH341ReadData0(self, length):
         self.CH341ReadData(length, cmd=0x10)
@@ -501,11 +501,11 @@ class CH341Device:
         while len(buffer) > 0:
             packet = buffer[:31]
             buffer = buffer[31:]
-            self.success = self.ioctl(
+            self.ioctl(
                 CH341_DEVICE_IO,
                 ctypes.pointer(BULK_OUT(packet, cmd=cmd)),
                 0x28,
-                self.point_buffer,
+                self._pointer_buffer,
                 0x8,
             )
         return self.success
@@ -520,16 +520,15 @@ class CH341Device:
         value = mode << 8
         if mode < 256:
             value |= 2
-        self.success = self.ioctl(
+        return self.ioctl(
             CH341_DEVICE_IO,
             ctypes.pointer(
                 CONTROL_TRANSFER(mCH341_VENDOR_WRITE, mCH341_PARA_INIT, value, 0, 0x0)
             ),
             0x28,
-            self.point_buffer,
+            self._pointer_buffer,
             0x28,
         )
-        return self.success
 
     def CH341SetDelayMS(self, delay):
         if delay > 0x0F:
@@ -539,32 +538,32 @@ class CH341Device:
 
     def CH341GetStatus(self):
         """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
-        self.success = self.ioctl(
+        self.ioctl(
             CH341_DEVICE_IO,
             ctypes.pointer(
                 CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_STATUS, 0, 0, 0x8)
             ),
             0x28,
-            self.point_buffer,
+            self._pointer_buffer,
             0x28,
         )
-        return tuple(self.buffer[8 : self.bytes_returned])
+        return tuple(self._buffer[8 : self.bytes_returned])
 
     def CH341GetVerIC(self):
-        self.success = self.ioctl(
+        self.ioctl(
             CH341_DEVICE_IO,
             ctypes.pointer(
                 CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_GET_VER, 0, 0, 0x2)
             ),
             0x28,
-            self.point_buffer,
+            self._pointer_buffer,
             0x28,
         )
-        return struct.unpack("<h", self.buffer[8 : self.bytes_returned])[0]
+        return struct.unpack("<h", self._buffer[8 : self.bytes_returned])[0]
 
     def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
         value = 0x2525
-        self.success = self.ioctl(
+        return self.ioctl(
             CH341_DEVICE_IO,
             ctypes.pointer(
                 CONTROL_TRANSFER(
@@ -576,10 +575,9 @@ class CH341Device:
                 )
             ),
             0x28,
-            self.point_buffer,
+            self._pointer_buffer,
             0x28,
         )
-        return self.success
 
 
 if __name__ == "__main__":
