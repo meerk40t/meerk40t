@@ -287,78 +287,6 @@ DIGCF_PRESENT = 2
 # CH341 Section
 ################
 
-USB_LOCK_VENDOR = 0x1A86  # Dev : (1a86) QinHeng Electronics
-USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
-BULK_WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
-BULK_READ_ENDPOINT = 0x82  # usb.util.ENDPOINT_IN|usb.util.ENDPOINT_TYPE_BULK
-CH341_PARA_MODE_EPP19 = 0x01
-
-mCH341_PARA_CMD_R0 = 0xAC  # 10101100
-mCH341_PARA_CMD_R1 = 0xAD  # 10101101
-mCH341_PARA_CMD_W0 = 0xA6  # 10100110
-mCH341_PARA_CMD_W1 = 0xA7  # 10100111
-mCH341_PARA_CMD_STS = 0xA0  # 10100000
-
-mCH341_PACKET_LENGTH = 32
-mCH341_PKT_LEN_SHORT = 8
-mCH341_SET_PARA_MODE = 0x9A
-mCH341_PARA_INIT = 0xB1
-mCH341_VENDOR_READ = 0xC0
-mCH341_VENDOR_WRITE = 0x40
-mCH341A_BUF_CLEAR = 0xB2
-mCH341A_DELAY_MS = 0x5E
-mCH341A_GET_VER = 0x5F
-mCH341A_STATUS = 0x52
-
-CH341_DEVICE_IO = 0x223CD0
-
-
-class CONTROL_TRANSFER(ctypes.Structure):
-    _fields_ = [
-        ("command", ctypes.c_int),
-        ("size", ctypes.c_int),
-        ("bmRequestType", ctypes.c_byte),
-        ("bRequest", ctypes.c_byte),
-        ("wValue", ctypes.c_ushort),
-        ("wIndex", ctypes.c_ushort),
-        ("wLength", ctypes.c_byte),
-    ]
-
-    def __init__(self, bmRequestType, bRequest, wValue, wIndex, wLength):
-        super().__init__()
-        self.command = 0x4
-        self.size = 0
-        self.bmRequestType = bmRequestType
-        self.bRequest = bRequest
-        self.wValue = wValue
-        self.wIndex = wIndex
-        self.wLength = wLength
-
-
-class BULK_OUT(ctypes.Structure):
-    _fields_ = [
-        ("command", ctypes.c_int),
-        ("size", ctypes.c_int),
-        ("packet", ctypes.c_byte * 31),
-    ]
-
-    def __init__(self, packet: bytes, cmd=0x07):
-        self.command = cmd
-        self.size = len(packet)
-        ctypes.memmove(ctypes.addressof(self.packet), packet, self.size)
-
-
-class CH341_DEFAULT(ctypes.Structure):
-    _fields_ = [
-        ("command", ctypes.c_int),
-        ("data", ctypes.c_int),
-    ]
-
-    def __init__(self, command, data):
-        self.command = command
-        self.data = data
-
-
 def _get_required_size(handle, key, dev_info):
     prop_type = ctypes.c_ulong()
     required_size = ctypes.c_ulong()
@@ -394,7 +322,7 @@ def _get_prop(handle, key, dev_info):
         return bytes(value_buffer).decode("utf-16").split("\0", 1)[0]
 
 
-class CH341Device:
+class GalvoDevice:
     def __init__(self, pdo_name, desc):
         self._handle = None
         self._buffer = (ctypes.c_char * 0x28)()
@@ -414,7 +342,7 @@ class CH341Device:
     @staticmethod
     def enumerate_devices():
         handle = SetupDiGetClassDevs(
-            GUID("{77989adf-06db-4025-92e8-40d902c03b0a}"), None, None, DIGCF_PRESENT
+            GUID("{9894E04E-1D84-4501-A00F-01519CCD26FE}"), None, None, DIGCF_PRESENT
         )
         try:
             devinfo = SP_DEVINFO_DATA()
@@ -432,7 +360,7 @@ class CH341Device:
                     DEVPROP_KEY("{a45c254e-df1c-4efd-8020-67d146a850e0}", 2),
                     devinfo,
                 )
-                yield CH341Device(pdo_name, desc)
+                yield GalvoDevice(pdo_name, desc)
 
             err_no = GetLastError()
             if err_no not in (ERROR_STILL_ACTIVE, ERROR_SUCCESS):
@@ -482,118 +410,18 @@ class CH341Device:
     def __exit__(self, typ, val, tb):
         self.close()
 
-    def CH341ReadData(self, length, cmd=0x06):
+    def command(self, cmd, p1, p2, p3, p4):
         self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(CH341_DEFAULT(command=cmd, data=length)),
-            0x8,
+            0x99982014,
+            ctypes.pointer(GALVO_COMMAND(cmd, p1, p2, p3, p4)),
+            0xc,
             self._pointer_buffer,
-            length,
+            6,
         )
-        return self._buffer[8 : self.bytes_returned]
-
-    def CH341ReadData0(self, length):
-        self.CH341ReadData(length, cmd=0x10)
-
-    def CH341ReadData1(self, length):
-        self.CH341ReadData(length, cmd=0x11)
-
-    def CH341WriteData(self, buffer, cmd=0x07):
-        if buffer is None:
-            return
-        self.success = True
-        while len(buffer) > 0:
-            packet = buffer[:31]
-            buffer = buffer[31:]
-            self.ioctl(
-                CH341_DEVICE_IO,
-                ctypes.pointer(BULK_OUT(packet, cmd=cmd)),
-                0x28,
-                self._pointer_buffer,
-                0x8,
-            )
-        return self.success
-
-    def CH341EppWriteData(self, buffer):
-        return self.CH341WriteData(buffer, cmd=0x12)
-
-    def CH341EppWriteAddr(self, buffer):
-        return self.CH341WriteData(buffer, cmd=0x13)
-
-    def CH341InitParallel(self, mode=CH341_PARA_MODE_EPP19):
-        value = mode << 8
-        if mode < 256:
-            value |= 2
-        return self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(
-                CONTROL_TRANSFER(mCH341_VENDOR_WRITE, mCH341_PARA_INIT, value, 0, 0x0)
-            ),
-            0x28,
-            self._pointer_buffer,
-            0x28,
-        )
-
-    def CH341ResetDevice(self):
-        return self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(CH341_DEFAULT(command=0xC, data=0)),
-            0x28,
-            self._pointer_buffer,
-            0x28,
-        )
-
-    def CH341SetDelayMS(self, delay):
-        if delay > 0x0F:
-            delay = 0x0F
-        return self.CH341WriteData(bytes([0xAA, 0x50 | delay, 0x00]))
-
-    def CH341GetStatus(self):
-        """D7-0, 8: err, 9: pEmp, 10: Int, 11: SLCT, 12: SDA, 13: Busy, 14: data, 15: addrs"""
-        self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(
-                CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_STATUS, 0, 0, 0x8)
-            ),
-            0x28,
-            self._pointer_buffer,
-            0x28,
-        )
-        return tuple(self.buffer)
-
-    def CH341GetVerIC(self):
-        self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(
-                CONTROL_TRANSFER(mCH341_VENDOR_READ, mCH341A_GET_VER, 0, 0, 0x2)
-            ),
-            0x28,
-            self._pointer_buffer,
-            0x28,
-        )
-        return struct.unpack("<h", self.buffer)[0]
-
-    def CH341SetParaMode(self, index, mode=CH341_PARA_MODE_EPP19):
-        value = 0x2525
-        return self.ioctl(
-            CH341_DEVICE_IO,
-            ctypes.pointer(
-                CONTROL_TRANSFER(
-                    mCH341_VENDOR_WRITE,
-                    mCH341_SET_PARA_MODE,
-                    value,
-                    index,
-                    mode << 8 | mode,
-                )
-            ),
-            0x28,
-            self._pointer_buffer,
-            0x28,
-        )
-
+        return self._buffer[:]
 
 if __name__ == "__main__":
-    for device in CH341Device.enumerate_devices():
+    for device in GalvoDevice.enumerate_devices():
         print(device)
         print(device.name)
         # device.open()
