@@ -377,8 +377,9 @@ def plugin(kernel, lifecycle=None):
                             self.end_headers()
                             self.wfile.write(buffer)
                             self.wfile.write(b"\r\n")
-                        except ConnectionAbortedError:
+                        except (ConnectionAbortedError, BrokenPipeError) as e:
                             channel(_("MJPEG-SERVER: Connection aborted"))
+                            channel(str(e))
                             break
 
                         # Pause for a short time before sending the next image
