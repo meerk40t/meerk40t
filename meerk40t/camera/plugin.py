@@ -377,7 +377,7 @@ def plugin(kernel, lifecycle=None):
                             self.end_headers()
                             self.wfile.write(buffer)
                             self.wfile.write(b"\r\n")
-                        except (ConnectionAbortedError, BrokenPipeError) as e:
+                        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError) as e:
                             channel(_("MJPEG-SERVER: Connection aborted"))
                             channel(str(e))
                             break
