@@ -103,7 +103,7 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
-                        "action": lambda e: service("element* path light\n"),
+                        "action": lambda e: service("element* geometry light\n"),
                     },
                 ],
                 "toggle": {
