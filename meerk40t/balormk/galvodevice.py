@@ -369,6 +369,7 @@ class GalvoDevice:
             devinfo = SP_DEVINFO_DATA()
             devinfo.cbSize = ctypes.sizeof(devinfo)
             index = 0
+            print(handle)
             while SetupDiEnumDeviceInfo(handle, index, ctypes.byref(devinfo)):
                 index += 1
                 pdo_name = _get_prop(
