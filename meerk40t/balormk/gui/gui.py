@@ -70,7 +70,7 @@ def plugin(service, lifecycle):
                     },
                     {
                         "identifier": "live-regmark",
-                        "label": _("Live Regmarks"),
+                        "label": _("Regmarks"),
                         "icon": icons8_computer_support_50,
                         "action": lambda e: service("regmark-light\n"),
                     },
