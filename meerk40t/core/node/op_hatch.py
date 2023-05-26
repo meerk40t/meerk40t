@@ -168,19 +168,16 @@ class HatchOpNode(Node, Parameters):
         if node.type not in self._allowed_elements_dnd:
             return False
         # even then it might not be eligible
-        result = False
         if hasattr(node, "path"):
-            if is_valid_closed_path(node.path):
-                result = True
+            # is_valid_closed_path(node.geometry):
+            return True
         elif node.type == "elem polyline":
-            # Are they a closed path?
-            obj = Path(node.shape)
+            obj = Path(node.geometry)
             if is_valid_closed_path(obj):
-                result = True
+                return True
         elif node.type in ("elem rect", "elem ellipse"):
-            result = True
-
-        return result
+            return True
+        return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
