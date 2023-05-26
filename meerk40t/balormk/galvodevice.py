@@ -443,7 +443,7 @@ class GalvoDevice:
 
 
 if __name__ == "__main__":
-    from .controller import GotoXY
+    GotoXY = 0x000D
     for device in GalvoDevice.enumerate_devices():
         print(device)
         print(device.name)
