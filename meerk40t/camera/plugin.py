@@ -392,7 +392,7 @@ def plugin(kernel, lifecycle=None):
                 server.server_close()
                 channel(_("MJPEG-SERVER: Closed"))
 
-            server = ThreadedHTTPServer(("0.0.0.0", port), MJPEGHandler)
+            server = ThreadedHTTPServer(("", port), MJPEGHandler)
             server.shutting_down = False
             thread = kernel.threaded(server.serve_forever, thread_name=f"cam-server{port}", daemon=True)
             thread.stop = do_shutdown
