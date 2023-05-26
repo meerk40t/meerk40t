@@ -220,20 +220,17 @@ class TestGeomstr(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(
@@ -295,7 +292,9 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(path.length(1), math.sqrt(2))
 
         for i in range(50):
-            path = Geomstr.regular_polygon(i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5)
+            path = Geomstr.regular_polygon(
+                i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5
+            )
             # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
 
     def test_geomstr_copies(self):
