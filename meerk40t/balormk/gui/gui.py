@@ -70,7 +70,7 @@ def plugin(service, lifecycle):
                     },
                     {
                         "identifier": "live-regmark",
-                        "label": _("Live Regmarks"),
+                        "label": _("Regmarks"),
                         "icon": icons8_computer_support_50,
                         "action": lambda e: service("regmark-light\n"),
                     },
@@ -95,15 +95,15 @@ def plugin(service, lifecycle):
                         "label": _("Trace Bounds"),
                         "action": lambda e: service("box light\n"),
                     },
-                    {
-                        "identifier": "ants",
-                        "label": _("Trace Ants"),
-                        "action": lambda e: service("element* ants light\n"),
-                    },
+                    # {
+                    #     "identifier": "ants",
+                    #     "label": _("Trace Ants"),
+                    #     "action": lambda e: service("element* ants light\n"),
+                    # },
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
-                        "action": lambda e: service("element* path light\n"),
+                        "action": lambda e: service("element* geometry light\n"),
                     },
                 ],
                 "toggle": {
