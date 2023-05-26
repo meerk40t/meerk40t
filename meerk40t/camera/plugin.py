@@ -366,7 +366,7 @@ def plugin(kernel, lifecycle=None):
                         if frame is None:
                             time.sleep(1)
                             continue
-
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         is_success, buffer = cv2.imencode(".jpg", frame)
 
                         try:
