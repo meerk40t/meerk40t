@@ -1557,9 +1557,10 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_angle(self):
         try:
-            self.operation.hatch_angle = (
-                f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
-            )
+            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            if angle == self.operation.hatch_angle:
+                return
+            self.operation.hatch_angle = angle
             self.hatch_lines = None
             self.travel_lines = None
             self.refresh_display()
@@ -1578,6 +1579,7 @@ class HatchSettingsPanel(wx.Panel):
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
+        self.on_text_angle()
         self.hatch_lines = None
         self.travel_lines = None
         self.refresh_display()
@@ -1628,20 +1630,17 @@ class HatchSettingsPanel(wx.Panel):
         if hatch_algorithm is None:
             return
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
         matrix = Matrix.scale(0.018)
         hatch = list(
@@ -1654,17 +1653,12 @@ class HatchSettingsPanel(wx.Panel):
         )
         o_start = []
         o_end = []
-        for path in paths:
-            last_x = None
-            last_y = None
-            for x, y in path:
-                if last_x is None:
-                    last_x = x
-                    last_y = y
-                    continue
-                o_start.append((x, y))
-                o_end.append((last_x, last_y))
-                last_x, last_y = x, y
+        last = None
+        for c in paths:
+            if last is not None and c is not None:
+                o_start.append((c.real, c.imag))
+                o_end.append((last.real, last.imag))
+            last = c
         self.outline_lines = o_start, o_end
         h_start = []
         h_end = []
