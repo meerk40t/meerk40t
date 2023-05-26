@@ -1557,9 +1557,10 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_angle(self):
         try:
-            self.operation.hatch_angle = (
-                f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
-            )
+            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            if angle == self.operation.hatch_angle:
+                return
+            self.operation.hatch_angle = angle
             self.hatch_lines = None
             self.travel_lines = None
             self.refresh_display()
@@ -1578,6 +1579,7 @@ class HatchSettingsPanel(wx.Panel):
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
+        self.on_text_angle()
         self.hatch_lines = None
         self.travel_lines = None
         self.refresh_display()
