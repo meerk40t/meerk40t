@@ -306,16 +306,10 @@ class HatchOpNode(Node, Parameters):
             outlines = list()
             for node in self.children:
                 try:
-                    path = node.as_path()
+                    path = node.as_geometry()
                 except AttributeError:
                     continue
-                path.approximate_arcs_with_cubics()
-                for subpath in path.as_subpaths():
-                    if len(subpath) == 0:
-                        continue
-                    sp = Path(subpath)
-                    points = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    outlines.append(points)
+                outlines.extend(path.as_interpolated_points(interpolate=100))
             self.remove_all_children()
             fills = list(context.match("hatch", suffix=True))
             penbox_pass = self.settings.get("penbox_pass")

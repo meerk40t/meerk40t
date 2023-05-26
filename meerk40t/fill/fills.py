@@ -125,8 +125,8 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         if pt is None:
             return None
         return (
-            pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-            pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            pt.real * rotate.a + pt.imag * rotate.c + 1 * rotate.e,
+            pt.real * rotate.b + pt.imag * rotate.d + 1 * rotate.f,
         )
 
     def mx_counter(pt):
@@ -137,12 +137,23 @@ def scanline_fill(settings, outlines, matrix, limit=None):
             pt[0] * counter_rotate.b + pt[1] * counter_rotate.d + 1 * counter_rotate.f,
         )
 
+    def as_polylines():
+        pos = 0
+        for i in range(len(outlines)):
+            p = outlines[i]
+            if p is None:
+                yield outlines[pos:i]
+                pos = i + 1
+                continue
+        if pos != len(outlines):
+            yield outlines[pos:]
+
     transformed_vector = matrix.transform_vector([0, distance_y])
     distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
     vm = VectorMontonizer()
-    for outline in outlines:
-        pts = list(map(Point, map(mx_rotate, outline)))
+    for poly in as_polylines():
+        pts = list(map(Point, map(mx_rotate, poly)))
         vm.add_polyline(pts)
     y_min, y_max = vm.event_range()
     height = y_max - y_min
