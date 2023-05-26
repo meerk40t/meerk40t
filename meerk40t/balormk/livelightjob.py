@@ -154,8 +154,9 @@ class LiveLightJob:
             first_x, first_y = con.get_last_xy()
             # first_x = 0x8000
             # first_y = 0x8000
-
-            con.dark(first_x, first_y, distance=0xFFFF)
+            con.light_off()
+            con.write_port()
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
         con._light_speed = self.service.redlight_speed
         con._dark_speed = self.service.redlight_speed
