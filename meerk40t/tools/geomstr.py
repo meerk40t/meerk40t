@@ -1012,7 +1012,9 @@ class Geomstr:
         self._ensure_capacity(self.index + other.index + 1)
         if self.index != 0:
             self.end()
-        self.segments[self.index : self.index + other.index] = other.segments[: other.index]
+        self.segments[self.index : self.index + other.index] = other.segments[
+            : other.index
+        ]
         self.index += other.index
 
     #######################
