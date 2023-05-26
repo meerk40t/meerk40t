@@ -297,6 +297,7 @@ class HatchOpNode(Node, Parameters):
                 except AttributeError:
                     continue
                 outlines.extend(path.as_interpolated_points(interpolate=100))
+                outlines.append(None)
             self.remove_all_children()
             fills = list(context.match("hatch", suffix=True))
             penbox_pass = self.settings.get("penbox_pass")
