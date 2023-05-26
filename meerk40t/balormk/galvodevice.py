@@ -29,6 +29,7 @@ was always a bit iffy and error prone.
 
 import ctypes
 import struct
+import time
 from ctypes import (
     POINTER,
     Structure,
@@ -322,6 +323,26 @@ def _get_prop(handle, key, dev_info):
         return bytes(value_buffer).decode("utf-16").split("\0", 1)[0]
 
 
+class GALVO_COMMAND(ctypes.Structure):
+    _fields_ = [
+        ("command", ctypes.c_ushort),
+        ("data1", ctypes.c_ushort),
+        ("data2", ctypes.c_ushort),
+        ("data3", ctypes.c_ushort),
+        ("data4", ctypes.c_ushort),
+        ("data5", ctypes.c_ushort),
+    ]
+
+    def __init__(self, command, data1=0, data2=0, data3=0, data4=0, data5=0):
+        super().__init__()
+        self.command = command
+        self.data1 = data1
+        self.data2 = data2
+        self.data3 = data3
+        self.data4 = data4
+        self.data5 = data5
+
+
 class GalvoDevice:
     def __init__(self, pdo_name, desc):
         self._handle = None
@@ -410,7 +431,7 @@ class GalvoDevice:
     def __exit__(self, typ, val, tb):
         self.close()
 
-    def command(self, cmd, p1, p2, p3, p4):
+    def command(self, cmd, p1=0, p2=0, p3=0, p4=0):
         self.ioctl(
             0x99982014,
             ctypes.pointer(GALVO_COMMAND(cmd, p1, p2, p3, p4)),
@@ -420,19 +441,17 @@ class GalvoDevice:
         )
         return self._buffer[:]
 
+
 if __name__ == "__main__":
+    from .controller import GotoXY
     for device in GalvoDevice.enumerate_devices():
         print(device)
         print(device.name)
         # device.open()
         with device:
-            device.CH341WriteData(b"\xA0")
-            data = device.CH341ReadData(8)
-            print(data)
-            device.CH341InitParallel()
-            status = device.CH341GetStatus()
-            print(status)
-            status = device.CH341GetVerIC()
-            print(status)
-            device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
+            for i in range(20):
+                device.command(GotoXY, 0x5000, 0x5000)
+                time.sleep(0.5)
+                device.command(GotoXY, 0x9000, 0x9000)
+                time.sleep(0.5)
 
