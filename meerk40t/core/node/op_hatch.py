@@ -156,14 +156,6 @@ class HatchOpNode(Node, Parameters):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
     def valid_node_for_reference(self, node):
-        def is_valid_closed_path(p):
-            valid = False
-            if len(p) != 0:
-                # Is it a closed path?
-                if p[-1].d().lower() == "z":
-                    valid = True
-            return valid
-
         # First check type per se
         if node.type not in self._allowed_elements_dnd:
             return False
@@ -172,9 +164,7 @@ class HatchOpNode(Node, Parameters):
             # is_valid_closed_path(node.geometry):
             return True
         elif node.type == "elem polyline":
-            obj = Path(node.geometry)
-            if is_valid_closed_path(obj):
-                return True
+            return node.geometry.is_closed()
         elif node.type in ("elem rect", "elem ellipse"):
             return True
         return False
