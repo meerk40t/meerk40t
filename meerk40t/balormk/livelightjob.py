@@ -151,8 +151,11 @@ class LiveLightJob:
             # The emphasis selection has changed.
             self.changed = False
             con.abort()
-            first_x = 0x8000
-            first_y = 0x8000
+            first_x, first_y = con.get_last_xy()
+            # first_x = 0x8000
+            # first_y = 0x8000
+            con.light_off()
+            con.write_port()
             con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
         con._light_speed = self.service.redlight_speed
@@ -321,12 +324,13 @@ class LiveLightJob:
         @param elements:
         @return:
         """
-        if not elements:
+        elems = [n for n in elements if hasattr(n, "as_geometry")]
+        if not elems:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
 
         rotate = self._redlight_adjust_matrix()
-        for node in elements:
+        for node in elems:
             if self.stopped:
                 return False
             if self.changed:

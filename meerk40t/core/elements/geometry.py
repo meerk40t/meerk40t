@@ -123,12 +123,12 @@ def init_commands(kernel):
             ry = 0
         data.append(
             Geomstr.rect(
-                x=x_pos,
-                y=y_pos,
-                width=width,
-                height=height,
-                rx=rx,
-                ry=ry,
+                x=float(x_pos),
+                y=float(y_pos),
+                width=float(width),
+                height=float(height),
+                rx=float(rx),
+                ry=float(ry),
             )
         )
         return "geometry", data
