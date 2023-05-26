@@ -95,11 +95,11 @@ def plugin(service, lifecycle):
                         "label": _("Trace Bounds"),
                         "action": lambda e: service("box light\n"),
                     },
-                    {
-                        "identifier": "ants",
-                        "label": _("Trace Ants"),
-                        "action": lambda e: service("element* ants light\n"),
-                    },
+                    # {
+                    #     "identifier": "ants",
+                    #     "label": _("Trace Ants"),
+                    #     "action": lambda e: service("element* ants light\n"),
+                    # },
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
