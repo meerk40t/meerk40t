@@ -514,8 +514,11 @@ class SpoolerPanel(wx.Panel):
             spooler.remove(job)
             # That will remove the job but create a log entry if needed.
             if mode == "stop":
-                # Force stop of laser.
-                self.context("estop\n")
+                if hasattr(job, "stop"):
+                    job.stop()
+                else:
+                    # Force stop of laser.
+                    self.context("estop\n")
             self.refresh_spooler_list()
 
         return delete
