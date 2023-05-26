@@ -445,11 +445,16 @@ class GalvoDevice:
 
 if __name__ == "__main__":
     GotoXY = 0x000D
+    WritePort = 0x0021
     for device in GalvoDevice.enumerate_devices():
         print(device)
         print(device.name)
+
         # device.open()
         with device:
+            port_bits = (1 << 8)
+            device.command(WritePort, port_bits)
+
             for i in range(20):
                 device.command(GotoXY, 0x5000, 0x5000)
                 time.sleep(0.5)
