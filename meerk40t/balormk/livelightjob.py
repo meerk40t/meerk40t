@@ -324,18 +324,17 @@ class LiveLightJob:
         @param elements:
         @return:
         """
-        if not elements:
+        elems = [n for n in elements if hasattr(n, "as_geometry")]
+        if not elems:
             # There are no elements, return a default crosshair.
             return self._crosshairs(con)
 
         rotate = self._redlight_adjust_matrix()
-        for node in elements:
+        for node in elems:
             if self.stopped:
                 return False
             if self.changed:
                 return True
-            if not hasattr(node, "as_geometry"):
-                continue
             geometry = Geomstr(node.as_geometry())
 
             # Move to device space.
