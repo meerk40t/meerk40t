@@ -331,6 +331,8 @@ class LiveLightJob:
                 return False
             if self.changed:
                 return True
+            if not hasattr(node, "as_geometry"):
+                continue
             geometry = Geomstr(node.as_geometry())
 
             # Move to device space.
