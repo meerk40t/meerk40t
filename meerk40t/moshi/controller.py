@@ -201,6 +201,10 @@ class MoshiController:
         self.start()
 
     def realtime(self, data):
+        if MoshiBuilder.is_estop(data):
+            with self._program_lock:
+                self._programs.clear()
+                self._buffer.clear()
         self.open()
         self.connection.write_addr(data)
 

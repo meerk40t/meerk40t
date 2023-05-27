@@ -543,6 +543,10 @@ class MoshiBuilder:
         self.pipe_int16le(int(y))
 
     @staticmethod
+    def is_estop(data):
+        return data in swizzle_table[MOSHI_ESTOP]
+
+    @staticmethod
     def read(output, channel=None):
         """
         The `a7xx` values used before the AC01 commands. Read preamble.
