@@ -86,6 +86,7 @@ class MoshiDriver(Parameters):
 
     def job_finish(self, job):
         if self.program.data:
+            self.rapid_mode()
             self.program.termination()
             self.push_program()
 
