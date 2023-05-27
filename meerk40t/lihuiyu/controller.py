@@ -19,7 +19,6 @@ import time
 
 from meerk40t.ch341 import get_ch341_interface
 
-STATUS_BAD_STATE = 204
 STATUS_SERIAL_CORRECT_M3_FINISH = 204
 # 0xCC, 11001100
 STATUS_OK = 206
@@ -59,8 +58,8 @@ def get_code_string_from_code(code):
         return "Finish"
     elif code == STATUS_POWER:
         return "Low Power"
-    elif code == STATUS_BAD_STATE:
-        return "Bad State"
+    elif code == STATUS_SERIAL_CORRECT_M3_FINISH:
+        return "M3-Finished"
     elif code == 0:
         return "USB Failed"
     else:

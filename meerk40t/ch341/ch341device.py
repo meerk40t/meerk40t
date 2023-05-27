@@ -29,25 +29,8 @@ was always a bit iffy and error prone.
 
 import ctypes
 import struct
-from ctypes import (
-    POINTER,
-    Structure,
-    WinDLL,
-    c_int64,
-    c_ulong,
-    c_void_p,
-    sizeof,
-)
-from ctypes.wintypes import (
-    BOOL,
-    BYTE,
-    DWORD,
-    HANDLE,
-    HWND,
-    LPCWSTR,
-    WORD,
-)
-
+from ctypes import POINTER, Structure, WinDLL, c_int64, c_ulong, c_void_p, sizeof
+from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, HWND, LPCWSTR, WORD
 
 _stdcall_libraries = {}
 _stdcall_libraries["kernel32"] = WinDLL("kernel32")
