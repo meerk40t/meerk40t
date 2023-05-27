@@ -69,15 +69,15 @@ class MoshiController:
     def __init__(self, context, channel=None, force_mock=False, *args, **kwargs):
         self.context = context
         self.state = "unknown"
-        self.is_shutdown = False
 
-        self._thread = None
         self._buffer = (
             bytearray()
         )  # Threadsafe buffered commands to be sent to controller.
 
         self._programs = []  # Programs to execute.
 
+        self._thread = None
+        self.is_shutdown = False
         self._main_lock = threading.Lock()
 
         self._status = [0] * 6
@@ -194,7 +194,14 @@ class MoshiController:
         self.pipe_channel("open()")
 
         try:
-            interfaces = list(get_ch341_interface(self.context, self.usb_log, mock=self.force_mock or self.context.mock))
+            interfaces = list(
+                get_ch341_interface(
+                    self.context,
+                    self.usb_log,
+                    mock=self.force_mock or self.context.mock,
+                    mock_status=STATUS_OK,
+                )
+            )
             if self.context.usb_index != -1:
                 # Instructed to check one specific device.
                 devices = [self.context.usb_index]

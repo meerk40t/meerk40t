@@ -1,4 +1,4 @@
-def get_ch341_interface(context, log, mock=False):
+def get_ch341_interface(context, log, mock=False, mock_status=206):
     def _state_change(state_value):
         context.signal("pipe;state", state_value)
 
@@ -6,8 +6,9 @@ def get_ch341_interface(context, log, mock=False):
     if mock:
         log(_("Using Mock Driver."))
         from .mock import MockCH341Driver as MockDriver
-
-        yield MockDriver(channel=log, state=_state_change)
+        mock_device = MockDriver(channel=log, state=_state_change)
+        mock_device.mock_status = mock_status
+        yield mock_device
         return
 
     try:

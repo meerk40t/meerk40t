@@ -222,7 +222,14 @@ class LihuiyuController:
         self.pipe_channel("open()")
 
         try:
-            interfaces = list(get_ch341_interface(self.context, self.usb_log, mock=self.context.mock))
+            interfaces = list(
+                get_ch341_interface(
+                    self.context,
+                    self.usb_log,
+                    mock=self.context.mock,
+                    mock_status=STATUS_OK,
+                )
+            )
             if self.context.usb_index != -1:
                 # Instructed to check one specific device.
                 devices = [self.context.usb_index]
