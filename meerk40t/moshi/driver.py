@@ -66,6 +66,8 @@ class MoshiDriver(Parameters):
         name = self.service.label
         self.pipe_channel = service.channel(f"{name}/events")
 
+        self.out_pipe = None
+
     def __repr__(self):
         return f"MoshiDriver({self.name})"
 
@@ -320,7 +322,7 @@ class MoshiDriver(Parameters):
         """
         self.rapid_mode()
         try:
-            self.service.controller.unlock_rail()
+            self.out_pipe.unlock_rail()
         except AttributeError:
             pass
 
@@ -521,7 +523,7 @@ class MoshiDriver(Parameters):
         self.service.spooler.clear_queue()
         self.rapid_mode()
         try:
-            self.service.controller.estop()
+            self.out_pipe.estop()
         except AttributeError:
             pass
 
@@ -611,7 +613,7 @@ class MoshiDriver(Parameters):
     def push_program(self):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
-            self.service.controller.push_program(self.program)
+            self.out_pipe.push_program(self.program)
             self.program = MoshiBuilder()
             self.program.channel = self.pipe_channel
 

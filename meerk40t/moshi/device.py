@@ -296,6 +296,7 @@ class MoshiDevice(Service, ViewPort):
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
+        self.driver.out_pipe = self.controller
         _ = self.kernel.translation
 
         @self.console_command("usb_connect", help=_("Connect USB"))
