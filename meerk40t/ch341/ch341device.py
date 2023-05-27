@@ -270,6 +270,7 @@ def valid_hdevinfo(value, func, arguments):
 SetupDiGetClassDevs.errcheck = valid_hdevinfo
 
 SetupDiGetDeviceProperty = setupapi.SetupDiGetDevicePropertyW
+SetupDiGetDeviceProperty.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
 
 
 def valid_property(value, func, arguments):
