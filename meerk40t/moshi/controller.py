@@ -7,15 +7,7 @@ Tasked with sending data to usb connection.
 import threading
 import time
 
-from .builder import (
-    MOSHI_EPILOGUE,
-    MOSHI_ESTOP,
-    MOSHI_FREEMOTOR,
-    MOSHI_LASER,
-    MOSHI_PROLOGUE,
-    MOSHI_READ,
-    swizzle_table,
-)
+from .builder import MoshiBuilder
 from ..ch341 import get_ch341_interface
 
 STATUS_OK = 205  # Seen before file send. And after file send.
@@ -70,11 +62,10 @@ class MoshiController:
         self.context = context
         self.state = "unknown"
 
+        self._programs = []  # Programs to execute.
         self._buffer = (
             bytearray()
         )  # Threadsafe buffered commands to be sent to controller.
-
-        self._programs = []  # Programs to execute.
 
         self._thread = None
         self.is_shutdown = False
@@ -124,68 +115,6 @@ class MoshiController:
     def __len__(self):
         """Provides the length of the buffer of this device."""
         return len(self._buffer) + sum(map(len, self._programs))
-
-    def realtime_read(self):
-        """
-        The `a7xx` values used before the AC01 commands. Read preamble.
-
-        Also seen randomly 3.2 seconds apart. Maybe keep-alive.
-        @return:
-        """
-        self.pipe_channel("Realtime: Read...")
-        self.realtime_pipe(swizzle_table[MOSHI_READ][0])
-
-    def realtime_prologue(self):
-        """
-        Before a jump / program / turned on:
-        @return:
-        """
-        self.pipe_channel("Realtime: Prologue")
-        self.realtime_pipe(swizzle_table[MOSHI_PROLOGUE][0])
-
-    def realtime_epilogue(self):
-        """
-        Status 205
-        After a jump / program
-        Status 207
-        Status 205 Done.
-        @return:
-        """
-        self.pipe_channel("Realtime: Epilogue")
-        self.realtime_pipe(swizzle_table[MOSHI_EPILOGUE][0])
-
-    def realtime_freemotor(self):
-        """
-        Freemotor command
-        @return:
-        """
-        self.pipe_channel("Realtime: FreeMotor")
-        self.realtime_pipe(swizzle_table[MOSHI_FREEMOTOR][0])
-
-    def realtime_laser(self):
-        """
-        Laser Command Toggle.
-        @return:
-        """
-        self.pipe_channel("Realtime: Laser Active")
-        self.realtime_pipe(swizzle_table[MOSHI_LASER][0])
-
-    def realtime_stop(self):
-        """
-        Stop command (likely same as freemotor):
-        @return:
-        """
-        self.pipe_channel("Realtime: Stop")
-        self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
-
-    def realtime_pipe(self, data):
-        if self.connection is not None:
-            try:
-                self.connection.write_addr(data)
-            except ConnectionError:
-                self.pipe_channel("Connection error")
-        else:
-            self.pipe_channel("Not connected")
 
     def open(self):
         _ = self.usb_log._
@@ -265,17 +194,15 @@ class MoshiController:
         else:
             raise ConnectionError
 
-    def push_program(self, program):
-        self.pipe_channel(f"Pushed: {str(program.data)}")
-        self._programs.append(program)
+    def write(self, data):
+        self.open()
+        with self._main_lock:
+            self._programs.append(data)
         self.start()
 
-    def unlock_rail(self):
-        self.pipe_channel("Control Request: Unlock")
-        if self._main_lock.locked():
-            return
-        else:
-            self.realtime_freemotor()
+    def realtime(self, data):
+        self.open()
+        self.connection.write_addr(data)
 
     def start(self):
         """
@@ -309,17 +236,6 @@ class MoshiController:
         """
         if self.state == "pause":
             self.update_state("active")
-
-    def estop(self):
-        """
-        Abort the current buffer and data queue.
-        """
-        self._buffer = bytearray()
-        self._programs.clear()
-        self.context.signal("pipe;buffer", 0)
-        self.realtime_stop()
-        self.update_state("terminate")
-        self.pipe_channel("Control Request: Stop")
 
     def stop(self, *args):
         """
@@ -395,7 +311,6 @@ class MoshiController:
         will be doing work in this function.
         """
         self.pipe_channel(f"Send Thread Start... {len(self._programs)}")
-        self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
 
@@ -417,16 +332,18 @@ class MoshiController:
                     self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
-                    self.realtime_prologue()
-                    self._buffer = self._programs.pop(0).data
-                    assert len(self._buffer) != 0
+                    MoshiBuilder.prologue(self.connection.write_addr, self.pipe_channel)
+                    with self._main_lock:
+                        self._buffer += self._programs.pop(0)
+                    if len(self._buffer) == 0:
+                        continue
 
                 # Stage 1: Send Program.
                 self.context.signal("pipe;running", True)
                 self.pipe_channel(f"Sending Data... {len(self._buffer)} bytes")
                 self._send_buffer()
                 self.update_status()
-                self.realtime_epilogue()
+                MoshiBuilder.epilogue(self.connection.write_addr, self.pipe_channel)
                 if self.is_shutdown:
                     break
 
@@ -463,7 +380,6 @@ class MoshiController:
         self._thread = None
         self.is_shutdown = False
         self.update_state("end")
-        self._main_lock.release()
         self.pipe_channel("Send Thread Finished...")
 
     def process_buffer(self):

@@ -6,7 +6,7 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import Service, CommandSyntaxError
+from meerk40t.kernel import Service, CommandSyntaxError, signal_listener
 from ..core.laserjob import LaserJob
 
 from ..core.spoolers import Spooler
@@ -39,10 +39,7 @@ class MoshiDevice(Service, ViewPort):
         self.setting(int, "usb_bus", -1)
         self.setting(int, "usb_address", -1)
         self.setting(int, "usb_version", -1)
-        self.setting(bool, "mock", False)
 
-        self.setting(bool, "home_right", False)
-        self.setting(bool, "home_bottom", False)
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
@@ -298,7 +295,8 @@ class MoshiDevice(Service, ViewPort):
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
-        self.driver.out_pipe = self.controller
+        self.driver.out_pipe = self.controller.write
+        self.driver.out_real = self.controller.realtime
         _ = self.kernel.translation
 
         @self.console_command("usb_connect", help=_("Connect USB"))
@@ -356,8 +354,8 @@ class MoshiDevice(Service, ViewPort):
             Abort output job. Usually due to the functionality of Moshiboards this will do
             nothing as the job will have already sent to the backend.
             """
-            self.controller.estop()
-            channel(_("Moshi Channel Aborted."))
+            self.driver.reset()
+            channel(_("Lihuiyu Channel Aborted."))
             self.signal("pipe;running", False)
 
         @self.console_command(
@@ -394,13 +392,7 @@ class MoshiDevice(Service, ViewPort):
                 with open(filename, "wb") as f:
                     driver = MoshiDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
-                    controller = MoshiController(self, force_mock=True)
-
-                    def push_program(program):
-                        f.write(program.data)
-
-                    controller.push_program = push_program
-                    driver.out_pipe = controller
+                    driver.out_pipe = f.write
 
                     driver.job_start(job)
                     job.execute()
@@ -440,6 +432,7 @@ class MoshiDevice(Service, ViewPort):
         """
         return self.driver.native_x, self.driver.native_y
 
+    @signal_listener("bedsize")
     def realize(self, origin=None):
         self.width = self.bedwidth
         self.height = self.bedheight

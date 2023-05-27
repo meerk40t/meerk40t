@@ -4,6 +4,7 @@ Moshiboard Builder
 Builder for Moshiboard command data output information. Allows interactions through simple commands to export the
 required data to run a Moshiboard.
 """
+import struct
 
 swizzle_table = [
     [
@@ -338,32 +339,21 @@ class MoshiBuilder:
     def __len__(self):
         return len(self.data)
 
+    def clear(self):
+        self.data.clear()
+        self._stage = 0
+
     def pipe_int8(self, value):
         """
         Write an 8 bit into to the current program.
         """
-        v = bytes(
-            bytearray(
-                [
-                    value & 0xFF,
-                ]
-            )
-        )
-        self.write(v)
+        self.write(struct.pack("b", value))
 
     def pipe_int16le(self, value):
         """
         Write a 16 bit little-endian value to the current program.
         """
-        v = bytes(
-            bytearray(
-                [
-                    (value >> 0) & 0xFF,
-                    (value >> 8) & 0xFF,
-                ]
-            )
-        )
-        self.write(v)
+        self.write(struct.pack("<h", value))
 
     def write(self, bytes_to_write):
         """
@@ -551,6 +541,71 @@ class MoshiBuilder:
             self.channel(f"Cut Vertical y: {int(y)}")
         self.write(swizzle_table[MOSHI_CUT_VERT][0])
         self.pipe_int16le(int(y))
+
+    @staticmethod
+    def read(output, channel=None):
+        """
+        The `a7xx` values used before the AC01 commands. Read preamble.
+
+        Also seen randomly 3.2 seconds apart. Maybe keep-alive.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Read...")
+        output(swizzle_table[MOSHI_READ][0])
+
+    @staticmethod
+    def prologue(output, channel=None):
+        """
+        Before a jump / program / turned on:
+        @return:
+        """
+        if channel:
+            channel("Realtime: Prologue")
+        output(swizzle_table[MOSHI_PROLOGUE][0])
+
+    @staticmethod
+    def epilogue(output, channel=None):
+        """
+        Status 205
+        After a jump / program
+        Status 207
+        Status 205 Done.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Epilogue")
+        output(swizzle_table[MOSHI_EPILOGUE][0])
+
+    @staticmethod
+    def laser(output, channel=None):
+        """
+        Laser Command Toggle.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Laser Active")
+        output(swizzle_table[MOSHI_LASER][0])
+
+    @staticmethod
+    def stop(output, channel=None):
+        """
+        Estop command.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Estop")
+        output(swizzle_table[MOSHI_ESTOP][0])
+
+    @staticmethod
+    def freemotor(output, channel=None):
+        """
+        Estop command.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Freemotor")
+        output(swizzle_table[MOSHI_FREEMOTOR][0])
 
     @staticmethod
     def _swizzle(b, p7, p6, p5, p4, p3, p2, p1, p0):
