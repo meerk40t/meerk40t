@@ -77,7 +77,6 @@ class MoshiController:
 
         self._programs = []  # Programs to execute.
 
-        self._buffer_size = 0
         self._main_lock = threading.Lock()
 
         self._status = [0] * 6
