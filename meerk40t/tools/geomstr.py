@@ -1191,7 +1191,6 @@ class Geomstr:
             return True
         return abs(self.segments[0][0] - self.segments[self.index][-1]) < 1e-5
 
-
     #######################
     # Geometric Helpers
     #######################
