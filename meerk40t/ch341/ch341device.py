@@ -37,7 +37,6 @@ from ctypes import (
     c_ulong,
     c_void_p,
     sizeof,
-    wintypes,
 )
 from ctypes.wintypes import (
     BOOL,
@@ -315,6 +314,10 @@ CH341_DEVICE_IO = 0x223CD0
 
 
 class CONTROL_TRANSFER(ctypes.Structure):
+    """
+    Control Transfer governs the control transfer routines for sending single control transfer commands to the CH341
+    Kernel-side driver.
+    """
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -337,6 +340,10 @@ class CONTROL_TRANSFER(ctypes.Structure):
 
 
 class BULK_OUT(ctypes.Structure):
+    """
+    Governs the USB Bulk-Out usb device commands with optional command override. The command tends to govern the type
+    of output write. WriteData(), WriteEppData(), WriteEppAddr() are all bulk out commands with different commands.
+    """
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -350,6 +357,10 @@ class BULK_OUT(ctypes.Structure):
 
 
 class CH341_DEFAULT(ctypes.Structure):
+    """
+    Default CH341 device command for other types of commands. We primarily support the EPP commands but other commands
+    can be sent using the defined types.
+    """
     _fields_ = [
         ("command", ctypes.c_int),
         ("data", ctypes.c_int),
@@ -361,6 +372,14 @@ class CH341_DEFAULT(ctypes.Structure):
 
 
 def _get_required_size(handle, key, dev_info):
+    """
+    Requests the property with a 0 size, this is expected to fail and return the required buffer size for the property.
+
+    @param handle:
+    @param key:
+    @param dev_info:
+    @return:
+    """
     prop_type = ctypes.c_ulong()
     required_size = ctypes.c_ulong()
 
@@ -379,6 +398,14 @@ def _get_required_size(handle, key, dev_info):
 
 
 def _get_prop(handle, key, dev_info):
+    """
+    Get property associated with the given key.
+
+    @param handle:
+    @param key:
+    @param dev_info:
+    @return:
+    """
     prop_type = ctypes.c_ulong()
     required_size = _get_required_size(handle, key, dev_info)
     value_buffer = ctypes.create_string_buffer(required_size.value)
@@ -501,7 +528,7 @@ class CH341Device:
 
     def CH341WriteData(self, buffer, cmd=0x07):
         if buffer is None:
-            return
+            return True
         self.success = True
         while len(buffer) > 0:
             packet = buffer[:31]
@@ -608,4 +635,3 @@ if __name__ == "__main__":
             status = device.CH341GetVerIC()
             print(status)
             device.CH341EppWriteData(b"\x00IPPFFFFFFFFFFFFFFFFFFFFFFFFFFF\xe4")
-
