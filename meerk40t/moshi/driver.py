@@ -528,17 +528,7 @@ class MoshiDriver(Parameters):
         self.queue.clear()
         self.pipe_channel("Realtime: Stop")
         MoshiBuilder.stop(self.out_real)
-
-        # self._buffer = bytearray()
-        # self._programs.clear()
-        # self.context.signal("pipe;buffer", 0)
-        # self.realtime_stop()
-        # self.update_state("terminate")
         self.pipe_channel("Control Request: Stop")
-        try:
-            self.out_pipe.estop()
-        except AttributeError:
-            pass
 
     ####################
     # Protected Driver Functions

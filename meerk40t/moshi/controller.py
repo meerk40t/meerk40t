@@ -203,6 +203,8 @@ class MoshiController:
 
     def realtime(self, data):
         if MoshiBuilder.is_estop(data):
+            self.context.signal("pipe;buffer", 0)
+            self.update_state("terminate")
             with self._program_lock:
                 self._programs.clear()
                 self._buffer.clear()
