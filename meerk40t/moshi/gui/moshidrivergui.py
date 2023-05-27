@@ -6,15 +6,13 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import ScrolledPanel
-from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
 
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(305, 410, *args, **kwds)
+        super().__init__(330, 630, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
