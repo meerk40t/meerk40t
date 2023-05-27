@@ -81,6 +81,14 @@ class MoshiDriver(Parameters):
         """
         return priority <= 0 and (self.paused or self.hold)
 
+    def job_start(self, job):
+        pass
+
+    def job_finish(self, job):
+        if self.program.data:
+            self.program.termination()
+            self.push_program()
+
     def get(self, key, default=None):
         """
         Required.
@@ -336,15 +344,6 @@ class MoshiDriver(Parameters):
 
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
-        if self.state == DRIVER_STATE_FINISH:
-            pass
-        elif self.state in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_MODECHANGE,
-            DRIVER_STATE_RASTER,
-        ):
-            self.program.termination()
-            self.push_program()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
 
