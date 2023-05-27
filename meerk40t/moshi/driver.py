@@ -60,8 +60,6 @@ class MoshiDriver(Parameters):
         self.hold = False
         self.paused = False
 
-        self.service._buffer_size = 0
-
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 

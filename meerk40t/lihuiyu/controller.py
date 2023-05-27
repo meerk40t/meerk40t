@@ -158,7 +158,6 @@ class LihuiyuController:
         self._preempt = (
             bytearray()
         )  # Thread-unsafe preempt commands to prepend to the buffer.
-        self.context._buffer_size = 0
         self._queue_lock = threading.Lock()
         self._preempt_lock = threading.Lock()
         self._main_lock = threading.Lock()
@@ -491,11 +490,7 @@ class LihuiyuController:
             self.context.signal("pipe;thread", self.state)
 
     def update_buffer(self):
-        if self.context is not None:
-            self.context._buffer_size = (
-                len(self._realtime_buffer) + len(self._buffer) + len(self._queue)
-            )
-            self.context.signal("pipe;buffer", len(self))
+        self.context.signal("pipe;buffer", len(self))
 
     def update_packet(self, packet):
         self.context.signal("pipe;packet", convert_to_list_bytes(packet))

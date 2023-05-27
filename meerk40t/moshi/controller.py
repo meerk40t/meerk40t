@@ -77,7 +77,7 @@ class MoshiController:
 
         self._programs = []  # Programs to execute.
 
-        self.context._buffer_size = 0
+        self._buffer_size = 0
         self._main_lock = threading.Lock()
 
         self._status = [0] * 6
@@ -298,9 +298,7 @@ class MoshiController:
         """
         Notify listening processes that the buffer size of this output has changed.
         """
-        if self.context is not None:
-            self.context._buffer_size = len(self._buffer)
-            self.context.signal("pipe;buffer", self.context._buffer_size)
+        self.context.signal("pipe;buffer", len(self._buffer))
 
     def update_packet(self, packet):
         """
