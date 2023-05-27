@@ -16,6 +16,7 @@ from .builder import (
     MOSHI_READ,
     swizzle_table,
 )
+from ..ch341 import get_ch341_interface
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
@@ -65,7 +66,7 @@ class MoshiController:
     Checks done before the Epilogue will have 205 state.
     """
 
-    def __init__(self, context, channel=None, *args, **kwargs):
+    def __init__(self, context, channel=None, force_mock=False, *args, **kwargs):
         self.context = context
         self.state = "unknown"
         self.is_shutdown = False
@@ -82,7 +83,8 @@ class MoshiController:
         self._status = [0] * 6
         self._usb_state = -1
 
-        self._connection = None
+        self.connection = None
+        self.force_mock = force_mock
 
         self.max_attempts = 5
         self.refuse_counts = 0
@@ -95,8 +97,6 @@ class MoshiController:
         self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
         self.usb_send_channel = context.channel(f"{name}/usb_send")
         self.recv_channel = context.channel(f"{name}/recv")
-
-        self.ch341 = context.open("module/ch341", log=self.usb_log)
 
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
@@ -179,40 +179,82 @@ class MoshiController:
         self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
 
     def realtime_pipe(self, data):
-        if self._connection is not None:
+        if self.connection is not None:
             try:
-                self._connection.write_addr(data)
+                self.connection.write_addr(data)
             except ConnectionError:
                 self.pipe_channel("Connection error")
         else:
             self.pipe_channel("Not connected")
 
     def open(self):
+        _ = self.usb_log._
+        if self.connection is not None and self.connection.is_connected():
+            return  # Already connected.
         self.pipe_channel("open()")
-        if self._connection is None:
-            connection = self.ch341.connect(
-                driver_index=self.context.usb_index,
-                chipv=self.context.usb_version,
-                bus=self.context.usb_bus,
-                address=self.context.usb_address,
-                mock=self.context.mock,
-            )
-            self._connection = connection
-            if self._connection is None:
+
+        try:
+            interfaces = list(get_ch341_interface(self.context, self.usb_log, mock=self.force_mock or self.context.mock))
+            if self.context.usb_index != -1:
+                # Instructed to check one specific device.
+                devices = [self.context.usb_index]
+            else:
+                devices = range(16)
+
+            for interface in interfaces:
+                self.connection = interface
+                for i in devices:
+                    try:
+                        self._open_at_index(i)
+                        return  # Opened successfully.
+                    except ConnectionRefusedError as e:
+                        self.usb_log(str(e))
+                        if self.connection is not None:
+                            self.connection.close()
+                    except IndexError:
+                        self.usb_log(_("Connection failed."))
+                        self.connection = None
+                        break
+        except PermissionError as e:
+            self.usb_log(str(e))
+            return  # OS denied permissions, no point checking anything else.
+
+        self.close()
+        raise ConnectionRefusedError(
+            _("No valid connection matched any given criteria.")
+        )
+
+    def _open_at_index(self, usb_index):
+        _ = self.context.kernel.translation
+        self.connection.open(usb_index=usb_index)
+        if not self.connection.is_connected():
+            raise ConnectionRefusedError("ch341 connect did not return a connection.")
+        if self.context.usb_bus != -1 and self.connection.bus != -1:
+            if self.connection.bus != self.context.usb_bus:
                 raise ConnectionRefusedError(
-                    "ch341 connect did not return a connection."
+                    _("K40 devices were found but they were rejected due to usb bus.")
                 )
-            if self.context.mock:
-                self._connection.mock_status = 205
-                self._connection.mock_finish = 207
-        else:
-            self._connection.open()
+        if self.context.usb_address != -1 and self.connection.address != -1:
+            if self.connection.address != self.context.usb_address:
+                raise ConnectionRefusedError(
+                    _(
+                        "K40 devices were found but they were rejected due to usb address."
+                    )
+                )
+        if self.context.usb_version != -1:
+            version = self.connection.get_chip_version()
+            if version != self.context.usb_version:
+                raise ConnectionRefusedError(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
 
     def close(self):
         self.pipe_channel("close()")
-        if self._connection is not None:
-            self._connection.close()
-            self._connection = None
+        if self.connection is not None:
+            self.connection.close()
+            self.connection = None
         else:
             raise ConnectionError
 
@@ -361,7 +403,7 @@ class MoshiController:
                 if len(self._buffer) == 0 and len(self._programs) == 0:
                     self.pipe_channel("Nothing to process")
                     break  # There is nothing to run.
-                if self._connection is None:
+                if self.connection is None:
                     self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
@@ -445,18 +487,18 @@ class MoshiController:
         """
         Send packet to the CH341 connection.
         """
-        if self._connection is None:
+        if self.connection is None:
             raise ConnectionError
-        self._connection.write(packet)
+        self.connection.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
         """
         Request a status update from the CH341 connection.
         """
-        if self._connection is None:
+        if self.connection is None:
             raise ConnectionError
-        self._status = self._connection.get_status()
+        self._status = self.connection.get_status()
         if self.context is not None:
             try:
                 self.context.signal(
