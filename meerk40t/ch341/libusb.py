@@ -27,13 +27,6 @@ mCH341A_GET_VER = 0x5F
 mCH341A_STATUS = 0x52
 
 
-def convert_to_list_bytes(data):
-    if isinstance(data, str):  # python 2
-        return [ord(e) for e in data]
-    else:
-        return [e for e in data]
-
-
 class Ch341LibusbDriver:
     """
     Libusb driver for the CH341 chip. The CH341x is a USB interface chip that can emulate UART, parallel port,
@@ -312,38 +305,6 @@ class Ch341LibusbDriver:
             self.channel(str(e))
             raise ConnectionError
 
-    def CH341EppWrite(self, index=0, buffer=None, length=0, pipe=0):
-        if buffer is not None:
-            device = self.devices[index]
-            data = convert_to_list_bytes(buffer)
-            while len(data) > 0:
-                if pipe == 0:
-                    packet = [mCH341_PARA_CMD_W0] + data[:31]
-                else:
-                    packet = [mCH341_PARA_CMD_W1] + data[:31]
-                data = data[31:]
-                try:
-                    # endpoint, data, timeout
-                    device.write(
-                        endpoint=BULK_WRITE_ENDPOINT, data=packet, timeout=self.timeout
-                    )
-                except usb.core.USBError as e:
-                    self.backend_error_code = e.backend_error_code
-
-                    self.channel(str(e))
-                    raise ConnectionError
-
-    def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
-        try:
-            return self.devices[index].read(
-                endpoint=BULK_READ_ENDPOINT, size_or_buffer=length, timeout=self.timeout
-            )
-        except usb.core.USBError as e:
-            self.backend_error_code = e.backend_error_code
-
-            self.channel(str(e))
-            raise ConnectionError
-
     # pylint: disable=dangerous-default-value
     def CH341GetStatus(self, index=0, status=[0]):
         if self.bulk:
@@ -433,15 +394,61 @@ class Ch341LibusbDriver:
     ):  # WR=1, DS=0, AS=1 D0-D7 in
         self.CH341EppRead(index, buffer, length, 1)
 
+    def CH341WriteData(self, index=0, buffer=None):
+        if buffer is None:
+            return
+        device = self.devices[index]
+        packet = list(buffer)
+        try:
+            # endpoint, data, timeout
+            device.write(
+                endpoint=BULK_WRITE_ENDPOINT, data=packet, timeout=self.timeout
+            )
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+
+            self.channel(str(e))
+            raise ConnectionError
+
+    def CH341EppRead(self, index=0, buffer=None, length=0, pipe=0):
+        try:
+            return self.devices[index].read(
+                endpoint=BULK_READ_ENDPOINT, size_or_buffer=length, timeout=self.timeout
+            )
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+
+            self.channel(str(e))
+            raise ConnectionError
+
+    def CH341EppWrite(self, index=0, buffer=None, pipe=0):
+        if buffer is not None:
+            device = self.devices[index]
+            packet = [mCH341_PARA_CMD_W1 if pipe else mCH341_PARA_CMD_W0] + list(buffer)
+            try:
+                # endpoint, data, timeout
+                device.write(
+                    endpoint=BULK_WRITE_ENDPOINT, data=packet, timeout=self.timeout
+                )
+            except usb.core.USBError as e:
+                self.backend_error_code = e.backend_error_code
+
+                self.channel(str(e))
+                raise ConnectionError
+
     def CH341EppWriteData(
-        self, index, buffer=None, length=0
+        self,
+        index,
+        buffer=None,
     ):  # WR=0, DS=0, AS=1, D0-D7 out
-        self.CH341EppWrite(index, buffer, length, 0)
+        self.CH341EppWrite(index, buffer, 0)
 
     def CH341EppWriteAddr(
-        self, index, buffer=None, length=0
+        self,
+        index,
+        buffer=None,
     ):  # WR=0, DS=1, AS=0, D0-D7 out
-        self.CH341EppWrite(index, buffer, length, 1)
+        self.CH341EppWrite(index, buffer, 1)
 
 
 class LibCH341Driver:
@@ -551,12 +558,12 @@ class LibCH341Driver:
     def write(self, packet):
         if not self.is_connected():
             raise ConnectionError
-        self.driver.CH341EppWriteData(self.driver_index, packet, len(packet))
+        self.driver.CH341EppWriteData(self.driver_index, packet)
 
     def write_addr(self, packet):
         if not self.is_connected():
             raise ConnectionError
-        self.driver.CH341EppWriteAddr(self.driver_index, packet, len(packet))
+        self.driver.CH341EppWriteAddr(self.driver_index, packet)
 
     def get_status(self):
         if not self.is_connected():
