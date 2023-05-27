@@ -355,7 +355,7 @@ class MoshiDevice(Service, ViewPort):
             nothing as the job will have already sent to the backend.
             """
             self.driver.reset()
-            channel(_("Lihuiyu Channel Aborted."))
+            channel(_("Moshi Channel Aborted."))
             self.signal("pipe;running", False)
 
         @self.console_command(
