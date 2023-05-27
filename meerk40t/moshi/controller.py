@@ -151,7 +151,7 @@ class MoshiController:
                     except IndexError:
                         self.usb_log(_("Connection failed."))
                         self.connection = None
-                        return
+                        break
         except PermissionError as e:
             self.usb_log(str(e))
             return  # OS denied permissions, no point checking anything else.
