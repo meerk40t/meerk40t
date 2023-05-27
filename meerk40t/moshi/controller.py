@@ -155,8 +155,8 @@ class MoshiController:
         except PermissionError as e:
             self.usb_log(str(e))
             return  # OS denied permissions, no point checking anything else.
-
-        self.close()
+        if self.connection:
+            self.close()
         raise ConnectionRefusedError(
             _("No valid connection matched any given criteria.")
         )
