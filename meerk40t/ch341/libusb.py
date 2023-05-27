@@ -55,13 +55,13 @@ class Ch341LibusbDriver:
     All commands during close don't care about errors, if it broke it's likely already closed.
     """
 
-    def __init__(self, channel):
+    def __init__(self, channel, bulk=True):
         self.devices = {}
         self.interface = {}
         self.channel = channel
         self.backend_error_code = None
         self.timeout = 1500
-        self.bulk = True
+        self.bulk = bulk
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -449,13 +449,14 @@ class LibCH341Driver:
         self,
         channel=None,
         state=None,
+        bulk=None,
     ):
         self.driver_index = None
         self.driver_value = None
         self.channel = channel
         self.state = state
 
-        self.driver = Ch341LibusbDriver(self.channel)
+        self.driver = Ch341LibusbDriver(self.channel, bulk=bulk)
 
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
