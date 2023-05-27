@@ -244,7 +244,8 @@ class LihuiyuController:
                         self.usb_log(_("Connection failed."))
                         self.connection = None
                         break
-        except PermissionError:
+        except PermissionError as e:
+            self.usb_log(str(e))
             return  # OS denied permissions, no point checking anything else.
 
         self.close()

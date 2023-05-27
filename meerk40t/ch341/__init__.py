@@ -18,7 +18,7 @@ def get_ch341_interface(context, log):
         log(_("PyUsb is not installed. Skipping."))
 
     try:
-        from .windll import WinCH341Driver
+        from .windriver import WinCH341Driver
 
         yield WinCH341Driver(channel=log, state=_state_change)
     except ImportError:
