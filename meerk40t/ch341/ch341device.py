@@ -269,7 +269,16 @@ def valid_hdevinfo(value, func, arguments):
 SetupDiGetClassDevs.errcheck = valid_hdevinfo
 
 SetupDiGetDeviceProperty = setupapi.SetupDiGetDevicePropertyW
-SetupDiGetDeviceProperty.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+SetupDiGetDeviceProperty.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_uint,
+    ctypes.c_void_p,
+    ctypes.c_uint,
+]
 
 
 def valid_property(value, func, arguments):
@@ -318,6 +327,7 @@ class CONTROL_TRANSFER(ctypes.Structure):
     Control Transfer governs the control transfer routines for sending single control transfer commands to the CH341
     Kernel-side driver.
     """
+
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -344,6 +354,7 @@ class BULK_OUT(ctypes.Structure):
     Governs the USB Bulk-Out usb device commands with optional command override. The command tends to govern the type
     of output write. WriteData(), WriteEppData(), WriteEppAddr() are all bulk out commands with different commands.
     """
+
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
@@ -361,6 +372,7 @@ class CH341_DEFAULT(ctypes.Structure):
     Default CH341 device command for other types of commands. We primarily support the EPP commands but other commands
     can be sent using the defined types.
     """
+
     _fields_ = [
         ("command", ctypes.c_int),
         ("data", ctypes.c_int),
