@@ -6,7 +6,8 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import Service
+from meerk40t.kernel import Service, CommandSyntaxError
+from ..core.laserjob import LaserJob
 
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -22,6 +23,7 @@ class MoshiDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, choices=None, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "MoshiDevice"
+        self.extension = "mos"
         if choices is not None:
             for c in choices:
                 attr = c.get("attr")
@@ -382,6 +384,30 @@ class MoshiDevice(Service, ViewPort):
             reports its status as READY (205)
             """
             self.controller.abort_waiting = True
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def moshi_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "wb") as f:
+                    driver = MoshiDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    controller = MoshiController(self, force_mock=True)
+
+                    def push_program(program):
+                        f.write(program.data)
+
+                    controller.push_program = push_program
+                    driver.out_pipe = controller
+
+                    driver.job_start(job)
+                    job.execute()
+                    driver.job_finish(job)
+
+            except (PermissionError, OSError):
+                channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(
             "viewport_update",
