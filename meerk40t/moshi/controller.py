@@ -129,6 +129,7 @@ class MoshiController:
                     self.usb_log,
                     mock=self.force_mock or self.context.mock,
                     mock_status=STATUS_OK,
+                    bulk=False,
                 )
             )
             if self.context.usb_index != -1:
