@@ -207,7 +207,7 @@ class GUID(ctypes.Structure):
         ret = CLSIDFromString(ctypes.create_unicode_buffer(guid), ctypes.byref(self))
         if ret < 0:
             err_no = GetLastError()
-            raise WindowsError(err_no, ctypes.FormatError(err_no), guid)
+            raise OSError(err_no, ctypes.FormatError(err_no), guid)
 
     def __str__(self):
         return "{{{:08x}-{:04x}-{:04x}-{}-{}}}".format(
@@ -263,7 +263,7 @@ SetupDiGetClassDevs.restype = HDEVINFO
 def valid_hdevinfo(value, func, arguments):
     if value in (-1, 0):
         err_no = GetLastError()
-        raise WindowsError(err_no, ctypes.FormatError(err_no))
+        raise OSError(err_no, ctypes.FormatError(err_no))
     return value
 
 
@@ -277,7 +277,7 @@ def valid_property(value, func, arguments):
     err_no = GetLastError()
     if err_no in (ERROR_SUCCESS, ERROR_INSUFFICIENT_BUFFER):
         return value
-    raise WindowsError(err_no, ctypes.FormatError(err_no))
+    raise OSError(err_no, ctypes.FormatError(err_no))
 
 
 SetupDiGetDeviceProperty.errcheck = valid_property
@@ -374,7 +374,7 @@ def _get_required_size(handle, key, dev_info):
         ctypes.byref(required_size),
         0,
     ):
-        raise WindowsError()
+        raise OSError()
     return required_size
 
 
@@ -437,7 +437,7 @@ class CH341Device:
 
             err_no = GetLastError()
             if err_no not in (ERROR_STILL_ACTIVE, ERROR_SUCCESS):
-                raise WindowsError(err_no, ctypes.FormatError(err_no))
+                raise OSError(err_no, ctypes.FormatError(err_no))
 
         finally:
             SetupDiDestroyDeviceInfoList(handle)
