@@ -69,7 +69,7 @@ class MoshiController:
 
         self._thread = None
         self.is_shutdown = False
-        self._main_lock = threading.Lock()
+        self._program_lock = threading.Lock()
 
         self._status = [0] * 6
         self._usb_state = -1
@@ -196,7 +196,7 @@ class MoshiController:
 
     def write(self, data):
         self.open()
-        with self._main_lock:
+        with self._program_lock:
             self._programs.append(data)
         self.start()
 
@@ -337,7 +337,7 @@ class MoshiController:
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     MoshiBuilder.prologue(self.connection.write_addr, self.pipe_channel)
-                    with self._main_lock:
+                    with self._program_lock:
                         self._buffer += self._programs.pop(0)
                     if len(self._buffer) == 0:
                         continue
