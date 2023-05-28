@@ -71,6 +71,12 @@ class ScenePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
+    def animate(self):
+        self.context.schedule(self.scene)
+
+    def pause(self):
+        self.context.unschedule(self.scene)
+
     def signal(self, *args, **kwargs):
         """
         Scene signal calls the signal command on the root which is used to pass message and data to deeper objects

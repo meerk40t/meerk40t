@@ -199,6 +199,7 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.camera(f"camera{self.index} start\n")
         self.camera.schedule(self)
+        self.display_camera.animate()
         # This listener is because you can have frames and windows and both need to care about the slider.
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
@@ -208,6 +209,7 @@ class CameraPanel(wx.Panel, Job):
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
         self.camera.unschedule(self)
+        self.display_camera.pause()
         if not self.pane:
             self.camera.close(f"Camera{str(self.index)}")
         self.camera.unlisten("camera;fps", self.on_fps_change)
