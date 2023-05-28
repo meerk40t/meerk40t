@@ -509,8 +509,8 @@ class LihuiyuController:
             if self.state == "init":
                 # If we are initialized. Change that to active since we're running.
                 self.update_state("active")
-            if self.state in ("pause", "busy", "suspend"):
-                # If we are paused just keep sleeping until the state changes.
+            elif self.state in ("pause", "busy", "suspend"):
+                # If we are paused just wait until the state changes.
                 if len(self._realtime_buffer) == 0 and len(self._preempt) == 0:
                     # Only pause if there are no realtime commands to queue.
                     self.context.signal("pipe;running", False)
