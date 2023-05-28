@@ -617,6 +617,8 @@ class MoshiDriver(Parameters):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
             self.program.termination()
+            if self.service.mock:
+                self.program.debug(self.pipe_channel)
             self(bytearray(self.program.data))
         self.program.clear()
 

@@ -197,7 +197,6 @@ class MoshiController:
             raise ConnectionError
 
     def write(self, data):
-        self.open()
         with self._program_lock:
             self._programs.append(data)
         self.start()
@@ -209,8 +208,11 @@ class MoshiController:
             with self._program_lock:
                 self._programs.clear()
                 self._buffer.clear()
-        self.open()
-        self.connection.write_addr(data)
+        try:
+            self.open()
+            self.connection.write_addr(data)
+        except ConnectionRefusedError:
+            pass  # could not open connection.
 
     def start(self):
         """
