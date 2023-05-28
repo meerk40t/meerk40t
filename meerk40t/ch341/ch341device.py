@@ -341,7 +341,7 @@ class BULK_OUT(ctypes.Structure):
     _fields_ = [
         ("command", ctypes.c_int),
         ("size", ctypes.c_int),
-        ("packet", ctypes.c_byte * 31),
+        ("packet", ctypes.c_byte * 258),
     ]
 
     def __init__(self, packet: bytes, cmd=0x07):
@@ -524,18 +524,13 @@ class CH341Device:
     def CH341WriteData(self, buffer, cmd=0x07):
         if buffer is None:
             return True
-        self.success = True
-        while len(buffer) > 0:
-            packet = buffer[:31]
-            buffer = buffer[31:]
-            self.ioctl(
-                CH341_DEVICE_IO,
-                ctypes.pointer(BULK_OUT(packet, cmd=cmd)),
-                0x28,
-                self._pointer_buffer,
-                0x8,
-            )
-        return self.success
+        return self.ioctl(
+            CH341_DEVICE_IO,
+            ctypes.pointer(BULK_OUT(bytes(buffer), cmd=cmd)),
+            len(buffer) + 8,
+            self._pointer_buffer,
+            0x8,
+        )
 
     def CH341EppWriteData(self, buffer):
         return self.CH341WriteData(buffer, cmd=0x12)

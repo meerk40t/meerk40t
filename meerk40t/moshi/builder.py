@@ -4,6 +4,7 @@ Moshiboard Builder
 Builder for Moshiboard command data output information. Allows interactions through simple commands to export the
 required data to run a Moshiboard.
 """
+import struct
 
 swizzle_table = [
     [
@@ -332,38 +333,27 @@ class MoshiBuilder:
 
         self.offset_x = 0
         self.offset_y = 0
-
+        self._vector = None
         self._stage = 0
 
     def __len__(self):
         return len(self.data)
 
+    def clear(self):
+        self.data.clear()
+        self._stage = 0
+
     def pipe_int8(self, value):
         """
         Write an 8 bit into to the current program.
         """
-        v = bytes(
-            bytearray(
-                [
-                    value & 0xFF,
-                ]
-            )
-        )
-        self.write(v)
+        self.write(struct.pack("b", value))
 
     def pipe_int16le(self, value):
         """
         Write a 16 bit little-endian value to the current program.
         """
-        v = bytes(
-            bytearray(
-                [
-                    (value >> 0) & 0xFF,
-                    (value >> 8) & 0xFF,
-                ]
-            )
-        )
-        self.write(v)
+        self.write(struct.pack("<h", value))
 
     def write(self, bytes_to_write):
         """
@@ -385,6 +375,7 @@ class MoshiBuilder:
         """
         assert self._stage == 0
         self._stage = 1
+        self._vector = True
         if self.channel:
             self.channel(
                 f"Vector Cut Speed: {int(speed_mms)} mm/s Normal Speed: {int(normal_speed_mms)} mm/s"
@@ -410,6 +401,7 @@ class MoshiBuilder:
         if speed_cms == 0:
             speed_cms = 1
         self.pipe_int8(speed_cms - 1)
+        self._vector = False
 
     def set_offset(self, z, x, y):
         """
@@ -551,6 +543,201 @@ class MoshiBuilder:
             self.channel(f"Cut Vertical y: {int(y)}")
         self.write(swizzle_table[MOSHI_CUT_VERT][0])
         self.pipe_int16le(int(y))
+
+    def debug(self, output=print):
+        data = self.data
+        convert = MoshiBuilder.convert
+
+        pos = 0
+        while pos < len(data):
+            cmd = data[pos]
+            cmd = convert(cmd)
+            cmd >>= 4
+            if cmd == 5:
+                output(
+                    "Vector Cut Speed: %d (%02x) mm/s Normal Speed: %d mm/s (%02x)"
+                    % (data[pos + 1] + 1, data[pos + 1], data[pos + 2] + 1, data[pos + 2])
+                )
+                pos += 3
+            elif cmd == 4:
+                output(
+                    "Raster Header Speed: %d cm/s (%02x)"
+                    % (data[pos + 1] + 1, data[pos + 1])
+                )
+                pos += 2
+            elif cmd == 0:
+                z = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                x = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                y = int.from_bytes(data[pos + 5: pos + 7], "little", signed=True)
+                output(
+                    "Set Location unknown: %d, x: %d, y: %d (%02x%02x,%02x%02x,%02x%02x) "
+                    % (
+                        z,
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                        data[pos + 5],
+                        data[pos + 6],
+                    )
+                )
+                pos += 7
+            elif cmd == 15:
+                x = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                y = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                if pos + 5 > len(data):
+                    output("Cut Off.")
+                    output(data[pos:])
+                    return
+                output(
+                    "cut x: %d, y: %d (%02x%02x,%02x%02x) "
+                    % (
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                    )
+                )
+                pos += 5
+            elif cmd == 7:
+                x = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                y = int.from_bytes(data[pos + 3: pos + 5], "little", signed=True)
+                output(
+                    "move x: %d, y: %d (%02x%02x,%02x%02x) "
+                    % (
+                        x,
+                        y,
+                        data[pos + 1],
+                        data[pos + 2],
+                        data[pos + 3],
+                        data[pos + 4],
+                    )
+                )
+                pos += 5
+            elif cmd == 6:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "move horiz x: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 3:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "move vert y: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 14:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "cut horiz x: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 11:
+                p = int.from_bytes(data[pos + 1: pos + 3], "little", signed=True)
+                output(
+                    "cut vert y: %d (%02x%02x) "
+                    % (
+                        p,
+                        data[pos + 1],
+                        data[pos + 2],
+                    )
+                )
+                pos += 3
+            elif cmd == 2:
+                output("Termination. (7 times)")
+                pos += 1
+            else:
+                output("UNKNOWN COMMAND: %d" % cmd)
+                raise ValueError
+                break
+
+    @staticmethod
+    def is_estop(data):
+        return data in swizzle_table[MOSHI_ESTOP]
+
+    @staticmethod
+    def read(output, channel=None):
+        """
+        The `a7xx` values used before the AC01 commands. Read preamble.
+
+        Also seen randomly 3.2 seconds apart. Maybe keep-alive.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Read...")
+        output(swizzle_table[MOSHI_READ][0])
+
+    @staticmethod
+    def prologue(output, channel=None):
+        """
+        Before a jump / program / turned on:
+        @return:
+        """
+        if channel:
+            channel("Realtime: Prologue")
+        output(swizzle_table[MOSHI_PROLOGUE][0])
+
+    @staticmethod
+    def epilogue(output, channel=None):
+        """
+        Status 205
+        After a jump / program
+        Status 207
+        Status 205 Done.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Epilogue")
+        output(swizzle_table[MOSHI_EPILOGUE][0])
+
+    @staticmethod
+    def laser(output, channel=None):
+        """
+        Laser Command Toggle.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Laser Active")
+        output(swizzle_table[MOSHI_LASER][0])
+
+    @staticmethod
+    def stop(output, channel=None):
+        """
+        Estop command.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Estop")
+        output(swizzle_table[MOSHI_ESTOP][0])
+
+    @staticmethod
+    def freemotor(output, channel=None):
+        """
+        Estop command.
+        @return:
+        """
+        if channel:
+            channel("Realtime: Freemotor")
+        output(swizzle_table[MOSHI_FREEMOTOR][0])
 
     @staticmethod
     def _swizzle(b, p7, p6, p5, p4, p3, p2, p1, p0):

@@ -9,11 +9,11 @@ class WinCH341Driver:
     This is basic interface code for a CH341 to be run in EPP 1.9 mode.
     """
 
-    def __init__(self, channel=None, state=None):
+    def __init__(self, channel=None, state=None, bulk=True):
         self.driver_index = None
         self.channel = channel
         self.state = state
-        self.bulk = True
+        self.bulk = bulk
         self.driver = None
 
     def is_connected(self):

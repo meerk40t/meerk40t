@@ -16,11 +16,6 @@ PLOT_RIGHT_LOWER = 1024
 
 
 def plugin(kernel, lifecycle=None):
-    if lifecycle == "plugins":
-        from .ch341 import ch341
-
-        return [ch341.plugin]
-
     if lifecycle == "boot":
         last_device = kernel.read_persistent(str, "/", "activated_device", None)
         if last_device:
