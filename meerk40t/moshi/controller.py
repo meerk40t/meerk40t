@@ -403,7 +403,7 @@ class MoshiController:
         else:
             return False
 
-        length = min(33, len(buffer))
+        length = min(32, len(buffer))
         packet = buffer[:length]
 
         # Packet is prepared and ready to send. Open Channel.
