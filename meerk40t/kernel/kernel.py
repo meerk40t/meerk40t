@@ -1102,7 +1102,7 @@ class Kernel(Settings):
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
-            interval=0.005,
+            interval=0.05,
             run_main=True,
             conditional=lambda: not self._processing,
         )
