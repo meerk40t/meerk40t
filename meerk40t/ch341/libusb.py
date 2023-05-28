@@ -422,19 +422,29 @@ class Ch341LibusbDriver:
             raise ConnectionError
 
     def CH341EppWrite(self, index=0, buffer=None, pipe=0):
-        if buffer is not None:
-            device = self.devices[index]
-            packet = [mCH341_PARA_CMD_W1 if pipe else mCH341_PARA_CMD_W0] + list(buffer)
-            try:
-                # endpoint, data, timeout
-                device.write(
-                    endpoint=BULK_WRITE_ENDPOINT, data=packet, timeout=self.timeout
-                )
-            except usb.core.USBError as e:
-                self.backend_error_code = e.backend_error_code
+        """
+        EPP Data is written in max 31 bytes prepended with either A7 or A6 (addr/data). With a new value appended
+        each 31 characters.
 
-                self.channel(str(e))
-                raise ConnectionError
+        @return:
+        """
+        if buffer is None:
+            return
+        p = mCH341_PARA_CMD_W1 if pipe else mCH341_PARA_CMD_W0
+        device = self.devices[index]
+        data = list(buffer)
+        for i in range(0, len(data) + 1, 32):
+            data.insert(i, p)
+        try:
+            # endpoint, data, timeout
+            device.write(
+                endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeout
+            )
+        except usb.core.USBError as e:
+            self.backend_error_code = e.backend_error_code
+
+            self.channel(str(e))
+            raise ConnectionError
 
     def CH341EppWriteData(
         self,
