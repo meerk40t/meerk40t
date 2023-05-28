@@ -847,6 +847,7 @@ class LihuiyuController:
             if self.abort_waiting:
                 self.abort_waiting = False
                 break  # Wait abort was requested.
+            time.sleep(0.001)  # Only if we are using control transfer status checks.
         self.update_state(original_state)
 
     def _confirm_serial(self):
