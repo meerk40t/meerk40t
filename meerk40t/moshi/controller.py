@@ -106,6 +106,7 @@ class MoshiController:
         self.start()
 
     def shutdown(self, *args, **kwargs):
+        self.update_state("terminate")
         if self._thread is not None:
             self.is_shutdown = True
 
