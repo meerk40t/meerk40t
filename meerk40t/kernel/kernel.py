@@ -1810,7 +1810,7 @@ class Kernel(Settings):
         """
         self.state = "active"
         while self.state != "end":
-            time.sleep(0.005)  # 200 ticks a second.
+            time.sleep(0.05)  # 200 ticks a second.
             while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)
