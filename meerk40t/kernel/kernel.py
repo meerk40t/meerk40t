@@ -148,7 +148,7 @@ class Kernel(Settings):
         self._add_lock = threading.Lock()
         self._remove_lock = threading.Lock()
         self._message_queue = {}
-        self._is_queue_processing = False
+        self._processing = {}
 
         # Channels
         self.channels = {}
@@ -1104,7 +1104,7 @@ class Kernel(Settings):
             name="kernel.signals",
             interval=0.005,
             run_main=True,
-            conditional=lambda: not self._is_queue_processing,
+            conditional=lambda: not self._processing,
         )
         self._booted = True
 
@@ -2000,15 +2000,13 @@ class Kernel(Settings):
             and len(self._removing_listeners) == 0
         ):
             return
-        self._is_queue_processing = True
         with self._signal_lock:
-            queue = self._message_queue
-            self._message_queue = {}
+            self._message_queue, self._processing = self._processing, self._message_queue
         self._process_add_listeners()
         self._process_remove_listeners()
 
-        self._process_signal_queue(queue)
-        self._is_queue_processing = False
+        self._process_signal_queue(self._processing)
+        self._processing.clear()
 
     def last_signal(self, signal: str) -> Optional[Tuple]:
         """
