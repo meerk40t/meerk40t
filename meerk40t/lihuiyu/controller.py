@@ -215,11 +215,10 @@ class LihuiyuController:
         return len(self._buffer) + len(self._queue) + len(self._preempt)
 
     def open(self):
-        _ = self.usb_log._
         if self.connection is not None and self.connection.is_connected():
             return  # Already connected.
+        _ = self.usb_log._
         self.pipe_channel("open()")
-
         try:
             interfaces = list(
                 get_ch341_interface(
@@ -227,6 +226,7 @@ class LihuiyuController:
                     self.usb_log,
                     mock=self.context.mock,
                     mock_status=STATUS_OK,
+                    bulk=False,
                 )
             )
             if self.context.usb_index != -1:
@@ -712,6 +712,8 @@ class LihuiyuController:
                 try:
                     self.update_status()
                     status = self._status[1]
+                    if attempts > 10:
+                        time.sleep(min(0.001 * attempts, 0.1))
                 except ConnectionError:
                     # Errors are ignored, must confirm packet.
                     flawless = False
@@ -725,8 +727,6 @@ class LihuiyuController:
                     break
                 elif status == STATUS_BUSY:
                     # Busy. We still do not have our confirmation. BUSY comes before ERROR or OK.
-                    if attempts > 10:
-                        time.sleep(0.05)
                     continue
                 elif status == STATUS_ERROR:
                     if not default_checksum:
@@ -753,8 +753,8 @@ class LihuiyuController:
                         post_send_command = None
                         continue
 
-            if status == 0:  # After 300 attempts we could only get status = 0.
-                raise ConnectionError  # Broken pipe. 300 attempts. Could not confirm packet.
+            if status == 0:  # After 500 attempts we could only get status = 0.
+                raise ConnectionError  # Broken pipe. Could not confirm packet.
             self.context.packet_count += (
                 1  # Our packet is confirmed or assumed confirmed.
             )
