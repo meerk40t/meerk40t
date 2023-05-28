@@ -2001,7 +2001,10 @@ class Kernel(Settings):
         ):
             return
         with self._signal_lock:
-            self._message_queue, self._processing = self._processing, self._message_queue
+            self._message_queue, self._processing = (
+                self._processing,
+                self._message_queue,
+            )
         self._process_add_listeners()
         self._process_remove_listeners()
 

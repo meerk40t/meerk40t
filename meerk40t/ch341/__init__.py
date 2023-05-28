@@ -6,6 +6,7 @@ def get_ch341_interface(context, log, mock=False, mock_status=206, bulk=True):
     if mock:
         log(_("Using Mock Driver."))
         from .mock import MockCH341Driver as MockDriver
+
         mock_device = MockDriver(channel=log, state=_state_change, bulk=bulk)
         mock_device.mock_status = mock_status
         yield mock_device

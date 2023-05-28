@@ -437,9 +437,7 @@ class Ch341LibusbDriver:
             data.insert(i, p)
         try:
             # endpoint, data, timeout
-            device.write(
-                endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeout
-            )
+            device.write(endpoint=BULK_WRITE_ENDPOINT, data=data, timeout=self.timeout)
         except usb.core.USBError as e:
             self.backend_error_code = e.backend_error_code
 

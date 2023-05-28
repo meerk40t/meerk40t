@@ -6,9 +6,9 @@ Defines the interactions between the device service and the meerk40t's viewport.
 Registers relevant commands and options.
 """
 
-from meerk40t.kernel import Service, CommandSyntaxError, signal_listener
-from ..core.laserjob import LaserJob
+from meerk40t.kernel import CommandSyntaxError, Service, signal_listener
 
+from ..core.laserjob import LaserJob
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import MoshiController

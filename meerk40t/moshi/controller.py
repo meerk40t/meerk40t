@@ -7,8 +7,8 @@ Tasked with sending data to usb connection.
 import threading
 import time
 
-from .builder import MoshiBuilder
 from ..ch341 import get_ch341_interface
+from .builder import MoshiBuilder
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
