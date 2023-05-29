@@ -794,7 +794,7 @@ class SimulationPanel(wx.Panel, Job):
             scene_name="SimScene",
             style=wx.EXPAND,
         )
-        self.view_pane.animate()
+        self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
 

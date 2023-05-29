@@ -71,10 +71,10 @@ class ScenePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
-    def animate(self):
+    def start_scene(self):
         self.context.schedule(self.scene)
 
-    def pause(self):
+    def stop_scene(self):
         self.context.unschedule(self.scene)
 
     def signal(self, *args, **kwargs):
