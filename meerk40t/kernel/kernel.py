@@ -73,6 +73,7 @@ class Kernel(Settings):
         profile: str,
         ansi: bool = True,
         ignore_settings: bool = False,
+        delay: float = 0.05, # 20 ticks per second
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -90,6 +91,7 @@ class Kernel(Settings):
             self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
         )
         self.settings = self
+        self.delay = delay
 
         # Boot State
         self._booted = False
@@ -1102,7 +1104,7 @@ class Kernel(Settings):
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
-            interval=0.005,
+            interval=self.delay,
             run_main=True,
             conditional=lambda: not self._processing,
         )
@@ -1810,7 +1812,7 @@ class Kernel(Settings):
         """
         self.state = "active"
         while self.state != "end":
-            time.sleep(0.005)  # 200 ticks a second.
+            time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)

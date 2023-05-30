@@ -222,7 +222,6 @@ class Scene(Module, Job):
 
     def module_open(self, *args, **kwargs):
         context = self.context
-        context.schedule(self)
         context.setting(int, "draw_mode", 0)
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)

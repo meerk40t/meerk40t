@@ -93,6 +93,7 @@ class MeerK40tScenePanel(wx.Panel):
             scene_name="Scene" if index is None else f"Scene{index}",
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
+        self.scene.start_scene()
         self.widget_scene = self.scene.scene
 
         self.tool_active = False

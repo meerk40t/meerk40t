@@ -281,7 +281,7 @@ class wxMeerK40t(wx.App, Module):
         self.timer = wx.Timer(self, id=wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
-        self.timer.Start(10)
+        self.timer.Start(50)
 
         icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
