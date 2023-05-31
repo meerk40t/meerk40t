@@ -19,9 +19,13 @@ class HatchEffectNode(Node, Stroked):
         self.stroke = Color("Blue")
         self.fill = None
         self.stroke_width = 1000.0
+        self.output = True
         self.stroke_scale = False
         self._stroke_zero = None
         Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
+        self._formatter = (
+            "{enabled}{element_type} - {distance} {angle}"
+        )
         if self.matrix is None:
             self.matrix = Matrix()
 
@@ -41,6 +45,17 @@ class HatchEffectNode(Node, Stroked):
 
     def __copy__(self):
         return HatchEffectNode(self)
+
+    def default_map(self, default_map=None):
+        default_map = super().default_map(default_map=default_map)
+        default_map["element_type"] = "Hatch"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["pass"] = (
+            f"{self.passes}X " if self.passes and self.passes != 1 else ""
+        )
+        default_map["angle"] = str(self.hatch_angle)
+        default_map["distance"] = str(self.hatch_distance)
+        return default_map
 
     def as_geometry(self):
         path = Geomstr()
