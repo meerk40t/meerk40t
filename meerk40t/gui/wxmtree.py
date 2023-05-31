@@ -382,6 +382,7 @@ class ShadowTree:
             "op raster": icons8_direction_20,
             "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
+            "effect hatch": icons8_diagonal_20,
             "place current": icons8_home_location_20,
             "place point": icons8_home_location_20,
             "elem point": icons8_scatter_plot_20,
