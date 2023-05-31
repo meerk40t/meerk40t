@@ -204,6 +204,7 @@ class LaserRender:
                     "elem polyline",
                     "elem rect",
                     "elem line",
+                    "effect hatch",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -240,24 +241,10 @@ class LaserRender:
                     "elem rect",
                     "elem line",
                     "elem polyline",
+                    "effect hatch",
                 ):
                     node.draw = self.draw_vector
                     node.make_cache = self.cache_geomstr
-                elif node.type == "elem path":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_path
-                elif node.type == "elem point":
-                    node.draw = self.draw_point_node
-                elif node.type in place_nodes:
-                    node.draw = self.draw_placement_node
-                elif node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "elem ellipse",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_shape
                 elif node.type == "elem image":
                     node.draw = self.draw_image_node
                 elif node.type == "elem text":

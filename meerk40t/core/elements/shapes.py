@@ -229,6 +229,21 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
+    @self.console_command(
+        "hatch",
+        help=_("adds hatch-effect to scene"),
+        input_type=None,
+    )
+    def effect_hatch(command, **kwargs):
+        """
+        Draws a svg line in the scene.
+        """
+        node = self.elem_branch.add(
+            type="effect hatch", label="Hatch Effect"
+        )
+        self.set_emphasis([node])
+        node.focus()
+
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
     )

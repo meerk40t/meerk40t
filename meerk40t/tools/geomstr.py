@@ -762,11 +762,18 @@ class Geomstr:
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
         if isinstance(first_point, (list, tuple)):
-            points = [pts[0] + pts[1] * 1j for pts in points]
+            points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
+            on = False
             for i in range(1, len(points)):
-                path.line(points[i - 1], points[i])
+                if points[i-1] is not None and points[i] is not None:
+                    on = True
+                    path.line(points[i - 1], points[i])
+                else:
+                    if on:
+                        path.end()
+                    on = False
         return path
 
     @classmethod

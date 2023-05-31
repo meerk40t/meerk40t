@@ -13,6 +13,7 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "effect hatch",
     "util console",
     "util wait",
     "util home",
@@ -43,6 +44,7 @@ op_parent_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "effect hatch",
 )
 op_nodes = (
     "op cut",
@@ -83,6 +85,7 @@ elem_group_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
     "group",
     "file",
 )
