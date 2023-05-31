@@ -230,7 +230,7 @@ def init_commands(kernel):
         return "elements", data
 
     @self.console_command(
-        "hatch",
+        "effect-hatch",
         help=_("adds hatch-effect to scene"),
         input_type=None,
     )
