@@ -694,16 +694,16 @@ def init_tree(kernel):
                 self.signal("element_property_reload", data)
                 break
 
-    @tree_separator_before()
-    @tree_operation(
-        _("Execute operation(s)"),
-        node_type=op_nodes,
-        help=_("Execute Job for the selected operation(s)."),
-    )
-    def execute_job(node, **kwargs):
-        self.set_node_emphasis(node, True)
-        self("plan0 clear copy-selected\n")
-        self("window open ExecuteJob 0\n")
+    # @tree_separator_before()
+    # @tree_operation(
+    #     _("Execute operation(s)"),
+    #     node_type=op_nodes,
+    #     help=_("Execute Job for the selected operation(s)."),
+    # )
+    # def execute_job(node, **kwargs):
+    #     self.set_node_emphasis(node, True)
+    #     self("plan0 clear copy-selected\n")
+    #     self("window open ExecuteJob 0\n")
 
     @tree_separator_after()
     @tree_operation(
