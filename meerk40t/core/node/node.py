@@ -981,6 +981,7 @@ class Node:
         emphasized=None,
         targeted=None,
         highlighted=None,
+        lock=None,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
@@ -1001,7 +1002,8 @@ class Node:
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
             and (selected is None or selected == node.selected)
-            and (highlighted is None or highlighted != node.highlighted)
+            and (highlighted is None or highlighted == node.highlighted)
+            and (lock is None or lock == node.lock)
         ):
             # Matches the emphases.
             if cascade:
@@ -1022,7 +1024,7 @@ class Node:
         # Check all children.
         for c in node.children:
             yield from c.flat(
-                types, cascade, depth, selected, emphasized, targeted, highlighted
+                types, cascade, depth, selected, emphasized, targeted, highlighted, lock
             )
 
     def count_children(self):
@@ -1150,6 +1152,8 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
+            if e.lock:
+                continue
             box = getattr(e, attr, None)
             if box is None:
                 continue
