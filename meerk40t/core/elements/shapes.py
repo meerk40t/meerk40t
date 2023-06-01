@@ -232,16 +232,22 @@ def init_commands(kernel):
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
-        input_type=None,
+        input_type=(None, "elements")
     )
-    def effect_hatch(command, **kwargs):
+    def effect_hatch(command, data=None, **kwargs):
         """
-        Draws a svg line in the scene.
+        Add an effect hatch object
         """
         node = self.elem_branch.add(
             type="effect hatch", label="Hatch Effect"
         )
         self.set_emphasis([node])
+        if data is not None:
+            for n in data:
+                node.append_child(n)
+                n._can_emphasize = False
+                n._can_move = False
+                n.lock = True
         node.focus()
 
     @self.console_option(

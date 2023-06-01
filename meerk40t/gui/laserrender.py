@@ -4,7 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
-from meerk40t.core.elements.element_types import elem_nodes, place_nodes
+from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
