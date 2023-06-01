@@ -183,7 +183,7 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
-        self.node_render(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+        self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
         for c in node.children:
             self.render_tree(c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
 
@@ -227,11 +227,11 @@ class LaserRender:
         for node in _nodes:
             if node.type == "reference":
                 # Reference nodes should be drawn per-usual, recurse.
-                self.node_render(node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+                self.render_node(node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
                 continue
-            self.node_render(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+            self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
 
-    def node_render(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+    def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         if node.type in elem_nodes:
             if not node.is_visible:
                 return
