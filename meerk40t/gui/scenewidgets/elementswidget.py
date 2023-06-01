@@ -53,20 +53,12 @@ class ElementsWidget(Widget):
                 zoomscale=zoom_scale,
                 alpha=96,
             )
-        self.renderer.render(
-            context.elements.elems_nodes(),
+        self.renderer.render_tree(
+            context.elements.elem_branch,
             gc,
             draw_mode,
             zoomscale=zoom_scale,
         )
-        # gc.PushState()
-        # gc.SetPen(wx.BLACK_PEN)
-        # dif = 500
-        # for elemnode in context.elements.elems_nodes(emphasized=True):
-        #     for p in elemnode.points:
-        #         gc.StrokeLine(p[0] - dif, p[1], p[0] + dif, p[1])
-        #         gc.StrokeLine(p[0], p[1] - dif, p[0], p[1] + dif)
-        # gc.PopState()
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs

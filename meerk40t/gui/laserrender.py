@@ -183,9 +183,9 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
-        self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
-        for c in node.children:
-            self.render_tree(c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+        if not self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha):
+            for c in node.children:
+                self.render_tree(c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
 
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -232,12 +232,26 @@ class LaserRender:
             self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
 
     def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
-        if node.type in elem_nodes:
+        """
+        Renders the specific node.
+        @param node:
+        @param gc:
+        @param draw_mode:
+        @param zoomscale:
+        @param alpha:
+        @return: True if rendering was done, False if rendering could not be done.
+        """
+        if hasattr(node, "is_visible"):
             if not node.is_visible:
-                return
+                return False
+        if hasattr(node, "output"):
+            if not node.output:
+                return False
+
         try:
             # Try to draw node, assuming it already has a known render method.
             node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
         except AttributeError:
             # No known render method, we must define the function to draw nodes.
             if node.type in (
@@ -257,9 +271,10 @@ class LaserRender:
             elif node.type == "cutcode":
                 node.draw = self.draw_cutcode_node
             else:
-                return
+                return False
             # We have now defined that function, draw it.
             node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
 
     def make_path(self, gc, path):
         """
