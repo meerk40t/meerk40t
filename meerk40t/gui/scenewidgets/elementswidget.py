@@ -53,8 +53,8 @@ class ElementsWidget(Widget):
                 zoomscale=zoom_scale,
                 alpha=96,
             )
-        self.renderer.render_tree(
-            context.elements.elem_branch,
+        self.renderer.render(
+            context.elements.elems_nodes(),
             gc,
             draw_mode,
             zoomscale=zoom_scale,
