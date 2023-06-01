@@ -82,7 +82,7 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use,
+    Use, SVG_TAG_POLYGON,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
 
@@ -325,7 +325,10 @@ class SVGWriter:
             elif c.type == "elem polyline":
                 element = c.shape
                 copy_attributes(c, element)
-                subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
+                if isinstance(element, Polygon):
+                    subelement = SubElement(xml_tree, SVG_TAG_POLYGON)
+                else:
+                    subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
                 subelement.set(
                     SVG_ATTR_POINTS,
                     " ".join([f"{e[0]} {e[1]}" for e in element.points]),
