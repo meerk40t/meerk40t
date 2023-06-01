@@ -454,7 +454,7 @@ def init_commands(kernel):
         else:
             for e in data:
                 if prop in ("x", "y"):
-                    if hasattr(e, "can_move") and not e.can_move(self.lock_allows_move):
+                    if not e.can_move(self.lock_allows_move):
                         channel(
                             _("Element can not be moved: {name}").format(name=str(e))
                         )
