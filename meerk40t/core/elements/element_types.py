@@ -75,6 +75,7 @@ elem_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
 )
 elem_group_nodes = (
     "elem ellipse",
@@ -98,5 +99,6 @@ elem_ref_nodes = (
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
     "reference",
 )
