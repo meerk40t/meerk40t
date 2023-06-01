@@ -199,22 +199,21 @@ class Node:
                 return True
             else:
                 return self._is_visible
-        else:
-            if hasattr(self, "references"):
-                valid = False
-                flag = False
-                for n in self.references:
-                    if hasattr(n.parent, "output"):
-                        valid = True
-                        if n.parent.output is None or n.parent.output:
-                            flag = True
-                            break
-                        if n.parent.is_visible:
-                            flag = True
-                            break
-                # If there aren't any references then it is visible by default
-                if valid:
-                    result = flag
+        if hasattr(self, "references"):
+            valid = False
+            flag = False
+            for n in self.references:
+                if hasattr(n.parent, "output"):
+                    valid = True
+                    if n.parent.output is None or n.parent.output:
+                        flag = True
+                        break
+                    if n.parent.is_visible:
+                        flag = True
+                        break
+            # If there aren't any references then it is visible by default
+            if valid:
+                result = flag
         return result
 
     @is_visible.setter
