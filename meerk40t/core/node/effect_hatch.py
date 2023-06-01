@@ -16,18 +16,22 @@ class HatchEffectNode(Node, Stroked):
 
     def __init__(self, *args, id=None, label=None, lock=False,  **kwargs):
         self.matrix = None
-        self.stroke = Color("Blue")
         self.fill = None
+        self.stroke = Color("Blue")
         self.stroke_width = 1000.0
-        self.output = True
         self.stroke_scale = False
         self._stroke_zero = None
+        self.output = True
         Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
         self._formatter = (
             "{enabled}{element_type} - {distance} {angle}"
         )
         if self.matrix is None:
             self.matrix = Matrix()
+
+        if self._stroke_zero is None:
+            # This defines the stroke-width zero point scale
+            self.stroke_width_zero()
 
         if label is None:
             self.label = "Hatch"
@@ -41,10 +45,31 @@ class HatchEffectNode(Node, Stroked):
         self.settings = kwargs
 
     def __repr__(self):
-        return "HatchEffectNode()"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        return HatchEffectNode(self)
+        nd = self.node_dict
+        nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
+        nd["fill"] = copy(self.fill)
+        return HatchEffectNode(*nd)
+
+    def bbox(self, transformed=True, with_stroke=False):
+        geometry = self.as_geometry()
+        if transformed:
+            bounds = geometry.bbox(mx=self.matrix)
+        else:
+            bounds = geometry.bbox()
+        xmin, ymin, xmax, ymax = bounds
+        if with_stroke:
+            delta = float(self.implied_stroke_width) / 2.0
+            return (
+                xmin - delta,
+                ymin - delta,
+                xmax + delta,
+                ymax + delta,
+            )
+        return xmin, ymin, xmax, ymax
 
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
@@ -74,6 +99,7 @@ class HatchEffectNode(Node, Stroked):
                     )
                 )
                 path.append(path.lines(*hatches))
+        path.transform(self.matrix)
         return path
 
     def drop(self, drag_node, modify=True):
