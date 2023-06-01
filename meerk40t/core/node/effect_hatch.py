@@ -107,7 +107,7 @@ class HatchEffectNode(Node, Stroked):
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.add_reference(drag_node, pos=0)
+                self.append_child(drag_node)
                 self.altered()
             return True
         elif drag_node.type == "reference":
