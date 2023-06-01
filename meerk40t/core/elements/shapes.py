@@ -245,10 +245,20 @@ def init_commands(kernel):
         if data is not None:
             for n in data:
                 node.append_child(n)
-                n._can_emphasize = False
-                n._can_move = False
-                n.lock = True
         node.focus()
+
+    @self.console_command(
+        "toggle_effect",
+        help=_("Toggles effect from being group to an effect."),
+        input_type="elements"
+    )
+    def effect_hatch(command, data=None, **kwargs):
+        """
+        Add an effect hatch object
+        """
+        for n in data:
+            if n.type.startswith("effect "):
+                n.effect = not n.effect
 
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")

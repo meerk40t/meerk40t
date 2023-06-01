@@ -43,6 +43,8 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_angle = "0deg"
         self.hatch_algorithm = scanline_fill
         self.settings = kwargs
+        self._operands = list()
+        self._effect = False
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -55,6 +57,8 @@ class HatchEffectNode(Node, Stroked):
         return HatchEffectNode(*nd)
 
     def bbox(self, transformed=True, with_stroke=False):
+        if not self.effect:
+            return None
         geometry = self.as_geometry()
         if transformed:
             bounds = geometry.bbox(mx=self.matrix)
@@ -82,10 +86,29 @@ class HatchEffectNode(Node, Stroked):
         default_map["distance"] = str(self.hatch_distance)
         return default_map
 
+    @property
+    def effect(self):
+        return self._effect
+
+    @effect.setter
+    def effect(self, value):
+        self._effect = value
+        if self._effect:
+            self._operands.extend(self._children)
+            self._children.clear()
+            self.altered()
+        else:
+            self._children.extend(self._operands)
+            self._operands.clear()
+            self.altered()
+
     def as_geometry(self):
+
         path = Geomstr()
+        if not self.effect:
+            return path
         outlines = list()
-        for node in self.children:
+        for node in self._operands:
             if node.type == "reference":
                 node = node.node
             path.append(node.as_geometry())
