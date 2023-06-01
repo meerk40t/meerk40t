@@ -301,9 +301,11 @@ class Node:
         return self._can_target
 
     def can_move(self, optional_permission=False):
-        if optional_permission is None:
-            optional_permission = False
-        return (self._can_move and not self.lock) or optional_permission
+        if not self._can_move:
+            return False
+        if optional_permission:
+            return True
+        return not self.lock
 
     @property
     def can_scale(self):
