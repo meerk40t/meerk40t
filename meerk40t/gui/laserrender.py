@@ -182,6 +182,11 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
+    def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        self.node_render(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+        for c in node.children:
+            self.render_tree(c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
@@ -221,39 +226,40 @@ class LaserRender:
 
         for node in _nodes:
             if node.type == "reference":
-                self.render(
-                    [node.node],
-                    gc,
-                    draw_mode=draw_mode,
-                    zoomscale=zoomscale,
-                    alpha=alpha,
-                )
+                # Reference nodes should be drawn per-usual, recurse.
+                self.node_render(node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
                 continue
-            if node.type in elem_nodes:
-                if not node.is_visible:
-                    continue
-            try:
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            except AttributeError:
-                if node.type in (
+            self.node_render(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+
+    def node_render(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        if node.type in elem_nodes:
+            if not node.is_visible:
+                return
+        try:
+            # Try to draw node, assuming it already has a known render method.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+        except AttributeError:
+            # No known render method, we must define the function to draw nodes.
+            if node.type in (
                     "elem path",
                     "elem ellipse",
                     "elem rect",
                     "elem line",
                     "elem polyline",
                     "effect hatch",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_geomstr
-                elif node.type == "elem image":
-                    node.draw = self.draw_image_node
-                elif node.type == "elem text":
-                    node.draw = self.draw_text_node
-                elif node.type == "cutcode":
-                    node.draw = self.draw_cutcode_node
-                else:
-                    continue
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            ):
+                node.draw = self.draw_vector
+                node.make_cache = self.cache_geomstr
+            elif node.type == "elem image":
+                node.draw = self.draw_image_node
+            elif node.type == "elem text":
+                node.draw = self.draw_text_node
+            elif node.type == "cutcode":
+                node.draw = self.draw_cutcode_node
+            else:
+                return
+            # We have now defined that function, draw it.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
 
     def make_path(self, gc, path):
         """
