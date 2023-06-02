@@ -1111,7 +1111,6 @@ class Node:
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
 
     def remove_all_children(self, fast=False):
