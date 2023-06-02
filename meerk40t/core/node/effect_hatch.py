@@ -44,7 +44,7 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_algorithm = scanline_fill
         self.settings = kwargs
         self._operands = list()
-        self._effect = False
+        self._effect = True
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -95,15 +95,15 @@ class HatchEffectNode(Node, Stroked):
         self._effect = value
         if self._effect:
             self._operands.extend(self._children)
-            self._children.clear()
+            self.remove_all_children(destroy=False)
             self.altered()
         else:
-            self._children.extend(self._operands)
+            for c in self._operands:
+                self.add_node(c)
             self._operands.clear()
             self.altered()
 
     def as_geometry(self):
-
         path = Geomstr()
         if not self.effect:
             return path
@@ -130,7 +130,11 @@ class HatchEffectNode(Node, Stroked):
         if drag_node.type.startswith("elem"):
             # Dragging element onto operation adds that element to the op.
             if modify:
-                self.append_child(drag_node)
+                if self._effect:
+                    self._operands.append(drag_node)
+                    drag_node.remove_node()
+                else:
+                    self.append_child(drag_node)
                 self.altered()
             return True
         elif drag_node.type == "reference":
