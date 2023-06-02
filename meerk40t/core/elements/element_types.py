@@ -44,7 +44,6 @@ op_parent_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
-    "effect hatch",
 )
 op_nodes = (
     "op cut",
