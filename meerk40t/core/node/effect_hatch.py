@@ -107,14 +107,14 @@ class HatchEffectNode(Node, Stroked):
         path = Geomstr()
         if not self.effect:
             return path
-        outlines = list()
         for node in self._operands:
             if node.type == "reference":
                 node = node.node
             path.append(node.as_geometry())
-            outlines.extend(path.as_interpolated_points(interpolate=100))
-            outlines.append(None)
+        outlines = list()
+        outlines.extend(path.as_interpolated_points(interpolate=100))
         if outlines:
+            path = Geomstr()
             for p in range(self.passes):
                 hatches = list(
                     self.hatch_algorithm(
