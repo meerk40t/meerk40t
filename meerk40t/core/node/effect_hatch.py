@@ -95,10 +95,13 @@ class HatchEffectNode(Node, Stroked):
         self._effect = value
         if self._effect:
             self._operands.extend(self._children)
+            for c in self._children:
+                c.matrix *= ~self.matrix
             self.remove_all_children(destroy=False)
             self.altered()
         else:
             for c in self._operands:
+                c.matrix *= self.matrix
                 self.add_node(c)
             self._operands.clear()
             self.altered()
@@ -131,6 +134,7 @@ class HatchEffectNode(Node, Stroked):
             # Dragging element onto operation adds that element to the op.
             if modify:
                 if self._effect:
+                    drag_node.matrix *= ~self.matrix
                     self._operands.append(drag_node)
                     drag_node.remove_node()
                 else:
