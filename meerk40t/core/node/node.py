@@ -898,7 +898,14 @@ class Node:
         """
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
-        self._attach_node(node, pos=pos)
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, parent=self, pos=pos)
+        return node
 
     def create(self, type, **kwargs):
         """
@@ -921,22 +928,6 @@ class Node:
             self._root.notify_created(node)
         return node
 
-    def _attach_node(self, node, pos=None):
-        """
-        Attach a valid and created node to tree.
-        @param node:
-        @param pos:
-        @return:
-        """
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, parent=self, pos=pos)
-        return node
-
     def add(self, type=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
@@ -947,7 +938,7 @@ class Node:
         @return:
         """
         node = self.create(type=type, **kwargs)
-        self._attach_node(node, pos=pos)
+        self.add_node(node, pos=pos)
         return node
 
     def _flatten(self, node):
