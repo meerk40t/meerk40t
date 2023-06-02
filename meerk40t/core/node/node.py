@@ -1087,15 +1087,18 @@ class Node:
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
         return node
 
-    def remove_node(self, children=True, references=True, fast=False):
+    def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
 
-        This also removes all the children of this node.
+        @param children: removes all the children of this node.
+        @param references: remove the references to this node.
+        @param fast: Do not send notifications of the detatches and destroys
+        @param destroy: Do not destroy the node.
+        @return:
         """
         if children:
             self.remove_all_children(fast=fast)
@@ -1104,7 +1107,8 @@ class Node:
             self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
-            self.notify_destroyed(self)
+            if destroy:
+                self.notify_destroyed(self)
         if references:
             for ref in list(self._references):
                 ref.remove_node(fast=fast)
@@ -1113,13 +1117,13 @@ class Node:
         self._root = None
         self.unregister()
 
-    def remove_all_children(self, fast=False):
+    def remove_all_children(self, fast=False, destroy=True):
         """
         Recursively removes all children of the current node.
         """
         for child in list(self.children):
-            child.remove_all_children(fast=fast)
-            child.remove_node(fast=fast)
+            child.remove_all_children(fast=fast, destroy=destroy)
+            child.remove_node(fast=fast, destroy=destroy)
 
     def get(self, type=None):
         """
