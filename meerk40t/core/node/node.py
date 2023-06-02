@@ -1031,7 +1031,9 @@ class Node:
 
     def append_child(self, new_child):
         """
-        Add the new_child node as the last child of the current node.
+        Moves the new_child node as the last child of the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
+
         """
         new_parent = self
         source_siblings = new_child.parent.children
@@ -1047,6 +1049,7 @@ class Node:
     def insert_sibling(self, new_sibling):
         """
         Add the new_sibling node next to the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
         source_siblings = new_sibling.parent.children
@@ -1091,7 +1094,8 @@ class Node:
     def remove_node(self, children=True, references=True, fast=False):
         """
         Remove the current node from the tree.
-        This function must iterate down and first remove all children from the bottom.
+
+        This also removes all the children of this node.
         """
         if children:
             self.remove_all_children(fast=fast)
@@ -1112,7 +1116,7 @@ class Node:
 
     def remove_all_children(self, fast=False):
         """
-        Removes all children of the current node.
+        Recursively removes all children of the current node.
         """
         for child in list(self.children):
             child.remove_all_children(fast=fast)
