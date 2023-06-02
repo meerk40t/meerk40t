@@ -968,6 +968,25 @@ def init_tree(kernel):
     # ==========
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
+
+    @tree_conditional(lambda node: hasattr(node, "effect") and not node.effect)
+    @tree_operation(
+        _("Effect: On"),
+        node_type=effect_nodes,
+        help="",
+    )
+    def effect_on(node, **kwargs):
+        node.effect = not node.effect
+
+    @tree_conditional(lambda node: hasattr(node, "effect") and node.effect)
+    @tree_operation(
+        _("Effect: Off"),
+        node_type=effect_nodes,
+        help="",
+    )
+    def effect_off(node, **kwargs):
+        node.effect = not node.effect
+
     @tree_conditional(lambda node: node.can_remove)
     @tree_conditional(
         lambda cond: len(

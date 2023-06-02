@@ -24,7 +24,7 @@ class HatchEffectNode(Node, Stroked):
         self.output = True
         Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
         self._formatter = (
-            "{enabled}{element_type} - {distance} {angle}"
+            "{effect}{element_type} - {distance} {angle}"
         )
         if self.matrix is None:
             self.matrix = Matrix()
@@ -79,6 +79,7 @@ class HatchEffectNode(Node, Stroked):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["effect"] = "+" if self.effect else "-"
         default_map["pass"] = (
             f"{self.passes}X " if self.passes and self.passes != 1 else ""
         )
