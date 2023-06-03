@@ -2,9 +2,9 @@ from copy import copy
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
-from meerk40t.fill.fills import scanline_fill
+from meerk40t.core.units import Length, Angle
 from meerk40t.svgelements import Matrix, Color
-from meerk40t.tools.geomstr import Geomstr
+from meerk40t.tools.geomstr import Geomstr, Scanbeam
 
 
 class HatchEffectNode(Node, Stroked):
@@ -41,10 +41,11 @@ class HatchEffectNode(Node, Stroked):
         self.passes = 1
         self.hatch_distance = "1mm"
         self.hatch_angle = "0deg"
-        self.hatch_algorithm = scanline_fill
         self.settings = kwargs
         self._operands = list()
         self._effect = True
+        for c in kwargs.get("operands", []):
+            self._operands.append(copy(c))
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
@@ -54,7 +55,16 @@ class HatchEffectNode(Node, Stroked):
         nd["matrix"] = copy(self.matrix)
         nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        return HatchEffectNode(*nd)
+        nd["operands"] = copy(self._operands)
+        return HatchEffectNode(**nd)
+
+    def preprocess(self, context, matrix, plan):
+        self.stroke_scaled = False
+        self.stroke_scaled = True
+        for oper in self._operands:
+            oper.matrix *= matrix
+        self.stroke_scaled = False
+        self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
         if not self.effect:
@@ -119,19 +129,58 @@ class HatchEffectNode(Node, Stroked):
             if node.type == "reference":
                 node = node.node
             path.append(node.as_geometry())
-        outlines = list()
-        outlines.extend(path.as_interpolated_points(interpolate=100))
+        outlines = list(path.as_interpolated_points(interpolate=100))
         if outlines:
             path = Geomstr()
             for p in range(self.passes):
-                hatches = list(
-                    self.hatch_algorithm(
-                        settings=self.settings, outlines=outlines, matrix=self.matrix
-                    )
-                )
-                path.append(path.lines(*hatches))
+                path.append(self.scanline_fill(outlines=outlines))
         path.transform(self.matrix)
         return path
+
+    def scanline_fill(self, outlines):
+        """
+        Applies optimized scanline fill
+        @return:
+        """
+        h_dist = self.hatch_distance
+        h_angle = self.hatch_angle
+        distance_y = float(Length(h_dist))
+        if isinstance(h_angle, float):
+            angle = h_angle
+        else:
+            angle = Angle(h_angle).radians
+        transformed_vector = self.matrix.transform_vector([0, distance_y])
+        distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+
+        path = Geomstr.lines(*outlines)
+        path.rotate(angle)
+
+        vm = Scanbeam(path)
+        y_min, y_max = vm.event_range()
+        vm.valid_low = y_min - distance
+        vm.valid_high = y_max + distance
+        vm.scanline_to(vm.valid_low)
+
+        forward = True
+        geometry = Geomstr()
+        while vm.current_is_valid_range():
+            vm.scanline_to(vm.scanline + distance)
+            y = vm.scanline
+            actives = vm.actives()
+            r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
+            for i in r:
+                left_segment = actives[i - 1]
+                right_segment = actives[i]
+                left_segment_x = vm.x_intercept(left_segment)
+                right_segment_x = vm.x_intercept(right_segment)
+                if forward:
+                    geometry.line(complex(left_segment_x, y), complex(right_segment_x, y))
+                else:
+                    geometry.line(complex(right_segment_x, y), complex(left_segment_x, y))
+                geometry.end()
+            forward = not forward
+        geometry.rotate(-angle)
+        return geometry
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
