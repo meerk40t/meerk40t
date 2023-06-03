@@ -1,5 +1,7 @@
 from copy import copy
 
+import numpy as np
+
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length, Angle
@@ -122,18 +124,16 @@ class HatchEffectNode(Node, Stroked):
             self.altered()
 
     def as_geometry(self):
-        path = Geomstr()
+        outlines = Geomstr()
         if not self.effect:
-            return path
+            return outlines
         for node in self._operands:
             if node.type == "reference":
                 node = node.node
-            path.append(node.as_geometry())
-        outlines = list(path.as_interpolated_points(interpolate=100))
-        if outlines:
-            path = Geomstr()
-            for p in range(self.passes):
-                path.append(self.scanline_fill(outlines=outlines))
+            outlines.append(node.as_geometry())
+        path = Geomstr()
+        for p in range(self.passes):
+            path.append(self.scanline_fill(outlines=outlines))
         path.transform(self.matrix)
         return path
 
@@ -152,9 +152,8 @@ class HatchEffectNode(Node, Stroked):
         transformed_vector = self.matrix.transform_vector([0, distance_y])
         distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
-        path = Geomstr.lines(*outlines)
+        path = outlines
         path.rotate(angle)
-
         vm = Scanbeam(path)
         y_min, y_max = vm.event_range()
         vm.valid_low = y_min - distance
@@ -163,6 +162,8 @@ class HatchEffectNode(Node, Stroked):
 
         forward = True
         geometry = Geomstr()
+        if np.isinf(y_max):
+            return geometry
         while vm.current_is_valid_range():
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
