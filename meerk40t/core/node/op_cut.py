@@ -36,6 +36,7 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -44,6 +45,7 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
         )
         # To which attributes responds the classification color check
         self.allowed_attributes = [
@@ -108,7 +110,7 @@ class CutOpNode(Node, Parameters):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
+        if drag_node.type.startswith("elem") or drag_node.type.startswith("effect"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
                 or drag_node._parent.type == "branch reg"
@@ -312,6 +314,8 @@ class CutOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+            elif node.type.startswith("effect"):
+                path = node.as_geometry().as_path()
             elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
