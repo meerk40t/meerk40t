@@ -97,14 +97,18 @@ class HatchEffectNode(Node, Stroked):
         if self._effect:
             self._operands.extend(self._children)
             for c in self._children:
+                c.set_dirty_bounds()
                 c.matrix *= ~self.matrix
             self.remove_all_children(destroy=False)
+            self.set_dirty_bounds()
             self.altered()
         else:
             for c in self._operands:
                 c.matrix *= self.matrix
+                self.set_dirty_bounds()
                 self.add_node(c)
             self._operands.clear()
+            self.set_dirty_bounds()
             self.altered()
 
     def as_geometry(self):
