@@ -1157,7 +1157,7 @@ class MovePanel(wx.Panel):
             else:
                 y = Length(self.context.elements.length_y("0%"))
             self.context.root.setting(
-                str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
+                str, f"movepos{idx}", f"{x.length_mm}|{y.length_mm}"
             )
             label = _(
                 "Left click to go to saved position\nRight click to save coordinates"
@@ -1250,7 +1250,7 @@ class MovePanel(wx.Panel):
 
     def on_left(self, index):
         def handler(event):
-            gotostr = getattr(self.context.root, f"MovePos{index}", "")
+            gotostr = getattr(self.context.root, f"movepos{index}", "")
             if gotostr:
                 substr = gotostr.split("|")
                 if len(substr) < 2:
@@ -1274,7 +1274,7 @@ class MovePanel(wx.Panel):
                 ylen = Length(self.text_position_y.GetValue())
                 setattr(
                     self.context.root,
-                    f"MovePos{index}",
+                    f"movepos{index}",
                     f"{xlen.length_mm}|{ylen.length_mm}",
                 )
                 label = _(
