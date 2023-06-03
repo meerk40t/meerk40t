@@ -330,6 +330,9 @@ class Scanbeam:
         self._low = float("inf")
         self._high = -float("inf")
 
+        self.valid_low = self._low
+        self.valid_high = self._high
+
         for i in range(self._geom.index):
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
@@ -455,7 +458,10 @@ class Scanbeam:
         """
         y_min, index_min = self._sorted_edge_list[0]
         y_max, index_max = self._sorted_edge_list[-1]
-        return y_min, y_max
+        return y_min.imag, y_max.imag
+
+    def current_is_valid_range(self):
+        return self.valid_high >= self.scanline >= self.valid_low
 
     def _sort_actives(self):
         if not self._dirty_actives_sort:
