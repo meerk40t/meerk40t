@@ -458,6 +458,8 @@ class Scanbeam:
 
         @return:
         """
+        if not self._sorted_edge_list:
+            return self._low, self._low
         y_min, index_min = self._sorted_edge_list[0]
         y_max, index_max = self._sorted_edge_list[-1]
         return y_min.imag, y_max.imag
