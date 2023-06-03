@@ -975,6 +975,9 @@ class Geomstr:
                 for a in arcs[1:]:
                     yield a
 
+    def segmented(self, interpolate=100):
+        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
+
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
             return
