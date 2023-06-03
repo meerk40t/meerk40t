@@ -130,12 +130,11 @@ class HatchEffectNode(Node, Stroked):
         for node in self._operands:
             if node.type == "reference":
                 node = node.node
-            g = node.as_geometry()
-            outlines.append(Geomstr.lines(*g.as_interpolated_points(interpolate=50)))
+            outlines.append(node.as_geometry())
         outlines.transform(self.matrix)
         path = Geomstr()
         for p in range(self.passes):
-            path.append(self.scanline_fill(outlines=outlines))
+            path.append(self.scanline_fill(outlines=outlines.segmented()))
         return path
 
     def modified(self):
