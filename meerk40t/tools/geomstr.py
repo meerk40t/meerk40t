@@ -334,6 +334,8 @@ class Scanbeam:
         self.valid_high = self._high
 
         for i in range(self._geom.index):
+            if self._geom.segments[i][2] != TYPE_LINE:
+                continue
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
                 self._geom.segments[i][-1].real,
