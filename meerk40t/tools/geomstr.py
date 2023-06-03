@@ -974,6 +974,8 @@ class Geomstr:
                 arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
                 for a in arcs[1:]:
                     yield a
+            elif seg_type == TYPE_END:
+                at_start = True
 
     def segmented(self, interpolate=100):
         return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
