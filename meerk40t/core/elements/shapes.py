@@ -640,8 +640,12 @@ def init_commands(kernel):
             channel("Requires a selected cutter polygon")
             return None
         data.sort(key=lambda n: n.emphasized_time)
-        outer_path = data[0].as_path()
-        inner_path = data[1].as_path()
+        try:
+            outer_path = data[0].as_path()
+            inner_path = data[1].as_path()
+        except AttributeError:
+            # elem text does not have an as_path() object
+            return "elements", data
         data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
