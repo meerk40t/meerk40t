@@ -1782,7 +1782,8 @@ class Geomstr:
             subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
 
         if not subject_polygons:
-            return
+            # No polygon has area of 0.
+            return 0
         idx = -1
         last_x = 0
         last_y = 0
