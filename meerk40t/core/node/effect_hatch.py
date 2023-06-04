@@ -1,4 +1,5 @@
 from copy import copy
+from math import sqrt
 
 import numpy as np
 
@@ -24,6 +25,9 @@ class HatchEffectNode(Node, Stroked):
         self.stroke_scale = False
         self._stroke_zero = None
         self.output = True
+        self.hatch_distance = None
+        self.hatch_angle = None
+        self.hatch_type = None
         Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
         self._formatter = (
             "{effect}{element_type} - {distance} {angle}"
@@ -39,13 +43,19 @@ class HatchEffectNode(Node, Stroked):
             self.label = "Hatch"
         else:
             self.label = label
-        self.hatch_type = "scanline"
+        if self.hatch_type is None:
+            self.hatch_type = "scanline"
         self.passes = 1
-        self.hatch_distance = "1mm"
-        self.hatch_angle = "0deg"
+        if self.hatch_distance is None:
+            self.hatch_distance = "1mm"
+        if self.hatch_angle is None:
+            self.hatch_angle = "0deg"
         self.settings = kwargs
         self._operands = list()
+        self._distance = None
+        self._angle = None
         self._effect = True
+        self.recalculate()
         for c in kwargs.get("operands", []):
             self._operands.append(copy(c))
 
@@ -60,11 +70,43 @@ class HatchEffectNode(Node, Stroked):
         nd["operands"] = copy(self._operands)
         return HatchEffectNode(**nd)
 
+    @property
+    def angle(self):
+        return self.hatch_angle
+
+    @angle.setter
+    def angle(self, value):
+        self.hatch_angle = value
+        self.recalculate()
+
+    @property
+    def distance(self):
+        return self.hatch_angle
+
+    @distance.setter
+    def distance(self, angle):
+        self.hatch_distance = angle
+        self.recalculate()
+
+    def recalculate(self):
+        h_dist = self.hatch_distance
+        h_angle = self.hatch_angle
+        distance_y = float(Length(h_dist))
+        if isinstance(h_angle, float):
+            self._angle = h_angle
+        else:
+            self._angle = Angle(h_angle).radians
+        transformed_vector = self.matrix.transform_vector([0, distance_y])
+        self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
+
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
+        factor = abs(sqrt(matrix.determinant))
+        self._distance *= factor
         for oper in self._operands:
             oper.matrix *= matrix
+
         self.stroke_scaled = False
         self.set_dirty_bounds()
 
@@ -145,22 +187,14 @@ class HatchEffectNode(Node, Stroked):
         Applies optimized scanline fill
         @return:
         """
-        h_dist = self.hatch_distance
-        h_angle = self.hatch_angle
-        distance_y = float(Length(h_dist))
-        if isinstance(h_angle, float):
-            angle = h_angle
-        else:
-            angle = Angle(h_angle).radians
-        transformed_vector = self.matrix.transform_vector([0, distance_y])
-        distance = abs(complex(transformed_vector[0], transformed_vector[1]))
-
+        if self._distance is None:
+            self.recalculate()
         path = outlines
-        path.rotate(angle)
+        path.rotate(self._angle)
         vm = Scanbeam(path)
         y_min, y_max = vm.event_range()
-        vm.valid_low = y_min - distance
-        vm.valid_high = y_max + distance
+        vm.valid_low = y_min - self._distance
+        vm.valid_high = y_max + self._distance
         vm.scanline_to(vm.valid_low)
 
         forward = True
@@ -168,7 +202,7 @@ class HatchEffectNode(Node, Stroked):
         if np.isinf(y_max):
             return geometry
         while vm.current_is_valid_range():
-            vm.scanline_to(vm.scanline + distance)
+            vm.scanline_to(vm.scanline + self._distance)
             y = vm.scanline
             actives = vm.actives()
             r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
@@ -183,7 +217,7 @@ class HatchEffectNode(Node, Stroked):
                     geometry.line(complex(right_segment_x, y), complex(left_segment_x, y))
                 geometry.end()
             forward = not forward
-        geometry.rotate(-angle)
+        geometry.rotate(-self._angle)
         return geometry
 
     def drop(self, drag_node, modify=True):
