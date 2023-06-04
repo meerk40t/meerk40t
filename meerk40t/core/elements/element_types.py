@@ -65,9 +65,7 @@ place_nodes = (
     "place point",
     "place current",
 )
-effect_nodes = (
-    "effect hatch",
-)
+effect_nodes = ("effect hatch",)
 elem_nodes = (
     "elem ellipse",
     "elem image",

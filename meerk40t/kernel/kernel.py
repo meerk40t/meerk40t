@@ -73,7 +73,7 @@ class Kernel(Settings):
         profile: str,
         ansi: bool = True,
         ignore_settings: bool = False,
-        delay: float = 0.05, # 20 ticks per second
+        delay: float = 0.05,  # 20 ticks per second
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.

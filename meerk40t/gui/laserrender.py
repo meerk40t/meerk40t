@@ -183,9 +183,13 @@ class LaserRender:
         self.color = wx.Colour()
 
     def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
-        if not self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha):
+        if not self.render_node(
+            node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+        ):
             for c in node.children:
-                self.render_tree(c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+                self.render_tree(
+                    c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+                )
 
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -227,9 +231,13 @@ class LaserRender:
         for node in _nodes:
             if node.type == "reference":
                 # Reference nodes should be drawn per-usual, recurse.
-                self.render_node(node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+                self.render_node(
+                    node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+                )
                 continue
-            self.render_node(node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha)
+            self.render_node(
+                node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+            )
 
     def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
@@ -255,12 +263,12 @@ class LaserRender:
         except AttributeError:
             # No known render method, we must define the function to draw nodes.
             if node.type in (
-                    "elem path",
-                    "elem ellipse",
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "effect hatch",
+                "elem path",
+                "elem ellipse",
+                "elem rect",
+                "elem line",
+                "elem polyline",
+                "effect hatch",
             ):
                 node.draw = self.draw_vector
                 node.make_cache = self.cache_geomstr

@@ -17,7 +17,7 @@ class HatchEffectNode(Node, Stroked):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False,  **kwargs):
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         self.matrix = None
         self.fill = None
         self.stroke = Color("Blue")
@@ -29,9 +29,7 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_angle = None
         self.hatch_type = None
         Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
-        self._formatter = (
-            "{effect}{element_type} - {distance} {angle}"
-        )
+        self._formatter = "{effect}{element_type} - {distance} {angle}"
         if self.matrix is None:
             self.matrix = Matrix()
 
@@ -212,9 +210,13 @@ class HatchEffectNode(Node, Stroked):
                 left_segment_x = vm.x_intercept(left_segment)
                 right_segment_x = vm.x_intercept(right_segment)
                 if forward:
-                    geometry.line(complex(left_segment_x, y), complex(right_segment_x, y))
+                    geometry.line(
+                        complex(left_segment_x, y), complex(right_segment_x, y)
+                    )
                 else:
-                    geometry.line(complex(right_segment_x, y), complex(left_segment_x, y))
+                    geometry.line(
+                        complex(right_segment_x, y), complex(left_segment_x, y)
+                    )
                 geometry.end()
             forward = not forward
         geometry.rotate(-self._angle)

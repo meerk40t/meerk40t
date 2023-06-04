@@ -777,7 +777,7 @@ class Geomstr:
         if isinstance(first_point, complex):
             on = False
             for i in range(1, len(points)):
-                if points[i-1] is not None and points[i] is not None:
+                if points[i - 1] is not None and points[i] is not None:
                     on = True
                     path.line(points[i - 1], points[i])
                 else:

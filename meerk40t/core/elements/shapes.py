@@ -232,15 +232,13 @@ def init_commands(kernel):
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
-        input_type=(None, "elements")
+        input_type=(None, "elements"),
     )
     def effect_hatch(command, data=None, **kwargs):
         """
         Add an effect hatch object
         """
-        node = self.elem_branch.add(
-            type="effect hatch", label="Hatch Effect"
-        )
+        node = self.elem_branch.add(type="effect hatch", label="Hatch Effect")
         self.set_emphasis([node])
         if data is not None:
             for n in data:
@@ -250,7 +248,7 @@ def init_commands(kernel):
     @self.console_command(
         "toggle",
         help=_("Toggles effect from being group to an effect."),
-        input_type="elements"
+        input_type="elements",
     )
     def effect_toggle(command, data=None, **kwargs):
         """
