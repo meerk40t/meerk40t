@@ -1765,11 +1765,8 @@ class Geomstr:
         @return:
         """
         if density is None:
-            interpolation = 100
-        else:
-            interpolation = density
-
-        poly = list(self.as_interpolated_points(interpolate=interpolation))
+            density = 100
+        poly = list(self.as_interpolated_points(interpolate=density))
         if not poly:
             # No polygon has area of 0.
             return 0
