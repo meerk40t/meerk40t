@@ -769,7 +769,7 @@ class DistributionPanel(wx.Panel):
                         last_y = pt.y
                 return this_length
 
-            def calc_slope(index):
+            def calc_angle(index):
                 try:
                     this_point = polypoints[index]
                 except IndexError:
@@ -809,11 +809,11 @@ class DistributionPanel(wx.Panel):
                 y = pt[1]
                 if len(polypoints) > 1:
                     if idxpt == 0:
-                        ptangle = calc_slope(idxpt + 1)
+                        pt_angle = calc_angle(idxpt + 1)
                     else:
-                        ptangle = calc_slope(idxpt)
+                        pt_angle = calc_angle(idxpt)
                 else:
-                    ptangle = 0
+                    pt_angle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
@@ -827,8 +827,8 @@ class DistributionPanel(wx.Panel):
                             fract = (mylen - lastlen) / (plen - lastlen)
                             x = lastx + fract * (x - lastx)
                             y = lasty + fract * (y - lasty)
-                    newpt = (x, y, ptangle)
-                    # print (f"I add: ({x:.1f}, {y:.1f}, {ptangle:.3f}) {ptangle/tau*360.0:.3f} ")
+                    newpt = (x, y, pt_angle)
+                    # print (f"I add: ({x:.1f}, {y:.1f}, {pt_angle:.3f}) {pt_angle/tau*360.0:.3f} ")
                     if newpt not in target:
                         # print ("..and added")
                         target.append(newpt)
@@ -838,7 +838,7 @@ class DistributionPanel(wx.Panel):
                 lastx = pt[0]
                 lasty = pt[1]
                 lastlen = pt[2]
-                last_angle = ptangle
+                last_angle = pt_angle
             # We may have slightly overshot, so in doubt add the last point
             if segadded < segcount:
                 # print ("I would add to it the last point...")
