@@ -1028,3 +1028,6 @@ class TestGeomstr(unittest.TestCase):
         self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
         gs = Geomstr.ellipse(100, 100, 0, 0)
         self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
+        # We add another equally sized circle to the same geometry.
+        gs.append(Geomstr.ellipse(100, 100, 1000, 1000))
+        self.assertAlmostEqual(gs.area(density=1000), tau * 100 * 100, delta=1)
