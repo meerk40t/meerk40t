@@ -1782,20 +1782,19 @@ class Geomstr:
         """
         if density is None:
             density = 100
-        poly = list(self.as_interpolated_points(interpolate=density))
-        if not poly:
-            # No polygon has area of 0.
-            return 0
-        p_array = np.array(poly)
-        original = len(p_array)
-        indexes0 = np.arange(0, original - 1)
-        indexes1 = indexes0 + 1
-        starts = p_array[indexes0]
-        ends = p_array[indexes1]
-        # use the numpy multiplication of all columns with n-1 of the previous
-        area_xy = np.sum(np.real(ends) * np.imag(starts))
-        area_yx = np.sum(np.imag(ends) * np.real(starts))
-        return 0.5 * abs(area_xy - area_yx)
+        area = 0
+        for poly in self.as_interpolated_segments(interpolate=density):
+            p_array = np.array(poly)
+            original = len(p_array)
+            indexes0 = np.arange(0, original - 1)
+            indexes1 = indexes0 + 1
+            starts = p_array[indexes0]
+            ends = p_array[indexes1]
+            # use the numpy multiplication of all columns with n-1 of the previous
+            area_xy = np.sum(np.real(ends) * np.imag(starts))
+            area_yx = np.sum(np.imag(ends) * np.real(starts))
+            area += 0.5 * abs(area_xy - area_yx)
+        return area
 
     def _cubic_length_via_quad(self, line):
         """
