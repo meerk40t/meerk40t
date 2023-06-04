@@ -683,7 +683,9 @@ def init_commands(kernel):
                 if bb is None:
                     # Node has no bounds or space, therefore no offset outline.
                     return "elements", data_out
-                p = Geomstr.rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]).as_path()
+                p = Geomstr.rect(
+                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
+                ).as_path()
 
             node_path = offset_path(
                 p,
