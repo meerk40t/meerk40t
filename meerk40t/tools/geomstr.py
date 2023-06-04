@@ -964,16 +964,13 @@ class Geomstr:
                 continue
             if seg_type == TYPE_QUAD:
                 quads = self._quad_position(e, np.linspace(0, 1, interpolate))
-                for q in quads[1:]:
-                    yield q
+                yield from quads[1:]
             elif seg_type == TYPE_CUBIC:
                 cubics = self._cubic_position(e, np.linspace(0, 1, interpolate))
-                for c in cubics[1:]:
-                    yield c
+                yield from cubics[1:]
             elif seg_type == TYPE_ARC:
                 arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
-                for a in arcs[1:]:
-                    yield a
+                yield from arcs[1:]
             elif seg_type == TYPE_END:
                 at_start = True
 
