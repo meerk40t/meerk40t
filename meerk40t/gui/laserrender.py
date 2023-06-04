@@ -264,6 +264,10 @@ class LaserRender:
             ):
                 node.draw = self.draw_vector
                 node.make_cache = self.cache_geomstr
+            elif node.type == "elem point":
+                node.draw = self.draw_point_node
+            elif node.type in place_nodes:
+                node.draw = self.draw_placement_node
             elif node.type == "elem image":
                 node.draw = self.draw_image_node
             elif node.type == "elem text":
