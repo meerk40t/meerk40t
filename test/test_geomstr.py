@@ -1023,8 +1023,8 @@ class TestGeomstr(unittest.TestCase):
 
     def test_geomstr_area(self):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
-        self.assertAlmostEqual(gs.area(), 100 * 100, delta=10)
-        # gs = Geomstr.circle(100, 0, 0)
-        # self.assertAlmostEqual(gs.area(), (tau / 2) * 100 * 100, delta=100)
+        self.assertAlmostEqual(gs.area(), 100 * 100)
+        gs = Geomstr.circle(100, 0, 0)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
         gs = Geomstr.ellipse(100, 100, 0, 0)
-        self.assertAlmostEqual(gs.area(), (tau / 2) * 100 * 100, delta=100)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
