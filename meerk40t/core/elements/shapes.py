@@ -248,13 +248,13 @@ def init_commands(kernel):
         node.focus()
 
     @self.console_command(
-        "toggle_effect",
+        "toggle",
         help=_("Toggles effect from being group to an effect."),
         input_type="elements"
     )
-    def effect_hatch(command, data=None, **kwargs):
+    def effect_toggle(command, data=None, **kwargs):
         """
-        Add an effect hatch object
+        Toggles effect hatch object
         """
         for n in data:
             if n.type.startswith("effect "):
