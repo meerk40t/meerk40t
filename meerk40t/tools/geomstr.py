@@ -330,7 +330,12 @@ class Scanbeam:
         self._low = float("inf")
         self._high = -float("inf")
 
+        self.valid_low = self._low
+        self.valid_high = self._high
+
         for i in range(self._geom.index):
+            if self._geom.segments[i][2] != TYPE_LINE:
+                continue
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
                 self._geom.segments[i][-1].real,
@@ -453,9 +458,14 @@ class Scanbeam:
 
         @return:
         """
+        if not self._sorted_edge_list:
+            return self._low, self._low
         y_min, index_min = self._sorted_edge_list[0]
         y_max, index_max = self._sorted_edge_list[-1]
-        return y_min, y_max
+        return y_min.imag, y_max.imag
+
+    def current_is_valid_range(self):
+        return self.valid_high >= self.scanline >= self.valid_low
 
     def _sort_actives(self):
         if not self._dirty_actives_sort:
@@ -762,11 +772,18 @@ class Geomstr:
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
         if isinstance(first_point, (list, tuple)):
-            points = [pts[0] + pts[1] * 1j for pts in points]
+            points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
+            on = False
             for i in range(1, len(points)):
-                path.line(points[i - 1], points[i])
+                if points[i-1] is not None and points[i] is not None:
+                    on = True
+                    path.line(points[i - 1], points[i])
+                else:
+                    if on:
+                        path.end()
+                    on = False
         return path
 
     @classmethod
@@ -957,6 +974,11 @@ class Geomstr:
                 arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
                 for a in arcs[1:]:
                     yield a
+            elif seg_type == TYPE_END:
+                at_start = True
+
+    def segmented(self, interpolate=100):
+        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -1760,7 +1782,8 @@ class Geomstr:
             subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
 
         if not subject_polygons:
-            return
+            # No polygon has area of 0.
+            return 0
         idx = -1
         last_x = 0
         last_y = 0
