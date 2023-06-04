@@ -680,6 +680,9 @@ def init_commands(kernel):
                 p = abs(node.as_path())
             else:
                 bb = node.bounds
+                if bb is None:
+                    # Node has no bounds or space, therefore no offset outline.
+                    return "elements", data_out
                 # TODO: Internal uses of Rect and Path.
                 r = Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1])
                 p = Path(r)
