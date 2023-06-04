@@ -1764,43 +1764,25 @@ class Geomstr:
         @param density: the interpolation density
         @return:
         """
-        path = self.as_path()
-
         if density is None:
             interpolation = 100
         else:
             interpolation = density
 
-        subject_polygons = []
-
-        from numpy import linspace
-
-        # TODO: This should run an npoints within geomstr for the segmentized values
-        for subpath in path.as_subpaths():
-            subj = Path(subpath)
-            subj.closed()
-            subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
-
-        if not subject_polygons:
+        poly = list(self.as_interpolated_points(interpolate=interpolation))
+        if not poly:
             # No polygon has area of 0.
             return 0
-        idx = -1
-        last_x = 0
-        last_y = 0
-        area_x_y = 0
-        area_y_x = 0
-        # TODO: This should use the numpy multiplication of all columns with n-1 of the previous
-        for pt in subject_polygons[0]:
-            idx += 1
-            if idx > 0:
-                # dx = pt.x - last_x
-                # dy = pt.y - last_y
-                area_x_y += last_x * pt[1]
-                area_y_x += last_y * pt[0]
-            last_x = pt[0]
-            last_y = pt[1]
-        this_area = 0.5 * abs(area_x_y - area_y_x)
-        return this_area
+        p_array = np.array(poly)
+        original = len(p_array)
+        indexes0 = np.arange(0, original - 1)
+        indexes1 = indexes0 + 1
+        starts = p_array[indexes0]
+        ends = p_array[indexes1]
+        # use the numpy multiplication of all columns with n-1 of the previous
+        area_xy = np.sum(np.real(ends) * np.imag(starts))
+        area_yx = np.sum(np.imag(ends) * np.real(starts))
+        return 0.5 * abs(area_xy - area_yx)
 
     def _cubic_length_via_quad(self, line):
         """
