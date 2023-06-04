@@ -656,18 +656,6 @@ class Elemental(Service):
         ly = float(lly)
         return lx * ly
 
-    def has_clipboard(self):
-        """
-        Returns the amount of elements in the clipboard
-        """
-        # TODO: this counts the clipboard not returns whether it exists
-        destination = self._clipboard_default
-        try:
-            num = len(self._clipboard[destination])
-        except (TypeError, KeyError):
-            num = 0
-        return num
-
     ### Operation tools
 
     def assign_operation(
