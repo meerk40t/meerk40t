@@ -936,6 +936,25 @@ class Geomstr:
             yield end
             at_start = False
 
+    def as_interpolated_segments(self, interpolate=100):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param interpolate:
+        @return:
+        """
+        segments = list()
+        for point in self.as_interpolated_points(interpolate=interpolate):
+            if point is None:
+                if segments:
+                    yield segments
+                    segments = list()
+            else:
+                segments.append(point)
+        if segments:
+            yield segments
+
     def as_interpolated_points(self, interpolate=100):
         """
         Interpolated points gives all the points for the geomstr data. The arc, quad, and cubic are interpolated.
