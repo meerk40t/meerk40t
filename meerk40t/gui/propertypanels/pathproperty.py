@@ -109,6 +109,8 @@ class PathPropertyPanel(ScrolledPanel):
             return False
         elif node.type.startswith("elem"):
             return True
+        elif node.type.startswith("effect"):
+            return True
         return False
 
     def covered_area(self, nodes):
