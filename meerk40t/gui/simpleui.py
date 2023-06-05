@@ -17,7 +17,7 @@ from ..core.exceptions import BadFileError
 _ = wx.GetTranslation
 
 
-class LoadButton(wx.Panel):
+class ProjectPanel(wx.Panel):
     name = "Project"
 
     def __init__(self, *args, context=None, **kwds):
@@ -199,7 +199,7 @@ class SimpleUI(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("simpleui/load", (LoadButton, None))
+        kernel.register("simpleui/load", (ProjectPanel, None))
 
         # from meerk40t.gui.wxmscene import MeerK40tScenePanel
         # kernel.register("simpleui/scene", MeerK40tScenePanel)
