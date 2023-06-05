@@ -1,37 +1,57 @@
 import wx
 from wx import aui
 
-from .icons import icons8_computer_support_50
+from .icons import icons8_computer_support_50, icons8_opened_folder_50
 from .mwindow import MWindow
 from ..core.exceptions import BadFileError
 
 _ = wx.GetTranslation
 
 
-class SimpleUI(MWindow):
-    def __init__(self, *args, **kwds):
-        super().__init__(598, 429, *args, **kwds)
+class LoadButton(wx.Panel):
+    name = "Project"
 
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
-        self.SetIcon(_icon)
-        # begin wxGlade: Navigation.__set_properties
-        self.SetTitle(_("MeerK40t"))
-        self.panel_instances = list()
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: Jog.__init__
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.SetSize((400, 300))
 
-        self.notebook_main = aui.AuiNotebook(
-            self,
-            -1,
-            style=aui.AUI_NB_TAB_EXTERNAL_MOVE
-            | aui.AUI_NB_SCROLL_BUTTONS
-            | aui.AUI_NB_TAB_SPLIT
-            | aui.AUI_NB_TAB_MOVE,
-        )
-        self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.notebook_main.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
+        self.button_load = wx.Button(self, wx.ID_ANY, _("Load Project"))
+
+        self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
+        sizer_buttons.Add(self.button_load, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(sizer_buttons)
+
         self.Layout()
-        self.on_build()
+
+        self.Bind(wx.EVT_BUTTON, self.on_load, self.button_load)
+        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
+        # end wxGlade
+
+    def on_load(self, event):  # wxGlade: MyFrame.<event_handler>
+        # This code should load just specific project files rather than all importable formats.
+        files = self.context.elements.load_types()
+        with wx.FileDialog(
+                self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+            pathname = fileDialog.GetPath()
+            self.clear_project()
+            self.load(pathname)
+        event.Skip()
+
+    def clear_project(self):
+        context = self.context
+        kernel = context.kernel
+        kernel.busyinfo.start(msg=_("Cleaning up..."))
+        context.elements.clear_all()
+        kernel.busyinfo.end()
 
     def on_drop_file(self, event):
         """
@@ -83,6 +103,31 @@ class SimpleUI(MWindow):
             dlg.ShowModal()
             dlg.Destroy()
         return False
+
+
+class SimpleUI(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(598, 429, *args, **kwds)
+
+        _icon = wx.NullIcon
+        _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        self.SetIcon(_icon)
+        # begin wxGlade: Navigation.__set_properties
+        self.SetTitle(_("MeerK40t"))
+        self.panel_instances = list()
+
+        self.notebook_main = aui.AuiNotebook(
+            self,
+            -1,
+            style=aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | aui.AUI_NB_SCROLL_BUTTONS
+            | aui.AUI_NB_TAB_SPLIT
+            | aui.AUI_NB_TAB_MOVE,
+        )
+        self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+
+        self.Layout()
+        self.on_build()
 
     def on_page_changed(self, event):
         event.Skip()
@@ -145,6 +190,8 @@ class SimpleUI(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        kernel.register("simpleui/load", (LoadButton, None))
+
         # from meerk40t.gui.wxmscene import MeerK40tScenePanel
         # kernel.register("simpleui/scene", MeerK40tScenePanel)
         from meerk40t.gui.laserpanel import LaserPanel
@@ -153,6 +200,7 @@ class SimpleUI(MWindow):
         kernel.register("simpleui/navigation", (Jog, {"icon_size": 20}))
         from meerk40t.gui.consolepanel import ConsolePanel
         kernel.register("simpleui/console", (ConsolePanel, None))
+
 
     def window_close(self):
         context = self.context
