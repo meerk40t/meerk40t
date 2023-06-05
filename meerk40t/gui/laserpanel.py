@@ -448,6 +448,7 @@ class LaserPanel(wx.Panel):
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
+        self.context.setting(bool, "laserpane_hold", False)
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
         else:
