@@ -46,6 +46,9 @@ parser.add_argument(
     "-Z", "--gui-suppress", action="store_true", help="completely suppress gui"
 )
 parser.add_argument(
+    "-w", "--simpleui", action="store_true", help="use simple rather than regular UI"
+)
+parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"
 )
 parser.add_argument("-c", "--console", action="store_true", help="start as console")
