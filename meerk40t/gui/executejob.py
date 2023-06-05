@@ -182,8 +182,6 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def pane_show(self):
-        # self.context.setting(bool, "opt_rasters_split", True)
-        # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:

@@ -15,8 +15,8 @@ from meerk40t.svgelements import (
     Path,
     Point,
     QuadraticBezier,
-    Rect,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 """
 The following routines deal with the offset of an SVG path at a given distance D.
@@ -683,9 +683,9 @@ def init_commands(kernel):
                 if bb is None:
                     # Node has no bounds or space, therefore no offset outline.
                     return "elements", data_out
-                # TODO: Internal uses of Rect and Path.
-                r = Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1])
-                p = Path(r)
+                p = Geomstr.rect(
+                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
+                ).as_path()
 
             node_path = offset_path(
                 p,

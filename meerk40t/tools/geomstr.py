@@ -936,6 +936,25 @@ class Geomstr:
             yield end
             at_start = False
 
+    def as_interpolated_segments(self, interpolate=100):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param interpolate:
+        @return:
+        """
+        segments = list()
+        for point in self.as_interpolated_points(interpolate=interpolate):
+            if point is None:
+                if segments:
+                    yield segments
+                    segments = list()
+            else:
+                segments.append(point)
+        if segments:
+            yield segments
+
     def as_interpolated_points(self, interpolate=100):
         """
         Interpolated points gives all the points for the geomstr data. The arc, quad, and cubic are interpolated.
@@ -964,16 +983,13 @@ class Geomstr:
                 continue
             if seg_type == TYPE_QUAD:
                 quads = self._quad_position(e, np.linspace(0, 1, interpolate))
-                for q in quads[1:]:
-                    yield q
+                yield from quads[1:]
             elif seg_type == TYPE_CUBIC:
                 cubics = self._cubic_position(e, np.linspace(0, 1, interpolate))
-                for c in cubics[1:]:
-                    yield c
+                yield from cubics[1:]
             elif seg_type == TYPE_ARC:
                 arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
-                for a in arcs[1:]:
-                    yield a
+                yield from arcs[1:]
             elif seg_type == TYPE_END:
                 at_start = True
 
@@ -1764,43 +1780,21 @@ class Geomstr:
         @param density: the interpolation density
         @return:
         """
-        path = self.as_path()
-
         if density is None:
-            interpolation = 100
-        else:
-            interpolation = density
-
-        subject_polygons = []
-
-        from numpy import linspace
-
-        # TODO: This should run an npoints within geomstr for the segmentized values
-        for subpath in path.as_subpaths():
-            subj = Path(subpath)
-            subj.closed()
-            subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
-
-        if not subject_polygons:
-            # No polygon has area of 0.
-            return 0
-        idx = -1
-        last_x = 0
-        last_y = 0
-        area_x_y = 0
-        area_y_x = 0
-        # TODO: This should use the numpy multiplication of all columns with n-1 of the previous
-        for pt in subject_polygons[0]:
-            idx += 1
-            if idx > 0:
-                # dx = pt.x - last_x
-                # dy = pt.y - last_y
-                area_x_y += last_x * pt[1]
-                area_y_x += last_y * pt[0]
-            last_x = pt[0]
-            last_y = pt[1]
-        this_area = 0.5 * abs(area_x_y - area_y_x)
-        return this_area
+            density = 100
+        area = 0
+        for poly in self.as_interpolated_segments(interpolate=density):
+            p_array = np.array(poly)
+            original = len(p_array)
+            indexes0 = np.arange(0, original - 1)
+            indexes1 = indexes0 + 1
+            starts = p_array[indexes0]
+            ends = p_array[indexes1]
+            # use the numpy multiplication of all columns with n-1 of the previous
+            area_xy = np.sum(np.real(ends) * np.imag(starts))
+            area_yx = np.sum(np.imag(ends) * np.real(starts))
+            area += 0.5 * abs(area_xy - area_yx)
+        return area
 
     def _cubic_length_via_quad(self, line):
         """
