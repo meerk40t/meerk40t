@@ -824,6 +824,8 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        context.setting(float, "button_repeat", 0.5)
+        context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
