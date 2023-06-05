@@ -104,6 +104,9 @@ class SimpleUI(MWindow):
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
 
+    def window_menu(self):
+        return False
+
     @staticmethod
     def submenu():
         return "Interface", "SimpleUI"
