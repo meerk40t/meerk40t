@@ -88,8 +88,12 @@ class SimpleUI(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        from meerk40t.gui.laserpanel import LaserPanel
+        kernel.register("simpleui/laserpanel", LaserPanel)
         from meerk40t.gui.navigationpanels import Jog
         kernel.register("simpleui/navigation", Jog)
+        from meerk40t.gui.consolepanel import ConsolePanel
+        kernel.register("simpleui/console", ConsolePanel)
 
     def window_close(self):
         for p in self.panel_instances:
