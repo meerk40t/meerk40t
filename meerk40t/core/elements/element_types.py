@@ -5,35 +5,6 @@ and listing all the nodes a tree-op would apply to can result in a very long lis
 These are those long list.
 """
 
-from meerk40t.svgelements import (
-    Circle,
-    Ellipse,
-    Path,
-    Point,
-    Polygon,
-    Polyline,
-    Rect,
-    SimpleLine,
-    SVGImage,
-)
-
-
-def get_type_from_element(element):
-    if isinstance(element, Path):
-        return "elem path"
-    elif isinstance(element, SVGImage):
-        return "elem image"
-    elif isinstance(element, Rect):
-        return "elem rect"
-    elif isinstance(element, SimpleLine):
-        return "elem line"
-    elif isinstance(element, (Ellipse, Circle)):
-        return "elem ellipse"
-    elif isinstance(element, (Polygon, Polyline)):
-        return "elem polyline"
-    elif isinstance(element, Point):
-        return "elem point"
-
 
 non_structural_nodes = (
     "op cut",
@@ -42,6 +13,7 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
+    "effect hatch",
     "util console",
     "util wait",
     "util home",
@@ -93,27 +65,28 @@ place_nodes = (
     "place point",
     "place current",
 )
+effect_nodes = ("effect hatch",)
 elem_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
-    "elem geomstr",
     "elem point",
     "elem polyline",
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
 )
 elem_group_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
-    "elem geomstr",
     "elem point",
     "elem polyline",
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
     "group",
     "file",
 )
@@ -121,11 +94,11 @@ elem_ref_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
-    "elem geomstr",
     "elem point",
     "elem polyline",
     "elem rect",
     "elem line",
     "elem text",
+    "effect hatch",
     "reference",
 )

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.9.3"
+SVGELEMENTS_VERSION = "1.9.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -570,12 +570,12 @@ class Length(object):
 
     Length class is lazy when solving values. Several conversion values are unknown by default and length simply
     stores that ambiguity. So we can have a length of 50% and without calling .value(relative_length=3000) it will
-    simply store as 50%. Likewise you can have absolute values like 30cm or 20in which are not knowable in pixels
+    simply store as 50%. Likewise, you can have absolute values like 30cm or 20in which are not knowable in pixels
     unless a PPI value is supplied. We can say .value(relative_length=30cm, PPI=96) and solve this for a value like
     12%. We can also convert values between knowable lengths. So 30cm is 300mm regardless whether we know how to
     convert this to pixels. 0% is 0 in any units or relative values. We can convert pixels to pc and pt without issue.
-    We can convert vh, vw, vmax, vmin values if we know viewbox values. We can convert em values if we know the font_size.
-    We can add values together if they are convertible units e.g. Length("20in") + Length("3cm").
+    We can convert vh, vw, vmax, vmin values if we know viewbox values. We can convert em values if we know the
+    font_size. We can add values together if they are convertible units e.g. Length("20in") + Length("3cm").
 
     If .value() cannot solve for the value with the given information then it will return a Length value. If it can
     be solved it will return a float.
@@ -846,14 +846,16 @@ class Length(object):
         if self.amount == other.amount and self.units == other.units:
             return True
         if s is not None:
-            o = self.in_pixels()
-            if abs(s - o) <= ERROR:
-                return True
+            o = other.in_pixels()
+            if o is not None:
+                if abs(s - o) <= ERROR:
+                    return True
         s = self.in_inches()
         if s is not None:
-            o = self.in_inches()
-            if abs(s - o) <= ERROR:
-                return True
+            o = other.in_inches()
+            if o is not None:
+                if abs(s - o) <= ERROR:
+                    return True
         return False
 
     @property
@@ -2032,7 +2034,7 @@ class Point:
         self.y = y
 
     def __key(self):
-        return (self.x, self.y)
+        return self.x, self.y
 
     def __hash__(self):
         return hash(self.__key())
@@ -2045,7 +2047,13 @@ class Point:
                 other = Point(other)
         except Exception:
             return NotImplemented
-
+        if (
+            isinstance(self.x, Length)
+            or isinstance(self.y, Length)
+            or isinstance(other.x, Length)
+            or isinstance(other.x, Length)
+        ):
+            return self.x == other.x and self.y == other.y
         return abs(self.x - other.x) <= ERROR and abs(self.y - other.y) <= ERROR
 
     def __ne__(self, other):
@@ -3001,6 +3009,28 @@ class Matrix:
         return v
 
     @classmethod
+    def affine(cls, p1, p2, p4):
+        """
+        Create a matrix which transforms these three ordered points to the clockwise points of the unit-square.
+
+        @param p1:
+        @param p2:
+        @param p4:
+        @return:
+        """
+        x1, y1 = p1
+        x2, y2 = p2
+        x4, y4 = p4
+
+        a = x4 - x1
+        b = x2 - x1
+        c = x1
+        d = y4 - y1
+        e = y2 - y1
+        f = y1
+        return cls(a, d, b, e, c, f)
+
+    @classmethod
     def perspective(cls, p1, p2, p3, p4):
         """
         Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
@@ -3019,38 +3049,32 @@ class Matrix:
         x3, y3 = p3
         x4, y4 = p4
 
-        j = x1 - x2 - x3 + x4
-        k = -x1 - x2 + x3 + x4
-        l = -x1 + x2 - x3 + x4
-        m = y1 - y2 - y3 + y4
-        n = -y1 - y2 + y3 + y4
-        o = -y1 + y2 - y3 + y4
-        i = 1.0
-
+        i = 1
         try:
-            h = (j * o - m * l) * i / (m * k - j * n)
+            j = (y1 - y2 + y3 - y4) / (y2 - y3)
+            k = (x1 - x2 + x3 - x4) / (x4 - x3)
+            m = (y4 - y3) / (y2 - y3)
+            n = (x2 - x3) / (x4 - x3)
+
+            h = i * (j - k * m) / (1 - m * n)
+            g = i * (k - j * n) / (1 - m * n)
         except ZeroDivisionError:
-            h = 0
+            h = 0.0
+            g = 0.0
 
-        try:
-            g = k * h + l * i
-        except ZeroDivisionError:
-            g = 0
+        c = x1 * i
+        f = y1 * i
+        a = x4 * (g + i) - x1 * i
+        b = x2 * (h + i) - x1 * i
+        d = y4 * (g + i) - y1 * i
+        e = y2 * (h + i) - y1 * i
 
-        f = (y1 * (g + h + i) + y3 * (-g - h + i)) / 2.0
-        e = (y1 * (g + h + i) - y2 * (g - h + i)) / 2.0
-        d = y1 * (g + h + i) - f - e
-        c = (x1 * (g + h + i) + x3 * (-g - h + i)) / 2.0
-        b = (x1 * (g + h + i) - x2 * (g - h + i)) / 2.0
-        a = x1 * (g + h + i) - c - b
-
-        matrix = Matrix(-2, 0, 0, -2, 1, 1)
-        return matrix * cls(a, d, b, e, c, f)
+        return cls(a, d, b, e, c, f)
 
     @classmethod
     def map(cls, p1, p2, p3, p4, p5, p6, p7, p8):
         """
-        Create a matrix which transforms these four ordered points to the clockwise points of the unit-square.
+        Create a matrix which transforms these four ordered points to equivalent points for the other 4 ordered points.
 
         If G and H are very close to 0, this is an affine transformation. If they are not, then the perspective
         transform requires g and h, but we do not support non-affine transformations.
@@ -3063,6 +3087,24 @@ class Matrix:
         """
         m1 = Matrix.perspective(p1, p2, p3, p4)
         m2 = Matrix.perspective(p5, p6, p7, p8)
+        return cls(~m1 * m2)
+
+    @classmethod
+    def map3(cls, p1, p2, p4, p5, p6, p8):
+        """
+        Create a matrix which transforms these three ordered points to map to 3 other ordered points. This does not
+        include p3 or p7 for the ordered squares.
+
+        @param p1:
+        @param p2:
+        @param p4:
+        @param p5:
+        @param p6:
+        @param p8:
+        @return:
+        """
+        m1 = Matrix.affine(p1, p2, p4)
+        m2 = Matrix.affine(p5, p6, p8)
         return cls(~m1 * m2)
 
     @classmethod
@@ -3425,8 +3467,8 @@ class SVGElement(object):
         self.values[key] = value
         return self
 
-    def write_xml(self, f):
-        write(self, f)
+    def write_xml(self, f, **kwargs):
+        write(self, f, **kwargs)
 
     def string_xml(self):
         return tostring(self)
@@ -3759,6 +3801,7 @@ class Shape(SVGElement, GraphicObject, Transformable):
             position_subset = (segment_start <= positions) & (positions < segment_end)
             v0 = positions[position_subset]
             if not len(v0):
+                segment_start = segment_end
                 continue  # Nothing matched.
             d = segment_end - segment_start
             if d == 0:  # This segment is 0 length.
@@ -3952,7 +3995,7 @@ class PathSegment:
 
     These segments define a 1:1 relationship with the path_d or path data attribute, denoted in
     SVG by the 'd' attribute. These are moveto, closepath, lineto, and the curves which are cubic
-    bezier curves, quadratic bezier curves, and elliptical arc. These are classed as Move, Close,
+    Bézier curves, quadratic Bézier curves, and elliptical arc. These are classed as Move, Close,
     Line, CubicBezier, QuadraticBezier, and Arc. And in path_d are denoted as M, Z, L, C, Q, A.
 
     There are lowercase versions of these commands. And for C, and Q there are S and T which are
@@ -3960,7 +4003,7 @@ class PathSegment:
     versions of the line command.
 
     The major difference between paths in 1.1 and 2.0 is the use of Z to truncate a command to close.
-    "M0,0C 0,100 100,0 z is valid in 2.0 since the last z replaces the 0,0. These are read by
+    "M0,0C 0,100 100,0 z" is valid in 2.0 since the last z replaces the 0,0. These are read by
     svg.elements but they are not written.
     """
 
@@ -4442,7 +4485,7 @@ class Linear(PathSegment):
 
 class Close(Linear):
     """Represents close commands. If this exists at the end of the shape then the shape is closed.
-    the methodology of a single flag close fails in a couple ways. You can have multi-part shapes
+    the methodology of a single flag close fails in a couple ways. You can have multipart shapes
     which can close or not close several times.
     """
 
@@ -4562,7 +4605,7 @@ class QuadraticBezier(Curve):
 
     def bbox(self):
         """
-        Returns the bounding box for the quadratic bezier curve.
+        Returns the bounding box for the quadratic Bézier curve.
         """
         n = self.start.x - self.control.x
         d = self.start.x - 2 * self.control.x + self.end.x
@@ -4759,7 +4802,7 @@ class CubicBezier(Curve):
             return [Point(*_compute_point(position)) for position in positions]
 
     def bbox(self):
-        """returns the tight fitting bounding box of the bezier curve.
+        """returns the tight-fitting bounding box of the Bézier curve.
         Code by:
         https://github.com/mathandy/svgpathtools
         """
@@ -5554,7 +5597,7 @@ class Arc(Curve):
     def point_at_angle(self, angle):
         """
         find the point on the ellipse from the center at the given angle.
-        Note: For non-circular arcs this is different than point(t).
+        Note: For non-circular arcs this is different from point(t).
 
         :param angle: angle from center to find point
         :return: point found
@@ -5625,7 +5668,7 @@ class Arc(Curve):
         return Ellipse(self.center, self.rx, self.ry, self.get_rotation())
 
     def bbox(self):
-        """Find the bounding box of a arc.
+        """Find the bounding box of an arc.
         Code from: https://github.com/mathandy/svgpathtools
         """
         if self.sweep == 0:
@@ -5742,7 +5785,7 @@ class Path(Shape, MutableSequence):
                 self._segments.append(s)
         if SVG_ATTR_DATA in self.values:
             # Not sure what the purpose of pathd_loaded is.
-            # It is only set and checked here and you cannot have "d" attribute more than once anyway
+            # It is only set and checked here, and you cannot have "d" attribute more than once anyway
             if not self.values.get("pathd_loaded", False):
                 self.parse(self.values[SVG_ATTR_DATA])
                 self.values["pathd_loaded"] = True
@@ -5802,7 +5845,7 @@ class Path(Shape, MutableSequence):
         Connection 0 is the connection between getitem(0) and getitem(1)
 
         prefer_second is for those cases where failing the connection requires replacing
-        a existing value. It will prefer the authority of right side, second value.
+        an existing value. It will prefer the authority of right side, second value.
         """
         if index < 0 or index + 1 >= len(self._segments):
             return  # This connection doesn't exist.
@@ -6309,7 +6352,7 @@ class Path(Shape, MutableSequence):
         line to operation just before any non-zero length close.
 
         This is helpful because for some operations like reverse() because the
-        close must located at the very end of the path sequence. But, if it's
+        close must be located at the very end of the path sequence. But, if it's
         in effect a line-to and close, the line-to would need to start the sequence.
 
         But, for some operations this won't matter since it will still result in
@@ -7031,7 +7074,7 @@ class _RoundShape(Shape):
 
     def unit_matrix(self):
         """
-        return the unit matrix which could would transform the unit circle into this ellipse.
+        return the unit matrix which would transform the unit circle into this ellipse.
 
         One of the valid parameterizations for ellipses is that they are all affine transforms of the unit circle.
         This provides exactly such a matrix.
@@ -7087,7 +7130,7 @@ class _RoundShape(Shape):
     def point_at_angle(self, angle):
         """
         find the point on the ellipse from the center at the given angle.
-        Note: For non-circular arcs this is different than point(t).
+        Note: For non-circular arcs this is different from point(t).
 
         :param angle: angle from center to find point
         :return: point found
@@ -7699,7 +7742,7 @@ class Subpath:
 
     def d(self, relative=None, smooth=None):
         segments = self._path._segments[self._start : self._end + 1]
-        return Path.svg_d(segments, relative=relative, smooth=None)
+        return Path.svg_d(segments, relative=relative, smooth=smooth)
 
     def _reverse_segments(self, start, end):
         """Reverses segments between the given indexes in the subpath space."""
@@ -7830,7 +7873,7 @@ class Group(SVGElement, Transformable, list):
         if len(boxes) == 0:
             return None
         (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
-        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+        return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -7945,7 +7988,7 @@ class Use(SVGElement, Transformable, list):
         if len(boxes) == 0:
             return None
         (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
-        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+        return min(xmins), min(ymins), max(xmaxs), max(ymaxs)
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -9097,7 +9140,7 @@ class SVG(Group):
                     and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
-                    continue  # If the attributes flags our values to display=none, stop rendering.
+                    continue  # If the attributes flag our values to display=none, stop rendering.
                 if SVG_NAME_TAG == tag:
                     # The ordering for transformations on the SVG object are:
                     # explicit transform, parent transforms, attribute transforms, viewport transforms
@@ -9352,18 +9395,26 @@ def tostring(node):
     return tostring(_write_node(node), encoding="unicode")
 
 
-def write(node, f, pretty=True):
+def write(node, f, pretty=True, **kwargs):
+    """
+    Gets the write node and writes to the ElementTree.write() function, all options in Element.write() are passed
+    along via this method. encoding, xml_declaration, short_empty_elements, etc.
+    """
     from xml.etree.ElementTree import ElementTree
 
     root = _write_node(node)
     if pretty:
         _pretty_print(root)
     tree = ElementTree(root)
-    if f.lower().endswith("svgz"):
-        import gzip
+    try:
+        if f.lower().endswith("svgz"):
+            import gzip
 
-        f = gzip.open(f, "wb")
-    tree.write(f)
+            f = gzip.open(f, "wb")
+    except AttributeError:
+        # might be a pathlib.Path()
+        pass
+    tree.write(f, **kwargs)
 
 
 def _write_node(node, xml_tree=None, viewport_transform=None):
@@ -9412,13 +9463,15 @@ def _write_node(node, xml_tree=None, viewport_transform=None):
             xml_tree.set(SVG_ATTR_HEIGHT, str(node.height))
         if node.viewbox:
             xml_tree.set(SVG_ATTR_VIEWBOX, str(node.viewbox))
-        vt = node.viewbox_transform
-        if vt:
-            m = Matrix(vt)
-            m.inverse()
-            vt = m
-        else:
-            vt = None
+        vt = None
+        try:
+            vt = node.viewbox_transform
+            if vt:
+                m = Matrix(vt)
+                m.inverse()
+                vt = m
+        except ValueError:
+            pass
         for child in node:
             _write_node(child, xml_tree, vt)
     elif isinstance(node, Ellipse):

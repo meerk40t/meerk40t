@@ -591,7 +591,7 @@ class WordlistPanel(wx.Panel):
                 self.cbo_Index.Append(str(i))
             self.cbo_Index.SetValue("0")
         self.cbo_Index.Enable(True)
-        # Lets refresh the scene to acknowledge new changes
+        # Let's refresh the scene to acknowledge new changes
         self.context.signal("refresh_scene", "Scene")
 
     def edit_message(self, text):
@@ -906,4 +906,4 @@ class WordlistEditor(MWindow):
     @staticmethod
     def submenu():
         # Suppress to avoid double menu-appearance
-        return ("Editing", "Variables + Wordlists", True)
+        return "Editing", "Variables + Wordlists", True

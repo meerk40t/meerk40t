@@ -7,7 +7,7 @@ from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Color, Path
+from meerk40t.svgelements import Color, Path, Polyline
 
 
 class HatchOpNode(Node, Parameters):
@@ -156,31 +156,18 @@ class HatchOpNode(Node, Parameters):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
     def valid_node_for_reference(self, node):
-        def is_valid_closed_path(p):
-            valid = False
-            if len(p) != 0:
-                # Is it a closed path?
-                if p[-1].d().lower() == "z":
-                    valid = True
-            return valid
-
         # First check type per se
         if node.type not in self._allowed_elements_dnd:
             return False
         # even then it might not be eligible
-        result = False
         if hasattr(node, "path"):
-            if is_valid_closed_path(node.path):
-                result = True
+            # is_valid_closed_path(node.geometry):
+            return True
         elif node.type == "elem polyline":
-            # Are they a closed path?
-            obj = Path(node.shape)
-            if is_valid_closed_path(obj):
-                result = True
+            return node.geometry.is_closed()
         elif node.type in ("elem rect", "elem ellipse"):
-            result = True
-
-        return result
+            return True
+        return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
@@ -288,7 +275,7 @@ class HatchOpNode(Node, Parameters):
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan:
         @return:
         """
         if isinstance(self.speed, str):
@@ -306,16 +293,11 @@ class HatchOpNode(Node, Parameters):
             outlines = list()
             for node in self.children:
                 try:
-                    path = node.as_path()
+                    path = node.as_geometry()
                 except AttributeError:
                     continue
-                path.approximate_arcs_with_cubics()
-                for subpath in path.as_subpaths():
-                    if len(subpath) == 0:
-                        continue
-                    sp = Path(subpath)
-                    points = [sp.point(i / 100.0, error=1e-4) for i in range(101)]
-                    outlines.append(points)
+                outlines.extend(path.as_interpolated_points(interpolate=100))
+                outlines.append(None)
             self.remove_all_children()
             fills = list(context.match("hatch", suffix=True))
             penbox_pass = self.settings.get("penbox_pass")

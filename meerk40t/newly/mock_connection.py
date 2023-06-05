@@ -5,7 +5,6 @@ The mock connection is used for debug and research purposes. And simply prints t
 any hardware.
 """
 
-import random
 import struct
 
 

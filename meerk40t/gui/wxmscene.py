@@ -93,6 +93,7 @@ class MeerK40tScenePanel(wx.Panel):
             scene_name="Scene" if index is None else f"Scene{index}",
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
+        self.scene.start_scene()
         self.widget_scene = self.scene.scene
 
         self.tool_active = False
@@ -1141,14 +1142,14 @@ class MeerK40tScenePanel(wx.Panel):
         self.request_refresh(origin)
 
     @signal_listener("magnet-attraction")
-    def on_magnet(self, origin, strength, *args):
+    def on_magnet_attract(self, origin, strength, *args):
         strength = int(strength)
         if strength < 0:
             strength = 0
         self.magnet_attraction = strength
 
     @signal_listener("magnet_gen")
-    def on_magnet(self, origin, *args):
+    def on_magnet_generate(self, origin, *args):
         candidate = args[0]
         if candidate is None:
             return

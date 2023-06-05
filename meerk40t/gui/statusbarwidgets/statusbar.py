@@ -27,7 +27,7 @@ class CustomStatusBar(wx.StatusBar):
         for __ in range(self.panelct):
             # Linux wxPython has a fundamental flaw in the treatment of
             # small bitmap buttons. It reserves an extent around the
-            # bitmap and tries to reduce the size (which leads to a lot of
+            # bitmap and tries to reduce the size, which leads to a lot of
             # unwanted messages plus some very unwanted X-Windows crash...
             btn = wx.StaticBitmap(
                 self,
@@ -65,7 +65,7 @@ class CustomStatusBar(wx.StatusBar):
             super().SetStatusText(self.status_text[idx], idx)
 
     def SetStatusText(self, message="", panel=0):
-        if panel >= 0 and panel < self.panelct:
+        if 0 <= panel < self.panelct:
             self.status_text[panel] = message
         # Signal it onwards....
         self.Signal("statusmsg", message, panel)
@@ -214,7 +214,7 @@ class CustomStatusBar(wx.StatusBar):
                             self.activesizer[pidx] = key
                         if (
                             self.activesizer[pidx] != key
-                        ):  # its not the default, so hide
+                        ):  # it's not the default, so hide
                             entry.Show(False)
                     else:  # not choosable --> hide:
                         entry.Show(False)

@@ -172,4 +172,4 @@ class BalorController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "Balor-Controller")
+        return "Device-Control", "Balor-Controller"

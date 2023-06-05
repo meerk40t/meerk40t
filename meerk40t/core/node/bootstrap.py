@@ -3,8 +3,8 @@ from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
 from meerk40t.core.node.cutnode import CutNode
+from meerk40t.core.node.effect_hatch import HatchEffectNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
-from meerk40t.core.node.elem_geomstr import GeomstrNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_line import LineNode
 from meerk40t.core.node.elem_path import PathNode
@@ -59,7 +59,6 @@ defaults = {
     "elem polyline": {},
     "elem image": {"dpi": 500},
     "elem text": {},
-    "elem geomstr": {},
     "reference": {},
     "cutcode": {},
     "branch ops": {},
@@ -76,6 +75,7 @@ bootstrap = {
     "op image": ImageOpNode,
     "op dots": DotsOpNode,
     "op hatch": HatchOpNode,
+    "effect hatch": HatchEffectNode,
     "util console": ConsoleOperation,
     "util wait": WaitOperation,
     "util home": HomeOperation,
@@ -96,7 +96,6 @@ bootstrap = {
     "elem polyline": PolylineNode,
     "elem image": ImageNode,
     "elem text": TextNode,
-    "elem geomstr": GeomstrNode,
     "reference": ReferenceNode,
     "cutcode": CutNode,
     "branch ops": BranchOperationsNode,

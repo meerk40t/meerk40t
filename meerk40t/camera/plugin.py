@@ -85,12 +85,38 @@ def plugin(kernel, lifecycle=None):
             "uri", help="Set camera uri", output_type="camera", input_type="camera"
         )
         def camera_uri(
+            _,
+            channel,
             data=None,
             uri=None,
             **kwargs,
         ):
-            if uri is not None:
+            if uri is None:
+                channel(_("Known camera URIs:"))
+                camera_context = kernel.get_context("camera")
+                camera_context.setting(list, "uris", [])
+                for i, uri in enumerate(camera_context.uris):
+                    channel(f"{i}: {uri}")
+            else:
                 data.set_uri(uri)
+            return "camera", data
+
+        @kernel.console_command(
+            "info", help="list camera info", output_type="camera", input_type="camera"
+        )
+        def camera_info(
+            _,
+            channel,
+            data=None,
+            **kwargs,
+        ):
+            channel(_("Camera Information:"))
+            camera_context = kernel.get_context("camera")
+            for d in camera_context.derivable():
+                if d == "camera":
+                    continue
+                context = kernel.get_context(d)
+                channel(f"{d}: {getattr(context, 'uri', '---')}")
             return "camera", data
 
         @kernel.console_command(
@@ -285,3 +311,93 @@ def plugin(kernel, lifecycle=None):
                     channel(f"{i}: {str(prop)} -- {str(v)}")
                 except:
                     pass
+
+        @kernel.console_option("quit", "q", type=bool, action="store_true")
+        @kernel.console_argument("port", type=int, help="port to start server on")
+        @kernel.console_command("server", input_type="camera")
+        def camera_server(_, channel, data, port=None, quit=False, **kwgs):
+            if port is None:
+                channel(_("MJPEG-SERVER: Listing Servers."))
+                for key, value in kernel.threads.items():
+                    if key.startswith("cam-server"):
+                        channel(key)
+                channel(_("MJPEG-SERVER: End of List"))
+                return
+            if quit:
+                thread = kernel.threads.get(f"cam-server{port}")
+                if not thread:
+                    channel(_("MJPEG-SERVER: No server found."))
+                    return
+                channel(_("MJPEG-SERVER: Instructing Server to Close"))
+                thread.stop()
+                return
+
+            import time
+            from http.server import BaseHTTPRequestHandler, HTTPServer
+            from socketserver import ThreadingMixIn
+
+            server = None
+
+            class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+                """Handle requests in a separate thread."""
+
+            class MJPEGHandler(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    channel(_("MJPEG-SERVER: New Connection"))
+
+                    import cv2
+
+                    # Set the response code to 200 (OK)
+                    self.send_response(200)
+
+                    # Set the content type to multipart/x-mixed-replace
+                    # This tells the browser to treat the content as a stream and display it as it is received
+                    self.send_header(
+                        "Content-type",
+                        "multipart/x-mixed-replace; boundary=--mkboundary",
+                    )
+                    self.end_headers()
+
+                    while not server.shutting_down:
+                        frame = data.get_frame()
+                        if frame is None:
+                            time.sleep(1)
+                            continue
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        is_success, buffer = cv2.imencode(".jpg", frame)
+
+                        try:
+                            # Send the JPEG image to the browser with the appropriate HTTP headers
+                            self.wfile.write(b"--mkboundary\r\n")
+                            self.send_header("Content-type", "image/jpeg")
+                            self.send_header("Content-length", len(buffer))
+                            self.end_headers()
+                            self.wfile.write(buffer)
+                            self.wfile.write(b"\r\n")
+                        except (
+                            ConnectionResetError,
+                            ConnectionAbortedError,
+                            BrokenPipeError,
+                        ) as e:
+                            channel(_("MJPEG-SERVER: Connection aborted"))
+                            channel(str(e))
+                            break
+
+                        # Pause for a short time before sending the next image
+                        time.sleep(0.1)
+                    channel(_("MJPEG-SERVER: Connection closing"))
+
+            def do_shutdown(*args):
+                server.shutting_down = True
+                server.shutdown()
+                server.server_close()
+                channel(_("MJPEG-SERVER: Closed"))
+
+            server = ThreadedHTTPServer(("", port), MJPEGHandler)
+            server.shutting_down = False
+            thread = kernel.threaded(
+                server.serve_forever, thread_name=f"cam-server{port}", daemon=True
+            )
+            thread.stop = do_shutdown
+
+            channel(_("MJPEG-SERVER: Launching"))

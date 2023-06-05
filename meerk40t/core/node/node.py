@@ -64,7 +64,7 @@ class Node:
 
     Type is a string value of the given node type and is used to delineate nodes.
     Label is a string value that will often describe the node.
-    Id is a string value, during saving, we make sure this is a unique id.
+    `Id` is a string value, during saving, we make sure this is a unique id.
 
 
     Node bounds exist, but not all nodes are have geometric bounds.
@@ -199,22 +199,21 @@ class Node:
                 return True
             else:
                 return self._is_visible
-        else:
-            if hasattr(self, "references"):
-                valid = False
-                flag = False
-                for n in self.references:
-                    if hasattr(n.parent, "output"):
-                        valid = True
-                        if n.parent.output is None or n.parent.output:
-                            flag = True
-                            break
-                        if n.parent.is_visible:
-                            flag = True
-                            break
-                # If there aren't any references then it is visible by default
-                if valid:
-                    result = flag
+        if hasattr(self, "references"):
+            valid = False
+            flag = False
+            for n in self.references:
+                if hasattr(n.parent, "output"):
+                    valid = True
+                    if n.parent.output is None or n.parent.output:
+                        flag = True
+                        break
+                    if n.parent.is_visible:
+                        flag = True
+                        break
+            # If there aren't any references then it is visible by default
+            if valid:
+                result = flag
         return result
 
     @is_visible.setter
@@ -301,9 +300,11 @@ class Node:
         return self._can_target
 
     def can_move(self, optional_permission=False):
-        if optional_permission is None:
-            optional_permission = False
-        return (self._can_move and not self.lock) or optional_permission
+        if not self._can_move:
+            return False
+        if optional_permission:
+            return True
+        return not self.lock
 
     @property
     def can_scale(self):
@@ -576,7 +577,7 @@ class Node:
 
         Should be overloaded by subclasses.
 
-        @param index: index of the updating point
+        @param index: updating point index
         @param point: Point to be updated
         @return: Whether update was successful
         """
@@ -589,6 +590,7 @@ class Node:
         Should be overloaded by subclasses.
 
         @param point: point to be added
+        @param index: index for point insertion
         @return: Whether append was successful
         """
         # return self._insert_point(point, index)
@@ -765,7 +767,7 @@ class Node:
     def translated(self, dx, dy):
         """
         This is a special case of the modified call, we are translating
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -800,7 +802,7 @@ class Node:
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -815,7 +817,7 @@ class Node:
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -896,7 +898,14 @@ class Node:
         """
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
-        self._attach_node(node, pos=pos)
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, parent=self, pos=pos)
+        return node
 
     def create(self, type, **kwargs):
         """
@@ -919,22 +928,6 @@ class Node:
             self._root.notify_created(node)
         return node
 
-    def _attach_node(self, node, pos=None):
-        """
-        Attach a valid and created node to tree.
-        @param node:
-        @param pos:
-        @return:
-        """
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, parent=self, pos=pos)
-        return node
-
     def add(self, type=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
@@ -945,7 +938,7 @@ class Node:
         @return:
         """
         node = self.create(type=type, **kwargs)
-        self._attach_node(node, pos=pos)
+        self.add_node(node, pos=pos)
         return node
 
     def _flatten(self, node):
@@ -978,6 +971,7 @@ class Node:
         emphasized=None,
         targeted=None,
         highlighted=None,
+        lock=None,
     ):
         """
         Returned flat list of matching nodes. If cascade is set then any matching group will give all the descendants
@@ -998,7 +992,8 @@ class Node:
             (targeted is None or targeted == node.targeted)
             and (emphasized is None or emphasized == node.emphasized)
             and (selected is None or selected == node.selected)
-            and (highlighted is None or highlighted != node.highlighted)
+            and (highlighted is None or highlighted == node.highlighted)
+            and (lock is None or lock == node.lock)
         ):
             # Matches the emphases.
             if cascade:
@@ -1019,7 +1014,7 @@ class Node:
         # Check all children.
         for c in node.children:
             yield from c.flat(
-                types, cascade, depth, selected, emphasized, targeted, highlighted
+                types, cascade, depth, selected, emphasized, targeted, highlighted, lock
             )
 
     def count_children(self):
@@ -1027,7 +1022,9 @@ class Node:
 
     def append_child(self, new_child):
         """
-        Add the new_child node as the last child of the current node.
+        Moves the new_child node as the last child of the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
+
         """
         new_parent = self
         source_siblings = new_child.parent.children
@@ -1043,6 +1040,7 @@ class Node:
     def insert_sibling(self, new_sibling):
         """
         Add the new_sibling node next to the current node.
+        If the node exists elsewhere in the tree it will be removed from that location.
         """
         reference_sibling = self
         source_siblings = new_sibling.parent.children
@@ -1080,14 +1078,18 @@ class Node:
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
         return node
 
-    def remove_node(self, children=True, references=True, fast=False):
+    def remove_node(self, children=True, references=True, fast=False, destroy=True):
         """
         Remove the current node from the tree.
-        This function must iterate down and first remove all children from the bottom.
+
+        @param children: removes all the children of this node.
+        @param references: remove the references to this node.
+        @param fast: Do not send notifications of the detatches and destroys
+        @param destroy: Do not destroy the node.
+        @return:
         """
         if children:
             self.remove_all_children(fast=fast)
@@ -1096,23 +1098,23 @@ class Node:
             self._parent.set_dirty_bounds()
         if not fast:
             self.notify_detached(self)
-            self.notify_destroyed(self)
+            if destroy:
+                self.notify_destroyed(self)
         if references:
             for ref in list(self._references):
                 ref.remove_node(fast=fast)
         self._item = None
         self._parent = None
         self._root = None
-        self.type = None
         self.unregister()
 
-    def remove_all_children(self, fast=False):
+    def remove_all_children(self, fast=False, destroy=True):
         """
-        Removes all children of the current node.
+        Recursively removes all children of the current node.
         """
         for child in list(self.children):
-            child.remove_all_children(fast=fast)
-            child.remove_node(fast=fast)
+            child.remove_all_children(fast=fast, destroy=destroy)
+            child.remove_node(fast=fast, destroy=destroy)
 
     def get(self, type=None):
         """
@@ -1147,6 +1149,8 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
+            if e.lock:
+                continue
             box = getattr(e, attr, None)
             if box is None:
                 continue

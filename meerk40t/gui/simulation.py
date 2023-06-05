@@ -40,7 +40,6 @@ from .icons import (
     icons8_stop_gesture_20,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -795,6 +794,7 @@ class SimulationPanel(wx.Panel, Job):
             scene_name="SimScene",
             style=wx.EXPAND,
         )
+        self.view_pane.start_scene()
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
 
@@ -2093,4 +2093,4 @@ class Simulation(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Burning", "Simulation")
+        return "Burning", "Simulation"

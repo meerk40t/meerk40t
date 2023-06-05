@@ -4,7 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
-from meerk40t.core.elements.element_types import elem_nodes, place_nodes
+from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -29,7 +29,13 @@ from ..core.cutcode.plotcut import PlotCut
 from ..core.cutcode.quadcut import QuadCut
 from ..core.cutcode.rastercut import RasterCut
 from ..core.cutcode.waitcut import WaitCut
-from ..tools.geomstr import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD  # , TYPE_RAMP
+from ..tools.geomstr import (  # , TYPE_RAMP
+    TYPE_ARC,
+    TYPE_CUBIC,
+    TYPE_LINE,
+    TYPE_QUAD,
+    Geomstr,
+)
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
@@ -176,14 +182,24 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
+    def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        if not self.render_node(
+            node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+        ):
+            for c in node.children:
+                self.render_tree(
+                    c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+                )
+
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
 
         @param nodes: Node types to render.
         @param gc: graphics context
-        @param draw_mode: draw_mode set
-        @param zoomscale: set zoomscale at which this is drawn at
+        @param draw_mode: draw mode flags for rendering
+        @param zoomscale: zoomscale at which to render nodes
+        @param alpha: render transparency
         @return:
         """
         if draw_mode is None:
@@ -197,6 +213,7 @@ class LaserRender:
                     "elem polyline",
                     "elem rect",
                     "elem line",
+                    "effect hatch",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -213,47 +230,63 @@ class LaserRender:
 
         for node in _nodes:
             if node.type == "reference":
-                self.render(
-                    [node.node],
-                    gc,
-                    draw_mode=draw_mode,
-                    zoomscale=zoomscale,
-                    alpha=alpha,
+                # Reference nodes should be drawn per-usual, recurse.
+                self.render_node(
+                    node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
                 )
                 continue
-            if node.type in elem_nodes:
-                if not node.is_visible:
-                    continue
-            try:
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            except AttributeError:
-                if node.type == "elem path":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_path
-                elif node.type == "elem geomstr":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_geomstr
-                elif node.type == "elem point":
-                    node.draw = self.draw_point_node
-                elif node.type in place_nodes:
-                    node.draw = self.draw_placement_node
-                elif node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "elem ellipse",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_shape
-                elif node.type == "elem image":
-                    node.draw = self.draw_image_node
-                elif node.type == "elem text":
-                    node.draw = self.draw_text_node
-                elif node.type == "cutcode":
-                    node.draw = self.draw_cutcode_node
-                else:
-                    continue
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            self.render_node(
+                node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+            )
+
+    def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        """
+        Renders the specific node.
+        @param node:
+        @param gc:
+        @param draw_mode:
+        @param zoomscale:
+        @param alpha:
+        @return: True if rendering was done, False if rendering could not be done.
+        """
+        if hasattr(node, "is_visible"):
+            if not node.is_visible:
+                return False
+        if hasattr(node, "output"):
+            if not node.output:
+                return False
+
+        try:
+            # Try to draw node, assuming it already has a known render method.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
+        except AttributeError:
+            # No known render method, we must define the function to draw nodes.
+            if node.type in (
+                "elem path",
+                "elem ellipse",
+                "elem rect",
+                "elem line",
+                "elem polyline",
+                "effect hatch",
+            ):
+                node.draw = self.draw_vector
+                node.make_cache = self.cache_geomstr
+            elif node.type == "elem point":
+                node.draw = self.draw_point_node
+            elif node.type in place_nodes:
+                node.draw = self.draw_placement_node
+            elif node.type == "elem image":
+                node.draw = self.draw_image_node
+            elif node.type == "elem text":
+                node.draw = self.draw_text_node
+            elif node.type == "cutcode":
+                node.draw = self.draw_cutcode_node
+            else:
+                return False
+            # We have now defined that function, draw it.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
 
     def make_path(self, gc, path):
         """
@@ -330,6 +363,19 @@ class LaserRender:
                     p.AddLineToPoint(end.real, end.imag)
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                elif seg_type == TYPE_ARC:
+                    radius = Geomstr.arc_radius(None, line=e)
+                    center = Geomstr.arc_center(None, line=e)
+                    start_t = Geomstr.angle(None, center, start)
+                    end_t = Geomstr.angle(None, center, end)
+                    p.AddArc(
+                        center.real,
+                        center.imag,
+                        radius,
+                        start_t,
+                        end_t,
+                        clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
+                    )
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
@@ -582,7 +628,8 @@ class LaserRender:
     def cache_geomstr(self, node, gc):
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
-        cache = self.make_geomstr(gc, node.path)
+        geom = node.as_geometry()
+        cache = self.make_geomstr(gc, geom)
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -749,13 +796,6 @@ class LaserRender:
         if draw_mode & DRAW_MODE_POINTS:
             return
         point = node.point
-        if point is None:
-            return
-        matrix = node.matrix
-        if matrix is not None and not matrix.is_identity():
-            point = matrix.point_in_matrix_space(point)
-            node.point = point
-            matrix.reset()
         gc.PushState()
         gc.SetPen(wx.BLACK_PEN)
         dif = 5 * zoomscale

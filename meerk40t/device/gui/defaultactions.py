@@ -13,7 +13,6 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
-    icons8_visit_20,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer
 
@@ -519,8 +518,6 @@ class DefaultActionPanel(wx.Panel):
                 entry[1] = ""
             display_name = entry[0]
             for def_entry in self.standards:
-                if def_entry[2] is None:
-                    def_entry[2] = ""
                 if def_entry[1] == entry[0] and def_entry[2] == entry[1]:
                     display_name = def_entry[0]
                     break

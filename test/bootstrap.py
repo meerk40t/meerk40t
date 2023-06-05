@@ -24,10 +24,6 @@ def bootstrap():
 
     kernel.add_plugin(fills.plugin)
 
-    from meerk40t.device.ch341 import ch341
-
-    kernel.add_plugin(ch341.plugin)
-
     from meerk40t.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)

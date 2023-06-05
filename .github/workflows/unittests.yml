@@ -2,12 +2,12 @@ name: Unittest
 
 on:
   push:
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/unittests.yml'
   pull_request:
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/unittests.yml'
@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2019, macos-10.15, macos-11]
+        os: [ubuntu-latest, windows-2019, macos-11]
         python-version: [3.9]
 
     steps:

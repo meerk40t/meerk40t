@@ -580,6 +580,32 @@ class PassesPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        self.has_kerf = False
+
+        sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.sizer_kerf = StaticBoxSizer(
+            self, wx.ID_ANY, _("Kerf compensation:"), wx.HORIZONTAL
+        )
+        self.text_kerf = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "0",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_kerf.SetToolTip(
+            _(
+                "Enter half the width of your laserbeam (kerf)\n"
+                + "if you want to have a shape with an exact size.\n"
+                + "Use the negative value if you are using the cutout\n"
+                + "as a placeholder for another part (eg inlays)."
+            )
+        )
+        self.kerf_label = wx.StaticText(self, wx.ID_ANY, "")
+        self.sizer_kerf.Add(self.text_kerf, 1, wx.EXPAND, 0)
+        self.sizer_kerf.Add(self.kerf_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes:"), wx.HORIZONTAL)
 
@@ -613,13 +639,17 @@ class PassesPanel(wx.Panel):
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
 
-        self.SetSizer(sizer_passes)
+        sizer_main.Add(sizer_passes, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_kerf, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
 
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
 
         self.text_passes.SetActionRoutine(self.on_text_passes)
+        self.text_kerf.SetActionRoutine(self.on_text_kerf)
         # end wxGlade
 
     def pane_hide(self):
@@ -643,12 +673,34 @@ class PassesPanel(wx.Panel):
         if self.operation is None or not self.accepts(node):
             self.Hide()
             return
+        self.has_kerf = bool(self.operation.type == "op cut")
+        if self.has_kerf:
+            s_label = ""
+            s_kerf = "0"
+            try:
+                ll = Length(self.operation.kerf, digits=2, preferred_units="mm")
+                kval = float(ll)
+                s_kerf = ll.preferred_length
+                if kval < 0:
+                    s_label = " " + _("Inward")
+                elif kval > 0:
+                    s_label = " " + _("Outward")
+                else:
+                    s_kerf = "0"
+
+            except ValueError:
+                pass
+            self.text_kerf.SetValue(s_kerf)
+            self.kerf_label.SetLabel(s_label)
         if self.operation.passes_custom is not None:
             self.check_passes.SetValue(self.operation.passes_custom)
         if self.operation.passes is not None:
             set_ctrl_value(self.text_passes, str(self.operation.passes))
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
+        self.sizer_kerf.ShowItems(self.has_kerf)
+        self.sizer_kerf.Show(self.has_kerf)
+        self.Layout()
         self.Show()
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
@@ -667,6 +719,17 @@ class PassesPanel(wx.Panel):
                 self.operation.passes = value
                 self.context.elements.signal(
                     "element_property_reload", self.operation, "text_Passes"
+                )
+        except ValueError:
+            pass
+
+    def on_text_kerf(self):
+        try:
+            value = float(Length(self.text_kerf.GetValue()))
+            if self.operation.kerf != value:
+                self.operation.kerf = value
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_kerf"
                 )
         except ValueError:
             pass
@@ -1497,9 +1560,10 @@ class HatchSettingsPanel(wx.Panel):
 
     def on_text_angle(self):
         try:
-            self.operation.hatch_angle = (
-                f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
-            )
+            angle = f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
+            if angle == self.operation.hatch_angle:
+                return
+            self.operation.hatch_angle = angle
             self.hatch_lines = None
             self.travel_lines = None
             self.refresh_display()
@@ -1518,6 +1582,7 @@ class HatchSettingsPanel(wx.Panel):
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
+        self.on_text_angle()
         self.hatch_lines = None
         self.travel_lines = None
         self.refresh_display()
@@ -1568,20 +1633,17 @@ class HatchSettingsPanel(wx.Panel):
         if hatch_algorithm is None:
             return
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
         matrix = Matrix.scale(0.018)
         hatch = list(
@@ -1594,17 +1656,12 @@ class HatchSettingsPanel(wx.Panel):
         )
         o_start = []
         o_end = []
-        for path in paths:
-            last_x = None
-            last_y = None
-            for x, y in path:
-                if last_x is None:
-                    last_x = x
-                    last_y = y
-                    continue
-                o_start.append((x, y))
-                o_end.append((last_x, last_y))
-                last_x, last_y = x, y
+        last = None
+        for c in paths:
+            if last is not None and c is not None:
+                o_start.append((c.real, c.imag))
+                o_end.append((last.real, last.imag))
+            last = c
         self.outline_lines = o_start, o_end
         h_start = []
         h_end = []

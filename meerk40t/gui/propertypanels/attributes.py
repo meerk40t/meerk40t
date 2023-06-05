@@ -296,8 +296,7 @@ class IdPanel(wx.Panel):
             self.text_id.Show(vis1)
             self.sizer_id.Show(vis1)
         except RuntimeWarning:
-            # Could happen if the propertypanel
-            # would have been destroyed already
+            # Could happen if the propertypanel has been destroyed
             pass
         try:
             if hasattr(self.node, "label") and self.showlabel:
@@ -306,8 +305,7 @@ class IdPanel(wx.Panel):
             self.text_label.Show(vis2)
             self.sizer_label.Show(vis2)
         except RuntimeWarning:
-            # Could happen if the propertypanel
-            # would have been destroyed already
+            # Could happen if the propertypanel has been destroyed
             pass
 
         if vis1 or vis2:
@@ -526,7 +524,7 @@ class StrokeWidthPanel(wx.Panel):
         elif hasattr(self.node, "stroke_width") and hasattr(self.node, "stroke_scaled"):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
-            # Lets establish which unit might be the best to represent the display
+            # Let's establish which unit might be the best to represent the display
             found_something = False
             if self.node.stroke_width is None or self.node.stroke_width == 0:
                 value = 0

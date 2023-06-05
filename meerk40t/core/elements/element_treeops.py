@@ -28,7 +28,7 @@ from meerk40t.core.treeop import (
 )
 from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.svgelements import Matrix, Point
+from meerk40t.svgelements import Matrix, Point, Polygon
 
 from .element_types import *
 
@@ -694,16 +694,16 @@ def init_tree(kernel):
                 self.signal("element_property_reload", data)
                 break
 
-    @tree_separator_before()
-    @tree_operation(
-        _("Execute operation(s)"),
-        node_type=op_nodes,
-        help=_("Execute Job for the selected operation(s)."),
-    )
-    def execute_job(node, **kwargs):
-        self.set_node_emphasis(node, True)
-        self("plan0 clear copy-selected\n")
-        self("window open ExecuteJob 0\n")
+    # @tree_separator_before()
+    # @tree_operation(
+    #     _("Execute operation(s)"),
+    #     node_type=op_nodes,
+    #     help=_("Execute Job for the selected operation(s)."),
+    # )
+    # def execute_job(node, **kwargs):
+    #     self.set_node_emphasis(node, True)
+    #     self("plan0 clear copy-selected\n")
+    #     self("window open ExecuteJob 0\n")
 
     @tree_separator_after()
     @tree_operation(
@@ -968,6 +968,25 @@ def init_tree(kernel):
     # ==========
     # REMOVE SINGLE (Tree Selected - ELEMENT)
     # ==========
+
+    @tree_conditional(lambda node: hasattr(node, "effect") and not node.effect)
+    @tree_operation(
+        _("Effect: On"),
+        node_type=effect_nodes,
+        help="",
+    )
+    def effect_on(node, **kwargs):
+        node.effect = not node.effect
+
+    @tree_conditional(lambda node: hasattr(node, "effect") and node.effect)
+    @tree_operation(
+        _("Effect: Off"),
+        node_type=effect_nodes,
+        help="",
+    )
+    def effect_off(node, **kwargs):
+        node.effect = not node.effect
+
     @tree_conditional(lambda node: node.can_remove)
     @tree_conditional(
         lambda cond: len(
@@ -2039,7 +2058,7 @@ def init_tree(kernel):
     )
     def set_assign_option_stroke(node, **kwargs):
         self.classify_inherit_stroke = not self.classify_inherit_stroke
-        # Poor mans radio
+        # Poor man's radio
         if self.classify_inherit_stroke:
             self.classify_inherit_fill = False
 
@@ -2055,7 +2074,7 @@ def init_tree(kernel):
     )
     def set_assign_option_fill(node, **kwargs):
         self.classify_inherit_fill = not self.classify_inherit_fill
-        # Poor mans radio
+        # Poor man's radio
         if self.classify_inherit_fill:
             self.classify_inherit_stroke = False
 
@@ -2215,45 +2234,28 @@ def init_tree(kernel):
     def trace_bitmap(node, **kwargs):
         self("vectorize\n")
 
-    @tree_conditional(lambda node: not is_regmark(node))
+    @tree_conditional(
+        lambda node: not is_regmark(node)
+        and hasattr(node, "as_geometry")
+        and node.type != "elem path"
+    )
     @tree_operation(
         _("Convert to path"),
-        node_type=(
-            "elem ellipse",
-            "elem path",
-            "elem polyline",
-            "elem rect",
-            "elem line",
-        ),
-        help="",
+        node_type=elem_nodes,
+        help="Convert node to path",
     )
     def convert_to_path(singlenode, **kwargs):
         for node in list(self.elems(emphasized=True)):
-            if not node not in (
-                "elem ellipse",
-                "elem path",
-                "elem polyline",
-                "elem rect",
-                "elem line",
-            ):
+            if not hasattr(node, "as_geometry"):
                 continue
-            oldstuff = []
+            node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    oldstuff.append([attrib, oldval])
-            try:
-                path = node.as_path()
-                # There are some challenges around the treatment
-                # of arcs within svgelements, so let's circumvent
-                # them for the time being (until resolved)
-                # by replacing arc segments with cubic beziers
-                if node.type in ("elem path", "elem ellipse"):
-                    path.approximate_arcs_with_cubics()
-            except AttributeError:
-                return
-            newnode = node.replace_node(path=path, type="elem path")
-            for item in oldstuff:
+                    node_attributes.append([attrib, oldval])
+            geometry = node.as_geometry()
+            newnode = node.replace_node(geometry=geometry, type="elem path")
+            for item in node_attributes:
                 setattr(newnode, item[0], item[1])
             newnode.altered()
 

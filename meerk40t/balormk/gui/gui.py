@@ -63,35 +63,47 @@ def plugin(service, lifecycle):
                 "identifier": "light_default",
                 "multi": [
                     {
-                        "identifier": "live",
-                        "label": _("Live Bounds"),
-                        "action": lambda e: service("select-light\n"),
-                    },
-                    {
                         "identifier": "live-full",
                         "label": _("Live Full"),
                         "icon": icons8_computer_support_50,
                         "action": lambda e: service("full-light\n"),
                     },
                     {
+                        "identifier": "live-regmark",
+                        "label": _("Regmarks"),
+                        "icon": icons8_computer_support_50,
+                        "action": lambda e: service("regmark-light\n"),
+                    },
+                    {
+                        "identifier": "live",
+                        "label": _("Live Bounds"),
+                        "action": lambda e: service("select-light\n"),
+                    },
+                    {
+                        "identifier": "live-hull",
+                        "label": _("Live Hull"),
+                        "icon": icons8_computer_support_50,
+                        "action": lambda e: service("hull-light\n"),
+                    },
+                    {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
-                        "action": lambda e: service("element* hull light\n"),
+                        "action": lambda e: service("element* geometry hull light\n"),
                     },
                     {
                         "identifier": "box",
                         "label": _("Trace Bounds"),
                         "action": lambda e: service("box light\n"),
                     },
-                    {
-                        "identifier": "ants",
-                        "label": _("Trace Ants"),
-                        "action": lambda e: service("element* ants light\n"),
-                    },
+                    # {
+                    #     "identifier": "ants",
+                    #     "label": _("Trace Ants"),
+                    #     "action": lambda e: service("element* ants light\n"),
+                    # },
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
-                        "action": lambda e: service("element* path light\n"),
+                        "action": lambda e: service("element* geometry light\n"),
                     },
                 ],
                 "toggle": {

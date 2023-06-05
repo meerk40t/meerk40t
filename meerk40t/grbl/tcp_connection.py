@@ -5,8 +5,6 @@ Communicate with a TCP network destination with the GRBL driver.
 """
 
 import socket
-import threading
-import time
 
 
 class TCPOutput:

@@ -174,4 +174,4 @@ class NewlyController(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Control", "Newly-Controller")
+        return "Device-Control", "Newly-Controller"

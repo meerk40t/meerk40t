@@ -149,6 +149,9 @@ class MeerK40t(MWindow):
         self.__set_panes()
         self.__set_commands()
 
+        self.edit_menu_choice = None
+        self._setup_edit_menu_choice()
+
         # Menu Bar
         self.main_menubar = wx.MenuBar()
         self.__set_menubars()
@@ -258,6 +261,248 @@ class MeerK40t(MWindow):
 
         self.assign_button_panel.show_stuff(False)
 
+    def _setup_edit_menu_choice(self):
+        def on_click_undo():
+            self.context("undo\n")
+
+        def on_click_redo():
+            self.context("redo\n")
+
+        def on_click_cut():
+            self.context("clipboard cut\n")
+
+        def on_click_copy():
+            self.context("clipboard copy\n")
+
+        def on_click_paste():
+            self.context("clipboard paste\n")
+
+        def on_click_sel_all():
+            self.context("element* select\n")
+
+        def on_click_sel_none():
+            self.context("element* select-\n")
+
+        def on_click_sel_invert():
+            self.context("element* select^\n")
+
+        def on_click_sel_unassigned():
+            elements = self.context.elements
+            for node in elements.elems():
+                flag = False
+                if hasattr(node, "references"):
+                    flag = True
+                    if len(node.references) > 0:
+                        flag = False
+                if node.can_emphasize:
+                    node.emphasized = flag
+            elements.validate_selected_area()
+            self.context.signal("refresh_scene", "Scene")
+
+        def on_click_properties():
+            self.context("window open Properties\n")
+
+        def on_click_device_manager():
+            self.context("window open DeviceManager\n")
+
+        def on_click_device_settings():
+            self.context("window open Configuration\n")
+
+        def on_click_pref_wordlist():
+            self.context("window open Wordlist\n")
+
+        def on_click_pref_fonts():
+            self.context("window open HersheyFontManager\n")
+
+        def on_click_pref_keys():
+            self.context("window open Keymap\n")
+
+        def on_click_preferences():
+            self.context("window open Preferences\n")
+
+        def on_click_delete():
+            self.context("tree selected delete\n")
+
+        def clipboard_filled():
+            res = False
+            try:
+                destination = self.context.elements._clipboard_default
+                if len(self.context.elements._clipboard[destination]) > 0:
+                    res = True
+            except (TypeError, KeyError):
+                pass
+            return res
+
+        self.edit_menu_choice = [
+            {
+                "label": _("&Undo\tCtrl-Z"),
+                "help": _("Undo last action"),
+                "action": on_click_undo,
+                "id": wx.ID_UNDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Redo\tCtrl-Shift-Z"),
+                "help": _("Revert last undo"),
+                "action": on_click_redo,
+                "id": wx.ID_REDO,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("C&ut\tCtrl-X"),
+                "help": _("Cut selected elements"),
+                "action": on_click_cut,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_CUT,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Copy\tCtrl-C"),
+                "help": _("Copy selected elements to clipboard"),
+                "action": on_click_copy,
+                "enabled": self.context.elements.has_emphasis,
+                "id": wx.ID_COPY,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Paste\tCtrl-V"),
+                "help": _("Paste elements from clipboard"),
+                "action": on_click_paste,
+                "enabled": clipboard_filled,
+                "id": wx.ID_PASTE,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select all\tCtrl-A"),
+                "help": _("Select all elements on scene"),
+                "action": on_click_sel_all,
+                "id": wx.ID_SELECTALL,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Select None"),
+                "help": _("Deselect all elements on scene"),
+                "action": on_click_sel_none,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("&Invert selection\tCtrl-I"),
+                "help": _("Invert the selection status of all elements"),
+                "action": on_click_sel_invert,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Select all non-assigned"),
+                "help": _("Select all elements that are not assigned to an operation"),
+                "action": on_click_sel_unassigned,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Delete"),
+                "help": _("Delete the selected elements"),
+                "action": on_click_delete,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Properties"),
+                "help": _("Edit the elements properties"),
+                "action": on_click_properties,
+                "enabled": self.context.elements.has_emphasis,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Manager"),
+                "help": _("Manage the Laser devices"),
+                "action": on_click_device_manager,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Device-Configuration"),
+                "help": _("Manage the device settings"),
+                "action": on_click_device_settings,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Wordlist-Editor"),
+                "help": _("Manages Wordlist-Entries"),
+                "action": on_click_pref_wordlist,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Font-Manager"),
+                "help": _("Open the vector-font management window."),
+                "action": on_click_pref_fonts,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Key-Bindings"),
+                "help": _("Opens Keymap Window"),
+                "action": on_click_pref_keys,
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": "",
+                "level": 2,
+                "segment": "Settings",
+            },
+            {
+                "label": _("Preferences\tCtrl-,"),
+                "help": _("Edit the general preferences"),
+                "action": on_click_preferences,
+                "level": 2,
+                "id": wx.ID_PREFERENCES,
+                "segment": "Settings",
+            },
+        ]
+
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
         self.widgets_created = False
@@ -308,9 +553,11 @@ class MeerK40t(MWindow):
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
+        value = self.context.elements.has_emphasis()
+        self._update_status_edit_menu()(None)
         if not self.context.show_colorbar or not self.widgets_created:
             return
-        value = self.context.elements.has_emphasis()
+
         self.main_statusbar.Signal("emphasized")
         # First enable/disable the controls in the statusbar
 
@@ -532,7 +779,7 @@ class MeerK40t(MWindow):
                 "max": 75,
                 "label": _("Display-Distance"),
                 "tip": _(
-                    "Defines until which distance snap points will be highlighted"
+                    "The screen distance in pixels inside which snap points will be highlighted"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -542,8 +789,10 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": False,
                 "type": bool,
-                "label": _("Snap to element"),
-                "tip": _("Shall the cursor snap to the next element point?"),
+                "label": _("Snap to Element"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest element point within the specified threshold"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Element-Points",
@@ -557,9 +806,9 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Element-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next element point"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -571,7 +820,9 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Snap to Grid"),
-                "tip": _("Shall the cursor snap to the next grid intersection?"),
+                "tip": _(
+                    "If checked, the cursor will snap to the closest grid intersection"
+                ),
                 "page": "Scene",
                 "section": "Snap-Options",
                 "subsection": "Grid",
@@ -585,9 +836,9 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Point-Snap-Threshold"),
+                "label": _("Grid-Point-Snap-Threshold"),
                 "tip": _(
-                    "Set the distance inside which the cursor will snap to the next grid intersection"
+                    "Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -598,9 +849,9 @@ class MeerK40t(MWindow):
                 "object": context.root,
                 "default": True,
                 "type": bool,
-                "label": _("Clear magnets on File - New"),
+                "label": _("Clear magnets on File/New"),
                 "tip": _(
-                    "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+                    "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
@@ -2305,56 +2556,17 @@ class MeerK40t(MWindow):
             except KeyError:
                 c_level = 1
 
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_subsegment = choice["subsegment"]
-            except KeyError:
-                c_subsegment = ""
-
-            try:
-                c_label = choice["label"]
-            except KeyError:
-                c_label = ""
-
-            try:
-                c_help = choice["help"]
-            except KeyError:
-                c_help = ""
-
-            try:
-                c_action = choice["action"]
-            except KeyError:
-                c_action = None
-
-            try:
-                c_criteria = choice["criteria"]
-            except KeyError:
-                c_criteria = None
-
-            try:
-                c_enabled = choice["enabled"]
-            except KeyError:
-                c_enabled = None
-
-            try:
-                c_segment = choice["segment"]
-            except KeyError:
-                c_segment = ""
-
-            try:
-                c_param = choice["parameter"]
-            except KeyError:
-                c_param = None
-
-            try:
-                c_id = choice["id"]
-            except KeyError:
-                c_id = wx.ID_ANY
-            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
+            c_segment = choice.get("segment", "")
+            c_subsegment = choice.get("subsegment", "")
+            c_label = choice.get("label", "")
+            c_help = choice.get("help", "")
+            c_action = choice.get("action")
+            c_criteria = choice.get("criteria")
+            c_enabled = choice.get("enabled")
+            c_segment = choice.get("segment", "")
+            c_param = choice.get("parameter")
+            c_text_color = choice.get("text_color")
+            c_id = choice.get("id", wx.ID_ANY)
             if c_segment != current_segment:
                 current_segment = c_segment
                 current_subsegment = ""
@@ -2405,13 +2617,17 @@ class MeerK40t(MWindow):
                         wx.ITEM_CHECK,
                     )
                     menu_item.Check(c_criteria)
-                flag = True
-                if c_enabled is not None:
-                    try:
-                        flag = bool(c_enabled())
-                    except (AttributeError, TypeError):
-                        pass
-                menu_item.Enable(flag)
+                choice["menu_item"] = menu_item
+                if c_text_color:
+                    menu_item.SetTextColour(c_text_color)
+                # flag = True
+                # if c_enabled is not None:
+                #     try:
+                #         flag = bool(c_enabled())
+                #     except (AttributeError, TypeError):
+                #         pass
+                # if not flag:
+                #     menu_item.Enable(flag)
 
                 def deal_with(routine, parameter=None):
                     def done(event):
@@ -2482,253 +2698,32 @@ class MeerK40t(MWindow):
         self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
+    def _update_status_edit_menu(self, *args):
+        def handler(event):
+            for entry in self.edit_menu_choice:
+                if "label" in entry and "enabled" in entry:
+                    flag = True
+                    label = entry["label"]
+                    try:
+                        flag = bool(entry["enabled"]())
+                    except AttributeError:
+                        flag = True
+                    if label:
+                        menu_id = self.edit_menu.FindItem(label)
+                        if menu_id != wx.NOT_FOUND:
+                            menu_item = self.edit_menu.FindItemById(menu_id)
+                            menu_item.Enable(flag)
+            if event:
+                event.Skip()
+
+        return handler
+
     def __set_edit_menu(self):
         """
         Edit MENU
         """
-
-        def on_click_undo():
-            self.context("undo\n")
-
-        def on_click_redo():
-            self.context("redo\n")
-
-        def on_click_cut():
-            self.context("clipboard cut\n")
-
-        def on_click_copy():
-            self.context("clipboard copy\n")
-
-        def on_click_paste():
-            self.context("clipboard paste\n")
-
-        def on_click_sel_all():
-            self.context("element* select\n")
-
-        def on_click_sel_none():
-            self.context("element* select-\n")
-
-        def on_click_sel_invert():
-            self.context("element* select^\n")
-
-        def on_click_sel_unassigned():
-            elements = self.context.elements
-            for node in elements.elems():
-                flag = False
-                if hasattr(node, "references"):
-                    flag = True
-                    if len(node.references) > 0:
-                        flag = False
-                if node.can_emphasize:
-                    node.emphasized = flag
-            elements.validate_selected_area()
-            self.context.signal("refresh_scene", "Scene")
-
-        def on_click_properties():
-            self.context("window open Properties\n")
-
-        def on_click_device_manager():
-            self.context("window open DeviceManager\n")
-
-        def on_click_device_settings():
-            self.context("window open Configuration\n")
-
-        def on_click_pref_wordlist():
-            self.context("window open Wordlist\n")
-
-        def on_click_pref_fonts():
-            self.context("window open HersheyFontManager\n")
-
-        def on_click_pref_keys():
-            self.context("window open Keymap\n")
-
-        def on_click_preferences():
-            self.context("window open Preferences\n")
-
-        def on_click_delete():
-            self.context("tree selected delete\n")
-
-        def clipboard_filled():
-            res = False
-            try:
-                destination = self.context.elements._clipboard_default
-                if len(self.context.elements._clipboard[destination]) > 0:
-                    res = True
-            except (TypeError, KeyError):
-                pass
-            return res
-
-        choices = [
-            {
-                "label": _("&Undo\tCtrl-Z"),
-                "help": _("Undo last action"),
-                "action": on_click_undo,
-                "id": wx.ID_UNDO,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Redo\tCtrl-Shift-Z"),
-                "help": _("Revert last undo"),
-                "action": on_click_redo,
-                "id": wx.ID_REDO,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("C&ut\tCtrl-X"),
-                "help": _("Cut selected elements"),
-                "action": on_click_cut,
-                "enabled": self.context.elements.has_emphasis,
-                "id": wx.ID_CUT,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Copy\tCtrl-C"),
-                "help": _("Copy selected elements to clipboard"),
-                "action": on_click_copy,
-                "enabled": self.context.elements.has_emphasis,
-                "id": wx.ID_COPY,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Paste\tCtrl-V"),
-                "help": _("Paste elements from clipboard"),
-                "action": on_click_paste,
-                "enabled": clipboard_filled,
-                "id": wx.ID_PASTE,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Select all\tCtrl-A"),
-                "help": _("Select all elements on scene"),
-                "action": on_click_sel_all,
-                "id": wx.ID_SELECTALL,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Select None"),
-                "help": _("Deselect all elements on scene"),
-                "action": on_click_sel_none,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("&Invert selection\tCtrl-I"),
-                "help": _("Invert the selection status of all elements"),
-                "action": on_click_sel_invert,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Select all non-assigned"),
-                "help": _("Select all elements that are not assigned to an operation"),
-                "action": on_click_sel_unassigned,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Delete"),
-                "help": _("Delete the selected elements"),
-                "action": on_click_delete,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Properties"),
-                "help": _("Edit the elements properties"),
-                "action": on_click_properties,
-                "enabled": self.context.elements.has_emphasis,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Manager"),
-                "help": _("Manage the Laser devices"),
-                "action": on_click_device_manager,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Device-Configuration"),
-                "help": _("Manage the device settings"),
-                "action": on_click_device_settings,
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": "",
-                "level": 1,
-                "segment": "",
-            },
-            {
-                "label": _("Wordlist-Editor"),
-                "help": _("Manages Wordlist-Entries"),
-                "action": on_click_pref_wordlist,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Font-Manager"),
-                "help": _("Open the vector-font management window."),
-                "action": on_click_pref_fonts,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Key-Bindings"),
-                "help": _("Opens Keymap Window"),
-                "action": on_click_pref_keys,
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": "",
-                "level": 2,
-                "segment": "Settings",
-            },
-            {
-                "label": _("Preferences\tCtrl-,"),
-                "help": _("Edit the general preferences"),
-                "action": on_click_preferences,
-                "level": 2,
-                "id": wx.ID_PREFERENCES,
-                "segment": "Settings",
-            },
-        ]
         self.edit_menu = wx.Menu()
-        self._create_menu_from_choices(self.edit_menu, choices)
+        self._create_menu_from_choices(self.edit_menu, self.edit_menu_choice)
         label = _("Edit")
         index = self.main_menubar.FindMenu(label)
         if index != -1:
@@ -2736,27 +2731,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.edit_menu, label)
 
-        def update_status(choices):
-            def handler(event):
-                for entry in choices:
-                    if "label" in entry and "enabled" in entry:
-                        flag = True
-                        label = entry["label"]
-                        try:
-                            flag = bool(entry["enabled"]())
-                        except AttributeError:
-                            flag = True
-                        if label:
-                            menu_id = self.edit_menu.FindItem(label)
-                            if menu_id != wx.NOT_FOUND:
-                                menu_item = self.edit_menu.FindItemById(menu_id)
-                                menu_item.Enable(flag)
-                        # print (entry["label"], entry["enabled"](), flag)
-                event.Skip()
-
-            return handler
-
-        self.edit_menu.Bind(wx.EVT_MENU_OPEN, update_status(choices))
+        self.edit_menu.Bind(wx.EVT_MENU_OPEN, self._update_status_edit_menu())
 
     def __set_view_menu(self):
         def toggle_draw_mode(bits):

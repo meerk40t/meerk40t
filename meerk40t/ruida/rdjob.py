@@ -227,6 +227,7 @@ class RDJob:
         and send those to the command routine.
 
         @param data:
+        @param magic: magic number for unswizzling
         @return:
         """
         if magic is None:
@@ -601,7 +602,7 @@ class RDJob:
             desc = f"Cut Horizontal Relative ({dx} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = relcoord(array[1:3]) * self.scale
-            self.plot_location(self.x, self.y + dy, 0)
+            self.plot_location(self.x, self.y + dy, 1)
             desc = f"Cut Vertical Relative ({dy} units)"
         elif array[0] == 0xC7:
             v0 = parse_power(array[1:3])  # TODO: Check command fewer values.
@@ -1009,16 +1010,7 @@ class RDJob:
                 self.plot_commit()
                 desc = "Block End"
             elif array[1] == 0x01:
-                self.filename = ""
-                for a in array[2:]:
-                    if a == 0x00:
-                        break
-                    self.filename += chr(a)
-                desc = f"Filename: {self.filename}"
-                if self.saving:
-                    pass
-                    # TODO: We cannot actually save the file within this type of job.
-                    # self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
+                pass  # Set filename for job (only realtime, see emulator)
             elif array[1] == 0x03:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM

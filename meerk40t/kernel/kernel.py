@@ -73,6 +73,7 @@ class Kernel(Settings):
         profile: str,
         ansi: bool = True,
         ignore_settings: bool = False,
+        delay: float = 0.05,  # 20 ticks per second
     ):
         """
         Initialize the Kernel. This sets core attributes of the ecosystem that are accessible to all modules.
@@ -90,6 +91,7 @@ class Kernel(Settings):
             self, self.name, f"{profile}.cfg", ignore_settings=ignore_settings
         )
         self.settings = self
+        self.delay = delay
 
         # Boot State
         self._booted = False
@@ -148,7 +150,7 @@ class Kernel(Settings):
         self._add_lock = threading.Lock()
         self._remove_lock = threading.Lock()
         self._message_queue = {}
-        self._is_queue_processing = False
+        self._processing = {}
 
         # Channels
         self.channels = {}
@@ -1102,9 +1104,9 @@ class Kernel(Settings):
         self.signal_job = self.add_job(
             run=self.process_queue,
             name="kernel.signals",
-            interval=0.005,
+            interval=self.delay,
             run_main=True,
-            conditional=lambda: not self._is_queue_processing,
+            conditional=lambda: not self._processing,
         )
         self._booted = True
 
@@ -1599,7 +1601,7 @@ class Kernel(Settings):
         Register an element at a given subpath.
         If this Kernel is not root, then it is registered relative to this location.
 
-        @param path: a "/" separated hierarchical index to the object
+        @param path: a "/" separated hierarchical index
         @param obj: object to be registered
         @return:
         """
@@ -1810,7 +1812,7 @@ class Kernel(Settings):
         """
         self.state = "active"
         while self.state != "end":
-            time.sleep(0.005)  # 200 ticks a second.
+            time.sleep(self.delay)
             while self.state == "pause":
                 # The scheduler is paused.
                 time.sleep(0.1)
@@ -2000,15 +2002,16 @@ class Kernel(Settings):
             and len(self._removing_listeners) == 0
         ):
             return
-        self._is_queue_processing = True
         with self._signal_lock:
-            queue = self._message_queue
-            self._message_queue = {}
+            self._message_queue, self._processing = (
+                self._processing,
+                self._message_queue,
+            )
         self._process_add_listeners()
         self._process_remove_listeners()
 
-        self._process_signal_queue(queue)
-        self._is_queue_processing = False
+        self._process_signal_queue(self._processing)
+        self._processing.clear()
 
     def last_signal(self, signal: str) -> Optional[Tuple]:
         """

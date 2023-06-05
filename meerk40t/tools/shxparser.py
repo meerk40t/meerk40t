@@ -580,7 +580,7 @@ class ShxFont:
     def _pop_stack(self):
         """
         Stack is considered four units deep. You may not pop more locations than have
-        been pushed onto the stack. Attempts to do so will respond with a error message.
+        been pushed onto the stack. Attempts to do so will respond with an error message.
         :return:
         """
         if self._debug:

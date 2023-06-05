@@ -23,7 +23,7 @@ Path Optimize are the older path-based optimizations routines from 0.6.x that wo
 
 ## Updater
 
-Updater was/is intended to provide program update capabilities checking the github for later version of the MeerK40t.
+Updater was/is intended to provide program update capabilities checking the GitHub for later version of the MeerK40t.
 
 
 ## Vectrace

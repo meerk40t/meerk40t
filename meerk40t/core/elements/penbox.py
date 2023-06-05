@@ -2,47 +2,9 @@
 This is a giant list of console commands that deal with and often implement the elements system in the program.
 """
 
-import os.path
 import re
-from copy import copy
-from math import cos, gcd, isinf, pi, sin, sqrt, tau
-from random import randint, shuffle
 
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.node.elem_path import PathNode
-from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.core.node.op_cut import CutOpNode
-from meerk40t.core.node.op_dots import DotsOpNode
-from meerk40t.core.node.op_engrave import EngraveOpNode
-from meerk40t.core.node.op_hatch import HatchOpNode
-from meerk40t.core.node.op_image import ImageOpNode
-from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.util_console import ConsoleOperation
-from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_output import OutputOperation
-from meerk40t.core.node.util_wait import WaitOperation
-from meerk40t.core.units import (
-    UNITS_PER_INCH,
-    UNITS_PER_MM,
-    UNITS_PER_PIXEL,
-    UNITS_PER_POINT,
-    Length,
-)
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
-from meerk40t.svgelements import (
-    SVG_RULE_EVENODD,
-    SVG_RULE_NONZERO,
-    Angle,
-    Close,
-    Color,
-    CubicBezier,
-    Line,
-    Matrix,
-    QuadraticBezier,
-    Viewbox,
-)
-
-from .element_types import *
 
 
 def plugin(kernel, lifecycle=None):

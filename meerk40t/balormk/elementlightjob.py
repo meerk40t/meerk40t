@@ -1,21 +1,24 @@
 """
 Element Light Job
 
-The element light job accepts elements (svg, etc) and processes a light job based on those elements. This comes in two
+The element light job accepts elements (svg, etc.) and processes a light job based on those elements. This comes in two
 forms. Simulate which does the light job at the speeds the laser job will run and light which will simply draw the given
 elements.
 """
 import time
 
+import numpy as np
+
 from meerk40t.core.units import UNITS_PER_PIXEL
-from meerk40t.svgelements import Matrix, Polygon, Polyline
+from meerk40t.svgelements import Matrix
+from meerk40t.tools.geomstr import Geomstr
 
 
 class ElementLightJob:
     def __init__(
         self,
         service,
-        elements,
+        geometry,
         travel_speed=None,
         jump_delay=200.0,
         simulation_speed=None,
@@ -23,7 +26,7 @@ class ElementLightJob:
         simulate=True,
     ):
         self.service = service
-        self.elements = elements
+        self.geometry = geometry
         self.started = False
         self.stopped = False
         self.travel_speed = travel_speed
@@ -94,7 +97,7 @@ class ElementLightJob:
     def process(self, con):
         if self.stopped:
             return False
-        if not self.elements:
+        if not self.geometry:
             return False
 
         con._light_speed = self.service.redlight_speed
@@ -122,44 +125,33 @@ class ElementLightJob:
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
 
-        def mx_rotate(pt):
-            if pt is None:
-                return None
-            return (
-                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-            )
+        geometry = Geomstr(self.geometry)
 
-        for e in self.elements:
+        # Move to device space.
+        geometry.transform(self.service.scene_to_device_matrix())
+
+        # Add redlight adjustments within device space.
+        geometry.transform(rotate)
+
+        points = list(geometry.as_interpolated_points(interpolate=quantization))
+        move = True
+        for i, e in enumerate(points):
             if self.stopped:
                 return False
-            x, y = e.point(0)
-            x, y = self.service.scene_to_device_position(x, y)
-            x, y = mx_rotate((x, y))
+            if e is None:
+                move = True
+                continue
+            x, y = e.real, e.imag
+            if np.isnan(x) or np.isnan(y):
+                move = True
+                continue
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
-            if isinstance(e, (Polygon, Polyline)):
+            if move:
                 con.dark(x, y, long=delay_dark, short=delay_dark)
-                for pt in e:
-                    if self.stopped:
-                        return False
-                    x, y = self.service.scene_to_device_position(*pt)
-                    x, y = mx_rotate((x, y))
-                    x = int(x) & 0xFFFF
-                    y = int(y) & 0xFFFF
-                    con.light(x, y, long=delay_between, short=delay_between)
+                move = False
                 continue
-
-            con.dark(x, y, long=delay_dark, short=delay_dark)
-            for i in range(1, quantization + 1):
-                if self.stopped:
-                    return False
-                x, y = e.point(i / float(quantization))
-                x, y = self.service.scene_to_device_position(x, y)
-                x, y = mx_rotate((x, y))
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                con.light(x, y, long=delay_between, short=delay_between)
+            con.light(x, y, long=delay_between, short=delay_between)
         if con.light_off():
             con.list_write_port()
         return True

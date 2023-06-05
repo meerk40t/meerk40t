@@ -5,7 +5,7 @@ from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -20,6 +20,8 @@ class CutOpNode(Node, Parameters):
         Node.__init__(self, type="op cut", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
+        self.kerf = 0
+        self._device_factor = 1.0
 
         if len(args) == 1:
             obj = args[0]
@@ -34,6 +36,7 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -42,6 +45,7 @@ class CutOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
+            "effect hatch",
         )
         # To which attributes responds the classification color check
         self.allowed_attributes = [
@@ -84,6 +88,11 @@ class CutOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
+        default_map["kerf"] = (
+            f"{Length(self.kerf, digits=2, preferred_units='mm').preferred_length}"
+            if self.kerf != 0
+            else ""
+        )
         ct = 0
         t = ""
         s = ""
@@ -101,7 +110,7 @@ class CutOpNode(Node, Parameters):
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
-        if drag_node.type.startswith("elem"):
+        if drag_node.type.startswith("elem") or drag_node.type.startswith("effect"):
             if (
                 drag_node.type not in self._allowed_elements_dnd
                 or drag_node._parent.type == "branch reg"
@@ -265,7 +274,7 @@ class CutOpNode(Node, Parameters):
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan: Plan value during preprocessor call
         @return:
         """
         if isinstance(self.speed, str):
@@ -274,9 +283,17 @@ class CutOpNode(Node, Parameters):
             except ValueError:
                 pass
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        if self.kerf is None:
+            self.kerf = 0
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+        # We need to establish the native device resolution,
+        # as kerf is given in scene space but needs to be passed on in device space
+        device = context.device
+        self._device_factor = 1 / abs(
+            complex(device.native_scale_x, device.native_scale_y)
+        )
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
@@ -297,6 +314,8 @@ class CutOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+            elif node.type.startswith("effect"):
+                path = node.as_geometry().as_path()
             elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
@@ -315,4 +334,5 @@ class CutOpNode(Node, Parameters):
                 passes=passes,
                 original_op=self.type,
                 color=stroke,
+                kerf=self.kerf * self._device_factor,
             )

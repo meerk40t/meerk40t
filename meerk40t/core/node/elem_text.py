@@ -1,6 +1,6 @@
 import re
 from copy import copy
-from math import sqrt, tau
+from math import tau
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
@@ -73,7 +73,7 @@ class TextNode(Node, Stroked):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
-        # Offset values to allow to fix the drawing of slanted fonts outside of the GetTextExtentBoundaries
+        # Offset values to allow fixing the drawing of slanted fonts. Without GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
         if "font" in kwargs:
@@ -143,8 +143,9 @@ class TextNode(Node, Stroked):
     def __copy__(self):
         nd = self.node_dict
         nd["matrix"] = copy(self.matrix)
-        nd["fill"] = copy(self.fill)
+        nd["stroke"] = copy(self.stroke)
         nd["stroke_width"] = copy(self.stroke_width)
+        nd["fill"] = copy(self.fill)
         return TextNode(**nd)
 
     @property

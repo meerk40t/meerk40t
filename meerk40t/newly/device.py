@@ -501,7 +501,7 @@ class NewlyDevice(Service, ViewPort):
         @self.console_command(
             "estop",
             help=_("stops the current job, deletes the spooler"),
-            input_type=(None),
+            input_type=None,
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping Job")

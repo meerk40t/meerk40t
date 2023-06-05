@@ -60,6 +60,14 @@ class MeasureTool(ToolWidget):
                 )
             gc.SetFont(font, self.scene.colors.color_measure_text)
 
+            matrix = self.parent.matrix
+            linewidth = 2.0 / matrix.value_scale_x()
+            if linewidth < 1:
+                linewidth = 1
+            try:
+                self.line_pen.SetWidth(linewidth)
+            except TypeError:
+                self.line_pen.SetWidth(int(linewidth))
             gc.SetPen(self.line_pen)
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
             points = list(self.point_series)

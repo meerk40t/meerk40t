@@ -409,8 +409,8 @@ class PPI(PlotManipulation):
                 if self.ppi_total >= 1000.0:
                     # PPI >= 1000: triggers on.
                     on = 1
-                    self.ppi_total -= 1000.0 * self.planner.dot_length
-                    self.dot_left = self.planner.dot_length - 1
+                    self.ppi_total -= 1000.0 * self.planner.implicit_dotlength
+                    self.dot_left = self.planner.implicit_dotlength - 1
                 else:
                     # PPI < 1000: triggers off.
                     on = 0

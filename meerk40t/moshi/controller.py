@@ -7,15 +7,8 @@ Tasked with sending data to usb connection.
 import threading
 import time
 
-from .builder import (
-    MOSHI_EPILOGUE,
-    MOSHI_ESTOP,
-    MOSHI_FREEMOTOR,
-    MOSHI_LASER,
-    MOSHI_PROLOGUE,
-    MOSHI_READ,
-    swizzle_table,
-)
+from ..ch341 import get_ch341_interface
+from .builder import MoshiBuilder
 
 STATUS_OK = 205  # Seen before file send. And after file send.
 STATUS_PROCESSING = 207  # PROCESSING
@@ -65,25 +58,24 @@ class MoshiController:
     Checks done before the Epilogue will have 205 state.
     """
 
-    def __init__(self, context, channel=None, *args, **kwargs):
+    def __init__(self, context, channel=None, force_mock=False, *args, **kwargs):
         self.context = context
         self.state = "unknown"
-        self.is_shutdown = False
 
-        self._thread = None
+        self._programs = []  # Programs to execute.
         self._buffer = (
             bytearray()
         )  # Threadsafe buffered commands to be sent to controller.
 
-        self._programs = []  # Programs to execute.
-
-        self.context._buffer_size = 0
-        self._main_lock = threading.Lock()
+        self._thread = None
+        self.is_shutdown = False
+        self._program_lock = threading.Lock()
 
         self._status = [0] * 6
         self._usb_state = -1
 
-        self._connection = None
+        self.connection = None
+        self.force_mock = force_mock
 
         self.max_attempts = 5
         self.refuse_counts = 0
@@ -96,8 +88,6 @@ class MoshiController:
         self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
         self.usb_send_channel = context.channel(f"{name}/usb_send")
         self.recv_channel = context.channel(f"{name}/recv")
-
-        self.ch341 = context.open("module/ch341", log=self.usb_log)
 
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
 
@@ -116,6 +106,7 @@ class MoshiController:
         self.start()
 
     def shutdown(self, *args, **kwargs):
+        self.update_state("terminate")
         if self._thread is not None:
             self.is_shutdown = True
 
@@ -126,108 +117,102 @@ class MoshiController:
         """Provides the length of the buffer of this device."""
         return len(self._buffer) + sum(map(len, self._programs))
 
-    def realtime_read(self):
-        """
-        The `a7xx` values used before the AC01 commands. Read preamble.
-
-        Also seen randomly 3.2 seconds apart. Maybe keep-alive.
-        @return:
-        """
-        self.pipe_channel("Realtime: Read...")
-        self.realtime_pipe(swizzle_table[MOSHI_READ][0])
-
-    def realtime_prologue(self):
-        """
-        Before a jump / program / turned on:
-        @return:
-        """
-        self.pipe_channel("Realtime: Prologue")
-        self.realtime_pipe(swizzle_table[MOSHI_PROLOGUE][0])
-
-    def realtime_epilogue(self):
-        """
-        Status 205
-        After a jump / program
-        Status 207
-        Status 205 Done.
-        @return:
-        """
-        self.pipe_channel("Realtime: Epilogue")
-        self.realtime_pipe(swizzle_table[MOSHI_EPILOGUE][0])
-
-    def realtime_freemotor(self):
-        """
-        Freemotor command
-        @return:
-        """
-        self.pipe_channel("Realtime: FreeMotor")
-        self.realtime_pipe(swizzle_table[MOSHI_FREEMOTOR][0])
-
-    def realtime_laser(self):
-        """
-        Laser Command Toggle.
-        @return:
-        """
-        self.pipe_channel("Realtime: Laser Active")
-        self.realtime_pipe(swizzle_table[MOSHI_LASER][0])
-
-    def realtime_stop(self):
-        """
-        Stop command (likely same as freemotor):
-        @return:
-        """
-        self.pipe_channel("Realtime: Stop")
-        self.realtime_pipe(swizzle_table[MOSHI_ESTOP][0])
-
-    def realtime_pipe(self, data):
-        if self._connection is not None:
-            try:
-                self._connection.write_addr(data)
-            except ConnectionError:
-                self.pipe_channel("Connection error")
-        else:
-            self.pipe_channel("Not connected")
-
     def open(self):
+        _ = self.usb_log._
+        if self.connection is not None and self.connection.is_connected():
+            return  # Already connected.
         self.pipe_channel("open()")
-        if self._connection is None:
-            connection = self.ch341.connect(
-                driver_index=self.context.usb_index,
-                chipv=self.context.usb_version,
-                bus=self.context.usb_bus,
-                address=self.context.usb_address,
-                mock=self.context.mock,
-            )
-            self._connection = connection
-            if self._connection is None:
-                raise ConnectionRefusedError(
-                    "ch341 connect did not return a connection."
+
+        try:
+            interfaces = list(
+                get_ch341_interface(
+                    self.context,
+                    self.usb_log,
+                    mock=self.force_mock or self.context.mock,
+                    mock_status=STATUS_OK,
+                    bulk=False,
                 )
-            if self.context.mock:
-                self._connection.mock_status = 205
-                self._connection.mock_finish = 207
-        else:
-            self._connection.open()
+            )
+            if self.context.usb_index != -1:
+                # Instructed to check one specific device.
+                devices = [self.context.usb_index]
+            else:
+                devices = range(16)
+
+            for interface in interfaces:
+                self.connection = interface
+                for i in devices:
+                    try:
+                        self._open_at_index(i)
+                        return  # Opened successfully.
+                    except ConnectionRefusedError as e:
+                        self.usb_log(str(e))
+                        if self.connection is not None:
+                            self.connection.close()
+                    except IndexError:
+                        self.usb_log(_("Connection failed."))
+                        self.connection = None
+                        break
+        except PermissionError as e:
+            self.usb_log(str(e))
+            return  # OS denied permissions, no point checking anything else.
+        if self.connection:
+            self.close()
+        raise ConnectionRefusedError(
+            _("No valid connection matched any given criteria.")
+        )
+
+    def _open_at_index(self, usb_index):
+        _ = self.context.kernel.translation
+        self.connection.open(usb_index=usb_index)
+        if not self.connection.is_connected():
+            raise ConnectionRefusedError("ch341 connect did not return a connection.")
+        if self.context.usb_bus != -1 and self.connection.bus != -1:
+            if self.connection.bus != self.context.usb_bus:
+                raise ConnectionRefusedError(
+                    _("K40 devices were found but they were rejected due to usb bus.")
+                )
+        if self.context.usb_address != -1 and self.connection.address != -1:
+            if self.connection.address != self.context.usb_address:
+                raise ConnectionRefusedError(
+                    _(
+                        "K40 devices were found but they were rejected due to usb address."
+                    )
+                )
+        if self.context.usb_version != -1:
+            version = self.connection.get_chip_version()
+            if version != self.context.usb_version:
+                raise ConnectionRefusedError(
+                    _(
+                        "K40 devices were found but they were rejected due to chip version."
+                    )
+                )
 
     def close(self):
         self.pipe_channel("close()")
-        if self._connection is not None:
-            self._connection.close()
-            self._connection = None
+        if self.connection is not None:
+            self.connection.close()
+            self.connection = None
         else:
             raise ConnectionError
 
-    def push_program(self, program):
-        self.pipe_channel(f"Pushed: {str(program.data)}")
-        self._programs.append(program)
+    def write(self, data):
+        with self._program_lock:
+            self._programs.append(data)
         self.start()
 
-    def unlock_rail(self):
-        self.pipe_channel("Control Request: Unlock")
-        if self._main_lock.locked():
-            return
-        else:
-            self.realtime_freemotor()
+    def realtime(self, data):
+        if MoshiBuilder.is_estop(data):
+            self.context.signal("pipe;buffer", 0)
+            self.update_state("terminate")
+            with self._program_lock:
+                self._programs.clear()
+                self._buffer.clear()
+        try:
+            self.open()
+            self.connection.write_addr(data)
+        except ConnectionRefusedError:
+            pass  # could not open connection.
 
     def start(self):
         """
@@ -262,17 +247,6 @@ class MoshiController:
         if self.state == "pause":
             self.update_state("active")
 
-    def estop(self):
-        """
-        Abort the current buffer and data queue.
-        """
-        self._buffer = bytearray()
-        self._programs.clear()
-        self.context.signal("pipe;buffer", 0)
-        self.realtime_stop()
-        self.update_state("terminate")
-        self.pipe_channel("Control Request: Stop")
-
     def stop(self, *args):
         """
         Start the shutdown of the local send thread.
@@ -298,9 +272,7 @@ class MoshiController:
         """
         Notify listening processes that the buffer size of this output has changed.
         """
-        if self.context is not None:
-            self.context._buffer_size = len(self._buffer)
-            self.context.signal("pipe;buffer", self.context._buffer_size)
+        self.context.signal("pipe;buffer", len(self._buffer))
 
     def update_packet(self, packet):
         """
@@ -349,7 +321,6 @@ class MoshiController:
         will be doing work in this function.
         """
         self.pipe_channel(f"Send Thread Start... {len(self._programs)}")
-        self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
 
@@ -364,23 +335,25 @@ class MoshiController:
                 if len(self._buffer) == 0 and len(self._programs) == 0:
                     self.pipe_channel("Nothing to process")
                     break  # There is nothing to run.
-                if self._connection is None:
+                if self.connection is None:
                     self.open()
                 # Stage 0: New Program send.
                 if len(self._buffer) == 0:
                     self.context.signal("pipe;running", True)
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
-                    self.realtime_prologue()
-                    self._buffer = self._programs.pop(0).data
-                    assert len(self._buffer) != 0
+                    MoshiBuilder.prologue(self.connection.write_addr, self.pipe_channel)
+                    with self._program_lock:
+                        self._buffer += self._programs.pop(0)
+                    if len(self._buffer) == 0:
+                        continue
 
                 # Stage 1: Send Program.
                 self.context.signal("pipe;running", True)
                 self.pipe_channel(f"Sending Data... {len(self._buffer)} bytes")
                 self._send_buffer()
                 self.update_status()
-                self.realtime_epilogue()
+                MoshiBuilder.epilogue(self.connection.write_addr, self.pipe_channel)
                 if self.is_shutdown:
                     break
 
@@ -417,7 +390,6 @@ class MoshiController:
         self._thread = None
         self.is_shutdown = False
         self.update_state("end")
-        self._main_lock.release()
         self.pipe_channel("Send Thread Finished...")
 
     def process_buffer(self):
@@ -448,18 +420,18 @@ class MoshiController:
         """
         Send packet to the CH341 connection.
         """
-        if self._connection is None:
+        if self.connection is None:
             raise ConnectionError
-        self._connection.write(packet)
+        self.connection.write(packet)
         self.update_packet(packet)
 
     def update_status(self):
         """
         Request a status update from the CH341 connection.
         """
-        if self._connection is None:
+        if self.connection is None:
             raise ConnectionError
-        self._status = self._connection.get_status()
+        self._status = self.connection.get_status()
         if self.context is not None:
             try:
                 self.context.signal(

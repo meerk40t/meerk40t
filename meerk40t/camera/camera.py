@@ -81,7 +81,6 @@ class Camera(Service):
 
         This attempts to perform checkerboard detection.
 
-        @param frame:
         @return:
         """
         _ = self._
@@ -162,7 +161,6 @@ class Camera(Service):
         """
         Open Camera device.
 
-        @param camera_index:
         @return:
         """
         self.quit_thread = False
@@ -347,7 +345,6 @@ class Camera(Service):
         """
         Reset the perspective settings.
 
-        @param event:
         @return:
         """
         self.perspective = None
@@ -361,7 +358,6 @@ class Camera(Service):
         """
         Reset the fisheye settings.
 
-        @param event:
         @return:
         """
         self.fisheye_k = None
@@ -380,14 +376,13 @@ class Camera(Service):
     def background(self):
         """
         Sets image background to main scene.
-        @param event:
         @return:
         """
         frame = self._last_frame
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("background", (self.image_width, self.image_height, frame))
-            return (self.image_width, self.image_height, frame)
+            return self.image_width, self.image_height, frame
         return None
 
     def export(self):
@@ -398,5 +393,5 @@ class Camera(Service):
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("export-image", (self.image_width, self.image_height, frame))
-            return (self.image_width, self.image_height, frame)
+            return self.image_width, self.image_height, frame
         return None

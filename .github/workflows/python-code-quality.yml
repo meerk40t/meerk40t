@@ -2,13 +2,13 @@ name: Python code quality
 
 on:
   push:
-    branches: [main, legacy, legacy7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/python-code-quality.yml'
       - 'pyproject.toml'
   pull_request:
-    branches: [main, legacy, legacy7]
+    branches: [main, legacy6, legacy7, legacy8]
     paths:
       - '**.py'
       - '.github/workflows/python-code-quality.yml'

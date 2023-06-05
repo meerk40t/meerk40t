@@ -6,13 +6,35 @@ from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
+from meerk40t.core.elements.offset import offset_path
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
 
 
 def path_to_cutobjects(
-    path, settings, closed_distance=15, passes=1, original_op=None, color=None
+    path,
+    settings,
+    closed_distance=15,
+    passes=1,
+    original_op=None,
+    color=None,
+    kerf=0,
 ):
-    for subpath in path.as_subpaths():
+    if kerf != 0:
+        source = offset_path(
+            abs(path),
+            -1 * kerf,
+            radial_connector=True,
+            linearize=True,
+            interpolation=500,
+        )
+        source.validate_connections()
+        source.approximate_arcs_with_cubics()
+        # Just a test to see if it works, replace path by it bounding box
+        # bb = sp.bbox(transformed=True)
+        # sp = Path(Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]))
+    else:
+        source = path
+    for subpath in source.as_subpaths():
         sp = Path(subpath)
         if len(sp) == 0:
             continue
@@ -29,7 +51,7 @@ def path_to_cutobjects(
         )
         group.path = sp
         group.original_op = original_op
-        for seg in subpath:
+        for seg in sp:
             if isinstance(seg, Move):
                 pass  # Move operations are ignored.
             elif isinstance(seg, Close):

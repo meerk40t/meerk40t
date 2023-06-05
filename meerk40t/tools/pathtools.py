@@ -827,7 +827,7 @@ class VectorMontonizer:
             y = self.scanline
         m = e[6]
         b = e[7]
-        if m == float("nan") or m == float("inf"):
+        if isnan(m) or isinf(m):
             low = e[5]
             return low.x
         return (y - b) / m

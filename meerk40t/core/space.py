@@ -1,4 +1,4 @@
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM, Length
+from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.core.view import View
 from meerk40t.kernel import Service, signal_listener
 

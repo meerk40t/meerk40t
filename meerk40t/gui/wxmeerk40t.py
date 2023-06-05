@@ -27,6 +27,7 @@ from meerk40t.gui.wxmscene import SceneWindow
 from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_safe_path
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
+from ..tools.kerftest import KerfTool
 from ..tools.livinghinges import LivingHingeTool
 from .about import About
 from .alignment import Alignment
@@ -280,7 +281,7 @@ class wxMeerK40t(wx.App, Module):
         self.timer = wx.Timer(self, id=wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
-        self.timer.Start(10)
+        self.timer.Start(50)
 
         icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
@@ -656,6 +657,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/HatchEffectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
@@ -701,6 +703,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Templatetool", TemplateTool)
         kernel.register("window/Hingetool", LivingHingeTool)
         kernel.register("window/NodeEditToolbar", NodeEditToolbar)
+        kernel.register("window/Kerftest", KerfTool)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 

@@ -143,8 +143,14 @@ DEFAULT_KEYMAP = {
         "",
         "rotaryscale",
     ),
-    "ctrl+a": ("element* select",),
-    "ctrl+c": ("clipboard copy",),
+    "ctrl+a": (
+        "",
+        "element* select",
+    ),
+    "ctrl+c": (
+        "",
+        "clipboard copy",
+    ),
     "ctrl+shift+c": ("align bed group xy center center",),
     "ctrl+e": (
         "circle 0.5in 0.5in 0.5in stroke red classify",
@@ -172,13 +178,23 @@ DEFAULT_KEYMAP = {
         "",
         "dialog_stroke",
     ),
-    "ctrl+v": ("clipboard paste",),
-    "ctrl+x": ("clipboard cut",),
+    "ctrl+v": (
+        "",
+        "clipboard paste",
+    ),
+    "ctrl+x": (
+        "",
+        "clipboard cut",
+    ),
     "ctrl+z": (
+        "",
         "undo",
         "reset",
     ),
-    "ctrl+shift+z": ("redo",),
+    "ctrl+shift+z": (
+        "",
+        "redo",
+    ),
     "ctrl+1": ("bind 1 move $x $y",),
     "ctrl+2": ("bind 2 move $x $y",),
     "ctrl+3": ("bind 3 move $x $y",),

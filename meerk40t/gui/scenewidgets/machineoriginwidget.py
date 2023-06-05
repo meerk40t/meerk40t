@@ -25,7 +25,6 @@ class MachineOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
-        """ """
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):

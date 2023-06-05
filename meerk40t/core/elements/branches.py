@@ -18,8 +18,6 @@ from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.svgelements import Angle, Color, Matrix
 
-from .element_types import *
-
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
@@ -71,13 +69,13 @@ def init_commands(kernel):
     @self.console_command(
         "operation.*", help=_("operation.*: selected operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_select(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
         "operation*", help=_("operation*: all operations"), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_all(**kwargs):
         return "ops", list(self.ops())
 
     @self.console_command(
@@ -85,13 +83,13 @@ def init_commands(kernel):
         help=_("operation~: non selected operations."),
         output_type="ops",
     )
-    def operation(**kwargs):
+    def operation_invert(**kwargs):
         return "ops", list(self.ops(emphasized=False))
 
     @self.console_command(
         "operation", help=_("operation: selected operations."), output_type="ops"
     )
-    def operation(**kwargs):
+    def operation_base(**kwargs):
         return "ops", list(self.ops(emphasized=True))
 
     @self.console_command(
@@ -100,7 +98,7 @@ def init_commands(kernel):
         regex=True,
         output_type="ops",
     )
-    def operation(command, channel, _, **kwargs):
+    def operation_re(command, channel, _, **kwargs):
         arg = command[9:]
         op_values = []
         for value in arg.split(","):
@@ -121,7 +119,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def operation_select(data=None, **kwargs):
+    def operation_select_emphasis(data=None, **kwargs):
         self.set_emphasis(data)
         return "ops", data
 
@@ -207,11 +205,11 @@ def init_commands(kernel):
         Valid operators are >, >=, <, <=, =, ==, +, -, *, /, &, &&, |, and ||
         Valid string operators are startswith, endswith, contains.
         String values require single-quotes ', because the console interface requires double-quotes.
-        eg. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
-        eg. filter engrave=op&speed=35|cut=op&speed=10
-        eg. filter len=0
-        eg. operation* filter "type='op image'" list
-        eg. element* filter "id startswith 'p'" list
+        e.g. filter speed>=10, filter speed=5+5, filter speed>power/10, filter speed==2*4+2
+        e.g. filter engrave=op&speed=35|cut=op&speed=10
+        e.g. filter len=0
+        e.g. operation* filter "type='op image'" list
+        e.g. element* filter "id startswith 'p'" list
         """
         sublist = list()
         _filter_parse = [
@@ -632,7 +630,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def waitop(
         command,
         time=None,
         **kwargs,
@@ -658,7 +656,7 @@ def init_commands(kernel):
         input_type=None,
         output_type="ops",
     )
-    def makeop(
+    def io_op(
         command,
         mask=None,
         value=None,
@@ -678,7 +676,7 @@ def init_commands(kernel):
         "consoleop",
         help=_("<consoleop> - Create new utility operation"),
     )
-    def makeop(
+    def consoleop(
         command,
         remainder=None,
         **kwargs,
@@ -1018,7 +1016,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def op_hatch_distance(
+    def op_hatch_angle(
         command,
         channel,
         _,
@@ -1216,7 +1214,7 @@ def init_commands(kernel):
         "elements",
         help=_("Show information about elements"),
     )
-    def element(**kwargs):
+    def elements(**kwargs):
         self(".element* list\n")
 
     @self.console_command(
@@ -1434,25 +1432,33 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_merge(data=None, post=None, **kwargs):
-        super_element = Path()
+        """
+        Merge combines the geometries of the inputs. This matters in some cases where fills are used. Such that two
+        nested circles forms a toroid rather two independent circles.
+        """
+        node = self.elem_branch.add(type="elem path")
         for e in data:
             try:
-                path = e.as_path()
+                path = e.as_geometry()
             except AttributeError:
                 continue
             try:
-                if super_element.stroke is None:
-                    super_element.stroke = e.stroke
+                if node.stroke is None:
+                    node.stroke = e.stroke
             except AttributeError:
                 pass
             try:
-                if super_element.fill is None:
-                    super_element.fill = e.fill
+                if node.fill is None:
+                    node.fill = e.fill
             except AttributeError:
                 pass
-            super_element += path
+            try:
+                if node.stroke_width is None:
+                    node.stroke_width = e.stroke_width
+            except AttributeError:
+                pass
+            node.geometry.append(path)
         self.remove_elements(data)
-        node = self.elem_branch.add(path=super_element, type="elem path")
         self.set_node_emphasis(node, True)
         # Newly created! Classification needed?
         data = [node]
@@ -1466,25 +1472,29 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_subpath(data=None, post=None, **kwargs):
+        """
+        Subpath is the opposite of merge. It divides non-attached paths into different node objects.
+        """
         if not isinstance(data, list):
             data = list(data)
         elements_nodes = []
         elements = []
         for node in data:
-            oldstuff = []
+            node_attributes = []
             for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
                 if hasattr(node, attrib):
                     oldval = getattr(node, attrib, None)
-                    oldstuff.append([attrib, oldval])
+                    node_attributes.append([attrib, oldval])
             group_node = node.replace_node(type="group", label=node.label)
+
             try:
-                p = node.as_path()
+                geometry = node.as_geometry()
             except AttributeError:
                 continue
-            for subpath in p.as_subpaths():
-                subelement = Path(subpath)
-                subnode = group_node.add(path=subelement, type="elem path")
-                for item in oldstuff:
+
+            for subpath in geometry.as_subpaths():
+                subnode = group_node.add(geometry=subpath, type="elem path")
+                for item in node_attributes:
                     setattr(subnode, item[0], item[1])
                 elements.append(subnode)
             elements_nodes.append(group_node)

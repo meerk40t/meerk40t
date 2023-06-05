@@ -2,7 +2,6 @@ import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
 
-from ...core.units import Length
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
 from .attributes import IdPanel

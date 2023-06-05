@@ -25,10 +25,8 @@ from ..svgelements import (
     Matrix,
     Move,
     Path,
-    Point,
     Polygon,
     Polyline,
-    SimpleLine,
     Viewbox,
 )
 
@@ -157,15 +155,24 @@ class DXFProcessor:
         except AttributeError:
             pass
         if entity.dxftype() == "CIRCLE":
-            element = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-            node = context_node.add(shape=element, type="elem ellipse")
+            m = Matrix()
+            m.post_scale(self.scale, -self.scale)
+            m.post_translate_y(self.elements.device.unit_height)
+            cx, cy = entity.dxf.center
+            node = context_node.add(
+                cx=cx,
+                cy=cy,
+                rx=entity.dxf.radius,
+                ry=entity.dxf.radius,
+                matrix=m,
+                stroke_scale=False,
+                type="elem ellipse",
+            )
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
         elif entity.dxftype() == "ARC":
+            # TODO: Ellipse used to make circ.arc_angle path.
             circ = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
             start_angle = Angle.degrees(entity.dxf.start_angle)
             end_angle = Angle.degrees(entity.dxf.end_angle)
@@ -186,10 +193,10 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "ELLIPSE":
             # TODO: needs more math, axis is vector, ratio is to minor.
+            # major axis is vector
+            # ratio is the ratio of major to minor.
             element = Ellipse(
                 center=entity.dxf.center,
-                # major axis is vector
-                # ratio is the ratio of major to minor.
                 start_point=entity.start_point,
                 end_point=entity.end_point,
                 start_angle=entity.dxf.start_param,
@@ -204,22 +211,24 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "LINE":
             #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
-            element = SimpleLine(
+            m = Matrix()
+            m.post_scale(self.scale, -self.scale)
+            m.post_translate_y(self.elements.device.unit_height)
+            node = context_node.add(
                 x1=entity.dxf.start[0],
                 y1=entity.dxf.start[1],
                 x2=entity.dxf.end[0],
                 y2=entity.dxf.end[1],
+                stroke_scale=False,
+                matrix=m,
+                type="elem line",
             )
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-            node = context_node.add(shape=element, type="elem line")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
         elif entity.dxftype() == "POINT":
-            element = Point(entity.dxf.location)
-            node = context_node.add(point=element, matrix=Matrix(), type="elem point")
+            x, y = entity.dxf.location
+            node = context_node.add(x=x, y=y, matrix=Matrix(), type="elem point")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return

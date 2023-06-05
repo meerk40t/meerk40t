@@ -1,17 +1,16 @@
 from copy import copy
-from math import sqrt
+from math import cos, sin
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Circle,
     Ellipse,
     Matrix,
-    Path,
     Point,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 class EllipseNode(Node, Stroked):
@@ -20,32 +19,54 @@ class EllipseNode(Node, Stroked):
     """
 
     def __init__(self, **kwargs):
-        self.shape = None
+        shape = kwargs.get("shape")
+        if shape is not None:
+            if "cx" not in kwargs:
+                kwargs["cx"] = shape.cx
+            if "cy" not in kwargs:
+                kwargs["cy"] = shape.cy
+            if "rx" not in kwargs:
+                kwargs["rx"] = shape.rx
+            if "ry" not in kwargs:
+                kwargs["ry"] = shape.ry
+            if "stroke" not in kwargs:
+                kwargs["stroke"] = shape.stroke
+            if "stroke_width" not in kwargs:
+                kwargs["stroke_width"] = shape.implicit_stroke_width
+            if "fill" not in kwargs:
+                kwargs["fill"] = shape.fill
+            if "matrix" not in kwargs:
+                kwargs["matrix"] = shape.transform
+            if "stroke_scale" not in kwargs:
+                kwargs["stroke_scale"] = (
+                    shape.values.get(SVG_ATTR_VECTOR_EFFECT)
+                    != SVG_VALUE_NON_SCALING_STROKE
+                )
+        self.cx = 0
+        self.cy = 0
+        self.rx = 0
+        self.ry = 0
         self.matrix = None
         self.fill = None
         self.stroke = None
-        self.stroke_width = None
-        self.stroke_scale = None
+        self.stroke_width = 1000.0
+        self.stroke_scale = False
         self._stroke_zero = None
         self.fillrule = Fillrule.FILLRULE_EVENODD
 
         super().__init__(type="elem ellipse", **kwargs)
         self.__formatter = "{element_type} {id} {stroke}"
-        assert isinstance(self.shape, (Ellipse, Circle))
-
+        if self.cx is None:
+            self.cx = 0
+        if self.cy is None:
+            self.cy = 0
+        if self.rx is None:
+            self.rx = 0
+        if self.ry is None:
+            self.ry = 0
         if self.matrix is None:
-            self.matrix = self.shape.transform
-        if self.fill is None:
-            self.fill = self.shape.fill
-        if self.stroke is None:
-            self.stroke = self.shape.stroke
-        if self.stroke_width is None:
-            self.stroke_width = self.shape.implicit_stroke_width
-        if self.stroke_scale is None:
-            self.stroke_scale = (
-                self.shape.values.get(SVG_ATTR_VECTOR_EFFECT)
-                != SVG_VALUE_NON_SCALING_STROKE
-            )
+            self.matrix = Matrix()
+
         if self._stroke_zero is None:
             # This defines the stroke-width zero point scale
             self.stroke_width_zero()
@@ -53,20 +74,49 @@ class EllipseNode(Node, Stroked):
         self.set_dirty_bounds()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         nd = self.node_dict
-        nd["shape"] = copy(self.shape)
         nd["matrix"] = copy(self.matrix)
+        nd["stroke"] = copy(self.stroke)
         nd["fill"] = copy(self.fill)
-        nd["stroke_width"] = copy(self.stroke_width)
         return EllipseNode(**nd)
+
+    @property
+    def shape(self):
+        return Ellipse(
+            cx=self.cx,
+            cy=self.cy,
+            rx=self.rx,
+            ry=self.ry,
+            transform=self.matrix,
+            stroke=self.stroke,
+            fill=self.fill,
+            stroke_width=self.stroke_width,
+        )
+
+    def point_at_t(self, t):
+        """
+        find the point that corresponds to given value t.
+        Where t=0 is the first point and t=tau is the final point.
+
+        In the case of a circle: t = angle.
+
+        :param t:
+        :return:
+        """
+        return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
+
+    def as_geometry(self):
+        path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
+        path.transform(self.matrix)
+        return path
 
     def scaled(self, sx, sy, ox, oy):
         """
         This is a special case of the modified call, we are scaling
-        the node without fundamentally altering it's properties
+        the node without fundamentally altering its properties
         """
 
         def apply_it(box):
@@ -81,7 +131,7 @@ class EllipseNode(Node, Stroked):
                 d2 = y1 - oy
                 y0 = oy + sy * d1
                 y1 = oy + sy * d2
-            return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+            return min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)
 
         if self._bounds_dirty or self._bounds is None:
             # A pity but we need proper data
@@ -89,7 +139,6 @@ class EllipseNode(Node, Stroked):
             return
 
         self._bounds = apply_it(self._bounds)
-        self._sync_svg()
         delta = float(self.implied_stroke_width) / 2.0
         self._paint_bounds = (
             self._bounds[0] - delta,
@@ -100,11 +149,11 @@ class EllipseNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        self._sync_svg()
-        bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        if bounds is None:
-            # degenerate paths can have no bounds.
-            return None
+        geometry = self.as_geometry()
+        if transformed:
+            bounds = geometry.bbox(mx=self.matrix)
+        else:
+            bounds = geometry.bbox()
         xmin, ymin, xmax, ymax = bounds
         if with_stroke:
             delta = float(self.implied_stroke_width) / 2.0
@@ -121,7 +170,6 @@ class EllipseNode(Node, Stroked):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
         self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
@@ -154,17 +202,16 @@ class EllipseNode(Node, Stroked):
         # self._points.append([cx, bounds[3], "bounds bottom_center"])
         # self._points.append([bounds[0], cy, "bounds center_left"])
         # self._points.append([bounds[2], cy, "bounds center_right"])
-        obj = self.shape
         npoints = [
-            Point(obj.cx - obj.rx, obj.cy),
-            Point(obj.cx, obj.cy - obj.ry),
-            Point(obj.cx + obj.rx, obj.cy),
-            Point(obj.cx, obj.cy + obj.ry),
+            Point(self.cx - self.rx, self.cy),
+            Point(self.cx, self.cy - self.ry),
+            Point(self.cx + self.rx, self.cy),
+            Point(self.cx, self.cy + self.ry),
         ]
-        p1 = Point(obj.cx, obj.cy)
-        if not obj.transform.is_identity():
-            points = list(map(obj.transform.point_in_matrix_space, npoints))
-            p1 = obj.transform.point_in_matrix_space(p1)
+        p1 = Point(self.cx, self.cy)
+        if not self.matrix.is_identity():
+            points = list(map(self.matrix.point_in_matrix_space, npoints))
+            p1 = self.matrix.point_in_matrix_space(p1)
         else:
             points = npoints
         for pt in points:
@@ -177,19 +224,13 @@ class EllipseNode(Node, Stroked):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
+    def as_path(self):
+        geometry = self.as_geometry()
+        path = geometry.as_path()
+        path.stroke = self.stroke
+        path.fill = self.fill
+        path.stroke_width = self.stroke_width
+        path.values[SVG_ATTR_VECTOR_EFFECT] = (
             SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self.shape.stroke = self.stroke
-        try:
-            del self.shape.values["viewport_transform"]
-            # If we had transforming viewport that is no longer relevant
-        except KeyError:
-            pass
-
-    def as_path(self):
-        self._sync_svg()
-        return abs(Path(self.shape))
+        return path

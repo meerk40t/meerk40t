@@ -579,6 +579,8 @@ class NewlyController:
         @param x:
         @param y:
         @param settings:
+        @param power: power during switch
+        @param speed: speed for marking
         @return:
         """
         self._set_vector_mode()

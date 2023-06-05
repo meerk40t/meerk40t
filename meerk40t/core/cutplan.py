@@ -7,7 +7,7 @@ CutPlan handles the various complicated algorithms to optimising the sequence of
 *   Sort burns for all operations at the same time rather than operation by operation
 *   Ensure that elements inside closed cut paths are burned before the outside path
 *   Group these inner burns so that one component on a sheet is completed before the next one is started
-*   Ensure that non-closed paths are started from one of the ends and burned in one continuous burn
+*   Ensure that non-closed paths start from one of the ends and burned in one continuous burn
     rather than being burned in 2 or more separate parts
 *   Split raster images in to self-contained areas to avoid sweeping over large empty areas
     including splitting into individual small areas if burn inner first is set and then recombining
@@ -19,6 +19,8 @@ from math import isinf
 from os import times
 from time import time
 from typing import Optional
+
+import numpy as np
 
 from ..svgelements import Group, Polygon
 from ..tools.pathtools import VectorMontonizer
@@ -236,7 +238,7 @@ class CutPlan:
             )
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
-                    # This is not able to be merged
+                    # This cannot merge
                     yield group
                     group = list()
             group.append(c)
@@ -642,6 +644,7 @@ def is_inside(inner, outer, tolerance=0):
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
+    @param tolerance: 0
     @return: whether path1 is wholly inside path2.
     """
     # We still consider a path to be inside another path if it is
@@ -697,18 +700,42 @@ def is_inside(inner, outer, tolerance=0):
     # a polygon more intelligently based on size and curvature
     # i.e. larger bboxes need more points and
     # tighter curves need more points (i.e. compare vector directions)
-    if not hasattr(outer, "vm"):
-        outer_path = Polygon(
-            [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
-        )
-        vm = VectorMontonizer()
-        vm.add_polyline(outer_path)
-        outer.vm = vm
-    for i in range(101):
-        p = inner_path.point(i / 100.0, error=1e4)
-        if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
-            return False
-    return True
+
+    def vm_code(outer, outer_path, inner, inner_path):
+        if not hasattr(outer, "vm"):
+            outer_path = Polygon(
+                [outer_path.point(i / 1000.0, error=1e4) for i in range(1001)]
+            )
+            vm = VectorMontonizer()
+            vm.add_polyline(outer_path)
+            outer.vm = vm
+        for i in range(101):
+            p = inner_path.point(
+                i / 100.0, error=1e4
+            )  # Point(4633.110682926033,1788.413481872459)
+            if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
+                return False
+        return True
+
+    def sb_code(outer, outer_path, inner, inner_path):
+        from ..tools.geomstr import Polygon as Gpoly
+        from ..tools.geomstr import Scanbeam
+
+        if not hasattr(outer, "sb"):
+            pg = outer_path.npoint(np.linspace(0, 1, 1001), error=1e4)
+            pg = pg[:, 0] + pg[:, 1] * 1j
+
+            outer_path = Gpoly(*pg)
+            sb = Scanbeam(outer_path.geomstr)
+            outer.sb = sb
+        p = inner_path.npoint(np.linspace(0, 1, 101), error=1e4)
+        points = p[:, 0] + p[:, 1] * 1j
+
+        q = outer.sb.points_in_polygon(points)
+        return q.all()
+
+    return sb_code(outer, outer_path, inner, inner_path)
+    # return vm_code(outer, outer_path, inner, inner_path)
 
 
 def reify_matrix(self):

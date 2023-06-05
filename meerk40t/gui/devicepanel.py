@@ -137,7 +137,7 @@ class SelectDevice(wx.Dialog):
         if item:
             try:
                 index = tree.GetItemData(item)
-                if index is not None and index >= 0 and index < len(self.dev_infos):
+                if index is not None and 0 <= index < len(self.dev_infos):
                     obj = self.dev_infos[index][0]
                     info = obj.get("extended_info", "")
                     self.device_type = obj.get("provider", "")
@@ -541,4 +541,4 @@ class DeviceManager(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Device Manager")
+        return "Device-Settings", "Device Manager"
