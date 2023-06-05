@@ -96,6 +96,7 @@ class SimpleUI(MWindow):
         kernel.register("simpleui/console", ConsolePanel)
 
     def window_close(self):
+        context = self.context
         for p in self.panel_instances:
             try:
                 p.pane_hide()
@@ -103,6 +104,9 @@ class SimpleUI(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
+
+        context.channel("shutdown").watch(print)
+        self.context(".timer 0 1 quit\n")
 
     def window_menu(self):
         return False
