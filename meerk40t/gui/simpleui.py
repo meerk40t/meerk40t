@@ -3,6 +3,7 @@ from wx import aui
 
 from .icons import icons8_computer_support_50
 from .mwindow import MWindow
+from ..core.exceptions import BadFileError
 
 _ = wx.GetTranslation
 
@@ -27,8 +28,61 @@ class SimpleUI(MWindow):
             | aui.AUI_NB_TAB_MOVE,
         )
         self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+
+        self.notebook_main.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.Layout()
         self.on_build()
+
+    def on_drop_file(self, event):
+        """
+        Drop file handler
+
+        Accepts multiple files drops.
+        """
+        accepted = 0
+        rejected = 0
+        rejected_files = []
+        for pathname in event.GetFiles():
+            if self.load(pathname):
+                accepted += 1
+            else:
+                rejected += 1
+                rejected_files.append(pathname)
+        if rejected != 0:
+            reject = "\n".join(rejected_files)
+            err_msg = _("Some files were unrecognized:\n{rejected_files}").format(
+                rejected_files=reject
+            )
+            dlg = wx.MessageDialog(
+                None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+
+    def load(self, pathname):
+        kernel = self.context.kernel
+        try:
+            # Reset to standard tool
+            self.context("tool none\n")
+            info = _("Loading File...") + "\n" + pathname
+            kernel.busyinfo.start(msg=info)
+            self.context.elements.load(
+                pathname,
+                channel=self.context.channel("load"),
+                svg_ppi=self.context.elements.svg_ppi,
+            )
+            kernel.busyinfo.end()
+            return True
+        except BadFileError as e:
+            dlg = wx.MessageDialog(
+                None,
+                str(e),
+                _("File is Malformed"),
+                wx.OK | wx.ICON_WARNING,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+        return False
 
     def on_page_changed(self, event):
         event.Skip()
@@ -88,6 +142,8 @@ class SimpleUI(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        # from meerk40t.gui.wxmscene import MeerK40tScenePanel
+        # kernel.register("simpleui/scene", MeerK40tScenePanel)
         from meerk40t.gui.laserpanel import LaserPanel
         kernel.register("simpleui/laserpanel", LaserPanel)
         from meerk40t.gui.navigationpanels import Jog
