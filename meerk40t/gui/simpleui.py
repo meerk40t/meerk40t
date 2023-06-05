@@ -68,7 +68,7 @@ class SimpleUI(MWindow):
             try:
                 name = page.name
             except AttributeError:
-                name = page.__class__.__name__
+                name = page_panel.__class__.__name__
 
             self.notebook_main.AddPage(page_panel, _(name))
             self.add_module_delegate(page_panel)
