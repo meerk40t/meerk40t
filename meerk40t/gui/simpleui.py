@@ -101,23 +101,26 @@ class SimpleUI(MWindow):
     def on_build(self, *args):
         self.Freeze()
 
-        def sort_priority(prop):
+        def sort_priority(ref):
+            prop, kwargs = ref
             return (
                 getattr(prop, "priority")
                 if hasattr(prop, "priority")
                 else 0
             )
         pages_to_instance = list()
-        for property_sheet in self.context.lookup_all(
+        for prop, kwargs in self.context.lookup_all(
             f"simpleui/.*"
         ):
-            pages_to_instance.append(property_sheet)
+            if kwargs is None:
+                kwargs = dict()
+            pages_to_instance.append((prop, kwargs))
 
         pages_to_instance.sort(key=sort_priority)
 
-        for page in pages_to_instance:
+        for page, kwargs in pages_to_instance:
             page_panel = page(
-                self.notebook_main, wx.ID_ANY, context=self.context
+                self.notebook_main, wx.ID_ANY, context=self.context, **kwargs
             )
             try:
                 name = page.name
@@ -145,11 +148,11 @@ class SimpleUI(MWindow):
         # from meerk40t.gui.wxmscene import MeerK40tScenePanel
         # kernel.register("simpleui/scene", MeerK40tScenePanel)
         from meerk40t.gui.laserpanel import LaserPanel
-        kernel.register("simpleui/laserpanel", LaserPanel)
+        kernel.register("simpleui/laserpanel", (LaserPanel, None))
         from meerk40t.gui.navigationpanels import Jog
-        kernel.register("simpleui/navigation", Jog)
+        kernel.register("simpleui/navigation", (Jog, {"icon_size": 20}))
         from meerk40t.gui.consolepanel import ConsolePanel
-        kernel.register("simpleui/console", ConsolePanel)
+        kernel.register("simpleui/console", (ConsolePanel, None))
 
     def window_close(self):
         context = self.context
