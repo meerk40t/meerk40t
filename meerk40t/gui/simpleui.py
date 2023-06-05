@@ -1,3 +1,12 @@
+"""
+Simple Display. The goal here is not to create a fully fleshed out, has everything dialog but rather a simple dialog
+that is small enough that it can fit in a 5in rPi touch screen display. This code is executed with --simpleui
+flagged from the commandline.
+
+See Discussion:
+https://github.com/meerk40t/meerk40t/discussions/1944
+"""
+
 import wx
 from wx import aui
 
