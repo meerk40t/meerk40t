@@ -453,6 +453,9 @@ class SpeedPpiPanel(wx.Panel):
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
+        trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
+        self.power_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         freq = self.context.device.lookup("frequency")
         if freq:
             frequency_sizer = StaticBoxSizer(
