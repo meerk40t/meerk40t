@@ -723,7 +723,6 @@ class NewlyController:
 
     def pulse(self, pulse_time_ms):
         self.realtime_job()
-        self.mode = "pulse"
         self.dwell(pulse_time_ms)
         self.close_job()
 
@@ -754,11 +753,16 @@ class NewlyController:
         if time_in_ms > 0:
             self(f"TX{int(round(time_in_ms))}")
 
-    def dwell(self, time_in_ms):
-        if self._pwm_frequency is not None:
-            self(f"PL{self._pwm_frequency}")
-        power = self.service.default_cut_power if self._power is None else self._power
-        self(f"DA{self._map_power(power)}")
+    def dwell(self, time_in_ms, settings=None):
+        self.mode = "pulse"
+        if self.service.pwm_enabled:
+            self._set_pwm_freq = self.service.pwm_frequency
+        if settings is not None:
+            # Settings based speed, power, pwm_freq
+            self.set_settings(settings)
+        self._set_power *= self.service.max_pulse_power / 100.0
+        self._commit_pwmfreq()
+        self._commit_power()
         while time_in_ms > 255:
             time_in_ms -= 255
             self("TO255")
