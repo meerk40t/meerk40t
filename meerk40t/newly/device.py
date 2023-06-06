@@ -302,6 +302,17 @@ class NewlyDevice(Service, ViewPort):
                 "subsection": "_40_Power",
             },
             {
+                "attr": "max_pulse_power",
+                "object": self,
+                "default": 65.0,
+                "type": float,
+                "label": _("Max Pulse Power"),
+                "trailer": "%",
+                "tip": _("What max power level should pulses be fired at?"),
+                "section": "_10_Parameters",
+                "subsection": "_45_Pulse",
+            },
+            {
                 "attr": "pwm_enabled",
                 "object": self,
                 "default": False,
