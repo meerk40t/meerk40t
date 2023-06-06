@@ -760,7 +760,11 @@ class NewlyController:
             self._set_pwm_freq = self.service.pwm_frequency
         if settings is not None:
             # Settings based speed, power, pwm_freq
-            self.set_settings(settings)
+            if "power" in settings:
+                self._set_power = settings.get("power")
+            if "pwm_frequency" in settings:
+                self._set_pwm_freq = settings.get("pwm_frequency")
+            # self.set_settings(settings)
         else:
             self._set_power = 1000.0
         self._set_power *= self.service.max_pulse_power / 100.0
