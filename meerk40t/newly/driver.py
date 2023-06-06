@@ -200,7 +200,7 @@ class NewlyDriver:
                 x, y = q.start
                 if last_x != x or last_y != y:
                     con.goto(x, y)
-                con.dwell(q.dwell_time)
+                con.dwell(q.dwell_time, settings=q.settings)
             elif isinstance(q, WaitCut):
                 con.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
