@@ -246,6 +246,7 @@ class NewlyController:
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
+        self.mode = "move"
         self._set_pen = self.sp2
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
@@ -760,6 +761,8 @@ class NewlyController:
         if settings is not None:
             # Settings based speed, power, pwm_freq
             self.set_settings(settings)
+        else:
+            self._set_power = 1000.0
         self._set_power *= self.service.max_pulse_power / 100.0
         self._commit_pwmfreq()
         self._commit_power()
@@ -907,6 +910,9 @@ class NewlyController:
     #######################
 
     def _map_power(self, power):
+        if self.mode == "pulse":
+            power /= 10.0
+            return int(round(power))
         power /= 1000.0  # Scale to 0-1
         power *= self.service.max_power  # Scale by max power %
         power *= 255.0 / 100.0  # range between 000 and 255
@@ -932,10 +938,13 @@ class NewlyController:
         if new_power is None:
             return
 
+        # Premap the power setting.
+        new_power = self._map_power(new_power)
+
         if new_power != self._power:
             # Already set power is not the new_power setting.
             self._power = new_power
-            self(f"DA{self._map_power(self._power)}")
+            self(f"DA{new_power}")
 
     def _commit_pwmfreq(self):
         """
