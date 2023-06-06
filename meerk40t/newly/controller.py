@@ -252,6 +252,7 @@ class NewlyController:
         self._set_move_dc = self.service.move_dc
         self._set_mode = "move"
         self._set_speed = self.service.moving_speed
+        self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = True
         self._set_bit_depth = None
