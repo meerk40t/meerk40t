@@ -18,6 +18,10 @@ _ = wx.GetTranslation
 
 
 class ProjectPanel(wx.Panel):
+    """
+    Serves to allow the use of Load Project button. This couldn't be provided natively by any readily availible panel.
+    """
+
     name = "Project"
 
     def __init__(self, *args, context=None, **kwds):
@@ -46,7 +50,7 @@ class ProjectPanel(wx.Panel):
         # This code should load just specific project files rather than all importable formats.
         files = self.context.elements.load_types()
         with wx.FileDialog(
-                self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
+            self, _("Open"), wildcard=files, style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
@@ -115,6 +119,11 @@ class ProjectPanel(wx.Panel):
 
 
 class SimpleUI(MWindow):
+    """
+    This version of SimpleUI (we are not attached this, and it can be radically changed in the future) consists of a
+    simple notebook of panels taken various sources.
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(598, 429, *args, **kwds)
 
@@ -157,15 +166,10 @@ class SimpleUI(MWindow):
 
         def sort_priority(ref):
             prop, kwargs = ref
-            return (
-                getattr(prop, "priority")
-                if hasattr(prop, "priority")
-                else 0
-            )
+            return getattr(prop, "priority") if hasattr(prop, "priority") else 0
+
         pages_to_instance = list()
-        for prop, kwargs in self.context.lookup_all(
-            f"simpleui/.*"
-        ):
+        for prop, kwargs in self.context.lookup_all("simpleui/.*"):
             if kwargs is None:
                 kwargs = dict()
             pages_to_instance.append((prop, kwargs))
@@ -204,12 +208,14 @@ class SimpleUI(MWindow):
         # from meerk40t.gui.wxmscene import MeerK40tScenePanel
         # kernel.register("simpleui/scene", MeerK40tScenePanel)
         from meerk40t.gui.laserpanel import LaserPanel
+
         kernel.register("simpleui/laserpanel", (LaserPanel, None))
         from meerk40t.gui.navigationpanels import Jog
+
         kernel.register("simpleui/navigation", (Jog, {"icon_size": 20}))
         from meerk40t.gui.consolepanel import ConsolePanel
-        kernel.register("simpleui/console", (ConsolePanel, None))
 
+        kernel.register("simpleui/console", (ConsolePanel, None))
 
     def window_close(self):
         context = self.context
