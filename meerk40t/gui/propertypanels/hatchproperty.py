@@ -67,7 +67,6 @@ class HatchPropertyPanel(ScrolledPanel):
         sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
         sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
-        main_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
         self.text_angle = TextCtrl(
             self,
@@ -82,9 +81,6 @@ class HatchPropertyPanel(ScrolledPanel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
-
-        self.display_panel = wx.Panel(self, wx.ID_ANY)
-        main_sizer.Add(self.display_panel, 6, wx.EXPAND, 0)
 
         self.check_classify = wx.CheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
