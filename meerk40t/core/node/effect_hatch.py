@@ -173,54 +173,14 @@ class HatchEffectNode(Node, Stroked):
             outlines.append(node.as_geometry())
         outlines.transform(self.matrix)
         path = Geomstr()
+        if self._distance is None:
+            self.recalculate()
         for p in range(self.passes):
-            path.append(self.scanline_fill(outlines=outlines.segmented()))
+            path.append(Geomstr.hatch(outlines, distance=self._distance, angle=self._angle))
         return path
 
     def modified(self):
         self.altered()
-
-    def scanline_fill(self, outlines):
-        """
-        Applies optimized scanline fill
-        @return:
-        """
-        if self._distance is None:
-            self.recalculate()
-        path = outlines
-        path.rotate(self._angle)
-        vm = Scanbeam(path)
-        y_min, y_max = vm.event_range()
-        vm.valid_low = y_min - self._distance
-        vm.valid_high = y_max + self._distance
-        vm.scanline_to(vm.valid_low)
-
-        forward = True
-        geometry = Geomstr()
-        if np.isinf(y_max):
-            return geometry
-        while vm.current_is_valid_range():
-            vm.scanline_to(vm.scanline + self._distance)
-            y = vm.scanline
-            actives = vm.actives()
-            r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
-            for i in r:
-                left_segment = actives[i - 1]
-                right_segment = actives[i]
-                left_segment_x = vm.x_intercept(left_segment)
-                right_segment_x = vm.x_intercept(right_segment)
-                if forward:
-                    geometry.line(
-                        complex(left_segment_x, y), complex(right_segment_x, y)
-                    )
-                else:
-                    geometry.line(
-                        complex(right_segment_x, y), complex(left_segment_x, y)
-                    )
-                geometry.end()
-            forward = not forward
-        geometry.rotate(-self._angle)
-        return geometry
 
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
