@@ -3,6 +3,7 @@ This is a giant list of console commands that deal with and often implement the 
 """
 
 from meerk40t.core.units import Angle, Length
+from meerk40t.svgelements import Matrix
 from meerk40t.tools.geomstr import Geomstr
 
 
@@ -159,13 +160,25 @@ def init_commands(kernel):
 
     @self.console_argument("scale", type=float, help=_("uniform scale value"))
     @self.console_command(
+        "uscale",
+        help=_("scale <scale-factor>"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def element_uscale(scale, data: Geomstr, **kwargs):
+        data.uscale(scale)
+        return "geometry", data
+
+    @self.console_argument("sx", type=float, help=_("Scale X value"))
+    @self.console_argument("sy", type=float, help=_("Scale Y value"))
+    @self.console_command(
         "scale",
         help=_("scale <scale-factor>"),
         input_type="geometry",
         output_type="geometry",
     )
-    def element_translate(scale, data: Geomstr, **kwargs):
-        data.uscale(scale)
+    def element_scale(data: Geomstr, sx: float, sy: float, **kwargs):
+        data.transform(Matrix.scale(sx, sy))
         return "geometry", data
 
     @self.console_argument("angle", type=Angle, help=_("rotation angle"))
