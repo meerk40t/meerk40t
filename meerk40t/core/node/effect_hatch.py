@@ -1,8 +1,6 @@
 from copy import copy
 from math import sqrt
 
-import numpy as np
-
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length, Angle
@@ -67,6 +65,9 @@ class HatchEffectNode(Node, Stroked):
         nd["fill"] = copy(self.fill)
         nd["operands"] = copy(self._operands)
         return HatchEffectNode(**nd)
+
+    def scaled(self, sx, sy, ox, oy):
+        self.altered()
 
     @property
     def angle(self):
