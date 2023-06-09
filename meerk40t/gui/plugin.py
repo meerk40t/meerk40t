@@ -303,6 +303,11 @@ and a wxpython version <= 4.1.1."""
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
+            if kernel.args.simpleui:
+                kernel.console("window open SimpleUI\n")
+                meerk40tgui.MainLoop()
+                return
+
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
                 wsplit = window.split(":")

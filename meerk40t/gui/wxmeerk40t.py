@@ -11,6 +11,7 @@ from .propertypanels.inputproperty import InputPropertyPanel
 from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
+from .simpleui import SimpleUI
 
 try:
     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
@@ -704,6 +705,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Hingetool", LivingHingeTool)
         kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         kernel.register("window/Kerftest", KerfTool)
+        kernel.register("window/SimpleUI", SimpleUI)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
