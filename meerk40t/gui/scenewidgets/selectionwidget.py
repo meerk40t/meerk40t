@@ -2583,7 +2583,7 @@ class SelectionWidget(Widget):
         matrix = self.parent.matrix
         if bounds is not None:
             try:
-                factor = math.sqrt(abs(matrix.determinate()))
+                factor = math.sqrt(abs(matrix.determinant))
                 self.line_width = 2.0 / factor
                 self.font_size = 14.0 / factor
             except ZeroDivisionError:
