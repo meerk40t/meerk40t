@@ -26,7 +26,7 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_distance = None
         self.hatch_angle = None
         self.hatch_type = None
-        Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock)
+        Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{effect}{element_type} - {distance} {angle}"
         if self.matrix is None:
             self.matrix = Matrix()
