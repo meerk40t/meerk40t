@@ -179,4 +179,19 @@ def init_commands(kernel):
         data.rotate(angle.radians)
         return "geometry", data
 
+    @self.console_option("distance", "d", type=Length, default="1mm")
+    @self.console_option("angle", "a", type=Angle, default="0deg")
+    @self.console_command(
+        "hatch",
+        help=_("Add hatch geometry"),
+        input_type="geometry",
+        output_type="geometry",
+    )
+    def geometry_hatch(data: Geomstr, distance: Length, angle: Angle, **kwargs):
+        segments = data.segmented()
+        hatch = Geomstr.hatch(segments, angle=angle.radians, distance=float(distance))
+        data.append(hatch)
+        return "geometry", data
+
+
     # --------------------------- END COMMANDS ------------------------------
