@@ -246,11 +246,13 @@ class NewlyController:
         VP100;VK100;SP2;SP2;VQ15;VJ24;VS10;DA0;
         @return:
         """
+        self.mode = "move"
         self._set_pen = self.sp2
         self._set_cut_dc = self.service.cut_dc
         self._set_move_dc = self.service.move_dc
         self._set_mode = "move"
         self._set_speed = self.service.moving_speed
+        self._set_power = None
         self._set_pwm_freq = None
         self._set_relative = True
         self._set_bit_depth = None
@@ -723,7 +725,6 @@ class NewlyController:
 
     def pulse(self, pulse_time_ms):
         self.realtime_job()
-        self.mode = "pulse"
         self.dwell(pulse_time_ms)
         self.close_job()
 
@@ -754,11 +755,22 @@ class NewlyController:
         if time_in_ms > 0:
             self(f"TX{int(round(time_in_ms))}")
 
-    def dwell(self, time_in_ms):
-        if self._pwm_frequency is not None:
-            self(f"PL{self._pwm_frequency}")
-        power = self.service.default_cut_power if self._power is None else self._power
-        self(f"DA{self._map_power(power)}")
+    def dwell(self, time_in_ms, settings=None):
+        self.mode = "pulse"
+        if self.service.pwm_enabled:
+            self._set_pwm_freq = self.service.pwm_frequency
+        if settings is not None:
+            # Settings based speed, power, pwm_freq
+            if "power" in settings:
+                self._set_power = settings.get("power")
+            if "pwm_frequency" in settings:
+                self._set_pwm_freq = settings.get("pwm_frequency")
+            # self.set_settings(settings)
+        else:
+            self._set_power = 1000.0
+        self._set_power *= self.service.max_pulse_power / 100.0
+        self._commit_pwmfreq()
+        self._commit_power()
         while time_in_ms > 255:
             time_in_ms -= 255
             self("TO255")
@@ -903,6 +915,9 @@ class NewlyController:
     #######################
 
     def _map_power(self, power):
+        if self.mode == "pulse":
+            power /= 10.0
+            return int(round(power))
         power /= 1000.0  # Scale to 0-1
         power *= self.service.max_power  # Scale by max power %
         power *= 255.0 / 100.0  # range between 000 and 255
@@ -928,10 +943,13 @@ class NewlyController:
         if new_power is None:
             return
 
+        # Premap the power setting.
+        new_power = self._map_power(new_power)
+
         if new_power != self._power:
             # Already set power is not the new_power setting.
             self._power = new_power
-            self(f"DA{self._map_power(self._power)}")
+            self(f"DA{new_power}")
 
     def _commit_pwmfreq(self):
         """
