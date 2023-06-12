@@ -219,9 +219,7 @@ class LaserJob:
             time_for_future_passes = self.avg_time_per_pass * max(
                 self.loops - self.loops_executed - 1, 0
             )
-        still_running = False
-        if isinf(self.loops) or self.loops_executed < self.loops:
-            still_running = True
+        still_running = isinf(self.loops) or self.loops_executed < self.loops
         if self.time_pass_started is not None and still_running:
             this_pass_seconds = time.time() - self.time_pass_started
             if this_pass_seconds >= 5:
