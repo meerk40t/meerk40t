@@ -201,7 +201,6 @@ class LaserJob:
         # b) we know current and total steps (if the driver has such a property)
         if isinf(self.loops):
             return float("inf")
-        result = 0
         time_for_past_passes = 0
         time_for_current_pass = 0
         time_for_future_passes = self.loops * self._estimate
@@ -233,16 +232,6 @@ class LaserJob:
                     )
                 else:
                     time_for_current_pass = self._estimate
-            # if hasattr(self._driver, "total_steps"):
-            #     total = self._driver.total_steps
-            #     current = self._driver.current_steps
-            #     # Safety belt, as we have disabled the logic partially
-            #     if total < current:
-            #         total = current + 1
-            #     if current > 10 and total > 0:
-            #         # Arbitrary minimum steps (if too low, value is erratic)
-            #         ratio = total / current
-            # result = elapsed * ratio
         if time_for_current_pass == time_for_past_passes == time_for_future_passes == 0:
             # Nothing useful came out, so we fall back on the initial value
             result = self._estimate
@@ -251,9 +240,4 @@ class LaserJob:
             result = (
                 time_for_current_pass + time_for_past_passes + time_for_future_passes
             )
-        # print (f"Passes: {self.loops_executed} / {self.loops}")
-        # print (f"Past: {time_for_past_passes:.1f}, Current: {time_for_current_pass:.1f}, Future: {time_for_future_passes:.1f}")
-        # print (f"Steps: {self.steps_done} / {self.steps_total}, Pass-Estimate: {self._estimate:.1f}")
-        # print (f"Result={result:.1f}")
-
         return result
