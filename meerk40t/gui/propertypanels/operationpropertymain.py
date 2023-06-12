@@ -248,7 +248,7 @@ class LayerSettingPanel(wx.Panel):
                     wx.Colour(swizzlecolor(self.operation.color))
                 )
             except RuntimeError:
-                pass
+                return
             # Ask the user if she/he wants to assign the color of the contained objects
             try:
                 candidate_stroke = bool(self.checkbox_stroke.GetValue())
