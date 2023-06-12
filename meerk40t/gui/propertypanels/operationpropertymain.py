@@ -243,12 +243,21 @@ class LayerSettingPanel(wx.Panel):
             rgb = color.GetRGB()
             color = swizzlecolor(rgb)
             self.operation.color = Color(color, 1.0)
-            self.button_layer_color.SetBackgroundColour(
-                wx.Colour(swizzlecolor(self.operation.color))
-            )
+            try:
+                self.button_layer_color.SetBackgroundColour(
+                    wx.Colour(swizzlecolor(self.operation.color))
+                )
+            except RuntimeError:
+                return
             # Ask the user if she/he wants to assign the color of the contained objects
-            candidate_stroke = bool(self.checkbox_stroke.GetValue())
-            candidate_fill = bool(self.checkbox_fill.GetValue())
+            try:
+                candidate_stroke = bool(self.checkbox_stroke.GetValue())
+            except AttributeError:
+                candidate_stroke = False
+            try:
+                candidate_fill = bool(self.checkbox_fill.GetValue())
+            except AttributeError:
+                candidate_fill = False
             if (
                 self.operation.type in ("op engrave", "op cut", "op hatch")
                 and len(self.operation.children) > 0

@@ -480,6 +480,7 @@ class LaserPanel(wx.Panel):
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
 
         plan = self.context.planner.get_or_make_plan("z")
+        param = "0"
         if not plan.plan or not self.context.laserpane_hold:
             if self.checkbox_optimize.GetValue():
                 self.context(
@@ -488,7 +489,6 @@ class LaserPanel(wx.Panel):
                 param = "1"
             else:
                 self.context("planz clear copy preprocess validate blob\n")
-                param = "0"
         self.context(f"window open Simulation z 0 {param}\n")
         self.context.kernel.busyinfo.end()
 

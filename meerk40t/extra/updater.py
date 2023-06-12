@@ -1,6 +1,7 @@
 """
 The code inside this module provides routines to look for newer versions of meerk40t on github
 """
+import http.client
 import json
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -157,7 +158,8 @@ def plugin(kernel, lifecycle):
                     req.add_header(*GITHUB_HEADER)
                     try:
                         req = urlopen(req)
-                    except (HTTPError, URLError):
+                        response = json.loads(req.read())
+                    except (HTTPError, URLError, http.client.IncompleteRead):
                         if verbosity > 0:
                             channel(ERROR_MESSAGE)
                         return
@@ -168,10 +170,6 @@ def plugin(kernel, lifecycle):
                     url_full = url_beta = None
                     assets_full = assets_beta = None
                     info_full = info_beta = ""
-
-                    response = json.loads(req.read())
-                    # print ("Response:")
-                    # print (response)
                     something = False
                     if beta:
                         for resp in response:

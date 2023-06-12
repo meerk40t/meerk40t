@@ -1970,6 +1970,9 @@ class EditTool(ToolWidget):
                 if event_type == "leftclick":
                     # Have we clicked outside the bbox? Then we call it a day...
                     outside = False
+                    if not self.element:
+                        # Element is required.
+                        return RESPONSE_CONSUME
                     bb = self.element.bbox()
                     if bb is None:
                         return RESPONSE_CONSUME

@@ -60,7 +60,10 @@ class PlotCut(CutObject):
         self.settings["raster_step_x"] = 0
         self.settings["raster_step_y"] = 0
         self.settings["power"] = 1000.0
-        if self.settings.get("speed", 0) < 80:
+        speed = self.settings.get("speed", 0)
+        if speed is None:
+            return False
+        if speed < 80:
             # Twitchless gets sketchy at 80.
             self.settings["_force_twitchless"] = True
             return False
