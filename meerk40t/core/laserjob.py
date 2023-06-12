@@ -66,12 +66,13 @@ class LaserJob:
 
     @property
     def status(self):
-        if self.is_running and self.time_started is not None:
-            return "Running"
-        elif not self.is_running:
-            return "Disabled"
+        if self.is_running():
+            if self.time_started:
+                return "Running"
+            else:
+                return "Queued"
         else:
-            return "Queued"
+            return "Disabled"
 
     def is_running(self):
         return not self._stopped
@@ -200,7 +201,7 @@ class LaserJob:
         """
         if isinf(self.loops):
             return float("inf")
-        if not self.is_running or self.time_started is None:
+        if not self.is_running() or self.time_started is None:
             return self.loops * self._estimate
 
         # Calculate future and past estimates.
