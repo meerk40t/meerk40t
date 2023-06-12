@@ -17,6 +17,8 @@ class BlobNode(Node):
         self._formatter = "{element_type}:{data_type}:{label} @{length}"
 
     def __len__(self):
+        if self.data is None:
+            return 0
         return len(self.data)
 
     def default_map(self, default_map=None):
@@ -41,4 +43,5 @@ class BlobNode(Node):
         return False
 
     def generate(self):
-        yield "blob", self.data_type, self.data
+        if self.data:
+            yield "blob", self.data_type, self.data
