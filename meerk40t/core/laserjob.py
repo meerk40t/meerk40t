@@ -233,7 +233,7 @@ class LaserJob:
             else:
                 time_for_current_pass = self._estimate
         result = time_for_current_pass + time_for_past_passes + time_for_future_passes
-        if not result:
-            # 0 means no values, nothing useful came out, so we fall back on the initial value
-            return self.loops * self._estimate
-        return result
+        if result:
+            return result
+        # 0 means no values, nothing useful came out, so we fall back on the initial value
+        return self.loops * self._estimate
