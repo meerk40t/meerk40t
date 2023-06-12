@@ -1681,8 +1681,8 @@ class SimulationWidget(Widget):
                 # We draw interpolated lines to acknowledge we are in the middle of a cut operation
                 starts = []
                 ends = []
-                cutstart = wx.Point2D(self.sim.cutcode[idx].start)
-                cutend = wx.Point2D(self.sim.cutcode[idx].end)
+                cutstart = wx.Point2D(*self.sim.cutcode[idx].start)
+                cutend = wx.Point2D(*self.sim.cutcode[idx].end)
                 if self.sim.statistics[idx]["type"] == "RasterCut":
                     # Rastercut object.
                     x = 0
