@@ -193,12 +193,13 @@ class LaserJob:
     def estimate_time(self):
         """
         Give laser job time estimate.
+
+        This is rather 'simple', we have no clue what exactly this job is doing, but we have some ideas,
+        if and only if the job is_running:
+        a) we know the elapsed time
+        b) we know current and total steps (if the driver has such a property)
         @return:
         """
-        # This is rather 'simple', we have no clue what exactly this job is doing,
-        # but we have some ideas, if and only if the job is_running:
-        # a) we know the elapsed time
-        # b) we know current and total steps (if the driver has such a property)
         if isinf(self.loops):
             return float("inf")
         if not self.is_running or self.time_started is None:
