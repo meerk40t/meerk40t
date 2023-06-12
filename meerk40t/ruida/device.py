@@ -72,6 +72,16 @@ class RuidaDevice(Service, ViewPort):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "section": "_10_Parameters",
+                "tip": _("Number of curve interpolation points"),
+            },
+
         ]
         self.register_choices("bed_dim", choices)
         choices = [
