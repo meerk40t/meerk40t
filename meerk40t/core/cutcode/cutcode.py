@@ -147,6 +147,8 @@ class CutCode(CutGroup):
             native_mm = cs.get("native_mm", 39.3701)
             default_speed = cs.get("speed", 0) * native_mm
             native_speed = cs.get("native_speed", default_speed)
+            native_speed *= 0.91
+            default_speed *= 0.91
             if native_speed != 0:
                 duration_of_this_burn = current_length / native_speed
                 total_duration_cut += duration_of_this_burn
