@@ -130,7 +130,7 @@ class RasterCut(CutObject):
         return scanlines * (scan_distance * scan_step + self.scan)
 
     def extra(self):
-        return self.width * 0.105  # 105ms for the turnaround.
+        return self.width * 1.4  # 105ms for the turnaround.
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1
