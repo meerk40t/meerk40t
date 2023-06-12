@@ -201,43 +201,6 @@ class LaserJob:
         """
         if isinf(self.loops):
             return float("inf")
-        if not self.is_running() or self.time_started is None:
-            return self.loops * self._estimate
-
-        # Calculate future and past estimates.
-        if self.avg_time_per_pass is None:
-            # We don't know how long a pass is, set to 0, estimate future passes based on per-pass estimate.
-            time_for_past_passes = 0
-            time_for_future_passes = (
-                max(self.loops - self.loops_executed - 1, 0) * self._estimate
-            )
-        else:
-            # We know the pass of passes and, we know the steps of total steps...
-            time_for_past_passes = self.time_pass_started - self.time_started
-            time_for_future_passes = self.avg_time_per_pass * max(
-                self.loops - self.loops_executed - 1, 0
-            )
-
-        # Calculate current pass estimate.
-        time_for_current_pass = 0
-        if (
-            self.time_pass_started is not None
-            and isinf(self.loops)
-            or self.loops_executed < self.loops
-        ):
-            # Still running.
-            this_pass_seconds = time.time() - self.time_pass_started
-            if this_pass_seconds >= 5:
-                time_for_current_pass = max(
-                    self._estimate,
-                    this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
-                )
-            else:
-                time_for_current_pass = self._estimate
-
-        # Our time is the sum of past, present and future passes.
-        result = time_for_current_pass + time_for_past_passes + time_for_future_passes
-        if result:
-            return result
-        # 0 means no values, nothing useful came out, so we fall back on the initial value
+        if self.is_running() and self.time_started is not None and self.avg_time_per_pass:
+            return self.avg_time_per_pass * self.loops
         return self.loops * self._estimate
