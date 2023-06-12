@@ -183,12 +183,10 @@ class LaserJob:
         """
         How long is this job already running...
         """
-        result = 0
         if self.is_running():
-            result = time.time() - self.time_started
+            return time.time() - self.time_started
         else:
-            result = self.runtime
-        return result
+            return self.runtime
 
     def estimate_time(self):
         """
