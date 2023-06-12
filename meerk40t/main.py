@@ -14,7 +14,7 @@ from meerk40t.internal_plugins import plugin as internal_plugins
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.4002"
+APPLICATION_VERSION = "0.8.4003"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
