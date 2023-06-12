@@ -229,16 +229,23 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
+    @self.console_option("distance", "d", type=Length, default="1mm")
+    @self.console_option("angle", "a", type=Angle.parse, default="0deg")
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
         input_type=(None, "elements"),
     )
-    def effect_hatch(command, data=None, **kwargs):
+    def effect_hatch(command, data=None, angle=None, distance=None, **kwargs):
         """
         Add an effect hatch object
         """
-        node = self.elem_branch.add(type="effect hatch", label="Hatch Effect")
+        node = self.elem_branch.add(
+            type="effect hatch",
+            label="Hatch Effect",
+            hatch_angle=angle.as_radians,
+            hatch_distance=distance,
+        )
         self.set_emphasis([node])
         if data is not None:
             for n in data:

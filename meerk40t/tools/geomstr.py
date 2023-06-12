@@ -922,6 +922,51 @@ class Geomstr:
         star_points.append(star_points[0])
         return Geomstr.lines(*star_points)
 
+    @classmethod
+    def hatch(cls, outer, angle, distance):
+        """
+        Create a hatch geometry from an outer shape, an angle (in radians) and distance (in units).
+        @param outer:
+        @param angle:
+        @param distance:
+        @return:
+        """
+        outlines = outer.segmented()
+        path = outlines
+        path.rotate(angle)
+        vm = Scanbeam(path)
+        y_min, y_max = vm.event_range()
+        vm.valid_low = y_min - distance
+        vm.valid_high = y_max + distance
+        vm.scanline_to(vm.valid_low)
+
+        forward = True
+        geometry = cls()
+        if np.isinf(y_max):
+            return geometry
+        while vm.current_is_valid_range():
+            vm.scanline_to(vm.scanline + distance)
+            y = vm.scanline
+            actives = vm.actives()
+            r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
+            for i in r:
+                left_segment = actives[i - 1]
+                right_segment = actives[i]
+                left_segment_x = vm.x_intercept(left_segment)
+                right_segment_x = vm.x_intercept(right_segment)
+                if forward:
+                    geometry.line(
+                        complex(left_segment_x, y), complex(right_segment_x, y)
+                    )
+                else:
+                    geometry.line(
+                        complex(right_segment_x, y), complex(left_segment_x, y)
+                    )
+                geometry.end()
+            forward = not forward
+        geometry.rotate(-angle)
+        return geometry
+
     def copies(self, n):
         segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
