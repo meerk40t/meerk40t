@@ -467,7 +467,7 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
-        if element.status.lower() == "running":
+        if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"
         else:
@@ -595,11 +595,9 @@ class SpoolerPanel(wx.Panel):
                         joblen = 1
                     self.list_job_spool.SetItem(list_id, JC_ENTRIES, str(joblen))
                     # STATUS
-                    # try:
-                    status = spool_obj.status
-                    # except AttributeError:
-                    # status = _("Queued")
-                    self.list_job_spool.SetItem(list_id, JC_STATUS, str(status))
+                    self.list_job_spool.SetItem(
+                        list_id, JC_STATUS, str(spool_obj.status)
+                    )
 
                     # TYPE
                     try:
