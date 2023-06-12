@@ -204,34 +204,42 @@ class LaserJob:
         time_for_past_passes = 0
         time_for_current_pass = 0
         time_for_future_passes = self.loops * self._estimate
-        if self.is_running and self.time_started is not None:
-            # We fall back on elapsed and some info from the driver...
-            elapsed = time.time() - self.time_started
-            ratio = 1
-            # As we have mainly disabled the driver preview, we do something simpler:
-            # We know the pass of passes and we know the steps of total steps...
-            if self.avg_time_per_pass is None:
-                time_for_past_passes = 0
-                time_for_future_passes = (
-                    max(self.loops - self.loops_executed - 1, 0) * self._estimate
+        if not self.is_running or self.time_started is None:
+            result = (
+                time_for_current_pass + time_for_past_passes + time_for_future_passes
+            )
+            if not result:
+                # 0 means no values, nothing useful came out, so we fall back on the initial value
+                return self._estimate
+            return result
+
+        # We fall back on elapsed and some info from the driver...
+        elapsed = time.time() - self.time_started
+        ratio = 1
+        # As we have mainly disabled the driver preview, we do something simpler:
+        # We know the pass of passes and, we know the steps of total steps...
+        if self.avg_time_per_pass is None:
+            time_for_past_passes = 0
+            time_for_future_passes = (
+                max(self.loops - self.loops_executed - 1, 0) * self._estimate
+            )
+        else:
+            time_for_past_passes = self.time_pass_started - self.time_started
+            time_for_future_passes = self.avg_time_per_pass * max(
+                self.loops - self.loops_executed - 1, 0
+            )
+        still_running = False
+        if isinf(self.loops) or self.loops_executed < self.loops:
+            still_running = True
+        if self.time_pass_started is not None and still_running:
+            this_pass_seconds = time.time() - self.time_pass_started
+            if this_pass_seconds >= 5:
+                time_for_current_pass = max(
+                    self._estimate,
+                    this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
                 )
             else:
-                time_for_past_passes = self.time_pass_started - self.time_started
-                time_for_future_passes = self.avg_time_per_pass * max(
-                    self.loops - self.loops_executed - 1, 0
-                )
-            still_running = False
-            if isinf(self.loops) or self.loops_executed < self.loops:
-                still_running = True
-            if self.time_pass_started is not None and still_running:
-                this_pass_seconds = time.time() - self.time_pass_started
-                if this_pass_seconds >= 5:
-                    time_for_current_pass = max(
-                        self._estimate,
-                        this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
-                    )
-                else:
-                    time_for_current_pass = self._estimate
+                time_for_current_pass = self._estimate
         result = time_for_current_pass + time_for_past_passes + time_for_future_passes
         if not result:
             # 0 means no values, nothing useful came out, so we fall back on the initial value
