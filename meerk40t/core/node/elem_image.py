@@ -344,6 +344,8 @@ class ImageNode(Node):
         @param image:
         @return:
         """
+        if image is None:
+            return None
         if "transparency" in image.info:
             image = image.convert("RGBA")
         try:
