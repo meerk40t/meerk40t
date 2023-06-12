@@ -386,6 +386,8 @@ def plugin(kernel, lifecycle):
             # We try to establish if a file contains certain features...
 
             source = pathname
+            if not os.path.exists(source):
+                return pathname
             if pathname.lower().endswith("svgz"):
                 source = gzip.open(pathname, "rb")
             METHOD_CONVERT_TO_OBJECT = 1
