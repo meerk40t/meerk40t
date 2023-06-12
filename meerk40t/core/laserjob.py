@@ -201,11 +201,8 @@ class LaserJob:
         # b) we know current and total steps (if the driver has such a property)
         if isinf(self.loops):
             return float("inf")
-        time_for_past_passes = 0
-        time_for_current_pass = 0
-        time_for_future_passes = self.loops * self._estimate
         if not self.is_running or self.time_started is None:
-            return time_for_future_passes
+            return self.loops * self._estimate
 
         # As we have mainly disabled the driver preview, we do something simpler:
         # We know the pass of passes and, we know the steps of total steps...
@@ -219,6 +216,8 @@ class LaserJob:
             time_for_future_passes = self.avg_time_per_pass * max(
                 self.loops - self.loops_executed - 1, 0
             )
+
+        time_for_current_pass = 0
         if (
             self.time_pass_started is not None
             and isinf(self.loops)
@@ -236,5 +235,5 @@ class LaserJob:
         result = time_for_current_pass + time_for_past_passes + time_for_future_passes
         if not result:
             # 0 means no values, nothing useful came out, so we fall back on the initial value
-            return self._estimate
+            return self.loops * self._estimate
         return result
