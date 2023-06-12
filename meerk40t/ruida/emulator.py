@@ -137,7 +137,7 @@ class RuidaEmulator:
                 if not self._process_realtime(array):
                     self.job.write_command(array)
                     self.device.spooler.send(self.job, prevent_duplicate=True)
-            except RuidaCommandError:
+            except (RuidaCommandError, IndexError):
                 if self.channel:
                     self.channel(f"Process Failure: {str(bytes(array).hex())}")
 
