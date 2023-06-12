@@ -76,11 +76,9 @@ class InfoPanel(wx.Panel):
             return result
 
         def create_image_from_node(node, iconsize):
-            image = wx.NullBitmap
+            image_from_node = None
             c = None
             # Do we have a standard representation?
-            defaultcolor = Color("black")
-            data = None
             if node.type.startswith("elem "):
                 if (
                     hasattr(node, "stroke")
@@ -89,13 +87,19 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                data = node
-                bounds = node.paint_bounds
+                image_from_node = self.make_raster(
+                    node,
+                    node.paint_bounds,
+                    width=iconsize,
+                    height=iconsize,
+                    bitmap=True,
+                    keep_ratio=True,
+                )
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
                 bounds = Node.union_bounds(data, attr="paint_bounds")
-            if data is not None:
-                image = self.make_raster(
+
+                image_from_node = self.make_raster(
                     data,
                     bounds,
                     width=iconsize,
@@ -103,10 +107,11 @@ class InfoPanel(wx.Panel):
                     bitmap=True,
                     keep_ratio=True,
                 )
-
             if c is None:
-                c = defaultcolor
-            return c, image
+                c = Color("black")
+            if image_from_node is None:
+                image_from_node = wx.NullBitmap
+            return c, image_from_node
 
         if self.make_raster is None:
             self.make_raster = self.context.elements.lookup("render-op/make_raster")
@@ -151,6 +156,7 @@ class InfoPanel(wx.Panel):
                 node = data[-1]
                 last_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
