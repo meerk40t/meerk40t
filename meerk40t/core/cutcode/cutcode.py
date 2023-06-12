@@ -109,66 +109,71 @@ class CutCode(CutGroup):
             result.append(item)
             return result
         stop_at = len(cutcode)
-        distance_travel = 0
-        distance_cut = 0
-        extra = 0
+        total_distance_travel = 0
+        total_distance_cut = 0
+        total_extra = 0
         total_duration_cut = 0
         total_duration_travel = 0
         if include_start:
             if self.start is not None:
-                distance_travel += abs(
+                total_distance_travel += abs(
                     complex(*self.start) - complex(*cutcode[0].start)
                 )
             else:
-                distance_travel += abs(0 - complex(*cutcode[0].start))
-        prev_end = 0
+                total_distance_travel += abs(0 - complex(*cutcode[0].start))
+        previous_total_time = 0
         for i in range(0, stop_at):
             duration_of_this_travel = 0
             duration_of_this_burn = 0
-            length_of_this_travel = 0
+            length_of_previous_travel = 0
+            current = cutcode[i]
             if i > 0:
                 prev = cutcode[i - 1]
-                length_of_this_travel = Point.distance(prev.end, curr.start)
-                distance_travel += length_of_this_travel
+                length_of_previous_travel = Point.distance(prev.end, current.start)
+                total_distance_travel += length_of_previous_travel
 
-            curr = cutcode[i]
             rapid_speed = self._native_speed(cutcode)
             if rapid_speed is not None:
-                total_duration_travel = distance_travel / rapid_speed
-                duration_of_this_travel = length_of_this_travel / rapid_speed
+                total_duration_travel = total_distance_travel / rapid_speed
+                duration_of_this_travel = length_of_previous_travel / rapid_speed
 
-            cut_type = type(curr).__name__
-
-            distance_cut += curr.length()
-            this_extra = curr.extra()
-            extra += this_extra
-            cs = curr.settings
+            cut_type = type(current).__name__
+            current_length = current.length()
+            total_distance_cut += current_length
+            current_extra = current.extra()
+            total_extra += current_extra
+            cs = current.settings
             # Speed is in mm/sec while native_speed and distance need to be in native units!
             native_mm = cs.get("native_mm", 39.3701)
             default_speed = cs.get("speed", 0) * native_mm
             native_speed = cs.get("native_speed", default_speed)
             if native_speed != 0:
-                duration_of_this_burn = curr.length() / native_speed
+                duration_of_this_burn = current_length / native_speed
                 total_duration_cut += duration_of_this_burn
 
-            end_of_this_travel = prev_end + duration_of_this_travel
+            end_of_this_travel = previous_total_time + duration_of_this_travel
             end_of_this_burn = (
-                prev_end + duration_of_this_travel + this_extra + duration_of_this_burn
+                previous_total_time
+                + duration_of_this_travel
+                + current_extra
+                + duration_of_this_burn
             )
             item = {
                 "type": cut_type,
-                "total_distance_travel": distance_travel,
-                "total_distance_cut": distance_cut,
-                "total_time_extra": extra,
+                "total_distance_travel": total_distance_travel,
+                "total_distance_cut": total_distance_cut,
+                "total_time_extra": total_extra,
                 "total_time_travel": total_duration_travel,
                 "total_time_cut": total_duration_cut,
-                "time_at_start": prev_end,
+                "time_at_start": previous_total_time,
                 "time_at_end_of_travel": end_of_this_travel,
                 "time_at_end_of_burn": end_of_this_burn,
             }
             # print (item)
             result.append(item)
-            prev_end = total_duration_cut + total_duration_travel + extra
+            previous_total_time = (
+                total_duration_cut + total_duration_travel + total_extra
+            )
 
         return result
 
