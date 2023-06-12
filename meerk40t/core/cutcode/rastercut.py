@@ -115,11 +115,6 @@ class RasterCut(CutObject):
             scan_stride = self.step_x
             scan_distance = self.width * scan_stride
         else:
-            result = (
-                self.width * self.height
-                + (2 * self.scan * self.height)
-                + (self.width * self.step_x)
-            )
             scanlines = self.width
             scan_stride = self.step_x
             scan_step = self.step_y
@@ -127,7 +122,8 @@ class RasterCut(CutObject):
         if not self.bidirectional:
             # Burning in only one direction means we have 2 x scanlines
             scanlines *= 2
-        return scanlines * (scan_distance * scan_step + self.scan)
+        total_distance_per_scanline = scan_distance + self.scan + scan_step
+        return scanlines * total_distance_per_scanline
 
     def extra(self):
         return self.width * 1.4  # 105ms for the turnaround.
