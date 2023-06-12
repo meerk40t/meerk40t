@@ -205,6 +205,7 @@ class LaserJob:
         if not self.is_running or self.time_started is None:
             return self.loops * self._estimate
 
+        # Calculate future and past estimates.
         if self.avg_time_per_pass is None:
             # We don't know how long a pass is, set to 0, estimate future passes based on per-pass estimate.
             time_for_past_passes = 0
@@ -218,6 +219,7 @@ class LaserJob:
                 self.loops - self.loops_executed - 1, 0
             )
 
+        # Calculate current pass estimate.
         time_for_current_pass = 0
         if (
             self.time_pass_started is not None
@@ -233,6 +235,8 @@ class LaserJob:
                 )
             else:
                 time_for_current_pass = self._estimate
+
+        # Our time is the sum of past, present and future passes.
         result = time_for_current_pass + time_for_past_passes + time_for_future_passes
         if result:
             return result
