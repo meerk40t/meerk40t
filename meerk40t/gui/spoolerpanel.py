@@ -595,7 +595,9 @@ class SpoolerPanel(wx.Panel):
                         joblen = 1
                     self.list_job_spool.SetItem(list_id, JC_ENTRIES, str(joblen))
                     # STATUS
-                    self.list_job_spool.SetItem(list_id, JC_STATUS, str(spool_obj.status))
+                    self.list_job_spool.SetItem(
+                        list_id, JC_STATUS, str(spool_obj.status)
+                    )
 
                     # TYPE
                     try:
