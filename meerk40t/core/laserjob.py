@@ -205,13 +205,7 @@ class LaserJob:
         time_for_current_pass = 0
         time_for_future_passes = self.loops * self._estimate
         if not self.is_running or self.time_started is None:
-            result = (
-                time_for_current_pass + time_for_past_passes + time_for_future_passes
-            )
-            if not result:
-                # 0 means no values, nothing useful came out, so we fall back on the initial value
-                return self._estimate
-            return result
+            return time_for_future_passes
 
         # We fall back on elapsed and some info from the driver...
         elapsed = time.time() - self.time_started
