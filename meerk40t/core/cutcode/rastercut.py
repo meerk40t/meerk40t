@@ -110,30 +110,28 @@ class RasterCut(CutObject):
         """
 
         if self.horizontal:
-            result = (
-                self.width * self.height
-                + (2 * self.scan * self.height)
-                + (self.height * self.step_y)
-            )
             scanlines = self.height
-            ss = self.step_y
-            sd = self.width
+            scan_step = self.step_y
+            scan_stride = self.step_x
+            scan_distance = self.width * scan_stride
         else:
-            result = (
-                self.width * self.height
-                + (2 * self.scan * self.height)
-                + (self.width * self.step_x)
-            )
             scanlines = self.width
-            sd = self.height
-            ss = self.step_y
+            scan_stride = self.step_x
+            scan_step = self.step_y
+            scan_distance = self.height * scan_stride
+        # Total scan-distance is pixel_distance plus overscan
+        scan_distance += self.scan
         if not self.bidirectional:
-            # Burning in only one direction means we have 2 x scanlines
-            scanlines *= 2
-        return scanlines * (sd * ss + self.scan)
+            # Burning in only one direction means we have 2 x distance
+            scan_distance *= 2
+        total_distance_per_scanline = scan_distance + scan_step
+        return scanlines * total_distance_per_scanline
 
     def extra(self):
-        return self.width * 0.105  # 105ms for the turnaround.
+        if self.horizontal:
+            return self.height * 0.119
+        else:
+            return self.width * 0.119
 
     def major_axis(self):
         return 0 if self.plot.horizontal else 1
