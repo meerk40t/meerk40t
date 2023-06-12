@@ -782,7 +782,7 @@ class SpoolerPanel(wx.Panel):
                     passes_str = "n/a"
                 else:
                     passes_str = f"{nr_loop}"
-            elif isinf(nr_total):
+            elif isinf(float(nr_total)):
                 passes_str = f"{nr_loop}/∞"
             else:
                 passes_str = f"{nr_loop}/{nr_total}"
