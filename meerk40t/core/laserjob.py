@@ -37,10 +37,9 @@ class LaserJob:
 
         for item in self.items:
             if isinstance(item, CutCode):
-                time_travel = item.duration_travel()
-                time_cuts = item.duration_cut()
-                time_extra = item.extra_time()
-                self._estimate += time_travel + time_cuts + time_extra
+                stats = item.provide_statistics()
+                final_values = stats[-1]
+                self._estimate = final_values["time_at_end_of_burn"]
         self.outline = outline
 
     def __str__(self):
