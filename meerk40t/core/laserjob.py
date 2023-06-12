@@ -207,9 +207,6 @@ class LaserJob:
         if not self.is_running or self.time_started is None:
             return time_for_future_passes
 
-        # We fall back on elapsed and some info from the driver...
-        elapsed = time.time() - self.time_started
-        ratio = 1
         # As we have mainly disabled the driver preview, we do something simpler:
         # We know the pass of passes and, we know the steps of total steps...
         if self.avg_time_per_pass is None:
