@@ -695,7 +695,10 @@ class TextPropertyPanel(ScrolledPanel):
             font = data.GetChosenFont()
             try:
                 color = data.GetColour()
-                rgb = color.GetRGB()
+                if color and color.IsOk():
+                    rgb = color.GetRGB()
+                else:
+                    rgb = 0
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
                 self.node.fill = color

@@ -59,7 +59,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "signals": "bedsize",
             },
             {
-                "attr": "scale_x",
+                "attr": "user_scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -72,7 +72,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "nonzero": True,
             },
             {
-                "attr": "scale_y",
+                "attr": "user_scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -363,26 +363,26 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _("Ignore Home-Command"),
                 "conditional": (self, "rotary_active"),
             },
-            {
-                "attr": "rotary_mirror_x",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror X"),
-                "tip": _("Mirror the elements on the X-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
-            {
-                "attr": "rotary_mirror_y",
-                "object": self,
-                "default": False,
-                "type": bool,
-                "label": _("Mirror Y"),
-                "tip": _("Mirror the elements on the Y-Axis"),
-                "conditional": (self, "rotary_active"),
-                "subsection": _("Mirror Output"),
-            },
+            # {
+            #     "attr": "rotary_mirror_x",
+            #     "object": self,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Mirror X"),
+            #     "tip": _("Mirror the elements on the X-Axis"),
+            #     "conditional": (self, "rotary_active"),
+            #     "subsection": _("Mirror Output"),
+            # },
+            # {
+            #     "attr": "rotary_mirror_y",
+            #     "object": self,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Mirror Y"),
+            #     "tip": _("Mirror the elements on the Y-Axis"),
+            #     "conditional": (self, "rotary_active"),
+            #     "subsection": _("Mirror Output"),
+            # },
         ]
         self.register_choices("rotary", choices)
 
@@ -409,8 +409,8 @@ class LihuiyuDevice(Service, ViewPort):
             self,
             self.bedwidth,
             self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
             origin_x=1.0 if self.home_right else 0.0,
@@ -949,6 +949,9 @@ class LihuiyuDevice(Service, ViewPort):
     def service_attach(self, *args, **kwargs):
         self.realize()
 
+    @signal_listener("rotary_scale_x")
+    @signal_listener("rotary_scale_y")
+    @signal_listener("rotary_active")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
