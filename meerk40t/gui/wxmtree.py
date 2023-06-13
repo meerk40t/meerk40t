@@ -563,7 +563,7 @@ class ShadowTree:
         """
         item = node.item
         if item is None:
-            raise ValueError("Item was None for node " + repr(node))
+            return  # Must be clearing. Don't bother with the unregister.
         if not item.IsOk():
             raise ValueError("Bad Item")
         node.unregister_object()
