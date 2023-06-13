@@ -200,7 +200,7 @@ class Pen:
         self.add_endpoint_time_per_point = args[32]
         self.add_endpoint_point_distance = args[31]
         self.add_endpoints_point_cycles = args[33]
-        self.opt_enable = args[40] # Apparently crashy for older versions of ezcad.
+        self.opt_enable = args[40]  # Apparently crashy for older versions of ezcad.
         self.break_angle = args[41]
 
         self.jump_min_jump_delay2 = args[37]

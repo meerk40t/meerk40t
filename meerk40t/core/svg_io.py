@@ -59,6 +59,7 @@ from ..svgelements import (
     SVG_TAG_IMAGE,
     SVG_TAG_LINE,
     SVG_TAG_PATH,
+    SVG_TAG_POLYGON,
     SVG_TAG_POLYLINE,
     SVG_TAG_RECT,
     SVG_TAG_TEXT,
@@ -82,7 +83,7 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use, SVG_TAG_POLYGON,
+    Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH
 

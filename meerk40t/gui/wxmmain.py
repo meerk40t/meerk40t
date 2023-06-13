@@ -48,6 +48,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
+    icons8_delete_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
@@ -75,7 +76,6 @@ from .icons import (  # icons8_replicate_rows_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
-    icons8_delete_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -923,9 +923,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Delete"),
                 "icon": icons8_delete_50,
-                "tip": _(
-                    "Delete selected items"
-                ),
+                "tip": _("Delete selected items"),
                 "action": lambda v: kernel.elements("tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
