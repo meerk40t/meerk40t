@@ -59,7 +59,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "signals": "bedsize",
             },
             {
-                "attr": "scale_x",
+                "attr": "user_scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -72,7 +72,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "nonzero": True,
             },
             {
-                "attr": "scale_y",
+                "attr": "user_scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
@@ -409,8 +409,8 @@ class LihuiyuDevice(Service, ViewPort):
             self,
             self.bedwidth,
             self.bedheight,
-            user_scale_x=self.scale_x,
-            user_scale_y=self.scale_y,
+            user_scale_x=self.user_scale_x,
+            user_scale_y=self.user_scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
             origin_x=1.0 if self.home_right else 0.0,
