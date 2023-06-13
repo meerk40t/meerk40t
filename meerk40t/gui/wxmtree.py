@@ -563,7 +563,19 @@ class ShadowTree:
         """
         item = node.item
         if item is None:
-            raise ValueError("Item was None for node " + repr(node))
+            # Use to raise value-error, but is part of clear operation (rare)
+            #   File "meerk40t\gui\wxmmain.py", line 2119, in clear_and_open
+            #   File "meerk40t\gui\wxmmain.py", line 2115, in clear_project
+            #   File "meerk40t\core\elements.py", line 6861, in clear_all
+            #   File "meerk40t\core\elements.py", line 6846, in clear_operations
+            #   File "meerk40t\core\elements.py", line 918, in remove_all_children
+            #   File "meerk40t\core\elements.py", line 901, in remove_node
+            #   File "meerk40t\core\elements.py", line 460, in notify_detached
+            #   File "meerk40t\core\elements.py", line 1672, in notify_detached
+            #   File "meerk40t\gui\wxmtree.py", line 267, in node_detached
+            #   File "meerk40t\gui\wxmtree.py", line 566, in node_unregister
+            # ValueError: Item was None for node LaserOperation('op', Image)
+            return  # Must be clearing. Don't bother with the unregister.
         if not item.IsOk():
             raise ValueError("Bad Item")
         node.unregister_object()
@@ -582,6 +594,8 @@ class ShadowTree:
         """
         parent = node.parent
         parent_item = parent.item
+        if parent_item is None:
+            return
         tree = self.wxtree
         if pos is None:
             node.item = tree.AppendItem(parent_item, self.name)

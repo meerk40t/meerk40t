@@ -1182,6 +1182,19 @@ class RuidaEmulator(Module):
                 desc = "Set Absolute"
                 # Only seen in Absolute Coords. MachineZero is Ref2 but does not Set Absolute.
         elif array[0] == 0xE7:
+            if len(array) == 1:
+                # It's possible to send a simple E7 command without follow-up this usually happens when lightburn
+                # doesn't know what the swizzling is and tries several keepalive checks.
+                #   File "meerk40t\kernel.py", line 1642, in run
+                #   File "meerk40t\kernelserver.py", line 129, in run_udp_listener
+                #   File "meerk40t\kernel.py", line 2808, in __call__
+                #   File "meerk40t\kernel.py", line 2793, in _call_raw
+                #   File "meerk40t\device\ruida\ruidadevice.py", line 442, in checksum_write
+                #   File "meerk40t\device\ruida\ruidadevice.py", line 472, in write
+                #   File "meerk40t\device\ruida\ruidadevice.py", line 466, in write
+                #   File "meerk40t\device\ruida\ruidadevice.py", line 1185, in process
+                # IndexError: list index out of range
+                return
             if array[1] == 0x00:
                 self.new_plot_cut()
                 desc = "Block End"
@@ -1361,11 +1374,15 @@ class RuidaEmulator(Module):
                 files = [
                     name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
                 ]
-                name = files[filenumber - 1]
                 try:
+                    name = files[filenumber - 1]
                     with open(name, "rb") as f:
                         self.write(BytesIO(self.unswizzle(f.read())))
+                except IndexError:
+                    # File number was invalid.
+                    pass
                 except IOError:
+                    # Could not load the given data.
                     pass
                 desc = "Start Select Document %d" % filenumber
             elif array[1] == 0x04:

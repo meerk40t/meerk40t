@@ -59,8 +59,12 @@ def group_elements_overlap(
     g2: Tuple[Union[SVGElement, RasterCut], Tuple],
 ) -> bool:
     for e1 in g1:
+        if e1 is None:
+            return False
         e1xmin, e1ymin, e1xmax, e1ymax = e1[1]
         for e2 in g2:
+            if e1 is None:
+                return False
             e2xmin, e2ymin, e2xmax, e2ymax = e2[1]
             if (
                 e1xmin <= e2xmax

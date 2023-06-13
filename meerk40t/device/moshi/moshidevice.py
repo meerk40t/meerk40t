@@ -1001,7 +1001,11 @@ class MoshiController:
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     self.realtime_prologue()
-                    self._buffer = self._programs.pop(0).data
+                    try:
+                        self._buffer = self._programs.pop(0).data
+                    except IndexError:
+                        # Must have cleared out of band,
+                        break
                     assert len(self._buffer) != 0
 
                 # Stage 1: Send Program.

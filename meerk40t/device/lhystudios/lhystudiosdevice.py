@@ -291,6 +291,8 @@ def plugin(kernel, lifecycle=None):
         )
         def egv_import(channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             if filename is None:
                 raise SyntaxError
 
@@ -331,6 +333,8 @@ def plugin(kernel, lifecycle=None):
         )
         def egv_export(channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             if filename is None:
                 raise SyntaxError
             try:
@@ -357,6 +361,8 @@ def plugin(kernel, lifecycle=None):
         )
         def egv(command, channel, _, data=None, remainder=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             if remainder is None or len(remainder) == 0:
                 channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
             else:
@@ -369,6 +375,8 @@ def plugin(kernel, lifecycle=None):
         )
         def pipe_start(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.update_state(STATE_ACTIVE)
             output.start()
             channel(_("Lhystudios Channel Started."))
@@ -378,6 +386,8 @@ def plugin(kernel, lifecycle=None):
         )
         def pipe_pause(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.update_state(STATE_PAUSE)
             output.pause()
             channel("Lhystudios Channel Paused.")
@@ -387,6 +397,8 @@ def plugin(kernel, lifecycle=None):
         )
         def pipe_resume(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.update_state(STATE_ACTIVE)
             output.start()
             channel(_("Lhystudios Channel Resumed."))
@@ -396,6 +408,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_connect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.open()
             channel(_("CH341 Opened."))
 
@@ -404,6 +418,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_disconnect(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.close()
             channel(_("CH341 Closed."))
 
@@ -412,6 +428,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_reset(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.usb_reset()
 
         @context.console_command(
@@ -419,6 +437,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_release(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.usb_release()
 
         @context.console_command(
@@ -426,6 +446,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_abort(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.abort_retry()
 
         @context.console_command(
@@ -433,6 +455,8 @@ def plugin(kernel, lifecycle=None):
         )
         def usb_continue(command, channel, _, data=None, **kwargs):
             spooler, driver, output = data
+            if output is None:
+                return
             output.continue_retry()
 
         @kernel.console_option(
