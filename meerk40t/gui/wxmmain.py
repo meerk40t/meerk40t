@@ -906,18 +906,6 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/tools/Delete",
-            {
-                "label": _("Delete"),
-                "icon": icons8_delete_50,
-                "tip": _(
-                    "Delete selected items"
-                ),
-                "action": lambda v: kernel.elements("tree selected delete\n"),
-                "size": bsize_normal,
-            },
-        )
-        kernel.register(
             "button/tools/Text",
             {
                 "label": _("Text"),
@@ -930,6 +918,19 @@ class MeerK40t(MWindow):
             },
         )
 
+        kernel.register(
+            "button/basicediting/Delete",
+            {
+                "label": _("Delete"),
+                "icon": icons8_delete_50,
+                "tip": _(
+                    "Delete selected items"
+                ),
+                "action": lambda v: kernel.elements("tree selected delete\n"),
+                "size": bsize_normal,
+                "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
+            },
+        )
         kernel.register(
             "button/basicediting/Cut",
             {
