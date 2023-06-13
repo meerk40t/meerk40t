@@ -14,27 +14,19 @@ jobs:
     - name: Checkout meerk40t
       uses: actions/checkout@v2
 
-    - name: Set up Python 3.7
+    - name: Set up Python 3.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
-        architecture: 'x86'
-# Yikes. ch341dll.dll is not compatible with 64-bit python/pyinstaller/ctypes
-#
-# Python 3.7, wxPython 4.0.7-post2 is specifically chosen to workaround
-# issue meerk40t/meerk40t#242, once the SetLocale issue is resolved, we can test
-# newer versions again. Python 3.8 is latest possible for Windows 7 support.
+        python-version: 3.8
+        architecture: 'x64'
 
     - name: Install dependencies
       run: |
+        pip install .[all]
         pip install wheel
-        pip install wxPython==4.1.1
-        pip install ezdxf
-        pip install pyserial
         pip install potracer
-        pip install meerk40t-camera opencv-python-headless==4.5.3.56
-# 10/25/2021 0.7.3-beta4 ok, but 0.7.3 release lacked camera. Fixing opencv @4.5.3.56 until it's fixed
-
+        pip install meerk40t-barcodes
+# ==4.1.1
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
 # 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon 
@@ -45,16 +37,24 @@ jobs:
       run: |
         git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
-        python3 ./waf distclean all --target-arch=32bit
+        python3 ./waf distclean all
         cd ..
         python3 setup.py install
         cd ..
 
     - name: Build MeerK40t
       run: |
+        cd meerk40t
+        move external_plugins.py external_plugins.unused
+        move external_plugins_build.py external_plugins.py
+        cd ..
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
+        cd meerk40t
+        move external_plugins.py external_plugins_build.py
+        move external_plugins.unused external_plugins.py 
+        cd ..
 
 # Switched to using softprops/action-gh-release@v1
 # because it supports uploading to existing release based on current tag.
