@@ -949,6 +949,9 @@ class LihuiyuDevice(Service, ViewPort):
     def service_attach(self, *args, **kwargs):
         self.realize()
 
+    @signal_listener("rotary_scale_x")
+    @signal_listener("rotary_scale_y")
+    @signal_listener("rotary_active")
     @signal_listener("user_scale_x")
     @signal_listener("user_scale_y")
     @signal_listener("bedsize")
