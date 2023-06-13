@@ -1374,11 +1374,15 @@ class RuidaEmulator(Module):
                 files = [
                     name for name in glob(join(realpath(get_safe_path(".")), "*.rd"))
                 ]
-                name = files[filenumber - 1]
                 try:
+                    name = files[filenumber - 1]
                     with open(name, "rb") as f:
                         self.write(BytesIO(self.unswizzle(f.read())))
+                except IndexError:
+                    # File number was invalid.
+                    pass
                 except IOError:
+                    # Could not load the given data.
                     pass
                 desc = "Start Select Document %d" % filenumber
             elif array[1] == 0x04:
