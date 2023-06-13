@@ -1009,7 +1009,7 @@ class RDJob:
                 self.plot_commit()
                 desc = "Block End"
             elif array[1] == 0x01:
-                pass # Set filename for job (only realtime, see emulator)
+                pass  # Set filename for job (only realtime, see emulator)
             elif array[1] == 0x03:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM

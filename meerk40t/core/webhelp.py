@@ -1,6 +1,6 @@
 """
 Webhelp is a list of websites relevant to the program. This registers a `webhelp` command that will launch a browser
-point to the relvant sites.
+point to the relevant sites.
 """
 
 MEERK40T_ISSUES = "https://github.com/meerk40t/meerk40t/issues"
