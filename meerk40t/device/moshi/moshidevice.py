@@ -1001,6 +1001,9 @@ class MoshiController:
                     self.pipe_channel("New Program")
                     self.wait_until_accepting_packets()
                     self.realtime_prologue()
+                    if len(self._programs) == 0:
+                        # Async clear was called we should quit.
+                        break
                     self._buffer = self._programs.pop(0).data
                     assert len(self._buffer) != 0
 
