@@ -406,22 +406,34 @@ class LhystudiosControllerPanel(wx.Panel):
     def on_update_pipe_index(self, origin, value):
         if origin != self.context.path:
             return
-        self.text_device_index.SetValue(str(value))
+        try:
+            self.text_device_index.SetValue(str(value))
+        except RuntimeError:
+            pass
 
     def on_update_pipe_chipv(self, origin, value):
         if origin != self.context.path:
             return
-        self.text_device_version.SetValue(str(value))
+        try:
+            self.text_device_version.SetValue(str(value))
+        except RuntimeError:
+            pass
 
     def on_update_pipe_bus(self, origin, value):
         if origin != self.context.path:
             return
-        self.text_device_bus.SetValue(str(value))
+        try:
+            self.text_device_bus.SetValue(str(value))
+        except RuntimeError:
+            pass
 
     def on_update_pipe_address(self, origin, value):
         if origin != self.context.path:
             return
-        self.text_device_address.SetValue(str(value))
+        try:
+            self.text_device_address.SetValue(str(value))
+        except RuntimeError:
+            pass
 
     def update_status(self, origin, status_data, code_string):
         if origin != self.context.path:
