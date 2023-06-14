@@ -751,9 +751,17 @@ class RDJob:
             elif array[1] == 0x09:
                 v1 = decodeu35(array[2:7])
                 desc = f"Feed Length {v1}"
+            elif array[1] == 0x0A:
+                desc = f"Feed Info"
             elif array[1] == 0x0B:
                 v1 = array[2]
                 desc = f"Unknown 1 {v1}"
+            elif array[1] == 0x0C:
+                v1 = array[2]
+                desc = f"Array Mirror Cut Distance {v1}"
+            elif array[1] == 0x0C:
+                v1 = array[2]
+                desc = f"Set File Head Distance {v1}"
             elif array[1] == 0x13:
                 c_x = abscoord(array[2:7]) * UNITS_PER_uM
                 c_y = abscoord(array[7:12]) * UNITS_PER_uM
@@ -776,9 +784,16 @@ class RDJob:
                 v1 = decodeu35(array[2:7])
                 v2 = decodeu35(array[7:12])
                 desc = f"Block X Size {v1} {v2}"
+            elif array[1] == 0x32:
+                desc = f"Set File Empty"
+            elif array[1] == 0x37:
+                v1 = decodeu35(array[2:7])
+                desc = f"Array Even Distance {v1}"
             elif array[1] == 0x38:
                 v1 = array[2]
-                desc = f"Unknown 38 {v1}"
+                desc = f"Set Feed Auto Pause {v1}"
+            elif array[1] == 0x3a:
+                desc = f"Union Block Property"
             elif array[1] == 0x3b:
                 v1 = array[2]
                 desc = f"Unknown 3b {v1}"

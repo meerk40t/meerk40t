@@ -746,6 +746,11 @@ class RuidaEmulator:
             if array[1] == 0x02:
                 # len 3
                 self._describe(array, "Document Data End")
+            if array[1] == 0x03:
+                self._describe(array, "Is TblCor Usable")
+            if array[1] == 0x04:
+                # Something check in data chunk write
+                pass
             return True
         elif array[0] == 0xE7:
             # File Layout commands
