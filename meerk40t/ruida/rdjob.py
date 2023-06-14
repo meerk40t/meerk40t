@@ -461,17 +461,15 @@ class RDJob:
             if array[1] == 0x01:
                 power = parse_power(array[2:4])
                 self.power1_min = power
-                power = self.power1_min * 10.0  # 1000 / 100
+                power = self.power1_min
                 desc = f"Power 1 min={power}"
-                if power != self.power:
-                    self.power = power
+                self.power = power * 10  # 1000 / 100
             elif array[1] == 0x02:
                 power = parse_power(array[2:4])
                 self.power1_max = power
-                power = self.power1_max * 10.0  # 1000 / 100
+                power = self.power1_max
                 desc = f"Power 1 max={power}"
-                if power != self.power:
-                    self.power = power
+                self.power = power * 10  # 1000 / 100
             elif array[1] == 0x05:
                 power = parse_power(array[2:4])
                 desc = f"Power 3 min={power}"
@@ -792,9 +790,9 @@ class RDJob:
             elif array[1] == 0x38:
                 v1 = array[2]
                 desc = f"Set Feed Auto Pause {v1}"
-            elif array[1] == 0x3a:
+            elif array[1] == 0x3A:
                 desc = f"Union Block Property"
-            elif array[1] == 0x3b:
+            elif array[1] == 0x3B:
                 v1 = array[2]
                 desc = f"Set File Property {v1}"
             elif array[1] == 0x46:
