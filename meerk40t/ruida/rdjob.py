@@ -778,7 +778,10 @@ class RDJob:
                 desc = f"Block X Size {v1} {v2}"
             elif array[1] == 0x38:
                 v1 = array[2]
-                desc = f"Unknown 2 {v1}"
+                desc = f"Unknown 38 {v1}"
+            elif array[1] == 0x3b:
+                v1 = array[2]
+                desc = f"Unknown 3b {v1}"
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
