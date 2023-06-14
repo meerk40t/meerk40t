@@ -699,6 +699,10 @@ class RDJob:
                 if array[1] == 0x02:
                     # len 3
                     desc = "Document Data End"
+                elif array[1] == 0x05:
+                    sum = decodeu35(array[2:7])
+                    desc = f"Set File Sum {sum}"
+
         elif array[0] == 0xE6:
             if array[1] == 0x01:
                 desc = "Set Absolute"
