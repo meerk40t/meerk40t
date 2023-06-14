@@ -366,14 +366,6 @@ class RDJob:
     def current(self):
         return self.x, self.y
 
-    def set_speed(self, speed):
-        if speed != self.speed:
-            try:
-                self._driver.set("speed", speed)
-            except AttributeError:
-                pass
-            self.speed = speed
-
     def set_color(self, color):
         self.color = color
 
@@ -581,7 +573,8 @@ class RDJob:
             if array[1] == 0x02:
                 self.plot_commit()
                 speed = parse_speed(array[2:7])
-                self.set_speed(speed)
+                if speed != self.speed:
+                    self.speed = speed
                 desc = f"Speed Laser 1 {speed}mm/s"
             elif array[1] == 0x03:
                 speed = parse_speed(array[2:7])
@@ -590,7 +583,8 @@ class RDJob:
                 self.plot_commit()
                 part = array[2]
                 speed = parse_speed(array[3:8])
-                self.set_speed(speed)
+                if speed != self.speed:
+                    self.speed = speed
                 desc = f"{part}, Speed {speed}mm/s"
             elif array[1] == 0x05:
                 speed = parse_speed(array[2:7]) / 1000.0
