@@ -596,7 +596,6 @@ class RuidaEmulator:
                         self.device.driver.move_abs(self.x + coord, self.y)
                     except AttributeError:
                         pass
-                    return True
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = abscoord(array[3:8]) * self.scale
                     self._describe(
@@ -607,7 +606,6 @@ class RuidaEmulator:
                         self.device.driver.move_abs(self.x, self.y + coord)
                     except AttributeError:
                         pass
-                    return True
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = abscoord(array[3:8])
                     self._describe(
@@ -618,7 +616,6 @@ class RuidaEmulator:
                         self.device.driver.axis("z", coord)
                     except AttributeError:
                         pass
-                    return True
                 elif array[1] == 0x03 or array[1] == 0x53:
                     coord = abscoord(array[3:8])
                     self._describe(
@@ -629,7 +626,6 @@ class RuidaEmulator:
                         self.device.driver.axis("u", self.u)
                     except AttributeError:
                         pass
-                    return True
                 elif array[1] == 0x0F:
                     self._describe(
                         array,
@@ -670,6 +666,7 @@ class RuidaEmulator:
                         self.device.driver.axis("u", self.u * UNITS_PER_uM)
                     except AttributeError:
                         pass
+            return True
         elif array[0] == 0xDA:
             # DA commands are usually memory or system processing commands.
 
