@@ -165,7 +165,6 @@ class RDJob:
         self.units_to_device_matrix = units_to_device_matrix
         self._driver = driver
         self.channel = channel
-        self.describe = None
         self.reply = None
         self.buffer = list()
         self.plotcut = None
@@ -1180,11 +1179,8 @@ class RDJob:
                 desc = f"Element Array Mirror ({index})"
         else:
             desc = "Unknown Command!"
-        if self.describe:
-            self.describe(f"{str(bytes(array).hex())}\t{desc}")
         if self.channel:
             self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
-        print(f"{str(bytes(array).hex())}\t{desc}")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])

@@ -43,7 +43,6 @@ class RuidaEmulator:
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
         self.channel = None
-        self.describe = None
 
         self.program_mode = False
         self.reply = None
@@ -56,7 +55,7 @@ class RuidaEmulator:
         self.job = RDJob(
             driver=device.driver,
             priority=0,
-            channel=self.channel,
+            channel=self._channel,
             units_to_device_matrix=units_to_device_matrix,
         )
 
@@ -141,9 +140,11 @@ class RuidaEmulator:
                 if self.channel:
                     self.channel(f"Process Failure: {str(bytes(array).hex())}")
 
+    def _channel(self, text):
+        if self.channel:
+            self.channel(text)
+
     def _describe(self, array, desc):
-        if self.describe:
-            self.describe(f"{str(bytes(array).hex())}\t{desc}")
         if self.channel:
             self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
 
