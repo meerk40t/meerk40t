@@ -16,6 +16,17 @@ def data_viewer(data, data_type):
     return BlobNode.hex_view(data=decode_bytes(data), data_type=data_type)
 
 
+def command_viewer(data, data_type):
+    from meerk40t.ruida.rdjob import RDJob
+    job = RDJob()
+    job.write_blob(data)
+    commands = list()
+    job.channel = commands.append
+    while not job.execute(None):
+        pass
+    return "\n".join(commands)
+
+
 class RDLoader:
     @staticmethod
     def load_types():
@@ -31,7 +42,7 @@ class RDLoader:
                 data_type="ruida",
                 type="blob",
                 label=basename,
-                views={"Unswizzled Hex": data_viewer},
+                views={"Unswizzled Hex": data_viewer, "Commands": command_viewer},
             )
             kernel.root.close(basename)
             return True
