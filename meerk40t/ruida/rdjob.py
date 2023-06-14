@@ -314,6 +314,9 @@ class RDJob:
         @return:
         """
         matrix = self.units_to_device_matrix
+        if matrix is None:
+            # Using job for something other than point plotting
+            return
         if self.plotcut is None:
             self.x = x
             self.y = y
