@@ -362,7 +362,11 @@ class RuidaEmulator:
                 return False
             elif array[1] == 0x2A:
                 self._describe(array, "Home XY")
-                return False
+                try:
+                    self.device.driver.home()
+                except AttributeError:
+                    pass
+                return True
             elif array[1] == 0x2E:
                 self._describe(array, "FocusZ")
                 return False
