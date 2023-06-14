@@ -711,7 +711,7 @@ class RuidaEmulator:
             elif array[1] == 0x06 or array[1] == 0x52:
                 self._describe(array, "Unknown/System Time.")
             elif array[1] == 0x10 or array[1] == 0x53:
-                self._describe(array, "Unknown Function--3")
+                self._describe(array, "Set System Time")
             elif array[1] == 0x30:
                 # Property requested with select document, upload button "fresh property"
                 filenumber = parse_filenumber(array[2:4])
