@@ -3,11 +3,10 @@ EGV Loader
 
 Registered loader for egv (engrave) data of lhymicro-gl.
 """
-from meerk40t.core.cutcode.cutcode import CutCode
-from meerk40t.core.cutcode.plotcut import PlotCut
-from meerk40t.lihuiyu.parser import LihuiyuParser
 
-
+# from meerk40t.core.cutcode.cutcode import CutCode
+# from meerk40t.core.cutcode.plotcut import PlotCut
+# from meerk40t.lihuiyu.parser import LihuiyuParser
 # class EGVBlob:
 #     def __init__(self, data: bytearray, name=None):
 #         self.name = name
@@ -76,12 +75,12 @@ class EgvLoader:
         yield "Engrave Files", ("egv",), "application/x-egv"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
+    def load(kernel, elements_service, pathname, **kwargs):
         import os
 
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            op_branch = elements_modifier.get(type="branch ops")
+            op_branch = elements_service.get(type="branch ops")
             op_branch.add(
                 data=bytearray(EgvLoader.remove_header(f.read())),
                 data_type="egv",
