@@ -711,25 +711,6 @@ class RDJob:
             if array[1] == 0x00:
                 desc = "Start Process"
                 self.program_mode = True
-            if array[1] == 0x01:
-                desc = "Stop Process"
-                try:
-                    self._driver.reset()
-                    self._driver.home()
-                except AttributeError:
-                    pass
-            if array[1] == 0x02:
-                desc = "Pause Process"
-                try:
-                    self._driver.pause()
-                except AttributeError:
-                    pass
-            if array[1] == 0x03:
-                desc = "Restore Process"
-                try:
-                    self._driver.resume()
-                except AttributeError:
-                    pass
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
