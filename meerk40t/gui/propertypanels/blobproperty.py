@@ -5,6 +5,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
 from .attributes import IdPanel
+from ...core.node.blobnode import BlobNode
 
 _ = wx.GetTranslation
 
@@ -20,9 +21,11 @@ class BlobPropertyPanel(ScrolledPanel):
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.operation
         )
-        optview = (_("Hexadecimal View"), _("Plain-Text"))
+        self.views = dict(node.views)
+        self.views[_("Hexadecimal View")] = BlobNode.hex_view
+        self.views[_("Plain-Text")] = BlobNode.ascii_view
         self.option_view = wx.RadioBox(
-            self, wx.ID_ANY, label="View", choices=optview, style=wx.RA_SPECIFY_COLS
+            self, wx.ID_ANY, label="View", choices=list(self.views), style=wx.RA_SPECIFY_COLS
         )
         self.option_view.SetSelection(0)
         self.text_blob = wx.TextCtrl(
@@ -44,49 +47,21 @@ class BlobPropertyPanel(ScrolledPanel):
 
         if node is not None:
             self.operation = node
-        self.fill_text()
+        self.refresh_view()
         self.on_option_view(None)
         self.Refresh()
 
-    def fill_text(self):
-        self.hex_content = ""
-        self.ascii_content = ""
-        if self.operation is None:
-            return
-        data = self.operation.data
-        header1 = f"Data-Type: {self.operation.data_type}, Length={len(data)}\n"
-        header2 = "Offset | Hex                                             | Ascii          \n"
-        header2 += "-------+-------------------------------------------------+----------------\n"
-        if isinstance(data, str):
-            data = data.encode("latin-1")
-        self.ascii_content = header1 + data.decode("latin-1")
-
-        def create_table():
-            ascii_list = list()
-            for i, c in enumerate(data):
-                q = i % 16
-                if q == 0:
-                    yield f"{i:06x}  "
-                yield f"{c:02x} "
-                if c in (0x0d, 0x0a, 0x09) or c > 0x80:
-                    ascii_list.append('.')
-                else:
-                    ascii_list.append(chr(c))
-                if q == 7:
-                    yield " "
-                if q == 15:
-                    ascii_line = "".join(ascii_list)
-                    ascii_list.clear()
-                    yield f" {ascii_line}\n"
-        hex_data = list(create_table())
-        self.hex_content = header1 + header2 + "".join(hex_data)
+    def refresh_view(self):
+        key = self.option_view.GetStringSelection()
+        view = self.views.get(key)
+        if view:
+            text = view(self.operation.data, self.operation.data_type)
+        else:
+            text = _("N/A")
+        self.text_blob.SetValue(text)
 
     def on_option_view(self, event):
-        hex_view = bool(self.option_view.GetSelection() == 0)
-        if hex_view:
-            self.text_blob.SetValue(self.hex_content)
-        else:
-            self.text_blob.SetValue(self.ascii_content)
+        self.refresh_view()
 
     def __set_properties(self):
         self.text_blob.SetFont(
