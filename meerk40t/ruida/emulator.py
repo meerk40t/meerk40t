@@ -10,7 +10,7 @@ from typing import Tuple, Union
 
 from meerk40t.kernel import get_safe_path
 
-from ..core.units import UNITS_PER_uM
+from ..core.units import UNITS_PER_uM, UNITS_PER_MM
 from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
@@ -20,7 +20,7 @@ from .rdjob import (
     parse_commands,
     parse_filenumber,
     parse_mem,
-    swizzles_lut,
+    swizzles_lut, abscoord,
 )
 
 
@@ -51,6 +51,8 @@ class RuidaEmulator:
         self.process_commands = True
         self.parse_lasercode = True
         self.swizzle_mode = True
+
+        self.scale = UNITS_PER_uM
 
         self.job = RDJob(
             driver=device.driver,
@@ -356,10 +358,10 @@ class RuidaEmulator:
                 return True
             elif array[1] == 0x2C:
                 self._describe(array, "Home Z")
-                return False
+                return True
             elif array[1] == 0x2D:
                 self._describe(array, "Home U")
-                return False
+                return True
             elif array[1] == 0x2A:
                 self._describe(array, "Home XY")
                 try:
@@ -369,7 +371,7 @@ class RuidaEmulator:
                 return True
             elif array[1] == 0x2E:
                 self._describe(array, "FocusZ")
-                return False
+                return True
             elif array[1] == 0x20:
                 self._describe(array, "KeyDown -X +Left")
                 try:
@@ -490,16 +492,16 @@ class RuidaEmulator:
                 return True
             elif array[1] == 0x39:
                 self._describe(array, "Home A")
-                return False
+                return True
             elif array[1] == 0x3A:
                 self._describe(array, "Home B")
-                return False
+                return True
             elif array[1] == 0x3B:
                 self._describe(array, "Home C")
-                return False
+                return True
             elif array[1] == 0x3C:
                 self._describe(array, "Home D")
-                return False
+                return True
             elif array[1] == 0x40:
                 self._describe(array, "KeyDown 0x18")
                 return True
@@ -551,6 +553,107 @@ class RuidaEmulator:
             elif array[1] == 0x51:
                 self._describe(array, "Inhale On/Off")
                 return True
+        elif array[0] == 0xD9:
+            if len(array) == 1:
+                self._describe(
+                    array,
+                    "Unknown Directional Setting"
+                )
+            else:
+                options = array[2]
+                if options == 0x03:
+                    param = "Light"
+                elif options == 0x02:
+                    param = ""
+                elif options == 0x01:
+                    param = "Light/Origin"
+                else:  # options == 0x00:
+                    param = "Origin"
+
+                if array[1] == 0x00 or array[1] == 0x50:
+                    coord = abscoord(array[3:8]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} X: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.move_abs(self.x + coord, self.y)
+                    except AttributeError:
+                        pass
+                    return True
+                elif array[1] == 0x01 or array[1] == 0x51:
+                    coord = abscoord(array[3:8]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} Y: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.move_abs(self.x, self.y + coord)
+                    except AttributeError:
+                        pass
+                    return True
+                elif array[1] == 0x02 or array[1] == 0x52:
+                    coord = abscoord(array[3:8])
+                    self._describe(
+                        array,
+                        f"Move {param} Z: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.axis("z", coord)
+                    except AttributeError:
+                        pass
+                    return True
+                elif array[1] == 0x03 or array[1] == 0x53:
+                    coord = abscoord(array[3:8])
+                    self._describe(
+                        array,
+                        f"Move {param} U: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.axis("u", self.u)
+                    except AttributeError:
+                        pass
+                    return True
+                elif array[1] == 0x0F:
+                    self._describe(
+                        array,
+                        "Feed Axis Move"
+                    )
+                elif array[1] == 0x10 or array[1] == 0x60:
+                    self.x = abscoord(array[3:8]) * self.scale
+                    self.y = abscoord(array[8:13]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} XY ({self.x}, {self.y})"
+                    )
+                    if "Origin" in param:
+                        try:
+                            self.device.driver.move_abs(
+                                f"{self.x / UNITS_PER_MM}mm",
+                                f"{self.y / UNITS_PER_MM}mm",
+                            )
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.device.driver.home()
+                        except AttributeError:
+                            pass
+                elif array[1] == 0x30 or array[1] == 0x70:
+                    self.x = abscoord(array[3:8])
+                    self.y = abscoord(array[8:13])
+                    self.u = abscoord(array[13: 13 + 5])
+                    self._describe(
+                        array,
+                        f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                    )
+                    try:
+                        self.device.driver.move_abs(
+                            self.x * UNITS_PER_uM, self.y * UNITS_PER_uM
+                        )
+                        self.device.driver.axis("u", self.u * UNITS_PER_uM)
+                    except AttributeError:
+                        pass
         elif array[0] == 0xDA:
             # DA commands are usually memory or system processing commands.
 
@@ -620,7 +723,7 @@ class RuidaEmulator:
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
                 self._describe(array, "Lightburn Swizzle Modulation E5")
-                return False
+                return True
             if array[1] == 0x00:
                 # RDWorks File Upload
                 filenumber = array[2]
@@ -705,7 +808,6 @@ class RuidaEmulator:
                 filenumber = parse_filenumber(array[2:4])
                 self._describe(array, f"Calculate Document Time {filenumber}")
             return True
-
         return False
 
     def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:
