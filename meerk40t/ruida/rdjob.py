@@ -663,8 +663,8 @@ class RDJob:
         elif array[0] == 0xCE:
             desc = "Keep Alive"
         elif array[0] == 0xD0:
-            if array[1] == 0x29:
-                desc = "Unknown LB Command"
+            zone = array[1]
+            desc = f"Set Inhale Zone {zone}"
         elif array[0] == 0xD7:
             self.plot_commit()
             try:
@@ -755,7 +755,7 @@ class RDJob:
                 desc = f"Feed Info"
             elif array[1] == 0x0B:
                 v1 = array[2]
-                desc = f"Unknown 1 {v1}"
+                desc = f"Array En Mirror Cut {v1}"
             elif array[1] == 0x0C:
                 v1 = array[2]
                 desc = f"Array Mirror Cut Distance {v1}"
@@ -825,6 +825,8 @@ class RDJob:
                 axis = array[2]
                 c_x = abscoord(array[3:8]) * UNITS_PER_uM
                 desc = f"Layer Offset {axis}: {c_x}"
+            elif array[1] == 0x57:
+                desc = f"PList Feed"
             elif array[1] == 0x60:
                 desc = f"Set Current Element Index ({array[2]})"
             elif array[1] == 0x61:
