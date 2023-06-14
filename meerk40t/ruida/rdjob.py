@@ -779,7 +779,7 @@ class RDJob:
                 desc = f"Array Mirror {v1}"
             elif array[1] == 0x32:
                 v1 = decodeu35(array[2:7])
-                desc = f"Unknown Preamble {v1}"
+                desc = f"Set Tick Count {v1}"
             elif array[1] == 0x35:
                 v1 = decodeu35(array[2:7])
                 v2 = decodeu35(array[7:12])
