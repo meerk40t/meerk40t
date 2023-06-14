@@ -636,17 +636,17 @@ class RuidaEmulator:
                         "Feed Axis Move"
                     )
                 elif array[1] == 0x10 or array[1] == 0x60:
-                    self.x = abscoord(array[3:8]) * self.scale
-                    self.y = abscoord(array[8:13]) * self.scale
+                    x = abscoord(array[3:8]) * self.scale
+                    y = abscoord(array[8:13]) * self.scale
                     self._describe(
                         array,
-                        f"Move {param} XY ({self.x}, {self.y})"
+                        f"Move {param} XY ({x}, {y})"
                     )
                     if "Origin" in param:
                         try:
                             self.device.driver.move_abs(
-                                f"{self.x / UNITS_PER_MM}mm",
-                                f"{self.y / UNITS_PER_MM}mm",
+                                f"{x / UNITS_PER_MM}mm",
+                                f"{y / UNITS_PER_MM}mm",
                             )
                         except AttributeError:
                             pass
@@ -656,16 +656,16 @@ class RuidaEmulator:
                         except AttributeError:
                             pass
                 elif array[1] == 0x30 or array[1] == 0x70:
-                    self.x = abscoord(array[3:8])
-                    self.y = abscoord(array[8:13])
+                    x = abscoord(array[3:8])
+                    y = abscoord(array[8:13])
                     self.u = abscoord(array[13: 13 + 5])
                     self._describe(
                         array,
-                        f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
                     )
                     try:
                         self.device.driver.move_abs(
-                            self.x * UNITS_PER_uM, self.y * UNITS_PER_uM
+                            x * UNITS_PER_uM, y * UNITS_PER_uM
                         )
                         self.device.driver.axis("u", self.u * UNITS_PER_uM)
                     except AttributeError:
@@ -696,7 +696,6 @@ class RuidaEmulator:
                         desc=f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}",
                     )
             elif array[1] == 0x01:
-                # MEM SET. This is sometimes inside files to set things like declared filesize
                 value0 = array[4:9]
                 value1 = array[9:14]
                 v0 = decodeu35(value0)
@@ -705,6 +704,7 @@ class RuidaEmulator:
                     array,
                     f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v0} (0x{v0:08x}) {v1} (0x{v1:08x})",
                 )
+                # MEM SET. This is sometimes inside files to set things like declared filesize
                 return False
             elif array[1] == 0x04:
                 self._describe(array, "OEM On/Off, CardIO On/OFF")
@@ -763,7 +763,6 @@ class RuidaEmulator:
                 if self.saving:
                     self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
                 return True
-            return False
         elif array[0] == 0xE8:
             # FILE INTERACTIONS
             if array[1] == 0x00:
