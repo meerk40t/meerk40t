@@ -1180,7 +1180,7 @@ class RDJob:
         else:
             desc = "Unknown Command!"
         if self.channel:
-            self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
+            self.channel(f"-**-> {str(bytes(array).hex())}\t({desc})")
 
     def unswizzle(self, data):
         return bytes([self.lut_unswizzle[b] for b in data])
