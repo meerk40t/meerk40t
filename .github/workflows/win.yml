@@ -12,29 +12,36 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout meerk40t
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Python 3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
-        architecture: 'x64'
+        # Latest version of python support by Windows 7 is Python 3.8
 
     - name: Install dependencies
       run: |
-        pip install .[all]
+        ## pip install . establishes meerk40t as a package in pip, so that meerk40t-barcodes can find it as a dependency
+        pip install .
         pip install wheel
         pip install potracer
+        pip install wxPython
+        pip install ezdxf
+        pip install pyserial
+        pip install bitarray
+        pip install scipy
+        pip install meerk40t-camera opencv-python-headless==4.5.3.56
         pip install meerk40t-barcodes
-# ==4.1.1
+
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
-# 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon 
-# when it branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
     - name: Build pyinstaller, generate bootloaders
       env:
         PYTHONHASHSEED: 12506
       run: |
+        ## 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon
+        ## when branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
         git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all
@@ -44,20 +51,24 @@ jobs:
 
     - name: Build MeerK40t
       run: |
+        ## pyinstaller struggles recognizing and including imports that are dynamic (such as for the plugins)
+        ## So for build purposes, we replace the dynamic imports with the static listing that we include in builds
         cd meerk40t
         move external_plugins.py external_plugins.unused
         move external_plugins_build.py external_plugins.py
         cd ..
+
+        ## pyinstaller struggles with meerk40t.py having the same name as the package meerk40t. Rename for the build
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
-        cd meerk40t
-        move external_plugins.py external_plugins_build.py
-        move external_plugins.unused external_plugins.py 
-        cd ..
 
-# Switched to using softprops/action-gh-release@v1
-# because it supports uploading to existing release based on current tag.
+        ## Restore original configuration (not really necessary in build environment which is fresh each time)
+        ##cd meerk40t
+        ##move external_plugins.py external_plugins_build.py
+        ##move external_plugins.unused external_plugins.py
+        ##cd ..
+
     - name: Upload Release Assets
       id: release
       uses: softprops/action-gh-release@v1

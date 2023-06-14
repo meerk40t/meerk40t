@@ -55,20 +55,16 @@ jobs:
     - name: Ensure latest pip and meerk40t-camera
       run: |
         python3.8 -m pip install --upgrade pip
-        ## python3.8 -m pip install --upgrade pip
+        python3.8 -m pip install wheel setuptools
         python3.8 -m pip install meerk40t-camera opencv-python-headless==3.4.13.47
-        ## python3.8 -m pip install meerk40t-camera opencv-python
-        ##python3.8 -m pip install --upgrade pyinstaller==4.3
         python3.8 -m pip install --no-use-pep517 pyinstaller==4.3
         
         ## numpy toggle based on 32 bit fix
-        python3.8 -m pip install wheel six numpy ezdxf
+        python3.8 -m pip install six numpy ezdxf
         ## python3.8 -m pip install wheel six ezdxf
         
         python3.8 -m pip install potracer
         
-        ## python3.8 -m pip install wheel six numpy
-        ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython==4.1.1
         if [ -f requirements-nogui.txt ]; then python3.8 -m pip install -r requirements-nogui.txt; fi
         python3.8 -m pip uninstall -y meerk40t[gui]
@@ -177,6 +173,5 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: ${{ steps.build.outputs.mkversion }}
         files: |
           MeerK40t_unsigned.dmg
