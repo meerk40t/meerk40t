@@ -480,10 +480,6 @@ class RDJob:
                 power = self.power1_min * 10.0  # 1000 / 100
                 desc = f"Power 1 min={power}"
                 if power != self.power:
-                    try:
-                        self._driver.set("power", power)
-                    except AttributeError:
-                        pass
                     self.power = power
             elif array[1] == 0x02:
                 power = parse_power(array[2:4])
@@ -491,10 +487,6 @@ class RDJob:
                 power = self.power1_max * 10.0  # 1000 / 100
                 desc = f"Power 1 max={power}"
                 if power != self.power:
-                    try:
-                        self._driver.set("power", power)
-                    except AttributeError:
-                        pass
                     self.power = power
             elif array[1] == 0x05:
                 power = parse_power(array[2:4])
@@ -584,10 +576,6 @@ class RDJob:
                 frequency = parse_frequency(array[4:9])
                 desc = f"part, Laser {laser}, Frequency ({frequency})"
                 if frequency != self.frequency:
-                    try:
-                        self._driver.set("frequency", frequency)
-                    except AttributeError:
-                        pass
                     self.frequency = frequency
         elif array[0] == 0xC9:
             if array[1] == 0x02:
