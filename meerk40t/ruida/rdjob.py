@@ -315,9 +315,8 @@ class RDJob:
         """
         matrix = self.units_to_device_matrix
         if self.plotcut is None:
-            if self.program_mode:
-                self.x = x
-                self.y = y
+            self.x = x
+            self.y = y
             ox, oy = matrix.transform_point([self.x, self.y])
             self.plotcut = PlotCut(
                 settings={
@@ -329,8 +328,6 @@ class RDJob:
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
         self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
-        if not self.program_mode:
-            self.plot_commit()
         self.x = x
         self.y = y
 
