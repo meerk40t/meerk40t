@@ -278,7 +278,7 @@ class PlotCut(CutObject):
 
     def generator(self):
         for x0, y0, power, x1, y1 in self.plot:
-            if x0 != x1 and y0 != y1:
+            if x0 != x1 and y0 != y1:  # Non-orthogonal
                 for zx, zy in ZinglPlotter.plot_line(
                     int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))
                 ):
