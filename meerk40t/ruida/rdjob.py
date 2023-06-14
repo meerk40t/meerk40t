@@ -717,22 +717,6 @@ class RDJob:
                 desc = "Ref Point Mode 1, Anchor Point"
             if array[1] == 0x12:
                 desc = "Ref Point Mode 0, Current Position"
-            if array[1] == 0x2C:
-                self.z = 0.0
-                desc = "Home Z"
-            if array[1] == 0x2D:
-                self.u = 0.0
-                desc = "Home U"
-            if array[1] == 0x2A:
-                self.x = 0.0
-                self.y = 0.0
-                desc = "Home XY"
-                try:
-                    self._driver.home()
-                except AttributeError:
-                    pass
-            if array[1] == 0x2E:
-                desc = "FocusZ"
         elif array[0] == 0xD9:
             if len(array) == 1:
                 desc = "Unknown Directional Setting"
