@@ -673,6 +673,8 @@ class RDJob:
                 pass
             desc = "End Of File"
         elif array[0] == 0xD8:
+            if array[1] == 0x00:
+                desc = "Start Process"
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
