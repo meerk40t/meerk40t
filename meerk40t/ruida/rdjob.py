@@ -330,7 +330,7 @@ class RDJob:
             )
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power * (self.power / 1000.0))
         self.x = x
         self.y = y
 
