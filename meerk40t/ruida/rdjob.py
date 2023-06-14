@@ -347,12 +347,6 @@ class RDJob:
             self._driver.plot(plot)
         except AttributeError:
             pass
-        if not self.program_mode:
-            # If we plotted this, and we aren't in program mode execute all of these commands right away
-            try:
-                self._driver.plot_start()
-            except AttributeError:
-                pass
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
