@@ -349,7 +349,7 @@ class RuidaEmulator:
             if array[1] == 0x00:
                 self._describe(array, "Start Process")
                 self.program_mode = True
-                return True
+                return False
             elif array[1] == 0x01:
                 self._describe(array, "Stop Process")
                 try:
