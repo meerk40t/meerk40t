@@ -796,7 +796,7 @@ class RDJob:
                 desc = f"Union Block Property"
             elif array[1] == 0x3b:
                 v1 = array[2]
-                desc = f"Unknown 3b {v1}"
+                desc = f"Set File Property {v1}"
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
