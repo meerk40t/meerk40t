@@ -60,6 +60,22 @@ class RuidaEmulator:
             channel=self._channel,
             units_to_device_matrix=units_to_device_matrix,
         )
+        self.z = 0.0
+        self.u = 0.0
+
+        self.a = 0.0
+        self.b = 0.0
+        self.c = 0.0
+        self.d = 0.0
+
+    @property
+    def x(self):
+        return self.device.current[0]
+
+
+    @property
+    def y(self):
+        return self.device.current[1]
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
