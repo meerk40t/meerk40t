@@ -57,14 +57,23 @@ class BlobPropertyPanel(ScrolledPanel):
         header1 = f"Data-Type: {self.operation.data_type}, Length={len(data)}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
+        if isinstance(data, str):
+            data = data.encode("latin-1")
+        self.ascii_content = header1 + data.decode("latin-1")
 
-        if isinstance(data, (bytes, bytearray)):
-            self.ascii_content = header1 + data.decode("latin-1")
-            self.hex_content = header1 + header2 + data.hex(sep="|", bytes_per_sep=16)
-        else:
-            self.ascii_content = header1 + data
-            self.hex_content = header1 + header2 + "".join([f"{hex(j)}" for j in data])
-
+        def create_table():
+            for i, c in enumerate(data):
+                q = i % 16
+                if q == 0:
+                    yield f"{i:06x}  "
+                yield f"{c:02x} "
+                if q == 7:
+                    yield " "
+                if q == 15:
+                    ascii_line = data[i-15:i].decode('latin-1').replace('\n', '.')
+                    yield f" {ascii_line}\n"
+        hex_data = list(create_table())
+        self.hex_content = header1 + header2 + "".join(hex_data)
 
     def on_option_view(self, event):
         hex_view = bool(self.option_view.GetSelection() == 0)
