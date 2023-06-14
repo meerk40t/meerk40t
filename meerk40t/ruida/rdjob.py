@@ -2,7 +2,7 @@ import threading
 import time
 
 from meerk40t.core.cutcode.plotcut import PlotCut
-from meerk40t.core.units import UNITS_PER_MM, UNITS_PER_uM
+from meerk40t.core.units import UNITS_PER_uM
 from meerk40t.svgelements import Color
 
 from .exceptions import RuidaCommandError
@@ -187,8 +187,6 @@ class RDJob:
         self.power1_min = None
         self.power2_max = None
         self.power2_min = None
-
-        self.program_mode = False
 
         self.color = None
         self.magic = 0x11  # 0x11 for the 634XG
@@ -674,15 +672,6 @@ class RDJob:
             if array[1] == 0x29:
                 desc = "Unknown LB Command"
         elif array[0] == 0xD7:
-            # if not self.saving:
-            #     pass
-            # If not saving send to spooler, if control
-            # self.saving = False
-            # self.filename = None
-            # if self.filestream is not None:
-            #     self.filestream.close()
-            #     self.filestream = None
-            self.program_mode = False
             self.plot_commit()
             try:
                 self._driver.plot_start()
@@ -690,9 +679,6 @@ class RDJob:
                 pass
             desc = "End Of File"
         elif array[0] == 0xD8:
-            if array[1] == 0x00:
-                desc = "Start Process"
-                self.program_mode = True
             if array[1] == 0x10:
                 desc = "Ref Point Mode 2, Machine Zero/Absolute Position"
             if array[1] == 0x11:
