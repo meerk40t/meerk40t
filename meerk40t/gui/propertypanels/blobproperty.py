@@ -54,58 +54,17 @@ class BlobPropertyPanel(ScrolledPanel):
         if self.operation is None:
             return
         data = self.operation.data
-        hexcodes = ""
-        cleartext = ""
-        data_len = 0
-        if data is not None:
-            offset = 0
-            index = 0
-            hexcodes = hex(offset)[2:]
-            while len(hexcodes) < 6:
-                hexcodes = "0" + hexcodes
-            hexcodes += " |"
-            cleartext = ""
-
-            for entry in data:
-                if isinstance(entry, bytes):
-                    self.ascii_content += entry.decode("utf-8")
-                    for single in entry:
-                        data_len += 1
-                        code = int(single)
-                        hexa = hex(code)[2:]
-                        while len(hexa) < 2:
-                            hexa = "0" + hexa
-                        hexcodes += " " + hexa
-                        if code >= 32:
-                            cleartext += chr(code)
-                        else:
-                            cleartext += "."
-                        index += 1
-                        offset += 1
-                        if index >= 16:
-                            hexcodes += " | " + cleartext + "\n"
-                            self.hex_content += hexcodes
-                            index = 0
-                            hexcodes = hex(offset)[2:]
-                            while len(hexcodes) < 6:
-                                hexcodes = "0" + hexcodes
-                            hexcodes += " |"
-                            cleartext = ""
-
-            # Still something to add?
-            if index > 0:
-                while index < 16:
-                    hexcodes += "   "
-                    cleartext += " "
-                    index += 1
-                hexcodes += " | " + cleartext + "\n"
-                self.hex_content += hexcodes
-
-        header1 = f"Data-Type: {self.operation.data_type}, Length={data_len}\n"
+        header1 = f"Data-Type: {self.operation.data_type}, Length={len(data)}\n"
         header2 = "Offset | Hex                                             | Ascii          \n"
         header2 += "-------+-------------------------------------------------+----------------\n"
-        self.hex_content = header1 + header2 + self.hex_content
-        self.ascii_content = header1 + self.ascii_content
+
+        if isinstance(data, (bytes, bytearray)):
+            self.ascii_content = header1 + data.decode("latin-1")
+            self.hex_content = header1 + header2 + data.hex(sep="|", bytes_per_sep=16)
+        else:
+            self.ascii_content = header1 + data
+            self.hex_content = header1 + header2 + "".join([f"{hex(j)}" for j in data])
+
 
     def on_option_view(self, event):
         hex_view = bool(self.option_view.GetSelection() == 0)
