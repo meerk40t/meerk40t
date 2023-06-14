@@ -85,7 +85,7 @@ class EgvLoader:
             op_branch.add(
                 data=bytearray(EgvLoader.remove_header(f.read())),
                 data_type="egv",
+                label=basename,
                 type="blob",
-                name=basename,
             )
         return True
