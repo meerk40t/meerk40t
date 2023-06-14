@@ -331,7 +331,7 @@ class RuidaEmulator:
             if array[1] == 0x00:
                 self._describe(array, "Start Process")
                 self.program_mode = True
-                return False
+                return True
             elif array[1] == 0x01:
                 self._describe(array, "Stop Process")
                 try:
@@ -354,20 +354,6 @@ class RuidaEmulator:
                 except AttributeError:
                     pass
                 return True
-            elif array[1] == 0x10:
-                # START FILE
-                self._describe(
-                    array, "Ref Point Mode 2, Machine Zero/Absolute Position"
-                )
-                return False
-            elif array[1] == 0x11:
-                # START FILE
-                self._describe(array, "Ref Point Mode 1, Anchor Point")
-                return False
-            elif array[1] == 0x12:
-                # START FILE
-                self._describe(array, "Ref Point Mode 0, Current Position")
-                return False
             elif array[1] == 0x2C:
                 self._describe(array, "Home Z")
                 return False
