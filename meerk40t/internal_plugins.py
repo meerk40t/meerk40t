@@ -84,6 +84,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(ezd.plugin)
 
+        from .extra import lbrn
+
+        plugins.append(lbrn.plugin)
+
         from .extra import pathoptimize
 
         plugins.append(pathoptimize.plugin)
