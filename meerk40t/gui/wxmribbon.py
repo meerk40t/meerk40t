@@ -329,8 +329,8 @@ class RibbonPanel(wx.Panel):
         self.ribbon_bars = []
         self.ribbon_panels = []
         self.ribbon_pages = []
-        context.setting(bool, "ribbon_art", False)
-        context.setting(bool, "ribbon_hide_labels", False)
+        context.setting(bool, "ribbon_art", True)
+        context.setting(bool, "ribbon_hide_labels", True)
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
