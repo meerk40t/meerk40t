@@ -53,7 +53,7 @@ def register_panel_tree(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
-        .Left()
+        .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
         .FloatingSize(300, 270)
