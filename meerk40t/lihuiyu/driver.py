@@ -1199,7 +1199,7 @@ class LihuiyuDriver(Parameters):
             and self._topward
             or remaining < 0
             and not self._topward
-            or abs(remaining) > 15
+            or abs(remaining) > 5
         ):
             # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
@@ -1245,7 +1245,7 @@ class LihuiyuDriver(Parameters):
             and self._leftward
             or remaining < 0
             and not self._leftward
-            or abs(remaining) > 15
+            or abs(remaining) > 5
         ):
             # Remaining value is in the wrong direction, abort and move.
             self.finished_mode()
