@@ -226,7 +226,7 @@ class LihuiyuController:
                     self.usb_log,
                     mock=self.context.mock,
                     mock_status=STATUS_OK,
-                    bulk=False,
+                    bulk=True,
                 )
             )
             if self.context.usb_index != -1:
