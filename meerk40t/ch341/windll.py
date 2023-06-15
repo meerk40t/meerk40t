@@ -26,7 +26,7 @@ class WinCH341Driver:
             )
         except (NameError, OSError) as e:
             self.channel(str(e))
-            raise ConnectionRefusedError
+            raise ImportError
 
     def is_connected(self):
         return self.driver_value != -1 and self.driver_index is not None
