@@ -585,7 +585,7 @@ class MeerK40t(MWindow):
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
         # tiny  = factor 1/2, min_size = 25
-        context.setting(str, "icon_size", "default")
+        # context.setting(str, "icon_size", "default")
         # Ribbon-Size (NOT YET ACTIVE)
         # default - std icon size + panel-labels,
         # small - std icon size / no labels
@@ -612,7 +612,7 @@ class MeerK40t(MWindow):
             {
                 "attr": "icon_size",
                 "object": self.context.root,
-                "default": "default",
+                "default": "small",
                 "type": str,
                 "style": "combosmall",
                 "choices": ["large", "big", "default", "small", "tiny"],
