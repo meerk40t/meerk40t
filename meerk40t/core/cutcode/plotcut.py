@@ -67,18 +67,24 @@ class PlotCut(CutObject):
             # Twitchless gets sketchy at 80.
             self.settings["_force_twitchless"] = True
             return False
-        if self.max_dx is None:
-            return False
-        if self.max_dy is None:
-            return False
-        # Above 80 we're likely dealing with a raster.
-        if -15 < self.max_dx <= 15:
-            self.v_raster = True
-            self.settings["raster_step_x"] = self.minmax_dx
-        if -15 < self.max_dy <= 15:
-            self.h_raster = True
-            self.settings["raster_step_y"] = self.minmax_dy
+
+        self.v_raster = False
+        self.h_raster = True
+        self.settings["raster_step_y"] = self.minmax_dy
         return True
+
+        # if self.max_dx is None:
+        #     return False
+        # if self.max_dy is None:
+        #     return False
+        # # Above 80 we're likely dealing with a raster.
+        # if -15 < self.max_dx <= 15:
+        #     self.v_raster = True
+        #     self.settings["raster_step_x"] = self.minmax_dx
+        # if -15 < self.max_dy <= 15:
+        #     self.h_raster = True
+        #     self.settings["raster_step_y"] = self.minmax_dy
+        # return True
 
     def transform(self, matrix):
         for i in range(len(self._points)):
@@ -278,7 +284,7 @@ class PlotCut(CutObject):
 
     def generator(self):
         for x0, y0, power, x1, y1 in self.plot:
-            if x0 != x1 and y0 != y1:
+            if x0 != x1 and y0 != y1:  # Non-orthogonal
                 for zx, zy in ZinglPlotter.plot_line(
                     int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))
                 ):

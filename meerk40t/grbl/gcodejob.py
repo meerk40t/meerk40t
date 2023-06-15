@@ -651,12 +651,15 @@ class GcodeJob:
         @return:
         """
         matrix = self.units_to_device_matrix
+        if matrix is None:
+            # Using job for something other than point plotting
+            return
         if self.plotcut is None:
             ox, oy = matrix.transform_point([self.x, self.y])
             self.plotcut = PlotCut(settings={"speed": self.speed, "power": self.power})
             self.plotcut.plot_init(int(round(ox)), int(round(oy)))
         tx, ty = matrix.transform_point([x, y])
-        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power)
+        self.plotcut.plot_append(int(round(tx)), int(round(ty)), power * (self.power / 1000.0))
         if not self.program_mode:
             self.plot_commit()
         self.x = x

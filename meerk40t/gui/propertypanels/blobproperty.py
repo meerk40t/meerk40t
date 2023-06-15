@@ -5,6 +5,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
 from .attributes import IdPanel
+from ...core.node.blobnode import BlobNode
 
 _ = wx.GetTranslation
 
@@ -20,9 +21,11 @@ class BlobPropertyPanel(ScrolledPanel):
         self.panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.operation
         )
-        optview = (_("Hexadecimal View"), _("Plain-Text"))
+        self.views = dict(node.views)
+        self.views[_("Hexadecimal View")] = BlobNode.hex_view
+        self.views[_("Plain-Text")] = BlobNode.ascii_view
         self.option_view = wx.RadioBox(
-            self, wx.ID_ANY, label="View", choices=optview, style=wx.RA_SPECIFY_COLS
+            self, wx.ID_ANY, label="View", choices=list(self.views), style=wx.RA_SPECIFY_COLS
         )
         self.option_view.SetSelection(0)
         self.text_blob = wx.TextCtrl(
@@ -44,75 +47,21 @@ class BlobPropertyPanel(ScrolledPanel):
 
         if node is not None:
             self.operation = node
-        self.fill_text()
+        self.refresh_view()
         self.on_option_view(None)
         self.Refresh()
 
-    def fill_text(self):
-        self.hex_content = ""
-        self.ascii_content = ""
-        if self.operation is None:
-            return
-        data = self.operation.data
-        hexcodes = ""
-        cleartext = ""
-        data_len = 0
-        if data is not None:
-            offset = 0
-            index = 0
-            hexcodes = hex(offset)[2:]
-            while len(hexcodes) < 6:
-                hexcodes = "0" + hexcodes
-            hexcodes += " |"
-            cleartext = ""
-
-            for entry in data:
-                if isinstance(entry, bytes):
-                    self.ascii_content += entry.decode("utf-8")
-                    for single in entry:
-                        data_len += 1
-                        code = int(single)
-                        hexa = hex(code)[2:]
-                        while len(hexa) < 2:
-                            hexa = "0" + hexa
-                        hexcodes += " " + hexa
-                        if code >= 32:
-                            cleartext += chr(code)
-                        else:
-                            cleartext += "."
-                        index += 1
-                        offset += 1
-                        if index >= 16:
-                            hexcodes += " | " + cleartext + "\n"
-                            self.hex_content += hexcodes
-                            index = 0
-                            hexcodes = hex(offset)[2:]
-                            while len(hexcodes) < 6:
-                                hexcodes = "0" + hexcodes
-                            hexcodes += " |"
-                            cleartext = ""
-
-            # Still something to add?
-            if index > 0:
-                while index < 16:
-                    hexcodes += "   "
-                    cleartext += " "
-                    index += 1
-                hexcodes += " | " + cleartext + "\n"
-                self.hex_content += hexcodes
-
-        header1 = f"Data-Type: {self.operation.data_type}, Length={data_len}\n"
-        header2 = "Offset | Hex                                             | Ascii          \n"
-        header2 += "-------+-------------------------------------------------+----------------\n"
-        self.hex_content = header1 + header2 + self.hex_content
-        self.ascii_content = header1 + self.ascii_content
+    def refresh_view(self):
+        key = self.option_view.GetStringSelection()
+        view = self.views.get(key)
+        if view:
+            text = view(self.operation.data, self.operation.data_type)
+        else:
+            text = _("N/A")
+        self.text_blob.SetValue(text)
 
     def on_option_view(self, event):
-        hex_view = bool(self.option_view.GetSelection() == 0)
-        if hex_view:
-            self.text_blob.SetValue(self.hex_content)
-        else:
-            self.text_blob.SetValue(self.ascii_content)
+        self.refresh_view()
 
     def __set_properties(self):
         self.text_blob.SetFont(
