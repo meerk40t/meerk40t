@@ -156,7 +156,7 @@ class Handler(CH341Handler):
             )
         except (NameError, OSError) as e:
             self.channel(str(e))
-            raise ConnectionRefusedError
+            raise ImportError
 
     def connect(self, driver_index=0, chipv=-1, bus=-1, address=-1):
         """Tries to open device at index, with given criteria"""
