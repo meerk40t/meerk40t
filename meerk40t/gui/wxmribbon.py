@@ -1006,14 +1006,6 @@ class RibbonPanel(wx.Panel):
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
-        home = RB.RibbonPage(
-            self._ribbon,
-            ID_PAGE_MAIN,
-            _("Project"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-        self.ribbon_pages.append((home, "home"))
-
         tool = RB.RibbonPage(
             self._ribbon,
             ID_PAGE_DESIGN,
@@ -1021,6 +1013,14 @@ class RibbonPanel(wx.Panel):
             icons8_opened_folder_50.GetBitmap(resize=16),
         )
         self.ribbon_pages.append((tool, "design"))
+
+        home = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_MAIN,
+            _("Project"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+        self.ribbon_pages.append((home, "home"))
 
         modify = RB.RibbonPage(
             self._ribbon,
@@ -1044,16 +1044,6 @@ class RibbonPanel(wx.Panel):
         # )
 
         panel_style = RB.RIBBON_PANEL_MINIMISE_BUTTON
-        self.project_panel = MyRibbonPanel(
-            parent=home,
-            id=wx.ID_ANY,
-            label="" if self.is_dark else _("Project"),
-            agwStyle=panel_style,
-        )
-        self.ribbon_panels.append(self.project_panel)
-        button_bar = RibbonButtonBar(self.project_panel)
-        self.project_button_bar = button_bar
-        self.ribbon_bars.append(button_bar)
 
         self.jobstart_panel = MyRibbonPanel(
             parent=home,
@@ -1125,6 +1115,17 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.device_panel_copy)
         button_bar = RibbonButtonBar(self.device_panel_copy)
         self.device_copy_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.project_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Project"),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.project_panel)
+        button_bar = RibbonButtonBar(self.project_panel)
+        self.project_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.tool_panel = MyRibbonPanel(
