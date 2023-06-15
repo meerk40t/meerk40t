@@ -10,90 +10,20 @@ from io import BytesIO
 from xml.etree.ElementTree import iterparse
 
 import PIL.Image
+from meerk40t.tools.geomstr import Geomstr
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_MM
-from meerk40t.svgelements import Color, Matrix, Path, Polygon
+from meerk40t.svgelements import Matrix
 
 
 def plugin(kernel, lifecycle):
-    if lifecycle == "boot":
-        context = kernel.root
-    elif lifecycle == "register":
+    if lifecycle == "register":
         kernel.register("load/LbrnLoader", LbrnLoader)
-        pass
-    elif lifecycle == "shutdown":
-        pass
 
 
-class LbFile:
-    """
-    Parse the LbrnFile given file as a stream.
-    """
-
-    def __init__(self, source):
-        self.objects = []
-        self.variable_text = None
-        self.app_version = None
-        self.format = None
-        self.material_height = None
-        self.mirror_x = None
-        self.mirror_y = None
-        parent = None  # Root Node
-        children = list()
-
-        for event, elem in iterparse(source, events=("start", "end")):
-            if event == "start":
-                siblings = children
-                parent = (parent, children)
-                children = list()
-                node = (elem, children)
-                siblings.append(node)
-                if elem.tag == "LightBurnProject":
-                    self.app_version = elem.attrib.get("AppVersion")
-                    self.format = elem.attrib.get("FormatVersion")
-                    self.material_height = elem.attrib.get("MaterialHeight")
-                    self.mirror_x = elem.attrib.get("MirrorX")
-                    self.mirror_y = elem.attrib.get("MirrorY")
-                    continue
-                elif elem.tag == "Thumbnail":
-                    self.thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
-                    stream = BytesIO(self.thumb_source_data)
-                    image = PIL.Image.open(stream)
-                    self.objects.append(image)
-                # print(f"{event}, {elem}")
-            elif event == "end":
-                parent, children = parent
-                if elem.tag == "VariableText":
-                    values = {"tag": elem.tag}
-                    for c, c_children in children:
-                        values[c.tag] = c.attrib.get("Value")
-                    self.objects.append(values)
-                elif elem.tag == "UIPrefs":
-                    values = {"tag": elem.tag}
-                    for c, c_children in children:
-                        values[c.tag] = c.attrib.get("Value")
-                    self.objects.append(values)
-                elif elem.tag == "CutSetting":
-                    values = {"tag": elem.tag, "type": elem.attrib.get("Type")}
-                    for c, c_children in children:
-                        values[c.tag] = c.attrib.get("Value")
-                    self.objects.append(values)
-                elif elem.tag == "XForm":
-                    self.objects.append(Matrix(*map(float, elem.text.split(" "))))
-                elif elem.tag == "Shape":
-                    shape_type = elem.attrib.get("Type")
-                    values = {"tag": elem.tag, "type": shape_type}
-                    values.update(elem.attrib)
-                    self.objects.append(values)
-                elif elem.tag == "VertList":
-                    self.objects.append(elem.text)
-                elif elem.tag == "Notes":
-                    values = {"tag": elem.tag}
-                    values.update(elem.attrib)
-                    self.objects.append(values)
-                else:
-                    print(f"{event}, {elem}")
+def geomstry_from_vert_list(vertlist):
+    geomstr = Geomstr()
+    return geomstr
 
 
 class LbrnLoader:
@@ -102,44 +32,88 @@ class LbrnLoader:
         yield "LightBurn Files", ("lbrn", "lbrn2"), "application/x-lbrn"
 
     @staticmethod
+    def parse(pathname, source, elements):
+        regmark = elements.reg_branch
+        op_branch = elements.op_branch
+        elem_branch = elements.elem_branch
+
+        width = elements.device.unit_width
+        height = elements.device.unit_height
+
+        op_branch.remove_all_children()
+        elem_branch.remove_all_children()
+        file_node = elem_branch.add(type="file", filepath=pathname)
+        matrix = None
+        vertlist = None
+
+        parent = None  # Root Node
+        children = list()
+        for event, elem in iterparse(source, events=("start", "end")):
+            if event == "start":
+                siblings = children
+                parent = (parent, children)
+                children = list()
+                node = (elem, children)
+                siblings.append(node)
+                if elem.tag == "LightBurnProject":
+                    app_version = elem.attrib.get("AppVersion")
+                    format = elem.attrib.get("FormatVersion")
+                    material_height = elem.attrib.get("MaterialHeight")
+                    mirror_x = elem.attrib.get("MirrorX")
+                    mirror_y = elem.attrib.get("MirrorY")
+
+                elif elem.tag == "Thumbnail":
+                    thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
+                    stream = BytesIO(thumb_source_data)
+                    image = PIL.Image.open(stream)
+
+            elif event == "end":
+                if elem.tag == "VariableText":
+                    values = {"tag": elem.tag}
+                    for c, c_children in children:
+                        values[c.tag] = c.attrib.get("Value")
+                    values.update(elem.attrib)
+
+                elif elem.tag == "UIPrefs":
+                    values = {"tag": elem.tag}
+                    for c, c_children in children:
+                        values[c.tag] = c.attrib.get("Value")
+                    values.update(elem.attrib)
+
+                elif elem.tag == "CutSetting":
+                    values = {"tag": elem.tag, "type": elem.attrib.get("Type")}
+                    for c, c_children in children:
+                        values[c.tag] = c.attrib.get("Value")
+                    values.update(elem.attrib)
+
+                elif elem.tag == "XForm":
+                    matrix = Matrix(*map(float, elem.text.split(" ")))
+
+                elif elem.tag == "Shape":
+                    _type = elem.attrib.get("Type")
+                    values = {"tag": elem.tag, "type": _type}
+                    values.update(elem.attrib)
+                    if _type == "Text":
+                        geometry = geomstry_from_vert_list(vertlist)
+                        file_node.add(type="elem path", geometry=geometry, matrix=matrix)
+
+                elif elem.tag == "VertList":
+                    vertlist = elem.text
+
+                elif elem.tag == "Notes":
+                    values = {"tag": elem.tag}
+                    values.update(elem.attrib)
+                    elements.note = values.get("Notes", "")
+
+                parent, children = parent
+
+        file_node.focus()
+
+    @staticmethod
     def load(context, elements_service, pathname, **kwargs):
         try:
-            with open(pathname, "r") as file:
-                lbfile = LbFile(file)
+            with open(pathname, "r") as source:
+                LbrnLoader.parse(pathname, source, elements_service)
         except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
-
-        lb_processor = LightBurnProcessor(elements_service)
-        lb_processor.process(lbfile, pathname)
         return True
-
-
-class LightBurnProcessor:
-    def __init__(self, elements):
-        self.elements = elements
-        self.element_list = list()
-        self.regmark_list = list()
-        self.pathname = None
-        self.regmark = self.elements.reg_branch
-        self.op_branch = elements.op_branch
-        self.elem_branch = elements.elem_branch
-
-        self.width = elements.device.unit_width
-        self.height = elements.device.unit_height
-        self.cx = self.width / 2.0
-        self.cy = self.height / 2.0
-        self.matrix = Matrix.scale(UNITS_PER_MM, -UNITS_PER_MM)
-        self.matrix.post_translate(self.cx, self.cy)
-
-    def process(self, lb, pathname):
-        print(lb.objects)
-        self.op_branch.remove_all_children()
-        self.elem_branch.remove_all_children()
-        self.pathname = pathname
-        file_node = self.elem_branch.add(type="file", filepath=pathname)
-        file_node.focus()
-        for f in lb.objects:
-            self.parse(lb, f, file_node, self.op_branch)
-
-    def parse(self, lb_file, element, elem, op):
-        pass
