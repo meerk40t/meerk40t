@@ -190,12 +190,16 @@ class LbrnLoader:
                     material_height = elem.attrib.get("MaterialHeight")
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
-                elif elem.tag == "Shape":
+                elif elem.tag in ("Shape", "BackupPath"):
                     stack.append((context, matrix))
                     matrix = Matrix(matrix)
                     _type = elem.attrib.get("Type")
                     if _type == "Group":
                         context = context.add(type="group")
+                    elif _type in "Text":
+                        context = context.add(
+                            type="group", label=elem.attrib.get("Str")
+                        )
                 elif elem.tag == "Thumbnail":
                     pass
                     # thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
@@ -251,7 +255,7 @@ class LbrnLoader:
                         )
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" "))) * matrix
-                elif elem.tag == "Shape":
+                elif elem.tag in ("Shape", "BackupPath"):
                     _type = elem.attrib.get("Type")
                     if primlist is None:
                         primlist = "".join(prims)
@@ -265,16 +269,17 @@ class LbrnLoader:
                     _cut_index = elem.attrib.get("CutIndex")
                     _cut_settings = cut_settings.get(_cut_index, None)
                     if _type == "Text":
-                        geometry = geomstry_from_vert_list(vertlist, primlist)
-                        geometry.transform(matrix)
-                        text = values.get("Str")
-                        node = context.add(
-                            type="elem path",
-                            label=text,
-                            geometry=geometry,
-                            stroke=color,
-                        )
-                        _cut_settings.get("op").add_reference(node)
+                        if not bool(int(values.get("HasBackupPath", 0))):
+                            text = values.get("Str")
+                            node = context.add(
+                                type="elem text",
+                                label=text,
+                                text=text,
+                                matrix=matrix,
+                                font=values.get("Font"),
+                                stroke=color,
+                            )
+                            _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
