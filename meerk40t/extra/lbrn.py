@@ -166,13 +166,14 @@ class LbrnLoader:
 
         op_branch.remove_all_children()
         elem_branch.remove_all_children()
-        file_node = elem_branch.add(type="file", filepath=pathname)
+        context = elem_branch.add(type="file", filepath=pathname)
         matrix = None
         vertlist = None
         primlist = None
         verts = []
         prims = []
 
+        stack = []
         parent = None  # Root Node
         children = list()
         cut_settings = dict()
@@ -190,7 +191,11 @@ class LbrnLoader:
                     material_height = elem.attrib.get("MaterialHeight")
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
-
+                elif elem.tag == "Shape":
+                    _type = elem.attrib.get("Type")
+                    if _type == "Group":
+                        stack.append(context)
+                        context = context.add(type="group")
                 elif elem.tag == "Thumbnail":
                     pass
                     # thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
@@ -248,13 +253,16 @@ class LbrnLoader:
                     matrix = Matrix(*map(float, elem.text.split(" ")))
                     matrix.post_scale(UNITS_PER_MM)
                 elif elem.tag == "Shape":
+                    _type = elem.attrib.get("Type")
+                    if _type == "Group":
+                        context = stack.pop()
+                        continue
                     if primlist is None:
                         primlist = "".join(prims)
                         prims.clear()
                     if vertlist is None:
                         vertlist = "".join(verts)
                         verts.clear()
-                    _type = elem.attrib.get("Type")
                     values = {"tag": elem.tag, "type": _type}
                     values.update(elem.attrib)
                     color = Color("black")
@@ -264,7 +272,7 @@ class LbrnLoader:
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
                         text = values.get("Str")
-                        node = file_node.add(
+                        node = context.add(
                             type="elem path",
                             label=text,
                             geometry=geometry,
@@ -274,14 +282,14 @@ class LbrnLoader:
                     elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        node = file_node.add(
+                        node = context.add(
                             type="elem path", geometry=geometry, stroke=color
                         )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Rect":
                         width = float(values.get("W", 0))
                         height = float(values.get("H", 0))
-                        node = file_node.add(
+                        node = context.add(
                             type="elem rect",
                             x=-width / 2,
                             y=-height / 2,
@@ -292,7 +300,7 @@ class LbrnLoader:
                         )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Ellipse":
-                        node = file_node.add(
+                        node = context.add(
                             type="elem ellipse",
                             cx=0,
                             cy=0,
@@ -312,7 +320,7 @@ class LbrnLoader:
                         )
                         matrix.pre_scale(rx, ry)
                         geometry.transform(matrix)
-                        node = file_node.add(
+                        node = context.add(
                             type="elem path", geometry=geometry, stroke=color
                         )
                         _cut_settings.get("op").add_reference(node)
@@ -327,7 +335,7 @@ class LbrnLoader:
                         height = float(values.get("H"))
                         matrix.pre_translate(-width / 2, -height / 2)
                         matrix.pre_scale(width / image.width, height / image.height)
-                        node = file_node.add(
+                        node = context.add(
                             type="elem image",
                             image=image,
                             matrix=matrix,
@@ -370,7 +378,7 @@ class LbrnLoader:
 
                 parent, children = parent
 
-        file_node.focus()
+        context.focus()
 
     @staticmethod
     def load(context, elements_service, pathname, **kwargs):
