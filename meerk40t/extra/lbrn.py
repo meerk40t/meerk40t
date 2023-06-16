@@ -141,9 +141,6 @@ class LbrnLoader:
         op_branch = elements.op_branch
         elem_branch = elements.elem_branch
 
-        width = elements.device.unit_width
-        height = elements.device.unit_height
-
         op_branch.remove_all_children()
         elem_branch.remove_all_children()
         file_node = elem_branch.add(type="file", filepath=pathname)
@@ -154,6 +151,7 @@ class LbrnLoader:
         parent = None  # Root Node
         children = list()
         cut_settings = dict()
+        cut_settings_img = dict()
         for event, elem in iterparse(source, events=("start", "end")):
             if event == "start":
                 siblings = children
@@ -169,30 +167,60 @@ class LbrnLoader:
                     mirror_y = elem.attrib.get("MirrorY")
 
                 elif elem.tag == "Thumbnail":
-                    thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
-                    stream = BytesIO(thumb_source_data)
-                    image = PIL.Image.open(stream)
-
+                    pass
+                    # thumb_source_data = base64.b64decode(elem.attrib.get("Source"))
+                    # stream = BytesIO(thumb_source_data)
+                    # image = PIL.Image.open(stream)
             elif event == "end":
                 if elem.tag == "VariableText":
                     values = {"tag": elem.tag}
                     for c, c_children in children:
                         values[c.tag] = c.attrib.get("Value")
                     values.update(elem.attrib)
-
                 elif elem.tag == "UIPrefs":
                     values = {"tag": elem.tag}
                     for c, c_children in children:
                         values[c.tag] = c.attrib.get("Value")
                     values.update(elem.attrib)
-
-                elif elem.tag == "CutSetting":
-                    values = {"tag": elem.tag, "type": elem.attrib.get("Type")}
+                elif elem.tag == "CutSetting_Img":
+                    values = {"tag": elem.tag}
                     for c, c_children in children:
                         values[c.tag] = c.attrib.get("Value")
                     values.update(elem.attrib)
-                    cut_settings[values["index"]] = values
 
+                    op_type = values.get("type")
+                    cut_settings_img[values["index"]] = values
+                    if op_type == "Image":
+                        values["op"] = values["op"] = op_branch.add(
+                            type="op image",
+                            label=values.get("name"),
+                            speed=float(values.get("speed")),
+                            power=float(values.get("maxPower")) * 10.0,
+                        )
+                elif elem.tag == "CutSetting":
+                    values = {"tag": elem.tag}
+                    for c, c_children in children:
+                        values[c.tag] = c.attrib.get("Value")
+                    values.update(elem.attrib)
+
+                    op_type = values.get("type")
+                    cut_settings[values["index"]] = values
+                    if op_type == "Cut":
+                        values["op"] = op_branch.add(
+                            type="op cut",
+                            label=values.get("name"),
+                            speed=float(values.get("speed")),
+                            power=float(values.get("maxPower")) * 10.0,
+                        )
+                    elif op_type == "Scan":
+                        values["op"] = op_branch.add(
+                            type="op raster",
+                            label=values.get("name"),
+                            speed=float(values.get("speed")),
+                            power=float(values.get("maxPower")) * 10.0,
+                        )
+                    else:
+                        print("Unknown")
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" ")))
                     matrix.post_scale(UNITS_PER_MM)
@@ -200,19 +228,21 @@ class LbrnLoader:
                     _type = elem.attrib.get("Type")
                     values = {"tag": elem.tag, "type": _type}
                     values.update(elem.attrib)
-                    _cut_index = elem.attrib.get("CutIndex")
-                    _cut_settings = cut_settings.get(_cut_index)
                     color = Color("black")
+                    _cut_index = elem.attrib.get("CutIndex")
+                    _cut_settings = cut_settings.get(_cut_index, None)
                     if _type == "Text":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        _cut_settings.get("op").add_reference(node)
                     elif _type == "Rect":
-                        file_node.add(
+                        node = file_node.add(
                             type="elem rect",
                             x=0,
                             y=0,
@@ -221,8 +251,9 @@ class LbrnLoader:
                             stroke=color,
                             matrix=matrix,
                         )
+                        _cut_settings.get("op").add_reference(node)
                     elif _type == "Ellipse":
-                        file_node.add(
+                        node = file_node.add(
                             type="elem ellipse",
                             cx=0,
                             cy=0,
@@ -231,6 +262,7 @@ class LbrnLoader:
                             stroke=color,
                             matrix=matrix,
                         )
+                        _cut_settings.get("op").add_reference(node)
                     elif _type == "Polygon":
                         geometry = Geomstr.regular_polygon(
                             number_of_vertex=int(values.get("N")) + 1,
@@ -238,20 +270,26 @@ class LbrnLoader:
                             radius_inner=float(values.get("Rx", 0)),
                         )
                         geometry.transform(matrix)
-                        file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        _cut_settings.get("op").add_reference(node)
                     elif _type == "Bitmap":
+                        # Needs image specific settings.
+                        _cut_settings = cut_settings_img.get(_cut_index, None)
+
                         thumb_source_data = base64.b64decode(elem.attrib.get("Data"))
                         stream = BytesIO(thumb_source_data)
                         image = PIL.Image.open(stream)
-                        width = float(values.get('W'))
-                        height = float(values.get('H'))
+                        width = float(values.get("W"))
+                        height = float(values.get("H"))
                         matrix.pre_translate(-width / 2, -height / 2)
                         matrix.pre_scale(width / image.width, height / image.height)
-                        file_node.add(
+                        node = file_node.add(
                             type="elem image",
                             image=image,
                             matrix=matrix,
                         )
+                        _cut_settings.get("op").add_reference(node)
+
                 elif elem.tag == "VertList":
                     vertlist = elem.text
                 elif elem.tag == "PrimList":
