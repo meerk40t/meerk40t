@@ -108,6 +108,29 @@ def geomstry_from_vert_list(vertlist, plist):
             data_type = value
     vert_commit()
 
+    if plist == "LineClosed":
+        size = len(vert_lookup)
+        for i in range(size + 1):
+            v0 = vert_lookup[i % size]
+            v1 = vert_lookup[(i + 1) % size]
+            start = v0.get("V")
+            end = v1.get("V")
+            geomstr.line(start, end)
+        return geomstr
+    elif plist == "":
+        size = len(vert_lookup)
+        for i in range(size + 1):
+            v0 = vert_lookup[i % size]
+            v1 = vert_lookup[(i + 1) % size]
+            start = v0.get("V")
+            end = v1.get("V")
+            c0 = v0.get("c0")
+            c1 = v1.get("c1")
+            if c0 and c1:
+                geomstr.cubic(start, c0, c1, end)
+            else:
+                geomstr.line(start, end)
+        return geomstr
     for kind, value, start, pos in prim_parser(plist):
         if kind == "TYPE":
             data_type = value
@@ -241,20 +264,27 @@ class LbrnLoader:
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
                         text = values.get("Str")
-                        node = file_node.add(type="elem path", label=text, geometry=geometry, stroke=color)
+                        node = file_node.add(
+                            type="elem path",
+                            label=text,
+                            geometry=geometry,
+                            stroke=color,
+                        )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        node = file_node.add(
+                            type="elem path", geometry=geometry, stroke=color
+                        )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Rect":
                         width = float(values.get("W", 0))
                         height = float(values.get("H", 0))
                         node = file_node.add(
                             type="elem rect",
-                            x=-width/2,
-                            y=-height/2,
+                            x=-width / 2,
+                            y=-height / 2,
                             width=width,
                             height=height,
                             stroke=color,
@@ -282,7 +312,9 @@ class LbrnLoader:
                         )
                         matrix.pre_scale(rx, ry)
                         geometry.transform(matrix)
-                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        node = file_node.add(
+                            type="elem path", geometry=geometry, stroke=color
+                        )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Bitmap":
                         # Needs image specific settings.
@@ -305,7 +337,9 @@ class LbrnLoader:
                     primlist = None
                 elif elem.tag == "V":
                     # FormatVersion 0
-                    verts.append(f"V{elem.attrib.get('vx', 0)} {elem.attrib.get('vy', 0)}")
+                    verts.append(
+                        f"V{elem.attrib.get('vx', 0)} {elem.attrib.get('vy', 0)}"
+                    )
                     c0x = elem.attrib.get("c0x")
                     c0y = elem.attrib.get("c0y")
                     c1x = elem.attrib.get("c1x")
@@ -320,7 +354,9 @@ class LbrnLoader:
                         verts.append("c1x1")
                 elif elem.tag == "P":
                     # FormatVersion 0
-                    prims.append(f"{elem.attrib.get('T')}{elem.attrib.get('p0', 0)} {elem.attrib.get('p1', 0)}")
+                    prims.append(
+                        f"{elem.attrib.get('T')}{elem.attrib.get('p0', 0)} {elem.attrib.get('p1', 0)}"
+                    )
                 elif elem.tag == "VertList":
                     vertlist = elem.text
                 elif elem.tag == "PrimList":
