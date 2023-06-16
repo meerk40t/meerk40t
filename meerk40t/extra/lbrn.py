@@ -266,11 +266,14 @@ class LbrnLoader:
                         )
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Polygon":
+                        rx = float(values.get("Rx", 0))
+                        ry = float(values.get("Ry", 0))
                         geometry = Geomstr.regular_polygon(
-                            number_of_vertex=int(values.get("N")) + 1,
-                            radius=float(values.get("Ry", 0)),
-                            radius_inner=float(values.get("Rx", 0)),
+                            number_of_vertex=int(values.get("N")),
+                            radius=1.0,
+                            radius_inner=1.0,
                         )
+                        matrix.pre_scale(rx, ry)
                         geometry.transform(matrix)
                         node = file_node.add(type="elem path", geometry=geometry, stroke=color)
                         _cut_settings.get("op").add_reference(node)
