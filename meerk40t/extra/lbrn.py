@@ -140,7 +140,6 @@ def geomstry_from_vert_list(vertlist, plist):
                 v0 = vert_lookup[indexes[0]]
                 v1 = vert_lookup[indexes[1]]
             except IndexError:
-                print(f"vertex {indexes}, {len(vert_lookup)}")
                 continue
             start = v0.get("V")
             end = v1.get("V")
@@ -160,19 +159,19 @@ class LbrnLoader:
 
     @staticmethod
     def parse(pathname, source, elements):
-        regmark = elements.reg_branch
         op_branch = elements.op_branch
         elem_branch = elements.elem_branch
 
         op_branch.remove_all_children()
         elem_branch.remove_all_children()
         context = elem_branch.add(type="file", filepath=pathname)
-        matrix = None
+
         vertlist = None
         primlist = None
         verts = []
         prims = []
 
+        matrix = Matrix.scale(UNITS_PER_MM)
         stack = []
         parent = None  # Root Node
         children = list()
@@ -192,9 +191,10 @@ class LbrnLoader:
                     mirror_x = elem.attrib.get("MirrorX")
                     mirror_y = elem.attrib.get("MirrorY")
                 elif elem.tag == "Shape":
+                    stack.append((context, matrix))
+                    matrix = Matrix(matrix)
                     _type = elem.attrib.get("Type")
                     if _type == "Group":
-                        stack.append(context)
                         context = context.add(type="group")
                 elif elem.tag == "Thumbnail":
                     pass
@@ -250,13 +250,9 @@ class LbrnLoader:
                             power=float(values.get("maxPower")) * 10.0,
                         )
                 elif elem.tag == "XForm":
-                    matrix = Matrix(*map(float, elem.text.split(" ")))
-                    matrix.post_scale(UNITS_PER_MM)
+                    matrix = Matrix(*map(float, elem.text.split(" "))) * matrix
                 elif elem.tag == "Shape":
                     _type = elem.attrib.get("Type")
-                    if _type == "Group":
-                        context = stack.pop()
-                        continue
                     if primlist is None:
                         primlist = "".join(prims)
                         prims.clear()
@@ -343,6 +339,7 @@ class LbrnLoader:
                         _cut_settings.get("op").add_reference(node)
                     vertlist = None
                     primlist = None
+                    context, matrix = stack.pop()
                 elif elem.tag == "V":
                     # FormatVersion 0
                     verts.append(
