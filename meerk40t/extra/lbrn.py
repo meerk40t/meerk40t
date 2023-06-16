@@ -38,6 +38,7 @@ _vert_parse = [
     ),
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
     ("VERTEX", r"(V)"),
+    ("SFLAG", r"(S)"),
     ("CONTROL", r"(c0x|c0y|c1x|c1y)"),
     ("NUM", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
 ]
@@ -97,6 +98,8 @@ def geomstry_from_vert_list(vertlist, plist):
             vert_commit()
             vmap = {}
             data_type = "V"
+        elif kind == "SFLAG":
+            vmap[value] = True
         elif kind == "POINT":
             vmap[data_type] = complex(*list(map(float, value.split(" "))))
         elif kind == "NUM":
@@ -114,7 +117,7 @@ def geomstry_from_vert_list(vertlist, plist):
                 v0 = vert_lookup[indexes[0]]
                 v1 = vert_lookup[indexes[1]]
             except IndexError:
-                print("WTF")
+                print(f"vertex {indexes}, {len(vert_lookup)}")
                 continue
             start = v0.get("V")
             end = v1.get("V")
@@ -123,10 +126,7 @@ def geomstry_from_vert_list(vertlist, plist):
             else:
                 c0 = v0.get("c0")
                 c1 = v1.get("c1")
-                if c0 and c1:
-                    geomstr.cubic(start, c0, c1, end)
-                else:
-                    print("This is also wrong.")
+                geomstr.cubic(start, c0, c1, end)
     return geomstr
 
 
@@ -219,7 +219,7 @@ class LbrnLoader:
                             width=float(values.get("W", 0)),
                             height=float(values.get("H", 0)),
                             stroke=color,
-                            matrix=matrix
+                            matrix=matrix,
                         )
                     elif _type == "Ellipse":
                         file_node.add(
@@ -229,17 +229,29 @@ class LbrnLoader:
                             rx=float(values.get("Rx", 0)),
                             ry=float(values.get("Ry", 0)),
                             stroke=color,
-                            matrix=matrix
+                            matrix=matrix,
                         )
                     elif _type == "Polygon":
                         geometry = Geomstr.regular_polygon(
-                            number_of_vertex=int(values.get("N")),
+                            number_of_vertex=int(values.get("N")) + 1,
                             radius=float(values.get("Ry", 0)),
                             radius_inner=float(values.get("Rx", 0)),
                         )
                         geometry.transform(matrix)
-                        # geometry.uscale(UNITS_PER_MM)
                         file_node.add(type="elem path", geometry=geometry, stroke=color)
+                    elif _type == "Bitmap":
+                        thumb_source_data = base64.b64decode(elem.attrib.get("Data"))
+                        stream = BytesIO(thumb_source_data)
+                        image = PIL.Image.open(stream)
+                        width = float(values.get('W'))
+                        height = float(values.get('H'))
+                        matrix.pre_translate(-width / 2, -height / 2)
+                        matrix.pre_scale(width / image.width, height / image.height)
+                        file_node.add(
+                            type="elem image",
+                            image=image,
+                            matrix=matrix,
+                        )
                 elif elem.tag == "VertList":
                     vertlist = elem.text
                 elif elem.tag == "PrimList":
