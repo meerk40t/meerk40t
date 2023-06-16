@@ -147,6 +147,8 @@ class LbrnLoader:
         matrix = None
         vertlist = None
         primlist = None
+        verts = []
+        prims = []
 
         parent = None  # Root Node
         children = list()
@@ -219,12 +221,16 @@ class LbrnLoader:
                             speed=float(values.get("speed")),
                             power=float(values.get("maxPower")) * 10.0,
                         )
-                    else:
-                        print("Unknown")
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" ")))
                     matrix.post_scale(UNITS_PER_MM)
                 elif elem.tag == "Shape":
+                    if primlist is None:
+                        primlist = "".join(prims)
+                        prims.clear()
+                    if vertlist is None:
+                        vertlist = "".join(verts)
+                        verts.clear()
                     _type = elem.attrib.get("Type")
                     values = {"tag": elem.tag, "type": _type}
                     values.update(elem.attrib)
@@ -294,7 +300,26 @@ class LbrnLoader:
                             matrix=matrix,
                         )
                         _cut_settings.get("op").add_reference(node)
-
+                    vertlist = None
+                    primlist = None
+                elif elem.tag == "V":
+                    # FormatVersion 0
+                    verts.append(f"V{elem.attrib.get('vx', 0)} {elem.attrib.get('vy', 0)}")
+                    c0x = elem.attrib.get("c0x")
+                    c0y = elem.attrib.get("c0y")
+                    c1x = elem.attrib.get("c1x")
+                    c1y = elem.attrib.get("c1y")
+                    if c0x and c0y:
+                        verts.append(f"c0x{c0x}c0y{c0y}")
+                    else:
+                        verts.append("c0x1")
+                    if c1x and c1y:
+                        verts.append(f"c1x{c1x}c1y{c1y}")
+                    else:
+                        verts.append("c1x1")
+                elif elem.tag == "P":
+                    # FormatVersion 0
+                    prims.append(f"{elem.attrib.get('T')}{elem.attrib.get('p0', 0)} {elem.attrib.get('p1', 0)}")
                 elif elem.tag == "VertList":
                     vertlist = elem.text
                 elif elem.tag == "PrimList":
