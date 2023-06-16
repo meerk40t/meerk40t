@@ -242,12 +242,14 @@ class LbrnLoader:
                         node = file_node.add(type="elem path", geometry=geometry, stroke=color)
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Rect":
+                        width = float(values.get("W", 0))
+                        height = float(values.get("H", 0))
                         node = file_node.add(
                             type="elem rect",
-                            x=0,
-                            y=0,
-                            width=float(values.get("W", 0)),
-                            height=float(values.get("H", 0)),
+                            x=-width/2,
+                            y=-height/2,
+                            width=width,
+                            height=height,
                             stroke=color,
                             matrix=matrix,
                         )
