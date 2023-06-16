@@ -240,7 +240,8 @@ class LbrnLoader:
                     if _type == "Text":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        node = file_node.add(type="elem path", geometry=geometry, stroke=color)
+                        text = values.get("Str")
+                        node = file_node.add(type="elem path", label=text, geometry=geometry, stroke=color)
                         _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
