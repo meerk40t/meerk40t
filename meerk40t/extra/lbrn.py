@@ -23,6 +23,7 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         kernel.register("load/LbrnLoader", LbrnLoader)
 
+
 _prim_parse = [
     ("CONNECT", r"([0-9]+ [0-9]+)"),
     ("TYPE", r"(B|L)"),
@@ -31,7 +32,10 @@ _prim_parse = [
 prim_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _prim_parse))
 
 _vert_parse = [
-    ("POINT", r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)? [-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)"),
+    (
+        "POINT",
+        r"([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)? [-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)",
+    ),
     ("SKIP", r"[ ,\t\n\x09\x0A\x0C\x0D]+"),
     ("VERTEX", r"(V)"),
     ("CONTROL", r"(c0x|c0y|c1x|c1y)"),
@@ -191,23 +195,51 @@ class LbrnLoader:
 
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" ")))
-                    # matrix.scale(65535)
+                    matrix.post_scale(UNITS_PER_MM)
                 elif elem.tag == "Shape":
                     _type = elem.attrib.get("Type")
                     values = {"tag": elem.tag, "type": _type}
                     values.update(elem.attrib)
                     _cut_index = elem.attrib.get("CutIndex")
                     _cut_settings = cut_settings.get(_cut_index)
+                    color = Color("black")
                     if _type == "Text":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        geometry.uscale(UNITS_PER_MM)
-                        file_node.add(type="elem path", geometry=geometry, stroke=Color("black"))
-                    if _type == "Path":
+                        file_node.add(type="elem path", geometry=geometry, stroke=color)
+                    elif _type == "Path":
                         geometry = geomstry_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
-                        geometry.uscale(UNITS_PER_MM)
-                        file_node.add(type="elem path", geometry=geometry, stroke=Color("black"))
+                        file_node.add(type="elem path", geometry=geometry, stroke=color)
+                    elif _type == "Rect":
+                        file_node.add(
+                            type="elem rect",
+                            x=0,
+                            y=0,
+                            width=float(values.get("W", 0)),
+                            height=float(values.get("H", 0)),
+                            stroke=color,
+                            matrix=matrix
+                        )
+                    elif _type == "Ellipse":
+                        file_node.add(
+                            type="elem ellipse",
+                            cx=0,
+                            cy=0,
+                            rx=float(values.get("Rx", 0)),
+                            ry=float(values.get("Ry", 0)),
+                            stroke=color,
+                            matrix=matrix
+                        )
+                    elif _type == "Polygon":
+                        geometry = Geomstr.regular_polygon(
+                            number_of_vertex=int(values.get("N")),
+                            radius=float(values.get("Ry", 0)),
+                            radius_inner=float(values.get("Rx", 0)),
+                        )
+                        geometry.transform(matrix)
+                        # geometry.uscale(UNITS_PER_MM)
+                        file_node.add(type="elem path", geometry=geometry, stroke=color)
                 elif elem.tag == "VertList":
                     vertlist = elem.text
                 elif elem.tag == "PrimList":
@@ -215,7 +247,9 @@ class LbrnLoader:
                 elif elem.tag == "Notes":
                     values = {"tag": elem.tag}
                     values.update(elem.attrib)
-                    elements.note = values.get("Notes", "")
+                    note = values.get("Notes")
+                    if note:
+                        elements.note = note
 
                 parent, children = parent
 
