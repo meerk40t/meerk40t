@@ -313,6 +313,39 @@ def register_panel_ribbon(window, context):
     context.register("pane/ribbon", pane)
 
 
+    choices = [
+        {
+            "attr": "ribbon_art",
+            "object": context,
+            "default": True,
+            "type": bool,
+            "label": _("Show Modified Ribbon-Art"),
+            "tip": _(
+                "Shows the ribbon in gray rather than blue (previously for OSX-DarkMode)"
+                "Requires Restart!\n"
+            ),
+            "page": "Gui",
+            "section": "Appearance",
+        },
+        {
+            "attr": "ribbon_show_labels",
+            "object": context,
+            "default": False,
+            "type": bool,
+            "label": _("Show the Ribbon Labels"),
+            "tip": _(
+                "Active: Show the labels for ribbonbar.\n"
+                "Inactive: Do not hide the ribbon labels.\n"
+                "Requires Restart!\n"
+            ),
+            "page": "Gui",
+            "section": "Appearance",
+        },
+    ]
+    context.kernel.register_choices("preferences", choices)
+
+
+
 class RibbonPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -329,8 +362,8 @@ class RibbonPanel(wx.Panel):
         self.ribbon_bars = []
         self.ribbon_panels = []
         self.ribbon_pages = []
-        context.setting(bool, "ribbon_art", False)
-        context.setting(bool, "ribbon_hide_labels", False)
+        context.setting(bool, "ribbon_art", True)
+        context.setting(bool, "ribbon_show_labels", False)
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
@@ -1001,18 +1034,10 @@ class RibbonPanel(wx.Panel):
         if self.is_dark or self.context.ribbon_art:
             provider = self._ribbon.GetArtProvider()
             _update_ribbon_artprovider_for_dark_mode(
-                provider, hide_labels=self.context.ribbon_hide_labels
+                provider, show_labels=self.context.ribbon_show_labels
             )
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
-
-        home = RB.RibbonPage(
-            self._ribbon,
-            ID_PAGE_MAIN,
-            _("Project"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-        self.ribbon_pages.append((home, "home"))
 
         tool = RB.RibbonPage(
             self._ribbon,
@@ -1021,6 +1046,14 @@ class RibbonPanel(wx.Panel):
             icons8_opened_folder_50.GetBitmap(resize=16),
         )
         self.ribbon_pages.append((tool, "design"))
+
+        home = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_MAIN,
+            _("Project"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+        self.ribbon_pages.append((home, "home"))
 
         modify = RB.RibbonPage(
             self._ribbon,
@@ -1044,16 +1077,6 @@ class RibbonPanel(wx.Panel):
         # )
 
         panel_style = RB.RIBBON_PANEL_MINIMISE_BUTTON
-        self.project_panel = MyRibbonPanel(
-            parent=home,
-            id=wx.ID_ANY,
-            label="" if self.is_dark else _("Project"),
-            agwStyle=panel_style,
-        )
-        self.ribbon_panels.append(self.project_panel)
-        button_bar = RibbonButtonBar(self.project_panel)
-        self.project_button_bar = button_bar
-        self.ribbon_bars.append(button_bar)
 
         self.jobstart_panel = MyRibbonPanel(
             parent=home,
@@ -1125,6 +1148,17 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.device_panel_copy)
         button_bar = RibbonButtonBar(self.device_panel_copy)
         self.device_copy_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.project_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Project"),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.project_panel)
+        button_bar = RibbonButtonBar(self.project_panel)
+        self.project_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.tool_panel = MyRibbonPanel(
@@ -1301,7 +1335,7 @@ class RibbonPanel(wx.Panel):
 # RIBBON_ART_TOOLBAR_FACE_COLOUR = 88
 
 
-def _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=False):
+def _update_ribbon_artprovider_for_dark_mode(provider, show_labels=False):
     def _set_ribbon_colour(provider, art_id_list, colour):
         for id_ in art_id_list:
             try:
@@ -1408,7 +1442,7 @@ def _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=False):
         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
     ]
     _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
-    if hide_labels:
+    if not show_labels:
         font = wx.Font(
             1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
