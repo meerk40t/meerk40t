@@ -251,7 +251,9 @@ class Button:
         for v in self.button_dict["multi"]:
             item = menu.Append(wx.ID_ANY, v.get("label"))
             menu_id = self.id
-            self.parent.parent.parent.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=menu_id)
+            self.parent.parent.parent.Bind(
+                wx.EVT_MENU, self.drop_menu_click(v), id=menu_id
+            )
         self.parent.parent.parent.PopupMenu(menu)
 
     def drop_menu_click(self, v):
@@ -652,7 +654,6 @@ class RibbonPanel:
             except:
                 pass
 
-
     def contains(self, pos):
         if self.position is None:
             return False
@@ -671,7 +672,6 @@ class RibbonPage:
         self.label = label
         self.icon = icon
         self.panels = []
-        self.map = {}
         self.position = None
 
     def modified(self):
@@ -679,7 +679,7 @@ class RibbonPage:
 
     def add_panel(self, panel, ref):
         self.panels.append(panel)
-        self.map[ref] = panel
+        setattr(self, ref, panel)
 
     def contains(self, pos):
         if self.position is None:
@@ -689,7 +689,6 @@ class RibbonPage:
             self.position[0] < x < self.position[2]
             and self.position[1] < y < self.position[3]
         )
-
 
 
 class RibbonBarPanel(wx.Panel):
@@ -705,7 +704,6 @@ class RibbonBarPanel(wx.Panel):
             run_main=True,
         )
         self.pages = []
-        self.map = {}
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
@@ -713,6 +711,34 @@ class RibbonBarPanel(wx.Panel):
         self.context = context
         self.stored_labels = {}
         self.stored_height = 0
+
+        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+        self.button_face_hover = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(50)
+        self.inactive_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
+        )
+        self.inactive_text = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.tooltip_foreground = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT)
+        )
+        self.tooltip_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
+        )
+        self.button_face = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+        )
+        self.highlight = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
+        )
+        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self.font = wx.Font(
+            12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
 
         # Define Ribbon.
         self.__set_ribbonbar()
@@ -757,7 +783,6 @@ class RibbonBarPanel(wx.Panel):
         if hover is not self._hover_button:
             self._hover_button = hover
             self.Refresh()
-
 
     def on_size(self, event):
         self.Refresh(True)
@@ -805,12 +830,12 @@ class RibbonBarPanel(wx.Panel):
         w, h = self.Size
         dc.DrawRectangle(0, 0, w, h)
 
-
         for n, page in enumerate(self.pages):
             dc.SetBrush(wx.WHITE_BRUSH)
             x, y, x1, y1 = page.position
             dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
 
+            dc.SetFont(self.font)
             dc.DrawText(page.label, x + BUFFER, y + BUFFER)
             if n != self.current_page:
                 continue
@@ -840,17 +865,21 @@ class RibbonBarPanel(wx.Panel):
                     if button.kind == "hybrid":
                         dc.SetPen(wx.BLACK_PEN)
                         dc.SetBrush(wx.GREEN_BRUSH)
-                        dc.DrawPolygon([[int(x + w * 0.7), int(y + h * 0.7)], [int(x + w * 0.9), int(y + h * 0.7)], [int(x + w * 0.8), (y + w * 0.9)]])
-                    if button.label:
-                        font = wx.Font(
-                            7,
-                            wx.FONTFAMILY_TELETYPE,
-                            wx.FONTSTYLE_NORMAL,
-                            wx.FONTWEIGHT_NORMAL,
+                        dc.DrawPolygon(
+                            [
+                                [int(x + w * 0.7), int(y + h * 0.7)],
+                                [int(x + w * 0.9), int(y + h * 0.7)],
+                                [int(x + w * 0.8), (y + w * 0.9)],
+                            ]
                         )
-                        dc.SetFont(font)
+                    if button.label:
+                        dc.SetFont(self.font)
                         text_width, text_height = dc.GetTextExtent(button.label)
-                        dc.DrawText(button.label, x + (w / 2.0) - (text_width / 2), y1  + text_height / 2.0)
+                        dc.DrawText(
+                            button.label,
+                            x + (w / 2.0) - (text_width / 2),
+                            y1 + text_height / 2.0,
+                        )
 
     def on_paint(self, event):
         """
@@ -919,59 +948,59 @@ class RibbonBarPanel(wx.Panel):
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
-        self.map["design"].map["edit"].set_buttons(new_values)
+        self.design.edit.set_buttons(new_values)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
-        self.map["design"].map["project"].set_buttons(new_values)
+        self.design.project.set_buttons(new_values)
 
     @lookup_listener("button/control")
     def set_control_buttons(self, new_values, old_values):
-        self.map["home"].map["control"].set_buttons(new_values)
+        self.home.control.set_buttons(new_values)
 
     @lookup_listener("button/config")
     def set_config_buttons(self, new_values, old_values):
-        self.map["config"].map["config"].set_buttons(new_values)
+        self.config.config.set_buttons(new_values)
 
     @lookup_listener("button/modify")
     def set_modify_buttons(self, new_values, old_values):
-        self.map["modify"].map["modify"].set_buttons(new_values)
+        self.modify.modify.set_buttons(new_values)
 
     @lookup_listener("button/tool")
     def set_tool_buttons(self, new_values, old_values):
-        self.map["design"].map["tool"].set_buttons(new_values)
+        self.design.tool.set_buttons(new_values)
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
-        self.map["design"].map["extended"].set_buttons(new_values)
+        self.design.extended.set_buttons(new_values)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
-        self.map["modify"].map["geometry"].set_buttons(new_values)
+        self.modify.geometry.set_buttons(new_values)
 
     @lookup_listener("button/preparation")
     def set_preparation_buttons(self, new_values, old_values):
-        self.map["home"].map["prep"].set_buttons(new_values)
+        self.home.prep.set_buttons(new_values)
 
     @lookup_listener("button/jobstart")
     def set_jobstart_buttons(self, new_values, old_values):
-        self.map["home"].map["job"].set_buttons(new_values)
+        self.home.job.set_buttons(new_values)
 
     @lookup_listener("button/group")
     def set_group_buttons(self, new_values, old_values):
-        self.map["design"].map["group"].set_buttons(new_values)
+        self.design.group.set_buttons(new_values)
 
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
-        self.map["home"].map["device"].set_buttons(new_values)
+        self.home.device.set_buttons(new_values)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
-        self.map["modify"].map["align"].set_buttons(new_values)
+        self.modify.align.set_buttons(new_values)
 
     @lookup_listener("button/properties")
     def set_property_buttons(self, new_values, old_values):
-        self.map["design"].map["properties"].set_buttons(new_values)
+        self.design.properties.set_buttons(new_values)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -984,10 +1013,6 @@ class RibbonBarPanel(wx.Panel):
     @signal_listener("icons")
     def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
-
-    # @signal_listener("ribbonbar")
-    # def on_rb_toggle(self, origin, showit, *args):
-    #     self._ribbon.ShowPanels(True)
 
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
@@ -1008,14 +1033,6 @@ class RibbonBarPanel(wx.Panel):
                         continue
                     button.set_button_toggle(button.identifier == identifier)
         self.apply_enable_rules()
-
-    @property
-    def is_dark(self):
-        # wxPython's SysAppearance does not always deliver a reliable response from
-        # wx.SystemSettings().GetAppearance().IsDark()
-        # so lets tick with 'old way', although this one is fishy...
-        result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        return result
 
     def apply_enable_rules(self):
         for page in self.pages:
@@ -1039,8 +1056,8 @@ class RibbonBarPanel(wx.Panel):
             label,
             icon,
         )
+        setattr(self, ref, page)
         self.pages.append(page)
-        self.map[ref] = page
         return page
 
     def add_panel(self, ref, parent, id, label, icon):
@@ -1057,11 +1074,6 @@ class RibbonBarPanel(wx.Panel):
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
 
-        # if self.is_dark or self.context.ribbon_art:
-        #     provider = self._ribbon.GetArtProvider()
-        #     _update_ribbon_artprovider_for_dark_mode(
-        #         provider, show_labels=self.context.ribbon_show_labels
-        #     )
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -1095,113 +1107,113 @@ class RibbonBarPanel(wx.Panel):
 
         self.add_panel(
             "job",
-            parent=self.map["home"],
+            parent=self.home,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Execute"),
+            label=_("Execute"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "prep",
-            parent=self.map["home"],
+            parent=self.home,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Prepare"),
+            label=_("Prepare"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "control",
-            parent=self.map["home"],
+            parent=self.home,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Control"),
+            label=_("Control"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "config",
-            parent=self.map["config"],
+            parent=self.config,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Configuration"),
+            label=_("Configuration"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "device",
-            parent=self.map["home"],
+            parent=self.home,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Devices"),
+            label=_("Devices"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "project",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Project"),
+            label=_("Project"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "tool",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Design"),
+            label=_("Design"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "edit",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Edit"),
+            label=_("Edit"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "group",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Group"),
+            label=_("Group"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "extended",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Extended Tools"),
+            label=_("Extended Tools"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "properties",
-            parent=self.map["design"],
+            parent=self.design,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Properties"),
+            label=_("Properties"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "modify",
-            parent=self.map["modify"],
+            parent=self.modify,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Modification"),
+            label=_("Modification"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "geometry",
-            parent=self.map["modify"],
+            parent=self.modify,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Geometry"),
+            label=_("Geometry"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
             "align",
-            parent=self.map["modify"],
+            parent=self.modify,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Alignment"),
+            label=_("Alignment"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
         self.ensure_realize()
@@ -1214,18 +1226,6 @@ class RibbonBarPanel(wx.Panel):
             for panel in page.panels:
                 for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
-
-    # def on_page_changing(self, event):
-    #     page = event.GetPage()
-    #     p_id = page.GetId()
-    #     # print ("Page Changing to ", p_id)
-    #     if p_id  == ID_PAGE_TOGGLE:
-    #         slist = debug_system_colors()
-    #         msg = ""
-    #         for s in slist:
-    #             msg += s + "\n"
-    #         wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
-    #         event.Veto()
 
     def on_page_changed(self, event):
         page = event.GetPage()
@@ -1254,34 +1254,6 @@ class RibbonBarPanel(wx.Panel):
                     setattr(self.context.root, "_active_page", pagename)
 
 
-# RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
-# RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
-# RIBBON_ART_BUTTON_BAR_ACTIVE_BORDER_COLOUR = 22
-# RIBBON_ART_GALLERY_BORDER_COLOUR = 27
-# RIBBON_ART_GALLERY_BUTTON_ACTIVE_FACE_COLOUR = 40
-# RIBBON_ART_GALLERY_ITEM_BORDER_COLOUR = 45
-# RIBBON_ART_TAB_LABEL_COLOUR = 46
-# RIBBON_ART_TAB_SEPARATOR_COLOUR = 47
-# RIBBON_ART_TAB_SEPARATOR_GRADIENT_COLOUR = 48
-# RIBBON_ART_TAB_BORDER_COLOUR = 59
-# RIBBON_ART_PANEL_BORDER_COLOUR = 60
-# RIBBON_ART_PANEL_BORDER_GRADIENT_COLOUR = 61
-# RIBBON_ART_PANEL_MINIMISED_BORDER_COLOUR = 62
-# RIBBON_ART_PANEL_MINIMISED_BORDER_GRADIENT_COLOUR = 63
-# RIBBON_ART_PANEL_LABEL_COLOUR = 66
-# RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR = 67
-# RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR = 68
-# RIBBON_ART_PANEL_HOVER_LABEL_COLOUR = 69
-# RIBBON_ART_PANEL_MINIMISED_LABEL_COLOUR = 70
-# RIBBON_ART_PANEL_BUTTON_FACE_COLOUR = 75
-# RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR = 76
-# RIBBON_ART_PAGE_BORDER_COLOUR = 77
-
-# RIBBON_ART_TOOLBAR_BORDER_COLOUR = 86
-# RIBBON_ART_TOOLBAR_HOVER_BORDER_COLOUR = 87
-# RIBBON_ART_TOOLBAR_FACE_COLOUR = 88
-
-
 def _update_ribbon_artprovider_for_dark_mode(provider, show_labels=False):
     def _set_ribbon_colour(provider, art_id_list, colour):
         for id_ in art_id_list:
@@ -1291,19 +1263,6 @@ def _update_ribbon_artprovider_for_dark_mode(provider, show_labels=False):
                 # Not all colorcodes are supported by all providers.
                 # So let's ignore it
                 pass
-
-    TEXTCOLOUR = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-    BTNFACE_HOVER = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT))
-    INACTIVE_BG = copy.copy(
-        wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
-    )
-    INACTIVE_TEXT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT))
-    TOOLTIP_FG = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT))
-    TOOLTIP_BG = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK))
-    BTNFACE = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE))
-    BTNFACE_HOVER = BTNFACE_HOVER.ChangeLightness(50)
-    HIGHLIGHT = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT))
 
     texts = [
         RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
