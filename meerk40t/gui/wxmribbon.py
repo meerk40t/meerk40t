@@ -765,8 +765,6 @@ class RibbonBarPanel(wx.Panel):
 
 
         for n, page in enumerate(self.pages):
-
-
             dc.SetBrush(wx.WHITE_BRUSH)
             x, y, x1, y1 = page.position
             dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
@@ -797,7 +795,20 @@ class RibbonBarPanel(wx.Panel):
                     h = y1 - y
                     dc.DrawRectangle(int(x), int(y), int(w), int(h))
                     dc.DrawBitmap(bitmap, x, y)
-                    # dc.DrawPolygon(([int(x + w * 0.8), int(y + h * 0.4)], [int(x + w * 0.9), int(y + w * 0.4)], [int(x + w * 0.85), (y + w * 0.5)],))
+                    if button.kind == "hybrid":
+                        dc.SetPen(wx.BLACK_PEN)
+                        dc.SetBrush(wx.GREEN_BRUSH)
+                        dc.DrawPolygon([[int(x + w * 0.7), int(y + h * 0.7)], [int(x + w * 0.9), int(y + h * 0.7)], [int(x + w * 0.8), (y + w * 0.9)]])
+                    if button.label:
+                        font = wx.Font(
+                            7,
+                            wx.FONTFAMILY_TELETYPE,
+                            wx.FONTSTYLE_NORMAL,
+                            wx.FONTWEIGHT_NORMAL,
+                        )
+                        dc.SetFont(font)
+                        text_width, text_height = dc.GetTextExtent(button.label)
+                        dc.DrawText(button.label, x + (w / 2.0) - (text_width / 2), y1  + text_height / 2.0)
 
     def on_paint(self, event):
         """
@@ -810,24 +821,9 @@ class RibbonBarPanel(wx.Panel):
             self.screen_refresh_lock.release()
 
     @signal_listener("ribbon_show_labels")
-    def on_show_labels(self, origin, *args):
-        self.ribbon_bars.clear()
-        self.ribbon_panels.clear()
-        self.ribbon_pages.clear()
-        self._ribbon = RB.RibbonBar(
-            self,
-            agwStyle=RB.RIBBON_BAR_FLOW_HORIZONTAL
-            | RB.RIBBON_BAR_SHOW_PAGE_LABELS
-            | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
-            | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
-        )
-        self.__set_ribbonbar()
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_1.Add(self._ribbon, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_1)
-        self.Layout()
+    def on_show_labels(self, origin, v, *args):
+        self._show_labels = v
         self.Refresh()
-        self.Update()
 
     def _button_at_position(self, pos):
         for n, page in enumerate(self.pages):
