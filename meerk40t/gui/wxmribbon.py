@@ -229,12 +229,12 @@ class Button:
             if self.toggle_attr is not None:
                 setattr(self.object, self.toggle_attr, True)
                 self.context.signal(self.toggle_attr, True, self.object)
-            self._restore_button_aspect(self, self.state_pressed)
+            self._restore_button_aspect(self.state_pressed)
         else:
             if self.toggle_attr is not None:
                 setattr(self.object, self.toggle_attr, False)
                 self.context.signal(self.toggle_attr, False, self.object)
-            self._restore_button_aspect(self, self.state_unpressed)
+            self._restore_button_aspect(self.state_unpressed)
 
     def _restore_button_aspect(self, key):
         """
