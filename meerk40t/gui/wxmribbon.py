@@ -150,7 +150,7 @@ class Button:
         self.client_data = None
         self.state = 0
         self.position = None
-        self.drop_down = None
+        self.dropdown = None
 
         self.toggle = False
         self.state_pressed = None
@@ -201,6 +201,8 @@ class Button:
         self.toggle = False
         self.state_pressed = None
         self.state_unpressed = None
+        if self.kind == "hybrid":
+            self.dropdown = DropDown()
 
     def apply_enable_rules(self):
         try:
@@ -776,8 +778,9 @@ class RibbonBarPanel(wx.Control):
         self.screen_refresh_lock = threading.Lock()
         self.recurse = True
         self._expanded_panel = None
-        self._hover_button = False
-        self._hover_tab = False
+        self._hover_button = None
+        self._hover_tab = None
+        self._hover_dropdown = None
 
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase_background)
@@ -803,18 +806,37 @@ class RibbonBarPanel(wx.Control):
     def on_mouse_leave(self, event):
         self._hover_tab = None
         self._hover_button = None
+        self._hover_dropdown = None
+        self.Refresh()
 
-    def on_mouse_move(self, event):
-        hover = self._button_at_position(event.Position)
-        if hover is not self._hover_button:
-            self._hover_button = hover
-            if hover is not None:
-                self.SetToolTip(hover.tip)
+    def _check_hover_dropdown(self, drop, pos):
+        if drop is not None and not drop.contains(pos):
+            drop = None
+        if drop is not self._hover_dropdown:
+            self._hover_dropdown = drop
             self.Refresh()
-        hover = self._page_at_position(event.Position)
+
+    def _check_hover_button(self, pos):
+        hover = self._button_at_position(pos)
+        if hover is not None:
+            self._check_hover_dropdown(hover.dropdown, pos)
+        if hover is self._hover_button:
+            return
+        self._hover_button = hover
+        if hover is not None:
+            self.SetToolTip(hover.tip)
+        self.Refresh()
+
+    def _check_hover_tab(self, pos):
+        hover = self._page_at_position(pos)
         if hover is not self._hover_tab:
             self._hover_tab = hover
             self.Refresh()
+
+    def on_mouse_move(self, event):
+        pos = event.Position
+        self._check_hover_button(pos)
+        self._check_hover_tab(pos)
 
     def on_size(self, event):
         self.Refresh(True)
@@ -868,14 +890,13 @@ class RibbonBarPanel(wx.Control):
                         text_width = max(text_width, line_width)
                         text_height += line_height
 
-                    drop_down_height = 0
+                    dropdown_height = 0
                     if button.kind == "hybrid":
-                        button.drop_down = DropDown()
-                        drop_down_height = 20
+                        dropdown_height = 20
 
                     button_width = max(bitmap_width, text_width)
                     button_height = (
-                        bitmap_height + buffer + text_height + drop_down_height + buffer
+                        bitmap_height + buffer + text_height + dropdown_height + buffer
                     )
                     panel_width = max(button_width, panel_width)
                     panel_height = max(button_height, panel_height)
@@ -886,7 +907,7 @@ class RibbonBarPanel(wx.Control):
                         y + button_height,
                     )
                     if button.kind == "hybrid":
-                        button.drop_down.position = (
+                        button.dropdown.position = (
                             x - button_buffer,
                             y + bitmap_height + buffer + text_height + buffer,
                             x + button_width + button_buffer,
@@ -924,7 +945,6 @@ class RibbonBarPanel(wx.Control):
             dc.SetBrush(wx.Brush(self.button_face_hover))
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        # dc.DrawRectangle()
         dc.SetFont(self.font)
         dc.DrawText(page.label, x + BUFFER, y + BUFFER)
 
@@ -943,7 +963,10 @@ class RibbonBarPanel(wx.Control):
     def _paint_dropdown(self, dc: wx.DC, dropdown):
         x, y, x1, y1 = dropdown.position
 
-        dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        if dropdown is self._hover_dropdown:
+            dc.SetBrush(wx.Brush(wx.Colour(self.highlight)))
+        else:
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.BLACK_PEN)
 
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
@@ -958,7 +981,7 @@ class RibbonBarPanel(wx.Control):
             )
             for x in (0, 90, 180)
         ]
-        dc.SetBrush(wx.GREEN_BRUSH)
+        dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
     def _paint_button(self, dc: wx.DC, button):
@@ -991,8 +1014,8 @@ class RibbonBarPanel(wx.Control):
         y += buffer
         dc.DrawBitmap(bitmap, x + (w - bitmap_width) / 2, y)
         y += bitmap_height
-        if button.drop_down is not None:
-            self._paint_dropdown(dc, button.drop_down)
+        if button.dropdown is not None:
+            self._paint_dropdown(dc, button.dropdown)
         if button.label:
             y += buffer
             dc.SetFont(self.font)
@@ -1071,21 +1094,22 @@ class RibbonBarPanel(wx.Control):
                 action(event)
 
     def on_click(self, event):
-        page = self._page_at_position(event.Position)
+        pos = event.Position
+
+        page = self._page_at_position(pos)
         if page is not None:
             self._current_page = page
             self.Refresh()
             return
 
-        pos = event.Position
         button = self._button_at_position(pos)
         if button is None:
             return
-        if button.drop_down is not None:
-            if button.drop_down.contains(pos):
-                button.drop_click()
-                self.Refresh()
-                return
+        drop = button.dropdown
+        if drop is not None and drop.contains(pos):
+            button.drop_click()
+            self.Refresh()
+            return
         button.click()
         self.Refresh()
 
