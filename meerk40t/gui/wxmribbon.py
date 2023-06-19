@@ -789,8 +789,11 @@ class RibbonBarPanel(wx.Panel):
                     else:
                         dc.SetBrush(wx.WHITE_BRUSH)
                     x, y, x1, y1 = button.position
-                    dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y_))
+                    w = x1 - x
+                    h = y1 - y
+                    dc.DrawRectangle(int(x), int(y), int(w), int(h))
                     dc.DrawBitmap(bitmap, x, y)
+                    # dc.DrawPolygon(([x + w * 0.8, y + w * 0.4]))
 
     def on_paint(self, event):
         """
