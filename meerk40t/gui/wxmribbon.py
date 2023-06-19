@@ -122,6 +122,7 @@ class Button:
         self.id = button_id
         self.kind = kind
         self.button_dict = description
+        self.enabled = True
 
         self.label = None
         self.bitmap = None
@@ -144,6 +145,7 @@ class Button:
         self.action_right = None
         self.enable_rule = None
         self.set_aspect(**description)
+        self.apply_enable_rules()
 
     def set_aspect(
         self,
@@ -182,6 +184,16 @@ class Button:
         self.toggle = False
         self.state_pressed = None
         self.state_unpressed = None
+
+
+    def apply_enable_rules(self):
+        try:
+            v = self.enable_rule(0)
+            if v != button.enabled:
+                button.enabled = v
+                self.modified()
+        except (AttributeError, TypeError):
+            pass
 
     def contains(self, pos):
         if self.position is None:
@@ -370,6 +382,8 @@ class Button:
         else:
             self._restore_button_aspect(self.state_unpressed)
 
+    def modified(self):
+        self.parent.modified()
 
 class RibbonPanel:
     def __init__(self, context, parent, id, label, icon):
@@ -615,7 +629,7 @@ class RibbonPanel:
         # Set initial value by identifer and object
         if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
             b.set_button_toggle(True)
-            self.Refresh()
+            self.modified()
 
     def _create_signal_for_toggle(self, button, signal):
         """
@@ -641,19 +655,6 @@ class RibbonPanel:
         self.context.listen(signal, signal_toggle_listener)
         self._registered_signals.append((signal, signal_toggle_listener))
 
-    def apply_enable_rules(self):
-        for k in self.button_lookup:
-            v = self.button_lookup[k]
-            try:
-                enable_it = v.enable_rule(0)
-            except:
-                enable_it = True
-            # The button might no longer around, so catch the error...
-            try:
-                v.parent.EnableButton(v.id, enable_it)
-            except:
-                pass
-
     def contains(self, pos):
         if self.position is None:
             return False
@@ -663,6 +664,8 @@ class RibbonPanel:
             and self.position[1] < y < self.position[3]
         )
 
+    def modified(self):
+        self.parent.modified()
 
 class RibbonPage:
     def __init__(self, context, parent, id, label, icon):
@@ -673,9 +676,6 @@ class RibbonPage:
         self.icon = icon
         self.panels = []
         self.position = None
-
-    def modified(self):
-        self.parent.modified()
 
     def add_panel(self, panel, ref):
         self.panels.append(panel)
@@ -690,6 +690,8 @@ class RibbonPage:
             and self.position[1] < y < self.position[3]
         )
 
+    def modified(self):
+        self.parent.modified()
 
 class RibbonBarPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -703,6 +705,7 @@ class RibbonBarPanel(wx.Panel):
             times=1,
             run_main=True,
         )
+        self._current_page = None
         self.pages = []
 
         # Some helper variables for showing / hiding the toolbar
@@ -737,7 +740,7 @@ class RibbonBarPanel(wx.Panel):
         )
         self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         self.font = wx.Font(
-            12, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
         # Define Ribbon.
@@ -751,6 +754,7 @@ class RibbonBarPanel(wx.Panel):
         self.recurse = True
         self._expanded_panel = None
         self._hover_button = False
+        self._hover_tab = False
 
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase_background)
@@ -762,7 +766,6 @@ class RibbonBarPanel(wx.Panel):
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
-        self.current_page = 0
         self._layout_dirty = True
 
     def modified(self):
@@ -783,25 +786,28 @@ class RibbonBarPanel(wx.Panel):
         if hover is not self._hover_button:
             self._hover_button = hover
             self.Refresh()
+        hover = self._page_at_position(event.Position)
+        if hover is not self._hover_tab:
+            self._hover_tab = hover
+            self.Refresh()
 
     def on_size(self, event):
         self.Refresh(True)
 
     def layout(self):
         w, h = self.Size
-        x = BUFFER * 2
-        y = h / 2
+        x = 1
+        y = 27
         for pn, page in enumerate(self.pages):
             page.position = pn * 70, 0, (pn + 1) * 70, 20
-            if pn != self.current_page:
+            if page is not self._current_page:
                 continue
             for panel in page.panels:
-                x += BUFFER * 3
                 px, py = x, y
                 m_height = 0
                 m_width = 0
                 for button in panel.buttons:
-                    x += BUFFER
+                    x += 7
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
 
@@ -811,75 +817,100 @@ class RibbonBarPanel(wx.Panel):
                     bw, bh = bitmap.Size
                     m_height = max(bh, m_height)
                     m_width = max(bw, m_width)
-                    button.position = (x, y, x + bw, y + bh)
+                    button.position = (x - 3, y, x + bw + 3, y + bh * 2)
                     x += bw
                 panel.position = (
                     px - BUFFER,
                     py - BUFFER,
                     x + BUFFER,
-                    y + BUFFER + m_height,
+                    y + BUFFER + m_height * 2,
                 )
+                x += BUFFER * 3
         self._layout_dirty = False
+
+    def _paint_tab(self, dc, page):
+        dc.SetPen(wx.BLACK_PEN)
+        if page is not self._current_page:
+            dc.SetBrush(wx.Brush(self.button_face))
+        else:
+            dc.SetBrush(wx.Brush(self.highlight))
+        if page is self._hover_tab:
+            dc.SetBrush(wx.Brush(self.button_face_hover))
+        x, y, x1, y1 = page.position
+        dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
+        dc.SetFont(self.font)
+        dc.DrawText(page.label, x + BUFFER, y + BUFFER)
+
+    def _paint_background(self, dc):
+        dc.SetBrush(wx.Brush(self.button_face))
+        w, h = self.Size
+        dc.DrawRectangle(0, 0, w, h)
+
+    def _paint_panel(self, dc, panel):
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.BLACK_PEN)
+        x, y, x1, y1 = panel.position
+        dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
+
+    def _paint_button(self, dc, button):
+        bitmap = button.bitmap_large
+        bitmap_small = button.bitmap_small
+        if button.state == "disabled":
+            bitmap = button.bitmap_large_disabled
+            bitmap_small = button.bitmap_small_disabled
+
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        if not button.enabled:
+            dc.SetBrush(wx.Brush(self.inactive_background))
+            dc.SetPen(wx.TRANSPARENT_PEN)
+        if button.toggle:
+            dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetPen(wx.BLACK_PEN)
+        if self._hover_button is button:
+            dc.SetBrush(wx.Brush(self.button_face_hover))
+            dc.SetPen(wx.BLACK_PEN)
+
+        x, y, x1, y1 = button.position
+        w = x1 - x
+        h = y1 - y
+        dc.DrawRectangle(int(x), int(y), int(w), int(h))
+        dc.DrawBitmap(bitmap, x, y)
+        if button.kind == "hybrid":
+            dc.SetPen(wx.BLACK_PEN)
+            dc.SetBrush(wx.GREEN_BRUSH)
+            dc.DrawPolygon(
+                [
+                    [int(x + 7), int(y + 7)],
+                    [int(x + 9), int(y + 7)],
+                    [int(x + 8), int(y + 9)],
+                ]
+            )
+        if button.label:
+            ly = y + h / 2
+            dc.SetFont(self.font)
+            for n, word in enumerate(button.label.split(" ")):
+                text_width, text_height = dc.GetTextExtent(word)
+                dc.DrawText(
+                    word,
+                    x + (w / 2.0) - (text_width / 2),
+                    ly + text_height * n,
+                )
 
     def paint(self):
         dc = wx.AutoBufferedPaintDC(self)
         if dc is None:
             return
         self.layout()
-        dc.SetBrush(wx.GREEN_BRUSH)
-        w, h = self.Size
-        dc.DrawRectangle(0, 0, w, h)
-
-        for n, page in enumerate(self.pages):
-            dc.SetBrush(wx.WHITE_BRUSH)
-            x, y, x1, y1 = page.position
-            dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
-
-            dc.SetFont(self.font)
-            dc.DrawText(page.label, x + BUFFER, y + BUFFER)
-            if n != self.current_page:
+        self._paint_background(dc)
+        for page in self.pages:
+            self._paint_tab(dc, page)
+            if page is not self._current_page:
                 continue
-
             for panel in page.panels:
-                dc.SetBrush(wx.MEDIUM_GREY_BRUSH)
-                x, y, x1, y1 = panel.position
-                dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
+                self._paint_panel(dc, panel)
                 for button in panel.buttons:
-                    bitmap = button.bitmap_large
-                    bitmap_small = button.bitmap_small
-                    if button.state == "disabled":
-                        bitmap = button.bitmap_large_disabled
-                        bitmap_small = button.bitmap_small_disabled
-
-                    if button.toggle:
-                        dc.SetBrush(wx.GREY_BRUSH)
-                    else:
-                        dc.SetBrush(wx.WHITE_BRUSH)
-                    if self._hover_button is button:
-                        dc.SetBrush(wx.YELLOW_BRUSH)
-                    x, y, x1, y1 = button.position
-                    w = x1 - x
-                    h = y1 - y
-                    dc.DrawRectangle(int(x), int(y), int(w), int(h))
-                    dc.DrawBitmap(bitmap, x, y)
-                    if button.kind == "hybrid":
-                        dc.SetPen(wx.BLACK_PEN)
-                        dc.SetBrush(wx.GREEN_BRUSH)
-                        dc.DrawPolygon(
-                            [
-                                [int(x + w * 0.7), int(y + h * 0.7)],
-                                [int(x + w * 0.9), int(y + h * 0.7)],
-                                [int(x + w * 0.8), (y + w * 0.9)],
-                            ]
-                        )
-                    if button.label:
-                        dc.SetFont(self.font)
-                        text_width, text_height = dc.GetTextExtent(button.label)
-                        dc.DrawText(
-                            button.label,
-                            x + (w / 2.0) - (text_width / 2),
-                            y1 + text_height / 2.0,
-                        )
+                    self._paint_button(dc, button)
 
     def on_paint(self, event):
         """
@@ -897,19 +928,19 @@ class RibbonBarPanel(wx.Panel):
         self.Refresh()
 
     def _button_at_position(self, pos):
-        for n, page in enumerate(self.pages):
-            if n != self.current_page:
+        for page in self.pages:
+            if page is not self._current_page:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
-                    if button.contains(pos):
+                    if button.contains(pos) and button.enabled:
                         return button
         return None
 
     def _page_at_position(self, pos):
-        for n, page in enumerate(self.pages):
+        for page in self.pages:
             if page.contains(pos):
-                return n
+                return page
         return None
 
     def on_click_right(self, event):
@@ -929,7 +960,7 @@ class RibbonBarPanel(wx.Panel):
     def on_click(self, event):
         page = self._page_at_position(event.Position)
         if page is not None:
-            self.current_page = page
+            self._current_page = page
             self.Refresh()
             return
 
@@ -1034,10 +1065,17 @@ class RibbonBarPanel(wx.Panel):
                     button.set_button_toggle(button.identifier == identifier)
         self.apply_enable_rules()
 
-    def apply_enable_rules(self):
+    def all_buttons(self):
         for page in self.pages:
+            if page is not self._current_page:
+                continue
             for panel in page.panels:
-                panel.apply_enable_rules()
+                for button in panel.buttons:
+                    yield button
+
+    def apply_enable_rules(self):
+        for button in self.all_buttons():
+            button.apply_enable_rules()
 
     def ensure_realize(self):
         self._ribbon_dirty = True
@@ -1057,6 +1095,8 @@ class RibbonBarPanel(wx.Panel):
             icon,
         )
         setattr(self, ref, page)
+        if self._current_page is None:
+            self._current_page = page
         self.pages.append(page)
         return page
 
