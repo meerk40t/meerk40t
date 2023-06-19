@@ -151,6 +151,7 @@ class Button:
         self.state = 0
         self.position = None
         self.dropdown = None
+        self.overflow = False
 
         self.toggle = False
         self.state_pressed = None
@@ -284,9 +285,7 @@ class Button:
             icon = v.get("icon")
             if icon:
                 item.SetBitmap(icon.GetBitmap())
-            top.Bind(
-                wx.EVT_MENU, self.drop_menu_click(v), id=self.id
-            )
+            top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=self.id)
         top.PopupMenu(menu)
 
     def drop_menu_click(self, v):
@@ -784,6 +783,7 @@ class RibbonBarPanel(wx.Control):
         self._hover_button = None
         self._hover_tab = None
         self._hover_dropdown = None
+        self._overflow = list()
 
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase_background)
@@ -852,7 +852,8 @@ class RibbonBarPanel(wx.Control):
         button_buffer = 3
         max_x = 0
         max_y = 0
-        w, h = self.Size
+        window_width, window_height = self.Size
+        self._overflow.clear()
         for pn, page in enumerate(self.pages):
             page.tab_position = (
                 (pn + 0.5) * tab_width,
@@ -862,13 +863,18 @@ class RibbonBarPanel(wx.Control):
             )
             if page is not self._current_page:
                 continue
-            page.position = [buffer, tab_height, w - buffer, h - buffer]
+            page.position = [
+                buffer,
+                tab_height,
+                window_width - buffer,
+                window_height - buffer,
+            ]
             x = buffer + buffer
             panel_max_width = 0
             panel_max_height = 0
             for panel in page.panels:
                 y = tab_height + buffer
-                px, py = x, y
+                panel_start_x, panel_start_y = x, y
                 x += buffer
                 panel_height = 0
                 panel_width = 0
@@ -909,6 +915,13 @@ class RibbonBarPanel(wx.Control):
                         x + button_width + button_buffer,
                         y + button_height,
                     )
+
+                    if x + (button_buffer + button_width + buffer) > window_width:
+                        button.overflow = True
+                        self._overflow.append(button)
+                    else:
+                        button.overflow = False
+
                     if button.kind == "hybrid":
                         button.dropdown.position = (
                             x - button_buffer,
@@ -923,17 +936,22 @@ class RibbonBarPanel(wx.Control):
 
                 panel_max_width = max(panel_max_width, panel_width)
                 panel_max_height = max(panel_max_height, panel_height)
-                panel.position = [
-                    px,
-                    py,
-                    x + buffer,
-                    y + buffer,
-                ]
+                panel_end_x = min(x + buffer, window_width - buffer - buffer)
+                if panel_start_x > panel_end_x:
+                    panel.position = None
+                else:
+                    panel.position = [
+                        panel_start_x,
+                        panel_start_y,
+                        panel_end_x,
+                        y + buffer,
+                    ]
                 x += buffer * 3
             for panel in page.panels:
-                panel.position[3] += panel_max_height
-                max_x = max(max_x, panel.position[2])
-                max_y = max(max_y, panel.position[3])
+                if panel.position:
+                    panel.position[3] += panel_max_height
+                    max_x = max(max_x, panel.position[2])
+                    max_y = max(max_y, panel.position[3])
             page.position[3] = max_y + buffer
         self._layout_dirty = False
         self.SetMinSize((int(max_x + buffer), int(max_y + buffer)))
@@ -958,9 +976,11 @@ class RibbonBarPanel(wx.Control):
         dc.DrawRectangle(0, 0, w, h)
 
     def _paint_panel(self, dc: wx.DC, panel):
+        if not panel.position:
+            return
+        x, y, x1, y1 = panel.position
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.BLACK_PEN)
-        x, y, x1, y1 = panel.position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown):
@@ -988,6 +1008,8 @@ class RibbonBarPanel(wx.Control):
         dc.DrawPolygon(points)
 
     def _paint_button(self, dc: wx.DC, button):
+        if button.overflow:
+            return
         buffer = 7
         button_buffer = 3
 
@@ -1115,7 +1137,6 @@ class RibbonBarPanel(wx.Control):
             return
         button.click()
         self.Refresh()
-
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
