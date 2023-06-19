@@ -143,7 +143,7 @@ class Button:
         self.identifier = None
         self.action = None
         self.action_right = None
-        self.enable_rule = None
+        self.rule_enabled = None
         self.set_aspect(**description)
         self.apply_enable_rules()
 
@@ -157,7 +157,7 @@ class Button:
         identifier=None,
         action=None,
         action_right=None,
-        enable_rule=None,
+        rule_enabled=None,
         object=None,
         **kwargs,
     ):
@@ -175,7 +175,7 @@ class Button:
         self.identifier = identifier
         self.action = action
         self.action_right = action_right
-        self.enable_rule = enable_rule
+        self.rule_enabled = rule_enabled
         self.object = object
 
         self.client_data = None
@@ -188,9 +188,9 @@ class Button:
 
     def apply_enable_rules(self):
         try:
-            v = self.enable_rule(0)
-            if v != button.enabled:
-                button.enabled = v
+            v = self.rule_enabled(0)
+            if v != self.enabled:
+                self.enabled = v
                 self.modified()
         except (AttributeError, TypeError):
             pass
