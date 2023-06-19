@@ -781,7 +781,8 @@ class RibbonBarPanel(wx.Panel):
         pass
 
     def on_mouse_leave(self, event):
-        pass
+        self._hover_tab = None
+        self._hover_button = None
 
     def on_mouse_move(self, event):
         hover = self._button_at_position(event.Position)
