@@ -698,15 +698,18 @@ class RibbonBarPanel(wx.Panel):
 
     def layout(self):
         w, h = self.Size
-        x = 0
-        y = 0
+        x = 10
+        y = 10
         for pn, page in enumerate(self.pages):
             if pn != self.current_page:
                 continue
             for panel in page.panels:
-                x += 0
+                x += 5
                 px, py = x, y
+                m_height = 0
+                m_width = 0
                 for button in panel.buttons:
+                    x += 5
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
 
@@ -714,12 +717,11 @@ class RibbonBarPanel(wx.Panel):
                         bitmap = button.bitmap_large_disabled
                         bitmap_small = button.bitmap_small_disabled
                     bw, bh = bitmap.Size
+                    m_height = max(bh, m_height)
+                    m_width = max(bw, m_width)
                     button.position = (x, y, x + bw, y + bh)
                     x += bw
-                    # if x > w:
-                    #     y += bh
-                    #     x = 0
-                panel.position = (px, py, x, y)
+                panel.position = (px - 5, py - 5, x + 5, y + 5 + m_height)
         self._layout_dirty = False
 
     def paint(self):
@@ -733,7 +735,11 @@ class RibbonBarPanel(wx.Panel):
         for n, page in enumerate(self.pages):
             if n != self.current_page:
                 continue
+
             for panel in page.panels:
+                dc.SetBrush(wx.MEDIUM_GREY_BRUSH)
+                x, y, x1, y1 = panel.position
+                dc.DrawRectangle(x, y, x1-x, y1-y)
                 for button in panel.buttons:
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
@@ -745,8 +751,9 @@ class RibbonBarPanel(wx.Panel):
                         dc.SetBrush(wx.GREY_BRUSH)
                     else:
                         dc.SetBrush(wx.WHITE_BRUSH)
-                    dc.DrawRectangle(button.position)
-                    dc.DrawBitmap(bitmap, button.position[0], button.position[1])
+                    x, y, x1, y1 = button.position
+                    dc.DrawRectangle(x, y, x1-x, y1-y)
+                    dc.DrawBitmap(bitmap, x, y)
 
     def on_paint(self, event):
         """
