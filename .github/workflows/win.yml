@@ -51,7 +51,7 @@ jobs:
         ## when branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
         git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
-        python3 ./waf distclean all
+        python3 ./waf distclean all --target-arch=32bit
         cd ..
         python3 setup.py install
         cd ..
