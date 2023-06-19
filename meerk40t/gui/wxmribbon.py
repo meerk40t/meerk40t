@@ -131,7 +131,7 @@ class Button:
         self.bitmap_large_disabled = None
         self.bitmap_small = None
         self.bitmap_large = None
-        self.help_string = None
+        self.tip = None
         self.client_data = None
         self.state = 0
         self.position = None
@@ -151,7 +151,7 @@ class Button:
         self,
         label=None,
         icon=None,
-        help_string=None,
+        tip=None,
         group=None,
         toggle_attr=None,
         identifier=None,
@@ -169,7 +169,7 @@ class Button:
         self.bitmap_large_disabled = self.bitmap_disabled
         self.bitmap_small = self.bitmap
         self.bitmap_large = self.bitmap
-        self.help_string = help_string
+        self.tip = tip
         self.group = group
         self.toggle_attr = toggle_attr
         self.identifier = identifier
@@ -311,8 +311,8 @@ class Button:
 
         helps = alt.get("help_string", "")
         if helps == "":
-            helps = alt.get("tip", self.help_string)
-        self.help_string = helps
+            helps = alt.get("tip", self.tip)
+        self.tip = helps
         self.bitmap_large = alt.get("bitmap_large", self.bitmap_large)
         self.bitmap_large_disabled = alt.get(
             "bitmap_large_disabled", self.bitmap_large_disabled
@@ -343,7 +343,7 @@ class Button:
             "action": self.action,
             "action_right": self.action_right,
             "label": self.label,
-            "help_string": self.help_string,
+            "help_string": self.tip,
             "bitmap_large": self.bitmap_large,
             "bitmap_large_disabled": self.bitmap_large_disabled,
             "bitmap_small": self.bitmap_small,
@@ -787,6 +787,8 @@ class RibbonBarPanel(wx.Panel):
         hover = self._button_at_position(event.Position)
         if hover is not self._hover_button:
             self._hover_button = hover
+            if hover is not None:
+                self.SetToolTip(hover.tip)
             self.Refresh()
         hover = self._page_at_position(event.Position)
         if hover is not self._hover_tab:
@@ -830,7 +832,7 @@ class RibbonBarPanel(wx.Panel):
                 x += BUFFER * 3
         self._layout_dirty = False
 
-    def _paint_tab(self, dc, page):
+    def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
         if page is not self._current_page:
             dc.SetBrush(wx.Brush(self.button_face))
@@ -839,26 +841,27 @@ class RibbonBarPanel(wx.Panel):
         if page is self._hover_tab:
             dc.SetBrush(wx.Brush(self.button_face_hover))
         x, y, x1, y1 = page.position
-        dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y),5)
+        # dc.DrawRectangle()
         dc.SetFont(self.font)
         dc.DrawText(page.label, x + BUFFER, y + BUFFER)
 
-    def _paint_background(self, dc):
+    def _paint_background(self, dc: wx.DC):
         w, h = self.Size
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
-    def _paint_panel(self, dc, panel):
+    def _paint_panel(self, dc: wx.DC, panel):
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.BLACK_PEN)
         x, y, x1, y1 = panel.position
-        dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
-    def _paint_button(self, dc, button):
+    def _paint_button(self, dc: wx.DC, button):
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
-        if button.state == "disabled":
+        if not button.enabled:
             bitmap = button.bitmap_large_disabled
             bitmap_small = button.bitmap_small_disabled
 
@@ -877,7 +880,7 @@ class RibbonBarPanel(wx.Panel):
         x, y, x1, y1 = button.position
         w = x1 - x
         h = y1 - y
-        dc.DrawRectangle(int(x), int(y), int(w), int(h))
+        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         dc.DrawBitmap(bitmap, x, y)
         if button.kind == "hybrid":
             dc.SetPen(wx.BLACK_PEN)
