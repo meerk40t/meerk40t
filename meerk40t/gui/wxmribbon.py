@@ -223,7 +223,7 @@ class Button:
             and self.position[1] < y < self.position[3]
         )
 
-    def click(self):
+    def click(self, event=None):
         """
         Process button click of button at provided button_id
 
@@ -784,6 +784,7 @@ class RibbonBarPanel(wx.Control):
         self._hover_tab = None
         self._hover_dropdown = None
         self._overflow = list()
+        self._overflow_position = None
 
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase_background)
@@ -852,8 +853,10 @@ class RibbonBarPanel(wx.Control):
         button_buffer = 3
         max_x = 0
         max_y = 0
+        overflow_width = 20
         window_width, window_height = self.Size
         self._overflow.clear()
+        self._overflow_position = None
         for pn, page in enumerate(self.pages):
             page.tab_position = (
                 (pn + 0.5) * tab_width,
@@ -953,6 +956,8 @@ class RibbonBarPanel(wx.Control):
                     max_x = max(max_x, panel.position[2])
                     max_y = max(max_y, panel.position[3])
             page.position[3] = max_y + buffer
+            if self._overflow:
+                self._overflow_position = max_x - overflow_width, 0, max_x, max_y
         self._layout_dirty = False
         self.SetMinSize((int(max_x + buffer), int(max_y + buffer)))
 
@@ -974,6 +979,14 @@ class RibbonBarPanel(wx.Control):
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangle(0, 0, w, h)
+
+    def _paint_overflow(self, dc: wx.DC):
+        if not self._overflow_position:
+            return
+        x, y, x1, y1 = self._overflow_position
+        dc.SetBrush(wx.Brush(self.highlight))
+        dc.SetPen(wx.BLACK_PEN)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
     def _paint_panel(self, dc: wx.DC, panel):
         if not panel.position:
@@ -1072,6 +1085,7 @@ class RibbonBarPanel(wx.Control):
                 self._paint_panel(dc, panel)
                 for button in panel.buttons:
                     self._paint_button(dc, button)
+        self._paint_overflow(dc)
 
     def on_paint(self, event):
         """
@@ -1118,8 +1132,35 @@ class RibbonBarPanel(wx.Control):
             if action:
                 action(event)
 
+    def overflow_click(self):
+        """
+        Drop down of a hybrid button was clicked.
+
+        We make a menu popup and fill it with the data about the multi-button
+
+        @param event:
+        @return:
+        """
+
+        menu = wx.Menu()
+        for v in self._overflow:
+            item = menu.Append(wx.ID_ANY, v.label)
+            icon = v.icon
+            if icon:
+                item.SetBitmap(icon.GetBitmap())
+            self.Bind(wx.EVT_MENU, v.click, id=item.Id)
+        self.PopupMenu(menu)
+
     def on_click(self, event):
         pos = event.Position
+
+        if self._overflow_position:
+            x, y = pos
+            if (
+                self._overflow_position[0] < x < self._overflow_position[2]
+                and self._overflow_position[1] < y < self._overflow_position[3]
+            ):
+                self.overflow_click()
 
         page = self._page_at_position(pos)
         if page is not None:
