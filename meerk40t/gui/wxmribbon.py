@@ -185,7 +185,6 @@ class Button:
         self.state_pressed = None
         self.state_unpressed = None
 
-
     def apply_enable_rules(self):
         try:
             v = self.rule_enabled(0)
@@ -384,6 +383,7 @@ class Button:
 
     def modified(self):
         self.parent.modified()
+
 
 class RibbonPanel:
     def __init__(self, context, parent, id, label, icon):
@@ -667,6 +667,7 @@ class RibbonPanel:
     def modified(self):
         self.parent.modified()
 
+
 class RibbonPage:
     def __init__(self, context, parent, id, label, icon):
         self.context = context
@@ -692,6 +693,7 @@ class RibbonPage:
 
     def modified(self):
         self.parent.modified()
+
 
 class RibbonBarPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -842,8 +844,9 @@ class RibbonBarPanel(wx.Panel):
         dc.DrawText(page.label, x + BUFFER, y + BUFFER)
 
     def _paint_background(self, dc):
-        dc.SetBrush(wx.Brush(self.button_face))
         w, h = self.Size
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.BLACK_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
     def _paint_panel(self, dc, panel):
@@ -1065,7 +1068,7 @@ class RibbonBarPanel(wx.Panel):
                     button.set_button_toggle(button.identifier == identifier)
         self.apply_enable_rules()
 
-    def all_buttons(self):
+    def _all_buttons(self):
         for page in self.pages:
             if page is not self._current_page:
                 continue
@@ -1074,7 +1077,7 @@ class RibbonBarPanel(wx.Panel):
                     yield button
 
     def apply_enable_rules(self):
-        for button in self.all_buttons():
+        for button in self._all_buttons():
             button.apply_enable_rules()
 
     def ensure_realize(self):
@@ -1292,110 +1295,3 @@ class RibbonBarPanel(wx.Panel):
                 self._ribbon.SetActivePage(p[0])
                 if getattr(self.context.root, "_active_page", "") != pagename:
                     setattr(self.context.root, "_active_page", pagename)
-
-
-def _update_ribbon_artprovider_for_dark_mode(provider, show_labels=False):
-    def _set_ribbon_colour(provider, art_id_list, colour):
-        for id_ in art_id_list:
-            try:
-                provider.SetColour(id_, colour)
-            except:
-                # Not all colorcodes are supported by all providers.
-                # So let's ignore it
-                pass
-
-    texts = [
-        RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_COLOUR,
-    ]
-    _set_ribbon_colour(provider, texts, TEXTCOLOUR)
-    disabled = [
-        RB.RIBBON_ART_GALLERY_BUTTON_DISABLED_FACE_COLOUR,
-        RB.RIBBON_ART_TAB_LABEL_COLOUR,
-    ]
-    _set_ribbon_colour(provider, disabled, INACTIVE_TEXT)
-
-    backgrounds = [
-        # Toolbar element backgrounds
-        RB.RIBBON_ART_TOOL_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TOOL_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TOOL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TOOL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TOOL_HOVER_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TOOL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-        # Page Background
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PAGE_HOVER_BACKGROUND_GRADIENT_COLOUR,
-        # Art Gallery
-        RB.RIBBON_ART_GALLERY_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_FACE_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_HOVER_FACE_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_GALLERY_BUTTON_ACTIVE_BACKGROUND_TOP_COLOUR,
-        # Panel backgrounds
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_PANEL_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_LABEL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
-        # Tab Background
-        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_CTRL_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_TOP_GRADIENT_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_TAB_ACTIVE_BACKGROUND_GRADIENT_COLOUR,
-    ]
-    _set_ribbon_colour(provider, backgrounds, BTNFACE)
-    highlights = [
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_COLOUR,
-        RB.RIBBON_ART_PANEL_HOVER_LABEL_BACKGROUND_GRADIENT_COLOUR,
-    ]
-    _set_ribbon_colour(provider, highlights, HIGHLIGHT)
-    borders = [
-        RB.RIBBON_ART_PANEL_BUTTON_HOVER_FACE_COLOUR,
-    ]
-    _set_ribbon_colour(provider, borders, wx.RED)
-
-    lowlights = [
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_COLOUR,
-        RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
-    ]
-    _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
-    if not show_labels:
-        font = wx.Font(
-            1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-        provider.SetFont(RB.RIBBON_ART_BUTTON_BAR_LABEL_FONT, font)
-        provider.SetFont(RB.RIBBON_ART_PANEL_LABEL_FONT, font)
-        fontcolors = [
-            RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
-            RB.RIBBON_ART_PANEL_LABEL_COLOUR,
-        ]
-        _set_ribbon_colour(provider, fontcolors, BTNFACE)
