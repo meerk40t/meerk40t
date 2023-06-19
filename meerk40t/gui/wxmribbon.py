@@ -1208,7 +1208,7 @@ class RibbonBarPanel(wx.Panel):
     def pane_hide(self):
         for page in self.pages:
             for panel in page.panels:
-                for key, listener in self._registered_signals:
+                for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):
