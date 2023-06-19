@@ -613,6 +613,16 @@ class RibbonPanel:
                 pass
 
 
+    def contains(self, pos):
+        if self.position is None:
+            return False
+        x, y = pos
+        return (
+            self.position[0] < x < self.position[2]
+            and self.position[1] < y < self.position[3]
+        )
+
+
 class RibbonPage:
     def __init__(self, context, parent, id, label, icon):
         self.context = context
@@ -622,6 +632,7 @@ class RibbonPage:
         self.icon = icon
         self.panels = []
         self.map = {}
+        self.position = None
 
     def modified(self):
         self.parent.modified()
@@ -629,6 +640,16 @@ class RibbonPage:
     def add_panel(self, panel, ref):
         self.panels.append(panel)
         self.map[ref] = panel
+
+    def contains(self, pos):
+        if self.position is None:
+            return False
+        x, y = pos
+        return (
+            self.position[0] < x < self.position[2]
+            and self.position[1] < y < self.position[3]
+        )
+
 
 
 class RibbonBarPanel(wx.Panel):
@@ -672,8 +693,8 @@ class RibbonBarPanel(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_SIZE, self.on_size)
 
-        self.Bind(wx.EVT_LEFT_DOWN, self.button_click)
-        self.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
+        self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
+        self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
         self.current_page = 0
         self._layout_dirty = True
 
@@ -700,8 +721,9 @@ class RibbonBarPanel(wx.Panel):
     def layout(self):
         w, h = self.Size
         x = BUFFER * 2
-        y = BUFFER * 2
+        y = h / 2
         for pn, page in enumerate(self.pages):
+            page.position = pn * 70, 0, (pn + 1) * 70, 20
             if pn != self.current_page:
                 continue
             for panel in page.panels:
@@ -738,7 +760,16 @@ class RibbonBarPanel(wx.Panel):
         dc.SetBrush(wx.GREEN_BRUSH)
         w, h = self.Size
         dc.DrawRectangle(0, 0, w, h)
+
+
         for n, page in enumerate(self.pages):
+
+
+            dc.SetBrush(wx.WHITE_BRUSH)
+            x, y, x1, y1 = page.position
+            dc.DrawRectangle(x, y, x1 - x, y1 - y)
+
+            dc.DrawText(page.label, x + BUFFER, y + BUFFER)
             if n != self.current_page:
                 continue
 
@@ -801,7 +832,13 @@ class RibbonBarPanel(wx.Panel):
                         return button
         return None
 
-    def button_click_right(self, event):
+    def _page_at_position(self, pos):
+        for n, page in enumerate(self.pages):
+            if page.contains(pos):
+                return n
+        return None
+
+    def on_click_right(self, event):
         """
         Handles the ``wx.EVT_RIGHT_DOWN`` event
         :param event: a :class:`MouseEvent` event to be processed.
@@ -815,7 +852,13 @@ class RibbonBarPanel(wx.Panel):
             if action:
                 action(event)
 
-    def button_click(self, event):
+    def on_click(self, event):
+        page = self._page_at_position(event.Position)
+        if page is not None:
+            self.current_page = page
+            self.Refresh()
+            return
+
         pos = event.Position
         button = self._button_at_position(pos)
         if button is None:
