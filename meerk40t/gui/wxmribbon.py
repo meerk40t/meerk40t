@@ -236,6 +236,48 @@ class Button:
                 self.context.signal(self.toggle_attr, False, self.object)
             self._restore_button_aspect(self.state_unpressed)
 
+    def drop_click(self):
+        """
+        Drop down of a hybrid button was clicked.
+
+        We make a menu popup and fill it with the data about the multi-button
+
+        @param event:
+        @return:
+        """
+        if self.toggle:
+            return
+        menu = wx.Menu()
+        for v in self.button_dict["multi"]:
+            item = menu.Append(wx.ID_ANY, v.get("label"))
+            menu_id = self.id
+            self.parent.parent.parent.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=menu_id)
+        self.parent.parent.parent.PopupMenu(menu)
+
+    def drop_menu_click(self, v):
+        """
+        Creates menu_item_click processors for the various menus created for a drop-click
+
+        @param button:
+        @param v:
+        @return:
+        """
+
+        def menu_item_click(event):
+            """
+            Process menu item click.
+
+            @param event:
+            @return:
+            """
+            key_id = v.get("identifier")
+            setattr(self.object, self.save_id, key_id)
+            self.state_unpressed = key_id
+            self._restore_button_aspect(key_id)
+            # self.ensure_realize()
+
+        return menu_item_click
+
     def _restore_button_aspect(self, key):
         """
         Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
@@ -866,54 +908,13 @@ class RibbonBarPanel(wx.Panel):
         button = self._button_at_position(pos)
         if button is None:
             return
-        button.click()
+        cx = (button.position[2] - button.position[0]) / 2
+        cy = (button.position[3] - button.position[1]) / 2
+        if button.kind == "hybrid" and pos[1] > cy and pos[0] > cx:
+            button.drop_click()
+        else:
+            button.click()
         self.Refresh()
-
-    def drop_click(self, event):
-        """
-        Drop down of a hybrid button was clicked.
-
-        We make a menu popup and fill it with the data about the multi-button
-
-        @param event:
-        @return:
-        """
-        evt_id = event.GetId()
-        button = self.button_lookup.get(evt_id)
-        if button is None:
-            return
-        if button.toggle:
-            return
-        menu = wx.Menu()
-        for v in button.button_dict["multi"]:
-            item = menu.Append(wx.ID_ANY, v.get("label"))
-            menu_id = item.GetId()
-            self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=menu_id)
-        event.PopupMenu(menu)
-
-    def drop_menu_click(self, button, v):
-        """
-        Creates menu_item_click processors for the various menus created for a drop-click
-
-        @param button:
-        @param v:
-        @return:
-        """
-
-        def menu_item_click(event):
-            """
-            Process menu item click.
-
-            @param event:
-            @return:
-            """
-            key_id = v.get("identifier")
-            setattr(button.object, button.save_id, key_id)
-            button.state_unpressed = key_id
-            self._restore_button_aspect(button, key_id)
-            self.ensure_realize()
-
-        return menu_item_click
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
