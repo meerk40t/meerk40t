@@ -908,8 +908,9 @@ class RibbonBarPanel(wx.Panel):
         button = self._button_at_position(pos)
         if button is None:
             return
-        cx = (button.position[2] - button.position[0]) / 2
-        cy = (button.position[3] - button.position[1]) / 2
+        cx = (button.position[0] + button.position[2]) / 2
+        cy = (button.position[1] + button.position[3]) / 2
+        print(f"{pos}, {cx}, {cy}")
         if button.kind == "hybrid" and pos[1] > cy and pos[0] > cx:
             button.drop_click()
         else:
