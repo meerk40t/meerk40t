@@ -277,14 +277,17 @@ class Button:
         """
         if self.toggle:
             return
+        top = self.parent.parent.parent
         menu = wx.Menu()
         for v in self.button_dict["multi"]:
             item = menu.Append(wx.ID_ANY, v.get("label"))
-            menu_id = self.id
-            self.parent.parent.parent.Bind(
-                wx.EVT_MENU, self.drop_menu_click(v), id=menu_id
+            icon = v.get("icon")
+            if icon:
+                item.SetBitmap(icon.GetBitmap())
+            top.Bind(
+                wx.EVT_MENU, self.drop_menu_click(v), id=self.id
             )
-        self.parent.parent.parent.PopupMenu(menu)
+        top.PopupMenu(menu)
 
     def drop_menu_click(self, v):
         """
