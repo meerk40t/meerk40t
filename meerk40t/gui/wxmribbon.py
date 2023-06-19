@@ -504,7 +504,7 @@ class RibbonPanel:
                 self._create_signal_for_multi(b, key, v["signal"])
 
             if key == initial_value:
-                self._restore_button_aspect(b, key)
+                b._restore_button_aspect(key)
 
     def _create_signal_for_multi(self, button, key, signal):
         """
@@ -539,7 +539,7 @@ class RibbonPanel:
         b.state_pressed = "toggle"
         b.state_unpressed = "original"
 
-        self._store_button_aspect(b, "original")
+        b._store_button_aspect("original")
 
         toggle_action = button["toggle"]
         key = toggle_action.get("identifier", "toggle")
