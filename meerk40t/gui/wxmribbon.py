@@ -682,6 +682,7 @@ class RibbonBarPanel(wx.Panel):
         self.screen_refresh_lock = threading.Lock()
         self.recurse = True
         self._expanded_panel = None
+        self._hover_button = False
 
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase_background)
@@ -710,8 +711,11 @@ class RibbonBarPanel(wx.Panel):
         pass
 
     def on_mouse_move(self, event):
-        self._hover_button = self._button_at_position(event.Position)
-        print(self._hover_button)
+        hover = self._button_at_position(event.Position)
+        if hover is not self._hover_button:
+            self._hover_button = hover
+            self.Refresh()
+
 
     def on_size(self, event):
         self.Refresh(True)
@@ -786,6 +790,8 @@ class RibbonBarPanel(wx.Panel):
                         dc.SetBrush(wx.GREY_BRUSH)
                     else:
                         dc.SetBrush(wx.WHITE_BRUSH)
+                    if self._hover_button is button:
+                        dc.SetBrush(wx.YELLOW_BRUSH)
                     x, y, x1, y1 = button.position
                     w = x1 - x
                     h = y1 - y
