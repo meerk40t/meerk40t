@@ -767,7 +767,7 @@ class RibbonBarPanel(wx.Panel):
 
             dc.SetBrush(wx.WHITE_BRUSH)
             x, y, x1, y1 = page.position
-            dc.DrawRectangle(x, y, x1 - x, y1 - y)
+            dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
 
             dc.DrawText(page.label, x + BUFFER, y + BUFFER)
             if n != self.current_page:
@@ -776,7 +776,7 @@ class RibbonBarPanel(wx.Panel):
             for panel in page.panels:
                 dc.SetBrush(wx.MEDIUM_GREY_BRUSH)
                 x, y, x1, y1 = panel.position
-                dc.DrawRectangle(x, y, x1 - x, y1 - y)
+                dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y))
                 for button in panel.buttons:
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
@@ -789,7 +789,7 @@ class RibbonBarPanel(wx.Panel):
                     else:
                         dc.SetBrush(wx.WHITE_BRUSH)
                     x, y, x1, y1 = button.position
-                    dc.DrawRectangle(x, y, x1 - x, y1 - y)
+                    dc.DrawRectangle(int(x), int(y), int(x1 - x), int(y1 - y_))
                     dc.DrawBitmap(bitmap, x, y)
 
     def on_paint(self, event):
