@@ -77,7 +77,7 @@ def register_panel_ribbon(window, context):
         .CaptionVisible(not context.pane_lock)
     )
     pane.dock_proportion = 640
-    ribbon = RibbonBarPanel(window, wx.ID_ANY, context=context)
+    ribbon = RibbonBarPanel(window, wx.ID_ANY, context=context, pane=pane)
     pane.control = ribbon
 
     window.on_pane_create(pane)
@@ -695,10 +695,11 @@ class RibbonPage:
         self.parent.modified()
 
 
-class RibbonBarPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+class RibbonBarPanel(wx.Control):
+    def __init__(self, *args, context=None, pane=None, **kwds):
+        super().__init__(*args, **kwds)
+        # kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        # wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self._job = Job(
             process=self._perform_realization,
@@ -707,6 +708,7 @@ class RibbonBarPanel(wx.Panel):
             times=1,
             run_main=True,
         )
+        self.pane = pane
         self._current_page = None
         self.pages = []
 
@@ -748,8 +750,9 @@ class RibbonBarPanel(wx.Panel):
         # Define Ribbon.
         self.__set_ribbonbar()
 
+        self._layout_dirty = True
         self.Layout()
-        # self._ribbon
+
         self.pipe_state = None
         self._ribbon_dirty = False
         self.screen_refresh_lock = threading.Lock()
@@ -768,7 +771,6 @@ class RibbonBarPanel(wx.Panel):
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
-        self._layout_dirty = True
 
     def modified(self):
         self._layout_dirty = True
@@ -799,39 +801,73 @@ class RibbonBarPanel(wx.Panel):
     def on_size(self, event):
         self.Refresh(True)
 
-    def layout(self):
+    def layout(self, dc: wx.DC):
+        horizontal = True
+        tab_width = 70
+        tab_height = 20
+        buffer = 7
+        button_buffer = 3
+        max_x = 0
+        max_y = 0
         w, h = self.Size
-        x = 1
-        y = 27
         for pn, page in enumerate(self.pages):
-            page.position = pn * 70, 0, (pn + 1) * 70, 20
+            page.position = (pn + 0.5) * tab_width, 0, (pn + 1.5) * tab_width, tab_height
             if page is not self._current_page:
                 continue
+            x = 1
+            y = tab_height + buffer
+
+            panel_max_width = 0
+            panel_max_height = 0
             for panel in page.panels:
                 px, py = x, y
-                m_height = 0
-                m_width = 0
+                panel_height = 0
+                panel_width = 0
                 for button in panel.buttons:
-                    x += 7
+                    if horizontal:
+                        x += buffer
+                    else:
+                        y += buffer
+
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
-
-                    if button.state == "disabled":
+                    if not button.enabled:
                         bitmap = button.bitmap_large_disabled
                         bitmap_small = button.bitmap_small_disabled
-                    bw, bh = bitmap.Size
-                    m_height = max(bh, m_height)
-                    m_width = max(bw, m_width)
-                    button.position = (x - 3, y, x + bw + 3, y + bh * 2)
-                    x += bw
-                panel.position = (
-                    px - BUFFER,
-                    py - BUFFER,
-                    x + BUFFER,
-                    y + BUFFER + m_height * 2,
-                )
-                x += BUFFER * 3
+                    bitmap_width, bitmap_height = bitmap.Size
+
+                    text_width = 0
+                    text_height = 0
+                    for n, word in enumerate(button.label.split(" ")):
+                        line_width, line_height = dc.GetTextExtent(word)
+                        text_width = max(text_width, line_width)
+                        text_height += line_height
+                    button_width = max(bitmap_width, text_width)
+                    button_height = bitmap_height + buffer + text_height + buffer
+                    panel_width = max(button_width, panel_width)
+                    panel_height = max(button_height, panel_height)
+                    button.position = (x - button_buffer, y, x + button_width + button_buffer, y + button_height)
+                    if horizontal:
+                        x += button_width
+                    else:
+                        y += button_height
+
+                panel_max_width = max(panel_max_width, panel_width)
+                panel_max_height = max(panel_max_height, panel_height)
+                panel.position = [
+                    px - buffer,
+                    py - buffer,
+                    x + buffer,
+                    y + buffer,
+                ]
+                x += buffer * 3
+            for panel in page.panels:
+                panel.position[3] += panel_max_height
+                max_x = max(max_x, panel.position[2])
+                max_y = max(max_y, panel.position[3])
         self._layout_dirty = False
+        self.SetMinSize((int(max_x + buffer), int(max_y + buffer)))
+
 
     def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
@@ -850,7 +886,7 @@ class RibbonBarPanel(wx.Panel):
     def _paint_background(self, dc: wx.DC):
         w, h = self.Size
         dc.SetBrush(wx.Brush(self.button_face))
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
     def _paint_panel(self, dc: wx.DC, panel):
@@ -860,6 +896,9 @@ class RibbonBarPanel(wx.Panel):
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
     def _paint_button(self, dc: wx.DC, button):
+        buffer = 7
+        button_buffer = 3
+
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
         if not button.enabled:
@@ -882,7 +921,10 @@ class RibbonBarPanel(wx.Panel):
         w = x1 - x
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
-        dc.DrawBitmap(bitmap, x, y)
+        bitmap_width, bitmap_height = bitmap.Size
+        y += buffer
+        dc.DrawBitmap(bitmap, x + (w - bitmap_width)/2, y)
+        y += bitmap_height
         if button.kind == "hybrid":
             dc.SetPen(wx.BLACK_PEN)
             dc.SetBrush(wx.GREEN_BRUSH)
@@ -894,21 +936,22 @@ class RibbonBarPanel(wx.Panel):
                 ]
             )
         if button.label:
-            ly = y + h / 2
+            y += buffer
             dc.SetFont(self.font)
             for n, word in enumerate(button.label.split(" ")):
                 text_width, text_height = dc.GetTextExtent(word)
                 dc.DrawText(
                     word,
                     x + (w / 2.0) - (text_width / 2),
-                    ly + text_height * n,
+                    y,
                 )
+                y += text_height
 
     def paint(self):
         dc = wx.AutoBufferedPaintDC(self)
         if dc is None:
             return
-        self.layout()
+        self.layout(dc)
         self._paint_background(dc)
         for page in self.pages:
             self._paint_tab(dc, page)
