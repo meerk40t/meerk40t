@@ -546,11 +546,10 @@ class RibbonPanel:
         if "signal" in toggle_action:
             self._create_signal_for_toggle(b, toggle_action["signal"])
 
-        self._store_button_aspect(b, key, **toggle_action)
+        b._store_button_aspect(key, **toggle_action)
         if "icon" in toggle_action:
             toggle_icon = toggle_action.get("icon")
-            self._update_button_aspect(
-                b,
+            b._update_button_aspect(
                 key,
                 bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
                 bitmap_large_disabled=toggle_icon.GetBitmap(
@@ -562,8 +561,7 @@ class RibbonPanel:
                 small_resize = 0.5 * siz[0]
             else:
                 small_resize = 0.5 * resize_param
-            self._update_button_aspect(
-                b,
+            b._update_button_aspect(
                 key,
                 bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
                 bitmap_small_disabled=toggle_icon.GetBitmap(
@@ -793,7 +791,7 @@ class RibbonBarPanel(wx.Panel):
                     h = y1 - y
                     dc.DrawRectangle(int(x), int(y), int(w), int(h))
                     dc.DrawBitmap(bitmap, x, y)
-                    # dc.DrawPolygon(([x + w * 0.8, y + w * 0.4]))
+                    # dc.DrawPolygon(([int(x + w * 0.8), int(y + h * 0.4)], [int(x + w * 0.9), int(y + w * 0.4)], [int(x + w * 0.85), (y + w * 0.5)],))
 
     def on_paint(self, event):
         """
