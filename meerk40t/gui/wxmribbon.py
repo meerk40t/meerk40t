@@ -59,6 +59,8 @@ ID_PAGE_MODIFY = 30
 ID_PAGE_CONFIG = 40
 ID_PAGE_TOGGLE = 99
 
+BUFFER = 5
+
 
 def register_panel_ribbon(window, context):
     iconsize = get_default_icon_size()
@@ -410,7 +412,6 @@ class RibbonPanel:
                     self.group_lookup[group] = c_group
                 c_group.append(b)
 
-
     def _create_button(self, button):
         """
         Creates a button and places it on the button_bar depending on the required definition.
@@ -698,18 +699,18 @@ class RibbonBarPanel(wx.Panel):
 
     def layout(self):
         w, h = self.Size
-        x = 10
-        y = 10
+        x = BUFFER * 2
+        y = BUFFER * 2
         for pn, page in enumerate(self.pages):
             if pn != self.current_page:
                 continue
             for panel in page.panels:
-                x += 5
+                x += BUFFER * 3
                 px, py = x, y
                 m_height = 0
                 m_width = 0
                 for button in panel.buttons:
-                    x += 5
+                    x += BUFFER
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
 
@@ -721,7 +722,12 @@ class RibbonBarPanel(wx.Panel):
                     m_width = max(bw, m_width)
                     button.position = (x, y, x + bw, y + bh)
                     x += bw
-                panel.position = (px - 5, py - 5, x + 5, y + 5 + m_height)
+                panel.position = (
+                    px - BUFFER,
+                    py - BUFFER,
+                    x + BUFFER,
+                    y + BUFFER + m_height,
+                )
         self._layout_dirty = False
 
     def paint(self):
@@ -739,7 +745,7 @@ class RibbonBarPanel(wx.Panel):
             for panel in page.panels:
                 dc.SetBrush(wx.MEDIUM_GREY_BRUSH)
                 x, y, x1, y1 = panel.position
-                dc.DrawRectangle(x, y, x1-x, y1-y)
+                dc.DrawRectangle(x, y, x1 - x, y1 - y)
                 for button in panel.buttons:
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
@@ -752,7 +758,7 @@ class RibbonBarPanel(wx.Panel):
                     else:
                         dc.SetBrush(wx.WHITE_BRUSH)
                     x, y, x1, y1 = button.position
-                    dc.DrawRectangle(x, y, x1-x, y1-y)
+                    dc.DrawRectangle(x, y, x1 - x, y1 - y)
                     dc.DrawBitmap(bitmap, x, y)
 
     def on_paint(self, event):
@@ -816,7 +822,6 @@ class RibbonBarPanel(wx.Panel):
             return
         button.click()
         self.Refresh()
-
 
     def drop_click(self, event):
         """
