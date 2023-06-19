@@ -114,21 +114,72 @@ def register_panel_ribbon(window, context):
 
 
 class Button:
-    def __init__(self, button_id, label, bitmap, bitmap_disabled, help_string, kind):
+    def __init__(self, context, parent, button_id, kind, description):
+        self.context = context
+        self.parent = parent
         self.id = button_id
-        self.label = label
-        self.bitmap = bitmap
-        self.bitmap_disabled = bitmap_disabled
-        self.bitmap_small_disabled = bitmap_disabled
-        self.bitmap_large_disabled = bitmap_disabled
-        self.bitmap_small = bitmap
-        self.bitmap_large = bitmap
-        self.help_string = help_string
         self.kind = kind
+        self.button_dict = description
+
+        self.label = None
+        self.bitmap = None
+        self.bitmap_disabled = None
+        self.bitmap_small_disabled = None
+        self.bitmap_large_disabled = None
+        self.bitmap_small = None
+        self.bitmap_large = None
+        self.help_string = None
         self.client_data = None
         self.state = 0
         self.position = None
         self.toggle = False
+        self.state_pressed = None
+        self.state_unpressed = None
+        self.group = None
+        self.toggle_attr = None
+        self.identifier = None
+        self.action = None
+        self.action_right = None
+        self.enable_rule = None
+        self.set_aspect(**description)
+
+    def set_aspect(
+        self,
+        label=None,
+        icon=None,
+        help_string=None,
+        group=None,
+        toggle_attr=None,
+        identifier=None,
+        action=None,
+        action_right=None,
+        enable_rule=None,
+        object=None,
+        **kwargs,
+    ):
+        self.label = label
+        self.icon = icon
+        self.bitmap = icon.GetBitmap()
+        self.bitmap_disabled = icon.GetBitmap()
+        self.bitmap_small_disabled = self.bitmap_disabled
+        self.bitmap_large_disabled = self.bitmap_disabled
+        self.bitmap_small = self.bitmap
+        self.bitmap_large = self.bitmap
+        self.help_string = help_string
+        self.group = group
+        self.toggle_attr = toggle_attr
+        self.identifier = identifier
+        self.action = action
+        self.action_right = action_right
+        self.enable_rule = enable_rule
+        self.object = object
+
+        self.client_data = None
+        self.state = 0
+        self.position = None
+        self.toggle = False
+        self.state_pressed = None
+        self.state_unpressed = None
 
     def contains(self, pos):
         if self.position is None:
@@ -139,13 +190,153 @@ class Button:
             and self.position[1] < y < self.position[3]
         )
 
+    def click(self):
+        """
+        Process button click of button at provided button_id
+
+        @return:
+        """
+        if self.group:
+            # Toggle radio buttons
+            self.toggle = not self.toggle
+            if self.toggle:  # got toggled
+                button_group = self.parent.group_lookup.get(self.group, [])
+
+                for obutton in button_group:
+                    # Untoggle all other buttons in this group.
+                    if obutton.group == self.group and obutton.id != self.id:
+                        obutton.set_button_toggle(False)
+            else:  # got untoggled...
+                # so let's activate the first button of the group (implicitly defined as default...)
+                button_group = self.parent.group_lookup.get(self.group)
+                if button_group:
+                    first_button = button_group[0]
+                    first_button.set_button_toggle(True)
+                    first_button.click()
+                    return
+        if self.action is not None:
+            # We have an action to call.
+            self.action(None)
+
+        if self.state_pressed is None:
+            # If there's a pressed state we should change the button state
+            return
+
+        self.toggle = not self.toggle
+        if self.toggle:
+            if self.toggle_attr is not None:
+                setattr(self.object, self.toggle_attr, True)
+                self.context.signal(self.toggle_attr, True, self.object)
+            self._restore_button_aspect(self, self.state_pressed)
+        else:
+            if self.toggle_attr is not None:
+                setattr(self.object, self.toggle_attr, False)
+                self.context.signal(self.toggle_attr, False, self.object)
+            self._restore_button_aspect(self, self.state_unpressed)
+
+    def _restore_button_aspect(self, key):
+        """
+        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
+        we restore the given aspect.
+
+        @param key:
+        @return:
+        """
+        if not hasattr(self, "alternatives"):
+            return
+        try:
+            alt = self.alternatives[key]
+        except KeyError:
+            return
+        self.action = alt.get("action", self.action)
+        self.action_right = alt.get("action_right", self.action_right)
+        self.label = alt.get("label", self.label)
+
+        helps = alt.get("help_string", "")
+        if helps == "":
+            helps = alt.get("tip", self.help_string)
+        self.help_string = helps
+        self.bitmap_large = alt.get("bitmap_large", self.bitmap_large)
+        self.bitmap_large_disabled = alt.get(
+            "bitmap_large_disabled", self.bitmap_large_disabled
+        )
+        self.bitmap_small = alt.get("bitmap_small", self.bitmap_small)
+        self.bitmap_small_disabled = alt.get(
+            "bitmap_small_disabled", self.bitmap_small_disabled
+        )
+        self.client_data = alt.get("client_data", self.client_data)
+        # base_button.id = alt.get("id", base_button.id)
+        # base_button.kind = alt.get("kind", base_button.kind)
+        # base_button.state = alt.get("state", base_button.state)
+        self.key = key
+
+    def _store_button_aspect(self, key, **kwargs):
+        """
+        Stores visual aspects of the buttons within the "alternatives" dictionary.
+
+        This stores the various icons, labels, help, and other properties found on the base_button.
+
+        @param key: aspects to store.
+        @param kwargs:
+        @return:
+        """
+        if not hasattr(self, "alternatives"):
+            self.alternatives = {}
+        self.alternatives[key] = {
+            "action": self.action,
+            "action_right": self.action_right,
+            "label": self.label,
+            "help_string": self.help_string,
+            "bitmap_large": self.bitmap_large,
+            "bitmap_large_disabled": self.bitmap_large_disabled,
+            "bitmap_small": self.bitmap_small,
+            "bitmap_small_disabled": self.bitmap_small_disabled,
+            "client_data": self.client_data,
+            # "id": base_button.id,
+            # "kind": base_button.kind,
+            # "state": base_button.state,
+        }
+        key_dict = self.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
+    def _update_button_aspect(self, key, **kwargs):
+        """
+        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
+
+        @param self:
+        @param key:
+        @param kwargs:
+        @return:
+        """
+        if not hasattr(self, "alternatives"):
+            self.alternatives = {}
+        key_dict = self.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
+    def set_button_toggle(self, toggle_state):
+        self.toggle = toggle_state
+        if toggle_state:
+            self._restore_button_aspect(self.state_pressed)
+        else:
+            self._restore_button_aspect(self.state_unpressed)
+
 
 class RibbonPanel:
-    def __init__(self, parent, id, label, icon):
+    def __init__(self, context, parent, id, label, icon):
+        self.context = context
         self.parent = parent
         self.id = id
         self.label = label
         self.icon = icon
+
+        self._registered_signals = list()
+        self.button_lookup = {}
+        self.group_lookup = {}
+
         self.buttons = []
         self.position = None
 
@@ -153,9 +344,277 @@ class RibbonPanel:
         self.buttons.clear()
         self.parent.modified()
 
+    def add_button(
+        self,
+        button_id,
+        kind="normal",
+        description=None,
+    ):
+        button = Button(self.context, self, button_id, kind, description=description)
+        self.buttons.append(button)
+        return button
+
+    def add_hybrid_button(self, **kwargs):
+        return self.add_button(**kwargs, kind="hybrid")
+
+    def set_buttons(self, new_values):
+        """
+        Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
+
+        * The button definition is a dynamically created and stored dictionary.
+        * Buttons are sorted by priority.
+        * Multi buttons get a hybrid type.
+        * Toggle buttons get a toggle type (Unless they are also multi).
+        * Created button objects have attributes assigned to them.
+            * toggle, parent, group, identifier, toggle_identifier, action, right, rule_enabled
+        * Multi-buttons have an identifier attr which is applied to the root context, or given "object".
+        * The identifier is used to set the state of the object, the attr-identifier is set to the value-identifier
+        * Toggle buttons have a toggle_identifier, this is used to set the and retrieve the state of the toggle.
+
+
+        @param new_values: dictionary of button values to use.
+        @return:
+        """
+        self._current_layout = 0
+        self._hovered_button = None
+        self._active_button = None
+        self.clear_buttons()
+        button_descriptions = []
+        for desc, name, sname in new_values:
+            button_descriptions.append(desc)
+
+        # Sort buttons by priority
+        def sort_priority(elem):
+            return elem.get("priority", 0)
+
+        button_descriptions.sort(key=sort_priority)
+
+        for desc in button_descriptions:
+            # Every registered button in the updated lookup gets created.
+            group = desc.get("group")
+            resize_param = desc.get("size")
+            b = self._create_button(desc)
+
+            if "multi" in desc:
+                self._setup_multi_button(desc, b)
+            if "toggle" in desc:
+                self._setup_toggle_button(desc, b)
+
+            # Store newly created button in the various lookups
+            new_id = b.id
+            self.button_lookup[new_id] = b
+            if group is not None:
+                c_group = self.group_lookup.get(group)
+                if c_group is None:
+                    c_group = []
+                    self.group_lookup[group] = c_group
+                c_group.append(b)
+
+
+    def _create_button(self, button):
+        """
+        Creates a button and places it on the button_bar depending on the required definition.
+
+        @param self:
+        @param button:
+        @return:
+        """
+        resize_param = button.get("size")
+        show_tip = not self.context.disable_tool_tips
+        # NewIdRef is only available after 4.1
+        try:
+            new_id = wx.NewIdRef()
+        except AttributeError:
+            new_id = wx.NewId()
+
+        # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
+        if "multi" in button:
+            # Button is a multi-type button
+            b = self.add_hybrid_button(
+                button_id=new_id,
+                description=button,
+            )
+        else:
+            if "group" in button or "toggle" in button:
+                bkind = "toggle"
+            else:
+                bkind = "normal"
+            helps = ""
+            if show_tip:
+                if helps == "" and "help_string" in button:
+                    helps = button["help_string"]
+                if helps == "" and "tip" in button:
+                    helps = button["tip"]
+            b = self.add_button(
+                button_id=new_id,
+                kind=bkind,
+                description=button,
+            )
+
+        return b
+
+    def _setup_multi_button(self, button, b):
+        """
+        Store alternative aspects for multi-buttons, load stored previous state.
+
+        @param button:
+        @param b:
+        @return:
+        """
+        resize_param = button.get("size")
+        multi_aspects = button["multi"]
+        # This is the key used for the multi button.
+        multi_ident = button.get("identifier")
+        b.save_id = multi_ident
+        try:
+            b.object.setting(str, b.save_id, "default")
+        except AttributeError:
+            # This is not a context, we tried.
+            pass
+        initial_value = getattr(b.object, b.save_id, "default")
+
+        for i, v in enumerate(multi_aspects):
+            # These are values for the outer identifier
+            key = v.get("identifier", i)
+            b._store_button_aspect(key)
+            b._update_button_aspect(key, **v)
+            if "icon" in v:
+                v_icon = v.get("icon")
+                b._update_button_aspect(
+                    key,
+                    bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                    bitmap_large_disabled=v_icon.GetBitmap(
+                        resize=resize_param, color=Color("grey")
+                    ),
+                )
+                if resize_param is None:
+                    siz = v_icon.GetBitmap().GetSize()
+                    small_resize = 0.5 * siz[0]
+                else:
+                    small_resize = 0.5 * resize_param
+                b._update_button_aspect(
+                    key,
+                    bitmap_small=v_icon.GetBitmap(resize=small_resize),
+                    bitmap_small_disabled=v_icon.GetBitmap(
+                        resize=small_resize, color=Color("grey")
+                    ),
+                )
+            if "signal" in v:
+                self._create_signal_for_multi(b, key, v["signal"])
+
+            if key == initial_value:
+                self._restore_button_aspect(b, key)
+
+    def _create_signal_for_multi(self, button, key, signal):
+        """
+        Creates a signal to restore the state of a multi button.
+
+        @param button:
+        @param key:
+        @param signal:
+        @return:
+        """
+
+        def make_multi_click(_tb, _key):
+            def multi_click(origin, set_value):
+                self._restore_button_aspect(_tb, _key)
+
+            return multi_click
+
+        signal_multi_listener = make_multi_click(button, key)
+        self.context.listen(signal, signal_multi_listener)
+        self._registered_signals.append((signal, signal_multi_listener))
+
+    def _setup_toggle_button(self, button, b):
+        """
+        Store toggle and original aspects for toggle-buttons
+
+        @param button:
+        @param b:
+        @return:
+        """
+        resize_param = button.get("size")
+
+        b.state_pressed = "toggle"
+        b.state_unpressed = "original"
+
+        self._store_button_aspect(b, "original")
+
+        toggle_action = button["toggle"]
+        key = toggle_action.get("identifier", "toggle")
+        if "signal" in toggle_action:
+            self._create_signal_for_toggle(b, toggle_action["signal"])
+
+        self._store_button_aspect(b, key, **toggle_action)
+        if "icon" in toggle_action:
+            toggle_icon = toggle_action.get("icon")
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
+                bitmap_large_disabled=toggle_icon.GetBitmap(
+                    resize=resize_param, color=Color("grey")
+                ),
+            )
+            if resize_param is None:
+                siz = toggle_icon.GetBitmap().GetSize()
+                small_resize = 0.5 * siz[0]
+            else:
+                small_resize = 0.5 * resize_param
+            self._update_button_aspect(
+                b,
+                key,
+                bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
+                bitmap_small_disabled=toggle_icon.GetBitmap(
+                    resize=small_resize, color=Color("grey")
+                ),
+            )
+        # Set initial value by identifer and object
+        if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
+            b.set_button_toggle(True)
+            self.Refresh()
+
+    def _create_signal_for_toggle(self, button, signal):
+        """
+        Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
+
+        E.G. If a toggle has a signal called "tracing" and the context.signal("tracing", True) is called this will
+        automatically set the toggle state.
+
+        Note: It will not call any of the associated actions, it will simply set the toggle state.
+
+        @param button:
+        @param signal:
+        @return:
+        """
+
+        def make_toggle_click(_tb):
+            def toggle_click(origin, set_value, *args):
+                _tb.set_button_toggle(set_value)
+
+            return toggle_click
+
+        signal_toggle_listener = make_toggle_click(button)
+        self.context.listen(signal, signal_toggle_listener)
+        self._registered_signals.append((signal, signal_toggle_listener))
+
+    def apply_enable_rules(self):
+        for k in self.button_lookup:
+            v = self.button_lookup[k]
+            try:
+                enable_it = v.enable_rule(0)
+            except:
+                enable_it = True
+            # The button might no longer around, so catch the error...
+            try:
+                v.parent.EnableButton(v.id, enable_it)
+            except:
+                pass
+
 
 class RibbonPage:
-    def __init__(self, parent, id, label, icon):
+    def __init__(self, context, parent, id, label, icon):
+        self.context = context
         self.parent = parent
         self.id = id
         self.label = label
@@ -192,11 +651,6 @@ class RibbonBarPanel(wx.Panel):
         self.context = context
         self.stored_labels = {}
         self.stored_height = 0
-
-        self.button_lookup = {}
-        self.group_lookup = {}
-
-        self._registered_signals = list()
 
         # Define Ribbon.
         self.__set_ribbonbar()
@@ -241,45 +695,6 @@ class RibbonBarPanel(wx.Panel):
 
     def on_size(self, event):
         self.Refresh(True)
-
-    def AddButton(
-        self,
-        panel,
-        button_id,
-        label,
-        bitmap=None,
-        bitmap_disabled=None,
-        help_string=None,
-        kind="normal",
-    ):
-        button = Button(button_id, label, bitmap, bitmap_disabled, help_string, kind)
-        self.buttons.append(button)
-        panel.buttons.append(button)
-        return button
-
-    def AddHybridButton(
-        self,
-        panel,
-        button_id,
-        label,
-        bitmap=None,
-        bitmap_disabled=None,
-        help_string=None,
-    ):
-        button = Button(
-            button_id, label, bitmap, bitmap_disabled, help_string, "hybrid"
-        )
-        self.buttons.append(button)
-        panel.buttons.append(button)
-        return button
-
-    def set_button_toggle(self, button, toggle_state):
-        button.toggle = toggle_state
-        if toggle_state:
-            self._restore_button_aspect(b, b.state_pressed)
-        else:
-            self._restore_button_aspect(b, b.state_unpressed)
-
 
     def layout(self):
         w, h = self.Size
@@ -371,7 +786,6 @@ class RibbonBarPanel(wx.Panel):
                         return button
         return None
 
-
     def button_click_right(self, event):
         """
         Handles the ``wx.EVT_RIGHT_DOWN`` event
@@ -387,67 +801,8 @@ class RibbonBarPanel(wx.Panel):
     def button_click(self, event):
         pos = event.Position
         button = self._button_at_position(pos)
-        self._button_click(button)
+        button.click()
 
-    def _button_click(self, button, event=None):
-        """
-        Process button click of button at provided button_id
-
-        @param evt_id:
-        @param event:
-        @return:
-        """
-        # button = self.button_lookup.get(evt_id)
-        # if button is None:
-        #     return
-
-        if button.group:
-            # Toggle radio buttons
-            button.toggle = not button.toggle
-            if button.toggle:  # got toggled
-                button_group = self.group_lookup.get(button.group, [])
-
-                for obutton in button_group:
-                    # Untoggle all other buttons in this group.
-                    if obutton.group == button.group and obutton.id != button.id:
-                        self.set_button_toggle(obutton, False)
-            else:  # got untoggled...
-                # so let's activate the first button of the group (implicitly defined as default...)
-                button_group = self.group_lookup.get(button.group)
-                if button_group:
-                    first_button = button_group[0]
-                    self.set_button_toggle(first_button, True)
-
-                    # Clone event and recurse.
-                    if event and first_button.id != evt_id:
-                        _event = event.Clone()
-                        _event.SetId(first_button.id)
-                        if first_button.id == evt_id:
-                            # Can't recurse.
-                            return
-                        self.button_click(_event)
-                        self._button_click_id(first_button.id, _event)
-                        return
-        if button.action is not None:
-            # We have an action to call.
-            button.action(event)
-
-        if button.state_pressed is None:
-            # If there's a pressed state we should change the button state
-            return
-
-        button.toggle = not button.toggle
-        if button.toggle:
-            if button.toggle_attr is not None:
-                setattr(button.object, button.toggle_attr, True)
-                self.context.signal(button.toggle_attr, True, button.object)
-            self._restore_button_aspect(button, button.state_pressed)
-        else:
-            if button.toggle_attr is not None:
-                setattr(button.object, button.toggle_attr, False)
-                self.context.signal(button.toggle_attr, False, button.object)
-            self._restore_button_aspect(button, button.state_unpressed)
-        self.ensure_realize()
 
     def drop_click(self, event):
         """
@@ -495,432 +850,61 @@ class RibbonBarPanel(wx.Panel):
 
         return menu_item_click
 
-    def _restore_button_aspect(self, base_button, key):
-        """
-        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
-        we restore the given aspect.
-
-        @param base_button:
-        @param key:
-        @return:
-        """
-        if not hasattr(base_button, "alternatives"):
-            return
-        try:
-            alt = base_button.alternatives[key]
-        except KeyError:
-            return
-        base_button.action = alt.get("action", base_button.action)
-        base_button.action_right = alt.get("action_right", base_button.action_right)
-        base_button.label = alt.get("label", base_button.label)
-
-        helps = alt.get("help_string", "")
-        if helps == "":
-            helps = alt.get("tip", base_button.help_string)
-        base_button.help_string = helps
-        base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
-        base_button.bitmap_large_disabled = alt.get(
-            "bitmap_large_disabled", base_button.bitmap_large_disabled
-        )
-        base_button.bitmap_small = alt.get("bitmap_small", base_button.bitmap_small)
-        base_button.bitmap_small_disabled = alt.get(
-            "bitmap_small_disabled", base_button.bitmap_small_disabled
-        )
-        base_button.client_data = alt.get("client_data", base_button.client_data)
-        # base_button.id = alt.get("id", base_button.id)
-        # base_button.kind = alt.get("kind", base_button.kind)
-        # base_button.state = alt.get("state", base_button.state)
-        base_button.key = key
-
-    def _store_button_aspect(self, base_button, key, **kwargs):
-        """
-        Stores visual aspects of the buttons within the "alternatives" dictionary.
-
-        This stores the various icons, labels, help, and other properties found on the base_button.
-
-        @param base_button: button with these askpects
-        @param key: aspects to store.
-        @param kwargs:
-        @return:
-        """
-        if not hasattr(base_button, "alternatives"):
-            base_button.alternatives = {}
-        base_button.alternatives[key] = {
-            "action": base_button.action,
-            "action_right": base_button.action_right,
-            "label": base_button.label,
-            "help_string": base_button.help_string,
-            "bitmap_large": base_button.bitmap_large,
-            "bitmap_large_disabled": base_button.bitmap_large_disabled,
-            "bitmap_small": base_button.bitmap_small,
-            "bitmap_small_disabled": base_button.bitmap_small_disabled,
-            "client_data": base_button.client_data,
-            # "id": base_button.id,
-            # "kind": base_button.kind,
-            # "state": base_button.state,
-        }
-        key_dict = base_button.alternatives[key]
-        for k in kwargs:
-            if kwargs[k] is not None:
-                key_dict[k] = kwargs[k]
-
-    def _update_button_aspect(self, base_button, key, **kwargs):
-        """
-        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
-
-        @param base_button:
-        @param key:
-        @param kwargs:
-        @return:
-        """
-        if not hasattr(base_button, "alternatives"):
-            base_button.alternatives = {}
-        key_dict = base_button.alternatives[key]
-        for k in kwargs:
-            if kwargs[k] is not None:
-                key_dict[k] = kwargs[k]
-
-    def _create_button(self, button_bar, button):
-        """
-        Creates a button and places it on the button_bar depending on the required definition.
-
-        @param button_bar:
-        @param button:
-        @return:
-        """
-        resize_param = button.get("size")
-        show_tip = not self.context.disable_tool_tips
-        # NewIdRef is only available after 4.1
-        try:
-            new_id = wx.NewIdRef()
-        except AttributeError:
-            new_id = wx.NewId()
-
-        # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
-        if "multi" in button:
-            # Button is a multi-type button
-            b = self.AddHybridButton(
-                panel=button_bar,
-                button_id=new_id,
-                label=button["label"],
-                bitmap=button["icon"].GetBitmap(resize=resize_param),
-                help_string=button["tip"] if show_tip else "",
-            )
-            # button_bar.Bind(
-            #     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-            #     self.drop_click,
-            #     id=new_id,
-            # )
-        else:
-            if "group" in button or "toggle" in button:
-                bkind = "toggle"
-            else:
-                bkind = "normal"
-            helps = ""
-            if show_tip:
-                if helps == "" and "help_string" in button:
-                    helps = button["help_string"]
-                if helps == "" and "tip" in button:
-                    helps = button["tip"]
-            b = self.AddButton(
-                panel=button_bar,
-                button_id=new_id,
-                label=button["label"],
-                bitmap=button["icon"].GetBitmap(resize=resize_param),
-                bitmap_disabled=button["icon"].GetBitmap(
-                    resize=resize_param, color=Color("grey")
-                ),
-                help_string=helps,
-                kind=bkind,
-            )
-
-        return b
-
-    def _setup_multi_button(self, button, b):
-        """
-        Store alternative aspects for multi-buttons, load stored previous state.
-
-        @param button:
-        @param b:
-        @return:
-        """
-        resize_param = button.get("size")
-        multi_aspects = button["multi"]
-        # This is the key used for the multi button.
-        multi_ident = button.get("identifier")
-        b.save_id = multi_ident
-        try:
-            b.object.setting(str, b.save_id, "default")
-        except AttributeError:
-            # This is not a context, we tried.
-            pass
-        initial_value = getattr(b.object, b.save_id, "default")
-
-        for i, v in enumerate(multi_aspects):
-            # These are values for the outer identifier
-            key = v.get("identifier", i)
-            self._store_button_aspect(b, key)
-            self._update_button_aspect(b, key, **v)
-            if "icon" in v:
-                v_icon = v.get("icon")
-                self._update_button_aspect(
-                    b,
-                    key,
-                    bitmap_large=v_icon.GetBitmap(resize=resize_param),
-                    bitmap_large_disabled=v_icon.GetBitmap(
-                        resize=resize_param, color=Color("grey")
-                    ),
-                )
-                if resize_param is None:
-                    siz = v_icon.GetBitmap().GetSize()
-                    small_resize = 0.5 * siz[0]
-                else:
-                    small_resize = 0.5 * resize_param
-                self._update_button_aspect(
-                    b,
-                    key,
-                    bitmap_small=v_icon.GetBitmap(resize=small_resize),
-                    bitmap_small_disabled=v_icon.GetBitmap(
-                        resize=small_resize, color=Color("grey")
-                    ),
-                )
-            if "signal" in v:
-                self._create_signal_for_multi(b, key, v["signal"])
-
-            if key == initial_value:
-                self._restore_button_aspect(b, key)
-
-    def _create_signal_for_multi(self, button, key, signal):
-        """
-        Creates a signal to restore the state of a multi button.
-
-        @param button:
-        @param key:
-        @param signal:
-        @return:
-        """
-
-        def make_multi_click(_tb, _key):
-            def multi_click(origin, set_value):
-                self._restore_button_aspect(_tb, _key)
-
-            return multi_click
-
-        signal_multi_listener = make_multi_click(button, key)
-        self.context.listen(signal, signal_multi_listener)
-        self._registered_signals.append((signal, signal_multi_listener))
-
-    def _setup_toggle_button(self, button, b):
-        """
-        Store toggle and original aspects for toggle-buttons
-
-        @param button:
-        @param b:
-        @return:
-        """
-        resize_param = button.get("size")
-
-        b.state_pressed = "toggle"
-        b.state_unpressed = "original"
-
-        self._store_button_aspect(b, "original")
-
-        toggle_action = button["toggle"]
-        key = toggle_action.get("identifier", "toggle")
-        if "signal" in toggle_action:
-            self._create_signal_for_toggle(b, toggle_action["signal"])
-
-        self._store_button_aspect(b, key, **toggle_action)
-        if "icon" in toggle_action:
-            toggle_icon = toggle_action.get("icon")
-            self._update_button_aspect(
-                b,
-                key,
-                bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
-                bitmap_large_disabled=toggle_icon.GetBitmap(
-                    resize=resize_param, color=Color("grey")
-                ),
-            )
-            if resize_param is None:
-                siz = toggle_icon.GetBitmap().GetSize()
-                small_resize = 0.5 * siz[0]
-            else:
-                small_resize = 0.5 * resize_param
-            self._update_button_aspect(
-                b,
-                key,
-                bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
-                bitmap_small_disabled=toggle_icon.GetBitmap(
-                    resize=small_resize, color=Color("grey")
-                ),
-            )
-        # Set initial value by identifer and object
-        if b.toggle_attr is not None and getattr(b.object, b.toggle_attr, False):
-            self.set_button_toggle(b, True)
-            self.Refresh()
-
-    def _create_signal_for_toggle(self, button, signal):
-        """
-        Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
-
-        E.G. If a toggle has a signal called "tracing" and the context.signal("tracing", True) is called this will
-        automatically set the toggle state.
-
-        Note: It will not call any of the associated actions, it will simply set the toggle state.
-
-        @param button:
-        @param signal:
-        @return:
-        """
-
-        def make_toggle_click(_tb):
-            def toggle_click(origin, set_value, *args):
-                self.set_button_toggle(_tb, set_value)
-
-            return toggle_click
-
-        signal_toggle_listener = make_toggle_click(button)
-        self.context.listen(signal, signal_toggle_listener)
-        self._registered_signals.append((signal, signal_toggle_listener))
-
-    def set_buttons(self, new_values, button_panel):
-        """
-        Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
-
-        * The button definition is a dynamically created and stored dictionary.
-        * Buttons are sorted by priority.
-        * Multi buttons get a hybrid type.
-        * Toggle buttons get a toggle type (Unless they are also multi).
-        * Created button objects have attributes assigned to them.
-            * toggle, parent, group, identifier, toggle_identifier, action, right, rule_enabled
-        * Multi-buttons have an identifier attr which is applied to the root context, or given "object".
-        * The identifier is used to set the state of the object, the attr-identifier is set to the value-identifier
-        * Toggle buttons have a toggle_identifier, this is used to set the and retrieve the state of the toggle.
-
-
-        @param new_values: dictionary of button values to use.
-        @param button_panel: specific button bar these buttons are applied to.
-        @return:
-        """
-        button_panel._current_layout = 0
-        button_panel._hovered_button = None
-        button_panel._active_button = None
-        button_panel.clear_buttons()
-        buttons = []
-        for button, name, sname in new_values:
-            buttons.append(button)
-
-        # Sort buttons by priority
-        def sort_priority(elem):
-            return elem.get("priority", 0)
-
-        buttons.sort(key=sort_priority)
-
-        for button in buttons:
-            # Every registered button in the updated lookup gets created.
-            group = button.get("group")
-            resize_param = button.get("size")
-            b = self._create_button(button_panel, button)
-
-            # Store all relevant aspects for newly registered button.
-            b.button_dict = button
-            b.state_pressed = None
-            b.state_unpressed = None
-            b.toggle = False
-            b.parent = button_panel
-            b.group = group
-            b.toggle_attr = button.get("toggle_attr")
-            b.identifier = button.get("identifier")
-            b.action = button.get("action")
-            b.action_right = button.get("right")
-            b.enable_rule = button.get("rule_enabled", lambda cond: True)
-            b.object = button.get("object", self.context)
-            if "multi" in button:
-                self._setup_multi_button(button, b)
-            if "toggle" in button:
-                self._setup_toggle_button(button, b)
-
-            # Store newly created button in the various lookups
-            new_id = b.id
-            self.button_lookup[new_id] = b
-            if group is not None:
-                c_group = self.group_lookup.get(group)
-                if c_group is None:
-                    c_group = []
-                    self.group_lookup[group] = c_group
-                c_group.append(b)
-
-        self.ensure_realize()
-
-    def apply_enable_rules(self):
-        for k in self.button_lookup:
-            v = self.button_lookup[k]
-            try:
-                enable_it = v.enable_rule(0)
-            except:
-                enable_it = True
-            # The button might no longer around, so catch the error...
-            try:
-                v.parent.EnableButton(v.id, enable_it)
-            except:
-                pass
-
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["edit"])
+        self.map["design"].map["edit"].set_buttons(new_values)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["project"])
+        self.map["design"].map["project"].set_buttons(new_values)
 
     @lookup_listener("button/control")
     def set_control_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["home"].map["control"])
+        self.map["home"].map["control"].set_buttons(new_values)
 
     @lookup_listener("button/config")
     def set_config_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["config"].map["config"])
+        self.map["config"].map["config"].set_buttons(new_values)
 
     @lookup_listener("button/modify")
     def set_modify_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["modify"].map["modify"])
+        self.map["modify"].map["modify"].set_buttons(new_values)
 
     @lookup_listener("button/tool")
     def set_tool_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["tool"])
+        self.map["design"].map["tool"].set_buttons(new_values)
 
     @lookup_listener("button/extended_tools")
     def set_tool_extended_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["extended"])
+        self.map["design"].map["extended"].set_buttons(new_values)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["modify"].map["geometry"])
+        self.map["modify"].map["geometry"].set_buttons(new_values)
 
     @lookup_listener("button/preparation")
     def set_preparation_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["home"].map["prep"])
+        self.map["home"].map["prep"].set_buttons(new_values)
 
     @lookup_listener("button/jobstart")
     def set_jobstart_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["home"].map["job"])
+        self.map["home"].map["job"].set_buttons(new_values)
 
     @lookup_listener("button/group")
     def set_group_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["group"])
+        self.map["design"].map["group"].set_buttons(new_values)
 
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["home"].map["device"])
-        # self.set_buttons(new_values, self.device_copy_panel)
+        self.map["home"].map["device"].set_buttons(new_values)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["modify"].map["align"])
+        self.map["modify"].map["align"].set_buttons(new_values)
 
     @lookup_listener("button/properties")
     def set_property_buttons(self, new_values, old_values):
-        self.set_buttons(new_values, self.map["design"].map["properties"])
+        self.map["design"].map["properties"].set_buttons(new_values)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -950,9 +934,12 @@ class RibbonBarPanel(wx.Panel):
             group = newtool
             identifier = ""
 
-        button_group = self.group_lookup.get(group, [])
-        for button in button_group:
-            self.set_button_toggle(button, button.identifier == identifier)
+        for page in self.pages:
+            for panel in page.panels:
+                for button in panel.buttons:
+                    if button.group != group:
+                        continue
+                    button.set_button_toggle(button.identifier == identifier)
         self.apply_enable_rules()
 
     @property
@@ -962,6 +949,11 @@ class RibbonBarPanel(wx.Panel):
         # so lets tick with 'old way', although this one is fishy...
         result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         return result
+
+    def apply_enable_rules(self):
+        for page in self.pages:
+            for panel in page.panels:
+                panel.apply_enable_rules()
 
     def ensure_realize(self):
         self._ribbon_dirty = True
@@ -974,6 +966,7 @@ class RibbonBarPanel(wx.Panel):
 
     def add_page(self, ref, id, label, icon):
         page = RibbonPage(
+            self.context,
             self,
             id,
             label,
@@ -985,6 +978,7 @@ class RibbonBarPanel(wx.Panel):
 
     def add_panel(self, ref, parent, id, label, icon):
         panel = RibbonPanel(
+            self.context,
             parent=parent,
             id=id,
             label=label,
@@ -1072,13 +1066,6 @@ class RibbonBarPanel(wx.Panel):
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
-        # self.add_panel("device_copy",
-        #     parent=self.map["config"],
-        #     id=wx.ID_ANY,
-        #     label="" if self.is_dark else _("Device"),
-        #     icon=icons8_opened_folder_50.GetBitmap(),
-        # )
-
         self.add_panel(
             "project",
             parent=self.map["design"],
@@ -1156,8 +1143,10 @@ class RibbonBarPanel(wx.Panel):
         pass
 
     def pane_hide(self):
-        for key, listener in self._registered_signals:
-            self.context.unlisten(key, listener)
+        for page in self.pages:
+            for panel in page.panels:
+                for key, listener in self._registered_signals:
+                    self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):
     #     page = event.GetPage()
