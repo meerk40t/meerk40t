@@ -734,16 +734,18 @@ class RibbonBarPanel(wx.Panel):
             if n != self.current_page:
                 continue
             for panel in page.panels:
-                dc.SetBrush(wx.GREY_BRUSH)
                 for button in panel.buttons:
                     bitmap = button.bitmap_large
                     bitmap_small = button.bitmap_small
-
                     if button.state == "disabled":
                         bitmap = button.bitmap_large_disabled
                         bitmap_small = button.bitmap_small_disabled
 
-                    # dc.DrawRectangle(button.position)
+                    if button.toggle:
+                        dc.SetBrush(wx.GREY_BRUSH)
+                    else:
+                        dc.SetBrush(wx.WHITE_BRUSH)
+                    dc.DrawRectangle(button.position)
                     dc.DrawBitmap(bitmap, button.position[0], button.position[1])
 
     def on_paint(self, event):
@@ -793,6 +795,8 @@ class RibbonBarPanel(wx.Panel):
         """
         pos = event.Position
         button = self._button_at_position(pos)
+        if button is None:
+            return
         if button is not None:
             action = button.action_right
             if action:
@@ -801,7 +805,10 @@ class RibbonBarPanel(wx.Panel):
     def button_click(self, event):
         pos = event.Position
         button = self._button_at_position(pos)
+        if button is None:
+            return
         button.click()
+        self.Refresh()
 
 
     def drop_click(self, event):
