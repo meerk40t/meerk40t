@@ -120,6 +120,15 @@ class DropDown:
     def __init__(self):
         self.position = None
 
+    def contains(self, pos):
+        if self.position is None:
+            return False
+        x, y = pos
+        return (
+            self.position[0] < x < self.position[2]
+            and self.position[1] < y < self.position[3]
+        )
+
 
 class Button:
     def __init__(self, context, parent, button_id, kind, description):
@@ -1072,14 +1081,14 @@ class RibbonBarPanel(wx.Control):
         button = self._button_at_position(pos)
         if button is None:
             return
-        cx = (button.position[0] + button.position[2]) / 2
-        cy = (button.position[1] + button.position[3]) / 2
-        print(f"{pos}, {cx}, {cy}")
-        if button.kind == "hybrid" and pos[1] > cy and pos[0] > cx:
-            button.drop_click()
-        else:
-            button.click()
+        if button.drop_down is not None:
+            if button.drop_down.contains(pos):
+                button.drop_click()
+                self.Refresh()
+                return
+        button.click()
         self.Refresh()
+
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
