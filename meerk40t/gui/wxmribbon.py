@@ -849,14 +849,15 @@ class RibbonBarPanel(wx.Control):
         horizontal = True
         tab_width = 70
         tab_height = 20
-        buffer = 7
-        button_buffer = 3
-        max_x = 0
-        max_y = 0
+        edge_page_buffer = 7
+        page_panel_buffer = 7
+        panel_button_buffer = 7
+        bitmap_text_buffer = 7
+        between_button_buffer = 9
         overflow_width = 20
         window_width, window_height = self.Size
 
-        over_width = 0
+        real_width_of_overflow = 0
         self._overflow.clear()
         self._overflow_position = None
         for pn, page in enumerate(self.pages):
@@ -872,37 +873,37 @@ class RibbonBarPanel(wx.Control):
 
             # Set page position.
             page.position = [
-                buffer,
+                edge_page_buffer,
                 tab_height,
-                window_width - buffer,
-                window_height - buffer,
+                window_width - edge_page_buffer,
+                window_height - edge_page_buffer,
             ]
             # Positioning pane left..
-            x = buffer + buffer
+            x = edge_page_buffer + page_panel_buffer
 
             panel_max_width = 0
             panel_max_height = 0
             for panel in page.panels:
                 # Position for button top.
-                y = tab_height + buffer
+                y = tab_height + edge_page_buffer
                 panel_start_x, panel_start_y = x, y
 
                 # Position for button left.
-                x += buffer
+                x += panel_button_buffer
 
                 panel_height = 0
                 panel_width = 0
-                y += buffer
+                y += panel_button_buffer
                 for button in panel.buttons:
-                    x += buffer
-
+                    if panel_width:
+                        x += between_button_buffer
                     bitmap = button.bitmap_large
                     bitmap_width, bitmap_height = bitmap.Size
 
                     # Calculate text height/width
                     text_width = 0
                     text_height = 0
-                    for n, word in enumerate(button.label.split(" ")):
+                    for word in button.label.split(" "):
                         line_width, line_height = dc.GetTextExtent(word)
                         text_width = max(text_width, line_width)
                         text_height += line_height
@@ -915,24 +916,24 @@ class RibbonBarPanel(wx.Control):
                     # Calculate button_width/button_height
                     button_width = max(bitmap_width, text_width)
                     button_height = (
-                        bitmap_height + buffer + text_height + dropdown_height + buffer
+                        bitmap_height + bitmap_text_buffer + text_height + dropdown_height + panel_button_buffer
                     )
 
-                    # Calculate the max value for panel_width
+                    # Calculate the max value for pane size based on button position
                     panel_width = max(button_width, panel_width)
                     panel_height = max(button_height, panel_height)
 
                     # layout button_position
                     button.position = (
-                        x - button_buffer,
+                        x,
                         y,
-                        x + button_width + button_buffer,
+                        x + button_width,
                         y + button_height,
                     )
 
                     # Determine whether button is within overflow.
                     if button.position[2] > window_width - overflow_width:
-                        over_width = overflow_width
+                        real_width_of_overflow = overflow_width
                         button.overflow = True
                         self._overflow.append(button)
                     else:
@@ -942,40 +943,52 @@ class RibbonBarPanel(wx.Control):
                         # Calculate dropdown
                         button.dropdown.position = (
                             x - button_buffer,
-                            y + bitmap_height + buffer + text_height + buffer,
+                            y + button_height - dropdown_height,
                             x + button_width + button_buffer,
                             y + button_height,
                         )
-                    if horizontal:
-                        x += button_width
-                    else:
-                        y += button_height
+                    x += button_width
 
+                # Calculate the max value for panel_width
                 panel_max_width = max(panel_max_width, panel_width)
                 panel_max_height = max(panel_max_height, panel_height)
-                panel_end_x = min(x + buffer, window_width - buffer - buffer)
-                if panel_start_x > panel_end_x - over_width:
+
+                # Calculate end_x for the panel
+                panel_end_x = min(x + panel_button_buffer, window_width - page_panel_buffer - panel_button_buffer) - real_width_of_overflow
+
+
+                if panel_start_x > panel_end_x:
+                    # Panel is entirely subsumed.
                     panel.position = None
                 else:
                     panel.position = [
                         panel_start_x,
                         panel_start_y,
-                        panel_end_x - over_width,
-                        y + buffer,
+                        panel_end_x,
+                        y + panel_button_buffer,  # Value will be updated when max_y is known.
                     ]
-                x += buffer * 3
+                # Step along x value between panels.
+                x += between_button_buffer
+
+            # Solve page max_x and max_y values
+            max_x = 0
+            max_y = 0
             for panel in page.panels:
                 if panel.position:
                     panel.position[3] += panel_max_height
                     max_x = max(max_x, panel.position[2])
                     max_y = max(max_y, panel.position[3])
-            page.position[3] = max_y + buffer
+
+            # Update panels to give the correct y value, for the solved max_y
+            page.position[3] = max_y + edge_page_buffer
+
+            # Set position of the overflow.
             if self._overflow:
                 if panel.position:
                     panel.position[2] -= overflow_width
                 self._overflow_position = window_width - overflow_width, 0, window_width, max_y
         self._layout_dirty = False
-        self.SetMinSize((int(max_x + buffer), int(max_y + buffer)))
+        self.SetMinSize((int(max_x+ edge_page_buffer), int(max_y + edge_page_buffer)))
 
     def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
