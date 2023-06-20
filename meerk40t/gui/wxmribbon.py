@@ -478,28 +478,28 @@ class Button:
 
         self._store_button_aspect("original")
 
-        toggle_action = self.button_dict["toggle"]
-        key = toggle_action.get("identifier", "toggle")
-        if "signal" in toggle_action:
-            self._create_signal_for_toggle(self, toggle_action["signal"])
+        toggle_button_dict = self.button_dict.get("toggle")
 
-        self._store_button_aspect(key, **toggle_action)
-        if "icon" in toggle_action:
-            toggle_icon = toggle_action.get("icon")
+        key = toggle_button_dict.get("identifier", "toggle")
+        if "signal" in toggle_button_dict:
+            self._create_signal_for_toggle(toggle_button_dict.get("signal"))
+
+        self._store_button_aspect(key, **toggle_button_dict)
+
+        if "icon" in toggle_button_dict:
+            toggle_icon = toggle_button_dict.get("icon")
+            if resize_param is None:
+                siz = toggle_icon.GetBitmap().GetSize()
+                small_resize = 0.5 * siz[0]
+            else:
+                small_resize = 0.5 * resize_param
+
             self._update_button_aspect(
                 key,
                 bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
                 bitmap_large_disabled=toggle_icon.GetBitmap(
                     resize=resize_param, color=Color("grey")
                 ),
-            )
-            if resize_param is None:
-                siz = toggle_icon.GetBitmap().GetSize()
-                small_resize = 0.5 * siz[0]
-            else:
-                small_resize = 0.5 * resize_param
-            self._update_button_aspect(
-                key,
                 bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
                 bitmap_small_disabled=toggle_icon.GetBitmap(
                     resize=small_resize, color=Color("grey")
@@ -512,7 +512,7 @@ class Button:
             self.set_button_toggle(True)
             self.modified()
 
-    def _create_signal_for_toggle(self, button, signal):
+    def _create_signal_for_toggle(self, signal):
         """
         Creates a signal toggle which will listen for the given signal and set the toggle-state to the given set_value
 
@@ -521,20 +521,14 @@ class Button:
 
         Note: It will not call any of the associated actions, it will simply set the toggle state.
 
-        @param button:
         @param signal:
         @return:
         """
+        def toggle_click(origin, set_value, *args):
+            self.set_button_toggle(set_value)
 
-        def make_toggle_click(_tb):
-            def toggle_click(origin, set_value, *args):
-                _tb.set_button_toggle(set_value)
-
-            return toggle_click
-
-        signal_toggle_listener = make_toggle_click(button)
-        self.context.listen(signal, signal_toggle_listener)
-        self.parent._registered_signals.append((signal, signal_toggle_listener))
+        self.context.listen(signal, toggle_click)
+        self.parent._registered_signals.append((signal, toggle_click))
 
     def set_button_toggle(self, toggle_state):
         self.toggle = toggle_state
@@ -565,16 +559,6 @@ class RibbonPanel:
     def clear_buttons(self):
         self.buttons.clear()
         self.parent.modified()
-
-    def add_button(
-        self,
-        button_id,
-        kind="normal",
-        description=None,
-    ):
-        button = Button(self.context, self, button_id, kind, description=description)
-        self.buttons.append(button)
-        return button
 
     def set_buttons(self, new_values):
         """
@@ -631,7 +615,6 @@ class RibbonPanel:
         @param desc:
         @return:
         """
-        resize_param = desc.get("size")
         show_tip = not self.context.disable_tool_tips
         # NewIdRef is only available after 4.1
         try:
@@ -642,30 +625,16 @@ class RibbonPanel:
         # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
         if "multi" in desc:
             # Button is a multi-type button
-            b = self.add_button(
-                button_id=new_id,
-                kind="hybrid",
-                description=desc,
-            )
+            b = Button(self.context, self, button_id=new_id, kind="hybrid", description=desc)
+            self.buttons.append(b)
+            b._setup_multi_button()
         else:
+            bkind = "normal"
             if "group" in desc or "toggle" in desc:
                 bkind = "toggle"
-            else:
-                bkind = "normal"
-            helps = ""
-            if show_tip:
-                if helps == "" and "help_string" in desc:
-                    helps = desc["help_string"]
-                if helps == "" and "tip" in desc:
-                    helps = desc["tip"]
-            b = self.add_button(
-                button_id=new_id,
-                kind=bkind,
-                description=desc,
-            )
+            b = Button(self.context, self, button_id=new_id, kind=bkind, description=desc)
+            self.buttons.append(b)
 
-        if "multi" in desc:
-            b._setup_multi_button()
         if "toggle" in desc:
             b._setup_toggle_button()
         return b
