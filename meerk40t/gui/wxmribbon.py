@@ -849,11 +849,12 @@ class RibbonBarPanel(wx.Control):
         horizontal = True
         tab_width = 70
         tab_height = 20
-        edge_page_buffer = 7
+        edge_page_buffer = 3
         page_panel_buffer = 3
-        panel_button_buffer = 7
-        bitmap_text_buffer = 7
-        between_button_buffer = 9
+        panel_button_buffer = 3
+        bitmap_text_buffer = 10
+        between_button_buffer = 3
+        between_panel_buffer = 3
         overflow_width = 20
         window_width, window_height = self.Size
 
@@ -889,11 +890,11 @@ class RibbonBarPanel(wx.Control):
                 panel_start_x, panel_start_y = x, y
 
                 # Position for button left.
-                x += panel_button_buffer
-
                 panel_height = 0
                 panel_width = 0
                 y += panel_button_buffer
+
+                x += panel_button_buffer
                 for button in panel.buttons:
                     if panel_width:
                         x += between_button_buffer
@@ -942,19 +943,20 @@ class RibbonBarPanel(wx.Control):
                     if button.kind == "hybrid":
                         # Calculate dropdown
                         button.dropdown.position = (
-                            x - button_buffer,
+                            x,
                             y + button_height - dropdown_height,
-                            x + button_width + button_buffer,
+                            x + button_width,
                             y + button_height,
                         )
                     x += button_width
+                x += panel_button_buffer
 
                 # Calculate the max value for panel_width
                 panel_max_width = max(panel_max_width, panel_width)
                 panel_max_height = max(panel_max_height, panel_height)
 
                 # Calculate end_x for the panel
-                panel_end_x = min(x + panel_button_buffer, window_width - page_panel_buffer - panel_button_buffer) - real_width_of_overflow
+                panel_end_x = min(x, window_width - edge_page_buffer - page_panel_buffer)
 
 
                 if panel_start_x > panel_end_x:
@@ -968,7 +970,7 @@ class RibbonBarPanel(wx.Control):
                         y + panel_button_buffer,  # Value will be updated when max_y is known.
                     ]
                 # Step along x value between panels.
-                x += between_button_buffer
+                x += between_panel_buffer
 
             # Solve page max_x and max_y values
             max_x = 0
