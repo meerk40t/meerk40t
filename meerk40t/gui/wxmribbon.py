@@ -506,7 +506,9 @@ class Button:
                 ),
             )
         # Set initial value by identifer and object
-        if self.toggle_attr is not None and getattr(self.object, self.toggle_attr, False):
+        if self.toggle_attr is not None and getattr(
+            self.object, self.toggle_attr, False
+        ):
             self.set_button_toggle(True)
             self.modified()
 
@@ -574,9 +576,6 @@ class RibbonPanel:
         self.buttons.append(button)
         return button
 
-    def add_hybrid_button(self, **kwargs):
-        return self.add_button(**kwargs, kind="hybrid")
-
     def set_buttons(self, new_values):
         """
         Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
@@ -615,7 +614,6 @@ class RibbonPanel:
             resize_param = desc.get("size")
             b = self._create_button(desc)
 
-
             # Store newly created button in the various lookups
             new_id = b.id
             self.button_lookup[new_id] = b
@@ -644,8 +642,9 @@ class RibbonPanel:
         # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
         if "multi" in desc:
             # Button is a multi-type button
-            b = self.add_hybrid_button(
+            b = self.add_button(
                 button_id=new_id,
+                kind="hybrid",
                 description=desc,
             )
         else:
@@ -913,7 +912,11 @@ class RibbonBarPanel(wx.Control):
                     # Calculate button_width/button_height
                     button_width = max(bitmap_width, text_width)
                     button_height = (
-                        bitmap_height + bitmap_text_buffer + text_height + dropdown_height + panel_button_buffer
+                        bitmap_height
+                        + bitmap_text_buffer
+                        + text_height
+                        + dropdown_height
+                        + panel_button_buffer
                     )
 
                     # Calculate the max value for pane size based on button position
@@ -954,8 +957,9 @@ class RibbonBarPanel(wx.Control):
                 panel_max_height = max(panel_max_height, panel_height)
 
                 # Calculate end_x for the panel
-                panel_end_x = min(x, window_width - edge_page_buffer - page_panel_buffer)
-
+                panel_end_x = min(
+                    x, window_width - edge_page_buffer - page_panel_buffer
+                )
 
                 if panel_start_x > panel_end_x or button_count == 0:
                     # Panel is entirely subsumed.
@@ -965,7 +969,8 @@ class RibbonBarPanel(wx.Control):
                         panel_start_x,
                         panel_start_y,
                         panel_end_x,
-                        y + panel_button_buffer,  # Value will be updated when max_y is known.
+                        y
+                        + panel_button_buffer,  # Value will be updated when max_y is known.
                     ]
                 # Step along x value between panels.
                 x += between_panel_buffer
@@ -986,9 +991,14 @@ class RibbonBarPanel(wx.Control):
             if self._overflow:
                 if panel.position:
                     panel.position[2] -= overflow_width
-                self._overflow_position = window_width - overflow_width, 0, window_width, max_y
+                self._overflow_position = (
+                    window_width - overflow_width,
+                    0,
+                    window_width,
+                    max_y,
+                )
         self._layout_dirty = False
-        self.SetMinSize((int(max_x+ edge_page_buffer), int(max_y + edge_page_buffer)))
+        self.SetMinSize((int(max_x + edge_page_buffer), int(max_y + edge_page_buffer)))
 
     def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
