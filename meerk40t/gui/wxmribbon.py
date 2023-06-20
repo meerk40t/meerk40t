@@ -850,7 +850,7 @@ class RibbonBarPanel(wx.Control):
         tab_width = 70
         tab_height = 20
         edge_page_buffer = 7
-        page_panel_buffer = 7
+        page_panel_buffer = 3
         panel_button_buffer = 7
         bitmap_text_buffer = 7
         between_button_buffer = 9
@@ -885,7 +885,7 @@ class RibbonBarPanel(wx.Control):
             panel_max_height = 0
             for panel in page.panels:
                 # Position for button top.
-                y = tab_height + edge_page_buffer
+                y = tab_height + page_panel_buffer
                 panel_start_x, panel_start_y = x, y
 
                 # Position for button left.
@@ -980,7 +980,7 @@ class RibbonBarPanel(wx.Control):
                     max_y = max(max_y, panel.position[3])
 
             # Update panels to give the correct y value, for the solved max_y
-            page.position[3] = max_y + edge_page_buffer
+            page.position[3] = max_y + page_panel_buffer
 
             # Set position of the overflow.
             if self._overflow:
