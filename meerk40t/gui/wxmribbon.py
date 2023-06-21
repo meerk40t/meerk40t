@@ -192,10 +192,13 @@ class Button:
             small_resize = 0.5 * resize_param
 
         self.bitmap_large = icon.GetBitmap(resize=resize_param)
-        self.bitmap_large_disabled = icon.GetBitmap(resize=resize_param, color=Color("grey"))
+        self.bitmap_large_disabled = icon.GetBitmap(
+            resize=resize_param, color=Color("grey")
+        )
         self.bitmap_small = icon.GetBitmap(resize=small_resize)
-        self.bitmap_small_disabled = icon.GetBitmap(resize=small_resize, color=Color("grey")
-                                                    )
+        self.bitmap_small_disabled = icon.GetBitmap(
+            resize=small_resize, color=Color("grey")
+        )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
 
@@ -404,6 +407,7 @@ class Button:
         @param signal:
         @return:
         """
+
         def multi_click(origin, set_value):
             self._restore_button_aspect(key)
 
@@ -448,6 +452,7 @@ class Button:
         @param signal:
         @return:
         """
+
         def toggle_click(origin, set_value, *args):
             self.set_button_toggle(set_value)
 
@@ -544,14 +549,18 @@ class RibbonPanel:
         # Create kind of button. Multi buttons are hybrid. Else, regular button or toggle-type
         if "multi" in desc:
             # Button is a multi-type button
-            b = Button(self.context, self, button_id=new_id, kind="hybrid", description=desc)
+            b = Button(
+                self.context, self, button_id=new_id, kind="hybrid", description=desc
+            )
             self.buttons.append(b)
             b._setup_multi_button()
         else:
             bkind = "normal"
             if "group" in desc or "toggle" in desc:
                 bkind = "toggle"
-            b = Button(self.context, self, button_id=new_id, kind=bkind, description=desc)
+            b = Button(
+                self.context, self, button_id=new_id, kind=bkind, description=desc
+            )
             self.buttons.append(b)
 
         if "toggle" in desc:
@@ -752,9 +761,13 @@ class RibbonBarPanel(wx.Control):
         for pn, page in enumerate(self.pages):
             # Set tab positioning.
             page.tab_position = (
-                pn *  self.tab_tab_buffer + pn * self.tab_width + self.tab_initial_buffer,
+                pn * self.tab_tab_buffer
+                + pn * self.tab_width
+                + self.tab_initial_buffer,
                 0,
-                pn *  self.tab_tab_buffer  + (pn + 1) * self.tab_width + self.tab_initial_buffer,
+                pn * self.tab_tab_buffer
+                + (pn + 1) * self.tab_width
+                + self.tab_initial_buffer,
                 self.tab_height * 2,
             )
             if page is not self._current_page:
@@ -892,7 +905,9 @@ class RibbonBarPanel(wx.Control):
                     max_y,
                 )
         self._layout_dirty = False
-        self.SetMinSize((int(max_x + self.edge_page_buffer), int(max_y + self.edge_page_buffer)))
+        self.SetMinSize(
+            (int(max_x + self.edge_page_buffer), int(max_y + self.edge_page_buffer))
+        )
 
     def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
