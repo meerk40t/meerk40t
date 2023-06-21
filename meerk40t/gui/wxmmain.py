@@ -2239,6 +2239,7 @@ class MeerK40t(MWindow):
                 self.add_module_delegate(page)
         else:
             self.add_module_delegate(control)
+        paneinfo.manager = self._mgr
         self.on_pane_show(paneinfo)
 
     def on_pane_show(self, paneinfo: aui.AuiPaneInfo):

@@ -912,9 +912,9 @@ class RibbonBarPanel(wx.Control):
                     window_height - self.edge_page_buffer,
                 )
         self._layout_dirty = False
-        self.SetMinSize(
-            (int(max_x + self.edge_page_buffer), int(max_y + self.edge_page_buffer))
-        )
+        bar_size_width = int(max_x + self.edge_page_buffer)
+        bar_size_height = int(max_y + self.edge_page_buffer)
+        # self.pane.MinSize(bar_size_width, bar_size_height)
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         dc.SetPen(wx.BLACK_PEN)
