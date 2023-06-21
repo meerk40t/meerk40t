@@ -1097,11 +1097,10 @@ class RibbonBarPanel(wx.Control):
         menu = wx.Menu()
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
-            if isinstance(item, wx.MenuItem):
-                item.Enable(v.enabled)
-            icon = v.icon
-            if icon:
-                item.SetBitmap(icon.GetBitmap())
+            item.Enable(v.enabled)
+            item.SetHelp(v.tip)
+            if v.icon:
+                item.SetBitmap(v.icon.GetBitmap())
             self.Bind(wx.EVT_MENU, v.click, id=item.Id)
         self.PopupMenu(menu)
 
