@@ -502,9 +502,6 @@ class RibbonPanel:
         @param new_values: dictionary of button values to use.
         @return:
         """
-        self._current_layout = 0
-        self._hovered_button = None
-        self._active_button = None
         self.clear_buttons()
         button_descriptions = []
         for desc, name, sname in new_values:
@@ -619,6 +616,22 @@ class RibbonBarPanel(wx.Control):
         self._current_page = None
         self.pages = []
 
+        # Layout properties.
+        self.height_factor = 1
+        self.horizontal = True
+        self.tab_width = 70
+        self.tab_height = 20
+        self.tab_tab_buffer = 10
+        self.tab_initial_buffer = 30
+        self.edge_page_buffer = 3 * self.height_factor
+        self.page_panel_buffer = 3 * self.height_factor
+        self.panel_button_buffer = 3 * self.height_factor
+        self.bitmap_text_buffer = 10 * self.height_factor
+        self.between_button_buffer = 3
+        self.between_panel_buffer = 3
+        self.dropdown_height = 20
+        self.overflow_width = 20
+
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
         self.minmax = None
@@ -731,16 +744,6 @@ class RibbonBarPanel(wx.Control):
         self.Refresh(True)
 
     def layout(self, dc: wx.DC):
-        horizontal = True
-        tab_width = 70
-        tab_height = 20
-        edge_page_buffer = 3
-        page_panel_buffer = 3
-        panel_button_buffer = 3
-        bitmap_text_buffer = 10
-        between_button_buffer = 3
-        between_panel_buffer = 3
-        overflow_width = 20
         window_width, window_height = self.Size
 
         real_width_of_overflow = 0
@@ -749,41 +752,41 @@ class RibbonBarPanel(wx.Control):
         for pn, page in enumerate(self.pages):
             # Set tab positioning.
             page.tab_position = (
-                (pn + 0.5) * tab_width,
+                pn *  self.tab_tab_buffer + pn * self.tab_width + self.tab_initial_buffer,
                 0,
-                (pn + 1.5) * tab_width,
-                tab_height * 2,
+                pn *  self.tab_tab_buffer  + (pn + 1) * self.tab_width + self.tab_initial_buffer,
+                self.tab_height * 2,
             )
             if page is not self._current_page:
                 continue
 
             # Set page position.
             page.position = [
-                edge_page_buffer,
-                tab_height,
-                window_width - edge_page_buffer,
-                window_height - edge_page_buffer,
+                self.edge_page_buffer,
+                self.tab_height,
+                window_width - self.edge_page_buffer,
+                window_height - self.edge_page_buffer,
             ]
             # Positioning pane left..
-            x = edge_page_buffer + page_panel_buffer
+            x = self.edge_page_buffer + self.page_panel_buffer
 
             panel_max_width = 0
             panel_max_height = 0
             for panel in page.panels:
                 # Position for button top.
-                y = tab_height + page_panel_buffer
+                y = self.tab_height + self.page_panel_buffer
                 panel_start_x, panel_start_y = x, y
 
                 # Position for button left.
                 panel_height = 0
                 panel_width = 0
-                y += panel_button_buffer
+                y += self.panel_button_buffer
 
-                x += panel_button_buffer
+                x += self.panel_button_buffer
                 button_count = 0
                 for button in panel.buttons:
                     if panel_width:
-                        x += between_button_buffer
+                        x += self.between_button_buffer
                     bitmap = button.bitmap_large
                     bitmap_width, bitmap_height = bitmap.Size
 
@@ -798,16 +801,16 @@ class RibbonBarPanel(wx.Control):
                     # Calculate dropdown height
                     dropdown_height = 0
                     if button.kind == "hybrid":
-                        dropdown_height = 20
+                        dropdown_height = self.dropdown_height
 
                     # Calculate button_width/button_height
                     button_width = max(bitmap_width, text_width)
                     button_height = (
                         bitmap_height
-                        + bitmap_text_buffer
+                        + self.bitmap_text_buffer
                         + text_height
                         + dropdown_height
-                        + panel_button_buffer
+                        + self.panel_button_buffer
                     )
 
                     # Calculate the max value for pane size based on button position
@@ -823,8 +826,8 @@ class RibbonBarPanel(wx.Control):
                     )
 
                     # Determine whether button is within overflow.
-                    if button.position[2] > window_width - overflow_width:
-                        real_width_of_overflow = overflow_width
+                    if button.position[2] > window_width - self.overflow_width:
+                        real_width_of_overflow = self.overflow_width
                         button.overflow = True
                         self._overflow.append(button)
                     else:
@@ -841,7 +844,7 @@ class RibbonBarPanel(wx.Control):
                         )
                     x += button_width
                     panel_end_x = x
-                x += panel_button_buffer
+                x += self.panel_button_buffer
 
                 # Calculate the max value for panel_width
                 panel_max_width = max(panel_max_width, panel_width)
@@ -849,7 +852,7 @@ class RibbonBarPanel(wx.Control):
 
                 # Calculate end_x for the panel
                 panel_end_x = min(
-                    x, window_width - edge_page_buffer - page_panel_buffer
+                    x, window_width - self.edge_page_buffer - self.page_panel_buffer
                 )
 
                 if panel_start_x > panel_end_x or button_count == 0:
@@ -861,10 +864,10 @@ class RibbonBarPanel(wx.Control):
                         panel_start_y,
                         panel_end_x,
                         y
-                        + panel_button_buffer,  # Value will be updated when max_y is known.
+                        + self.panel_button_buffer,  # Value will be updated when max_y is known.
                     ]
                 # Step along x value between panels.
-                x += between_panel_buffer
+                x += self.between_panel_buffer
 
             # Solve page max_x and max_y values
             max_x = 0
@@ -876,20 +879,20 @@ class RibbonBarPanel(wx.Control):
                     max_y = max(max_y, panel.position[3])
 
             # Update panels to give the correct y value, for the solved max_y
-            page.position[3] = max_y + page_panel_buffer
+            page.position[3] = max_y + self.page_panel_buffer
 
             # Set position of the overflow.
             if self._overflow:
                 if panel.position:
                     panel.position[2] -= overflow_width
                 self._overflow_position = (
-                    window_width - overflow_width,
+                    window_width - self.overflow_width,
                     0,
                     window_width,
                     max_y,
                 )
         self._layout_dirty = False
-        self.SetMinSize((int(max_x + edge_page_buffer), int(max_y + edge_page_buffer)))
+        self.SetMinSize((int(max_x + self.edge_page_buffer), int(max_y + self.edge_page_buffer)))
 
     def _paint_tab(self, dc: wx.DC, page):
         dc.SetPen(wx.BLACK_PEN)
@@ -954,7 +957,6 @@ class RibbonBarPanel(wx.Control):
         if button.overflow:
             return
         buffer = 7
-        button_buffer = 3
 
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
