@@ -86,19 +86,6 @@ def register_panel_ribbon(window, context):
 
     choices = [
         {
-            "attr": "ribbon_art",
-            "object": context,
-            "default": True,
-            "type": bool,
-            "label": _("Show Modified Ribbon-Art"),
-            "tip": _(
-                "Shows the ribbon in gray rather than blue (previously for OSX-DarkMode)"
-                "Requires Restart!\n"
-            ),
-            "page": "Gui",
-            "section": "Appearance",
-        },
-        {
             "attr": "ribbon_show_labels",
             "object": context,
             "default": False,
@@ -107,7 +94,6 @@ def register_panel_ribbon(window, context):
             "tip": _(
                 "Active: Show the labels for ribbonbar.\n"
                 "Inactive: Do not hide the ribbon labels.\n"
-                "Requires Restart!\n"
             ),
             "page": "Gui",
             "section": "Appearance",
