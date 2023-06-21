@@ -815,11 +815,6 @@ class RibbonBarPanel(wx.Control):
                             text_width = max(text_width, line_width)
                             text_height += line_height
 
-                    # Calculate dropdown height
-                    dropdown_height = 0
-                    if button.kind == "hybrid":
-                        dropdown_height = self.dropdown_height
-
                     # Calculate button_width/button_height
                     button_width = max(bitmap_width, text_width)
                     button_height = (
@@ -851,7 +846,7 @@ class RibbonBarPanel(wx.Control):
                         button.overflow = False
                         button_count += 1
 
-                    if button.kind == "hybrid":
+                    if button.kind == "hybrid" and button.key != "toggle":
                         # Calculate dropdown
                         button.dropdown.position = (
                             x + bitmap_width / 2,
@@ -1016,7 +1011,7 @@ class RibbonBarPanel(wx.Control):
                     y,
                 )
                 y += text_height
-        if button.dropdown is not None:
+        if button.dropdown is not None and button.dropdown.position is not None:
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
 
