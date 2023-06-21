@@ -728,14 +728,14 @@ class RibbonBarPanel(wx.Control):
         self._hover_tab = None
         self._hover_button = None
         self._hover_dropdown = None
-        self.Refresh()
+        self.modified()
 
     def _check_hover_dropdown(self, drop, pos):
         if drop is not None and not drop.contains(pos):
             drop = None
         if drop is not self._hover_dropdown:
             self._hover_dropdown = drop
-            self.Refresh()
+            self.modified()
 
     def _check_hover_button(self, pos):
         hover = self._button_at_position(pos)
@@ -746,13 +746,13 @@ class RibbonBarPanel(wx.Control):
         self._hover_button = hover
         if hover is not None:
             self.SetToolTip(hover.tip)
-        self.Refresh()
+        self.modified()
 
     def _check_hover_tab(self, pos):
         hover = self._pagetab_at_position(pos)
         if hover is not self._hover_tab:
             self._hover_tab = hover
-            self.Refresh()
+            self.modified()
 
     def on_mouse_move(self, event: wx.MouseEvent):
         pos = event.Position
@@ -760,7 +760,7 @@ class RibbonBarPanel(wx.Control):
         self._check_hover_tab(pos)
 
     def on_size(self, event: wx.SizeEvent):
-        self.Refresh(True)
+        self.modified()
 
     def layout(self, dc: wx.DC):
         if not self._layout_dirty:
@@ -1058,7 +1058,7 @@ class RibbonBarPanel(wx.Control):
     @signal_listener("ribbon_show_labels")
     def on_show_labels(self, origin, v, *args):
         self._show_labels = v
-        self.Refresh()
+        self.modified()
 
     def _button_at_position(self, pos):
         for page in self.pages:
@@ -1125,17 +1125,17 @@ class RibbonBarPanel(wx.Control):
         button = self._button_at_position(pos)
         if page is not None and button is None:
             self._current_page = page
-            self.Refresh()
+            self.modified()
             return
         if button is None:
             return
         drop = button.dropdown
         if drop is not None and drop.contains(pos):
             button.drop_click()
-            self.Refresh()
+            self.modified()
             return
         button.click()
-        self.Refresh()
+        self.modified()
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
