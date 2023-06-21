@@ -905,9 +905,9 @@ class RibbonBarPanel(wx.Control):
                     panel.position[2] -= overflow_width
                 self._overflow_position = (
                     window_width - self.overflow_width,
-                    0,
+                    self.edge_page_buffer,
                     window_width,
-                    max_y,
+                    window_height - self.edge_page_buffer,
                 )
         self._layout_dirty = False
         self.SetMinSize(
