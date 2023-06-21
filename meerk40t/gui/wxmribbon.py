@@ -280,7 +280,7 @@ class Button:
             and self.position[1] < y < self.position[3]
         )
 
-    def click(self, event=None):
+    def click(self, event=None, recurse=True):
         """
         Process button click of button at provided button_id
 
@@ -299,10 +299,10 @@ class Button:
             else:  # got untoggled...
                 # so let's activate the first button of the group (implicitly defined as default...)
                 button_group = self.parent.group_lookup.get(self.group)
-                if button_group:
+                if button_group and recurse:
                     first_button = button_group[0]
                     first_button.set_button_toggle(True)
-                    first_button.click()
+                    first_button.click(recurse=False)
                     return
         if self.action is not None:
             # We have an action to call.
@@ -861,6 +861,7 @@ class RibbonBarPanel(wx.Control):
                     x += button_width
                     panel_end_x = x
                 x += self.panel_button_buffer
+                y += self.panel_button_buffer
 
                 # Calculate the max value for panel_width
                 panel_max_width = max(panel_max_width, panel_width)
@@ -998,7 +999,8 @@ class RibbonBarPanel(wx.Control):
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
-        y += self.bitmap_text_buffer
+        if self._show_labels:
+            y += self.bitmap_text_buffer
         dc.DrawBitmap(bitmap, x + (w - bitmap_width) / 2, y)
         y += bitmap_height
         if button.dropdown is not None:
