@@ -640,6 +640,8 @@ class RibbonBarPanel(wx.Control):
         self.between_panel_buffer = 3
         self.dropdown_height = 20
         self.overflow_width = 20
+        self.text_dropdown_buffer = 7
+        self._show_labels = context.setting(bool, "ribbon_show_labels", True)
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
@@ -711,10 +713,10 @@ class RibbonBarPanel(wx.Control):
     def on_erase_background(self, event):
         pass
 
-    def on_mouse_enter(self, event):
+    def on_mouse_enter(self, event: wx.MouseEvent):
         pass
 
-    def on_mouse_leave(self, event):
+    def on_mouse_leave(self, event: wx.MouseEvent):
         self._hover_tab = None
         self._hover_button = None
         self._hover_dropdown = None
@@ -744,12 +746,12 @@ class RibbonBarPanel(wx.Control):
             self._hover_tab = hover
             self.Refresh()
 
-    def on_mouse_move(self, event):
+    def on_mouse_move(self, event: wx.MouseEvent):
         pos = event.Position
         self._check_hover_button(pos)
         self._check_hover_tab(pos)
 
-    def on_size(self, event):
+    def on_size(self, event: wx.SizeEvent):
         self.Refresh(True)
 
     def layout(self, dc: wx.DC):
@@ -806,10 +808,11 @@ class RibbonBarPanel(wx.Control):
                     # Calculate text height/width
                     text_width = 0
                     text_height = 0
-                    for word in button.label.split(" "):
-                        line_width, line_height = dc.GetTextExtent(word)
-                        text_width = max(text_width, line_width)
-                        text_height += line_height
+                    if button.label and self._show_labels:
+                        for word in button.label.split(" "):
+                            line_width, line_height = dc.GetTextExtent(word)
+                            text_width = max(text_width, line_width)
+                            text_height += line_height
 
                     # Calculate dropdown height
                     dropdown_height = 0
@@ -909,7 +912,7 @@ class RibbonBarPanel(wx.Control):
             (int(max_x + self.edge_page_buffer), int(max_y + self.edge_page_buffer))
         )
 
-    def _paint_tab(self, dc: wx.DC, page):
+    def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         dc.SetPen(wx.BLACK_PEN)
         if page is not self._current_page:
             dc.SetBrush(wx.Brush(self.button_face))
@@ -936,7 +939,7 @@ class RibbonBarPanel(wx.Control):
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
-    def _paint_panel(self, dc: wx.DC, panel):
+    def _paint_panel(self, dc: wx.DC, panel: RibbonPanel):
         if not panel.position:
             return
         x, y, x1, y1 = panel.position
@@ -944,7 +947,7 @@ class RibbonBarPanel(wx.Control):
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
-    def _paint_dropdown(self, dc: wx.DC, dropdown):
+    def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
         x, y, x1, y1 = dropdown.position
 
         if dropdown is self._hover_dropdown:
@@ -968,10 +971,9 @@ class RibbonBarPanel(wx.Control):
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
-    def _paint_button(self, dc: wx.DC, button):
+    def _paint_button(self, dc: wx.DC, button: Button):
         if button.overflow:
             return
-        buffer = 7
 
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
@@ -996,13 +998,13 @@ class RibbonBarPanel(wx.Control):
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
-        y += buffer
+        y += self.bitmap_text_buffer
         dc.DrawBitmap(bitmap, x + (w - bitmap_width) / 2, y)
         y += bitmap_height
         if button.dropdown is not None:
             self._paint_dropdown(dc, button.dropdown)
-        if button.label:
-            y += buffer
+        if button.label and self._show_labels:
+            y += self.text_dropdown_buffer
             dc.SetFont(self.font)
             for word in button.label.split(" "):
                 text_width, text_height = dc.GetTextExtent(word)
@@ -1034,7 +1036,7 @@ class RibbonBarPanel(wx.Control):
                     self._paint_button(dc, button)
         self._paint_overflow(dc)
 
-    def on_paint(self, event):
+    def on_paint(self, event: wx.PaintEvent):
         """
         Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
 
@@ -1065,7 +1067,7 @@ class RibbonBarPanel(wx.Control):
                 return page
         return None
 
-    def on_click_right(self, event):
+    def on_click_right(self, event: wx.MouseEvent):
         """
         Handles the ``wx.EVT_RIGHT_DOWN`` event
         :param event: a :class:`MouseEvent` event to be processed.
@@ -1098,7 +1100,7 @@ class RibbonBarPanel(wx.Control):
             self.Bind(wx.EVT_MENU, v.click, id=item.Id)
         self.PopupMenu(menu)
 
-    def on_click(self, event):
+    def on_click(self, event: wx.MouseEvent):
         pos = event.Position
 
         if self._overflow_position:
