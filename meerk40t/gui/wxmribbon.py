@@ -140,6 +140,7 @@ class Button:
         self.enabled = True
         self._aspects = {}
         self.key = "original"
+        self.object = None
 
         self.position = None
         self.toggle = False
@@ -209,7 +210,8 @@ class Button:
         self.action = action
         self.action_right = action_right
         self.rule_enabled = rule_enabled
-        self.object = object
+        if object is not None:
+            self.object = object
         if self.kind == "hybrid":
             self.dropdown = DropDown()
         self.modified()
