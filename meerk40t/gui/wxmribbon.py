@@ -141,6 +141,9 @@ class Button:
         self._aspects = {}
         self.key = "original"
 
+        self.position = None
+        self.toggle = False
+
         self.label = None
         self.bitmap = None
         self.bitmap_disabled = None
@@ -151,11 +154,9 @@ class Button:
         self.tip = None
         self.client_data = None
         self.state = 0
-        self.position = None
         self.dropdown = None
         self.overflow = False
 
-        self.toggle = False
         self.state_pressed = None
         self.state_unpressed = None
         self.group = None
@@ -206,11 +207,6 @@ class Button:
         self.action_right = action_right
         self.rule_enabled = rule_enabled
         self.object = object
-
-        self.state = 0
-        self.position = None
-        self.toggle = False
-
         if self.kind == "hybrid":
             self.dropdown = DropDown()
 
