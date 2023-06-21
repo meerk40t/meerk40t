@@ -370,9 +370,6 @@ class Button:
             "bitmap_small": self.bitmap_small,
             "bitmap_small_disabled": self.bitmap_small_disabled,
             "client_data": self.client_data,
-            # "id": base_button.id,
-            # "kind": base_button.kind,
-            # "state": base_button.state,
         }
         key_dict = self.alternatives[key]
         for k in kwargs:
@@ -418,6 +415,12 @@ class Button:
             key = v.get("identifier", i)
             self._store_button_aspect(key)
             self._update_button_aspect(key, **v)
+            if resize_param is None:
+                siz = v_icon.GetBitmap().GetSize()
+                small_resize = 0.5 * siz[0]
+            else:
+                small_resize = 0.5 * resize_param
+
             if "icon" in v:
                 v_icon = v.get("icon")
                 self._update_button_aspect(
@@ -426,14 +429,6 @@ class Button:
                     bitmap_large_disabled=v_icon.GetBitmap(
                         resize=resize_param, color=Color("grey")
                     ),
-                )
-                if resize_param is None:
-                    siz = v_icon.GetBitmap().GetSize()
-                    small_resize = 0.5 * siz[0]
-                else:
-                    small_resize = 0.5 * resize_param
-                self._update_button_aspect(
-                    key,
                     bitmap_small=v_icon.GetBitmap(resize=small_resize),
                     bitmap_small_disabled=v_icon.GetBitmap(
                         resize=small_resize, color=Color("grey")
