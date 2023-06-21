@@ -214,6 +214,57 @@ class Button:
         if self.kind == "hybrid":
             self.dropdown = DropDown()
 
+    def _restore_button_aspect(self, key):
+        """
+        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
+        we restore the given aspect.
+
+        @param key:
+        @return:
+        """
+        if not hasattr(self, "alternatives"):
+            return
+        try:
+            alt = self._aspects[key]
+        except KeyError:
+            return
+        self.set_aspect(*alt)
+        self.key = key
+
+    def _store_button_aspect(self, key, **kwargs):
+        """
+        Stores visual aspects of the buttons within the "alternatives" dictionary.
+
+        This stores the various icons, labels, help, and other properties found on the base_button.
+
+        @param key: aspects to store.
+        @param kwargs:
+        @return:
+        """
+        self._aspects[key] = {
+            "action": self.action,
+            "action_right": self.action_right,
+            "label": self.label,
+            "tip": self.tip,
+            "icon": self.icon,
+            "client_data": self.client_data,
+        }
+        self._update_button_aspect(key, **kwargs)
+
+    def _update_button_aspect(self, key, **kwargs):
+        """
+        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
+
+        @param self:
+        @param key:
+        @param kwargs:
+        @return:
+        """
+        key_dict = self._aspects[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
     def apply_enable_rules(self):
         try:
             v = self.rule_enabled(0)
@@ -320,57 +371,6 @@ class Button:
             # self.ensure_realize()
 
         return menu_item_click
-
-    def _restore_button_aspect(self, key):
-        """
-        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
-        we restore the given aspect.
-
-        @param key:
-        @return:
-        """
-        if not hasattr(self, "alternatives"):
-            return
-        try:
-            alt = self._aspects[key]
-        except KeyError:
-            return
-        self.set_aspect(*alt)
-        self.key = key
-
-    def _store_button_aspect(self, key, **kwargs):
-        """
-        Stores visual aspects of the buttons within the "alternatives" dictionary.
-
-        This stores the various icons, labels, help, and other properties found on the base_button.
-
-        @param key: aspects to store.
-        @param kwargs:
-        @return:
-        """
-        self._aspects[key] = {
-            "action": self.action,
-            "action_right": self.action_right,
-            "label": self.label,
-            "tip": self.tip,
-            "icon": self.icon,
-            "client_data": self.client_data,
-        }
-        self._update_button_aspect(key, **kwargs)
-
-    def _update_button_aspect(self, key, **kwargs):
-        """
-        Directly update the button aspects via the kwargs, aspect dictionary *must* exist.
-
-        @param self:
-        @param key:
-        @param kwargs:
-        @return:
-        """
-        key_dict = self._aspects[key]
-        for k in kwargs:
-            if kwargs[k] is not None:
-                key_dict[k] = kwargs[k]
 
     def _setup_multi_button(self):
         """
