@@ -138,6 +138,8 @@ class Button:
         self.kind = kind
         self.button_dict = description
         self.enabled = True
+        self._aspects = {}
+        self.key = "original"
 
         self.label = None
         self.bitmap = None
@@ -181,12 +183,21 @@ class Button:
     ):
         self.label = label
         self.icon = icon
-        self.bitmap = icon.GetBitmap()
-        self.bitmap_disabled = icon.GetBitmap()
-        self.bitmap_small_disabled = self.bitmap_disabled
-        self.bitmap_large_disabled = self.bitmap_disabled
-        self.bitmap_small = self.bitmap
-        self.bitmap_large = self.bitmap
+        resize_param = kwargs.get("size")
+        if resize_param is None:
+            siz = v_icon.GetBitmap().GetSize()
+            small_resize = 0.5 * siz[0]
+        else:
+            small_resize = 0.5 * resize_param
+
+        self.bitmap_large = icon.GetBitmap(resize=resize_param)
+        self.bitmap_large_disabled = icon.GetBitmap(resize=resize_param, color=Color("grey"))
+        self.bitmap_small = icon.GetBitmap(resize=small_resize)
+        self.bitmap_small_disabled = icon.GetBitmap(resize=small_resize, color=Color("grey")
+                                                    )
+        self.bitmap = self.bitmap_large
+        self.bitmap_disabled = self.bitmap_large_disabled
+
         self.tip = tip
         self.group = group
         self.toggle_attr = toggle_attr
@@ -196,12 +207,10 @@ class Button:
         self.rule_enabled = rule_enabled
         self.object = object
 
-        self.client_data = None
         self.state = 0
         self.position = None
         self.toggle = False
-        self.state_pressed = None
-        self.state_unpressed = None
+
         if self.kind == "hybrid":
             self.dropdown = DropDown()
 
@@ -323,29 +332,10 @@ class Button:
         if not hasattr(self, "alternatives"):
             return
         try:
-            alt = self.alternatives[key]
+            alt = self._aspects[key]
         except KeyError:
             return
-        self.action = alt.get("action", self.action)
-        self.action_right = alt.get("action_right", self.action_right)
-        self.label = alt.get("label", self.label)
-
-        helps = alt.get("help_string", "")
-        if helps == "":
-            helps = alt.get("tip", self.tip)
-        self.tip = helps
-        self.bitmap_large = alt.get("bitmap_large", self.bitmap_large)
-        self.bitmap_large_disabled = alt.get(
-            "bitmap_large_disabled", self.bitmap_large_disabled
-        )
-        self.bitmap_small = alt.get("bitmap_small", self.bitmap_small)
-        self.bitmap_small_disabled = alt.get(
-            "bitmap_small_disabled", self.bitmap_small_disabled
-        )
-        self.client_data = alt.get("client_data", self.client_data)
-        # base_button.id = alt.get("id", base_button.id)
-        # base_button.kind = alt.get("kind", base_button.kind)
-        # base_button.state = alt.get("state", base_button.state)
+        self.set_aspect(*alt)
         self.key = key
 
     def _store_button_aspect(self, key, **kwargs):
@@ -358,23 +348,15 @@ class Button:
         @param kwargs:
         @return:
         """
-        if not hasattr(self, "alternatives"):
-            self.alternatives = {}
-        self.alternatives[key] = {
+        self._aspects[key] = {
             "action": self.action,
             "action_right": self.action_right,
             "label": self.label,
-            "help_string": self.tip,
-            "bitmap_large": self.bitmap_large,
-            "bitmap_large_disabled": self.bitmap_large_disabled,
-            "bitmap_small": self.bitmap_small,
-            "bitmap_small_disabled": self.bitmap_small_disabled,
+            "tip": self.tip,
+            "icon": self.icon,
             "client_data": self.client_data,
         }
-        key_dict = self.alternatives[key]
-        for k in kwargs:
-            if kwargs[k] is not None:
-                key_dict[k] = kwargs[k]
+        self._update_button_aspect(key, **kwargs)
 
     def _update_button_aspect(self, key, **kwargs):
         """
@@ -385,9 +367,7 @@ class Button:
         @param kwargs:
         @return:
         """
-        if not hasattr(self, "alternatives"):
-            self.alternatives = {}
-        key_dict = self.alternatives[key]
+        key_dict = self._aspects[key]
         for k in kwargs:
             if kwargs[k] is not None:
                 key_dict[k] = kwargs[k]
@@ -398,7 +378,6 @@ class Button:
 
         @return:
         """
-        resize_param = self.button_dict.get("size")
         multi_aspects = self.button_dict["multi"]
         # This is the key used for the multi button.
         multi_ident = self.button_dict.get("identifier")
@@ -413,27 +392,7 @@ class Button:
         for i, v in enumerate(multi_aspects):
             # These are values for the outer identifier
             key = v.get("identifier", i)
-            self._store_button_aspect(key)
-            self._update_button_aspect(key, **v)
-            if resize_param is None:
-                siz = v_icon.GetBitmap().GetSize()
-                small_resize = 0.5 * siz[0]
-            else:
-                small_resize = 0.5 * resize_param
-
-            if "icon" in v:
-                v_icon = v.get("icon")
-                self._update_button_aspect(
-                    key,
-                    bitmap_large=v_icon.GetBitmap(resize=resize_param),
-                    bitmap_large_disabled=v_icon.GetBitmap(
-                        resize=resize_param, color=Color("grey")
-                    ),
-                    bitmap_small=v_icon.GetBitmap(resize=small_resize),
-                    bitmap_small_disabled=v_icon.GetBitmap(
-                        resize=small_resize, color=Color("grey")
-                    ),
-                )
+            self._store_button_aspect(key, **v)
             if "signal" in v:
                 self._create_signal_for_multi(key, v["signal"])
 
