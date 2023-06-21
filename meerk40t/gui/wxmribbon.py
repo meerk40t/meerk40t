@@ -185,7 +185,7 @@ class Button:
         self.icon = icon
         resize_param = kwargs.get("size")
         if resize_param is None:
-            siz = v_icon.GetBitmap().GetSize()
+            siz = icon.GetBitmap().GetSize()
             small_resize = 0.5 * siz[0]
         else:
             small_resize = 0.5 * resize_param
@@ -222,13 +222,11 @@ class Button:
         @param key:
         @return:
         """
-        if not hasattr(self, "alternatives"):
-            return
         try:
             alt = self._aspects[key]
         except KeyError:
             return
-        self.set_aspect(*alt)
+        self.set_aspect(**alt)
         self.key = key
 
     def _store_button_aspect(self, key, **kwargs):
@@ -424,37 +422,14 @@ class Button:
 
         self.state_pressed = "toggle"
         self.state_unpressed = "original"
-
-        self._store_button_aspect("original")
+        self._store_button_aspect(self.state_unpressed)
 
         toggle_button_dict = self.button_dict.get("toggle")
-
-        key = toggle_button_dict.get("identifier", "toggle")
+        key = toggle_button_dict.get("identifier", self.state_pressed)
         if "signal" in toggle_button_dict:
             self._create_signal_for_toggle(toggle_button_dict.get("signal"))
-
         self._store_button_aspect(key, **toggle_button_dict)
 
-        if "icon" in toggle_button_dict:
-            toggle_icon = toggle_button_dict.get("icon")
-
-            if resize_param is None:
-                siz = toggle_icon.GetBitmap().GetSize()
-                small_resize = 0.5 * siz[0]
-            else:
-                small_resize = 0.5 * resize_param
-
-            self._update_button_aspect(
-                key,
-                bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
-                bitmap_large_disabled=toggle_icon.GetBitmap(
-                    resize=resize_param, color=Color("grey")
-                ),
-                bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
-                bitmap_small_disabled=toggle_icon.GetBitmap(
-                    resize=small_resize, color=Color("grey")
-                ),
-            )
         # Set initial value by identifer and object
         if self.toggle_attr is not None and getattr(
             self.object, self.toggle_attr, False
