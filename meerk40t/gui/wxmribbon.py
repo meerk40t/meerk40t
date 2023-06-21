@@ -212,6 +212,7 @@ class Button:
         self.object = object
         if self.kind == "hybrid":
             self.dropdown = DropDown()
+        self.modified()
 
     def _restore_button_aspect(self, key):
         """
