@@ -38,7 +38,7 @@ def plugin(service, lifecycle):
             {
                 "label": _("Config"),
                 "icon": icons8_computer_support_50,
-                "tip": _("Opens device-specfic configuration window"),
+                "tip": _("Opens device-specific configuration window"),
                 "action": lambda v: service("window toggle Configuration\n"),
             },
         )
