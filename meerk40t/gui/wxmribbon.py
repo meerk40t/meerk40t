@@ -339,7 +339,12 @@ class Button:
         top = self.parent.parent.parent
         menu = wx.Menu()
         for v in self.button_dict["multi"]:
-            item = menu.Append(wx.ID_ANY, v.get("label"))
+            item = menu.AppendCheckItem(wx.ID_ANY, v.get("label"))
+            tip = v.get("tip")
+            if tip:
+                item.SetHelp(tip)
+            if v.get("identifier") == self.identifier:
+                item.Check(True)
             icon = v.get("icon")
             if icon:
                 item.SetBitmap(icon.GetBitmap())
