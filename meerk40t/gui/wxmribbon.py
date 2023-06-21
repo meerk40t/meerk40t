@@ -824,7 +824,7 @@ class RibbonBarPanel(wx.Control):
                     button_width = max(bitmap_width, text_width)
                     button_height = (
                         bitmap_height
-                        + dropdown_height
+                        # + dropdown_height
                         + self.panel_button_buffer
                     )
                     if button.label and self._show_labels:
@@ -854,10 +854,10 @@ class RibbonBarPanel(wx.Control):
                     if button.kind == "hybrid":
                         # Calculate dropdown
                         button.dropdown.position = (
-                            x,
-                            y + button_height - dropdown_height,
-                            x + button_width,
-                            y + button_height,
+                            x + bitmap_width / 2,
+                            y + bitmap_height / 2,
+                            x + bitmap_width,
+                            y + bitmap_height,
                         )
                     x += button_width
                     panel_end_x = x
@@ -920,7 +920,7 @@ class RibbonBarPanel(wx.Control):
             dc.SetBrush(wx.Brush(self.button_face))
         else:
             dc.SetBrush(wx.Brush(self.highlight))
-        if page is self._hover_tab:
+        if page is self._hover_tab and self._hover_button is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
@@ -956,7 +956,7 @@ class RibbonBarPanel(wx.Control):
             dc.SetBrush(wx.Brush(wx.Colour(self.highlight)))
         else:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.TRANSPARENT_PEN)
 
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         r = (y1 - y) / 2
@@ -970,6 +970,7 @@ class RibbonBarPanel(wx.Control):
             )
             for x in (0, 90, 180)
         ]
+        dc.SetPen(wx.BLACK_PEN)
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
@@ -991,7 +992,7 @@ class RibbonBarPanel(wx.Control):
         if button.toggle:
             dc.SetBrush(wx.Brush(self.highlight))
             dc.SetPen(wx.BLACK_PEN)
-        if self._hover_button is button:
+        if self._hover_button is button and self._hover_dropdown is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
             dc.SetPen(wx.BLACK_PEN)
 
