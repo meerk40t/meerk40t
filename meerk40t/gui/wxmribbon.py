@@ -1117,12 +1117,11 @@ class RibbonBarPanel(wx.Control):
                 self.overflow_click()
 
         page = self._pagetab_at_position(pos)
-        if page is not None:
+        button = self._button_at_position(pos)
+        if page is not None and button is None:
             self._current_page = page
             self.Refresh()
             return
-
-        button = self._button_at_position(pos)
         if button is None:
             return
         drop = button.dropdown
