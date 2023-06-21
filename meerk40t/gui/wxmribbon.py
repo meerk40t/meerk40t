@@ -763,6 +763,8 @@ class RibbonBarPanel(wx.Control):
         self.Refresh(True)
 
     def layout(self, dc: wx.DC):
+        if not self._layout_dirty:
+            return
         window_width, window_height = self.Size
 
         real_width_of_overflow = 0
