@@ -339,7 +339,7 @@ class Button:
             icon = v.get("icon")
             if icon:
                 item.SetBitmap(icon.GetBitmap())
-            top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=self.id)
+            top.Bind(wx.EVT_MENU, self.drop_menu_click(v), id=item.GetId())
         top.PopupMenu(menu)
 
     def drop_menu_click(self, v):
@@ -359,7 +359,10 @@ class Button:
             @return:
             """
             key_id = v.get("identifier")
-            setattr(self.object, self.save_id, key_id)
+            try:
+                setattr(self.object, self.save_id, key_id)
+            except AttributeError:
+                pass
             self.state_unpressed = key_id
             self._restore_button_aspect(key_id)
             # self.ensure_realize()
@@ -515,13 +518,11 @@ class RibbonPanel:
 
         for desc in button_descriptions:
             # Every registered button in the updated lookup gets created.
-            group = desc.get("group")
-            resize_param = desc.get("size")
             b = self._create_button(desc)
 
             # Store newly created button in the various lookups
-            new_id = b.id
-            self.button_lookup[new_id] = b
+            self.button_lookup[b.id] = b
+            group = desc.get("group")
             if group is not None:
                 c_group = self.group_lookup.get(group)
                 if c_group is None:
@@ -716,7 +717,7 @@ class RibbonBarPanel(wx.Control):
         self.Refresh()
 
     def _check_hover_tab(self, pos):
-        hover = self._page_at_position(pos)
+        hover = self._pagetab_at_position(pos)
         if hover is not self._hover_tab:
             self._hover_tab = hover
             self.Refresh()
@@ -1041,7 +1042,7 @@ class RibbonBarPanel(wx.Control):
                         return button
         return None
 
-    def _page_at_position(self, pos):
+    def _pagetab_at_position(self, pos):
         for page in self.pages:
             if page.contains(pos):
                 return page
@@ -1091,7 +1092,7 @@ class RibbonBarPanel(wx.Control):
             ):
                 self.overflow_click()
 
-        page = self._page_at_position(pos)
+        page = self._pagetab_at_position(pos)
         if page is not None:
             self._current_page = page
             self.Refresh()
