@@ -1086,9 +1086,9 @@ class RibbonBarPanel(wx.Control):
 
     def overflow_click(self):
         """
-        Drop down of a hybrid button was clicked.
+        Click of overflow. Overflow exists if some icons are not able to be shown.
 
-        We make a menu popup and fill it with the data about the multi-button
+        We make a menu popup and fill it with the overflow commands.
 
         @param event:
         @return:
@@ -1097,6 +1097,8 @@ class RibbonBarPanel(wx.Control):
         menu = wx.Menu()
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
+            if isinstance(item, wx.MenuItem):
+                item.Enable(v.enabled)
             icon = v.icon
             if icon:
                 item.SetBitmap(icon.GetBitmap())
