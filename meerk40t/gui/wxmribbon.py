@@ -824,11 +824,11 @@ class RibbonBarPanel(wx.Control):
                     button_width = max(bitmap_width, text_width)
                     button_height = (
                         bitmap_height
-                        + self.bitmap_text_buffer
-                        + text_height
                         + dropdown_height
                         + self.panel_button_buffer
                     )
+                    if button.label and self._show_labels:
+                        button_height += self.bitmap_text_buffer + text_height
 
                     # Calculate the max value for pane size based on button position
                     panel_width = max(button_width, panel_width)
@@ -1000,14 +1000,12 @@ class RibbonBarPanel(wx.Control):
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
-        if self._show_labels:
-            y += self.bitmap_text_buffer
+
         dc.DrawBitmap(bitmap, x + (w - bitmap_width) / 2, y)
         y += bitmap_height
-        if button.dropdown is not None:
-            self._paint_dropdown(dc, button.dropdown)
+
         if button.label and self._show_labels:
-            y += self.text_dropdown_buffer
+            y += self.bitmap_text_buffer
             dc.SetFont(self.font)
             for word in button.label.split(" "):
                 text_width, text_height = dc.GetTextExtent(word)
@@ -1017,6 +1015,9 @@ class RibbonBarPanel(wx.Control):
                     y,
                 )
                 y += text_height
+        if button.dropdown is not None:
+            y += self.text_dropdown_buffer
+            self._paint_dropdown(dc, button.dropdown)
 
     def paint(self):
         dc = wx.AutoBufferedPaintDC(self)
