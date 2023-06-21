@@ -448,16 +448,11 @@ class Button:
         @param signal:
         @return:
         """
+        def multi_click(origin, set_value):
+            self._restore_button_aspect(key)
 
-        def make_multi_click(_tb, _key):
-            def multi_click(origin, set_value):
-                _tb._restore_button_aspect(_key)
-
-            return multi_click
-
-        signal_multi_listener = make_multi_click(self, key)
-        self.context.listen(signal, signal_multi_listener)
-        self.parent._registered_signals.append((signal, signal_multi_listener))
+        self.context.listen(signal, multi_click)
+        self.parent._registered_signals.append((signal, multi_click))
 
     def _setup_toggle_button(self):
         """
@@ -483,6 +478,7 @@ class Button:
 
         if "icon" in toggle_button_dict:
             toggle_icon = toggle_button_dict.get("icon")
+
             if resize_param is None:
                 siz = toggle_icon.GetBitmap().GetSize()
                 small_resize = 0.5 * siz[0]
