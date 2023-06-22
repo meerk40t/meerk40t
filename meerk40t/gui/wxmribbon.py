@@ -915,7 +915,7 @@ class RibbonBarPanel(wx.Control):
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         dc.SetFont(self.font)
-        dc.DrawText(page.label, x + BUFFER, y + BUFFER)
+        dc.DrawText(page.label, int(x + BUFFER), int(y + BUFFER))
 
     def _paint_background(self, dc: wx.DC):
         w, h = self.Size
@@ -1002,8 +1002,8 @@ class RibbonBarPanel(wx.Control):
                 text_width, text_height = dc.GetTextExtent(word)
                 dc.DrawText(
                     word,
-                    x + (w / 2.0) - (text_width / 2),
-                    y,
+                    int(x + (w / 2.0) - (text_width / 2)),
+                    int(y),
                 )
                 y += text_height
         if button.dropdown is not None and button.dropdown.position is not None:
