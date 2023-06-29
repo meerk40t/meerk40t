@@ -663,10 +663,10 @@ class EZExtendAxis(EZObject):
         EZObject.__init__(self, file)
         args = _parse_struct(file)
         _construct(args)
-        self.extension0 = bool(args[0])
-        self.extension1 = bool(args[1])
-        self.axis_go_zero = bool(args[2])
-        self.relative = bool(args[3])
+        self.axis_go_zero = bool(args[0])
+        self.only_once_origin = bool(args[1])
+        self.relative = bool(args[2])
+        self.unit_type = args[3]  # Pulse (0), MM (1), Degree(2).
         self.pulse_per_mm = args[4]
         self.move_pulse = args[5]
         self.max_speed = args[6]
