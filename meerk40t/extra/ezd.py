@@ -654,6 +654,26 @@ class EZEncoderDistance(EZObject):
         self.distance = args[0]
 
 
+class EZExtendAxis(EZObject):
+    """
+    This is for testing on-the-fly movement.
+    """
+
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.extension0 = bool(args[0])
+        self.extension1 = bool(args[1])
+        self.axis_go_zero = bool(args[2])
+        self.relative = bool(args[3])
+        self.pulse_per_mm = args[4]
+        self.move_pulse = args[5]
+        self.max_speed = args[6]
+        self.min_speed = args[7]
+        self.acceleration_time = args[8]
+
+
 class EZText(EZObject):
     """
     Text objects.
@@ -790,6 +810,7 @@ object_map = {
     0x40: EZImage,
     0x60: EZSpiral,
     0x6000: EZEncoderDistance,
+    0x5000: EZExtendAxis,
     0x4000: EZOutput,
     0x3000: EZInput,
     0x2000: EZTimer,
