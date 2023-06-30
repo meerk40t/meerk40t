@@ -103,8 +103,8 @@ class HatchEffectNode(Node, Stroked):
         self.stroke_scaled = True
         factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
-        for oper in self._operands:
-            oper.matrix *= matrix
+        for c in self._operands:
+            c.matrix *= matrix
 
         self.stroke_scaled = False
         self.set_dirty_bounds()
@@ -169,8 +169,6 @@ class HatchEffectNode(Node, Stroked):
         if not self.effect:
             return outlines
         for node in self._operands:
-            if node.type == "reference":
-                node = node.node
             outlines.append(node.as_geometry())
         outlines.transform(self.matrix)
         path = Geomstr()
@@ -198,7 +196,7 @@ class HatchEffectNode(Node, Stroked):
             return True
         elif drag_node.type == "reference":
             if modify:
-                self.append_child(drag_node)
+                self.append_child(drag_node.node)
             return True
         return False
 
