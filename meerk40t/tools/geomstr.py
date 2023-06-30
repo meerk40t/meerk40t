@@ -1023,6 +1023,7 @@ class Geomstr:
             if end != start and not at_start:
                 # Start point does not equal previous end point.
                 yield None
+                at_start = True
             end = e[4]
             if at_start:
                 yield start
