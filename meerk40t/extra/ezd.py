@@ -497,16 +497,15 @@ class EZCurve(EZObject):
             # Unk1 is 2 for a weird node. with t equal 0.
             if curve_type == 0:
                 d = struct.unpack(f"<5d", file.read(40))
-                print(d)
+                # print(d)
                 continue
             (pt_count,) = struct.unpack("<I", file.read(4))
-            print(unk1, curve_type, unk2, unk2, pt_count)
-            data = struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)),
+            # print(unk1, curve_type, unk2, unk2, pt_count)
             pts.append(
                 (
                     curve_type,
                     closed,
-                    data
+                    struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)),
                 )
             )
 
