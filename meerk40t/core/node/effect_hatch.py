@@ -101,7 +101,7 @@ class HatchEffectNode(Node, Stroked):
     def preprocess(self, context, matrix, plan):
         self.stroke_scaled = False
         self.stroke_scaled = True
-        factor = abs(sqrt(matrix.determinant))
+        factor = sqrt(abs(matrix.determinant))
         self._distance *= factor
         for oper in self._operands:
             oper.matrix *= matrix
