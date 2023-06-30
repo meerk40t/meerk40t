@@ -948,6 +948,7 @@ class Geomstr:
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
             actives = vm.actives()
+
             r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
             for i in r:
                 left_segment = actives[i - 1]
@@ -1019,6 +1020,7 @@ class Geomstr:
             if end != start and not at_start:
                 # Start point does not equal previous end point.
                 yield None
+                at_start = True
             end = e[4]
             if at_start:
                 yield start
