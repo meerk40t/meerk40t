@@ -992,7 +992,7 @@ class RibbonBarPanel(wx.Control):
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
 
-        dc.DrawBitmap(bitmap, x + (w - bitmap_width) / 2, y)
+        dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
         y += bitmap_height
 
         if button.label and self._show_labels:
