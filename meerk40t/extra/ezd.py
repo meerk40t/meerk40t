@@ -494,7 +494,13 @@ class EZCurve(EZObject):
         (count, closed) = struct.unpack("<2I", file.read(8))
         for i in range(count):
             (unk1, curve_type, unk2, unk3) = struct.unpack("<BB2H", file.read(6))
+            # Unk1 is 2 for a weird node. with t equal 0.
+            if curve_type == 0:
+                d = struct.unpack(f"<5d", file.read(40))
+                # print(d)
+                continue
             (pt_count,) = struct.unpack("<I", file.read(4))
+            # print(unk1, curve_type, unk2, unk2, pt_count)
             pts.append(
                 (
                     curve_type,
@@ -502,6 +508,7 @@ class EZCurve(EZObject):
                     struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)),
                 )
             )
+
         self.points = pts
 
 
@@ -654,6 +661,26 @@ class EZEncoderDistance(EZObject):
         self.distance = args[0]
 
 
+class EZExtendAxis(EZObject):
+    """
+    This is for testing on-the-fly movement.
+    """
+
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.axis_go_zero = bool(args[0])
+        self.only_once_origin = bool(args[1])
+        self.relative = bool(args[2])
+        self.unit_type = args[3]  # Pulse (0), MM (1), Degree(2).
+        self.pulse_per_mm = args[4]
+        self.move_pulse = args[5]
+        self.max_speed = args[6]
+        self.min_speed = args[7]
+        self.acceleration_time = args[8]
+
+
 class EZText(EZObject):
     """
     Text objects.
@@ -790,6 +817,7 @@ object_map = {
     0x40: EZImage,
     0x60: EZSpiral,
     0x6000: EZEncoderDistance,
+    0x5000: EZExtendAxis,
     0x4000: EZOutput,
     0x3000: EZInput,
     0x2000: EZTimer,
