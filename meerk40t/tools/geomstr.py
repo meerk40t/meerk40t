@@ -948,7 +948,11 @@ class Geomstr:
             vm.scanline_to(vm.scanline + distance)
             y = vm.scanline
             actives = vm.actives()
+
             r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
+            print(len(actives))
+            if len(actives) % 2 != 0:
+                print("Wrong values.")
             for i in r:
                 left_segment = actives[i - 1]
                 right_segment = actives[i]
