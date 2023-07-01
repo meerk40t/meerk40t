@@ -796,7 +796,6 @@ class GalvoController:
         self.reset()
         self.usb_log("Reset")
         self.write_correction_file(cor_file)
-        self.usb_log("Correction File Sent")
         self.enable_laser()
         self.usb_log("Laser Enabled")
         self.set_control_mode(control_mode)
@@ -914,12 +913,15 @@ class GalvoController:
     def write_correction_file(self, filename):
         if filename is None:
             self.write_blank_correct_file()
+            self.usb_log("Correction file set to blank.")
             return
         try:
             table = self._read_correction_file(filename)
             self._write_correction_table(table)
+            self.usb_log("Correction File Sent")
         except OSError:
             self.write_blank_correct_file()
+            self.usb_log("Correction file set to blank.")
             return
 
     @staticmethod
