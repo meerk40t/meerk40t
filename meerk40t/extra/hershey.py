@@ -287,8 +287,8 @@ def plugin(kernel, lifecycle):
             command, channel, _, font=None, font_size=None, remainder=None, **kwargs
         ):
             def display_fonts():
-                for extension, item in registered_fonts:
-                    desc = item[0]
+                for extension in registered_fonts:
+                    desc, parser = registered_fonts[extension]
                     channel(
                         _("{ftype} fonts in {path}:").format(ftype=desc, path=font_dir)
                     )
@@ -296,7 +296,6 @@ def plugin(kernel, lifecycle):
                         channel(p)
                     for p in glob(join(font_dir, "*." + extension.upper())):
                         channel(p)
-                    return
 
             registered_fonts = fonts_registered()
 
