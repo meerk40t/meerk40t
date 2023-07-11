@@ -692,9 +692,29 @@ class EZText(EZObject):
         _interpret(args, 10, str)
         _interpret(args, 18, str)
         _interpret(args, 44, str)
+        _interpret(args, 54, str)
         _construct(args)
         self.font_angle = args[0]  # Font angle in Text.
+        self.height = args[1]  # Height in MM
+        self.text_space_setting = args[5]  # 0 auto, 1 between, 2 center
+        self.text_space = args[12]
+        self.char_space = args[13]
+        self.line_space = args[14]
+        self.font = args[18]  # Arial, JSF Font, etc
+        self.font2 = args[44]
+        self.x, self.y = args[7]
         self.text = args[10]
+        self.hatch_loop_distance = args[21]
+        self.circle_text_enable = args[48]
+        self.circle_text_diameter = args[49]
+        self.circle_text_base_angle = args[50]
+        self.circle_text_range_limit_enable = args[51]
+        self.circle_text_range_limit_angle = args[52]
+        self.save_options = args[53]  # 3 boolean values
+        self.save_filename = args[54]
+        self.circle_text_button_flags = args[85]  # 2 is first button, 1 is right to left.
+        # extradata = _parse_struct(file)
+        # print(extradata)
 
 
 class EZImage(EZObject):
