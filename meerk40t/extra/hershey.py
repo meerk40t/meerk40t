@@ -329,11 +329,6 @@ def plugin(kernel, lifecycle):
             except ShxFontParseError as e:
                 channel(f"{e.args}")
                 return
-            path_node = create_linetext_node(context, x, y, remainder, font, font_size)
-            # path_node = PathNode(
-            #     path=path.path,
-            #     matrix=Matrix.translate(0, float(font_size)),
-            #     stroke=Color("black"),
-            # )
+            path_node = create_linetext_node(context, x, y, remainder, font_path, font_size)
             context.elements.elem_branch.add_node(path_node)
             context.signal("element_added", path_node)
