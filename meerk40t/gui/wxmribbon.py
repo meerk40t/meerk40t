@@ -103,10 +103,21 @@ def register_panel_ribbon(window, context):
 
 
 class DropDown:
+    """
+    Drop downs are the triangle click addons that expand the button list to having other functions.
+
+    This primarily stores the position of the given dropdown.
+    """
     def __init__(self):
         self.position = None
 
     def contains(self, pos):
+        """
+        Is this drop down hit by this position.
+
+        @param pos:
+        @return:
+        """
         if self.position is None:
             return False
         x, y = pos
@@ -117,6 +128,11 @@ class DropDown:
 
 
 class Button:
+    """
+    Buttons store most of the relevant data as to how how to display the current aspect of the given button. This
+    includes things like tool-tip, the drop-down if needed, whether its in the overflow, the pressed and unpressed
+    aspects of the buttons and enable/disable rules.
+    """
     def __init__(self, context, parent, button_id, kind, description):
         self.context = context
         self.parent = parent
@@ -169,6 +185,22 @@ class Button:
         object=None,
         **kwargs,
     ):
+        """
+        This sets all the different aspects that buttons generally have.
+
+        @param label: button label
+        @param icon: icon used for this button
+        @param tip: tool tip for the button
+        @param group: Group the button exists in for radio-toggles
+        @param toggle_attr: The attribute that should be changed on toggle.
+        @param identifier: Identifier in the group or toggle
+        @param action: Action taken when button is pressed.
+        @param action_right: Action taken when button is clicked with right mouse button.
+        @param rule_enabled: Rule by which the button is enabled or disabled
+        @param object: object which the toggle_attr is an attr applied to
+        @param kwargs:
+        @return:
+        """
         self.label = label
         self.icon = icon
         resize_param = kwargs.get("size")
@@ -204,10 +236,10 @@ class Button:
 
     def _restore_button_aspect(self, key):
         """
-        Restores a saved button aspect for the given key. Given a base_button and the key to the alternative aspect
-        we restore the given aspect.
+        Restores a saved button aspect for the given key. Given a key to the alternative aspect we restore the given
+        aspect.
 
-        @param key:
+        @param key: aspect key to set.
         @return:
         """
         try:
@@ -219,12 +251,12 @@ class Button:
 
     def _store_button_aspect(self, key, **kwargs):
         """
-        Stores visual aspects of the buttons within the "alternatives" dictionary.
+        Stores visual aspects of the buttons within the "_aspects" dictionary.
 
-        This stores the various icons, labels, help, and other properties found on the base_button.
+        This stores the various icons, labels, help, and other properties found on the button.
 
         @param key: aspects to store.
-        @param kwargs:
+        @param kwargs: Additional aspects to implement that are not necessarily currently set on the button.
         @return:
         """
         self._aspects[key] = {
@@ -252,6 +284,11 @@ class Button:
                 key_dict[k] = kwargs[k]
 
     def apply_enable_rules(self):
+        """
+        Calls rule_enabled() and returns whether the given rule enables the button.
+
+        @return:
+        """
         try:
             v = self.rule_enabled(0)
             if v != self.enabled:
@@ -261,6 +298,12 @@ class Button:
             pass
 
     def contains(self, pos):
+        """
+        Is this button hit by this position.
+
+        @param pos:
+        @return:
+        """
         if self.position is None:
             return False
         x, y = pos
@@ -298,16 +341,19 @@ class Button:
             self.action(None)
 
         if self.state_pressed is None:
-            # If there's a pressed state we should change the button state
+            # Unless button has a pressed state we have finished.
             return
 
+        # There is a pressed state which requires that we have a toggle.
         self.toggle = not self.toggle
         if self.toggle:
+            # Call the toggle_attr restore the pressed state.
             if self.toggle_attr is not None:
                 setattr(self.object, self.toggle_attr, True)
                 self.context.signal(self.toggle_attr, True, self.object)
             self._restore_button_aspect(self.state_pressed)
         else:
+            # Call the toggle_attr restore the unpressed state.
             if self.toggle_attr is not None:
                 setattr(self.object, self.toggle_attr, False)
                 self.context.signal(self.toggle_attr, False, self.object)
@@ -454,6 +500,12 @@ class Button:
         self.parent._registered_signals.append((signal, toggle_click))
 
     def set_button_toggle(self, toggle_state):
+        """
+        Set the button's toggle state to the given toggle_state
+
+        @param toggle_state:
+        @return:
+        """
         self.toggle = toggle_state
         if toggle_state:
             self._restore_button_aspect(self.state_pressed)
@@ -461,10 +513,17 @@ class Button:
             self._restore_button_aspect(self.state_unpressed)
 
     def modified(self):
+        """
+        This button was modified and should be redrawn.
+        @return:
+        """
         self.parent.modified()
 
 
 class RibbonPanel:
+    """
+    Ribbon Panel is a panel of buttons within the page.
+    """
     def __init__(self, context, parent, id, label, icon):
         self.context = context
         self.parent = parent
@@ -562,6 +621,12 @@ class RibbonPanel:
         return b
 
     def contains(self, pos):
+        """
+        Does the given position hit the current panel.
+
+        @param pos:
+        @return:
+        """
         if self.position is None:
             return False
         x, y = pos
@@ -571,10 +636,17 @@ class RibbonPanel:
         )
 
     def modified(self):
+        """
+        Modified call parent page.
+        @return:
+        """
         self.parent.modified()
 
 
 class RibbonPage:
+    """
+    Ribbon Page is a page of buttons this is the the series of ribbon panels as triggered by the different tags.
+    """
     def __init__(self, context, parent, id, label, icon):
         self.context = context
         self.parent = parent
@@ -586,10 +658,21 @@ class RibbonPage:
         self.tab_position = None
 
     def add_panel(self, panel, ref):
+        """
+        Adds a panel to this page.
+        @param panel:
+        @param ref:
+        @return:
+        """
         self.panels.append(panel)
         setattr(self, ref, panel)
 
     def contains(self, pos):
+        """
+        Does this position hit the tab position of this page.
+        @param pos:
+        @return:
+        """
         if self.tab_position is None:
             return False
         x, y = pos
@@ -599,6 +682,11 @@ class RibbonPage:
         )
 
     def modified(self):
+        """
+        Call modified to parent RibbonBarPanel.
+
+        @return:
+        """
         self.parent.modified()
 
 
@@ -701,6 +789,10 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
 
     def modified(self):
+        """
+        if modified then we flag the layout as dirty and call for a refresh of the ribbonbar.
+        @return:
+        """
         self._layout_dirty = True
         self.Refresh()
 
@@ -905,6 +997,13 @@ class RibbonBarPanel(wx.Control):
         # self.pane.MinSize(bar_size_width, bar_size_height)
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
+        """
+        Paint the individual page tab.
+
+        @param dc:
+        @param page:
+        @return:
+        """
         dc.SetPen(wx.BLACK_PEN)
         if page is not self._current_page:
             dc.SetBrush(wx.Brush(self.button_face))
@@ -918,12 +1017,23 @@ class RibbonBarPanel(wx.Control):
         dc.DrawText(page.label, int(x + BUFFER), int(y + BUFFER))
 
     def _paint_background(self, dc: wx.DC):
+        """
+        Paint the background of the ribbonbar.
+        @param dc:
+        @return:
+        """
         w, h = self.Size
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
     def _paint_overflow(self, dc: wx.DC):
+        """
+        Paint the overflow of buttons that cannot be stored within the required width.
+
+        @param dc:
+        @return:
+        """
         if not self._overflow_position:
             return
         x, y, x1, y1 = self._overflow_position
@@ -932,6 +1042,12 @@ class RibbonBarPanel(wx.Control):
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
     def _paint_panel(self, dc: wx.DC, panel: RibbonPanel):
+        """
+        Paint the ribbonpanel of the given panel.
+        @param dc:
+        @param panel:
+        @return:
+        """
         if not panel.position:
             return
         x, y, x1, y1 = panel.position
@@ -940,6 +1056,13 @@ class RibbonBarPanel(wx.Control):
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
     def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
+        """
+        Paint the dropdown on the button containing a dropdown.
+
+        @param dc:
+        @param dropdown:
+        @return:
+        """
         x, y, x1, y1 = dropdown.position
 
         if dropdown is self._hover_dropdown:
@@ -965,6 +1088,13 @@ class RibbonBarPanel(wx.Control):
         dc.DrawPolygon(points)
 
     def _paint_button(self, dc: wx.DC, button: Button):
+        """
+        Paint the given button on the screen.
+
+        @param dc:
+        @param button:
+        @return:
+        """
         if button.overflow:
             return
 
@@ -1011,6 +1141,10 @@ class RibbonBarPanel(wx.Control):
             self._paint_dropdown(dc, button.dropdown)
 
     def paint(self):
+        """
+        Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
+        @return:
+        """
         dc = wx.AutoBufferedPaintDC(self)
         if dc is None:
             return
@@ -1043,10 +1177,24 @@ class RibbonBarPanel(wx.Control):
 
     @signal_listener("ribbon_show_labels")
     def on_show_labels(self, origin, v, *args):
+        """
+        Signal listener for a change to ribbon_show_labels, this means the show labels are toggled and thus the ribbon
+        is entirely modified.
+        @param origin:
+        @param v:
+        @param args:
+        @return:
+        """
         self._show_labels = v
         self.modified()
 
     def _button_at_position(self, pos):
+        """
+        Find the button at the given position, so long as that button is enabled.
+
+        @param pos:
+        @return:
+        """
         for page in self.pages:
             if page is not self._current_page:
                 continue
@@ -1057,6 +1205,12 @@ class RibbonBarPanel(wx.Control):
         return None
 
     def _pagetab_at_position(self, pos):
+        """
+        Find the page tab at the given position.
+
+        @param pos:
+        @return:
+        """
         for page in self.pages:
             if page.contains(pos):
                 return page
@@ -1097,6 +1251,12 @@ class RibbonBarPanel(wx.Control):
         self.PopupMenu(menu)
 
     def on_click(self, event: wx.MouseEvent):
+        """
+        The ribbon bar was clicked. We check the various parts of the ribbonbar that could have been clicked in the
+        preferred click order. Overflow, pagetab, drop-down, button.
+        @param event:
+        @return:
+        """
         pos = event.Position
 
         if self._overflow_position:
@@ -1123,6 +1283,9 @@ class RibbonBarPanel(wx.Control):
         button.click()
         self.modified()
 
+    ###############################
+    # GUI SPECIFIC LISTENERS
+    ###############################
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
         self.design.edit.set_buttons(new_values)
@@ -1212,6 +1375,10 @@ class RibbonBarPanel(wx.Control):
         self.apply_enable_rules()
 
     def _all_buttons(self):
+        """
+        Helper to cycle through all buttons that are currently visible.
+        @return:
+        """
         for page in self.pages:
             if page is not self._current_page:
                 continue
@@ -1220,19 +1387,40 @@ class RibbonBarPanel(wx.Control):
                     yield button
 
     def apply_enable_rules(self):
+        """
+        Applies all enable rules for all buttons that are currently seen.
+        @return:
+        """
         for button in self._all_buttons():
             button.apply_enable_rules()
 
     def ensure_realize(self):
+        """
+        Ensure the ribbon bar has been correctly realized.
+        @return:
+        """
         self._ribbon_dirty = True
         self.context.schedule(self._job)
         self.apply_enable_rules()
 
     def _perform_realization(self, *args):
+        """
+        Flag the ribbonbar as realized.
+        @param args:
+        @return:
+        """
         self._ribbon_dirty = False
         # self._ribbon.Realize()
 
     def add_page(self, ref, id, label, icon):
+        """
+        Add a page to the ribbonbar.
+        @param ref:
+        @param id:
+        @param label:
+        @param icon:
+        @return:
+        """
         page = RibbonPage(
             self.context,
             self,
@@ -1246,7 +1434,16 @@ class RibbonBarPanel(wx.Control):
         self.pages.append(page)
         return page
 
-    def add_panel(self, ref, parent, id, label, icon):
+    def add_panel(self, ref, parent:RibbonPage, id, label, icon):
+        """
+        Add a panel to the ribbon bar. Parent must be a page.
+        @param ref:
+        @param parent:
+        @param id:
+        @param label:
+        @param icon:
+        @return:
+        """
         panel = RibbonPanel(
             self.context,
             parent=parent,
@@ -1258,6 +1455,10 @@ class RibbonBarPanel(wx.Control):
         return panel
 
     def __set_ribbonbar(self):
+        """
+        GUI Specific creation of ribbonbar.
+        @return:
+        """
         self.ribbonbar_caption_visible = False
 
         self.ribbon_position_aspect_ratio = True
@@ -1408,12 +1609,21 @@ class RibbonBarPanel(wx.Control):
         pass
 
     def pane_hide(self):
+        """
+        On pane_hide all the listeners are disabled.
+        @return:
+        """
         for page in self.pages:
             for panel in page.panels:
                 for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
 
     def on_page_changed(self, event):
+        """
+        Code to be activated when the page changes from one page to another. Gui specific.
+        @param event:
+        @return:
+        """
         page = event.GetPage()
         p_id = page.GetId()
         if p_id != ID_PAGE_DESIGN:
@@ -1428,6 +1638,13 @@ class RibbonBarPanel(wx.Control):
 
     @signal_listener("page")
     def on_page_signal(self, origin, pagename=None, *args):
+        """
+        Page listener to force the given active page on the triggering of a page signal.
+        @param origin:
+        @param pagename:
+        @param args:
+        @return:
+        """
         if pagename is None:
             return
         pagename = pagename.lower()
