@@ -203,6 +203,7 @@ single_command_lookup = {
 
 BUSY = 0x04
 READY = 0x20
+AXIS = 0x40
 
 
 def _bytes_to_words(r):
@@ -704,6 +705,10 @@ class GalvoController:
         status = self.status()
         return bool(status & READY)
 
+    def is_axis(self):
+        status = self.status()
+        return bool(status & AXIS)
+
     def is_ready_and_not_busy(self):
         if self.mode == DRIVER_STATE_RAW:
             return True
@@ -714,6 +719,14 @@ class GalvoController:
         if self.mode == DRIVER_STATE_RAW:
             return
         while not self.is_ready_and_not_busy():
+            time.sleep(0.01)
+            if self.is_shutdown:
+                return
+
+    def wait_axis(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
+        while not self.is_axis():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
