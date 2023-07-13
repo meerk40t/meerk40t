@@ -113,11 +113,14 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.pane = pane
 
         # Layout properties.
-        self._show_labels = context.setting(bool, "ribbon_show_labels", True)
-        self.toggle_show_labels(self._show_labels)
+        self.toggle_show_labels(context.setting(bool, "ribbon_show_labels", True))
 
         # Define Ribbon.
         self.__set_ribbonbar()
+
+    @signal_listener("ribbon_show_labels")
+    def on_show_labels_change(self, origin, value, *args):
+        self.toggle_show_labels(value)
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):

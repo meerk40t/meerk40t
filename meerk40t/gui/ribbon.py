@@ -52,10 +52,6 @@ from meerk40t.svgelements import Color
 
 from .icons import get_default_icon_size, icons8_opened_folder_50
 
-_ = wx.GetTranslation
-
-BUFFER = 5
-
 
 class DropDown:
     """
@@ -652,8 +648,6 @@ class RibbonPage:
 class RibbonBarPanel(wx.Control):
     def __init__(self, parent, id, context=None, **kwds):
         super().__init__(parent, id, **kwds)
-        # kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        # wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self._current_page = None
         self.pages = []
@@ -671,6 +665,7 @@ class RibbonBarPanel(wx.Control):
         self.tab_height = 20
         self.tab_tab_buffer = 10
         self.tab_initial_buffer = 30
+        self.tab_text_buffer = 5
         self.edge_page_buffer = 3 * self.height_factor
         self.page_panel_buffer = 3 * self.height_factor
         self.panel_button_buffer = 3 * self.height_factor
@@ -680,7 +675,7 @@ class RibbonBarPanel(wx.Control):
         self.dropdown_height = 20
         self.overflow_width = 20
         self.text_dropdown_buffer = 7
-        self._show_labels = context.setting(bool, "ribbon_show_labels", True)
+        self._show_labels = True
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
@@ -969,7 +964,7 @@ class RibbonBarPanel(wx.Control):
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         dc.SetFont(self.font)
-        dc.DrawText(page.label, int(x + BUFFER), int(y + BUFFER))
+        dc.DrawText(page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer))
 
     def _paint_background(self, dc: wx.DC):
         """
