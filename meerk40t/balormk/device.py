@@ -1257,7 +1257,7 @@ class BalorDevice(Service, ViewPort):
             self.driver.connection.set_axis_motion_param(minspeed, maxspeed)
             self.driver.connection.set_axis_origin_param(100)  # Unsure why 100.
             self.driver.connection.move_axis_to(position)
-            self.driver.connection.wait_ready()
+            self.driver.connection.wait_axis()
 
         @self.console_argument("off", type=str)
         @self.console_command(
