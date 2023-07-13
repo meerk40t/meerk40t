@@ -1406,17 +1406,17 @@ class GalvoController:
     def read_port(self):
         return self._command(ReadPort)
 
-    def set_axis_motion_param(self, param):
-        return self._command(SetAxisMotionParam, param)
+    def set_axis_motion_param(self, *param):
+        return self._command(SetAxisMotionParam, *param)
 
-    def set_axis_origin_param(self, param):
-        return self._command(SetAxisOriginParam, param)
+    def set_axis_origin_param(self, *param):
+        return self._command(SetAxisOriginParam, *param)
 
     def axis_go_origin(self):
         return self._command(AxisGoOrigin)
 
     def move_axis_to(self, a):
-        return self._command(MoveAxisTo)
+        return self._command(MoveAxisTo, a)
 
     def get_axis_pos(self):
         return self._command(GetAxisPos)
