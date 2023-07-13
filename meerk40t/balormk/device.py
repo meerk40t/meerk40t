@@ -1253,10 +1253,10 @@ class BalorDevice(Service, ViewPort):
             "rotary_to",
             help=_("Send laser rotary command info."),
         )
-        def galvo_goto(command, channel, _, minspeed, maxspeed, position, **kwgs):
-            self.driver.connection.set_axis_motion_param(minspeed, maxspeed)
+        def galvo_rotary(command, channel, _, minspeed, maxspeed, position, **kwgs):
+            self.driver.connection.set_axis_motion_param(minspeed & 0xFFFF, maxspeed & 0xFFFF)
             self.driver.connection.set_axis_origin_param(100)  # Unsure why 100.
-            self.driver.connection.move_axis_to(position)
+            self.driver.connection.move_axis_to(position & 0xFFFF)
             self.driver.connection.wait_axis()
 
         @self.console_argument("off", type=str)
