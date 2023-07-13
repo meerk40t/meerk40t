@@ -726,7 +726,7 @@ class GalvoController:
     def wait_axis(self):
         if self.mode == DRIVER_STATE_RAW:
             return
-        while not self.is_axis():
+        while self.is_axis():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
