@@ -756,18 +756,26 @@ class RibbonBarPanel(wx.Control):
         real_width_of_overflow = 0
         self._overflow.clear()
         self._overflow_position = None
+        xpos = 0
         for pn, page in enumerate(self.pages):
             # Set tab positioning.
+            # Compute tabwidth according to be displayed label,
+            # if bigger than default then extend width
+            line_width, line_height = dc.GetTextExtent(page.label)
+
+            tabwidth = max(line_width + 2 * BUFFER, self.tab_width)
+
             page.tab_position = (
                 pn * self.tab_tab_buffer
-                + pn * self.tab_width
+                + xpos
                 + self.tab_initial_buffer,
                 0,
                 pn * self.tab_tab_buffer
-                + (pn + 1) * self.tab_width
+                + xpos + tabwidth
                 + self.tab_initial_buffer,
                 self.tab_height * 2,
             )
+            xpos += tabwidth
             if page is not self._current_page:
                 continue
 
