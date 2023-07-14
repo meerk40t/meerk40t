@@ -732,6 +732,8 @@ class RibbonBarPanel(wx.Control):
         self._hover_button = hover
         if hover is not None:
             self.SetToolTip(hover.tip)
+        else:
+            self.SetToolTip("")
         self.modified()
 
     def _check_hover_tab(self, pos):
