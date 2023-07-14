@@ -1319,7 +1319,7 @@ class Art:
             if self.horizontal:
                 x += panel_width
             else:
-                x += panel_height
+                y += panel_height
 
     def panel_layout(self, dc: wx.DC, panel):
         x, y, max_x, max_y = panel.position
