@@ -1,38 +1,39 @@
 """
-The WxmRibbon Bar is a core aspect of MeerK40t's interaction. All the buttons are dynmically generated but the
-panels themselves are created in a static fashion. But the contents of those individual ribbon panels are defined
-in the kernel lookup.
+The RibbonBar is a scratch control widget. All the buttons are dynamically generated. The contents of those individual
+ribbon panels are defined by implementing classes.
 
-        service.register(
-            "button/control/Redlight",
-            {
-                "label": _("Red Dot On"),
-                "icon": icons8_quick_mode_on_50,
-                "tip": _("Turn Redlight On"),
-                "action": lambda v: service("red on\n"),
-                "toggle": {
-                    "label": _("Red Dot Off"),
-                    "action": lambda v: service("red off\n"),
-                    "icon": icons8_flash_off_50,
-                    "signal": "grbl_red_dot",
-                },
-                "rule_enabled": lambda v: has_red_dot_enabled(),
-            },
-        )
+The primary method of defining a panel is by calling the `set_buttons()` on the panel.
 
-For example would register a button in the control panel with a discrete name "Redlight" the definitions for label,
-icon, tip, action are all pretty standard to set up a button. This can often be registered as part of a service such
-that if you switch the service it will change the lookup and that change will be detected here and rebuilt the buttons.
+control_panel.set_buttons(
+    {
+        "label": _("Red Dot On"),
+        "icon": icons8_quick_mode_on_50,
+        "tip": _("Turn Redlight On"),
+        "action": lambda v: service("red on\n"),
+        "toggle": {
+            "label": _("Red Dot Off"),
+            "action": lambda v: service("red off\n"),
+            "icon": icons8_flash_off_50,
+            "signal": "grbl_red_dot",
+        },
+        "rule_enabled": lambda v: has_red_dot_enabled(),
+    }
+)
+
+Would, for example, register a button in the control panel the definitions for label, icon, tip, action are all
+standard with regard to buttons.
 
 The toggle defines an alternative set of values for the toggle state of the button.
+
 The multi defines a series of alternative states, and creates a hybrid button with a drop-down to select the state
     desired.
+
 Other properties like `rule_enabled` provides a check for whether this button should be enabled or not.
 
 The `toggle_attr` will permit a toggle to set an attribute on the given `object` which would default to the root
 context but could need to set a more local object attribute.
 
-If a `signal` is assigned as an aspect of multi it triggers that specfic option in the multi button.
+If a `signal` is assigned as an aspect of multi it triggers that option multi-button option.
 If a `signal` is assigned within the toggle it sets the state of the given toggle. These should be compatible with
 the signals issued by choice panels.
 
@@ -41,16 +42,12 @@ The action is a function which is run when the button is pressed.
 
 import copy
 import math
-import platform
 import threading
 
 import wx
-from wx import aui
 
-from meerk40t.kernel import Job, lookup_listener, signal_listener
+from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
-
-from .icons import get_default_icon_size, icons8_opened_folder_50
 
 
 class DropDown:
@@ -964,7 +961,9 @@ class RibbonBarPanel(wx.Control):
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         dc.SetFont(self.font)
-        dc.DrawText(page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer))
+        dc.DrawText(
+            page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
+        )
 
     def _paint_background(self, dc: wx.DC):
         """
