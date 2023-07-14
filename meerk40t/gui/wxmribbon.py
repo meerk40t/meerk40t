@@ -334,7 +334,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
             label=_("Alignment"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
-        self.ensure_realize()
+        self.modified()
 
     def pane_show(self):
         pass
