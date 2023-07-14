@@ -50,56 +50,6 @@ from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
 
 
-class Art:
-    def __init__(self):
-        self.horizontal = True
-        self.between_button_buffer = 3
-        self.panel_button_buffer = 3
-        self.page_panel_buffer = 3
-        self.between_panel_buffer = 5
-
-        self.tab_width = 70
-        self.tab_height = 20
-        self.tab_tab_buffer = 10
-        self.tab_initial_buffer = 30
-        self.tab_text_buffer = 5
-        self.edge_page_buffer = 4
-
-        self.bitmap_text_buffer = 10
-        self.dropdown_height = 20
-        self.overflow_width = 20
-        self.text_dropdown_buffer = 7
-        self.show_labels = True
-
-        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-        self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        ).ChangeLightness(50)
-        self.inactive_background = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
-        )
-        self.inactive_text = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        )
-        self.tooltip_foreground = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT)
-        )
-        self.tooltip_background = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
-        )
-        self.button_face = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
-        )
-        self.highlight = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
-        )
-        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        self.font = wx.Font(
-            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-
-
 class DropDown:
     """
     Dropdowns are the triangle click addons that expand the button list to having other functions.
@@ -171,7 +121,7 @@ class Button:
         self.set_aspect(**description)
         self.apply_enable_rules()
 
-    def layout(self, dc: wx.DC, art: Art):
+    def layout(self, dc: wx.DC, art):
         x, y, max_x, max_y = self.position
         button_width = max_x - x
         button_height = max_y - y
@@ -575,7 +525,7 @@ class RibbonPanel:
         self.buttons = []
         self.position = None
 
-    def layout(self, dc: wx.DC, art: Art):
+    def layout(self, dc: wx.DC, art):
         x, y, max_x, max_y = self.position
         panel_width = max_x - x
         panel_height = max_y - y
@@ -751,7 +701,7 @@ class RibbonPage:
         self.panels.append(panel)
         setattr(self, ref, panel)
 
-    def layout(self, dc: wx.DC, art: Art):
+    def layout(self, dc: wx.DC, art):
         """
         Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
         contains.
@@ -887,7 +837,6 @@ class RibbonBarPanel(wx.Control):
     def __init__(self, parent, id, context=None, **kwds):
         super().__init__(parent, id, **kwds)
         self.context = context
-        self._current_page = None
         self.pages = []
         self._redraw_job = Job(
             process=self._paint_main_on_buffer,
@@ -912,11 +861,6 @@ class RibbonBarPanel(wx.Control):
         self._ribbon_buffer = None
 
         self.pipe_state = None
-        self.recurse = True
-        self._expanded_panel = None
-        self._hover_button = None
-        self._hover_tab = None
-        self._hover_dropdown = None
         self._overflow = list()
         self._overflow_position = None
 
@@ -940,6 +884,14 @@ class RibbonBarPanel(wx.Control):
         self._layout_dirty = True
         self.context.schedule(self._redraw_job)
 
+    def redrawn(self):
+        """
+        if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
+        @return:
+        """
+        self._paint_dirty = True
+        self.context.schedule(self._redraw_job)
+
     def on_size(self, event: wx.SizeEvent):
         self._set_buffer()
         self.modified()
@@ -951,34 +903,34 @@ class RibbonBarPanel(wx.Control):
         pass
 
     def on_mouse_leave(self, event: wx.MouseEvent):
-        self._hover_tab = None
-        self._hover_button = None
-        self._hover_dropdown = None
-        self.modified()
+        self.art.hover_tab = None
+        self.art.hover_button = None
+        self.art.hover_dropdown = None
+        self.redrawn()
 
     def _check_hover_dropdown(self, drop, pos):
         if drop is not None and not drop.contains(pos):
             drop = None
-        if drop is not self._hover_dropdown:
-            self._hover_dropdown = drop
-            self.modified()
+        if drop is not self.art.hover_dropdown:
+            self.art.hover_dropdown = drop
+            self.redrawn()
 
     def _check_hover_button(self, pos):
         hover = self._button_at_position(pos)
         if hover is not None:
             self._check_hover_dropdown(hover.dropdown, pos)
-        if hover is self._hover_button:
+        if hover is self.art.hover_button:
             return
-        self._hover_button = hover
+        self.art.hover_button = hover
         if hover is not None:
             self.SetToolTip(hover.tip)
-        self.modified()
+        self.redrawn()
 
     def _check_hover_tab(self, pos):
         hover = self._pagetab_at_position(pos)
-        if hover is not self._hover_tab:
-            self._hover_tab = hover
-            self.modified()
+        if hover is not self.art.hover_tab:
+            self.art.hover_tab = hover
+            self.redrawn()
 
     def on_mouse_move(self, event: wx.MouseEvent):
         pos = event.Position
@@ -998,7 +950,7 @@ class RibbonBarPanel(wx.Control):
         except (RuntimeError, AssertionError, TypeError):
             pass
 
-    def layout(self, dc: wx.DC, art: Art):
+    def layout(self, dc: wx.DC, art):
         """
         Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
 
@@ -1023,7 +975,7 @@ class RibbonBarPanel(wx.Control):
                 + art.tab_initial_buffer,
                 art.tab_height * 2,
             )
-            if page is not self._current_page:
+            if page is not self.art.current_page:
                 continue
 
             page_width = ribbon_width - 2 * art.edge_page_buffer
@@ -1043,163 +995,16 @@ class RibbonBarPanel(wx.Control):
             print(f"page: {page.position}")
             page.layout(dc, art)
 
-    def _paint_tab(self, dc: wx.DC, page: RibbonPage):
-        """
-        Paint the individual page tab.
-
-        @param dc:
-        @param page:
-        @return:
-        """
-        art = self.art
-        dc.SetPen(wx.BLACK_PEN)
-        if page is not self._current_page:
-            dc.SetBrush(wx.Brush(art.button_face))
-        else:
-            dc.SetBrush(wx.Brush(art.highlight))
-        if page is self._hover_tab and self._hover_button is None:
-            dc.SetBrush(wx.Brush(art.button_face_hover))
-        x, y, x1, y1 = page.tab_position
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        dc.SetFont(art.font)
-        dc.DrawText(
-            page.label, int(x + art.tab_text_buffer), int(y + art.tab_text_buffer)
-        )
-
-    def _paint_background(self, dc: wx.DC):
-        """
-        Paint the background of the ribbonbar.
-        @param dc:
-        @return:
-        """
-        art = self.art
-        w, h = self.Size
-        dc.SetBrush(wx.Brush(art.button_face))
-        dc.SetPen(wx.TRANSPARENT_PEN)
-        dc.DrawRectangle(0, 0, w, h)
-
-    def _paint_overflow(self, dc: wx.DC):
-        """
-        Paint the overflow of buttons that cannot be stored within the required width.
-
-        @param dc:
-        @return:
-        """
-        if not self._overflow_position:
-            return
-        art = self.art
-        x, y, x1, y1 = self._overflow_position
-        dc.SetBrush(wx.Brush(art.highlight))
-        dc.SetPen(wx.BLACK_PEN)
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-
-    def _paint_panel(self, dc: wx.DC, panel: RibbonPanel):
-        """
-        Paint the ribbonpanel of the given panel.
-        @param dc:
-        @param panel:
-        @return:
-        """
-        if not panel.position:
-            return
-        art = self.art
-        x, y, x1, y1 = panel.position
-        dc.SetBrush(wx.Brush(art.button_face))
-        dc.SetPen(wx.BLACK_PEN)
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-
-    def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
-        """
-        Paint the dropdown on the button containing a dropdown.
-
-        @param dc:
-        @param dropdown:
-        @return:
-        """
-        x, y, x1, y1 = dropdown.position
-        art = self.art
-        if dropdown is self._hover_dropdown:
-            dc.SetBrush(wx.Brush(wx.Colour(art.highlight)))
-        else:
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        dc.SetPen(wx.TRANSPARENT_PEN)
-
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        r = (y1 - y) / 2
-        cx = (x + x1) / 2
-        cy = -r / 2 + (y + y1) / 2
-
-        points = [
-            (
-                int(cx + r * math.cos(math.radians(x))),
-                int(cy + r * math.sin(math.radians(x))),
-            )
-            for x in (0, 90, 180)
-        ]
-        dc.SetPen(wx.BLACK_PEN)
-        dc.SetBrush(wx.Brush(art.inactive_background))
-        dc.DrawPolygon(points)
-
-    def _paint_button(self, dc: wx.DC, button: Button):
-        """
-        Paint the given button on the screen.
-
-        @param dc:
-        @param button:
-        @return:
-        """
-        if button.overflow:
-            return
-        art = self.art
-        bitmap = button.bitmap_large
-        bitmap_small = button.bitmap_small
-        if not button.enabled:
-            bitmap = button.bitmap_large_disabled
-            bitmap_small = button.bitmap_small_disabled
-
-        dc.SetBrush(wx.Brush(art.button_face))
-        dc.SetPen(wx.TRANSPARENT_PEN)
-        if not button.enabled:
-            dc.SetBrush(wx.Brush(art.inactive_background))
-            dc.SetPen(wx.TRANSPARENT_PEN)
-        if button.toggle:
-            dc.SetBrush(wx.Brush(art.highlight))
-            dc.SetPen(wx.BLACK_PEN)
-        if self._hover_button is button and self._hover_dropdown is None:
-            dc.SetBrush(wx.Brush(art.button_face_hover))
-            dc.SetPen(wx.BLACK_PEN)
-
-        x, y, x1, y1 = button.position
-        w = x1 - x
-        h = y1 - y
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
-        bitmap_width, bitmap_height = bitmap.Size
-
-        dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
-        y += bitmap_height
-
-        if button.label and art.show_labels:
-            y += art.bitmap_text_buffer
-            dc.SetFont(art.font)
-            for word in button.label.split(" "):
-                text_width, text_height = dc.GetTextExtent(word)
-                dc.DrawText(
-                    word,
-                    int(x + (w / 2.0) - (text_width / 2)),
-                    int(y),
-                )
-                y += text_height
-        if button.dropdown is not None and button.dropdown.position is not None:
-            y += art.text_dropdown_buffer
-            self._paint_dropdown(dc, button.dropdown)
-
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         buf = self._set_buffer()
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
-            self._paint_main(dc)
+            if self._layout_dirty:
+                self.layout(dc, self.art)
+                self._layout_dirty = False
+            self.art.paint_main(dc, self)
             self._redraw_lock.release()
             self._paint_dirty = False
         dc.SelectObject(wx.NullBitmap)
@@ -1224,31 +1029,6 @@ class RibbonBarPanel(wx.Control):
             self._ribbon_buffer = wx.Bitmap(width, height)
         return self._ribbon_buffer
 
-    def _paint_main(self, dc):
-        """
-        Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
-        @return:
-        """
-        art = self.art
-        if self._layout_dirty:
-            self.layout(dc, art)
-            self._layout_dirty = False
-        self._paint_background(dc)
-        for page in self.pages:
-            self._paint_tab(dc, page)
-
-        for page in self.pages:
-            if page is not self._current_page:
-                continue
-            dc.SetBrush(wx.Brush(art.button_face))
-            x, y, x1, y1 = page.position
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-            for panel in page.panels:
-                self._paint_panel(dc, panel)
-                for button in panel.buttons:
-                    self._paint_button(dc, button)
-        self._paint_overflow(dc)
-
     def toggle_show_labels(self, v):
         self.art.show_labels = v
         self.modified()
@@ -1261,7 +1041,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self._current_page:
+            if page is not self.art.current_page:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -1335,7 +1115,7 @@ class RibbonBarPanel(wx.Control):
         page = self._pagetab_at_position(pos)
         button = self._button_at_position(pos)
         if page is not None and button is None:
-            self._current_page = page
+            self.art.current_page = page
             self.modified()
             return
         if button is None:
@@ -1354,7 +1134,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self._current_page:
+            if page is not self.art.current_page:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -1385,8 +1165,8 @@ class RibbonBarPanel(wx.Control):
             icon,
         )
         setattr(self, ref, page)
-        if self._current_page is None:
-            self._current_page = page
+        if self.art.current_page is None:
+            self.art.current_page = page
         self.pages.append(page)
         return page
 
@@ -1409,3 +1189,224 @@ class RibbonBarPanel(wx.Control):
         )
         parent.add_panel(panel, ref)
         return panel
+
+
+class Art:
+    def __init__(self):
+        self.horizontal = True
+        self.between_button_buffer = 3
+        self.panel_button_buffer = 3
+        self.page_panel_buffer = 3
+        self.between_panel_buffer = 5
+
+        self.tab_width = 70
+        self.tab_height = 20
+        self.tab_tab_buffer = 10
+        self.tab_initial_buffer = 30
+        self.tab_text_buffer = 5
+        self.edge_page_buffer = 4
+
+        self.bitmap_text_buffer = 10
+        self.dropdown_height = 20
+        self.overflow_width = 20
+        self.text_dropdown_buffer = 7
+        self.show_labels = True
+
+        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+        self.button_face_hover = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(50)
+        self.inactive_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
+        )
+        self.inactive_text = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.tooltip_foreground = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT)
+        )
+        self.tooltip_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
+        )
+        self.button_face = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+        )
+        self.highlight = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
+        )
+        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self.font = wx.Font(
+            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.current_page = None
+        self.hover_tab = None
+        self.hover_button = None
+        self.hover_dropdown = None
+        self.overflow_position = None
+
+    def paint_main(self, dc, ribbon):
+        """
+        Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
+        @return:
+        """
+        self._paint_background(dc)
+        for page in ribbon.pages:
+            self._paint_tab(dc, page)
+
+        for page in ribbon.pages:
+            if page is not self.current_page:
+                continue
+            dc.SetBrush(wx.Brush(self.button_face))
+            x, y, x1, y1 = page.position
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+            for panel in page.panels:
+                self._paint_panel(dc, panel)
+                for button in panel.buttons:
+                    self._paint_button(dc, button)
+        self._paint_overflow(dc)
+
+    def _paint_tab(self, dc: wx.DC, page: RibbonPage):
+        """
+        Paint the individual page tab.
+
+        @param dc:
+        @param page:
+        @return:
+        """
+        dc.SetPen(wx.BLACK_PEN)
+        if page is not self.current_page:
+            dc.SetBrush(wx.Brush(self.button_face))
+        else:
+            dc.SetBrush(wx.Brush(self.highlight))
+        if page is self.hover_tab and self.hover_button is None:
+            dc.SetBrush(wx.Brush(self.button_face_hover))
+        x, y, x1, y1 = page.tab_position
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.SetFont(self.font)
+        dc.DrawText(
+            page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
+        )
+
+    def _paint_background(self, dc: wx.DC):
+        """
+        Paint the background of the ribbonbar.
+        @param dc:
+        @return:
+        """
+        w, h = dc.Size
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangle(0, 0, w, h)
+
+    def _paint_overflow(self, dc: wx.DC):
+        """
+        Paint the overflow of buttons that cannot be stored within the required width.
+
+        @param dc:
+        @return:
+        """
+        if not self.overflow_position:
+            return
+        x, y, x1, y1 = self.overflow_position
+        dc.SetBrush(wx.Brush(self.highlight))
+        dc.SetPen(wx.BLACK_PEN)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+
+    def _paint_panel(self, dc: wx.DC, panel: RibbonPanel):
+        """
+        Paint the ribbonpanel of the given panel.
+        @param dc:
+        @param panel:
+        @return:
+        """
+        if not panel.position:
+            return
+        x, y, x1, y1 = panel.position
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.BLACK_PEN)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+
+    def _paint_dropdown(self, dc: wx.DC, dropdown: DropDown):
+        """
+        Paint the dropdown on the button containing a dropdown.
+
+        @param dc:
+        @param dropdown:
+        @return:
+        """
+        x, y, x1, y1 = dropdown.position
+        if dropdown is self.hover_dropdown:
+            dc.SetBrush(wx.Brush(wx.Colour(self.highlight)))
+        else:
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        dc.SetPen(wx.TRANSPARENT_PEN)
+
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        r = (y1 - y) / 2
+        cx = (x + x1) / 2
+        cy = -r / 2 + (y + y1) / 2
+
+        points = [
+            (
+                int(cx + r * math.cos(math.radians(x))),
+                int(cy + r * math.sin(math.radians(x))),
+            )
+            for x in (0, 90, 180)
+        ]
+        dc.SetPen(wx.BLACK_PEN)
+        dc.SetBrush(wx.Brush(self.inactive_background))
+        dc.DrawPolygon(points)
+
+    def _paint_button(self, dc: wx.DC, button: Button):
+        """
+        Paint the given button on the screen.
+
+        @param dc:
+        @param button:
+        @return:
+        """
+        if button.overflow:
+            return
+        bitmap = button.bitmap_large
+        bitmap_small = button.bitmap_small
+        if not button.enabled:
+            bitmap = button.bitmap_large_disabled
+            bitmap_small = button.bitmap_small_disabled
+
+        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        if not button.enabled:
+            dc.SetBrush(wx.Brush(self.inactive_background))
+            dc.SetPen(wx.TRANSPARENT_PEN)
+        if button.toggle:
+            dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetPen(wx.BLACK_PEN)
+        if self.hover_button is button and self.hover_dropdown is None:
+            dc.SetBrush(wx.Brush(self.button_face_hover))
+            dc.SetPen(wx.BLACK_PEN)
+
+        x, y, x1, y1 = button.position
+        w = x1 - x
+        h = y1 - y
+        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
+        bitmap_width, bitmap_height = bitmap.Size
+
+        dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
+        y += bitmap_height
+
+        if button.label and self.show_labels:
+            y += self.bitmap_text_buffer
+            dc.SetFont(self.font)
+            for word in button.label.split(" "):
+                text_width, text_height = dc.GetTextExtent(word)
+                dc.DrawText(
+                    word,
+                    int(x + (w / 2.0) - (text_width / 2)),
+                    int(y),
+                )
+                y += text_height
+        if button.dropdown is not None and button.dropdown.position is not None:
+            y += self.text_dropdown_buffer
+            self._paint_dropdown(dc, button.dropdown)
+
