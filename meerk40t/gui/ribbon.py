@@ -649,7 +649,8 @@ class RibbonBarPanel(wx.Control):
         self._current_page = None
         self.pages = []
         self._job = Job(
-            process=self._perform_realization,
+            process=self._update_buffer_ui_thread,
+            # conditional=lambda: self._paint_dirty,
             job_name="realize_ribbon_bar",
             interval=0.1,
             times=1,
@@ -709,11 +710,11 @@ class RibbonBarPanel(wx.Control):
         )
 
         # Define Ribbon.
+        self._paint_dirty = True
         self._layout_dirty = True
-        self.Layout()
+        self._ribbon_buffer = None
 
         self.pipe_state = None
-        self._ribbon_dirty = False
         self.screen_refresh_lock = threading.Lock()
         self.recurse = True
         self._expanded_panel = None
@@ -736,11 +737,16 @@ class RibbonBarPanel(wx.Control):
 
     def modified(self):
         """
-        if modified then we flag the layout as dirty and call for a refresh of the ribbonbar.
+        if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
         @return:
         """
+        self._paint_dirty = True
         self._layout_dirty = True
-        self.Refresh()
+        self.context.schedule(self._job)
+
+    def on_size(self, event: wx.SizeEvent):
+        self._set_buffer()
+        self.modified()
 
     def on_erase_background(self, event):
         pass
@@ -783,12 +789,23 @@ class RibbonBarPanel(wx.Control):
         self._check_hover_button(pos)
         self._check_hover_tab(pos)
 
-    def on_size(self, event: wx.SizeEvent):
-        self.modified()
+    def on_paint(self, event: wx.PaintEvent):
+        """
+        Ribbonbar paint event calls the paints the bitmap self._ribbon_buffer. If self._ribbon_buffer does not exist
+        initially it is created in the self.scene.update_buffer_ui_thread() call.
+        """
+        if self._paint_dirty:
+            self._update_buffer_ui_thread()
+
+        try:
+            if self._ribbon_buffer is None:
+                self.modified()
+                return
+            wx.BufferedPaintDC(self, self._ribbon_buffer)
+        except (RuntimeError, AssertionError, TypeError):
+            pass
 
     def layout(self, dc: wx.DC):
-        if not self._layout_dirty:
-            return
         window_width, window_height = self.Size
 
         real_width_of_overflow = 0
@@ -937,7 +954,6 @@ class RibbonBarPanel(wx.Control):
                     window_width,
                     window_height - self.edge_page_buffer,
                 )
-        self._layout_dirty = False
         bar_size_width = int(max_x + self.edge_page_buffer)
         bar_size_height = int(max_y + self.edge_page_buffer)
         # self.pane.MinSize(bar_size_width, bar_size_height)
@@ -1088,15 +1104,45 @@ class RibbonBarPanel(wx.Control):
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
 
-    def paint(self):
+    def _update_buffer_ui_thread(self):
+        """Performs redrawing of the data in the UI thread."""
+        buf = self._set_buffer()
+        dc = wx.MemoryDC()
+        dc.SelectObject(buf)
+        if self.screen_refresh_lock.acquire(timeout=0.2):
+            self._paint_main(dc)
+            self.screen_refresh_lock.release()
+            self._paint_dirty = False
+        dc.SelectObject(wx.NullBitmap)
+        del dc
+
+        self.Refresh()
+
+    def _set_buffer(self):
+        """
+        Set the value for the self._Buffer bitmap equal to the panel's clientSize.
+        """
+        if (
+            self._ribbon_buffer is None
+            or self._ribbon_buffer.GetSize() != self.ClientSize
+            or not self._ribbon_buffer.IsOk()
+        ):
+            width, height = self.ClientSize
+            if width <= 0:
+                width = 1
+            if height <= 0:
+                height = 1
+            self._ribbon_buffer = wx.Bitmap(width, height)
+        return self._ribbon_buffer
+
+    def _paint_main(self, dc):
         """
         Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
         @return:
         """
-        dc = wx.AutoBufferedPaintDC(self)
-        if dc is None:
-            return
-        self.layout(dc)
+        if self._layout_dirty:
+            self.layout(dc)
+            self._layout_dirty = False
         self._paint_background(dc)
         for page in self.pages:
             self._paint_tab(dc, page)
@@ -1112,16 +1158,6 @@ class RibbonBarPanel(wx.Control):
                 for button in panel.buttons:
                     self._paint_button(dc, button)
         self._paint_overflow(dc)
-
-    def on_paint(self, event: wx.PaintEvent):
-        """
-        Handles the ``wx.EVT_PAINT`` event for :class:`RibbonButtonBar`.
-
-        :param event: a :class:`PaintEvent` event to be processed.
-        """
-        if self.screen_refresh_lock.acquire(timeout=0.2):
-            self.paint()
-            self.screen_refresh_lock.release()
 
     def toggle_show_labels(self, v):
         self._show_labels = v
@@ -1241,24 +1277,6 @@ class RibbonBarPanel(wx.Control):
         """
         for button in self._all_buttons():
             button.apply_enable_rules()
-
-    def ensure_realize(self):
-        """
-        Ensure the ribbon bar has been correctly realized.
-        @return:
-        """
-        self._ribbon_dirty = True
-        self.context.schedule(self._job)
-        self.apply_enable_rules()
-
-    def _perform_realization(self, *args):
-        """
-        Flag the ribbonbar as realized.
-        @param args:
-        @return:
-        """
-        self._ribbon_dirty = False
-        # self._ribbon.Realize()
 
     def add_page(self, ref, id, label, icon):
         """
