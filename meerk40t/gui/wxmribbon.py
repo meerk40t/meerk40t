@@ -85,7 +85,6 @@ def register_panel_ribbon(window, context):
 class MKRibbonBarPanel(RibbonBarPanel):
     def __init__(self, parent, id, context=None, pane=None, **kwds):
         RibbonBarPanel.__init__(self, parent, id, context, **kwds)
-        self.context = context
         self.pane = pane
 
         # Layout properties.

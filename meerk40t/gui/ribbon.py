@@ -677,7 +677,6 @@ class RibbonBarPanel(wx.Control):
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
         self.minmax = None
-        self.context = context
         self.stored_labels = {}
         self.stored_height = 0
 
