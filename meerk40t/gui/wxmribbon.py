@@ -791,6 +791,7 @@ class RibbonBarPanel(wx.Control):
 
             panel_max_width = 0
             panel_max_height = 0
+            max_button_height = 0
             for panel in page.panels:
                 # Position for button top.
                 y = self.tab_height + self.page_panel_buffer
@@ -839,6 +840,7 @@ class RibbonBarPanel(wx.Control):
                         x + button_width,
                         y + button_height,
                     )
+                    max_button_height = max(max_button_height, button_height)
 
                     # Determine whether button is within overflow.
                     if button.position[2] > window_width - self.overflow_width:
@@ -859,6 +861,7 @@ class RibbonBarPanel(wx.Control):
                         )
                     x += button_width
                     panel_end_x = x
+
                 x += self.panel_button_buffer
                 y += self.panel_button_buffer
 
@@ -884,6 +887,19 @@ class RibbonBarPanel(wx.Control):
                     ]
                 # Step along x value between panels.
                 x += self.between_panel_buffer
+
+            # Now adjust all buttons, so that they have the same height:
+            for panel in page.panels:
+                # Position for button top.
+                y = self.tab_height + self.page_panel_buffer
+                y += self.panel_button_buffer
+                for button in panel.buttons:
+                    button.position = (
+                        button.position[0],
+                        button.position[1],
+                        button.position[2],
+                        y + max_button_height,
+                    )
 
             # Solve page max_x and max_y values
             max_x = 0
