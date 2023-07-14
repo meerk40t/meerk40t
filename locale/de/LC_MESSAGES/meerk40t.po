@@ -6630,21 +6630,25 @@ msgid "Snap-Options"
 msgstr "Einrast-Optionen"
 
 #: meerk40t/gui/snapoptions.py:43 meerk40t/gui/wxmmain.py:501
-msgid "Defines until which distance snap points will be highlighted"
+msgid "The screen distance in pixels inside which snap points will be highlighted"
 msgstr "Definiert bis zu welchem Abstand Einrast-Punkte hervorgehoben werden"
 
 #: meerk40t/gui/snapoptions.py:46 meerk40t/gui/wxmmain.py:512
-msgid "Snap to element"
+msgid "Snap to Element"
 msgstr "An Element einrasten"
 
 #: meerk40t/gui/snapoptions.py:48 meerk40t/gui/wxmmain.py:513
 msgid "Shall the cursor snap to the next element point?"
 msgstr "Soll der Cursor zum nächstgelegenen Element-Einrastpunkt springen?"
 
+msgid ""
+"If checked, the cursor will snap to the closest element "
+"point within the specified threshold"
+msgstr "Falls aktiv, wird der Cursor zum nächstgelegenen Element-Einrastpunkt springen"
+
 #: meerk40t/gui/snapoptions.py:54 meerk40t/gui/wxmmain.py:528
 msgid ""
-"Set the distance inside which the cursor will snap to the next element "
-"point"
+"Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
 msgstr ""
 "Definiert den Abstand innerhalb dessen der Cursor zum nächstgelegenen "
 "Element-Einrast-Punkt springt"
@@ -6657,10 +6661,12 @@ msgstr "Am Gitter einrasten"
 msgid "Shall the cursor snap to the next grid intersection?"
 msgstr "Soll der Cursor zum nächstgelegenen Gitter-Kreuzungspunkt springen?"
 
+msgid "If checked, the cursor will snap to the closest grid intersection"
+msgstr "Falls aktiv, springt der Cursor zum nächgelegenen Gitter-Kreuzungspunkt"
+
 #: meerk40t/gui/snapoptions.py:67 meerk40t/gui/wxmmain.py:556
 msgid ""
-"Set the distance inside which the cursor will snap to the next grid "
-"intersection"
+"Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
 msgstr ""
 "Definiert den Abstand innerhalb dessen der Cursor zum nächstgelegenen "
 "Gitter-Kreuzungspunkt springt"
@@ -6710,6 +6716,10 @@ msgstr "Historie bei Programmstart löschen"
 
 msgid "Ignore helper jobs"
 msgstr "Hilfs-Jobs ignorieren"
+
+#: meerk40t/gui/spoolerpanel.py:427
+msgid "Write CSV"
+msgstr "CSV-Protokoll"
 
 #: meerk40t/gui/spoolerpanel.py:116
 msgid "List and modify the queued operations"
@@ -7185,8 +7195,11 @@ msgid "Display-Distance"
 msgstr "Anzeigeradius"
 
 #: meerk40t/gui/wxmmain.py:527 meerk40t/gui/wxmmain.py:555
-msgid "Point-Snap-Threshold"
-msgstr "Einrast-Horizont"
+msgid "Element-Point-Snap-Threshold"
+msgstr "Abstand"
+
+msgid "Grid-Point-Snap-Threshold"
+msgstr "Abstand"
 
 #: meerk40t/gui/wxmmain.py:571
 msgid "Use in-scene tool-menu"
@@ -16080,4 +16093,26 @@ msgid ""
 msgstr ""
 "Hier kann ein anderer Willkommenstext als das Standard 'Grbl' hinterlegt werden, "
 "das ist für einige Spezial-Firmwares wie FluidNC nötig"
+
+msgid "What power level do we cut at?"
+msgstr "Welche Laser-Leistung soll beim Schneiden verwendet werden?"
+
+msgid "Delays"
+msgstr "Verzögerungen"
+
+#: meerk40t/balormk/device.py:662
+msgid "Input Signal Hold"
+msgstr "Input-Signal Haltezeit"
+
+#: meerk40t/balormk/device.py:663
+msgid "How long does the input operation need to hold for to count as a pass"
+msgstr "Wie lange muss das Input-Signal anliegen, damit es als Durchgang gewertet wird"
+
+#: meerk40t/balormk/device.py:672
+msgid "Input Operation Hardware"
+msgstr "Input-Operation Hardware"
+
+#: meerk40t/balormk/device.py:673
+msgid "Use hardware based input operation command"
+msgstr "Nutze Hardware-basierte Input-Operations Befehle"
 
