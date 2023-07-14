@@ -648,9 +648,8 @@ class RibbonBarPanel(wx.Control):
         self.context = context
         self._current_page = None
         self.pages = []
-        self._job = Job(
-            process=self._update_buffer_ui_thread,
-            # conditional=lambda: self._paint_dirty,
+        self._redraw_job = Job(
+            process=self._paint_main_on_buffer,
             job_name="realize_ribbon_bar",
             interval=0.1,
             times=1,
@@ -710,12 +709,12 @@ class RibbonBarPanel(wx.Control):
         )
 
         # Define Ribbon.
+        self._redraw_lock = threading.Lock()
         self._paint_dirty = True
         self._layout_dirty = True
         self._ribbon_buffer = None
 
         self.pipe_state = None
-        self.screen_refresh_lock = threading.Lock()
         self.recurse = True
         self._expanded_panel = None
         self._hover_button = None
@@ -742,7 +741,7 @@ class RibbonBarPanel(wx.Control):
         """
         self._paint_dirty = True
         self._layout_dirty = True
-        self.context.schedule(self._job)
+        self.context.schedule(self._redraw_job)
 
     def on_size(self, event: wx.SizeEvent):
         self._set_buffer()
@@ -795,12 +794,9 @@ class RibbonBarPanel(wx.Control):
         initially it is created in the self.scene.update_buffer_ui_thread() call.
         """
         if self._paint_dirty:
-            self._update_buffer_ui_thread()
+            self._paint_main_on_buffer()
 
         try:
-            if self._ribbon_buffer is None:
-                self.modified()
-                return
             wx.BufferedPaintDC(self, self._ribbon_buffer)
         except (RuntimeError, AssertionError, TypeError):
             pass
@@ -1104,19 +1100,19 @@ class RibbonBarPanel(wx.Control):
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
 
-    def _update_buffer_ui_thread(self):
+    def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         buf = self._set_buffer()
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
-        if self.screen_refresh_lock.acquire(timeout=0.2):
+        if self._redraw_lock.acquire(timeout=0.2):
             self._paint_main(dc)
-            self.screen_refresh_lock.release()
+            self._redraw_lock.release()
             self._paint_dirty = False
         dc.SelectObject(wx.NullBitmap)
         del dc
 
-        self.Refresh()
+        self.Refresh()  # Paint buffer on screen.
 
     def _set_buffer(self):
         """
