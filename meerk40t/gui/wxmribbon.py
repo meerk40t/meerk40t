@@ -190,10 +190,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
         GUI Specific creation of ribbonbar.
         @return:
         """
-        self.ribbonbar_caption_visible = False
-
-        self.ribbon_position_aspect_ratio = True
-        self.ribbon_position_ignore_update = False
 
         self.add_page(
             "design",

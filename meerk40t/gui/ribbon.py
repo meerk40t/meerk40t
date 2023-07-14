@@ -657,19 +657,12 @@ class RibbonBarPanel(wx.Control):
         # Layout properties.
         self.art = Art()
 
-        # Some helper variables for showing / hiding the toolbar
-        self.panels_shown = True
-        self.minmax = None
-        self.stored_labels = {}
-        self.stored_height = 0
-
         # Define Ribbon.
         self._redraw_lock = threading.Lock()
         self._paint_dirty = True
         self._layout_dirty = True
         self._ribbon_buffer = None
 
-        self.pipe_state = None
         self._overflow = list()
         self._overflow_position = None
 
