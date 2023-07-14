@@ -121,42 +121,6 @@ class Button:
         self.set_aspect(**description)
         self.apply_enable_rules()
 
-    def layout(self, dc: wx.DC, art):
-        x, y, max_x, max_y = self.position
-        button_width = max_x - x
-        button_height = max_y - y
-
-        bitmap = self.bitmap_large
-        bitmap_width, bitmap_height = bitmap.Size
-
-        # Calculate text height/width
-        text_width = 0
-        text_height = 0
-        if self.label and art.show_labels:
-            for word in self.label.split(" "):
-                line_width, line_height = dc.GetTextExtent(word)
-                text_width = max(text_width, line_width)
-                text_height += line_height
-
-        # Calculate button_width/button_height
-        button_width = max(bitmap_width, text_width)
-        button_height = (
-            bitmap_height
-            # + dropdown_height
-            + art.panel_button_buffer
-        )
-        if self.label and art.show_labels:
-            button_height += art.bitmap_text_buffer + text_height
-
-        if self.kind == "hybrid" and self.key != "toggle":
-            # Calculate dropdown
-            self.dropdown.position = (
-                x + bitmap_width / 2,
-                y + bitmap_height / 2,
-                x + bitmap_width,
-                y + bitmap_height,
-            )
-
     def set_aspect(
         self,
         label=None,
@@ -525,52 +489,6 @@ class RibbonPanel:
         self.buttons = []
         self.position = None
 
-    def layout(self, dc: wx.DC, art):
-        x, y, max_x, max_y = self.position
-        panel_width = max_x - x
-        panel_height = max_y - y
-
-        if art.horizontal:
-            button_horizontal = max(len(self.buttons), 1)
-            button_vertical = 1
-        else:
-            button_horizontal = 1
-            button_vertical = max(len(self.buttons), 1)
-
-        all_button_width = (
-            panel_width
-            - (button_horizontal - 1) * art.between_button_buffer
-            - 2 * art.panel_button_buffer
-        )
-        all_button_height = (
-            panel_height
-            - (button_vertical - 1) * art.between_button_buffer
-            - 2 * art.panel_button_buffer
-        )
-
-        button_width = all_button_width / button_horizontal
-        button_height = all_button_height / button_vertical
-
-        x += art.panel_button_buffer
-        y += art.panel_button_buffer
-
-        for b, button in enumerate(self.buttons):
-            if b != 0:
-                # Move across button gap if not first button.
-                if art.horizontal:
-                    x += art.between_button_buffer
-                else:
-                    y += art.between_button_buffer
-
-            button.position = x, y, x + button_width, y + button_height
-            print(f"button: {button.position}")
-            button.layout(dc, art)
-
-            if art.horizontal:
-                x += button_width
-            else:
-                y += button_height
-
     def clear_buttons(self):
         self.buttons.clear()
         self.parent.modified()
@@ -700,115 +618,6 @@ class RibbonPage:
         """
         self.panels.append(panel)
         setattr(self, ref, panel)
-
-    def layout(self, dc: wx.DC, art):
-        """
-        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
-        contains.
-
-        @param dc:
-        @param art:
-        @return:
-        """
-        x, y, max_x, max_y = self.position
-        page_width = max_x - x
-        page_height = max_y - y
-
-        # Count buttons and panels
-        total_button_count = 0
-        panel_count = 0
-        for panel in self.panels:
-            total_button_count += len(panel.buttons)
-            panel_count += 1
-
-        # Calculate h/v counts for panels and buttons
-        if art.horizontal:
-            all_button_horizontal = max(total_button_count, 1)
-            all_button_vertical = 1
-
-            all_panel_horizontal = max(panel_count, 1)
-            all_panel_vertical = 1
-        else:
-            all_button_horizontal = 1
-            all_button_vertical = max(total_button_count, 1)
-
-            all_panel_horizontal = 1
-            all_panel_vertical = max(panel_count, 1)
-
-        # Calculate width/height for just buttons.
-        button_width_across_panels = page_width
-        button_width_across_panels -= (
-            all_panel_horizontal - 1
-        ) * art.between_panel_buffer
-        button_width_across_panels -= 2 * art.page_panel_buffer
-
-        button_height_across_panels = page_height
-        button_height_across_panels -= (
-            all_panel_vertical - 1
-        ) * art.between_panel_buffer
-        button_height_across_panels -= 2 * art.page_panel_buffer
-
-        for p, panel in enumerate(self.panels):
-            if p == 0:
-                # Remove high-and-low perpendicular panel_button_buffer
-                if art.horizontal:
-                    button_height_across_panels -= 2 * art.panel_button_buffer
-                else:
-                    button_width_across_panels -= 2 * art.panel_button_buffer
-            for b, button in enumerate(panel.buttons):
-                if b == 0:
-                    # First and last buffers.
-                    if art.horizontal:
-                        button_width_across_panels -= 2 * art.panel_button_buffer
-                    else:
-                        button_height_across_panels -= 2 * art.panel_button_buffer
-                else:
-                    # Each gap between buttons
-                    if art.horizontal:
-                        button_width_across_panels -= art.between_button_buffer
-                    else:
-                        button_height_across_panels -= art.between_button_buffer
-
-        # Calculate width/height for each button.
-        button_width = button_width_across_panels / all_button_horizontal
-        button_height = button_height_across_panels / all_button_vertical
-
-        x += art.page_panel_buffer
-        y += art.page_panel_buffer
-        for p, panel in enumerate(self.panels):
-            if p != 0:
-                # Non-first move between panel gap.
-                if art.horizontal:
-                    x += art.between_panel_buffer
-                else:
-                    y += art.between_panel_buffer
-
-            if art.horizontal:
-                single_panel_horizontal = max(len(panel.buttons), 1)
-                single_panel_vertical = 1
-            else:
-                single_panel_horizontal = 1
-                single_panel_vertical = max(len(panel.buttons), 1)
-
-            panel_width = (
-                single_panel_horizontal * button_width
-                + (single_panel_horizontal - 1) * art.between_button_buffer
-                + 2 * art.panel_button_buffer
-            )
-            panel_height = (
-                single_panel_vertical * button_height
-                + (single_panel_vertical - 1) * art.between_button_buffer
-                + 2 * art.panel_button_buffer
-            )
-
-            panel.position = x, y, x + panel_width, y + panel_height
-            print(f"panel: {panel.position}")
-            panel.layout(dc, art)
-
-            if art.horizontal:
-                x += panel_width
-            else:
-                x += panel_height
 
     def contains(self, pos):
         """
@@ -950,51 +759,6 @@ class RibbonBarPanel(wx.Control):
         except (RuntimeError, AssertionError, TypeError):
             pass
 
-    def layout(self, dc: wx.DC, art):
-        """
-        Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
-
-        @param dc:
-        @param art:
-        @return:
-        """
-        horizontal = True
-        ribbon_width, ribbon_height = self.Size
-        print(f"ribbon: {self.Size}")
-        # ribbon_height -= 20
-
-        self._overflow.clear()
-        self._overflow_position = None
-        for pn, page in enumerate(self.pages):
-            # Set tab positioning.
-            page.tab_position = (
-                pn * art.tab_tab_buffer + pn * art.tab_width + art.tab_initial_buffer,
-                0,
-                pn * art.tab_tab_buffer
-                + (pn + 1) * art.tab_width
-                + art.tab_initial_buffer,
-                art.tab_height * 2,
-            )
-            if page is not self.art.current_page:
-                continue
-
-            page_width = ribbon_width - 2 * art.edge_page_buffer
-            page_height = ribbon_height - art.edge_page_buffer - art.tab_height
-
-            # Page start position.
-            x = art.edge_page_buffer
-            y = art.tab_height
-
-            # Set page position.
-            page.position = (
-                x,
-                y,
-                x + page_width,
-                y + page_height,
-            )
-            print(f"page: {page.position}")
-            page.layout(dc, art)
-
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         buf = self._set_buffer()
@@ -1002,7 +766,7 @@ class RibbonBarPanel(wx.Control):
         dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
             if self._layout_dirty:
-                self.layout(dc, self.art)
+                self.art.layout(dc, self)
                 self._layout_dirty = False
             self.art.paint_main(dc, self)
             self._redraw_lock.release()
@@ -1410,3 +1174,237 @@ class Art:
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
 
+    def layout(self, dc: wx.DC, ribbon):
+        """
+        Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
+
+        @param dc:
+        @param art:
+        @return:
+        """
+        ribbon_width, ribbon_height = dc.Size
+        print(f"ribbon: {dc.Size}")
+
+        ribbon._overflow.clear()
+        ribbon._overflow_position = None
+        for pn, page in enumerate(ribbon.pages):
+            # Set tab positioning.
+            page.tab_position = (
+                pn * self.tab_tab_buffer + pn * self.tab_width + self.tab_initial_buffer,
+                0,
+                pn * self.tab_tab_buffer
+                + (pn + 1) * self.tab_width
+                + self.tab_initial_buffer,
+                self.tab_height * 2,
+            )
+            if page is not self.current_page:
+                continue
+
+            page_width = ribbon_width - 2 * self.edge_page_buffer
+            page_height = ribbon_height - self.edge_page_buffer - self.tab_height
+
+            # Page start position.
+            x = self.edge_page_buffer
+            y = self.tab_height
+
+            # Set page position.
+            page.position = (
+                x,
+                y,
+                x + page_width,
+                y + page_height,
+            )
+            print(f"page: {page.position}")
+            self.page_layout(dc, page)
+
+    def page_layout(self, dc, page):
+        """
+        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
+        contains.
+
+        @param dc:
+        @param art:
+        @return:
+        """
+        x, y, max_x, max_y = page.position
+        page_width = max_x - x
+        page_height = max_y - y
+
+        # Count buttons and panels
+        total_button_count = 0
+        panel_count = 0
+        for panel in page.panels:
+            total_button_count += len(panel.buttons)
+            panel_count += 1
+
+        # Calculate h/v counts for panels and buttons
+        if self.horizontal:
+            all_button_horizontal = max(total_button_count, 1)
+            all_button_vertical = 1
+
+            all_panel_horizontal = max(panel_count, 1)
+            all_panel_vertical = 1
+        else:
+            all_button_horizontal = 1
+            all_button_vertical = max(total_button_count, 1)
+
+            all_panel_horizontal = 1
+            all_panel_vertical = max(panel_count, 1)
+
+        # Calculate width/height for just buttons.
+        button_width_across_panels = page_width
+        button_width_across_panels -= (
+                                              all_panel_horizontal - 1
+                                      ) * self.between_panel_buffer
+        button_width_across_panels -= 2 * self.page_panel_buffer
+
+        button_height_across_panels = page_height
+        button_height_across_panels -= (
+                                               all_panel_vertical - 1
+                                       ) * self.between_panel_buffer
+        button_height_across_panels -= 2 * self.page_panel_buffer
+
+        for p, panel in enumerate(page.panels):
+            if p == 0:
+                # Remove high-and-low perpendicular panel_button_buffer
+                if self.horizontal:
+                    button_height_across_panels -= 2 * self.panel_button_buffer
+                else:
+                    button_width_across_panels -= 2 * self.panel_button_buffer
+            for b, button in enumerate(panel.buttons):
+                if b == 0:
+                    # First and last buffers.
+                    if self.horizontal:
+                        button_width_across_panels -= 2 * self.panel_button_buffer
+                    else:
+                        button_height_across_panels -= 2 * self.panel_button_buffer
+                else:
+                    # Each gap between buttons
+                    if self.horizontal:
+                        button_width_across_panels -= self.between_button_buffer
+                    else:
+                        button_height_across_panels -= self.between_button_buffer
+
+        # Calculate width/height for each button.
+        button_width = button_width_across_panels / all_button_horizontal
+        button_height = button_height_across_panels / all_button_vertical
+
+        x += self.page_panel_buffer
+        y += self.page_panel_buffer
+        for p, panel in enumerate(page.panels):
+            if p != 0:
+                # Non-first move between panel gap.
+                if self.horizontal:
+                    x += self.between_panel_buffer
+                else:
+                    y += self.between_panel_buffer
+
+            if self.horizontal:
+                single_panel_horizontal = max(len(panel.buttons), 1)
+                single_panel_vertical = 1
+            else:
+                single_panel_horizontal = 1
+                single_panel_vertical = max(len(panel.buttons), 1)
+
+            panel_width = (
+                    single_panel_horizontal * button_width
+                    + (single_panel_horizontal - 1) * self.between_button_buffer
+                    + 2 * self.panel_button_buffer
+            )
+            panel_height = (
+                    single_panel_vertical * button_height
+                    + (single_panel_vertical - 1) * self.between_button_buffer
+                    + 2 * self.panel_button_buffer
+            )
+
+            panel.position = x, y, x + panel_width, y + panel_height
+            print(f"panel: {panel.position}")
+            self.panel_layout(dc, panel)
+
+            if self.horizontal:
+                x += panel_width
+            else:
+                x += panel_height
+
+
+    def panel_layout(self, dc: wx.DC, panel):
+        x, y, max_x, max_y = panel.position
+        panel_width = max_x - x
+        panel_height = max_y - y
+
+        if self.horizontal:
+            button_horizontal = max(len(panel.buttons), 1)
+            button_vertical = 1
+        else:
+            button_horizontal = 1
+            button_vertical = max(len(panel.buttons), 1)
+
+        all_button_width = (
+                panel_width
+                - (button_horizontal - 1) * self.between_button_buffer
+                - 2 * self.panel_button_buffer
+        )
+        all_button_height = (
+                panel_height
+                - (button_vertical - 1) * self.between_button_buffer
+                - 2 * self.panel_button_buffer
+        )
+
+        button_width = all_button_width / button_horizontal
+        button_height = all_button_height / button_vertical
+
+        x += self.panel_button_buffer
+        y += self.panel_button_buffer
+
+        for b, button in enumerate(panel.buttons):
+            if b != 0:
+                # Move across button gap if not first button.
+                if self.horizontal:
+                    x += self.between_button_buffer
+                else:
+                    y += self.between_button_buffer
+
+            button.position = x, y, x + button_width, y + button_height
+            print(f"button: {button.position}")
+            self.button_layout(dc, button)
+
+            if self.horizontal:
+                x += button_width
+            else:
+                y += button_height
+
+    def button_layout(self, dc: wx.DC, button):
+        x, y, max_x, max_y = button.position
+        button_width = max_x - x
+        button_height = max_y - y
+
+        bitmap = button.bitmap_large
+        bitmap_width, bitmap_height = bitmap.Size
+
+        # Calculate text height/width
+        text_width = 0
+        text_height = 0
+        if button.label and self.show_labels:
+            for word in button.label.split(" "):
+                line_width, line_height = dc.GetTextExtent(word)
+                text_width = max(text_width, line_width)
+                text_height += line_height
+
+        # Calculate button_width/button_height
+        button_width = max(bitmap_width, text_width)
+        button_height = (
+                bitmap_height
+                # + dropdown_height
+                + self.panel_button_buffer
+        )
+        if button.label and self.show_labels:
+            button_height += self.bitmap_text_buffer + text_height
+
+        if button.kind == "hybrid" and button.key != "toggle":
+            # Calculate dropdown
+            button.dropdown.position = (
+                x + bitmap_width / 2,
+                y + bitmap_height / 2,
+                x + bitmap_width,
+                y + bitmap_height,
+            )
