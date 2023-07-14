@@ -1190,7 +1190,9 @@ class Art:
         for pn, page in enumerate(ribbon.pages):
             # Set tab positioning.
             page.tab_position = (
-                pn * self.tab_tab_buffer + pn * self.tab_width + self.tab_initial_buffer,
+                pn * self.tab_tab_buffer
+                + pn * self.tab_width
+                + self.tab_initial_buffer,
                 0,
                 pn * self.tab_tab_buffer
                 + (pn + 1) * self.tab_width
@@ -1254,14 +1256,14 @@ class Art:
         # Calculate width/height for just buttons.
         button_width_across_panels = page_width
         button_width_across_panels -= (
-                                              all_panel_horizontal - 1
-                                      ) * self.between_panel_buffer
+            all_panel_horizontal - 1
+        ) * self.between_panel_buffer
         button_width_across_panels -= 2 * self.page_panel_buffer
 
         button_height_across_panels = page_height
         button_height_across_panels -= (
-                                               all_panel_vertical - 1
-                                       ) * self.between_panel_buffer
+            all_panel_vertical - 1
+        ) * self.between_panel_buffer
         button_height_across_panels -= 2 * self.page_panel_buffer
 
         for p, panel in enumerate(page.panels):
@@ -1307,14 +1309,14 @@ class Art:
                 single_panel_vertical = max(len(panel.buttons), 1)
 
             panel_width = (
-                    single_panel_horizontal * button_width
-                    + (single_panel_horizontal - 1) * self.between_button_buffer
-                    + 2 * self.panel_button_buffer
+                single_panel_horizontal * button_width
+                + (single_panel_horizontal - 1) * self.between_button_buffer
+                + 2 * self.panel_button_buffer
             )
             panel_height = (
-                    single_panel_vertical * button_height
-                    + (single_panel_vertical - 1) * self.between_button_buffer
-                    + 2 * self.panel_button_buffer
+                single_panel_vertical * button_height
+                + (single_panel_vertical - 1) * self.between_button_buffer
+                + 2 * self.panel_button_buffer
             )
 
             panel.position = x, y, x + panel_width, y + panel_height
@@ -1325,7 +1327,6 @@ class Art:
                 x += panel_width
             else:
                 x += panel_height
-
 
     def panel_layout(self, dc: wx.DC, panel):
         x, y, max_x, max_y = panel.position
@@ -1340,14 +1341,14 @@ class Art:
             button_vertical = max(len(panel.buttons), 1)
 
         all_button_width = (
-                panel_width
-                - (button_horizontal - 1) * self.between_button_buffer
-                - 2 * self.panel_button_buffer
+            panel_width
+            - (button_horizontal - 1) * self.between_button_buffer
+            - 2 * self.panel_button_buffer
         )
         all_button_height = (
-                panel_height
-                - (button_vertical - 1) * self.between_button_buffer
-                - 2 * self.panel_button_buffer
+            panel_height
+            - (button_vertical - 1) * self.between_button_buffer
+            - 2 * self.panel_button_buffer
         )
 
         button_width = all_button_width / button_horizontal
@@ -1393,9 +1394,9 @@ class Art:
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
         button_height = (
-                bitmap_height
-                # + dropdown_height
-                + self.panel_button_buffer
+            bitmap_height
+            # + dropdown_height
+            + self.panel_button_buffer
         )
         if button.label and self.show_labels:
             button_height += self.bitmap_text_buffer + text_height
