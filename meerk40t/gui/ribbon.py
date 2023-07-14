@@ -50,6 +50,56 @@ from meerk40t.kernel import Job
 from meerk40t.svgelements import Color
 
 
+class Art:
+    def __init__(self):
+        self.horizontal = True
+        self.between_button_buffer = 3
+        self.panel_button_buffer = 3
+        self.page_panel_buffer = 3
+        self.between_panel_buffer = 5
+
+        self.tab_width = 70
+        self.tab_height = 20
+        self.tab_tab_buffer = 10
+        self.tab_initial_buffer = 30
+        self.tab_text_buffer = 5
+        self.edge_page_buffer = 4
+
+        self.bitmap_text_buffer = 10
+        self.dropdown_height = 20
+        self.overflow_width = 20
+        self.text_dropdown_buffer = 7
+        self.show_labels = True
+
+        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+
+        self.button_face_hover = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        ).ChangeLightness(50)
+        self.inactive_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
+        )
+        self.inactive_text = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
+        self.tooltip_foreground = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT)
+        )
+        self.tooltip_background = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
+        )
+        self.button_face = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
+        )
+        self.highlight = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
+        )
+        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        self.font = wx.Font(
+            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+
+
 class DropDown:
     """
     Dropdowns are the triangle click addons that expand the button list to having other functions.
@@ -121,64 +171,41 @@ class Button:
         self.set_aspect(**description)
         self.apply_enable_rules()
 
-    def layout(self, dc: wx.DC, horizontal=True):
+    def layout(self, dc: wx.DC, art: Art):
         x, y, max_x, max_y = self.position
         button_width = max_x - x
         button_height = max_y - y
 
-        # bitmap = button.bitmap_large
-        # bitmap_width, bitmap_height = bitmap.Size
-        #
-        # # Calculate text height/width
-        # text_width = 0
-        # text_height = 0
-        # if button.label and self._show_labels:
-        #     for word in button.label.split(" "):
-        #         line_width, line_height = dc.GetTextExtent(word)
-        #         text_width = max(text_width, line_width)
-        #         text_height += line_height
-        #
-        # # Calculate button_width/button_height
-        # button_width = max(bitmap_width, text_width)
-        # button_height = (
-        #         bitmap_height
-        #         # + dropdown_height
-        #         + self.panel_button_buffer
-        # )
-        # if button.label and self._show_labels:
-        #     button_height += self.bitmap_text_buffer + text_height
-        #
-        # # Calculate the max value for pane size based on button position
-        # panel_width = max(button_width, panel_width)
-        # panel_height = max(button_height, panel_height)
-        #
-        # # layout button_position
-        # button.position = (
-        #     x,
-        #     y,
-        #     x + button_width,
-        #     y + button_height,
-        # )
-        #
-        # # Determine whether button is within overflow.
-        # if button.position[2] > window_width - self.overflow_width:
-        #     real_width_of_overflow = self.overflow_width
-        #     button.overflow = True
-        #     self._overflow.append(button)
-        # else:
-        #     button.overflow = False
-        #     button_count += 1
-        #
-        # if button.kind == "hybrid" and button.key != "toggle":
-        #     # Calculate dropdown
-        #     button.dropdown.position = (
-        #         x + bitmap_width / 2,
-        #         y + bitmap_height / 2,
-        #         x + bitmap_width,
-        #         y + bitmap_height,
-        #     )
-        # x += button_width
-        # panel_end_x = x
+        bitmap = self.bitmap_large
+        bitmap_width, bitmap_height = bitmap.Size
+
+        # Calculate text height/width
+        text_width = 0
+        text_height = 0
+        if self.label and art.show_labels:
+            for word in self.label.split(" "):
+                line_width, line_height = dc.GetTextExtent(word)
+                text_width = max(text_width, line_width)
+                text_height += line_height
+
+        # Calculate button_width/button_height
+        button_width = max(bitmap_width, text_width)
+        button_height = (
+            bitmap_height
+            # + dropdown_height
+            + art.panel_button_buffer
+        )
+        if self.label and art.show_labels:
+            button_height += art.bitmap_text_buffer + text_height
+
+        if self.kind == "hybrid" and self.key != "toggle":
+            # Calculate dropdown
+            self.dropdown.position = (
+                x + bitmap_width / 2,
+                y + bitmap_height / 2,
+                x + bitmap_width,
+                y + bitmap_height,
+            )
 
     def set_aspect(
         self,
@@ -548,43 +575,48 @@ class RibbonPanel:
         self.buttons = []
         self.position = None
 
-        self.between_button_buffer = 3
-        self.panel_button_buffer = 3
-
-    def layout(self, dc: wx.DC, horizontal=True):
+    def layout(self, dc: wx.DC, art: Art):
         x, y, max_x, max_y = self.position
         panel_width = max_x - x
         panel_height = max_y - y
 
-        if horizontal:
+        if art.horizontal:
             button_horizontal = max(len(self.buttons), 1)
             button_vertical = 1
         else:
             button_horizontal = 1
             button_vertical = max(len(self.buttons), 1)
 
-        all_button_width = panel_width - (button_horizontal - 1) * self.between_button_buffer - 2 * self.panel_button_buffer
-        all_button_height = panel_height - (button_vertical - 1) * self.between_button_buffer - 2 * self.panel_button_buffer
+        all_button_width = (
+            panel_width
+            - (button_horizontal - 1) * art.between_button_buffer
+            - 2 * art.panel_button_buffer
+        )
+        all_button_height = (
+            panel_height
+            - (button_vertical - 1) * art.between_button_buffer
+            - 2 * art.panel_button_buffer
+        )
 
         button_width = all_button_width / button_horizontal
         button_height = all_button_height / button_vertical
 
-        x += self.panel_button_buffer
-        y += self.panel_button_buffer
+        x += art.panel_button_buffer
+        y += art.panel_button_buffer
 
         for b, button in enumerate(self.buttons):
             if b != 0:
                 # Move across button gap if not first button.
-                if horizontal:
-                    x += self.between_button_buffer
+                if art.horizontal:
+                    x += art.between_button_buffer
                 else:
-                    y += self.between_button_buffer
+                    y += art.between_button_buffer
 
             button.position = x, y, x + button_width, y + button_height
             print(f"button: {button.position}")
-            button.layout(dc, horizontal)
+            button.layout(dc, art)
 
-            if horizontal:
+            if art.horizontal:
                 x += button_width
             else:
                 y += button_height
@@ -708,8 +740,6 @@ class RibbonPage:
         self.panels = []
         self.position = None
         self.tab_position = None
-        self.page_panel_buffer = 3
-        self.between_panel_buffer = 5
 
     def add_panel(self, panel, ref):
         """
@@ -721,13 +751,13 @@ class RibbonPage:
         self.panels.append(panel)
         setattr(self, ref, panel)
 
-    def layout(self, dc: wx.DC, horizontal=True):
+    def layout(self, dc: wx.DC, art: Art):
         """
         Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
         contains.
 
         @param dc:
-        @param horizontal:
+        @param art:
         @return:
         """
         x, y, max_x, max_y = self.position
@@ -742,7 +772,7 @@ class RibbonPage:
             panel_count += 1
 
         # Calculate h/v counts for panels and buttons
-        if horizontal:
+        if art.horizontal:
             all_button_horizontal = max(total_button_count, 1)
             all_button_vertical = 1
 
@@ -757,63 +787,75 @@ class RibbonPage:
 
         # Calculate width/height for just buttons.
         button_width_across_panels = page_width
-        button_width_across_panels -= (all_panel_horizontal - 1) * self.between_panel_buffer
-        button_width_across_panels -= 2 * self.page_panel_buffer
+        button_width_across_panels -= (
+            all_panel_horizontal - 1
+        ) * art.between_panel_buffer
+        button_width_across_panels -= 2 * art.page_panel_buffer
 
         button_height_across_panels = page_height
-        button_height_across_panels -= (all_panel_vertical - 1) * self.between_panel_buffer
-        button_height_across_panels -= 2 * self.page_panel_buffer
+        button_height_across_panels -= (
+            all_panel_vertical - 1
+        ) * art.between_panel_buffer
+        button_height_across_panels -= 2 * art.page_panel_buffer
 
         for p, panel in enumerate(self.panels):
             if p == 0:
                 # Remove high-and-low perpendicular panel_button_buffer
-                if horizontal:
-                    button_height_across_panels -= 2 * panel.panel_button_buffer
+                if art.horizontal:
+                    button_height_across_panels -= 2 * art.panel_button_buffer
                 else:
-                    button_width_across_panels -= 2 * panel.panel_button_buffer
+                    button_width_across_panels -= 2 * art.panel_button_buffer
             for b, button in enumerate(panel.buttons):
                 if b == 0:
                     # First and last buffers.
-                    if horizontal:
-                        button_width_across_panels -= 2 * panel.panel_button_buffer
+                    if art.horizontal:
+                        button_width_across_panels -= 2 * art.panel_button_buffer
                     else:
-                        button_height_across_panels -= 2 * panel.panel_button_buffer
+                        button_height_across_panels -= 2 * art.panel_button_buffer
                 else:
                     # Each gap between buttons
-                    if horizontal:
-                        button_width_across_panels -= panel.between_button_buffer
+                    if art.horizontal:
+                        button_width_across_panels -= art.between_button_buffer
                     else:
-                        button_height_across_panels -= panel.between_button_buffer
+                        button_height_across_panels -= art.between_button_buffer
 
         # Calculate width/height for each button.
         button_width = button_width_across_panels / all_button_horizontal
         button_height = button_height_across_panels / all_button_vertical
 
-        x += self.page_panel_buffer
-        y += self.page_panel_buffer
+        x += art.page_panel_buffer
+        y += art.page_panel_buffer
         for p, panel in enumerate(self.panels):
             if p != 0:
                 # Non-first move between panel gap.
-                if horizontal:
-                    x += self.between_panel_buffer
+                if art.horizontal:
+                    x += art.between_panel_buffer
                 else:
-                    y += self.between_panel_buffer
+                    y += art.between_panel_buffer
 
-            if horizontal:
+            if art.horizontal:
                 single_panel_horizontal = max(len(panel.buttons), 1)
                 single_panel_vertical = 1
             else:
                 single_panel_horizontal = 1
                 single_panel_vertical = max(len(panel.buttons), 1)
 
-            panel_width = single_panel_horizontal * button_width + (single_panel_horizontal - 1) * panel.between_button_buffer + 2 * panel.panel_button_buffer
-            panel_height = single_panel_vertical * button_height + (single_panel_vertical - 1) * panel.between_button_buffer + 2 * panel.panel_button_buffer
+            panel_width = (
+                single_panel_horizontal * button_width
+                + (single_panel_horizontal - 1) * art.between_button_buffer
+                + 2 * art.panel_button_buffer
+            )
+            panel_height = (
+                single_panel_vertical * button_height
+                + (single_panel_vertical - 1) * art.between_button_buffer
+                + 2 * art.panel_button_buffer
+            )
 
             panel.position = x, y, x + panel_width, y + panel_height
             print(f"panel: {panel.position}")
-            panel.layout(dc, horizontal)
+            panel.layout(dc, art)
 
-            if horizontal:
+            if art.horizontal:
                 x += panel_width
             else:
                 x += panel_height
@@ -855,53 +897,13 @@ class RibbonBarPanel(wx.Control):
             run_main=True,
         )
         # Layout properties.
-        self.horizontal = True
-        self.tab_width = 70
-        self.tab_height = 20
-        self.tab_tab_buffer = 10
-        self.tab_initial_buffer = 30
-        self.tab_text_buffer = 5
-        self.edge_page_buffer = 4
-
-        self.bitmap_text_buffer = 10
-        self.dropdown_height = 20
-        self.overflow_width = 20
-        self.text_dropdown_buffer = 7
-        self._show_labels = True
+        self.art = Art()
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
         self.minmax = None
         self.stored_labels = {}
         self.stored_height = 0
-
-        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
-
-        self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        ).ChangeLightness(50)
-        self.inactive_background = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
-        )
-        self.inactive_text = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        )
-        self.tooltip_foreground = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOTEXT)
-        )
-        self.tooltip_background = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_INFOBK)
-        )
-        self.button_face = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNFACE)
-        )
-        self.highlight = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
-        )
-        self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        self.font = wx.Font(
-            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
 
         # Define Ribbon.
         self._redraw_lock = threading.Lock()
@@ -996,11 +998,12 @@ class RibbonBarPanel(wx.Control):
         except (RuntimeError, AssertionError, TypeError):
             pass
 
-    def layout(self, dc: wx.DC):
+    def layout(self, dc: wx.DC, art: Art):
         """
         Performs the layout of the page. This is determined to be the size of the ribbon minus any edge buffering.
 
         @param dc:
+        @param art:
         @return:
         """
         horizontal = True
@@ -1013,24 +1016,22 @@ class RibbonBarPanel(wx.Control):
         for pn, page in enumerate(self.pages):
             # Set tab positioning.
             page.tab_position = (
-                pn * self.tab_tab_buffer
-                + pn * self.tab_width
-                + self.tab_initial_buffer,
+                pn * art.tab_tab_buffer + pn * art.tab_width + art.tab_initial_buffer,
                 0,
-                pn * self.tab_tab_buffer
-                + (pn + 1) * self.tab_width
-                + self.tab_initial_buffer,
-                self.tab_height * 2,
+                pn * art.tab_tab_buffer
+                + (pn + 1) * art.tab_width
+                + art.tab_initial_buffer,
+                art.tab_height * 2,
             )
             if page is not self._current_page:
                 continue
 
-            page_width = ribbon_width - 2 * self.edge_page_buffer
-            page_height = ribbon_height - self.edge_page_buffer - self.tab_height
+            page_width = ribbon_width - 2 * art.edge_page_buffer
+            page_height = ribbon_height - art.edge_page_buffer - art.tab_height
 
             # Page start position.
-            x = self.edge_page_buffer
-            y = self.tab_height
+            x = art.edge_page_buffer
+            y = art.tab_height
 
             # Set page position.
             page.position = (
@@ -1040,7 +1041,7 @@ class RibbonBarPanel(wx.Control):
                 y + page_height,
             )
             print(f"page: {page.position}")
-            page.layout(dc, horizontal)
+            page.layout(dc, art)
 
     def _paint_tab(self, dc: wx.DC, page: RibbonPage):
         """
@@ -1050,18 +1051,19 @@ class RibbonBarPanel(wx.Control):
         @param page:
         @return:
         """
+        art = self.art
         dc.SetPen(wx.BLACK_PEN)
         if page is not self._current_page:
-            dc.SetBrush(wx.Brush(self.button_face))
+            dc.SetBrush(wx.Brush(art.button_face))
         else:
-            dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetBrush(wx.Brush(art.highlight))
         if page is self._hover_tab and self._hover_button is None:
-            dc.SetBrush(wx.Brush(self.button_face_hover))
+            dc.SetBrush(wx.Brush(art.button_face_hover))
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        dc.SetFont(self.font)
+        dc.SetFont(art.font)
         dc.DrawText(
-            page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
+            page.label, int(x + art.tab_text_buffer), int(y + art.tab_text_buffer)
         )
 
     def _paint_background(self, dc: wx.DC):
@@ -1070,8 +1072,9 @@ class RibbonBarPanel(wx.Control):
         @param dc:
         @return:
         """
+        art = self.art
         w, h = self.Size
-        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetBrush(wx.Brush(art.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.DrawRectangle(0, 0, w, h)
 
@@ -1084,8 +1087,9 @@ class RibbonBarPanel(wx.Control):
         """
         if not self._overflow_position:
             return
+        art = self.art
         x, y, x1, y1 = self._overflow_position
-        dc.SetBrush(wx.Brush(self.highlight))
+        dc.SetBrush(wx.Brush(art.highlight))
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
@@ -1098,8 +1102,9 @@ class RibbonBarPanel(wx.Control):
         """
         if not panel.position:
             return
+        art = self.art
         x, y, x1, y1 = panel.position
-        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetBrush(wx.Brush(art.button_face))
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
 
@@ -1112,9 +1117,9 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         x, y, x1, y1 = dropdown.position
-
+        art = self.art
         if dropdown is self._hover_dropdown:
-            dc.SetBrush(wx.Brush(wx.Colour(self.highlight)))
+            dc.SetBrush(wx.Brush(wx.Colour(art.highlight)))
         else:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -1132,7 +1137,7 @@ class RibbonBarPanel(wx.Control):
             for x in (0, 90, 180)
         ]
         dc.SetPen(wx.BLACK_PEN)
-        dc.SetBrush(wx.Brush(self.inactive_background))
+        dc.SetBrush(wx.Brush(art.inactive_background))
         dc.DrawPolygon(points)
 
     def _paint_button(self, dc: wx.DC, button: Button):
@@ -1145,23 +1150,23 @@ class RibbonBarPanel(wx.Control):
         """
         if button.overflow:
             return
-
+        art = self.art
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
         if not button.enabled:
             bitmap = button.bitmap_large_disabled
             bitmap_small = button.bitmap_small_disabled
 
-        dc.SetBrush(wx.Brush(self.button_face))
+        dc.SetBrush(wx.Brush(art.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
         if not button.enabled:
-            dc.SetBrush(wx.Brush(self.inactive_background))
+            dc.SetBrush(wx.Brush(art.inactive_background))
             dc.SetPen(wx.TRANSPARENT_PEN)
         if button.toggle:
-            dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetBrush(wx.Brush(art.highlight))
             dc.SetPen(wx.BLACK_PEN)
         if self._hover_button is button and self._hover_dropdown is None:
-            dc.SetBrush(wx.Brush(self.button_face_hover))
+            dc.SetBrush(wx.Brush(art.button_face_hover))
             dc.SetPen(wx.BLACK_PEN)
 
         x, y, x1, y1 = button.position
@@ -1173,9 +1178,9 @@ class RibbonBarPanel(wx.Control):
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
         y += bitmap_height
 
-        if button.label and self._show_labels:
-            y += self.bitmap_text_buffer
-            dc.SetFont(self.font)
+        if button.label and art.show_labels:
+            y += art.bitmap_text_buffer
+            dc.SetFont(art.font)
             for word in button.label.split(" "):
                 text_width, text_height = dc.GetTextExtent(word)
                 dc.DrawText(
@@ -1185,7 +1190,7 @@ class RibbonBarPanel(wx.Control):
                 )
                 y += text_height
         if button.dropdown is not None and button.dropdown.position is not None:
-            y += self.text_dropdown_buffer
+            y += art.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
 
     def _paint_main_on_buffer(self):
@@ -1224,8 +1229,9 @@ class RibbonBarPanel(wx.Control):
         Main paint routine. This should delegate, in paint order, to the things on screen that require painting.
         @return:
         """
+        art = self.art
         if self._layout_dirty:
-            self.layout(dc)
+            self.layout(dc, art)
             self._layout_dirty = False
         self._paint_background(dc)
         for page in self.pages:
@@ -1234,7 +1240,7 @@ class RibbonBarPanel(wx.Control):
         for page in self.pages:
             if page is not self._current_page:
                 continue
-            dc.SetBrush(wx.Brush(self.button_face))
+            dc.SetBrush(wx.Brush(art.button_face))
             x, y, x1, y1 = page.position
             dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
             for panel in page.panels:
@@ -1244,7 +1250,7 @@ class RibbonBarPanel(wx.Control):
         self._paint_overflow(dc)
 
     def toggle_show_labels(self, v):
-        self._show_labels = v
+        self.art.show_labels = v
         self.modified()
 
     def _button_at_position(self, pos):
