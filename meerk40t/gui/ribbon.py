@@ -709,7 +709,7 @@ class RibbonPage:
         self.position = None
         self.tab_position = None
         self.page_panel_buffer = 3
-        self.between_panel_buffer = 50
+        self.between_panel_buffer = 5
 
     def add_panel(self, panel, ref):
         """
@@ -766,12 +766,11 @@ class RibbonPage:
 
         for p, panel in enumerate(self.panels):
             if p == 0:
-                # Remove non-primary angle
+                # Remove high-and-low perpendicular panel_button_buffer
                 if horizontal:
-                    # If horizontal, we're removing the one buffer of height.
-                    button_height_across_panels -= panel.panel_button_buffer
+                    button_height_across_panels -= 2 * panel.panel_button_buffer
                 else:
-                    button_width_across_panels -= panel.panel_button_buffer
+                    button_width_across_panels -= 2 * panel.panel_button_buffer
             for b, button in enumerate(panel.buttons):
                 if b == 0:
                     # First and last buffers.
