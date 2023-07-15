@@ -1536,7 +1536,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements(
                     "align push first individual left pop\n"
                 ),
-                "right": lambda v: kernel.elements("align push bed group left pop\n"),
+                "action_right": lambda v: kernel.elements("align push bed group left pop\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1599,7 +1599,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first right\n"),
-                "right": lambda v: kernel.elements("align bed group right\n"),
+                "action_right": lambda v: kernel.elements("align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1616,7 +1616,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first top\n"),
-                "right": lambda v: kernel.elements("align bed group top\n"),
+                "action_right": lambda v: kernel.elements("align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1633,7 +1633,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first bottom\n"),
-                "right": lambda v: kernel.elements("align bed group bottom\n"),
+                "action_right": lambda v: kernel.elements("align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1650,7 +1650,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerh\n"),
-                "right": lambda v: kernel.elements("align bed group centerh\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1667,7 +1667,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerv\n"),
-                "right": lambda v: kernel.elements("align bed group centerv\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1686,7 +1686,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
-                "right": lambda v: kernel.elements("align spaceh2\n"),
+                "action_right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1705,7 +1705,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spacev\n"),
-                "right": lambda v: kernel.elements("align spacev2\n"),
+                "action_right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))

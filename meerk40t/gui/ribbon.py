@@ -875,6 +875,7 @@ class RibbonBarPanel(wx.Control):
         button = self._button_at_position(pos)
         if page is not None and button is None:
             self.art.current_page = page
+            self.apply_enable_rules()
             self.modified()
             return
         if button is None:
