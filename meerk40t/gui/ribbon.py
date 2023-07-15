@@ -1178,7 +1178,7 @@ class Art:
         @return:
         """
         ribbon_width, ribbon_height = dc.Size
-        print(f"ribbon: {dc.Size}")
+        # print(f"ribbon: {dc.Size}")
 
         ribbon._overflow.clear()
         ribbon._overflow_position = None
@@ -1211,7 +1211,7 @@ class Art:
                 x + page_width,
                 y + page_height,
             )
-            print(f"page: {page.position}")
+            # print(f"page: {page.position}")
             self.page_layout(dc, page)
 
     def page_layout(self, dc, page):
@@ -1315,7 +1315,7 @@ class Art:
             )
 
             panel.position = x, y, x + panel_width, y + panel_height
-            print(f"panel: {panel.position}")
+            # print(f"panel: {panel.position}")
             self.panel_layout(dc, panel)
 
             if self.horizontal:
@@ -1361,7 +1361,7 @@ class Art:
                     y += self.between_button_buffer
 
             button.position = x, y, x + button_width, y + button_height
-            print(f"button: {button.position}")
+            # print(f"button: {button.position}")
             self.button_layout(dc, button)
 
             if self.horizontal:
