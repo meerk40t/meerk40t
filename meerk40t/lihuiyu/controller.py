@@ -805,6 +805,8 @@ class LihuiyuController:
         i = 0
         while self.state != "terminate":
             self.update_status()
+            if self._status is None:
+                raise ConnectionError
             status = self._status[1]
             if status == 0:
                 raise ConnectionError
