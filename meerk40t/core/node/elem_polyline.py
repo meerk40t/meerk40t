@@ -238,4 +238,4 @@ class PolylineNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
         path.move(list(self.geometry.as_points()))
-        return Path
+        return path
