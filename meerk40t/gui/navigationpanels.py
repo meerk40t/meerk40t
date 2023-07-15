@@ -5,6 +5,7 @@ from time import time
 import wx
 from wx import aui
 
+from meerk40t.kernel import signal_listener
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
@@ -1916,6 +1917,17 @@ class Transform(wx.Panel):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("modified", self.on_modified_element)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    # To get updates about translation / scaling of selected elements
+    # we need to attach to some signals...
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_matrix_text()
+
+    @signal_listener("tool_modified")
+    def on_modified(self, *args):
+        self.update_matrix_text()
 
     def set_timer_options(self):
         interval = self.context.button_repeat
