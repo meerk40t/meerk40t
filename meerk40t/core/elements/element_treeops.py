@@ -984,8 +984,8 @@ def init_tree(kernel):
         if hasattr(node, "can_remove") and not node.can_remove:
             pass
         else:
-            node.remove_node()
             self.set_emphasis(None)
+            node.remove_node()
 
     @tree_conditional(
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
@@ -997,9 +997,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_op(node, **kwargs):
-
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1012,8 +1011,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_blob(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
         self.signal("operation_removed")
 
     @tree_conditional(
@@ -1056,8 +1055,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_grp(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
 
     @tree_conditional(lambda cond: contains_no_unremovable_items())
     @tree_conditional(
@@ -1072,8 +1071,8 @@ def init_tree(kernel):
         help="",
     )
     def remove_type_file(node, **kwargs):
-        node.remove_node()
         self.set_emphasis(None)
+        node.remove_node()
 
     @tree_conditional(lambda node: not is_regmark(node))
     @tree_operation(
