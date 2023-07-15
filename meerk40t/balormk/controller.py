@@ -203,6 +203,7 @@ single_command_lookup = {
 
 BUSY = 0x04
 READY = 0x20
+AXIS = 0x40
 
 
 def _bytes_to_words(r):
@@ -704,6 +705,10 @@ class GalvoController:
         status = self.status()
         return bool(status & READY)
 
+    def is_axis(self):
+        status = self.status()
+        return bool(status & AXIS)
+
     def is_ready_and_not_busy(self):
         if self.mode == DRIVER_STATE_RAW:
             return True
@@ -714,6 +719,14 @@ class GalvoController:
         if self.mode == DRIVER_STATE_RAW:
             return
         while not self.is_ready_and_not_busy():
+            time.sleep(0.01)
+            if self.is_shutdown:
+                return
+
+    def wait_axis(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
+        while self.is_axis():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
@@ -1393,17 +1406,17 @@ class GalvoController:
     def read_port(self):
         return self._command(ReadPort)
 
-    def set_axis_motion_param(self, param):
-        return self._command(SetAxisMotionParam, param)
+    def set_axis_motion_param(self, *param):
+        return self._command(SetAxisMotionParam, *param)
 
-    def set_axis_origin_param(self, param):
-        return self._command(SetAxisOriginParam, param)
+    def set_axis_origin_param(self, *param):
+        return self._command(SetAxisOriginParam, *param)
 
     def axis_go_origin(self):
         return self._command(AxisGoOrigin)
 
     def move_axis_to(self, a):
-        return self._command(MoveAxisTo)
+        return self._command(MoveAxisTo, a)
 
     def get_axis_pos(self):
         return self._command(GetAxisPos)
