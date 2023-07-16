@@ -559,24 +559,32 @@ def offset_path(
                 # Arc is not working, so we always linearize
                 arclinearize = True
                 newsegment = offset_arc(segment, offset, arclinearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, QuadraticBezier):
                 newsegment = offset_quad(segment, offset, linearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
+                p._segments[idx] = newsegment[0]  # TODO: indexError as newsegment can return an empty list
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
                 newsegment = offset_line(segment, offset)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first

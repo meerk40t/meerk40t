@@ -2,6 +2,7 @@
 This module creates a very basic BusyInfo implementation.
 Based on the wxpython wxlib.busy routines.
 """
+import threading
 
 import wx
 
@@ -23,6 +24,7 @@ class BusyInfo:
     """
 
     def __init__(self, parent=None, **kwds):
+        self.lock = threading.RLock()
         self.busy_object = None
         self.msg = None
         self.bgcolor = None
@@ -64,29 +66,28 @@ class BusyInfo:
 
     def start(self, **kwds):
         self.end()
-        # self.frame = wx.Frame(
-        #     self.parent, style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP
-        # )
-        self.frame = wx.Frame(
-            self.parent,
-            id=wx.ID_ANY,
-            style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP,
-        )
-        self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
-        self.text = wx.StaticText(
-            self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL
-        )
-        self.update_keywords(kwds)
-        self.show()
-        self.shown = True
+        with self.lock:
+            self.frame = wx.Frame(
+                self.parent,
+                id=wx.ID_ANY,
+                style=wx.BORDER_SIMPLE | wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP,
+            )
+            self.panel = wx.Panel(self.frame, id=wx.ID_ANY)
+            self.text = wx.StaticText(
+                self.panel, id=wx.ID_ANY, label="", style=wx.ALIGN_CENTRE_HORIZONTAL
+            )
+            self.update_keywords(kwds)
+            self.show()
+            self.shown = True
 
     def end(self):
-        self.hide()
-        if self.frame:
-            self.frame.Close()
-            del self.frame
-            self.frame = None
-        self.shown = False
+        with self.lock:
+            self.hide()
+            if self.frame:
+                self.frame.Close()
+                del self.frame
+                self.frame = None
+            self.shown = False
 
     def change(self, **kwds):
         self.update_keywords(kwds)
@@ -101,32 +102,32 @@ class BusyInfo:
         self.parent = newparent
 
     def show(self):
-        if self.frame is None or self.panel is None or self.text is None:
-            # Shouldn't happen, `show` called before `start`
-            # print (f"Strange, show called although frame was none: {self.shown}")
-            return
-        for win in [self.panel, self.text]:
-            win.SetBackgroundColour(self.bgcolor)
-        for win in [self.panel, self.text]:
-            win.SetForegroundColour(self.fgcolor)
-        try:
-            self.fontsize = int(self.fontsize)
-        except ValueError:
-            self.fontsize = DEFAULT_SIZE
-        font = wx.Font(
-            self.fontsize,
-            wx.FONTFAMILY_SWISS,
-            wx.FONTSTYLE_NORMAL,
-            wx.FONTWEIGHT_NORMAL,
-        )
-        self.text.SetFont(font)
-        self.text.SetLabel(self.msg)
-        size = self.text.GetBestSize()
-        self.frame.SetClientSize((size.width + 60, size.height + 40))
-        self.panel.SetSize(self.frame.GetClientSize())
-        self.text.Center()
-        self.frame.Center()
-        # That may be a bit over the top, but we really want an update :-)
-        self.frame.Show()
-        self.frame.Refresh()
-        self.frame.Update()
+        with self.lock:
+            if self.frame is None or self.panel is None or self.text is None:
+                # The busy was ended before this thread could acquire the lock.
+                return
+            for win in [self.panel, self.text]:
+                win.SetBackgroundColour(self.bgcolor)
+            for win in [self.panel, self.text]:
+                win.SetForegroundColour(self.fgcolor)
+            try:
+                self.fontsize = int(self.fontsize)
+            except ValueError:
+                self.fontsize = DEFAULT_SIZE
+            font = wx.Font(
+                self.fontsize,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+            self.text.SetFont(font)
+            self.text.SetLabel(self.msg)
+            size = self.text.GetBestSize()
+            self.frame.SetClientSize((size.width + 60, size.height + 40))
+            self.panel.SetSize(self.frame.GetClientSize())
+            self.text.Center()
+            self.frame.Center()
+            # That may be a bit over the top, but we really want an update :-)
+            self.frame.Show()
+            self.frame.Refresh()
+            self.frame.Update()

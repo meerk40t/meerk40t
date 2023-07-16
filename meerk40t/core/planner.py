@@ -666,7 +666,7 @@ class Planner(Service):
 
             for c in data.plan:
                 if isinstance(c, CutCode):
-                    operations.add(c, type="cutcode")
+                    operations.add(type="cutcode", cutcode=c)
                 if isinstance(
                     c,
                     (

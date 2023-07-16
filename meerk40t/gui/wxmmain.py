@@ -3264,6 +3264,8 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("file;loaded")
+    @signal_listener("file;saved")
+    @signal_listener("file;cleared")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
@@ -3456,8 +3458,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.Reposition(value)
 
     def __set_titlebar(self):
-        device_name = ""
-        device_version = ""
         label = self.context.elements.filename
         if label is None:
             label = ""

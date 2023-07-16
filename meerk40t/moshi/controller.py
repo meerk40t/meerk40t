@@ -213,6 +213,8 @@ class MoshiController:
             self.connection.write_addr(data)
         except ConnectionRefusedError:
             pass  # could not open connection.
+        except ConnectionError:
+            pass  # Connection did not return success.
 
     def start(self):
         """
