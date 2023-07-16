@@ -118,6 +118,8 @@ class Button:
         self.action = None
         self.action_right = None
         self.rule_enabled = None
+        self.min_width = 0
+        self.min_height = 0
         self.set_aspect(**description)
         self.apply_enable_rules()
 
@@ -1337,6 +1339,7 @@ class Art:
         panel_width = max_x - x
         panel_height = max_y - y
 
+        distribute_evenly = False
         if self.horizontal:
             button_horizontal = max(len(panel.buttons), 1)
             button_vertical = 1
@@ -1362,6 +1365,16 @@ class Art:
         y += self.panel_button_buffer
 
         for b, button in enumerate(panel.buttons):
+            self.button_calc(dc, button)
+            this_width = button_width
+            this_height = button_height
+            local_width = button.min_width
+            local_height = button.min_height
+            if not distribute_evenly:
+                if button_horizontal > 1:
+                    this_width = min(this_width, local_width)
+                if button_vertical > 1:
+                    this_height = min(this_height, local_height)
             if b != 0:
                 # Move across button gap if not first button.
                 if self.horizontal:
@@ -1369,20 +1382,16 @@ class Art:
                 else:
                     y += self.between_button_buffer
 
-            button.position = x, y, x + button_width, y + button_height
+            button.position = x, y, x + this_width, y + this_height
             # print(f"button: {button.position}")
             self.button_layout(dc, button)
 
             if self.horizontal:
-                x += button_width
+                x += this_width
             else:
-                y += button_height
+                y += this_height
 
-    def button_layout(self, dc: wx.DC, button):
-        x, y, max_x, max_y = button.position
-        button_width = max_x - x
-        button_height = max_y - y
-
+    def button_calc(self, dc: wx.DC, button):
         bitmap = button.bitmap_large
         bitmap_width, bitmap_height = bitmap.Size
 
@@ -1405,6 +1414,15 @@ class Art:
         if button.label and self.show_labels:
             button_height += self.bitmap_text_buffer + text_height
 
+        button.min_width = button_width
+        button.min_height = button_height
+
+    def button_layout(self, dc: wx.DC, button):
+        x, y, max_x, max_y = button.position
+        bitmap = button.bitmap_large
+        bitmap_width, bitmap_height = bitmap.Size
+
+        # Calculate text height/width
         if button.kind == "hybrid" and button.key != "toggle":
             # Calculate dropdown
             button.dropdown.position = (
