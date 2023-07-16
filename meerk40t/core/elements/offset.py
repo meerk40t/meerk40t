@@ -572,7 +572,7 @@ def offset_path(
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
                 left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
+                p._segments[idx] = newsegment[0]  # TODO: indexError as newsegment can return an empty list
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
