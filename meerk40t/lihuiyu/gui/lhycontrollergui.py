@@ -194,7 +194,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         sizer_statistics.Add(sizer_count_packets, 1, wx.EXPAND, 0)
         sizer_count_rejected.Add(self.rejected_packet_count_text, 0, wx.EXPAND, 0)
         sizer_statistics.Add(sizer_count_rejected, 1, wx.EXPAND, 0)
-        sizer_statistics.Add(self.button_clear_stats, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_statistics.Add(self.button_clear_stats, 0, wx.EXPAND, 0)
         packet_count.Add(sizer_statistics, 1, wx.EXPAND, 0)
         packet_info.Add(self.packet_text_text, 11, wx.EXPAND, 0)
         packet_count.Add(packet_info, 0, wx.EXPAND, 0)
