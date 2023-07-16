@@ -635,7 +635,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def move_rect(file_index, **kwargs):
-            self.driver.connection.move_frame(file_index)
+            try:
+                self.driver.connection.move_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -644,7 +651,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def draw_rect(file_index, **kwargs):
-            self.driver.connection.draw_frame(file_index)
+            try:
+                self.driver.connection.draw_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -653,7 +667,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def replay(file_index, **kwargs):
-            self.driver.connection.replay(file_index)
+            try:
+                self.driver.connection.replay(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_command(
             "viewport_update",
