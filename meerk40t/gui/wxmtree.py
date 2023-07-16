@@ -1312,6 +1312,9 @@ class ShadowTree:
 
     def update_op_labels(self):
         startnode = self.elements.get(type="branch ops")._item
+        if startnode is None:
+            # Branch op never populated the tree, we cannot update sublayer.
+            return
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
             node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
