@@ -119,6 +119,8 @@ def geomstr_from_vert_list(vertlist, plist):
         return geomstr
     elif plist == "":
         size = len(vert_lookup)
+        if size == 0:
+            return geomstr
         for i in range(size + 1):
             v0 = vert_lookup[i % size]
             v1 = vert_lookup[(i + 1) % size]
