@@ -77,7 +77,7 @@ def prim_parser(text: str):
         yield _kind, _value, _start, p
 
 
-def geomstry_from_vert_list(vertlist, plist):
+def geomstr_from_vert_list(vertlist, plist):
     geomstr = Geomstr()
 
     vmap = None
@@ -281,7 +281,7 @@ class LbrnLoader:
                             )
                             _cut_settings.get("op").add_reference(node)
                     elif _type == "Path":
-                        geometry = geomstry_from_vert_list(vertlist, primlist)
+                        geometry = geomstr_from_vert_list(vertlist, primlist)
                         geometry.transform(matrix)
                         node = context.add(
                             type="elem path", geometry=geometry, stroke=color
