@@ -284,6 +284,11 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.Refresh()
 
+    def signal(self, signalstr, myargs):
+        for panel in self.panels:
+            if hasattr(panel, "signal"):
+                panel.signal(signalstr, myargs)
+
     def __set_properties(self):
         return
 

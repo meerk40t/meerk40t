@@ -1916,6 +1916,17 @@ class Transform(wx.Panel):
         self.context.unlisten("modified", self.on_modified_element)
         self.context.unlisten("button-repeat", self.on_button_repeat)
 
+    # To get updates about translation / scaling of selected elements
+    # we need to attach to some signals...
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_matrix_text()
+
+    @signal_listener("tool_modified")
+    def on_modified(self, *args):
+        self.update_matrix_text()
+
     def set_timer_options(self):
         interval = self.context.button_repeat
         if interval is None:

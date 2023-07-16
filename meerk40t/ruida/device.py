@@ -144,6 +144,28 @@ class RuidaDevice(Service, ViewPort):
         ]
         self.register_choices("rotary", choices)
 
+        choices = [
+            {
+                "attr": "default_power",
+                "object": self,
+                "default": 20.0,
+                "type": float,
+                "label": _("Laser Power"),
+                "trailer": "%",
+                "tip": _("What power level do we cut at?"),
+            },
+            {
+                "attr": "default_speed",
+                "object": self,
+                "default": 40.0,
+                "type": float,
+                "trailer": "mm/s",
+                "label": _("Cut Speed"),
+                "tip": _("How fast do we cut?"),
+            },
+        ]
+        self.register_choices("ruida-global", choices)
+
         self.driver = RuidaDriver(self)
 
         self.spooler = Spooler(self, driver=self.driver)

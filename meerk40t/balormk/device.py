@@ -870,6 +870,11 @@ class BalorDevice(Service, ViewPort):
                 self.job.stop()
             self.spooler.clear_queue()
             self.driver.set_abort()
+            try:
+                channel("Resetting controller.")
+                self.driver.reset()
+            except ConnectionRefusedError:
+                pass
 
         @self.console_command(
             "pause",

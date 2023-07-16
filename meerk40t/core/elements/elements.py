@@ -1470,7 +1470,7 @@ class Elemental(Service):
             self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
         self._filename = None
-        self.signal("file;loaded")
+        self.signal("file;cleared")
 
     def clear_note(self):
         self.note = None
@@ -3066,6 +3066,7 @@ class Elemental(Service):
                 if pathname.lower().endswith(extension) and _version == version:
                     saver.save(self, pathname, version)
                     self._filename = pathname
+                    self.signal("file;saved")
                     return True
         return False
 

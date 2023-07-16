@@ -252,6 +252,8 @@ def generate_hull_shape_hull(data):
         try:
             path = node.as_path()
             p = path.first_point
+            if p is None:
+                return None
             pts.append(p)
             for segment in path:
                 pts.append(segment.end)
@@ -449,7 +451,7 @@ def init_commands(kernel):
             start = self.trace_start_method
         if start < 0 or start > 2:
             start = 0
-        if len(hull) == 0:
+        if hull is None or len(hull) == 0:
             channel(_("No elements bounds to trace."))
             return
 

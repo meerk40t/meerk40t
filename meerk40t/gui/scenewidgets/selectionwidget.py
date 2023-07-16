@@ -2605,7 +2605,7 @@ class SelectionWidget(Widget):
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_BOLD,
                 )
-            except TypeError:
+            except (TypeError, AssertionError):
                 font = wx.Font(
                     int(self.font_size),
                     wx.FONTFAMILY_SWISS,
