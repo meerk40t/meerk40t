@@ -1946,8 +1946,11 @@ def init_tree(kernel):
     def reload_file(node, **kwargs):
         filepath = node.filepath
         if not os.path.exists(filepath):
-            info = _("The file no longer exists!")
-            self(f'interrupt "{info}"\n')
+            self.signal(
+                "warning",
+                _("The file no longer exists!"),
+                _("File does not exist."),
+            )
             return
         node.remove_node()
         self.load(filepath)
@@ -1962,8 +1965,11 @@ def init_tree(kernel):
     def open_system_file(node, **kwargs):
         filepath = node.filepath
         if not os.path.exists(filepath):
-            info = _("The file no longer exists!")
-            self(f'interrupt "{info}"\n')
+            self.signal(
+                "warning",
+                _("The file no longer exists!"),
+                _("File does not exist."),
+            )
             return
 
         normalized = os.path.realpath(filepath)
