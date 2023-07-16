@@ -1415,8 +1415,8 @@ class GalvoController:
     def axis_go_origin(self):
         return self._command(AxisGoOrigin)
 
-    def move_axis_to(self, a):
-        return self._command(MoveAxisTo, a)
+    def move_axis_to(self, position, invert):
+        return self._command(MoveAxisTo, position, invert)
 
     def get_axis_pos(self):
         return self._command(GetAxisPos)
