@@ -45,7 +45,8 @@ class Undo:
                 message = self.message
             try:
                 self._undo_stack.insert(
-                    self._undo_index, UndoState(self.tree.backup_tree(), message=message)
+                    self._undo_index,
+                    UndoState(self.tree.backup_tree(), message=message),
                 )
             except KeyError:
                 # Hit a concurrent issue.

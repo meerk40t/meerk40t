@@ -1,11 +1,11 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_compress_50
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -126,7 +126,7 @@ class PositionPanel(wx.Panel):
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
 
-  # Option 2: attach yourself to the refresh_scene and the tool_modified signals
+    # Option 2: attach yourself to the refresh_scene and the tool_modified signals
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
         if scene_name == "Scene":
