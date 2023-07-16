@@ -556,24 +556,26 @@ class TestGeomstr(unittest.TestCase):
         No remove segment ~x should occur before the append segment x value.
         :return:
         """
-        path = Geomstr()
-        for i in range(5000):
-            path.line(
-                random_pointi(50),
-                random_pointi(50),
-            )
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
 
-        beam = Scanbeam(path)
-        m = list()
-        for v, idx in beam._sorted_edge_list:
-            if idx >= 0:
-                m.append(idx)
-            else:
-                try:
-                    m.remove(~idx)
-                except ValueError as e:
-                    raise e
-        self.assertEqual(len(m), 0)
+            beam = Scanbeam(path)
+            m = list()
+            for v, idx in beam._sorted_edge_list:
+                if idx >= 0:
+                    m.append(idx)
+                else:
+                    try:
+                        m.remove(~idx)
+                    except ValueError as e:
+                        raise e
+            self.assertEqual(len(m), 0)
+            beam.compute_beam()
 
     def test_geomstr_scanbeam_increment(self):
         path = Geomstr()
