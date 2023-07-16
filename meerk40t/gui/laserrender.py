@@ -94,7 +94,13 @@ def svgfont_to_wx(textnode):
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
     wxfont = textnode.wxfont
+    # if the font_list is empty, then we do have a not properly initialised textnode,
+    # that needs to be resolved...
+    if textnode.font_family is None:
+        wxfont_to_svg(textnode)
 
+    svg_to_wx_family(textnode, wxfont)
+    svg_to_wx_fontstyle(textnode, wxfont)
     try:
         wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
     except AttributeError:
@@ -103,13 +109,7 @@ def svgfont_to_wx(textnode):
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
-    # if the font_list is empty, then we do have a not properly initialised textnode,
-    # that needs to be resolved...
-    if textnode.font_family is None:
-        wxfont_to_svg(textnode)
 
-    svg_to_wx_family(textnode, wxfont)
-    svg_to_wx_fontstyle(textnode, wxfont)
     font_size = textnode.font_size
     try:
         wxfont.SetFractionalPointSize(font_size)

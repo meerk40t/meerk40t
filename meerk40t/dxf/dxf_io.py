@@ -158,7 +158,11 @@ class DXFProcessor:
             m = Matrix()
             m.post_scale(self.scale, -self.scale)
             m.post_translate_y(self.elements.device.unit_height)
-            cx, cy = entity.dxf.center
+            try:
+                cx, cy = entity.dxf.center
+            except ValueError:
+                # 3d center.
+                cx, cy, cz = entity.dxf.center
             node = context_node.add(
                 cx=cx,
                 cy=cy,

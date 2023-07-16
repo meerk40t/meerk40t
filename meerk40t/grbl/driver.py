@@ -366,12 +366,11 @@ class GRBLDriver(Parameters):
         """
         if data_type != "grbl":
             return
-        for line in data:
-            grbl = bytes.decode(line, "utf-8")
-            for split in grbl.split("\r"):
-                g = split.strip()
-                if g:
-                    self(f"{g}{self.line_end}")
+        grbl = bytes.decode(data, "latin-1")
+        for split in grbl.split("\r"):
+            g = split.strip()
+            if g:
+                self(f"{g}{self.line_end}")
 
     def physical_home(self):
         """

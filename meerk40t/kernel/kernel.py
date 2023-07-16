@@ -1149,6 +1149,12 @@ class Kernel(Settings):
             self.channel("console").watch(self.__print_delegate)
             import sys
 
+            if sys.stdin is None:
+                # This may happen if we are in gui-mode of a compiled application and launch with -c. There is no
+                # stdin and consequently trying to launch with this flag will otherwise crash.
+
+                return
+
             async def aio_readline(loop):
                 while not self._shutdown:
                     print(">>", end="", flush=True)
