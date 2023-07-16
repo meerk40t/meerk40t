@@ -145,6 +145,8 @@ def scanline_fill(settings, outlines, matrix, limit=None):
         pts = list(map(Point, map(mx_rotate, outline)))
         vm.add_polyline(pts)
     y_min, y_max = vm.event_range()
+    if y_min is None:
+        return []
     height = y_max - y_min
     try:
         count = height / distance
