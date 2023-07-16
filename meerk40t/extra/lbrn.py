@@ -255,6 +255,13 @@ class LbrnLoader:
                             speed=float(values.get("speed")),
                             power=float(values.get("maxPower")) * 10.0,
                         )
+                    else:
+                        values["op"] = op_branch.add(
+                            type="op engrave",
+                            label=values.get("name"),
+                            speed=float(values.get("speed")),
+                            power=float(values.get("maxPower")) * 10.0,
+                        )
                 elif elem.tag == "XForm":
                     matrix = Matrix(*map(float, elem.text.split(" "))) * matrix
                 elif elem.tag in ("Shape", "BackupPath"):
