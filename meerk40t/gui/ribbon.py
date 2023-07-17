@@ -1175,19 +1175,25 @@ class Art:
             dc.SetPen(wx.BLACK_PEN)
 
         x, y, x1, y1 = button.position
-        w = x1 - x
-        h = y1 - y
+        w = int(round(x1 - x, 2))
+        h = int(round(y1 - y, 2))
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
         font = self.default_font
-        if bitmap_height >= h or bitmap_width >= w:
+        # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
+        #     print (f"N - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
+        if bitmap_height > h or bitmap_width > w:
             bitmap = bitmap_small
             font = self.small_font
             bitmap_width, bitmap_height = bitmap.Size
-            if bitmap_height >= h or bitmap_width >= w:
+            # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
+            #     print (f"S - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
+            if bitmap_height > h or bitmap_width > w:
                 bitmap = bitmap_tiny
                 font = self.tiny_font
                 bitmap_width, bitmap_height = bitmap.Size
+                # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
+                #     print (f"T - {button.label}: {bitmap_width}x{bitmap_height} in {w}x{h}")
 
         bitmap_width, bitmap_height = bitmap.Size
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
@@ -1442,8 +1448,8 @@ class Art:
             self.button_calc(dc, button)
             this_width = button_width
             this_height = button_height
-            local_width = button.min_width
-            local_height = button.min_height
+            local_width = 1.25 * button.min_width
+            local_height = 1.25 * button.min_height
             if not distribute_evenly:
                 if button_horizontal > 1:
                     this_width = min(this_width, local_width)
