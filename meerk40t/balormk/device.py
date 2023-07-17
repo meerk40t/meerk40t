@@ -1264,6 +1264,19 @@ class BalorDevice(Service, ViewPort):
             self.driver.connection.move_axis_to(p0, p1)
             self.driver.connection.wait_axis()
 
+        @self.console_command(
+            "rotary_pos",
+            help=_("Check the rotary position"),
+        )
+        def galvo_rotary_pos(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_axis_pos()
+            if reply is None:
+                channel("Not connected, cannot get axis pos.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
         @self.console_argument("off", type=str)
         @self.console_command(
             "red",
