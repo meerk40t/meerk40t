@@ -16116,3 +16116,13 @@ msgstr "Input-Operation Hardware"
 msgid "Use hardware based input operation command"
 msgstr "Nutze Hardware-basierte Input-Operations Befehle"
 
+msgid "Show the Ribbon Labels"
+msgstr "Text unter Icons anzeigen"
+
+msgid ""
+"Active: Show the labels for ribbonbar.\n"
+"Inactive: Hide the ribbon labels."
+msgstr ""
+"Aktiv: Zeige die Texte unter den Icons in der Symbolleiste an\n"
+"Inaktiv: Text werden nicht angezeigt (spart etwas Platz)"
+
