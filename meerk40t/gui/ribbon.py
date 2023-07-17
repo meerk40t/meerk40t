@@ -100,8 +100,10 @@ class Button:
         self.label = None
         self.bitmap = None
         self.bitmap_disabled = None
+        self.bitmap_tiny_disabled = None
         self.bitmap_small_disabled = None
         self.bitmap_large_disabled = None
+        self.bitmap_tiny = None
         self.bitmap_small = None
         self.bitmap_large = None
         self.tip = None
@@ -120,6 +122,7 @@ class Button:
         self.rule_enabled = None
         self.min_width = 0
         self.min_height = 0
+        self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
 
@@ -157,18 +160,33 @@ class Button:
         self.icon = icon
         resize_param = kwargs.get("size")
         if resize_param is None:
+            resize_param = 50
+        if resize_param is None:
+            # We can get the real icon width, that means though
+            # all buttons will have slightly different dimensions
+            # so we set the minimum size
             siz = icon.GetBitmap().GetSize()
-            small_resize = 0.5 * siz[0]
-        else:
-            small_resize = 0.5 * resize_param
+            wd = max(self.default_width, siz[0])
+            small_resize = int(2/3 * wd)
+            tiny_resize = int(0.5 * wd)
+            # print (f"No size parameter given for: {label}")
 
-        self.bitmap_large = icon.GetBitmap(resize=resize_param)
+        else:
+            self.default_width = resize_param
+            small_resize = int(2/3 * resize_param)
+            tiny_resize = int(0.5 * resize_param)
+
+        self.bitmap_large = icon.GetBitmap(resize=resize_param, noadjustment=True)
         self.bitmap_large_disabled = icon.GetBitmap(
-            resize=resize_param, color=Color("grey")
+            resize=resize_param, color=Color("grey"), noadjustment=True
         )
-        self.bitmap_small = icon.GetBitmap(resize=small_resize)
+        self.bitmap_small = icon.GetBitmap(resize=small_resize, noadjustment=True)
         self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey")
+            resize=small_resize, color=Color("grey"), noadjustment=True
+        )
+        self.bitmap_tiny = icon.GetBitmap(resize=tiny_resize, noadjustment=True)
+        self.bitmap_tiny_disabled = icon.GetBitmap(
+            resize=tiny_resize, color=Color("grey"), noadjustment=True
         )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
@@ -998,8 +1016,14 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
         )
         self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        self.font = wx.Font(
+        self.default_font = wx.Font(
             10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.small_font = wx.Font(
+            8, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.tiny_font = wx.Font(
+            6, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.current_page = None
         self.hover_tab = None
@@ -1045,7 +1069,7 @@ class Art:
             dc.SetBrush(wx.Brush(self.button_face_hover))
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        dc.SetFont(self.font)
+        dc.SetFont(self.default_font)
         dc.DrawText(
             page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
         )
@@ -1132,9 +1156,11 @@ class Art:
             return
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
+        bitmap_tiny = button.bitmap_tiny
         if not button.enabled:
             bitmap = button.bitmap_large_disabled
             bitmap_small = button.bitmap_small_disabled
+            bitmap_tiny = button.bitmap_tiny_disabled
 
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -1153,8 +1179,15 @@ class Art:
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
-        if bitmap_height > h or bitmap_width > w:
+        font = self.default_font
+        if bitmap_height >= h or bitmap_width >= w:
             bitmap = bitmap_small
+            font = self.small_font
+            bitmap_width, bitmap_height = bitmap.Size
+            if bitmap_height >= h or bitmap_width >= w:
+                bitmap = bitmap_tiny
+                font = self.tiny_font
+                bitmap_width, bitmap_height = bitmap.Size
 
         bitmap_width, bitmap_height = bitmap.Size
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
@@ -1164,11 +1197,10 @@ class Art:
             show_text = True
             label_text = list(button.label.split(" "))
             test_y = y + self.bitmap_text_buffer
-            dc.SetFont(self.font)
+            dc.SetFont(font)
             for idx, word in enumerate(label_text):
                 test_word = word
                 while True:
-                    print(f"{idx}: {test_word}")
                     text_width, text_height = dc.GetTextExtent(test_word)
                     if text_width <= w:
                         break
@@ -1201,7 +1233,7 @@ class Art:
             label_text = list()
         if show_text:
             y += self.bitmap_text_buffer
-            dc.SetFont(self.font)
+            dc.SetFont(font)
             for word in label_text:
                 text_width, text_height = dc.GetTextExtent(word)
                 dc.DrawText(
@@ -1436,6 +1468,8 @@ class Art:
     def button_calc(self, dc: wx.DC, button):
         bitmap = button.bitmap_large
         bitmap_width, bitmap_height = bitmap.Size
+        bitmap_height = max(bitmap_height, button.default_width)
+        bitmap_width = max(bitmap_width, button.default_width)
 
         # Calculate text height/width
         text_width = 0
