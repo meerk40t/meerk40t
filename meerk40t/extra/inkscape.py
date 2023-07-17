@@ -182,8 +182,17 @@ class MultiLoader:
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
             return False
+
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         if was_shown:
-            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + svg_temp_file)
+            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + unescaped(svg_temp_file))
             kernel.busyinfo.show()
         filename_to_process = svg_temp_file
         preproc = elements_service.lookup("preprocessor/.svg")
