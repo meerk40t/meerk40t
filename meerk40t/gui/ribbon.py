@@ -1153,14 +1153,56 @@ class Art:
         h = y1 - y
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
+        if bitmap_height > h or bitmap_width > w:
+            bitmap = bitmap_small
 
+        bitmap_width, bitmap_height = bitmap.Size
         dc.DrawBitmap(bitmap, int(x + (w - bitmap_width) / 2), int(y))
         y += bitmap_height
 
         if button.label and self.show_labels:
+            show_text = True
+            label_text = list(button.label.split(" "))
+            test_y = y + self.bitmap_text_buffer
+            dc.SetFont(self.font)
+            for idx, word in enumerate(label_text):
+                test_word = word
+                while True:
+                    print(f"{idx}: {test_word}")
+                    text_width, text_height = dc.GetTextExtent(test_word)
+                    if text_width <= w:
+                        break
+                    if test_word.endswith("..."):
+                        test_word = test_word[:-4]
+                    else:
+                        test_word = word[:-2]
+                    if len(test_word) > 0:
+                        test_word += "..."
+                    else:
+                        show_text = False
+                        break
+                if len(test_word) > 0:
+                    if test_word.endswith("..."):
+                        label_text[idx] = test_word
+                        label_text = label_text[:idx + 1]
+                        break
+                else:
+                    if idx == 0:
+                        show_text = False
+                    else:
+                        label_text = label_text[:idx]
+
+                    break
+
+                test_y += text_height
+
+        else:
+            show_text = False
+            label_text = list()
+        if show_text:
             y += self.bitmap_text_buffer
             dc.SetFont(self.font)
-            for word in button.label.split(" "):
+            for word in label_text:
                 text_width, text_height = dc.GetTextExtent(word)
                 dc.DrawText(
                     word,
