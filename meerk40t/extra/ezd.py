@@ -713,8 +713,15 @@ class EZText(EZObject):
         self.save_options = args[53]  # 3 boolean values
         self.save_filename = args[54]
         self.circle_text_button_flags = args[85]  # 2 is first button, 1 is right to left.
-        # extradata = _parse_struct(file)
-        # print(extradata)
+        (count,) = struct.unpack("<I", file.read(4))
+        for i in range(count):
+            (type,) = struct.unpack("<H", file.read(2))
+            # type, 7 file. 1 Text. 2 Serial
+            extradata = _parse_struct(file)
+            _construct(extradata)
+            extradata2 = _parse_struct(file)
+            _construct(extradata2)
+        (unk,) = struct.unpack("<I", file.read(4))
 
 
 class EZImage(EZObject):
