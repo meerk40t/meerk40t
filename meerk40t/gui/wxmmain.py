@@ -1550,7 +1550,8 @@ class MeerK40t(MWindow):
             {
                 "label": _("Wordlist"),
                 "icon": icons8_curly_brackets_50,
-                "tip": _("Manages Wordlist-Entries"),
+                "tip": _("Manages Wordlist-Entries") + "\n"
+                        + _(" (right go to next entry)"),
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
                 "identifier": "prep_wordlist",
                 "priority": 99,
@@ -1561,7 +1562,7 @@ class MeerK40t(MWindow):
                         "icon": icons8_curly_brackets_50,
                         "tip": _("Manages Wordlist-Entries")
                         + _(" (right go to next entry)"),
-                        "label": _("Wordlist"),
+                        "label": _("Wordlist Editor"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
