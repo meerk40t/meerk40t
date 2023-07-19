@@ -73,7 +73,7 @@ def register_panel_ribbon(window, context):
             "label": _("Show the Ribbon Labels"),
             "tip": _(
                 "Active: Show the labels for ribbonbar.\n"
-                "Inactive: Do not hide the ribbon labels.\n"
+                "Inactive: Hide the ribbon labels."
             ),
             "page": "Gui",
             "section": "Appearance",
