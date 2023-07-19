@@ -344,13 +344,15 @@ class Button:
             return
         top = self.parent.parent.parent
         menu = wx.Menu()
+        item = menu.Append(wx.ID_ANY, "...")
+        item.Enable(False)
         for v in self.button_dict["multi"]:
-            item = menu.AppendCheckItem(wx.ID_ANY, v.get("label"))
+            item = menu.Append(wx.ID_ANY, v.get("label"))
             tip = v.get("tip")
             if tip:
                 item.SetHelp(tip)
             if v.get("identifier") == self.identifier:
-                item.Check(True)
+                item.SetItemLabel(v.get("label") + "(*)")
             icon = v.get("icon")
             if icon:
                 # There seems to be a bug to display icons in a submenu consistently
