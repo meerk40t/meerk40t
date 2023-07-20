@@ -1290,7 +1290,6 @@ class Art:
         if show_text:
             y += self.bitmap_text_buffer
             dc.SetFont(font)
-            remainder = ""
             i = 0
             while i < len(label_text):
                 # We know by definition that all single words
@@ -1514,6 +1513,7 @@ class Art:
         panel._overflow_position = None
 
         for b, button in enumerate(panel.buttons):
+            button.overflow = False
             self.button_calc(dc, button)
             this_width = button_width
             this_height = button_height
