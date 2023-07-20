@@ -1319,6 +1319,7 @@ class BalorDevice(Service, ViewPort):
         )
         def galvo_rotary_home(command, channel, _, remainder=None, **kwgs):
             self.driver.connection.axis_go_origin()
+            self.driver.connection.wait_axis()
             channel(_("Homing Rotary."))
 
         @self.console_argument("off", type=str)
