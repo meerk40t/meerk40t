@@ -1313,22 +1313,6 @@ class BalorDevice(Service, ViewPort):
                 current = -current + 0x80000000
             channel(f"Rotary Position: {current}")
 
-        @self.console_command(
-            "rotary_home",
-            help=_("Home the rotary"),
-        )
-        def galvo_rotary_home(command, channel, _, remainder=None, **kwgs):
-            minspeed = 100
-            maxspeed = 5000
-            acc_time = 100
-            self.driver.connection.set_axis_motion_param(
-                minspeed & 0xFFFF, maxspeed & 0xFFFF
-            )
-            self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
-            self.driver.connection.axis_go_origin()
-            self.driver.connection.wait_axis()
-            channel(_("Homing Rotary."))
-
         @self.console_argument("off", type=str)
         @self.console_command(
             "red",
