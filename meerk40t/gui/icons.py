@@ -58,6 +58,7 @@ class PyEmbeddedImage(py_embedded_image):
         rotate=None,
         noadjustment=False,
         keepalpha=False,
+        force_darkmode=False,
     ):
         """
         Assumes greyscale icon black on transparent background using alpha for shading
@@ -121,7 +122,7 @@ class PyEmbeddedImage(py_embedded_image):
             and color.blue is not None
         ):
             image.Replace(0, 0, 0, color.red, color.green, color.blue)
-            if DARKMODE and use_theme:
+            if force_darkmode or (DARKMODE and use_theme):
                 reverse = color.distance_to("black") <= 200
                 black_bg = False
             else:
@@ -129,7 +130,7 @@ class PyEmbeddedImage(py_embedded_image):
                 black_bg = True
             if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
-        elif DARKMODE and use_theme:
+        elif force_darkmode or (DARKMODE and use_theme):
             for x in range(image.GetWidth()):
                 for y in range(image.GetHeight()):
                     r = int(255 - image.GetRed(x, y))
