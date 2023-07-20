@@ -3610,12 +3610,21 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
+
     def load(self, pathname):
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         kernel = self.context.kernel
         try:
             # Reset to standard tool
             self.context("tool none\n")
-            info = _("Loading File...") + "\n" + pathname
+            info = _("Loading File...") + "\n" + unescaped(pathname)
             kernel.busyinfo.start(msg=info)
             n = self.context.elements.note
             results = self.context.elements.load(
