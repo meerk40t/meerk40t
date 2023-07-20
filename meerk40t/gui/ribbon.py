@@ -51,6 +51,7 @@ from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
+
 class DropDown:
     """
     Dropdowns are the triangle click addons that expand the button list to having other functions.
@@ -169,13 +170,13 @@ class Button:
             # so we set the minimum size
             siz = icon.GetBitmap().GetSize()
             wd = max(self.default_width, siz[0])
-            small_resize = int(2/3 * wd)
+            small_resize = int(2 / 3 * wd)
             tiny_resize = int(0.5 * wd)
             # print (f"No size parameter given for: {label}")
 
         else:
             self.default_width = resize_param
-            small_resize = int(2/3 * resize_param)
+            small_resize = int(2 / 3 * resize_param)
             tiny_resize = int(0.5 * resize_param)
 
         self.bitmap_large = icon.GetBitmap(resize=resize_param, noadjustment=True)
@@ -634,7 +635,7 @@ class RibbonPanel:
         """
         # print (f"Overflow click called for {self.label}")
         menu = wx.Menu()
-        top = self.parent.parent # .parent
+        top = self.parent.parent  # .parent
         for v in self._overflow:
             item = menu.Append(wx.ID_ANY, v.label)
             item.Enable(v.enabled)
@@ -643,6 +644,7 @@ class RibbonPanel:
                 item.SetBitmap(v.icon.GetBitmap(resize=25))
             top.Bind(wx.EVT_MENU, v.click, id=item.Id)
         top.PopupMenu(menu)
+
 
 class RibbonPage:
     """
@@ -906,7 +908,6 @@ class RibbonBarPanel(wx.Control):
             if action:
                 action(event)
 
-
     def on_click(self, event: wx.MouseEvent):
         """
         The ribbon bar was clicked. We check the various parts of the ribbonbar that could have been clicked in the
@@ -1140,7 +1141,7 @@ class Art:
         dc.SetBrush(wx.Brush(self.highlight))
         dc.SetPen(wx.BLACK_PEN)
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
-        r = min( (y1 - y) / 2, (x1 - x) / 2) - 2
+        r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
         # print (f"area: {x},{y}-{x1},{y1} - center={cx},{cy} r={r}")
@@ -1271,7 +1272,7 @@ class Art:
                 if len(test_word) > 0:
                     if test_word.endswith("..."):
                         label_text[idx] = test_word
-                        label_text = label_text[:idx + 1]
+                        label_text = label_text[: idx + 1]
                         break
                 else:
                     if idx == 0:
@@ -1291,7 +1292,7 @@ class Art:
             dc.SetFont(font)
             remainder = ""
             i = 0
-            while (i < len(label_text)):
+            while i < len(label_text):
                 # We know by definition that all single words
                 # are okay for drawing, now we check whether
                 # we can draw multiple in one line
@@ -1343,13 +1344,9 @@ class Art:
             tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
 
             page.tab_position = (
-                pn * self.tab_tab_buffer
-                + xpos
-                + self.tab_initial_buffer,
+                pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer,
                 0,
-                pn * self.tab_tab_buffer
-                + xpos + tabwidth
-                + self.tab_initial_buffer,
+                pn * self.tab_tab_buffer + xpos + tabwidth + self.tab_initial_buffer,
                 self.tab_height * 2,
             )
             xpos += tabwidth
@@ -1540,18 +1537,14 @@ class Art:
                     panel._overflow.append(button)
                     if panel._overflow_position is None:
                         ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (
-                            ppx1 - 15, ppy, ppx1, ppy1
-                        )
+                        panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
             else:
                 if y + this_height > panel.position[3]:
                     button.overflow = True
                     panel._overflow.append(button)
                     if panel._overflow_position is None:
                         ppx, ppy, ppx1, ppy1 = panel.position
-                        panel._overflow_position = (
-                            ppx, ppy1 - 15, ppx1, ppy1
-                        )
+                        panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
 
             # print(f"button: {button.position}")
             self.button_layout(dc, button)
@@ -1612,7 +1605,7 @@ class Art:
             sizy = 15
             # Let's see whether we have enough room
             extx = (x + max_x) / 2 + bitmap_width / 2 + sizx - 1
-            exty = y  + bitmap_height + sizy - 1
+            exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
             button.dropdown.position = (
