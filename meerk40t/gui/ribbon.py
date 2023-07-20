@@ -179,17 +179,43 @@ class Button:
             small_resize = int(2 / 3 * resize_param)
             tiny_resize = int(0.5 * resize_param)
 
-        self.bitmap_large = icon.GetBitmap(resize=resize_param, noadjustment=True)
+        top = self.parent.parent.parent
+        if top.art.dark_mode:
+            targetcolor = Color("white")
+            darkm = True
+        else:
+            targetcolor = None
+            darkm = False
+        # We need to cast the icon explicitly to PyEmbeddedImage
+        # as otherwise a strange type error is thrown:
+        # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
+        # Well...
+        from meerk40t.gui.icons import PyEmbeddedImage
+        icon = PyEmbeddedImage(icon.data)
+        self.bitmap_large = icon.GetBitmap(
+            resize=resize_param,
+            noadjustment=True,
+            force_darkmode=darkm,
+        )
         self.bitmap_large_disabled = icon.GetBitmap(
-            resize=resize_param, color=Color("grey"), noadjustment=True
+            resize=resize_param, color=Color("grey"),
+            noadjustment=True, force_darkmode=darkm
         )
-        self.bitmap_small = icon.GetBitmap(resize=small_resize, noadjustment=True)
+        self.bitmap_small = icon.GetBitmap(
+            resize=small_resize, noadjustment=True,
+            force_darkmode=darkm
+        )
         self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey"), noadjustment=True
+            resize=small_resize, color=Color("grey"),
+            noadjustment=True
         )
-        self.bitmap_tiny = icon.GetBitmap(resize=tiny_resize, noadjustment=True)
+        self.bitmap_tiny = icon.GetBitmap(
+            resize=tiny_resize, noadjustment=True,
+            force_darkmode=darkm
+        )
         self.bitmap_tiny_disabled = icon.GetBitmap(
-            resize=tiny_resize, color=Color("grey"), noadjustment=True
+            resize=tiny_resize, color=Color("grey"),
+            noadjustment=True
         )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
@@ -1025,7 +1051,10 @@ class Art:
         self.text_dropdown_buffer = 7
         self.show_labels = True
 
-        self.text_color = wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+        self.text_color = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT))
+        self.text_color_inactive = copy.copy(self.text_color).ChangeLightness(50)
+        self.text_color_disabled = wx.Colour("Dark Grey")
+        self.black_color = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT))
 
         self.button_face_hover = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
@@ -1048,7 +1077,22 @@ class Art:
         self.highlight = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HOTLIGHT)
         )
+
         self.dark_mode = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        manualmode = self.parent.context.root.setting(bool, "force_darkmode", False)
+        if manualmode:
+            self.dark_mode = True
+
+        if self.dark_mode:
+            # This is rather crude, as a dark mode could also
+            # be based eg on a dark blue scheme
+            self.button_face = wx.BLACK
+            self.text_color = wx.WHITE
+            self.text_color_inactive = copy.copy(self.text_color)
+            self.text_color_disabled = wx.Colour("Light Grey")
+            self.black_color = wx.WHITE
+            self.inactive_background = wx.BLACK
+
         self.default_font = wx.Font(
             10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
@@ -1091,11 +1135,13 @@ class Art:
         @param page:
         @return:
         """
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.Pen(self.black_color))
         if page is not self.current_page:
             dc.SetBrush(wx.Brush(self.button_face))
+            dc.SetTextForeground(self.text_color_inactive)
         else:
             dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetTextForeground(self.text_color)
         if page is self.hover_tab and self.hover_button is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
         x, y, x1, y1 = page.tab_position
@@ -1127,7 +1173,7 @@ class Art:
             return
         x, y, x1, y1 = panel.position
         dc.SetBrush(wx.Brush(self.button_face))
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.Pen(self.black_color))
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         """
         Paint the overflow of buttons that cannot be stored within the required width.
@@ -1139,7 +1185,7 @@ class Art:
             return
         x, y, x1, y1 = panel._overflow_position
         dc.SetBrush(wx.Brush(self.highlight))
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.Pen(self.black_color))
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
@@ -1152,7 +1198,7 @@ class Art:
             )
             for angle in (0, 90, 180)
         ]
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
@@ -1183,7 +1229,7 @@ class Art:
             )
             for x in (0, 90, 180)
         ]
-        dc.SetPen(wx.BLACK_PEN)
+        dc.SetPen(wx.Pen(self.black_color))
         dc.SetBrush(wx.Brush(self.inactive_background))
         dc.DrawPolygon(points)
 
@@ -1200,6 +1246,7 @@ class Art:
         bitmap = button.bitmap_large
         bitmap_small = button.bitmap_small
         bitmap_tiny = button.bitmap_tiny
+
         button.bitmapsize = "large"
         if not button.enabled:
             bitmap = button.bitmap_large_disabled
@@ -1208,15 +1255,17 @@ class Art:
 
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.SetTextForeground(self.text_color)
         if not button.enabled:
             dc.SetBrush(wx.Brush(self.inactive_background))
             dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.SetTextForeground(self.text_color_disabled)
         if button.toggle:
             dc.SetBrush(wx.Brush(self.highlight))
-            dc.SetPen(wx.BLACK_PEN)
+            dc.SetPen(wx.Pen(self.black_color))
         if self.hover_button is button and self.hover_dropdown is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
-            dc.SetPen(wx.BLACK_PEN)
+            dc.SetPen(wx.Pen(self.black_color))
 
         x, y, x1, y1 = button.position
         w = int(round(x1 - x, 2))
@@ -1309,7 +1358,6 @@ class Art:
                             cont = True
 
                 text_width, text_height = dc.GetTextExtent(word)
-
                 dc.DrawText(
                     word,
                     int(x + (w / 2.0) - (text_width / 2)),
