@@ -1285,14 +1285,34 @@ class Art:
         if show_text:
             y += self.bitmap_text_buffer
             dc.SetFont(font)
-            for word in label_text:
+            remainder = ""
+            i = 0
+            while (i < len(label_text)):
+                # We know by definition that all single words
+                # are okay for drawing, now we check whether
+                # we can draw multiple in one line
+                word = label_text[i]
+                cont = True
+                while cont:
+                    cont = False
+                    if i < len(label_text) - 1:
+                        nextword = label_text[i + 1]
+                        test = word + " " + nextword
+                        tw, th = dc.GetTextExtent(test)
+                        if tw < w:
+                            word = test
+                            i += 1
+                            cont = True
+
                 text_width, text_height = dc.GetTextExtent(word)
+
                 dc.DrawText(
                     word,
                     int(x + (w / 2.0) - (text_width / 2)),
                     int(y),
                 )
                 y += text_height
+                i += 1
         if button.dropdown is not None and button.dropdown.position is not None:
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
