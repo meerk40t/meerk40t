@@ -195,17 +195,20 @@ class Pen:
         self.wobble_diameter = args[27]
         self.wobble_distance = args[28]
 
-        self.add_endpoints = args[29]
-        self.add_endpoint_distance = args[30]
-        self.add_endpoint_time_per_point = args[32]
-        self.add_endpoint_point_distance = args[31]
-        self.add_endpoints_point_cycles = args[33]
-        self.opt_enable = args[40] # Apparently crashy for older versions of ezcad.
-        self.break_angle = args[41]
+        try:
+            self.add_endpoints = args[29]
+            self.add_endpoint_distance = args[30]
+            self.add_endpoint_time_per_point = args[32]
+            self.add_endpoint_point_distance = args[31]
+            self.add_endpoints_point_cycles = args[33]
+            self.opt_enable = args[40]
+            self.break_angle = args[41]
 
-        self.jump_min_jump_delay2 = args[37]
-        self.jump_max_delay2 = args[38]
-        self.jump_speed_max_limit = args[39]
+            self.jump_min_jump_delay2 = args[37]
+            self.jump_max_delay2 = args[38]
+            self.jump_speed_max_limit = args[39]
+        except IndexError:
+            pass
 
 
 class EZCFile:
@@ -692,9 +695,36 @@ class EZText(EZObject):
         _interpret(args, 10, str)
         _interpret(args, 18, str)
         _interpret(args, 44, str)
+        _interpret(args, 54, str)
         _construct(args)
         self.font_angle = args[0]  # Font angle in Text.
+        self.height = args[1]  # Height in MM
+        self.text_space_setting = args[5]  # 0 auto, 1 between, 2 center
+        self.text_space = args[12]
+        self.char_space = args[13]
+        self.line_space = args[14]
+        self.font = args[18]  # Arial, JSF Font, etc
+        self.font2 = args[44]
+        self.x, self.y = args[7]
         self.text = args[10]
+        self.hatch_loop_distance = args[21]
+        self.circle_text_enable = args[48]
+        self.circle_text_diameter = args[49]
+        self.circle_text_base_angle = args[50]
+        self.circle_text_range_limit_enable = args[51]
+        self.circle_text_range_limit_angle = args[52]
+        self.save_options = args[53]  # 3 boolean values
+        self.save_filename = args[54]
+        self.circle_text_button_flags = args[85]  # 2 is first button, 1 is right to left.
+        (count,) = struct.unpack("<I", file.read(4))
+        for i in range(count):
+            (type,) = struct.unpack("<H", file.read(2))
+            # type, 7 file. 1 Text. 2 Serial
+            extradata = _parse_struct(file)
+            _construct(extradata)
+            extradata2 = _parse_struct(file)
+            _construct(extradata2)
+        (unk,) = struct.unpack("<I", file.read(4))
 
 
 class EZImage(EZObject):
