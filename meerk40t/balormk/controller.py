@@ -1418,8 +1418,8 @@ class GalvoController:
     def move_axis_to(self, position, invert):
         return self._command(MoveAxisTo, position, invert)
 
-    def get_axis_pos(self):
-        return self._command(GetAxisPos)
+    def get_axis_pos(self, index=0):
+        return self._command(GetAxisPos, index)
 
     def get_fly_wait_count(self):
         return self._command(GetFlyWaitCount)

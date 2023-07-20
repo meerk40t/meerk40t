@@ -1255,45 +1255,56 @@ class BalorDevice(Service, ViewPort):
             help=_("Send laser rotary command info."),
             all_arguments_required=True,
         )
-        def galvo_rotary(command, channel, _, position, minspeed, maxspeed, acc_time, **kwgs):
-            self.driver.connection.set_axis_motion_param(minspeed & 0xFFFF, maxspeed & 0xFFFF)
+        def galvo_rotary(
+            command, channel, _, position, minspeed, maxspeed, acc_time, **kwgs
+        ):
+            self.driver.connection.set_axis_motion_param(
+                minspeed & 0xFFFF, maxspeed & 0xFFFF
+            )
             self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
             pos = position if position >= 0 else -position + 0x80000000
             p1 = (pos >> 16) & 0xFFFF
-            p0 = (pos & 0xFFFF)
+            p0 = pos & 0xFFFF
             self.driver.connection.move_axis_to(p0, p1)
             self.driver.connection.wait_axis()
 
         @self.console_option("minspeed", "n", type=int, default=100)
         @self.console_option("maxspeed", "x", type=int, default=5000)
         @self.console_option("acc_time", "a", type=int, default=100)
-        @self.console_argument("delta_rotary", type=int, default=0, help="relative amount")
+        @self.console_argument(
+            "delta_rotary", type=int, default=0, help="relative amount"
+        )
         @self.console_command(
             "rotary_relative",
             help=_("Advance the rotary by the given amount"),
             all_arguments_required=True,
         )
-        def galvo_rotary_advance(command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs):
+        def galvo_rotary_advance(
+            command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
+        ):
             pos_args = self.driver.connection.get_axis_pos()
             current = pos_args[1] << 16 | pos_args[0]
             if current > 0x80000000:
                 current = -current + 0x80000000
             position = current + delta_rotary
 
-            self.driver.connection.set_axis_motion_param(minspeed & 0xFFFF, maxspeed & 0xFFFF)
+            self.driver.connection.set_axis_motion_param(
+                minspeed & 0xFFFF, maxspeed & 0xFFFF
+            )
             self.driver.connection.set_axis_origin_param(acc_time)  # Unsure why 100.
             pos = position if position >= 0 else -position + 0x80000000
             p1 = (pos >> 16) & 0xFFFF
-            p0 = (pos & 0xFFFF)
+            p0 = pos & 0xFFFF
             self.driver.connection.move_axis_to(p0, p1)
             self.driver.connection.wait_axis()
 
+        @self.console_option("axis_index", "i", type=int, default=0)
         @self.console_command(
             "rotary_pos",
             help=_("Check the rotary position"),
         )
-        def galvo_rotary_pos(command, channel, _, remainder=None, **kwgs):
-            pos_args = self.driver.connection.get_axis_pos()
+        def galvo_rotary_pos(command, channel, _, axis_index=0, **kwgs):
+            pos_args = self.driver.connection.get_axis_pos(axis_index)
             if pos_args is None:
                 channel("Not connected, cannot get axis pos.")
                 return
