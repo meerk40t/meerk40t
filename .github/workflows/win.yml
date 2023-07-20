@@ -31,6 +31,7 @@ jobs:
         pip install wxPython==4.1.1
         pip install ezdxf
         pip install pyserial
+        pip install bitarray
         pip install potracer
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
 # 10/25/2021 0.7.3-beta4 ok, but 0.7.3 release lacked camera. Fixing opencv @4.5.3.56 until it's fixed
