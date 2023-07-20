@@ -1293,13 +1293,22 @@ class BalorDevice(Service, ViewPort):
             help=_("Check the rotary position"),
         )
         def galvo_rotary_pos(command, channel, _, remainder=None, **kwgs):
-            reply = self.driver.connection.get_axis_pos()
-            if reply is None:
+            pos_args = self.driver.connection.get_axis_pos()
+            if pos_args is None:
                 channel("Not connected, cannot get axis pos.")
                 return
-            channel(f"Command replied: {reply}")
-            for index, b in enumerate(reply):
-                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+            current = pos_args[1] << 16 | pos_args[0]
+            if current > 0x80000000:
+                current = -current + 0x80000000
+            channel(f"Rotary Position: {current}")
+
+        @self.console_command(
+            "rotary_home",
+            help=_("Home the rotary"),
+        )
+        def galvo_rotary_home(command, channel, _, remainder=None, **kwgs):
+            self.driver.connection.axis_go_origin()
+            channel(_("Homing Rotary."))
 
         @self.console_argument("off", type=str)
         @self.console_command(
