@@ -1220,6 +1220,10 @@ class Art:
         x, y, x1, y1 = button.position
         w = int(round(x1 - x, 2))
         h = int(round(y1 - y, 2))
+
+        # Lets clip the output
+        dc.SetClippingRegion(x, y, w, h)
+
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
         font = self.default_font
@@ -1316,6 +1320,7 @@ class Art:
         if button.dropdown is not None and button.dropdown.position is not None:
             y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
+        dc.DestroyClippingRegion()
 
     def layout(self, dc: wx.DC, ribbon):
         """
