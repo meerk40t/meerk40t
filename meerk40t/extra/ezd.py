@@ -195,17 +195,20 @@ class Pen:
         self.wobble_diameter = args[27]
         self.wobble_distance = args[28]
 
-        self.add_endpoints = args[29]
-        self.add_endpoint_distance = args[30]
-        self.add_endpoint_time_per_point = args[32]
-        self.add_endpoint_point_distance = args[31]
-        self.add_endpoints_point_cycles = args[33]
-        self.opt_enable = args[40] # Apparently crashy for older versions of ezcad.
-        self.break_angle = args[41]
+        try:
+            self.add_endpoints = args[29]
+            self.add_endpoint_distance = args[30]
+            self.add_endpoint_time_per_point = args[32]
+            self.add_endpoint_point_distance = args[31]
+            self.add_endpoints_point_cycles = args[33]
+            self.opt_enable = args[40]
+            self.break_angle = args[41]
 
-        self.jump_min_jump_delay2 = args[37]
-        self.jump_max_delay2 = args[38]
-        self.jump_speed_max_limit = args[39]
+            self.jump_min_jump_delay2 = args[37]
+            self.jump_max_delay2 = args[38]
+            self.jump_speed_max_limit = args[39]
+        except IndexError:
+            pass
 
 
 class EZCFile:
