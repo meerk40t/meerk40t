@@ -1308,7 +1308,7 @@ class BalorDevice(Service, ViewPort):
             if pos_args is None:
                 channel("Not connected, cannot get axis pos.")
                 return
-            current = pos_args[1] << 16 | pos_args[0]
+            current = pos_args[1] | pos_args[2] << 16
             if current > 0x80000000:
                 current = -current + 0x80000000
             channel(f"Rotary Position: {current}")
