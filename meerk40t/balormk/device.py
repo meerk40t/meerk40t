@@ -1283,7 +1283,7 @@ class BalorDevice(Service, ViewPort):
             command, channel, _, delta_rotary, minspeed, maxspeed, acc_time, **kwgs
         ):
             pos_args = self.driver.connection.get_axis_pos()
-            current = pos_args[1] << 16 | pos_args[0]
+            current = pos_args[1] | pos_args[2] << 16
             if current > 0x80000000:
                 current = -current + 0x80000000
             position = current + delta_rotary
