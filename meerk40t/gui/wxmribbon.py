@@ -149,7 +149,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
         self.redrawn()
-        print ("Requested by icons")
 
     # @signal_listener("tool_changed")
     # def on_tool_changed(self, origin, newtool=None, *args):
