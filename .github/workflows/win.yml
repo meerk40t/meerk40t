@@ -29,6 +29,7 @@ jobs:
         pip install pyusb
         pip install wheel
         pip install potracer
+        pip install pillow==9.5.0
         pip install wxPython
         pip install ezdxf
         pip install pyserial
@@ -47,13 +48,11 @@ jobs:
       env:
         PYTHONHASHSEED: 12506
       run: |
-        ## 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon
-        ## when branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
-        git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
+        git clone --depth=1 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all --target-arch=32bit
         cd ..
-        python3 setup.py install
+        pip3 install .
         cd ..
 
     - name: Build MeerK40t
@@ -67,7 +66,7 @@ jobs:
 
         ## pyinstaller struggles with meerk40t.py having the same name as the package meerk40t. Rename for the build
         move meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
+        pyinstaller .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
 
         ## Restore original configuration (not really necessary in build environment which is fresh each time)
