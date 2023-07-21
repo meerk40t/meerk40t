@@ -294,24 +294,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
 
-    def on_page_changed(self, event):
-        """
-        Code to be activated when the page changes from one page to another. Gui specific.
-        @param event:
-        @return:
-        """
-        page = event.GetPage()
-        p_id = page.GetId()
-        if p_id != ID_PAGE_DESIGN:
-            self.context("tool none\n")
-        pagename = ""
-        for p in self.ribbon_pages:
-            if p[0] is page:
-                pagename = p[1]
-                break
-        setattr(self.context.root, "_active_page", pagename)
-        event.Skip()
-
     @signal_listener("page")
     def on_page_signal(self, origin, pagename=None, *args):
         """
