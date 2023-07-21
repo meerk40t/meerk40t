@@ -85,6 +85,7 @@ class MKToolbarPanel(RibbonBarPanel):
     @signal_listener("icons")
     def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
+        self.modified()
 
     @signal_listener("tool_changed")
     def on_tool_changed(self, origin, newtool=None, *args):
@@ -105,6 +106,7 @@ class MKToolbarPanel(RibbonBarPanel):
                         continue
                     button.set_button_toggle(button.identifier == identifier)
         self.apply_enable_rules()
+        self.modified()
 
     def __set_ribbonbar(self):
         """
@@ -156,41 +158,3 @@ class MKToolbarPanel(RibbonBarPanel):
             for panel in page.panels:
                 for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
-
-    def on_page_changed(self, event):
-        """
-        Code to be activated when the page changes from one page to another. Gui specific.
-        @param event:
-        @return:
-        """
-        page = event.GetPage()
-        p_id = page.GetId()
-        if p_id != ID_PAGE_TOOLS:
-            self.context("tool none\n")
-        pagename = ""
-        for p in self.ribbon_pages:
-            if p[0] is page:
-                pagename = p[1]
-                break
-        setattr(self.context.root, "_active_page", pagename)
-        event.Skip()
-
-    @signal_listener("page")
-    def on_page_signal(self, origin, pagename=None, *args):
-        """
-        Page listener to force the given active page on the triggering of a page signal.
-        @param origin:
-        @param pagename:
-        @param args:
-        @return:
-        """
-        if pagename is None:
-            return
-        pagename = pagename.lower()
-        if pagename == "":
-            pagename = "home"
-        for p in self.ribbon_pages:
-            if p[1] == pagename:
-                self._ribbon.SetActivePage(p[0])
-                if getattr(self.context.root, "_active_page", "") != pagename:
-                    setattr(self.context.root, "_active_page", pagename)

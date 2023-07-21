@@ -148,6 +148,29 @@ class MKRibbonBarPanel(RibbonBarPanel):
     @signal_listener("icons")
     def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
+        self.redrawn()
+
+    # @signal_listener("tool_changed")
+    # def on_tool_changed(self, origin, newtool=None, *args):
+    #     # Signal provides a tuple with (togglegroup, id)
+    #     if newtool is None:
+    #         return
+    #     if isinstance(newtool, (list, tuple)):
+    #         group = newtool[0].lower() if newtool[0] is not None else ""
+    #         identifier = newtool[1].lower() if newtool[1] is not None else ""
+    #     else:
+    #         group = newtool
+    #         identifier = ""
+    #     for page in self.pages:
+    #         for panel in page.panels:
+    #             for button in panel.buttons:
+    #                 if button.group != group:
+    #                     continue
+    #                 button.set_button_toggle(button.identifier == identifier)
+    #                 if self.art.current_page is not page:
+    #                     self.art.current_page = page
+    #     self.apply_enable_rules()
+    #     self.modified()
 
     def __set_ribbonbar(self):
         """
@@ -270,24 +293,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
                 for key, listener in panel._registered_signals:
                     self.context.unlisten(key, listener)
 
-    def on_page_changed(self, event):
-        """
-        Code to be activated when the page changes from one page to another. Gui specific.
-        @param event:
-        @return:
-        """
-        page = event.GetPage()
-        p_id = page.GetId()
-        if p_id != ID_PAGE_DESIGN:
-            self.context("tool none\n")
-        pagename = ""
-        for p in self.ribbon_pages:
-            if p[0] is page:
-                pagename = p[1]
-                break
-        setattr(self.context.root, "_active_page", pagename)
-        event.Skip()
-
     @signal_listener("page")
     def on_page_signal(self, origin, pagename=None, *args):
         """
@@ -301,9 +306,10 @@ class MKRibbonBarPanel(RibbonBarPanel):
             return
         pagename = pagename.lower()
         if pagename == "":
-            pagename = "home"
-        for p in self.ribbon_pages:
-            if p[1] == pagename:
-                self._ribbon.SetActivePage(p[0])
+            pagename = "project"
+        for p in self.pages:
+            if p.label.lower() == pagename:
+                self.art.current_page = p
+                self.modified()
                 if getattr(self.context.root, "_active_page", "") != pagename:
                     setattr(self.context.root, "_active_page", pagename)
