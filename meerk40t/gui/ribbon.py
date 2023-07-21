@@ -1113,8 +1113,11 @@ class Art:
         @return:
         """
         self._paint_background(dc)
-        for page in ribbon.pages:
-            self._paint_tab(dc, page)
+        if len(ribbon.pages) > 1:
+            for page in ribbon.pages:
+                self._paint_tab(dc, page)
+        else:
+            self.current_page = ribbon.pages[0]
 
         for page in ribbon.pages:
             if page is not self.current_page:
@@ -1382,21 +1385,24 @@ class Art:
         # print(f"ribbon: {dc.Size}")
 
         xpos = 0
+        has_page_header = len(ribbon.pages) > 1
         for pn, page in enumerate(ribbon.pages):
             # Set tab positioning.
             # Compute tabwidth according to be displayed label,
             # if bigger than default then extend width
-            line_width, line_height = dc.GetTextExtent(page.label)
+            if has_page_header:
+                line_width, line_height = dc.GetTextExtent(page.label)
 
-            tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
-
-            page.tab_position = (
-                pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer,
-                0,
-                pn * self.tab_tab_buffer + xpos + tabwidth + self.tab_initial_buffer,
-                self.tab_height * 2,
-            )
-            xpos += tabwidth
+                tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
+                page.tab_position = (
+                    pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer,
+                    0,
+                    pn * self.tab_tab_buffer + xpos + tabwidth + self.tab_initial_buffer,
+                    self.tab_height * 2,
+                )
+                xpos += tabwidth
+            else:
+                page.tab_position = (0, 0, 0, 0)
             if page is not self.current_page:
                 continue
 
@@ -1405,8 +1411,10 @@ class Art:
 
             # Page start position.
             x = self.edge_page_buffer
-            y = self.tab_height
-
+            if has_page_header:
+                y = self.tab_height
+            else:
+                y = 0
             # Set page position.
             page.position = (
                 x,
@@ -1414,6 +1422,7 @@ class Art:
                 x + page_width,
                 y + page_height,
             )
+
             # print(f"page: {page.position}")
             self.page_layout(dc, page)
 
