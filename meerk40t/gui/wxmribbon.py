@@ -121,13 +121,13 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_jobstart_buttons(self, new_values, old_values):
         self.home.job.set_buttons(new_values)
 
+    @lookup_listener("button/control")
+    def set_control_buttons(self, new_values, old_values):
+        self.home.control.set_buttons(new_values)
+
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
         self.config.device.set_buttons(new_values)
-
-    @lookup_listener("button/control")
-    def set_control_buttons(self, new_values, old_values):
-        self.config.control.set_buttons(new_values)
 
     @lookup_listener("button/config")
     def set_config_buttons(self, new_values, old_values):
@@ -210,7 +210,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
         self.add_panel(
             "control",
-            parent=self.config,
+            parent=self.home,
             id=wx.ID_ANY,
             label=_("Control"),
             icon=icons8_opened_folder_50.GetBitmap(),
