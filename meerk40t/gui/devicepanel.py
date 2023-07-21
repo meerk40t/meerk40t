@@ -195,6 +195,10 @@ class DevicePanel(wx.Panel):
 
         self.button_activate_device = wx.Button(self, wx.ID_ANY, _("Activate"))
         sizer_3.Add(self.button_activate_device, 0, 0, 0)
+        sizer_3.AddStretchSpacer()
+        self.button_config_device = wx.Button(self, wx.ID_ANY, _("Config"))
+        self.button_config_device.SetToolTip("Open the configuration window for the active device")
+        sizer_3.Add(self.button_config_device, 0, 0, 0)
 
         self.SetSizer(sizer_1)
 
@@ -225,6 +229,9 @@ class DevicePanel(wx.Panel):
         )
         self.Bind(
             wx.EVT_BUTTON, self.on_button_activate_device, self.button_activate_device
+        )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_button_config_device, self.button_config_device
         )
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit, self.devices_list)
         self.Parent.Bind(wx.EVT_SIZE, self.on_resize)
@@ -411,6 +418,9 @@ class DevicePanel(wx.Panel):
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(data), item2)
                 item3 = menu.Append(wx.ID_ANY, _("Activate"), "", wx.ITEM_NORMAL)
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_activate(data), item3)
+            else:
+                item4 = menu.Append(wx.ID_ANY, _("Config"), "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_config(data), item4)
             self.PopupMenu(menu)
             menu.Destroy()
 
@@ -451,6 +461,13 @@ class DevicePanel(wx.Panel):
 
         return activateit
 
+    def on_tree_popup_config(self, service):
+        def configit(event=None):
+            if service is not None:
+                service("window toggle Configuration\n")
+
+        return configit
+
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
         result = dlg.ShowModal()
@@ -486,6 +503,11 @@ class DevicePanel(wx.Panel):
         if service is not None:
             service.kernel.activate_service_path("device", service.path)
             self.recolor_device_items()
+
+    def on_button_config_device(self, event):  # wxGlade: DevicePanel.<event_handler>
+        service = self.get_selected_device()
+        if service is not None:
+            service("window toggle Configuration\n")
 
     def on_button_rename_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
