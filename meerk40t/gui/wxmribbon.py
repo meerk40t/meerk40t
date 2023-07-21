@@ -99,31 +99,15 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
-        self.design.edit.set_buttons(new_values)
+        self.home.edit.set_buttons(new_values)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
-        self.design.project.set_buttons(new_values)
-
-    @lookup_listener("button/control")
-    def set_control_buttons(self, new_values, old_values):
-        self.home.control.set_buttons(new_values)
-
-    @lookup_listener("button/config")
-    def set_config_buttons(self, new_values, old_values):
-        self.config.config.set_buttons(new_values)
+        self.home.project.set_buttons(new_values)
 
     @lookup_listener("button/modify")
     def set_modify_buttons(self, new_values, old_values):
         self.modify.modify.set_buttons(new_values)
-
-    @lookup_listener("button/tool")
-    def set_tool_buttons(self, new_values, old_values):
-        self.design.tool.set_buttons(new_values)
-
-    @lookup_listener("button/extended_tools")
-    def set_tool_extended_buttons(self, new_values, old_values):
-        self.design.extended.set_buttons(new_values)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
@@ -137,21 +121,21 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def set_jobstart_buttons(self, new_values, old_values):
         self.home.job.set_buttons(new_values)
 
-    @lookup_listener("button/group")
-    def set_group_buttons(self, new_values, old_values):
-        self.design.group.set_buttons(new_values)
+    @lookup_listener("button/control")
+    def set_control_buttons(self, new_values, old_values):
+        self.home.control.set_buttons(new_values)
 
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
-        self.home.device.set_buttons(new_values)
+        self.config.device.set_buttons(new_values)
+
+    @lookup_listener("button/config")
+    def set_config_buttons(self, new_values, old_values):
+        self.config.config.set_buttons(new_values)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
         self.modify.align.set_buttons(new_values)
-
-    @lookup_listener("button/properties")
-    def set_property_buttons(self, new_values, old_values):
-        self.design.properties.set_buttons(new_values)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -165,38 +149,11 @@ class MKRibbonBarPanel(RibbonBarPanel):
     def on_requested_change(self, origin, node=None, *args):
         self.apply_enable_rules()
 
-    @signal_listener("tool_changed")
-    def on_tool_changed(self, origin, newtool=None, *args):
-        # Signal provides a tuple with (togglegroup, id)
-        if newtool is None:
-            return
-        if isinstance(newtool, (list, tuple)):
-            group = newtool[0].lower() if newtool[0] is not None else ""
-            identifier = newtool[1].lower() if newtool[1] is not None else ""
-        else:
-            group = newtool
-            identifier = ""
-
-        for page in self.pages:
-            for panel in page.panels:
-                for button in panel.buttons:
-                    if button.group != group:
-                        continue
-                    button.set_button_toggle(button.identifier == identifier)
-        self.apply_enable_rules()
-
     def __set_ribbonbar(self):
         """
         GUI Specific creation of ribbonbar.
         @return:
         """
-
-        self.add_page(
-            "design",
-            ID_PAGE_DESIGN,
-            _("Design"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
 
         self.add_page(
             "home",
@@ -215,15 +172,23 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.add_page(
             "config",
             ID_PAGE_CONFIG,
-            _("Settings"),
+            _("Config"),
             icons8_opened_folder_50.GetBitmap(resize=16),
         )
 
         self.add_panel(
-            "job",
+            "project",
             parent=self.home,
             id=wx.ID_ANY,
-            label=_("Execute"),
+            label=_("Project"),
+            icon=icons8_opened_folder_50.GetBitmap(),
+        )
+
+        self.add_panel(
+            "edit",
+            parent=self.home,
+            id=wx.ID_ANY,
+            label=_("Edit"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
@@ -244,6 +209,14 @@ class MKRibbonBarPanel(RibbonBarPanel):
         )
 
         self.add_panel(
+            "job",
+            parent=self.home,
+            id=wx.ID_ANY,
+            label=_("Execute"),
+            icon=icons8_opened_folder_50.GetBitmap(),
+        )
+
+        self.add_panel(
             "config",
             parent=self.config,
             id=wx.ID_ANY,
@@ -253,57 +226,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
         self.add_panel(
             "device",
-            parent=self.home,
+            parent=self.config,
             id=wx.ID_ANY,
             label=_("Devices"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "project",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Project"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "tool",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Design"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "edit",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Edit"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "group",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Group"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "extended",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Extended Tools"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "properties",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Properties"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 

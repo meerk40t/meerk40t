@@ -255,9 +255,9 @@ class DevicePanel(wx.Panel):
         size = self.devices_list.GetSize()
         if size[0] == 0 or size[1] == 0:
             return
-        self.devices_list.SetColumnWidth(0, int(0.3 * size[0]))
-        self.devices_list.SetColumnWidth(1, int(0.3 * size[0]))
-        self.devices_list.SetColumnWidth(2, int(0.3 * size[0]))
+        self.devices_list.SetColumnWidth(0, int(0.5 * size[0]))
+        self.devices_list.SetColumnWidth(1, int(0.25 * size[0]))
+        self.devices_list.SetColumnWidth(2, int(0.25 * size[0]))
 
     def on_end_edit(self, event):
         prohibited = "'" + '"' + "/"
