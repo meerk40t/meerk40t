@@ -193,14 +193,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
         )
 
         self.add_panel(
-            "job",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Execute"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
             "prep",
             parent=self.home,
             id=wx.ID_ANY,
@@ -213,6 +205,14 @@ class MKRibbonBarPanel(RibbonBarPanel):
             parent=self.home,
             id=wx.ID_ANY,
             label=_("Control"),
+            icon=icons8_opened_folder_50.GetBitmap(),
+        )
+
+        self.add_panel(
+            "job",
+            parent=self.home,
+            id=wx.ID_ANY,
+            label=_("Execute"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
