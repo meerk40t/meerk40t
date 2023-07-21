@@ -99,19 +99,11 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
-        self.design.edit.set_buttons(new_values)
+        self.home.edit.set_buttons(new_values)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
-        self.design.project.set_buttons(new_values)
-
-    @lookup_listener("button/control")
-    def set_control_buttons(self, new_values, old_values):
-        self.home.control.set_buttons(new_values)
-
-    @lookup_listener("button/config")
-    def set_config_buttons(self, new_values, old_values):
-        self.config.config.set_buttons(new_values)
+        self.home.project.set_buttons(new_values)
 
     @lookup_listener("button/modify")
     def set_modify_buttons(self, new_values, old_values):
@@ -131,15 +123,19 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
-        self.home.device.set_buttons(new_values)
+        self.config.device.set_buttons(new_values)
+
+    @lookup_listener("button/control")
+    def set_control_buttons(self, new_values, old_values):
+        self.config.control.set_buttons(new_values)
+
+    @lookup_listener("button/config")
+    def set_config_buttons(self, new_values, old_values):
+        self.config.config.set_buttons(new_values)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
         self.modify.align.set_buttons(new_values)
-
-    @lookup_listener("button/properties")
-    def set_property_buttons(self, new_values, old_values):
-        self.design.properties.set_buttons(new_values)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -160,13 +156,6 @@ class MKRibbonBarPanel(RibbonBarPanel):
         """
 
         self.add_page(
-            "design",
-            ID_PAGE_DESIGN,
-            _("Design"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-
-        self.add_page(
             "home",
             ID_PAGE_MAIN,
             _("Project"),
@@ -183,8 +172,24 @@ class MKRibbonBarPanel(RibbonBarPanel):
         self.add_page(
             "config",
             ID_PAGE_CONFIG,
-            _("Settings"),
+            _("Config"),
             icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+
+        self.add_panel(
+            "project",
+            parent=self.home,
+            id=wx.ID_ANY,
+            label=_("Project"),
+            icon=icons8_opened_folder_50.GetBitmap(),
+        )
+
+        self.add_panel(
+            "edit",
+            parent=self.home,
+            id=wx.ID_ANY,
+            label=_("Edit"),
+            icon=icons8_opened_folder_50.GetBitmap(),
         )
 
         self.add_panel(
@@ -205,7 +210,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
         self.add_panel(
             "control",
-            parent=self.home,
+            parent=self.config,
             id=wx.ID_ANY,
             label=_("Control"),
             icon=icons8_opened_folder_50.GetBitmap(),
@@ -221,33 +226,9 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
         self.add_panel(
             "device",
-            parent=self.home,
+            parent=self.config,
             id=wx.ID_ANY,
             label=_("Devices"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "project",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Project"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "edit",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Edit"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "properties",
-            parent=self.design,
-            id=wx.ID_ANY,
-            label=_("Properties"),
             icon=icons8_opened_folder_50.GetBitmap(),
         )
 
