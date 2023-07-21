@@ -411,6 +411,9 @@ class DevicePanel(wx.Panel):
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(data), item2)
                 item3 = menu.Append(wx.ID_ANY, _("Activate"), "", wx.ITEM_NORMAL)
                 self.Bind(wx.EVT_MENU, self.on_tree_popup_activate(data), item3)
+            else:
+                item3 = menu.Append(wx.ID_ANY, _("Config"), "", wx.ITEM_NORMAL)
+                self.Bind(wx.EVT_MENU, self.on_tree_popup_config(data), item3)
             self.PopupMenu(menu)
             menu.Destroy()
 
@@ -450,6 +453,13 @@ class DevicePanel(wx.Panel):
                 self.recolor_device_items()
 
         return activateit
+
+    def on_tree_popup_config(self, service):
+        def config_window(event=None):
+            if service is not None:
+                service("window open Configuration\n")
+
+        return config_window
 
     def on_button_create_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         dlg = SelectDevice(None, wx.ID_ANY, context=self.context)
