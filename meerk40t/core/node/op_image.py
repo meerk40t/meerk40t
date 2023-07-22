@@ -5,7 +5,7 @@ from meerk40t.core.cutcode.rastercut import RasterCut
 from meerk40t.core.elements.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length, UNITS_PER_MM
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -233,6 +233,11 @@ class ImageOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
+
+        native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        self.settings["native_mm"] = native_mm
+        self.settings["native_speed"] = self.speed * native_mm
+        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
         for node in self.children:
 

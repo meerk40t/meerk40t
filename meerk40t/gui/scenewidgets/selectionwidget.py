@@ -2583,8 +2583,9 @@ class SelectionWidget(Widget):
         matrix = self.parent.matrix
         if bounds is not None:
             try:
-                self.line_width = 2.0 / matrix.value_scale_x()
-                self.font_size = 14.0 / matrix.value_scale_x()
+                factor = math.sqrt(abs(matrix.determinant))
+                self.line_width = 2.0 / factor
+                self.font_size = 14.0 / factor
             except ZeroDivisionError:
                 matrix.reset()
                 return
@@ -2605,7 +2606,7 @@ class SelectionWidget(Widget):
                     wx.FONTSTYLE_NORMAL,
                     wx.FONTWEIGHT_BOLD,
                 )
-            except TypeError:
+            except (TypeError, AssertionError):
                 font = wx.Font(
                     int(self.font_size),
                     wx.FONTFAMILY_SWISS,

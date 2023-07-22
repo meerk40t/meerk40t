@@ -203,6 +203,7 @@ single_command_lookup = {
 
 BUSY = 0x04
 READY = 0x20
+AXIS = 0x40
 
 
 def _bytes_to_words(r):
@@ -704,6 +705,10 @@ class GalvoController:
         status = self.status()
         return bool(status & READY)
 
+    def is_axis(self):
+        status = self.status()
+        return bool(status & AXIS)
+
     def is_ready_and_not_busy(self):
         if self.mode == DRIVER_STATE_RAW:
             return True
@@ -714,6 +719,14 @@ class GalvoController:
         if self.mode == DRIVER_STATE_RAW:
             return
         while not self.is_ready_and_not_busy():
+            time.sleep(0.01)
+            if self.is_shutdown:
+                return
+
+    def wait_axis(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
+        while self.is_axis():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
@@ -796,7 +809,6 @@ class GalvoController:
         self.reset()
         self.usb_log("Reset")
         self.write_correction_file(cor_file)
-        self.usb_log("Correction File Sent")
         self.enable_laser()
         self.usb_log("Laser Enabled")
         self.set_control_mode(control_mode)
@@ -914,12 +926,15 @@ class GalvoController:
     def write_correction_file(self, filename):
         if filename is None:
             self.write_blank_correct_file()
+            self.usb_log("Correction file set to blank.")
             return
         try:
             table = self._read_correction_file(filename)
             self._write_correction_table(table)
+            self.usb_log("Correction File Sent")
         except OSError:
             self.write_blank_correct_file()
+            self.usb_log("Correction file set to blank.")
             return
 
     @staticmethod
@@ -1391,20 +1406,20 @@ class GalvoController:
     def read_port(self):
         return self._command(ReadPort)
 
-    def set_axis_motion_param(self, param):
-        return self._command(SetAxisMotionParam, param)
+    def set_axis_motion_param(self, *param):
+        return self._command(SetAxisMotionParam, *param)
 
-    def set_axis_origin_param(self, param):
-        return self._command(SetAxisOriginParam, param)
+    def set_axis_origin_param(self, *param):
+        return self._command(SetAxisOriginParam, *param)
 
     def axis_go_origin(self):
         return self._command(AxisGoOrigin)
 
-    def move_axis_to(self, a):
-        return self._command(MoveAxisTo)
+    def move_axis_to(self, position, invert):
+        return self._command(MoveAxisTo, position, invert)
 
-    def get_axis_pos(self):
-        return self._command(GetAxisPos)
+    def get_axis_pos(self, index=0):
+        return self._command(GetAxisPos, index)
 
     def get_fly_wait_count(self):
         return self._command(GetFlyWaitCount)

@@ -75,6 +75,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
+    icons8_delete_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -262,7 +263,6 @@ class MeerK40t(MWindow):
         self.assign_button_panel.show_stuff(False)
 
     def _setup_edit_menu_choice(self):
-
         def on_click_undo():
             self.context("undo\n")
 
@@ -585,7 +585,7 @@ class MeerK40t(MWindow):
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
         # tiny  = factor 1/2, min_size = 25
-        context.setting(str, "icon_size", "default")
+        # context.setting(str, "icon_size", "default")
         # Ribbon-Size (NOT YET ACTIVE)
         # default - std icon size + panel-labels,
         # small - std icon size / no labels
@@ -612,7 +612,7 @@ class MeerK40t(MWindow):
             {
                 "attr": "icon_size",
                 "object": self.context.root,
-                "default": "default",
+                "default": "small",
                 "type": str,
                 "style": "combosmall",
                 "choices": ["large", "big", "default", "small", "tiny"],
@@ -1152,7 +1152,6 @@ class MeerK40t(MWindow):
                 "identifier": "vector",
             },
         )
-
         kernel.register(
             "button/tools/Text",
             {
@@ -1166,6 +1165,19 @@ class MeerK40t(MWindow):
             },
         )
 
+        kernel.register(
+            "button/basicediting/Delete",
+            {
+                "label": _("Delete"),
+                "icon": icons8_delete_50,
+                "tip": _(
+                    "Delete selected items"
+                ),
+                "action": lambda v: kernel.elements("tree selected delete\n"),
+                "size": bsize_normal,
+                "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
+            },
+        )
         kernel.register(
             "button/basicediting/Cut",
             {
@@ -1524,7 +1536,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements(
                     "align push first individual left pop\n"
                 ),
-                "right": lambda v: kernel.elements("align push bed group left pop\n"),
+                "action_right": lambda v: kernel.elements("align push bed group left pop\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1538,7 +1550,8 @@ class MeerK40t(MWindow):
             {
                 "label": _("Wordlist"),
                 "icon": icons8_curly_brackets_50,
-                "tip": _("Manages Wordlist-Entries"),
+                "tip": _("Manages Wordlist-Entries") + "\n"
+                        + _(" (right go to next entry)"),
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
                 "identifier": "prep_wordlist",
                 "priority": 99,
@@ -1549,7 +1562,7 @@ class MeerK40t(MWindow):
                         "icon": icons8_curly_brackets_50,
                         "tip": _("Manages Wordlist-Entries")
                         + _(" (right go to next entry)"),
-                        "label": _("Wordlist"),
+                        "label": _("Wordlist Editor"),
                         "action": lambda v: kernel.console("window toggle Wordlist\n"),
                         "action_right": lambda v: kernel.elements.wordlist_advance(1),
                     },
@@ -1587,7 +1600,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first right\n"),
-                "right": lambda v: kernel.elements("align bed group right\n"),
+                "action_right": lambda v: kernel.elements("align bed group right\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1604,7 +1617,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first top\n"),
-                "right": lambda v: kernel.elements("align bed group top\n"),
+                "action_right": lambda v: kernel.elements("align bed group top\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1621,7 +1634,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first bottom\n"),
-                "right": lambda v: kernel.elements("align bed group bottom\n"),
+                "action_right": lambda v: kernel.elements("align bed group bottom\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1638,7 +1651,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerh\n"),
-                "right": lambda v: kernel.elements("align bed group centerh\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerh\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1655,7 +1668,7 @@ class MeerK40t(MWindow):
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align first centerv\n"),
-                "right": lambda v: kernel.elements("align bed group centerv\n"),
+                "action_right": lambda v: kernel.elements("align bed group centerv\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1674,7 +1687,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
-                "right": lambda v: kernel.elements("align spaceh2\n"),
+                "action_right": lambda v: kernel.elements("align spaceh2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1693,7 +1706,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("Right click: Equal centers"),
                 "action": lambda v: kernel.elements("align spacev\n"),
-                "right": lambda v: kernel.elements("align spacev2\n"),
+                "action_right": lambda v: kernel.elements("align spacev2\n"),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2227,6 +2240,7 @@ class MeerK40t(MWindow):
                 self.add_module_delegate(page)
         else:
             self.add_module_delegate(control)
+        paneinfo.manager = self._mgr
         self.on_pane_show(paneinfo)
 
     def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
@@ -3251,6 +3265,8 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(wxglade_tmp_menu, _("Languages"))
 
     @signal_listener("file;loaded")
+    @signal_listener("file;saved")
+    @signal_listener("file;cleared")
     @signal_listener("device;renamed")
     @lookup_listener("service/device/active")
     def on_active_change(self, *args):
@@ -3443,8 +3459,6 @@ class MeerK40t(MWindow):
         self.main_statusbar.Reposition(value)
 
     def __set_titlebar(self):
-        device_name = ""
-        device_version = ""
         label = self.context.elements.filename
         if label is None:
             label = ""
@@ -3596,12 +3610,21 @@ class MeerK40t(MWindow):
             except AttributeError:
                 pass
 
+
     def load(self, pathname):
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         kernel = self.context.kernel
         try:
             # Reset to standard tool
             self.context("tool none\n")
-            info = _("Loading File...") + "\n" + pathname
+            info = _("Loading File...") + "\n" + unescaped(pathname)
             kernel.busyinfo.start(msg=info)
             n = self.context.elements.note
             results = self.context.elements.load(

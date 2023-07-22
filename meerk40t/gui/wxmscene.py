@@ -93,6 +93,7 @@ class MeerK40tScenePanel(wx.Panel):
             scene_name="Scene" if index is None else f"Scene{index}",
             style=wx.EXPAND | wx.WANTS_CHARS,
         )
+        self.scene.start_scene()
         self.widget_scene = self.scene.scene
 
         self.tool_active = False
@@ -200,7 +201,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
 
-        buttonsize = int(STD_ICON_SIZE / 2)
+        bsize_normal = STD_ICON_SIZE
 
         def proxy_linetext():
             from meerk40t.extra.hershey import have_hershey_fonts
@@ -218,7 +219,7 @@ class MeerK40tScenePanel(wx.Panel):
                 "tip": _("Add a vector text element"),
                 "action": lambda v: proxy_linetext(),
                 "group": "tool",
-                "size": 50,
+                "size": bsize_normal,
                 "identifier": "linetext",
             },
         )
@@ -230,7 +231,7 @@ class MeerK40tScenePanel(wx.Panel):
                 "icon": icons8_r_white,
                 "tip": _("Toggle Reference Object Status"),
                 "action": lambda v: self.toggle_ref_obj(),
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "refobj",
                 "rule_enabled": lambda cond: len(
                     list(context.kernel.elements.elems(emphasized=True))

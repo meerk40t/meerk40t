@@ -7,10 +7,12 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from .propertypanels.hatchproperty import HatchPropertyPanel
 from .propertypanels.inputproperty import InputPropertyPanel
 from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
+from .simpleui import SimpleUI
 
 try:
     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
@@ -281,7 +283,7 @@ class wxMeerK40t(wx.App, Module):
         self.timer = wx.Timer(self, id=wx.ID_ANY)
         self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
         context._kernel.scheduler_handles_main_thread_jobs = False
-        self.timer.Start(10)
+        self.timer.Start(50)
 
         icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
@@ -657,6 +659,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/LineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/HatchEffectNode/HatchProperty", HatchPropertyPanel)
         kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/BlobNode/BlobProperty", BlobPropertyPanel)
@@ -703,12 +706,17 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Hingetool", LivingHingeTool)
         kernel.register("window/NodeEditToolbar", NodeEditToolbar)
         kernel.register("window/Kerftest", KerfTool)
+        kernel.register("window/SimpleUI", SimpleUI)
         # Hershey Manager stuff
         register_hershey_stuff(kernel)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
         kernel.register("wxpane/Ribbon", register_panel_ribbon)
+
+        from meerk40t.gui.wxmtools import register_panel_tools
+
+        kernel.register("wxpane/Tools", register_panel_tools)
 
         from meerk40t.gui.wxmscene import register_panel_scene
 

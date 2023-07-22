@@ -86,7 +86,11 @@ class GridWidget(Widget):
     def scene_scale(self):
         matrix = self.scene.widget_root.scene_widget.matrix
         try:
-            return sqrt(abs(matrix.determinant))
+            scene_scale = sqrt(abs(matrix.determinant))
+            if scene_scale < 1e-8:
+                matrix.reset()
+                return 1.0
+            return scene_scale
         except (OverflowError, ValueError, ZeroDivisionError):
             matrix.reset()
         return 1.0

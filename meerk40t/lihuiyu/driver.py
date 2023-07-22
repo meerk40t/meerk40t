@@ -156,7 +156,6 @@ class LihuiyuDriver(Parameters):
         self.CODE_LASER_OFF = b"U"
 
         self.paused = False
-        self.service._buffer_size = 0
 
         def primary_hold():
             if self.out_pipe is None:

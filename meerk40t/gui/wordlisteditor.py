@@ -884,7 +884,7 @@ class WordlistEditor(MWindow):
         kernel.register(
             "button/config/Wordlist",
             {
-                "label": _("Wordlist"),
+                "label": _("Wordlist Editor"),
                 "icon": icons8_curly_brackets_50,
                 "tip": _("Manages Wordlist-Entries"),
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),

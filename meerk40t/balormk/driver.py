@@ -74,6 +74,8 @@ class BalorDriver:
     #############
     # DRIVER COMMANDS
     #############
+    def job_start(self, job):
+        self._aborting = False
 
     def hold_work(self, priority):
         """

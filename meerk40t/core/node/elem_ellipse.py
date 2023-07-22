@@ -1,4 +1,3 @@
-import math
 from copy import copy
 from math import cos, sin
 
@@ -33,7 +32,7 @@ class EllipseNode(Node, Stroked):
             if "stroke" not in kwargs:
                 kwargs["stroke"] = shape.stroke
             if "stroke_width" not in kwargs:
-                kwargs["stroke_width"] = shape.stroke_width
+                kwargs["stroke_width"] = shape.implicit_stroke_width
             if "fill" not in kwargs:
                 kwargs["fill"] = shape.fill
             if "matrix" not in kwargs:
@@ -150,11 +149,6 @@ class EllipseNode(Node, Stroked):
         self.notify_scaled(self, sx=sx, sy=sy, ox=ox, oy=oy)
 
     def bbox(self, transformed=True, with_stroke=False):
-        # self._sync_svg()
-        # bounds = self.shape.bbox(transformed=transformed, with_stroke=False)
-        # if bounds is None:
-        #     # degenerate paths can have no bounds.
-        #     return None
         geometry = self.as_geometry()
         if transformed:
             bounds = geometry.bbox(mx=self.matrix)

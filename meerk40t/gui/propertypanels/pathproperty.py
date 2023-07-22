@@ -109,6 +109,8 @@ class PathPropertyPanel(ScrolledPanel):
             return False
         elif node.type.startswith("elem"):
             return True
+        elif node.type.startswith("effect"):
+            return True
         return False
 
     def covered_area(self, nodes):
@@ -283,6 +285,11 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_segments.SetValue("")
 
         self.Refresh()
+
+    def signal(self, signalstr, myargs):
+        for panel in self.panels:
+            if hasattr(panel, "signal"):
+                panel.signal(signalstr, myargs)
 
     def __set_properties(self):
         return

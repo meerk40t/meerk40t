@@ -53,7 +53,7 @@ def register_panel_tree(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
-        .Left()
+        .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
         .FloatingSize(300, 270)
@@ -382,6 +382,7 @@ class ShadowTree:
             "op raster": icons8_direction_20,
             "op hatch": icons8_diagonal_20,
             "op dots": icons8_scatter_plot_20,
+            "effect hatch": icons8_diagonal_20,
             "place current": icons8_home_location_20,
             "place point": icons8_home_location_20,
             "elem point": icons8_scatter_plot_20,
@@ -1311,6 +1312,9 @@ class ShadowTree:
 
     def update_op_labels(self):
         startnode = self.elements.get(type="branch ops")._item
+        if startnode is None:
+            # Branch op never populated the tree, we cannot update sublayer.
+            return
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
             node = self.wxtree.GetItemData(child)  # Make sure the map is updated...

@@ -47,7 +47,7 @@ def register_panel_laser(window, context):
     )
     pane = (
         aui.AuiPaneInfo()
-        .Left()
+        .Right()
         .MinSize(200, 180)
         .BestSize(300, 270)
         .FloatingSize(300, 270)
@@ -115,8 +115,14 @@ class LaserPanel(wx.Panel):
             _("Select device from list of configured devices")
         )
         self.combo_devices.SetSelection(index)
+        self.btn_config_laser = wx.Button(self, wx.ID_ANY, "*")
+        self.btn_config_laser.SetToolTip(
+            _("Opens device-specific configuration window")
+        )
 
-        sizer_devices.Add(self.combo_devices, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_devices.Add(self.combo_devices, 1, wx.EXPAND, 0)
+        self.btn_config_laser.SetMinSize(wx.Size(20, -1))
+        sizer_devices.Add(self.btn_config_laser, 0, wx.EXPAND, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)
@@ -235,6 +241,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_SLIDER, self.on_slider_speed, self.slider_speed)
         self.Bind(wx.EVT_SLIDER, self.on_slider_power, self.slider_power)
         self.Bind(wx.EVT_CHECKBOX, self.on_optimize, self.checkbox_optimize)
+        self.Bind(wx.EVT_BUTTON, self.on_config_button, self.btn_config_laser)
         # end wxGlade
         if index == -1:
             disable_window(self)
@@ -448,6 +455,7 @@ class LaserPanel(wx.Panel):
         busy = self.context.kernel.busyinfo
         busy.start(msg=_("Preparing Laserjob..."))
         plan = self.context.planner.get_or_make_plan("z")
+        self.context.setting(bool, "laserpane_hold", False)
         if plan.plan and self.context.laserpane_hold:
             self.context("planz spool\n")
         else:
@@ -480,6 +488,7 @@ class LaserPanel(wx.Panel):
         self.context.kernel.busyinfo.start(msg=_("Preparing simulation..."))
 
         plan = self.context.planner.get_or_make_plan("z")
+        param = "0"
         if not plan.plan or not self.context.laserpane_hold:
             if self.checkbox_optimize.GetValue():
                 self.context(
@@ -488,7 +497,6 @@ class LaserPanel(wx.Panel):
                 param = "1"
             else:
                 self.context("planz clear copy preprocess validate blob\n")
-                param = "0"
         self.context(f"window open Simulation z 0 {param}\n")
         self.context.kernel.busyinfo.end()
 
@@ -503,6 +511,8 @@ class LaserPanel(wx.Panel):
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
         self.set_pause_color()
 
+    def on_config_button(self, event):
+        self.context.device("window toggle Configuration\n")
 
 class JobPanel(wx.Panel):
     """

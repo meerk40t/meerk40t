@@ -657,9 +657,9 @@ class Spooler:
     def remove(self, element):
         with self._lock:
             status = "completed"
-            if element.status == "running":
+            if element.status == "Running":
                 element.stop()
-                status = "stopped"
+                status = "Stopped"
             self.context.logging.event(
                 {
                     "uid": getattr(element, "uid"),

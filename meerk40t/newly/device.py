@@ -302,6 +302,17 @@ class NewlyDevice(Service, ViewPort):
                 "subsection": "_40_Power",
             },
             {
+                "attr": "max_pulse_power",
+                "object": self,
+                "default": 65.0,
+                "type": float,
+                "label": _("Max Pulse Power"),
+                "trailer": "%",
+                "tip": _("What max power level should pulses be fired at?"),
+                "section": "_10_Parameters",
+                "subsection": "_45_Pulse",
+            },
+            {
                 "attr": "pwm_enabled",
                 "object": self,
                 "default": False,
@@ -635,7 +646,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def move_rect(file_index, **kwargs):
-            self.driver.connection.move_frame(file_index)
+            try:
+                self.driver.connection.move_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -644,7 +662,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def draw_rect(file_index, **kwargs):
-            self.driver.connection.draw_frame(file_index)
+            try:
+                self.driver.connection.draw_frame(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_argument("file_index", type=int)
         @self.console_command(
@@ -653,7 +678,14 @@ class NewlyDevice(Service, ViewPort):
             all_arguments_required=True,
         )
         def replay(file_index, **kwargs):
-            self.driver.connection.replay(file_index)
+            try:
+                self.driver.connection.replay(file_index)
+            except ConnectionRefusedError:
+                self.signal(
+                    "warning",
+                    _("Connection was aborted. Manual connection required."),
+                    _("Not Connected"),
+                )
 
         @self.console_command(
             "viewport_update",

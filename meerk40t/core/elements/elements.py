@@ -20,7 +20,7 @@ from meerk40t.core.undos import Undo
 from meerk40t.core.units import Length
 from meerk40t.core.wordlist import Wordlist
 from meerk40t.kernel import ConsoleFunction, Service, Settings
-from meerk40t.svgelements import Color, SVGElement, Point, Path
+from meerk40t.svgelements import Color, Path, Point, SVGElement
 
 from .element_types import *
 
@@ -33,6 +33,7 @@ def plugin(kernel, lifecycle=None):
             branches,
             clipboard,
             element_treeops,
+            geometry,
             grid,
             materials,
             notes,
@@ -54,6 +55,7 @@ def plugin(kernel, lifecycle=None):
             wordlist.plugin,
             materials.plugin,
             shapes.plugin,
+            geometry.plugin,
             tree_commands.plugin,
             undo_redo.plugin,
             clipboard.plugin,
@@ -653,18 +655,6 @@ class Elemental(Service):
             lly = Length(f"1{llx._preferred_units}")
         ly = float(lly)
         return lx * ly
-
-    def has_clipboard(self):
-        """
-        Returns the amount of elements in the clipboard
-        """
-        # TODO: this counts the clipboard not returns whether it exists
-        destination = self._clipboard_default
-        try:
-            num = len(self._clipboard[destination])
-        except (TypeError, KeyError):
-            num = 0
-        return num
 
     ### Operation tools
 
@@ -1366,7 +1356,7 @@ class Elemental(Service):
             self.signal("rebuild_tree")
         self.set_end_time("clear_all", display=True)
         self._filename = None
-        self.signal("file;loaded")
+        self.signal("file;cleared")
 
     def clear_note(self):
         self.note = None
@@ -2962,6 +2952,7 @@ class Elemental(Service):
                 if pathname.lower().endswith(extension) and _version == version:
                     saver.save(self, pathname, version)
                     self._filename = pathname
+                    self.signal("file;saved")
                     return True
         return False
 

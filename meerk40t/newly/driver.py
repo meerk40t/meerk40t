@@ -196,7 +196,11 @@ class NewlyDriver:
                     con.mark(x, y, settings=q.settings, power=percent_power * on)
                     con.update()
             elif isinstance(q, DwellCut):
-                con.dwell(q.dwell_time)
+                last_x, last_y = con.get_last_xy()
+                x, y = q.start
+                if last_x != x or last_y != y:
+                    con.goto(x, y)
+                con.dwell(q.dwell_time, settings=q.settings)
             elif isinstance(q, WaitCut):
                 con.wait(q.dwell_time)
             elif isinstance(q, HomeCut):

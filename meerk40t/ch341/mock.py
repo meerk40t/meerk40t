@@ -8,12 +8,12 @@ class MockCH341Driver:
     This is basic interface code for a mock CH341.
     """
 
-    def __init__(self, channel=None, state=None):
+    def __init__(self, channel=None, state=None, bulk=True):
         self.driver_index = None
         self.driver_value = None
         self.channel = channel
         self.state = state
-        self.bulk = True
+        self.bulk = bulk
 
         self.mock_status = 206
         self.mock_error = 207

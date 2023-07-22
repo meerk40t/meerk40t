@@ -182,8 +182,6 @@ class PlannerPanel(wx.Panel):
         self.update_gui()
 
     def pane_show(self):
-        # self.context.setting(bool, "opt_rasters_split", True)
-        # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
@@ -279,17 +277,18 @@ class ExecuteJob(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register(
-            "button/jobstart/ExecuteJob",
-            {
-                "label": _("Execute Job"),
-                "icon": icons8_laser_beam_52,
-                "tip": _("Execute the current laser project"),
-                "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
-                "size": STD_ICON_SIZE,
-                "priority": 2,
-            },
-        )
+        pass
+        # kernel.register(
+        #     "button/jobstart/ExecuteJob",
+        #     {
+        #         "label": _("Execute Job"),
+        #         "icon": icons8_laser_beam_52,
+        #         "tip": _("Execute the current laser project"),
+        #         "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+        #         "size": STD_ICON_SIZE,
+        #         "priority": 2,
+        #     },
+        # )
 
     def delegates(self):
         yield self.panel

@@ -15,8 +15,8 @@ from meerk40t.svgelements import (
     Path,
     Point,
     QuadraticBezier,
-    Rect,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 """
 The following routines deal with the offset of an SVG path at a given distance D.
@@ -559,24 +559,32 @@ def offset_path(
                 # Arc is not working, so we always linearize
                 arclinearize = True
                 newsegment = offset_arc(segment, offset, arclinearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, QuadraticBezier):
                 newsegment = offset_quad(segment, offset, linearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
+                p._segments[idx] = newsegment[0]  # TODO: indexError as newsegment can return an empty list
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
                 newsegment = offset_line(segment, offset)
+                if newsegment is None or len(newsegment) == 0:
+                    continue
                 left_end = idx - 1 + len(newsegment)
                 p._segments[idx] = newsegment[0]
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
@@ -680,9 +688,12 @@ def init_commands(kernel):
                 p = abs(node.as_path())
             else:
                 bb = node.bounds
-                # TODO: Internal uses of Rect and Path.
-                r = Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1])
-                p = Path(r)
+                if bb is None:
+                    # Node has no bounds or space, therefore no offset outline.
+                    return "elements", data_out
+                p = Geomstr.rect(
+                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
+                ).as_path()
 
             node_path = offset_path(
                 p,

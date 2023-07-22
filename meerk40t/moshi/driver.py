@@ -60,16 +60,24 @@ class MoshiDriver(Parameters):
         self.hold = False
         self.paused = False
 
-        self.service._buffer_size = 0
-
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
         name = self.service.label
         self.pipe_channel = service.channel(f"{name}/events")
+        self.program.channel = self.pipe_channel
+
+        self.out_pipe = None
+        self.out_real = None
 
     def __repr__(self):
         return f"MoshiDriver({self.name})"
+
+    def __call__(self, e, real=False):
+        if real:
+            self.out_real(e)
+        else:
+            self.out_pipe(e)
 
     def hold_work(self, priority):
         """
@@ -80,6 +88,12 @@ class MoshiDriver(Parameters):
         @return: hold?
         """
         return priority <= 0 and (self.paused or self.hold)
+
+    def job_start(self, job):
+        pass
+
+    def job_finish(self, job):
+        self.rapid_mode()
 
     def get(self, key, default=None):
         """
@@ -321,10 +335,8 @@ class MoshiDriver(Parameters):
         Unlock the Rail or send a "FreeMotor" command.
         """
         self.rapid_mode()
-        try:
-            self.service.controller.unlock_rail()
-        except AttributeError:
-            pass
+        self.pipe_channel("Realtime: FreeMotor")
+        MoshiBuilder.freemotor(self.out_real, self.pipe_channel)
 
     def rapid_mode(self, *values):
         """
@@ -333,18 +345,9 @@ class MoshiDriver(Parameters):
         """
         if self.state == DRIVER_STATE_RAPID:
             return
-
+        self.commit()
         if self.pipe_channel:
             self.pipe_channel("Rapid Mode")
-        if self.state == DRIVER_STATE_FINISH:
-            pass
-        elif self.state in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_MODECHANGE,
-            DRIVER_STATE_RASTER,
-        ):
-            self.program.termination()
-            self.push_program()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
 
@@ -522,10 +525,10 @@ class MoshiDriver(Parameters):
         """
         self.service.spooler.clear_queue()
         self.rapid_mode()
-        try:
-            self.service.controller.estop()
-        except AttributeError:
-            pass
+        self.queue.clear()
+        self.pipe_channel("Realtime: Stop")
+        MoshiBuilder.stop(self.out_real)
+        self.pipe_channel("Control Request: Stop")
 
     ####################
     # Protected Driver Functions
@@ -610,12 +613,14 @@ class MoshiDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def push_program(self):
+    def commit(self):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
-            self.service.controller.push_program(self.program)
-            self.program = MoshiBuilder()
-            self.program.channel = self.pipe_channel
+            self.program.termination()
+            if self.service.mock:
+                self.program.debug(self.pipe_channel)
+            self(bytearray(self.program.data))
+        self.program.clear()
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """

@@ -1,25 +1,27 @@
-def get_ch341_interface(context, log):
+def get_ch341_interface(context, log, mock=False, mock_status=206, bulk=True):
     def _state_change(state_value):
         context.signal("pipe;state", state_value)
 
     _ = log._
-    if context.mock:
+    if mock:
         log(_("Using Mock Driver."))
         from .mock import MockCH341Driver as MockDriver
 
-        yield MockDriver(channel=log, state=_state_change)
+        mock_device = MockDriver(channel=log, state=_state_change, bulk=bulk)
+        mock_device.mock_status = mock_status
+        yield mock_device
         return
 
     try:
         from .libusb import LibCH341Driver
 
-        yield LibCH341Driver(channel=log, state=_state_change)
+        yield LibCH341Driver(channel=log, state=_state_change, bulk=bulk)
     except ImportError:
         log(_("PyUsb is not installed. Skipping."))
 
     try:
-        from .windll import WinCH341Driver
+        from .windriver import WinCH341Driver
 
-        yield WinCH341Driver(channel=log, state=_state_change)
+        yield WinCH341Driver(channel=log, state=_state_change, bulk=bulk)
     except ImportError:
         log(_("No Windll interfacing. Skipping."))

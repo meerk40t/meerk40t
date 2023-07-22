@@ -83,7 +83,7 @@ def run_command_and_log(command_array, logfile):
             except UnicodeDecodeError:
                 pass
         result = True
-    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError) as e:
+    except (FileNotFoundError, TimeoutExpired, UnicodeDecodeError, OSError) as e:
         if f:
             f.write(f"Execution failed: {str(e)}\n")
     if f:
@@ -182,8 +182,17 @@ class MultiLoader:
         result, c = run_command_and_log(cmd, logfile)
         if not result or c.returncode == 1:
             return False
+
+        def unescaped(filename):
+            OS_NAME = platform.system()
+            if OS_NAME == "Windows":
+                newstring = filename.replace("&", "&&")
+            else:
+                newstring = filename.replace("&", "&&")
+            return newstring
+
         if was_shown:
-            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + svg_temp_file)
+            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + unescaped(svg_temp_file))
             kernel.busyinfo.show()
         filename_to_process = svg_temp_file
         preproc = elements_service.lookup("preprocessor/.svg")
@@ -386,6 +395,8 @@ def plugin(kernel, lifecycle):
             # We try to establish if a file contains certain features...
 
             source = pathname
+            if not os.path.exists(source):
+                return pathname
             if pathname.lower().endswith("svgz"):
                 source = gzip.open(pathname, "rb")
             METHOD_CONVERT_TO_OBJECT = 1

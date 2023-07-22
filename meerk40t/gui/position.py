@@ -1,6 +1,7 @@
 import wx
 from wx import aui
 
+from meerk40t.kernel import signal_listener
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_compress_50
@@ -118,12 +119,50 @@ class PositionPanel(wx.Panel):
         self.context.listen("emphasized", self._update_position)
         self.context.listen("modified", self._update_position)
         self.context.listen("altered", self._update_position)
+        # To get an update about translation / scaling
+        # updates to an element we have two options....
+        # Option 1: plug yourself to the rootnode update
+        # self.context.elements.listen_tree(self)
 
     def pane_hide(self, *args):
         self.context.unlisten("units", self.space_changed)
         self.context.unlisten("emphasized", self._update_position)
         self.context.unlisten("modified", self._update_position)
         self.context.unlisten("altered", self._update_position)
+        # Option 1: plug yourself to the rootnode update
+        # self.context.elements.unlisten_tree(self)
+
+    # Option 2: attach yourself to the refresh_scene and the tool_modified signals
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_position(True)
+
+    @signal_listener("tool_modified")
+    def on_modified(self, *args):
+        self.update_position(True)
+
+    # This the foolproofest way of getting informed
+    # about such changes, as it is called by rootnode.
+    # Drawback: it's called for every node in the selection
+    # that has been moved / scaled...
+    # def translated(self, node, dx, dy):
+    #     if node is None:
+    #         return
+    #     if node.emphasized:
+    #         prev = self.last_update
+    #         self.last_update = perf_counter()
+    #         if self.last_update - prev > 0.1:
+    #             self.update_position(True)
+
+    # def scaled(self, node, sx, sy, ox, oy):
+    #     if node is None:
+    #         return
+    #     if node.emphasized:
+    #         prev = self.last_update
+    #         self.last_update = perf_counter()
+    #         if self.last_update - prev > 0.1:
+    #             self.update_position(True)
 
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties

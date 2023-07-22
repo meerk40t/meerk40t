@@ -195,17 +195,20 @@ class Pen:
         self.wobble_diameter = args[27]
         self.wobble_distance = args[28]
 
-        self.add_endpoints = args[29]
-        self.add_endpoint_distance = args[30]
-        self.add_endpoint_time_per_point = args[32]
-        self.add_endpoint_point_distance = args[31]
-        self.add_endpoints_point_cycles = args[33]
-        self.opt_enable = args[40]
-        self.break_angle = args[41]
+        try:
+            self.add_endpoints = args[29]
+            self.add_endpoint_distance = args[30]
+            self.add_endpoint_time_per_point = args[32]
+            self.add_endpoint_point_distance = args[31]
+            self.add_endpoints_point_cycles = args[33]
+            self.opt_enable = args[40]
+            self.break_angle = args[41]
 
-        self.jump_min_jump_delay2 = args[37]
-        self.jump_max_delay2 = args[38]
-        self.jump_speed_max_limit = args[39]
+            self.jump_min_jump_delay2 = args[37]
+            self.jump_max_delay2 = args[38]
+            self.jump_speed_max_limit = args[39]
+        except IndexError:
+            pass
 
 
 class EZCFile:
@@ -494,7 +497,13 @@ class EZCurve(EZObject):
         (count, closed) = struct.unpack("<2I", file.read(8))
         for i in range(count):
             (unk1, curve_type, unk2, unk3) = struct.unpack("<BB2H", file.read(6))
+            # Unk1 is 2 for a weird node. with t equal 0.
+            if curve_type == 0:
+                d = struct.unpack(f"<5d", file.read(40))
+                # print(d)
+                continue
             (pt_count,) = struct.unpack("<I", file.read(4))
+            # print(unk1, curve_type, unk2, unk2, pt_count)
             pts.append(
                 (
                     curve_type,
@@ -502,6 +511,7 @@ class EZCurve(EZObject):
                     struct.unpack(f"<{pt_count * 2}d", file.read(16 * pt_count)),
                 )
             )
+
         self.points = pts
 
 
@@ -654,6 +664,26 @@ class EZEncoderDistance(EZObject):
         self.distance = args[0]
 
 
+class EZExtendAxis(EZObject):
+    """
+    This is for testing on-the-fly movement.
+    """
+
+    def __init__(self, file):
+        EZObject.__init__(self, file)
+        args = _parse_struct(file)
+        _construct(args)
+        self.axis_go_zero = bool(args[0])
+        self.only_once_origin = bool(args[1])
+        self.relative = bool(args[2])
+        self.unit_type = args[3]  # Pulse (0), MM (1), Degree(2).
+        self.pulse_per_mm = args[4]
+        self.move_pulse = args[5]
+        self.max_speed = args[6]
+        self.min_speed = args[7]
+        self.acceleration_time = args[8]
+
+
 class EZText(EZObject):
     """
     Text objects.
@@ -665,9 +695,36 @@ class EZText(EZObject):
         _interpret(args, 10, str)
         _interpret(args, 18, str)
         _interpret(args, 44, str)
+        _interpret(args, 54, str)
         _construct(args)
         self.font_angle = args[0]  # Font angle in Text.
+        self.height = args[1]  # Height in MM
+        self.text_space_setting = args[5]  # 0 auto, 1 between, 2 center
+        self.text_space = args[12]
+        self.char_space = args[13]
+        self.line_space = args[14]
+        self.font = args[18]  # Arial, JSF Font, etc
+        self.font2 = args[44]
+        self.x, self.y = args[7]
         self.text = args[10]
+        self.hatch_loop_distance = args[21]
+        self.circle_text_enable = args[48]
+        self.circle_text_diameter = args[49]
+        self.circle_text_base_angle = args[50]
+        self.circle_text_range_limit_enable = args[51]
+        self.circle_text_range_limit_angle = args[52]
+        self.save_options = args[53]  # 3 boolean values
+        self.save_filename = args[54]
+        self.circle_text_button_flags = args[85]  # 2 is first button, 1 is right to left.
+        (count,) = struct.unpack("<I", file.read(4))
+        for i in range(count):
+            (type,) = struct.unpack("<H", file.read(2))
+            # type, 7 file. 1 Text. 2 Serial
+            extradata = _parse_struct(file)
+            _construct(extradata)
+            extradata2 = _parse_struct(file)
+            _construct(extradata2)
+        (unk,) = struct.unpack("<I", file.read(4))
 
 
 class EZImage(EZObject):
@@ -790,6 +847,7 @@ object_map = {
     0x40: EZImage,
     0x60: EZSpiral,
     0x6000: EZEncoderDistance,
+    0x5000: EZExtendAxis,
     0x4000: EZOutput,
     0x3000: EZInput,
     0x2000: EZTimer,
@@ -820,7 +878,7 @@ class EZDLoader:
         try:
             with open(pathname, "br") as file:
                 ezfile = EZCFile(file)
-        except IOError as e:
+        except (IOError, IndexError) as e:
             raise BadFileError(str(e)) from e
 
         ez_processor = EZProcessor(elements_service)

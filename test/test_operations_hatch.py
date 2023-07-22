@@ -31,3 +31,26 @@ class TestHatch(unittest.TestCase):
             self.assertEqual(len(path), 1)
         finally:
             kernel.shutdown()
+
+    def test_operation_hatch_empty(self):
+        """
+        Test code to ensure op hatch can work on an empty hatch
+
+        :return:
+        """
+        kernel = bootstrap.bootstrap()
+        try:
+            initial = "M0,0Z"
+            path = Path(initial)
+            laserop = HatchOpNode()
+            laserop.add_node(PathNode(path))
+            cutplan = CutPlan("a", kernel.root)
+            matrix = Matrix()
+            laserop.preprocess(kernel.root, matrix, cutplan)
+            cutplan.execute()
+            cutcode = CutCode(laserop.as_cutobjects())
+            self.assertEqual(len(cutcode), 0)
+            path = list(cutcode.as_elements())
+            self.assertEqual(len(path), 0)
+        finally:
+            kernel.shutdown()

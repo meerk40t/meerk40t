@@ -261,14 +261,14 @@ class IdPanel(wx.Panel):
     def on_text_id_change(self):
         try:
             self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
         except AttributeError:
             pass
 
     def on_text_label_change(self):
         try:
             self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("element_property_reload", self.node)
         except AttributeError:
             pass
 
@@ -706,6 +706,14 @@ class PositionSizePanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def signal(self, signalstr, myargs):
+        # To get updates about translation / scaling of selected elements
+        if signalstr == "refresh_scene":
+            if myargs[0] == "Scene":
+                self.set_widgets(self.node)
+        elif signalstr == "tool_modified":
+            self.set_widgets(self.node)
+
     def _set_widgets_hidden(self):
         self.text_x.SetValue("")
         self.text_y.SetValue("")
@@ -760,6 +768,7 @@ class PositionSizePanel(wx.Panel):
         self.text_w.Enable(en_wh)
         self.text_h.Enable(en_wh)
         self.show_hide_wh(node.type != "elem point")
+        self.Refresh()
         self.Show()
 
     def translate_it(self):
@@ -778,6 +787,7 @@ class PositionSizePanel(wx.Panel):
             # self.node.modified()
             self.node.translated(dx, dy)
             self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def scale_it(self, was_width):
         if not self.node.can_scale:
@@ -820,6 +830,7 @@ class PositionSizePanel(wx.Panel):
             )
 
             self.context.elements.signal("element_property_update", self.node)
+            self.context.elements.signal("refresh_scene", "Scene")
 
     def on_toggle_ratio(self, event):
         if self.btn_lock_ratio.GetValue():

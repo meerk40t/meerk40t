@@ -14,7 +14,7 @@ from meerk40t.internal_plugins import plugin as internal_plugins
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.9.0001"
+APPLICATION_VERSION = "0.9.0004"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -44,6 +44,9 @@ parser.add_argument(
 parser.add_argument("-z", "--no-gui", action="store_true", help="run without gui")
 parser.add_argument(
     "-Z", "--gui-suppress", action="store_true", help="completely suppress gui"
+)
+parser.add_argument(
+    "-w", "--simpleui", action="store_true", help="use simple rather than regular UI"
 )
 parser.add_argument(
     "-b", "--batch", type=argparse.FileType("r"), help="console batch file"

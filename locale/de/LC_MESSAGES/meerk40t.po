@@ -6630,21 +6630,25 @@ msgid "Snap-Options"
 msgstr "Einrast-Optionen"
 
 #: meerk40t/gui/snapoptions.py:43 meerk40t/gui/wxmmain.py:501
-msgid "Defines until which distance snap points will be highlighted"
+msgid "The screen distance in pixels inside which snap points will be highlighted"
 msgstr "Definiert bis zu welchem Abstand Einrast-Punkte hervorgehoben werden"
 
 #: meerk40t/gui/snapoptions.py:46 meerk40t/gui/wxmmain.py:512
-msgid "Snap to element"
+msgid "Snap to Element"
 msgstr "An Element einrasten"
 
 #: meerk40t/gui/snapoptions.py:48 meerk40t/gui/wxmmain.py:513
 msgid "Shall the cursor snap to the next element point?"
 msgstr "Soll der Cursor zum nächstgelegenen Element-Einrastpunkt springen?"
 
+msgid ""
+"If checked, the cursor will snap to the closest element "
+"point within the specified threshold"
+msgstr "Falls aktiv, wird der Cursor zum nächstgelegenen Element-Einrastpunkt springen"
+
 #: meerk40t/gui/snapoptions.py:54 meerk40t/gui/wxmmain.py:528
 msgid ""
-"Set the distance inside which the cursor will snap to the next element "
-"point"
+"Set the screen distance in pixels inside which the cursor will snap to the nearest element point"
 msgstr ""
 "Definiert den Abstand innerhalb dessen der Cursor zum nächstgelegenen "
 "Element-Einrast-Punkt springt"
@@ -6657,10 +6661,12 @@ msgstr "Am Gitter einrasten"
 msgid "Shall the cursor snap to the next grid intersection?"
 msgstr "Soll der Cursor zum nächstgelegenen Gitter-Kreuzungspunkt springen?"
 
+msgid "If checked, the cursor will snap to the closest grid intersection"
+msgstr "Falls aktiv, springt der Cursor zum nächgelegenen Gitter-Kreuzungspunkt"
+
 #: meerk40t/gui/snapoptions.py:67 meerk40t/gui/wxmmain.py:556
 msgid ""
-"Set the distance inside which the cursor will snap to the next grid "
-"intersection"
+"Set the screen distance in pixels inside which the cursor will snap to the nearest grid intersection"
 msgstr ""
 "Definiert den Abstand innerhalb dessen der Cursor zum nächstgelegenen "
 "Gitter-Kreuzungspunkt springt"
@@ -6710,6 +6716,10 @@ msgstr "Historie bei Programmstart löschen"
 
 msgid "Ignore helper jobs"
 msgstr "Hilfs-Jobs ignorieren"
+
+#: meerk40t/gui/spoolerpanel.py:427
+msgid "Write CSV"
+msgstr "CSV-Protokoll"
 
 #: meerk40t/gui/spoolerpanel.py:116
 msgid "List and modify the queued operations"
@@ -7185,8 +7195,11 @@ msgid "Display-Distance"
 msgstr "Anzeigeradius"
 
 #: meerk40t/gui/wxmmain.py:527 meerk40t/gui/wxmmain.py:555
-msgid "Point-Snap-Threshold"
-msgstr "Einrast-Horizont"
+msgid "Element-Point-Snap-Threshold"
+msgstr "Abstand"
+
+msgid "Grid-Point-Snap-Threshold"
+msgstr "Abstand"
 
 #: meerk40t/gui/wxmmain.py:571
 msgid "Use in-scene tool-menu"
@@ -7274,29 +7287,29 @@ msgid ""
 "Add a polygon element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 
 msgstr ""
 "Füge ein geschlossenes Polygon zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Ende"
+"Click rechts: Abbruch"
 
 #: meerk40t/gui/wxmmain.py:738
 msgid "Polyline"
 msgstr "Polyline"
 
 #: meerk40t/gui/wxmmain.py:740
-msgid ""
+msgid "@
 "Add a polyline element\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 msgstr ""
 "Füge ein Polyline-Objekt zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Ende"
+"Click rechts: Abbruch"
 
 #: meerk40t/gui/wxmmain.py:753
 msgid "Rectangle"
@@ -7324,13 +7337,13 @@ msgid ""
 "Left click: point/line\n"
 "Click and hold: curve\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 msgstr ""
 "Füge ein Vektor-Objekt zum Arbeitsbereich hinzu\n"
 "Click links: Punkt/Linie\n"
 "Click und halten: Kurve\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Ende"
+"Click rechts: Abbruch"
 
 #: meerk40t/gui/wxmmain.py:796
 msgid "Add a text element"
@@ -7345,12 +7358,12 @@ msgid ""
 "Measure distance / perimeter / area\n"
 "Left click: point/line\n"
 "Double click: complete\n"
-"Right click: end"
+"Right click: cancel"
 msgstr ""
 "Misst den Abstand / Umfang / Fläche\n"
 "Click links: Punkt/Linie\n"
 "Doppelclick: Fertig\n"
-"Click rechts: Ende"
+"Click rechts: Abbruch"
 
 #: meerk40t/gui/wxmmain.py:824
 msgid "Flip Vertical"
@@ -16030,3 +16043,86 @@ msgid ""
 msgstr ""
 "Bei aktiver Option gilt: wenn die Schaltfläche eine gewisse Zeit\n"
 "gedrückt wird, so wird die Wiederholungsfrequenz ncoh einmal erhöht."
+
+#: meerk40t/gui/toolwidgets/toolcircle.py:102
+#: meerk40t/gui/toolwidgets/toolellipse.py:91
+#: meerk40t/gui/toolwidgets/toolrect.py:88
+msgid " (Press Alt-Key to draw from center)"
+msgstr " (Mit Alt-Taste von Mitte zeichnen)"
+
+msgid "Rounded Corners"
+msgstr "Abgerundete Ecken"
+
+msgid "Delete selected items"
+msgstr "Lösche selektierte Elemente"
+
+msgid "Limit the controller buffer size"
+msgstr "Begrenze die Sendepuffer-Größe"
+
+msgid "Enables the controller buffer limit."
+msgstr "Puffergrößen-Beschränkung einschalten"
+
+msgid "Controller Buffer"
+msgstr "Sende-Puffer"
+
+msgid "lines"
+msgstr "Zeilen"
+
+msgid "This is the limit of the controller buffer size. Prevents full writing to the controller."
+msgstr "Maximale Größe des Sende-Puffers. Verhindert dass alle Daten sofort yum Gerät geschickt werden."
+
+msgid "Validation"
+msgstr "GRBL-Erkennung"
+
+msgid "Require validation for device"
+msgstr "Verlange Geräte-Erkennung"
+
+msgid ""
+"Ensure device is completely initialized before sending data. "
+"This is usually known to be valid at the 'Grbl xx.x' version message."
+msgstr ""
+"Warte auf Willkommens-Nachricht des Gerätes, bevor Daten gesendet werden. "
+"Das ist üblicherweise die 'Grbl x.x' Versionsinformation
+
+msgid "Welcome Validator"
+msgstr "Willkommens-Nachricht"
+
+msgid ""
+"If for some reason the device needs a different welcome validator than 'Grbl' (default), "
+"for example, somewhat custom grbl-like firmware"
+msgstr ""
+"Hier kann ein anderer Willkommenstext als das Standard 'Grbl' hinterlegt werden, "
+"das ist für einige Spezial-Firmwares wie FluidNC nötig"
+
+msgid "What power level do we cut at?"
+msgstr "Welche Laser-Leistung soll beim Schneiden verwendet werden?"
+
+msgid "Delays"
+msgstr "Verzögerungen"
+
+#: meerk40t/balormk/device.py:662
+msgid "Input Signal Hold"
+msgstr "Input-Signal Haltezeit"
+
+#: meerk40t/balormk/device.py:663
+msgid "How long does the input operation need to hold for to count as a pass"
+msgstr "Wie lange muss das Input-Signal anliegen, damit es als Durchgang gewertet wird"
+
+#: meerk40t/balormk/device.py:672
+msgid "Input Operation Hardware"
+msgstr "Input-Operation Hardware"
+
+#: meerk40t/balormk/device.py:673
+msgid "Use hardware based input operation command"
+msgstr "Nutze Hardware-basierte Input-Operations Befehle"
+
+msgid "Show the Ribbon Labels"
+msgstr "Text unter Icons anzeigen"
+
+msgid ""
+"Active: Show the labels for ribbonbar.\n"
+"Inactive: Hide the ribbon labels."
+msgstr ""
+"Aktiv: Zeige die Texte unter den Icons in der Symbolleiste an\n"
+"Inaktiv: Text werden nicht angezeigt (spart etwas Platz)"
+

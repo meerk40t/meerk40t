@@ -5,6 +5,7 @@ from time import time
 import wx
 from wx import aui
 
+from meerk40t.kernel import signal_listener
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
@@ -824,6 +825,8 @@ class Jog(wx.Panel):
 
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        context.setting(float, "button_repeat", 0.5)
+        context.setting(bool, "button_accelerate", True)
         context.setting(str, "jog_amount", "10mm")
         self.button_navigate_up_left = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap(resize=icon_size)
@@ -1156,7 +1159,7 @@ class MovePanel(wx.Panel):
             else:
                 y = Length(self.context.elements.length_y("0%"))
             self.context.root.setting(
-                str, f"MovePos{idx}", f"{x.length_mm}|{y.length_mm}"
+                str, f"movepos{idx}", f"{x.length_mm}|{y.length_mm}"
             )
             label = _(
                 "Left click to go to saved position\nRight click to save coordinates"
@@ -1249,7 +1252,7 @@ class MovePanel(wx.Panel):
 
     def on_left(self, index):
         def handler(event):
-            gotostr = getattr(self.context.root, f"MovePos{index}", "")
+            gotostr = getattr(self.context.root, f"movepos{index}", "")
             if gotostr:
                 substr = gotostr.split("|")
                 if len(substr) < 2:
@@ -1273,7 +1276,7 @@ class MovePanel(wx.Panel):
                 ylen = Length(self.text_position_y.GetValue())
                 setattr(
                     self.context.root,
-                    f"MovePos{index}",
+                    f"movepos{index}",
                     f"{xlen.length_mm}|{ylen.length_mm}",
                 )
                 label = _(
@@ -1914,6 +1917,17 @@ class Transform(wx.Panel):
         self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
         self.context.unlisten("modified", self.on_modified_element)
         self.context.unlisten("button-repeat", self.on_button_repeat)
+
+    # To get updates about translation / scaling of selected elements
+    # we need to attach to some signals...
+    @signal_listener("refresh_scene")
+    def on_refresh_scene(self, origin, scene_name=None, *args):
+        if scene_name == "Scene":
+            self.update_matrix_text()
+
+    @signal_listener("tool_modified")
+    def on_modified(self, *args):
+        self.update_matrix_text()
 
     def set_timer_options(self):
         interval = self.context.button_repeat

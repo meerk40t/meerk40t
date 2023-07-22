@@ -28,20 +28,17 @@ class TestFill(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(eulerian_fill(settings={}, outlines=paths, matrix=None))
@@ -53,20 +50,17 @@ class TestFill(unittest.TestCase):
         w = 1000
         h = 1000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
         matrix = Matrix.scale(0.005)
         fill = list(eulerian_fill(settings={}, outlines=paths, matrix=matrix))
@@ -136,20 +130,17 @@ class TestFill(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(scanline_fill(settings={}, outlines=paths, matrix=None))

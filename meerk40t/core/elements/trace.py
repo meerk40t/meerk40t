@@ -6,7 +6,7 @@ from math import cos, isinf, sin, sqrt, tau
 from random import randint, shuffle
 
 from meerk40t.core.units import Length
-from meerk40t.svgelements import Point, Path, Polyline, Circle
+from meerk40t.svgelements import Circle, Path, Point, Polyline
 
 
 def plugin(kernel, lifecycle=None):
@@ -402,7 +402,7 @@ def init_commands(kernel):
     @self.console_command(
         "trace",
         help=_("trace the given elements"),
-        input_type=("elements", "shapes", None),
+        input_type=("elements", None),
     )
     def trace_trace_spooler(
         command,
@@ -491,7 +491,7 @@ def init_commands(kernel):
     @self.console_command(
         "tracegen",
         help=_("create the trace around the given elements"),
-        input_type=("elements", "shapes", None),
+        input_type=("elements", None),
         output_type="elements",
     )
     def trace_trace_generator(

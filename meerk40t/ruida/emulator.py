@@ -10,7 +10,7 @@ from typing import Tuple, Union
 
 from meerk40t.kernel import get_safe_path
 
-from ..core.units import UNITS_PER_uM
+from ..core.units import UNITS_PER_uM, UNITS_PER_MM
 from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
@@ -20,7 +20,7 @@ from .rdjob import (
     parse_commands,
     parse_filenumber,
     parse_mem,
-    swizzles_lut,
+    swizzles_lut, abscoord,
 )
 
 
@@ -43,7 +43,6 @@ class RuidaEmulator:
         self.lut_swizzle, self.lut_unswizzle = swizzles_lut(self.magic)
 
         self.channel = None
-        self.describe = None
 
         self.program_mode = False
         self.reply = None
@@ -53,12 +52,30 @@ class RuidaEmulator:
         self.parse_lasercode = True
         self.swizzle_mode = True
 
+        self.scale = UNITS_PER_uM
+
         self.job = RDJob(
             driver=device.driver,
             priority=0,
-            channel=self.channel,
+            channel=self._channel,
             units_to_device_matrix=units_to_device_matrix,
         )
+        self.z = 0.0
+        self.u = 0.0
+
+        self.a = 0.0
+        self.b = 0.0
+        self.c = 0.0
+        self.d = 0.0
+
+    @property
+    def x(self):
+        return self.device.current[0]
+
+
+    @property
+    def y(self):
+        return self.device.current[1]
 
     def __repr__(self):
         return f"RuidaEmulator(@{hex(id(self))})"
@@ -137,13 +154,15 @@ class RuidaEmulator:
                 if not self._process_realtime(array):
                     self.job.write_command(array)
                     self.device.spooler.send(self.job, prevent_duplicate=True)
-            except RuidaCommandError:
+            except (RuidaCommandError, IndexError):
                 if self.channel:
                     self.channel(f"Process Failure: {str(bytes(array).hex())}")
 
+    def _channel(self, text):
+        if self.channel:
+            self.channel(text)
+
     def _describe(self, array, desc):
-        if self.describe:
-            self.describe(f"{str(bytes(array).hex())}\t{desc}")
         if self.channel:
             self.channel(f"--> {str(bytes(array).hex())}\t({desc})")
 
@@ -353,32 +372,22 @@ class RuidaEmulator:
                 except AttributeError:
                     pass
                 return True
-            elif array[1] == 0x10:
-                # START FILE
-                self._describe(
-                    array, "Ref Point Mode 2, Machine Zero/Absolute Position"
-                )
-                return False
-            elif array[1] == 0x11:
-                # START FILE
-                self._describe(array, "Ref Point Mode 1, Anchor Point")
-                return False
-            elif array[1] == 0x12:
-                # START FILE
-                self._describe(array, "Ref Point Mode 0, Current Position")
-                return False
             elif array[1] == 0x2C:
                 self._describe(array, "Home Z")
-                return False
+                return True
             elif array[1] == 0x2D:
                 self._describe(array, "Home U")
-                return False
+                return True
             elif array[1] == 0x2A:
                 self._describe(array, "Home XY")
-                return False
+                try:
+                    self.device.driver.home()
+                except AttributeError:
+                    pass
+                return True
             elif array[1] == 0x2E:
                 self._describe(array, "FocusZ")
-                return False
+                return True
             elif array[1] == 0x20:
                 self._describe(array, "KeyDown -X +Left")
                 try:
@@ -499,16 +508,16 @@ class RuidaEmulator:
                 return True
             elif array[1] == 0x39:
                 self._describe(array, "Home A")
-                return False
+                return True
             elif array[1] == 0x3A:
                 self._describe(array, "Home B")
-                return False
+                return True
             elif array[1] == 0x3B:
                 self._describe(array, "Home C")
-                return False
+                return True
             elif array[1] == 0x3C:
                 self._describe(array, "Home D")
-                return False
+                return True
             elif array[1] == 0x40:
                 self._describe(array, "KeyDown 0x18")
                 return True
@@ -560,6 +569,104 @@ class RuidaEmulator:
             elif array[1] == 0x51:
                 self._describe(array, "Inhale On/Off")
                 return True
+        elif array[0] == 0xD9:
+            if len(array) == 1:
+                self._describe(
+                    array,
+                    "Unknown Directional Setting"
+                )
+            else:
+                options = array[2]
+                if options == 0x03:
+                    param = "Light"
+                elif options == 0x02:
+                    param = ""
+                elif options == 0x01:
+                    param = "Light/Origin"
+                else:  # options == 0x00:
+                    param = "Origin"
+
+                if array[1] == 0x00 or array[1] == 0x50:
+                    coord = abscoord(array[3:8]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} X: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.move_abs(self.x + coord, self.y)
+                    except AttributeError:
+                        pass
+                elif array[1] == 0x01 or array[1] == 0x51:
+                    coord = abscoord(array[3:8]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} Y: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.move_abs(self.x, self.y + coord)
+                    except AttributeError:
+                        pass
+                elif array[1] == 0x02 or array[1] == 0x52:
+                    coord = abscoord(array[3:8])
+                    self._describe(
+                        array,
+                        f"Move {param} Z: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.axis("z", coord)
+                    except AttributeError:
+                        pass
+                elif array[1] == 0x03 or array[1] == 0x53:
+                    coord = abscoord(array[3:8])
+                    self._describe(
+                        array,
+                        f"Move {param} U: {coord} ({self.x},{self.y})"
+                    )
+                    try:
+                        self.device.driver.axis("u", self.u)
+                    except AttributeError:
+                        pass
+                elif array[1] == 0x0F:
+                    self._describe(
+                        array,
+                        "Feed Axis Move"
+                    )
+                elif array[1] == 0x10 or array[1] == 0x60:
+                    x = abscoord(array[3:8]) * self.scale
+                    y = abscoord(array[8:13]) * self.scale
+                    self._describe(
+                        array,
+                        f"Move {param} XY ({x}, {y})"
+                    )
+                    if "Origin" in param:
+                        try:
+                            self.device.driver.move_abs(
+                                f"{x / UNITS_PER_MM}mm",
+                                f"{y / UNITS_PER_MM}mm",
+                            )
+                        except AttributeError:
+                            pass
+                    else:
+                        try:
+                            self.device.driver.home()
+                        except AttributeError:
+                            pass
+                elif array[1] == 0x30 or array[1] == 0x70:
+                    x = abscoord(array[3:8])
+                    y = abscoord(array[8:13])
+                    self.u = abscoord(array[13: 13 + 5])
+                    self._describe(
+                        array,
+                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                    )
+                    try:
+                        self.device.driver.move_abs(
+                            x * UNITS_PER_uM, y * UNITS_PER_uM
+                        )
+                        self.device.driver.axis("u", self.u * UNITS_PER_uM)
+                    except AttributeError:
+                        pass
+            return True
         elif array[0] == 0xDA:
             # DA commands are usually memory or system processing commands.
 
@@ -586,7 +693,6 @@ class RuidaEmulator:
                         desc=f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}",
                     )
             elif array[1] == 0x01:
-                # MEM SET. This is sometimes inside files to set things like declared filesize
                 value0 = array[4:9]
                 value1 = array[9:14]
                 v0 = decodeu35(value0)
@@ -595,6 +701,7 @@ class RuidaEmulator:
                     array,
                     f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v0} (0x{v0:08x}) {v1} (0x{v1:08x})",
                 )
+                # MEM SET. This is sometimes inside files to set things like declared filesize
                 return False
             elif array[1] == 0x04:
                 self._describe(array, "OEM On/Off, CardIO On/OFF")
@@ -604,7 +711,7 @@ class RuidaEmulator:
             elif array[1] == 0x06 or array[1] == 0x52:
                 self._describe(array, "Unknown/System Time.")
             elif array[1] == 0x10 or array[1] == 0x53:
-                self._describe(array, "Unknown Function--3")
+                self._describe(array, "Set System Time")
             elif array[1] == 0x30:
                 # Property requested with select document, upload button "fresh property"
                 filenumber = parse_filenumber(array[2:4])
@@ -629,7 +736,7 @@ class RuidaEmulator:
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
                 self._describe(array, "Lightburn Swizzle Modulation E5")
-                return False
+                return True
             if array[1] == 0x00:
                 # RDWorks File Upload
                 filenumber = array[2]
@@ -639,6 +746,11 @@ class RuidaEmulator:
             if array[1] == 0x02:
                 # len 3
                 self._describe(array, "Document Data End")
+            if array[1] == 0x03:
+                self._describe(array, "Is TblCor Usable")
+            if array[1] == 0x04:
+                # Something check in data chunk write
+                pass
             return True
         elif array[0] == 0xE7:
             # File Layout commands
@@ -653,7 +765,6 @@ class RuidaEmulator:
                 if self.saving:
                     self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
                 return True
-            return False
         elif array[0] == 0xE8:
             # FILE INTERACTIONS
             if array[1] == 0x00:
@@ -714,7 +825,6 @@ class RuidaEmulator:
                 filenumber = parse_filenumber(array[2:4])
                 self._describe(array, f"Calculate Document Time {filenumber}")
             return True
-
         return False
 
     def mem_lookup(self, mem) -> Tuple[str, Union[int, bytes]]:

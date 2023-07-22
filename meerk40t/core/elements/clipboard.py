@@ -198,7 +198,10 @@ def init_commands(kernel):
         for v in self._clipboard:
             k = self._clipboard[v]
             channel(f"{str(v).ljust(5)}: {str(k)}")
-        num = self.has_clipboard()
+        try:
+            num = len(self._clipboard[self._clipboard_default])
+        except (TypeError, KeyError):
+            num = 0
         channel(_("Clipboard-Entries: {index}").format(index=num))
 
     # --------------------------- END COMMANDS ------------------------------

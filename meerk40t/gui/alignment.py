@@ -1,4 +1,4 @@
-from math import atan, sqrt, tau
+from math import atan2, sqrt
 
 import numpy as np
 import wx
@@ -76,11 +76,9 @@ class InfoPanel(wx.Panel):
             return result
 
         def create_image_from_node(node, iconsize):
-            image = wx.NullBitmap
+            image_from_node = None
             c = None
             # Do we have a standard representation?
-            defaultcolor = Color("black")
-            data = None
             if node.type.startswith("elem "):
                 if (
                     hasattr(node, "stroke")
@@ -89,13 +87,19 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
-                data = node
-                bounds = node.paint_bounds
+                image_from_node = self.make_raster(
+                    node,
+                    node.paint_bounds,
+                    width=iconsize,
+                    height=iconsize,
+                    bitmap=True,
+                    keep_ratio=True,
+                )
             elif node.type in ("group", "file"):
                 data = list(node.flat(types=elem_nodes))
                 bounds = Node.union_bounds(data, attr="paint_bounds")
-            if data is not None:
-                image = self.make_raster(
+
+                image_from_node = self.make_raster(
                     data,
                     bounds,
                     width=iconsize,
@@ -103,10 +107,11 @@ class InfoPanel(wx.Panel):
                     bitmap=True,
                     keep_ratio=True,
                 )
-
             if c is None:
-                c = defaultcolor
-            return c, image
+                c = Color("black")
+            if image_from_node is None:
+                image_from_node = wx.NullBitmap
+            return c, image_from_node
 
         if self.make_raster is None:
             self.make_raster = self.context.elements.lookup("render-op/make_raster")
@@ -151,6 +156,7 @@ class InfoPanel(wx.Panel):
                 node = data[-1]
                 last_node = node
                 c, image = create_image_from_node(node, self.preview_size)
+
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
@@ -769,7 +775,7 @@ class DistributionPanel(wx.Panel):
                         last_y = pt.y
                 return this_length
 
-            def calc_slope(index):
+            def calc_angle(index):
                 try:
                     this_point = polypoints[index]
                 except IndexError:
@@ -780,43 +786,7 @@ class DistributionPanel(wx.Panel):
                     last_point = (0, 0, 0)
                 dx = this_point[0] - last_point[0]
                 dy = this_point[1] - last_point[1]
-                # TODO: Replace remaining code with atan2
-                # if dx < 1.0E-07:
-                #     dx = 0
-                # if dy < 1.0E-07:
-                #     dy = 0
-                # calc_atan(dx, dy):
-                if dx == 0:
-                    if dy < 0:
-                        c_angle = -1 / 4 * tau
-                        quadrant = 4
-                    elif dy == 0:
-                        c_angle = 0
-                        quadrant = 0
-                    else:
-                        c_angle = +1 / 4 * tau
-                        quadrant = 1
-                elif dx > 0 and dy >= 0:
-                    # Quadrant 1: angle between 0 und 90 (0 - tau / 4)
-                    c_angle = atan(dy / dx)
-                    quadrant = 1
-                elif dx < 0 <= dy:
-                    # Quadrant 2: angle between 90 und 180 (1/4 tau - 2/4 tau)
-                    c_angle = atan(dy / dx) + tau / 2
-                    quadrant = 2
-                elif dx < 0 and dy < 0:
-                    # Quadrant 3: angle between 180 und 270 (2/4 tau - 3/4 tau)
-                    c_angle = atan(dy / dx) + tau / 2
-                    quadrant = 3
-                elif dx > 0 > dy:
-                    # Quadrant 4: angle between 270 und 360 (2/4 tau - 3/4 tau)
-                    c_angle = atan(dy / dx)
-                    quadrant = 4
-                # print(
-                #     f"dx, dy={dx:.2f}, {dy:.2f}, Quadrant={quadrant}, "
-                #     + f"angle={c_angle:.2f} ({c_angle / tau * 360.0:.2f})"
-                # )
-                return c_angle
+                return atan2(dy, dx)
 
             polypoints = []
             poly_length = generate_polygon()
@@ -845,11 +815,11 @@ class DistributionPanel(wx.Panel):
                 y = pt[1]
                 if len(polypoints) > 1:
                     if idxpt == 0:
-                        ptangle = calc_slope(idxpt + 1)
+                        pt_angle = calc_angle(idxpt + 1)
                     else:
-                        ptangle = calc_slope(idxpt)
+                        pt_angle = calc_angle(idxpt)
                 else:
-                    ptangle = 0
+                    pt_angle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
@@ -863,8 +833,8 @@ class DistributionPanel(wx.Panel):
                             fract = (mylen - lastlen) / (plen - lastlen)
                             x = lastx + fract * (x - lastx)
                             y = lasty + fract * (y - lasty)
-                    newpt = (x, y, ptangle)
-                    # print (f"I add: ({x:.1f}, {y:.1f}, {ptangle:.3f}) {ptangle/tau*360.0:.3f} ")
+                    newpt = (x, y, pt_angle)
+                    # print (f"I add: ({x:.1f}, {y:.1f}, {pt_angle:.3f}) {pt_angle/tau*360.0:.3f} ")
                     if newpt not in target:
                         # print ("..and added")
                         target.append(newpt)
@@ -874,7 +844,7 @@ class DistributionPanel(wx.Panel):
                 lastx = pt[0]
                 lasty = pt[1]
                 lastlen = pt[2]
-                last_angle = ptangle
+                last_angle = pt_angle
             # We may have slightly overshot, so in doubt add the last point
             if segadded < segcount:
                 # print ("I would add to it the last point...")

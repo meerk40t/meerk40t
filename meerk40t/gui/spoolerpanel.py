@@ -467,7 +467,7 @@ class SpoolerPanel(wx.Panel):
             return
 
         menu = wx.Menu()
-        if element.status.lower() == "running":
+        if element.status == "Running":
             action = _("Stop")
             remove_mode = "stop"
         else:
@@ -514,8 +514,11 @@ class SpoolerPanel(wx.Panel):
             spooler.remove(job)
             # That will remove the job but create a log entry if needed.
             if mode == "stop":
-                # Force stop of laser.
-                self.context("estop\n")
+                if hasattr(job, "stop"):
+                    job.stop()
+                else:
+                    # Force stop of laser.
+                    self.context("estop\n")
             self.refresh_spooler_list()
 
         return delete
@@ -592,11 +595,9 @@ class SpoolerPanel(wx.Panel):
                         joblen = 1
                     self.list_job_spool.SetItem(list_id, JC_ENTRIES, str(joblen))
                     # STATUS
-                    # try:
-                    status = spool_obj.status
-                    # except AttributeError:
-                    # status = _("Queued")
-                    self.list_job_spool.SetItem(list_id, JC_STATUS, str(status))
+                    self.list_job_spool.SetItem(
+                        list_id, JC_STATUS, str(spool_obj.status)
+                    )
 
                     # TYPE
                     try:
@@ -784,7 +785,7 @@ class SpoolerPanel(wx.Panel):
                     passes_str = "n/a"
                 else:
                     passes_str = f"{nr_loop}"
-            elif isinf(nr_total):
+            elif isinf(float(nr_total)):
                 passes_str = f"{nr_loop}/∞"
             else:
                 passes_str = f"{nr_loop}/{nr_total}"

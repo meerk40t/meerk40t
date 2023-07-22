@@ -4,7 +4,7 @@ from math import ceil, isnan, sqrt
 import wx
 from PIL import Image
 
-from meerk40t.core.elements.element_types import elem_nodes, place_nodes
+from meerk40t.core.elements.element_types import place_nodes
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     Arc,
@@ -94,7 +94,13 @@ def svgfont_to_wx(textnode):
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
     wxfont = textnode.wxfont
+    # if the font_list is empty, then we do have a not properly initialised textnode,
+    # that needs to be resolved...
+    if textnode.font_family is None:
+        wxfont_to_svg(textnode)
 
+    svg_to_wx_family(textnode, wxfont)
+    svg_to_wx_fontstyle(textnode, wxfont)
     try:
         wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
     except AttributeError:
@@ -103,13 +109,7 @@ def svgfont_to_wx(textnode):
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
-    # if the font_list is empty, then we do have a not properly initialised textnode,
-    # that needs to be resolved...
-    if textnode.font_family is None:
-        wxfont_to_svg(textnode)
 
-    svg_to_wx_family(textnode, wxfont)
-    svg_to_wx_fontstyle(textnode, wxfont)
     font_size = textnode.font_size
     try:
         wxfont.SetFractionalPointSize(font_size)
@@ -182,6 +182,15 @@ class LaserRender:
         self.brush = wx.Brush()
         self.color = wx.Colour()
 
+    def render_tree(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        if not self.render_node(
+            node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+        ):
+            for c in node.children:
+                self.render_tree(
+                    c, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+                )
+
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
@@ -204,6 +213,7 @@ class LaserRender:
                     "elem polyline",
                     "elem rect",
                     "elem line",
+                    "effect hatch",
                 )
                 nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
@@ -220,53 +230,63 @@ class LaserRender:
 
         for node in _nodes:
             if node.type == "reference":
-                self.render(
-                    [node.node],
-                    gc,
-                    draw_mode=draw_mode,
-                    zoomscale=zoomscale,
-                    alpha=alpha,
+                # Reference nodes should be drawn per-usual, recurse.
+                self.render_node(
+                    node.node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
                 )
                 continue
-            if node.type in elem_nodes:
-                if not node.is_visible:
-                    continue
-            try:
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
-            except AttributeError:
-                if node.type in (
-                    "elem path",
-                    "elem ellipse",
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_geomstr
-                elif node.type == "elem path":
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_path
-                elif node.type == "elem point":
-                    node.draw = self.draw_point_node
-                elif node.type in place_nodes:
-                    node.draw = self.draw_placement_node
-                elif node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "elem ellipse",
-                ):
-                    node.draw = self.draw_vector
-                    node.make_cache = self.cache_shape
-                elif node.type == "elem image":
-                    node.draw = self.draw_image_node
-                elif node.type == "elem text":
-                    node.draw = self.draw_text_node
-                elif node.type == "cutcode":
-                    node.draw = self.draw_cutcode_node
-                else:
-                    continue
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            self.render_node(
+                node, gc, draw_mode=draw_mode, zoomscale=zoomscale, alpha=alpha
+            )
+
+    def render_node(self, node, gc, draw_mode=None, zoomscale=1.0, alpha=255):
+        """
+        Renders the specific node.
+        @param node:
+        @param gc:
+        @param draw_mode:
+        @param zoomscale:
+        @param alpha:
+        @return: True if rendering was done, False if rendering could not be done.
+        """
+        if hasattr(node, "is_visible"):
+            if not node.is_visible:
+                return False
+        if hasattr(node, "output"):
+            if not node.output:
+                return False
+
+        try:
+            # Try to draw node, assuming it already has a known render method.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
+        except AttributeError:
+            # No known render method, we must define the function to draw nodes.
+            if node.type in (
+                "elem path",
+                "elem ellipse",
+                "elem rect",
+                "elem line",
+                "elem polyline",
+                "effect hatch",
+            ):
+                node.draw = self.draw_vector
+                node.make_cache = self.cache_geomstr
+            elif node.type == "elem point":
+                node.draw = self.draw_point_node
+            elif node.type in place_nodes:
+                node.draw = self.draw_placement_node
+            elif node.type == "elem image":
+                node.draw = self.draw_image_node
+            elif node.type == "elem text":
+                node.draw = self.draw_text_node
+            elif node.type == "cutcode":
+                node.draw = self.draw_cutcode_node
+            else:
+                return False
+            # We have now defined that function, draw it.
+            node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
+            return True
 
     def make_path(self, gc, path):
         """

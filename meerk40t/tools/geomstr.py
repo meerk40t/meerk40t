@@ -330,7 +330,12 @@ class Scanbeam:
         self._low = float("inf")
         self._high = -float("inf")
 
+        self.valid_low = self._low
+        self.valid_high = self._high
+
         for i in range(self._geom.index):
+            if self._geom.segments[i][2] != TYPE_LINE:
+                continue
             if (self._geom.segments[i][0].imag, self._geom.segments[i][0].real) < (
                 self._geom.segments[i][-1].imag,
                 self._geom.segments[i][-1].real,
@@ -453,9 +458,14 @@ class Scanbeam:
 
         @return:
         """
+        if not self._sorted_edge_list:
+            return self._low, self._low
         y_min, index_min = self._sorted_edge_list[0]
         y_max, index_max = self._sorted_edge_list[-1]
-        return y_min, y_max
+        return y_min.imag, y_max.imag
+
+    def current_is_valid_range(self):
+        return self.valid_high >= self.scanline >= self.valid_low
 
     def _sort_actives(self):
         if not self._dirty_actives_sort:
@@ -762,11 +772,18 @@ class Geomstr:
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
         if isinstance(first_point, (list, tuple)):
-            points = [pts[0] + pts[1] * 1j for pts in points]
+            points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
+            on = False
             for i in range(1, len(points)):
-                path.line(points[i-1], points[i])
+                if points[i - 1] is not None and points[i] is not None:
+                    on = True
+                    path.line(points[i - 1], points[i])
+                else:
+                    if on:
+                        path.end()
+                    on = False
         return path
 
     @classmethod
@@ -847,8 +864,112 @@ class Geomstr:
             path.line(complex(x + rx, y), complex(x + rx, y))
         return path
 
+    @classmethod
+    def hull(cls, geom):
+        ipts = list(geom.as_interpolated_points(interpolate=50))
+        pts = list(Geomstr.convex_hull(None, ipts))
+        if pts:
+            pts.append(pts[0])
+        return Geomstr.lines(*pts)
+
+    @classmethod
+    def regular_polygon(
+        cls,
+        number_of_vertex,
+        point_center=0j,
+        radius=0,
+        radius_inner=0,
+        alt_seq=1,
+        density=1,
+        start_angle=0,
+    ):
+        if number_of_vertex < 2:
+            return cls()
+        if alt_seq == 0 and radius_inner != 0:
+            alt_seq = 1
+        # Do we have to consider the radius value as the length of one corner?
+        # if side_length:
+        #     # Let's recalculate the radius then...
+        #     # d_oc = s * csc( pi / n)
+        #     radius = 0.5 * radius / math.sin(math.pi / number_of_vertex)
+        # if inscribed and side_length is None:
+        #     # Inscribed requires side_length be undefined.
+        #     # You have as well provided the --side_length parameter, this takes precedence, so --inscribed is ignored
+        #     radius = radius / math.cos(math.pi / number_of_vertex)
+
+        if alt_seq < 1:
+            radius_inner = radius
+
+        i_angle = start_angle
+        delta_angle = math.tau / number_of_vertex
+        pts = []
+        for j in range(number_of_vertex):
+            r = radius if j % (2 * alt_seq) < alt_seq else radius_inner
+            current = point_center + r * complex(math.cos(i_angle), math.sin(i_angle))
+            i_angle += delta_angle
+            pts.append(current)
+
+        # Close the path
+        pts.append(pts[0])
+        if density <= 1 or number_of_vertex > density:
+            return Geomstr.lines(*pts)
+
+        # Process star-like qualities.
+        star_points = [pts[0]]
+        for i in range(number_of_vertex):
+            idx = (density * i) % number_of_vertex
+            star_points.append(pts[idx])
+        star_points.append(star_points[0])
+        return Geomstr.lines(*star_points)
+
+    @classmethod
+    def hatch(cls, outer, angle, distance):
+        """
+        Create a hatch geometry from an outer shape, an angle (in radians) and distance (in units).
+        @param outer:
+        @param angle:
+        @param distance:
+        @return:
+        """
+        outlines = outer.segmented()
+        path = outlines
+        path.rotate(angle)
+        vm = Scanbeam(path)
+        y_min, y_max = vm.event_range()
+        vm.valid_low = y_min - distance
+        vm.valid_high = y_max + distance
+        vm.scanline_to(vm.valid_low)
+
+        forward = True
+        geometry = cls()
+        if np.isinf(y_max):
+            return geometry
+        while vm.current_is_valid_range():
+            vm.scanline_to(vm.scanline + distance)
+            y = vm.scanline
+            actives = vm.actives()
+
+            r = range(1, len(actives), 2) if forward else range(len(actives) - 1, 0, -2)
+            for i in r:
+                left_segment = actives[i - 1]
+                right_segment = actives[i]
+                left_segment_x = vm.x_intercept(left_segment)
+                right_segment_x = vm.x_intercept(right_segment)
+                if forward:
+                    geometry.line(
+                        complex(left_segment_x, y), complex(right_segment_x, y)
+                    )
+                else:
+                    geometry.line(
+                        complex(right_segment_x, y), complex(left_segment_x, y)
+                    )
+                geometry.end()
+            forward = not forward
+        geometry.rotate(-angle)
+        return geometry
+
     def copies(self, n):
-        segs = self.segments[:self.index]
+        segs = self.segments[: self.index]
         self.segments = np.vstack([segs] * n)
         self.capacity = len(self.segments)
         self.index = self.capacity
@@ -860,6 +981,25 @@ class Geomstr:
                 yield start
             yield end
             at_start = False
+
+    def as_interpolated_segments(self, interpolate=100):
+        """
+        Interpolated segments gives interpolated points as a generator of lists.
+
+        At points of disjoint, the list is yielded.
+        @param interpolate:
+        @return:
+        """
+        segments = list()
+        for point in self.as_interpolated_points(interpolate=interpolate):
+            if point is None:
+                if segments:
+                    yield segments
+                    segments = list()
+            else:
+                segments.append(point)
+        if segments:
+            yield segments
 
     def as_interpolated_points(self, interpolate=100):
         """
@@ -880,6 +1020,10 @@ class Geomstr:
             if end != start and not at_start:
                 # Start point does not equal previous end point.
                 yield None
+                at_start = True
+                if seg_type == TYPE_END:
+                    # End segments, flag new start but should not be returned.
+                    continue
             end = e[4]
             if at_start:
                 yield start
@@ -888,17 +1032,19 @@ class Geomstr:
                 yield end
                 continue
             if seg_type == TYPE_QUAD:
-                quads = self._quad_position(e, np.linspace(0,1,interpolate))
-                for q in quads[1:]:
-                    yield q
+                quads = self._quad_position(e, np.linspace(0, 1, interpolate))
+                yield from quads[1:]
             elif seg_type == TYPE_CUBIC:
                 cubics = self._cubic_position(e, np.linspace(0, 1, interpolate))
-                for c in cubics[1:]:
-                    yield c
+                yield from cubics[1:]
             elif seg_type == TYPE_ARC:
                 arcs = self._arc_position(e, np.linspace(0, 1, interpolate))
-                for a in arcs[1:]:
-                    yield a
+                yield from arcs[1:]
+            elif seg_type == TYPE_END:
+                at_start = True
+
+    def segmented(self, interpolate=100):
+        return Geomstr.lines(*self.as_interpolated_points(interpolate=interpolate))
 
     def _ensure_capacity(self, capacity):
         if self.capacity > capacity:
@@ -952,7 +1098,8 @@ class Geomstr:
 
     def append(self, other):
         self._ensure_capacity(self.index + other.index + 1)
-        self.end()
+        if self.index != 0:
+            self.end()
         self.segments[self.index : self.index + other.index] = other.segments[
             : other.index
         ]
@@ -1126,6 +1273,11 @@ class Geomstr:
         end_segment = self.segments[self.index - 1][-1]
         if start_segment != end_segment:
             self.line(end_segment, start_segment, settings=settings)
+
+    def is_closed(self):
+        if self.index != 0:
+            return True
+        return abs(self.segments[0][0] - self.segments[self.index][-1]) < 1e-5
 
     #######################
     # Geometric Helpers
@@ -1678,42 +1830,21 @@ class Geomstr:
         @param density: the interpolation density
         @return:
         """
-        path = self.as_path()
-
         if density is None:
-            interpolation = 100
-        else:
-            interpolation = density
-
-        subject_polygons = []
-
-        from numpy import linspace
-
-        # TODO: This should run an npoints within geomstr for the segmentized values
-        for subpath in path.as_subpaths():
-            subj = Path(subpath)
-            subj.closed()
-            subject_polygons.append(subj.npoint(linspace(0, 1, interpolation)))
-
-        if not subject_polygons:
-            return
-        idx = -1
-        last_x = 0
-        last_y = 0
-        area_x_y = 0
-        area_y_x = 0
-        # TODO: This should use the numpy multiplication of all columns with n-1 of the previous
-        for pt in subject_polygons[0]:
-            idx += 1
-            if idx > 0:
-                # dx = pt.x - last_x
-                # dy = pt.y - last_y
-                area_x_y += last_x * pt[1]
-                area_y_x += last_y * pt[0]
-            last_x = pt[0]
-            last_y = pt[1]
-        this_area = 0.5 * abs(area_x_y - area_y_x)
-        return this_area
+            density = 100
+        area = 0
+        for poly in self.as_interpolated_segments(interpolate=density):
+            p_array = np.array(poly)
+            original = len(p_array)
+            indexes0 = np.arange(0, original - 1)
+            indexes1 = indexes0 + 1
+            starts = p_array[indexes0]
+            ends = p_array[indexes1]
+            # use the numpy multiplication of all columns with n-1 of the previous
+            area_xy = np.sum(np.real(ends) * np.imag(starts))
+            area_yx = np.sum(np.imag(ends) * np.real(starts))
+            area += 0.5 * abs(area_xy - area_yx)
+        return area
 
     def _cubic_length_via_quad(self, line):
         """
@@ -2620,6 +2751,8 @@ class Geomstr:
         points = []
         for i in range(len(pts)):
             p = pts[i]
+            if p is None or np.isnan(p.real):
+                continue
             if isinstance(p, int):
                 if p < 0:
                     p = self.segments[~p][-1]

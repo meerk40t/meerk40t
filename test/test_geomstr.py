@@ -20,20 +20,28 @@ from meerk40t.tools.geomstr import (
 )
 
 
-def draw(segments, w, h, filename="test.png"):
+def draw(segments, min_x, min_y, max_x, max_y, filename="test.png"):
     from PIL import Image, ImageDraw
 
-    im = Image.new("RGBA", (w, h), "white")
+    im = Image.new("RGBA", (int(max_x - min_x) + 1, int(max_y - min_y) + 1), "white")
+
     draw = ImageDraw.Draw(im)
-    for segment in segments:
-        f = segment[0]
-        t = segment[-1]
-        draw.line(((f.real, f.imag), (t.real, t.imag)), fill="#000000")
-    for segment in segments:
-        f = segment[0]
-        t = segment[-1]
-        draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
-        draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
+    for i in range(len(segments) - 1):
+        # Draw raw segments.
+        f = segments[i]
+        t = segments[i + 1]
+        if f is None or t is None:
+            continue
+        draw.line(
+            ((f.real - min_x, f.imag - min_y), (t.real - min_x, t.imag - min_y)),
+            fill="#000000",
+        )
+    # for segment in segments:
+    #     # Draw end points.
+    #     f = segment[0]
+    #     t = segment[-1]
+    #     draw.ellipse((f.real - 3, f.imag - 3, f.real + 3, f.imag + 3), fill="#FF0000")
+    #     draw.ellipse((t.real - 2, t.imag - 2, t.real + 2, t.imag + 2), fill="#0000FF")
     im.save(filename)
 
 
@@ -218,20 +226,17 @@ class TestGeomstr(unittest.TestCase):
         w = 10000
         h = 10000
         paths = (
-            (
-                (w * 0.05, h * 0.05),
-                (w * 0.95, h * 0.05),
-                (w * 0.95, h * 0.95),
-                (w * 0.05, h * 0.95),
-                (w * 0.05, h * 0.05),
-            ),
-            (
-                (w * 0.25, h * 0.25),
-                (w * 0.75, h * 0.25),
-                (w * 0.75, h * 0.75),
-                (w * 0.25, h * 0.75),
-                (w * 0.25, h * 0.25),
-            ),
+            complex(w * 0.05, h * 0.05),
+            complex(w * 0.95, h * 0.05),
+            complex(w * 0.95, h * 0.95),
+            complex(w * 0.05, h * 0.95),
+            complex(w * 0.05, h * 0.05),
+            None,
+            complex(w * 0.25, h * 0.25),
+            complex(w * 0.75, h * 0.25),
+            complex(w * 0.75, h * 0.75),
+            complex(w * 0.25, h * 0.75),
+            complex(w * 0.25, h * 0.25),
         )
 
         fill = list(
@@ -291,6 +296,12 @@ class TestGeomstr(unittest.TestCase):
         self.assertEqual(len(path), 2)
         self.assertEqual(path.length(0), math.sqrt(2))
         self.assertEqual(path.length(1), math.sqrt(2))
+
+        for i in range(50):
+            path = Geomstr.regular_polygon(
+                i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5
+            )
+            # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
 
     def test_geomstr_copies(self):
         path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
@@ -545,24 +556,26 @@ class TestGeomstr(unittest.TestCase):
         No remove segment ~x should occur before the append segment x value.
         :return:
         """
-        path = Geomstr()
-        for i in range(5000):
-            path.line(
-                random_pointi(50),
-                random_pointi(50),
-            )
+        for trials in range(50):
+            path = Geomstr()
+            for i in range(500):
+                path.line(
+                    random_point(50),
+                    random_point(50),
+                )
 
-        beam = Scanbeam(path)
-        m = list()
-        for v, idx in beam._sorted_edge_list:
-            if idx >= 0:
-                m.append(idx)
-            else:
-                try:
-                    m.remove(~idx)
-                except ValueError as e:
-                    raise e
-        self.assertEqual(len(m), 0)
+            beam = Scanbeam(path)
+            m = list()
+            for v, idx in beam._sorted_edge_list:
+                if idx >= 0:
+                    m.append(idx)
+                else:
+                    try:
+                        m.remove(~idx)
+                    except ValueError as e:
+                        raise e
+            self.assertEqual(len(m), 0)
+            beam.compute_beam()
 
     def test_geomstr_scanbeam_increment(self):
         path = Geomstr()
@@ -1015,3 +1028,34 @@ class TestGeomstr(unittest.TestCase):
     def test_geomstr_svg(self):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
         self.assertEqual(gs.raw_length(), 400.0)
+
+    def test_geomstr_area(self):
+        gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
+        self.assertAlmostEqual(gs.area(), 100 * 100)
+        gs = Geomstr.circle(100, 0, 0)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
+        gs = Geomstr.ellipse(100, 100, 0, 0)
+        self.assertAlmostEqual(gs.area(density=1000), (tau / 2) * 100 * 100, delta=1)
+        # We add another equally sized circle to the same geometry.
+        gs.append(Geomstr.ellipse(100, 100, 1000, 1000))
+        self.assertAlmostEqual(gs.area(density=1000), tau * 100 * 100, delta=1)
+
+    #
+    # def test_geomstr_hatch(self):
+    #     gs = Geomstr.svg(
+    #         "M 207770.064517,235321.124952 C 206605.069353,234992.732685 205977.289179,234250.951228 205980.879932,233207.034699 C 205983.217733,232527.380908 206063.501616,232426.095743 206731.813533,232259.66605 L 207288.352862,232121.071081 L 207207.998708,232804.759538 C 207106.904585,233664.912764 207367.871267,234231.469286 207960.295387,234437.989447 C 208960.760372,234786.753419 209959.046638,234459.536445 210380.398871,233644.731075 C 210672.441667,233079.98258 210772.793626,231736.144349 210569.029382,231118.732625 C 210379.268508,230543.75153 209783.667018,230128.095713 209148.499972,230127.379646 C 208627.98084,230126.79283 208274.720902,230294.472682 207747.763851,230792.258962 C 207377.90966,231141.639128 207320.755956,231155.543097 206798.920578,231023.087178 C 206328.09633,230903.579262 206253.35266,230839.656219 206307.510015,230602.818034 C 206382.366365,230275.460062 207158.299204,225839.458855 207158.299204,225738.863735 C 207158.299204,225701.269015 208426.401454,225670.509699 209976.304204,225670.509699 C 211869.528049,225670.509699 212794.309204,225715.990496 212794.309204,225809.099369 C 212794.309204,225885.323687 212726.683921,226357.175687 212644.030798,226857.659369 L 212493.752392,227767.629699 L 210171.516354,227767.629699 L 207849.280317,227767.629699 L 207771.086662,228324.677199 C 207728.080152,228631.053324 207654.900983,229067.454479 207608.466287,229294.457543 L 207524.039566,229707.190387 L 208182.568319,229381.288158 C 209664.399179,228647.938278 211467.922971,228893.537762 212548.92912,229975.888551 C 214130.813964,231559.741067 213569.470754,234195.253882 211455.779825,235108.237047 C 210589.985852,235482.206254 208723.891068,235589.992389 207770.064517,235321.124952 L 207770.064517,235321.124952Z"
+    #         "M 217143.554487,235251.491866 C 215510.313868,234687.408946 214629.289204,233029.479999 214629.289204,230520.099699 C 214629.289204,227300.669136 216066.08164,225539.439699 218692.459204,225539.439699 C 221318.836768,225539.439699 222755.629204,227300.669136 222755.629204,230520.099699 C 222755.629204,233768.619944 221313.285526,235510.883949 218635.902338,235496.480807 C 218198.433364,235494.127417 217526.876831,235383.882393 217143.554487,235251.491866 L 217143.554487,235251.491866Z"
+    #         "M 190905.619204,231712.322088 L 190905.619204,228054.954477 L 190248.863277,228304.502088 C 189887.647517,228441.753274 189445.286267,228554.049699 189265.838277,228554.049699 C 188966.73452,228554.049699 188939.569204,228505.149339 188939.569204,227966.731848 C 188939.569204,227432.097785 188971.901741,227372.495945 189300.011704,227302.291681 C 190198.545589,227110.036287 190884.012886,226765.589154 191414.377757,226239.823305 C 191971.194511,225687.834949 192014.073023,225670.509699 192823.380257,225670.509699 L 193658.089204,225670.509699 L 193658.089204,230520.099699 L 193658.089204,235369.689699 L 192281.854204,235369.689699 L 190905.619204,235369.689699 L 190905.619204,231712.322088 L 190905.619204,231712.322088"
+    #
+    #     )
+    #     # gs.uscale(0.05)
+    #     # bounds = gs.bbox()
+    #     # t = list(gs.as_interpolated_points(interpolate=5))
+    #     # draw(t, *bounds)
+    #     # return
+    #
+    #     hatch = Geomstr.hatch(gs, distance=200, angle=tau / 4)
+    #     # hatch = Geomstr.hatch(gs, distance=200, angle=0)
+    #     print(hatch)
+    #     bounds = hatch.bbox()
+    #     draw(list(hatch.as_interpolated_points()), *bounds)

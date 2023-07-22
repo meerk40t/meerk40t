@@ -17,6 +17,7 @@ from meerk40t.svgelements import (
     Polygon,
     Polyline,
 )
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle=None):
@@ -228,6 +229,42 @@ def init_commands(kernel):
         post.append(classify_new(data))
         return "elements", data
 
+    @self.console_option("distance", "d", type=Length, default="1mm")
+    @self.console_option("angle", "a", type=Angle.parse, default="0deg")
+    @self.console_command(
+        "effect-hatch",
+        help=_("adds hatch-effect to scene"),
+        input_type=(None, "elements"),
+    )
+    def effect_hatch(command, data=None, angle=None, distance=None, **kwargs):
+        """
+        Add an effect hatch object
+        """
+        node = self.elem_branch.add(
+            type="effect hatch",
+            label="Hatch Effect",
+            hatch_angle=angle.as_radians,
+            hatch_distance=distance,
+        )
+        self.set_emphasis([node])
+        if data is not None:
+            for n in data:
+                node.append_child(n)
+        node.focus()
+
+    @self.console_command(
+        "toggle",
+        help=_("Toggles effect from being group to an effect."),
+        input_type="elements",
+    )
+    def effect_toggle(command, data=None, **kwargs):
+        """
+        Toggles effect hatch object
+        """
+        for n in data:
+            if n.type.startswith("effect "):
+                n.effect = not n.effect
+
     @self.console_option(
         "size", "s", type=float, default=16, help=_("font size to for object")
     )
@@ -432,7 +469,7 @@ def init_commands(kernel):
         else:
             for e in data:
                 if prop in ("x", "y"):
-                    if hasattr(e, "can_move") and not e.can_move(self.lock_allows_move):
+                    if not e.can_move(self.lock_allows_move):
                         channel(
                             _("Element can not be moved: {name}").format(name=str(e))
                         )
@@ -608,8 +645,12 @@ def init_commands(kernel):
             channel("Requires a selected cutter polygon")
             return None
         data.sort(key=lambda n: n.emphasized_time)
-        outer_path = data[0].as_path()
-        inner_path = data[1].as_path()
+        try:
+            outer_path = data[0].as_path()
+            inner_path = data[1].as_path()
+        except AttributeError:
+            # elem text does not have an as_path() object
+            return "elements", data
         data[1].remove_node()
 
         from meerk40t.tools.pathtools import VectorMontonizer
@@ -673,34 +714,6 @@ def init_commands(kernel):
         # Newly created! Classification needed?
         post.append(classify_new(data))
         return "elements", data
-
-    @self.console_command(
-        "path",
-        help=_("Convert any shapes to paths"),
-        input_type="shapes",
-        output_type="shapes",
-    )
-    def element_shape_convert(data, **kwargs):
-        paths = []
-        for e in data:
-            paths.append(abs(Path(e)))
-        return "shapes", paths
-
-    @self.console_command(
-        "path",
-        help=_("Convert any element nodes to paths"),
-        input_type="elements",
-        output_type="shapes",
-    )
-    def element_path_convert(data, **kwargs):
-        paths = []
-        for node in data:
-            try:
-                e = node.as_path()
-            except AttributeError:
-                continue
-            paths.append(e)
-        return "shapes", paths
 
     @self.console_option(
         "real",
