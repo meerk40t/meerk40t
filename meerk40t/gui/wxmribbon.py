@@ -50,8 +50,6 @@ def register_panel_ribbon(window, context):
         aui.AuiPaneInfo()
         .Name("ribbon")
         .Top()
-        .RightDockable(False)
-        .LeftDockable(False)
         .BestSize(300, minh)
         .FloatingSize(640, minh)
         .Caption(_("Ribbon"))
