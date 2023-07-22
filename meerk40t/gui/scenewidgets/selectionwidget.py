@@ -1,3 +1,19 @@
+"""
+The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+
+BorderWidget: Draws the border of the selected object.
+RotationWidget: Little arrow in the corner allowing the object to be rotated.
+CornerWidget: Square in corner that typically governs uniform or x/y scaling.
+SideWidget: Square at different sides that typically does x-scaling or y-scaling.
+SkewWidget: Tiny squares along the side that deal with X-skew or y-skew.
+MoveWidget: Center widget that moves the entire selected object.
+MoveRotationOriginWidget: Weird function of rotating based on the reference object or something.
+ReferenceWidget: Yellow-R widget that that makes this object the reference object.
+LockWidget: Widget to lock and unlock the given object.
+
+"""
+
+
 import math
 
 import wx

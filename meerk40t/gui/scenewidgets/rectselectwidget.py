@@ -1,3 +1,8 @@
+"""
+Specifically draws the rectangle selection box and deals with emphasis of selected objects.
+"""
+
+
 import wx
 
 from meerk40t.gui.scene.scene import (
