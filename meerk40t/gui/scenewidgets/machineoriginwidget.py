@@ -60,10 +60,10 @@ class MachineOriginWidget(Widget):
 
         gc.SetBrush(wx.NullBrush)
         gc.SetPen(self.x_axis_pen)
-        # gc.DrawLines will draw a polygon according to the documentation! 
-        # While the windows implementation of wxPython does not care 
+        # gc.DrawLines will draw a polygon according to the documentation!
+        # While the windows implementation of wxPython does not care
         # and draws a polyline, the Linux implementation does and closes the
-        # polygon!     
+        # polygon!
         arrow1 = gc.CreatePath()
         arrow1.MoveToPoint((x, y))
         arrow1.AddLineToPoint((x_dx, x_dy))
@@ -71,12 +71,12 @@ class MachineOriginWidget(Widget):
         arrow1.MoveToPoint((x_dx, x_dy))
         arrow1.AddLineToPoint((xa2_dx, xa2_dy))
         gc.DrawPath(arrow1)
-        
+
         gc.SetPen(self.y_axis_pen)
         arrow2 = gc.CreatePath()
         arrow2.MoveToPoint((x, y))
         arrow2.AddLineToPoint((y_dx, y_dy))
         arrow2.AddLineToPoint((ya1_dx, ya1_dy))
-        arrow2.MoveToPoint((y_dx, y_dy)) 
+        arrow2.MoveToPoint((y_dx, y_dy))
         arrow2.AddLineToPoint((ya2_dx, ya2_dy))
         gc.DrawPath(arrow2)

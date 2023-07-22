@@ -816,7 +816,7 @@ class HingePanel(wx.Panel):
 
     def _setup_settings(self):
         firstpattern = self.patterns[0]
-        for (pattern, recommended) in zip(self.patterns, self.defaults):
+        for pattern, recommended in zip(self.patterns, self.defaults):
             default = (
                 pattern,
                 200,

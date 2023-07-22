@@ -16,7 +16,6 @@ FIX_SPEEDS_RATIO = 0.9195
 
 class ConfigurationUsb(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
-
         # begin wxGlade: ConfigurationUsb.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)

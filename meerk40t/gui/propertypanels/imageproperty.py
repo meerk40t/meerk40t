@@ -883,7 +883,6 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.bitmap_preview.SetBitmap(self.wximage)
 
     def generate_preview(self):
-
         # from time import sleep
         make_vector = self.context.kernel.lookup("render-op/make_vector")
         make_raster = self.context.kernel.lookup("render-op/make_raster")

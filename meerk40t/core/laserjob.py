@@ -200,6 +200,10 @@ class LaserJob:
         """
         if isinf(self.loops):
             return float("inf")
-        if self.is_running() and self.time_started is not None and self.avg_time_per_pass:
+        if (
+            self.is_running()
+            and self.time_started is not None
+            and self.avg_time_per_pass
+        ):
             return self.avg_time_per_pass * self.loops
         return self.loops * self._estimate

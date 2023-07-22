@@ -48,6 +48,7 @@ from .icons import (  # icons8_replicate_rows_50,
     icons8_copy_50,
     icons8_curly_brackets_50,
     icons8_cursor_50,
+    icons8_delete_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
     icons8_measure_50,
@@ -75,7 +76,6 @@ from .icons import (  # icons8_replicate_rows_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
-    icons8_delete_50,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -1170,9 +1170,7 @@ class MeerK40t(MWindow):
             {
                 "label": _("Delete"),
                 "icon": icons8_delete_50,
-                "tip": _(
-                    "Delete selected items"
-                ),
+                "tip": _("Delete selected items"),
                 "action": lambda v: kernel.elements("tree selected delete\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: bool(kernel.elements.has_emphasis()),
@@ -1536,7 +1534,9 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements(
                     "align push first individual left pop\n"
                 ),
-                "action_right": lambda v: kernel.elements("align push bed group left pop\n"),
+                "action_right": lambda v: kernel.elements(
+                    "align push bed group left pop\n"
+                ),
                 "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1550,8 +1550,9 @@ class MeerK40t(MWindow):
             {
                 "label": _("Wordlist"),
                 "icon": icons8_curly_brackets_50,
-                "tip": _("Manages Wordlist-Entries") + "\n"
-                        + _(" (right go to next entry)"),
+                "tip": _("Manages Wordlist-Entries")
+                + "\n"
+                + _(" (right go to next entry)"),
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
                 "identifier": "prep_wordlist",
                 "priority": 99,
@@ -2662,7 +2663,6 @@ class MeerK40t(MWindow):
                     )
 
     def __set_file_menu(self):
-
         self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
@@ -3609,7 +3609,6 @@ class MeerK40t(MWindow):
                     self.validate_save()
             except AttributeError:
                 pass
-
 
     def load(self, pathname):
         def unescaped(filename):

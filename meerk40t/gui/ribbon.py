@@ -1704,7 +1704,6 @@ class Art:
             bitmap = button.bitmap_large
         bitmap_width, bitmap_height = bitmap.Size
         if button.kind == "hybrid" and button.key != "toggle":
-
             # Calculate text height/width
             # Calculate dropdown
             # Same size regardless of bitmap-size

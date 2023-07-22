@@ -336,7 +336,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.text_text.SelectAll()
 
     def __set_properties(self):
-
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
 
         self.button_attrib_bold.SetFont(

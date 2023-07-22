@@ -578,7 +578,9 @@ def offset_path(
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]  # TODO: indexError as newsegment can return an empty list
+                p._segments[idx] = newsegment[
+                    0
+                ]  # TODO: indexError as newsegment can return an empty list
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):

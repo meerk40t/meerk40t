@@ -81,7 +81,6 @@ class RuidaDevice(Service, ViewPort):
                 "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
-
         ]
         self.register_choices("bed_dim", choices)
         choices = [

@@ -1,11 +1,11 @@
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
 from meerk40t.core.elements.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_compress_50
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

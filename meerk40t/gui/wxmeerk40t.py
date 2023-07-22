@@ -371,7 +371,6 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(kernel):
-
         #################
         # WINDOW COMMANDS
         #################

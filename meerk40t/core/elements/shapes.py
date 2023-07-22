@@ -589,7 +589,6 @@ def init_commands(kernel):
         "recalc", input_type=("elements", None), output_type="elements"
     )
     def recalc(command, channel, _, data=None, post=None, **kwargs):
-
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
@@ -603,7 +602,6 @@ def init_commands(kernel):
         "simplify", input_type=("elements", None), output_type="elements"
     )
     def simplify_path(command, channel, _, data=None, post=None, **kwargs):
-
         if data is None:
             data = list(self.elems(emphasized=True))
         data_changed = list()

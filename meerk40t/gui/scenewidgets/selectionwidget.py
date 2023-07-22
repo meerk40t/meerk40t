@@ -46,7 +46,6 @@ def process_event(
     helptext="",
     optimize_drawing=True,
 ):
-
     if widget_identifier is None:
         widget_identifier = "none"
     try:
@@ -466,7 +465,6 @@ class RotationWidget(Widget):
             elements.prepare_undo()
             return
         elif event == 0:
-
             if self.rotate_cx is None:
                 self.rotate_cx = self.master.rotation_cx
             if self.rotate_cy is None:

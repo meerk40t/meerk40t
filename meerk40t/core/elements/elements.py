@@ -1716,7 +1716,6 @@ class Elemental(Service):
                 cc = node.bounds
                 f_area = (cc[2] - cc[0]) * (cc[3] - cc[1])
                 if use_smallest:
-
                     if f_area <= e_area:  # Tie goes to child or later sibling
                         e_area = f_area
                         e = node
@@ -1869,7 +1868,6 @@ class Elemental(Service):
                             f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
                         )
                     if hasattr(op, "classify") and whisperer:
-
                         classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=tempfuzzy,

@@ -276,7 +276,6 @@ class PanelFontSelect(wx.Panel):
         fontinfo = fonts_registered()
         sizer_checker = wx.BoxSizer(wx.HORIZONTAL)
         for extension in fontinfo:
-
             info = fontinfo[extension]
             checker = wx.CheckBox(self, wx.ID_ANY, info[0])
             checker.SetValue(True)

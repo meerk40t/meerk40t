@@ -472,7 +472,6 @@ class Wordlist:
                 # 0
                 newpattern = f"{{{key}}}"
             if newpattern != bracketed_key:
-
                 item = [relative, bracketed_key, newpattern]
                 toreplace.append(item)
 

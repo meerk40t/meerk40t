@@ -514,6 +514,7 @@ class LaserPanel(wx.Panel):
     def on_config_button(self, event):
         self.context.device("window toggle Configuration\n")
 
+
 class JobPanel(wx.Panel):
     """
     Contains all elements to plan and save the job

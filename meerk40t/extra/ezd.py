@@ -715,7 +715,9 @@ class EZText(EZObject):
         self.circle_text_range_limit_angle = args[52]
         self.save_options = args[53]  # 3 boolean values
         self.save_filename = args[54]
-        self.circle_text_button_flags = args[85]  # 2 is first button, 1 is right to left.
+        self.circle_text_button_flags = args[
+            85
+        ]  # 2 is first button, 1 is right to left.
         (count,) = struct.unpack("<I", file.read(4))
         for i in range(count):
             (type,) = struct.unpack("<H", file.read(2))

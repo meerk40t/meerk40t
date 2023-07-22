@@ -58,8 +58,8 @@ class BlobNode(Node):
                 if q == 0:
                     yield f"{i:06x}  "
                 yield f"{c:02x} "
-                if c in (0x00, 0x0d, 0x0a, 0x09) or c > 0x80:
-                    ascii_list.append('.')
+                if c in (0x00, 0x0D, 0x0A, 0x09) or c > 0x80:
+                    ascii_list.append(".")
                 else:
                     ascii_list.append(chr(c))
                 if q == 7:
