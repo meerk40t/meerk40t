@@ -229,6 +229,8 @@ class Button:
         self.rule_enabled = rule_enabled
         if object is not None:
             self.object = object
+        else:
+            self.object = self.context
         if self.kind == "hybrid":
             self.dropdown = DropDown()
         self.modified()
