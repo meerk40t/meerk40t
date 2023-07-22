@@ -131,24 +131,44 @@ class MeerK40tScenePanel(wx.Panel):
         self._last_snap_ts = 0
 
         context = self.context
+        # Add in snap-to-grid functionality.
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
+
+        # Selection/Manipulation widget.
         self.selectionwidget = SelectionWidget(self.widget_scene)
         self.affinemover = None
         self.widget_scene.add_scenewidget(self.selectionwidget)
+
+        # Tool container - Widget to hold tools.
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
+
+        # Rectangular selection.
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+
+        # Laser-Path blue-line drawer.
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
+
+        # Draw elements in scene.
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
 
+        # Draw Machine Origin widget.
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
+
+        # Draw Grid.
         self.grid = GridWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.grid)
+
+        # Draw Bed
         self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
+
+        # Draw Interface Guide.
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+
+        # Draw Interface Laser-Position
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
