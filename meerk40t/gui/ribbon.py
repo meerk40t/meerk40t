@@ -688,6 +688,7 @@ class RibbonPage:
         self.panels = []
         self.position = None
         self.tab_position = None
+        self.visible = True
 
     def add_panel(self, panel, ref):
         """
@@ -756,6 +757,21 @@ class RibbonBarPanel(wx.Control):
 
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
+
+    # Preparation for individual page visibility
+    def visible_pages(self):
+        count = 0
+        for p in self.pages:
+            if p.visible:
+                count += 1
+        return count
+
+    def first_page(self):
+        # returns the first visible page
+        for p in self.pages:
+            if p.visible:
+                return p
+        return None
 
     def modified(self):
         """
@@ -879,7 +895,7 @@ class RibbonBarPanel(wx.Control):
 
     def _overflow_at_position(self, pos):
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 x, y = pos
@@ -902,7 +918,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -918,7 +934,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page.contains(pos):
+            if page.visible and page.contains(pos):
                 return page
         return None
 
@@ -974,7 +990,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -1115,14 +1131,15 @@ class Art:
         @return:
         """
         self._paint_background(dc)
-        if len(ribbon.pages) > 1:
+        if ribbon.visible_pages() > 1:
             for page in ribbon.pages:
-                self._paint_tab(dc, page)
+                if page.visible:
+                    self._paint_tab(dc, page)
         else:
-            self.current_page = ribbon.pages[0]
+            self.current_page = ribbon.first_page()
 
         for page in ribbon.pages:
-            if page is not self.current_page:
+            if page is not self.current_page or not page.visible:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
@@ -1387,8 +1404,10 @@ class Art:
         # print(f"ribbon: {dc.Size}")
 
         xpos = 0
-        has_page_header = len(ribbon.pages) > 1
+        has_page_header = ribbon.visible_pages() > 1
         for pn, page in enumerate(ribbon.pages):
+            if not page.visible:
+                continue
             # Set tab positioning.
             # Compute tabwidth according to be displayed label,
             # if bigger than default then extend width
