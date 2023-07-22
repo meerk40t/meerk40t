@@ -96,7 +96,6 @@ class Clip:
         self.bounds = shape.bbox()
 
     def clip(self, subject, split=True):
-
         clip = self.clipping_shape
         if split:
             s = subject.segments[: subject.index]
@@ -2452,7 +2451,6 @@ class Geomstr:
         tb_hit = qb[hits] / denom[hits]
 
         for i, hit in enumerate(where_hit):
-
             at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
             bt = tb[0] + float(hit[0]) * step_b
             # Fractional guess within intersected segment

@@ -40,7 +40,9 @@ class SnapOptionPanel(wx.Panel):
             self, wx.ID_ANY, 1, 1, maxpoints, style=wx.SL_HORIZONTAL
         )
         self.slider_visibility.SetToolTip(
-            _("The screen distance in pixels inside which snap points will be highlighted")
+            _(
+                "The screen distance in pixels inside which snap points will be highlighted"
+            )
         )
 
         self.check_snap_points = wx.CheckBox(self, wx.ID_ANY, _("Snap to Element"))

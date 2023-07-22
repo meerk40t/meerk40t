@@ -181,11 +181,20 @@ def tree_operations_for_node(registration, node):
                 continue
         if reject:
             continue
-        node_name = str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label)
-        node_label = str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label)
+        node_name = (
+            str(node.name)
+            if (hasattr(node, "name") and node.name is not None)
+            else str(node.label)
+        )
+        node_label = (
+            str(node.name)
+            if (hasattr(node, "name") and node.name is not None)
+            else str(node.label)
+        )
 
         def unescaped(filename):
             from platform import system
+
             OS_NAME = system()
             if OS_NAME == "Windows":
                 newstring = filename.replace("&", "&&")

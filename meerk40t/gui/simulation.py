@@ -1351,7 +1351,6 @@ class SimulationPanel(wx.Panel, Job):
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
-
         # Stop animation
         if self.running:
             self._stop()

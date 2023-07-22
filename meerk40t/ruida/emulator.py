@@ -10,17 +10,18 @@ from typing import Tuple, Union
 
 from meerk40t.kernel import get_safe_path
 
-from ..core.units import UNITS_PER_uM, UNITS_PER_MM
+from ..core.units import UNITS_PER_MM, UNITS_PER_uM
 from .exceptions import RuidaCommandError
 from .rdjob import (
     RDJob,
+    abscoord,
     decode14,
     decodeu35,
     encode32,
     parse_commands,
     parse_filenumber,
     parse_mem,
-    swizzles_lut, abscoord,
+    swizzles_lut,
 )
 
 
@@ -71,7 +72,6 @@ class RuidaEmulator:
     @property
     def x(self):
         return self.device.current[0]
-
 
     @property
     def y(self):
@@ -571,10 +571,7 @@ class RuidaEmulator:
                 return True
         elif array[0] == 0xD9:
             if len(array) == 1:
-                self._describe(
-                    array,
-                    "Unknown Directional Setting"
-                )
+                self._describe(array, "Unknown Directional Setting")
             else:
                 options = array[2]
                 if options == 0x03:
@@ -589,8 +586,7 @@ class RuidaEmulator:
                 if array[1] == 0x00 or array[1] == 0x50:
                     coord = abscoord(array[3:8]) * self.scale
                     self._describe(
-                        array,
-                        f"Move {param} X: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} X: {coord} ({self.x},{self.y})"
                     )
                     try:
                         self.device.driver.move_abs(self.x + coord, self.y)
@@ -599,8 +595,7 @@ class RuidaEmulator:
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = abscoord(array[3:8]) * self.scale
                     self._describe(
-                        array,
-                        f"Move {param} Y: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Y: {coord} ({self.x},{self.y})"
                     )
                     try:
                         self.device.driver.move_abs(self.x, self.y + coord)
@@ -609,8 +604,7 @@ class RuidaEmulator:
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} Z: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} Z: {coord} ({self.x},{self.y})"
                     )
                     try:
                         self.device.driver.axis("z", coord)
@@ -619,25 +613,18 @@ class RuidaEmulator:
                 elif array[1] == 0x03 or array[1] == 0x53:
                     coord = abscoord(array[3:8])
                     self._describe(
-                        array,
-                        f"Move {param} U: {coord} ({self.x},{self.y})"
+                        array, f"Move {param} U: {coord} ({self.x},{self.y})"
                     )
                     try:
                         self.device.driver.axis("u", self.u)
                     except AttributeError:
                         pass
                 elif array[1] == 0x0F:
-                    self._describe(
-                        array,
-                        "Feed Axis Move"
-                    )
+                    self._describe(array, "Feed Axis Move")
                 elif array[1] == 0x10 or array[1] == 0x60:
                     x = abscoord(array[3:8]) * self.scale
                     y = abscoord(array[8:13]) * self.scale
-                    self._describe(
-                        array,
-                        f"Move {param} XY ({x}, {y})"
-                    )
+                    self._describe(array, f"Move {param} XY ({x}, {y})")
                     if "Origin" in param:
                         try:
                             self.device.driver.move_abs(
@@ -654,15 +641,13 @@ class RuidaEmulator:
                 elif array[1] == 0x30 or array[1] == 0x70:
                     x = abscoord(array[3:8])
                     y = abscoord(array[8:13])
-                    self.u = abscoord(array[13: 13 + 5])
+                    self.u = abscoord(array[13 : 13 + 5])
                     self._describe(
                         array,
-                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
+                        f"Move {param} XYU: {x * UNITS_PER_uM} ({y * UNITS_PER_uM},{self.u * UNITS_PER_uM})",
                     )
                     try:
-                        self.device.driver.move_abs(
-                            x * UNITS_PER_uM, y * UNITS_PER_uM
-                        )
+                        self.device.driver.move_abs(x * UNITS_PER_uM, y * UNITS_PER_uM)
                         self.device.driver.axis("u", self.u * UNITS_PER_uM)
                     except AttributeError:
                         pass

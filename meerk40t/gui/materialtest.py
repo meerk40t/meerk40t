@@ -827,7 +827,6 @@ class TemplatePanel(wx.Panel):
             self.context.elements.clear_elements(fast=True)
 
         def create_operations():
-
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
             display_labels = self.check_labels.GetValue()
             display_values = self.check_values.GetValue()

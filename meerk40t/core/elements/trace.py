@@ -137,7 +137,6 @@ def min_circle_trivial(P):
     # by 2 points only
     for i in range(3):
         for j in range(i + 1, 3):
-
             center, radius = circle_from1(P[i], P[j])
             if is_valid_circle(center, radius, P):
                 return center, radius
@@ -535,7 +534,6 @@ def init_commands(kernel):
         else:
             raise ValueError
         if shape_type == "elem polyline":
-
             if len(hull) == 0:
                 channel(_("No elements bounds to trace."))
                 return

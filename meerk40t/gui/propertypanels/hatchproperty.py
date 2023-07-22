@@ -5,7 +5,7 @@ from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
 from ...core.units import Length
 from ...svgelements import Angle
 from ..wxutils import TextCtrl, set_ctrl_value
-from .attributes import IdPanel, ColorPanel
+from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
@@ -141,9 +141,7 @@ class HatchPropertyPanel(ScrolledPanel):
 
     def on_text_distance(self):
         try:
-            self.node.distance = Length(
-                self.text_distance.GetValue()
-            ).length_mm
+            self.node.distance = Length(self.text_distance.GetValue()).length_mm
             self.node.modified()
         except ValueError:
             pass

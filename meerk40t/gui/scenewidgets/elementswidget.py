@@ -36,7 +36,6 @@ class ElementsWidget(Widget):
             zoom_scale = 1
         draw_mode = self.renderer.context.draw_mode
         if (draw_mode & DRAW_MODE_REGMARKS) == 0:
-
             # Very faint in the background as orientation - alpha 64
             self.renderer.render(
                 context.elements.regmarks_nodes(),
@@ -63,7 +62,6 @@ class ElementsWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
-
         if event_type == "rightdown" and not modifiers:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":

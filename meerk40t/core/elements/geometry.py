@@ -206,5 +206,4 @@ def init_commands(kernel):
         data.append(hatch)
         return "geometry", data
 
-
     # --------------------------- END COMMANDS ------------------------------

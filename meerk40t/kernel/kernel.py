@@ -2669,10 +2669,8 @@ class Kernel(Settings):
                 except Exception:
                     pass
             elif OS_NAME == "Darwin":  # Mac
-
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
             elif OS_NAME == "Linux":
-
                 print("\a")  # Beep.
                 os.system('say "Ding"')
 

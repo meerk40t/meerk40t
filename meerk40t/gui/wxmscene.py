@@ -657,7 +657,6 @@ class MeerK40tScenePanel(wx.Panel):
                 elif target[0] == "s":
                     self.grid.draw_grid_secondary = not self.grid.draw_grid_secondary
                     if self.grid.draw_grid_secondary:
-
                         if ox is None:
                             self.grid.grid_secondary_cx = None
                             self.grid.grid_secondary_cy = None
@@ -869,7 +868,6 @@ class MeerK40tScenePanel(wx.Panel):
         return delta, y_val
 
     def revised_magnet_bound(self, bounds=None):
-
         dx = 0
         dy = 0
         if self.has_magnets() and self._magnet_attraction > 0:

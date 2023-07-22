@@ -35,6 +35,7 @@ from ctypes.wintypes import BOOL, BYTE, DWORD, HANDLE, HWND, LPCWSTR, WORD
 _stdcall_libraries = {}
 _stdcall_libraries["kernel32"] = WinDLL("kernel32")
 
+
 # some details of the windows API differ between 32 and 64 bit systems..
 def is_64bit():
     """Returns true when running on a 64 bit system"""

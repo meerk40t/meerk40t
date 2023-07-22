@@ -10,9 +10,9 @@ https://github.com/meerk40t/meerk40t/discussions/1944
 import wx
 from wx import aui
 
+from ..core.exceptions import BadFileError
 from .icons import icons8_computer_support_50, icons8_opened_folder_50
 from .mwindow import MWindow
-from ..core.exceptions import BadFileError
 
 _ = wx.GetTranslation
 

@@ -70,7 +70,6 @@ and a wxpython version <= 4.1.1."""
         kernel_root.register("render-op/make_raster", renderer.make_raster)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
-
         from meerk40t.gui.guicolors import GuiColors
 
         kernel.add_service("colors", GuiColors(kernel))

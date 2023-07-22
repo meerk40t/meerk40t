@@ -11,12 +11,11 @@ from io import BytesIO
 from xml.etree.ElementTree import iterparse
 
 import PIL.Image
-from meerk40t.core.units import UNITS_PER_MM
-
-from meerk40t.tools.geomstr import Geomstr
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.svgelements import Matrix, Color
+from meerk40t.core.units import UNITS_PER_MM
+from meerk40t.svgelements import Color, Matrix
+from meerk40t.tools.geomstr import Geomstr
 
 
 def plugin(kernel, lifecycle):

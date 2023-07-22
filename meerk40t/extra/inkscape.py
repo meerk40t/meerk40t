@@ -192,7 +192,9 @@ class MultiLoader:
             return newstring
 
         if was_shown:
-            kernel.busyinfo.change(msg=_("Loading File...") + "\n" + unescaped(svg_temp_file))
+            kernel.busyinfo.change(
+                msg=_("Loading File...") + "\n" + unescaped(svg_temp_file)
+            )
             kernel.busyinfo.show()
         filename_to_process = svg_temp_file
         preproc = elements_service.lookup("preprocessor/.svg")
@@ -391,7 +393,6 @@ def plugin(kernel, lifecycle):
             return "inkscape", (root_context.inkscape_path, None)
 
         def check_for_features(pathname, **kwargs):
-
             # We try to establish if a file contains certain features...
 
             source = pathname

@@ -392,7 +392,6 @@ class LaserRender:
             self.pen.SetCap(wx.CAP_ROUND)
         else:
             if node.linecap == Linecap.CAP_BUTT:
-
                 self.pen.SetCap(wx.CAP_BUTT)
             elif node.linecap == Linecap.CAP_ROUND:
                 self.pen.SetCap(wx.CAP_ROUND)
@@ -1100,7 +1099,6 @@ class LaserRender:
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
-
             # bb = item.bounds
             bb = item.paint_bounds
             if bb is None:

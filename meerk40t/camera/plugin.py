@@ -27,7 +27,6 @@ def plugin(kernel, lifecycle=None):
             return True
 
     elif lifecycle == "register":
-
         from meerk40t.camera.camera import Camera
 
         kernel.register("camera-enabled", True)

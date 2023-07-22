@@ -197,7 +197,9 @@ class DevicePanel(wx.Panel):
         sizer_3.Add(self.button_activate_device, 0, 0, 0)
         sizer_3.AddStretchSpacer()
         self.button_config_device = wx.Button(self, wx.ID_ANY, _("Config"))
-        self.button_config_device.SetToolTip("Open the configuration window for the active device")
+        self.button_config_device.SetToolTip(
+            "Open the configuration window for the active device"
+        )
         sizer_3.Add(self.button_config_device, 0, 0, 0)
 
         self.SetSizer(sizer_1)

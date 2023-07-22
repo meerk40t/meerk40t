@@ -187,7 +187,6 @@ class StatusBarWidget(BasicHSizer):
         self.parent = None
 
     def SetActive(self, control, enableit=True):
-
         # Logic to use own hsizer or wx.BoxSizer
         if hasattr(super(), "SetActive"):
             super().SetActive(control, enableit)

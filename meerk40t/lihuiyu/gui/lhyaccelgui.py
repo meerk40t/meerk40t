@@ -319,7 +319,6 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         pass
 
     def on_check_vector_accel_enable(self, event=None):
-
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
     def on_text_vector_accel(self, event):

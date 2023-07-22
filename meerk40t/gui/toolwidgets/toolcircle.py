@@ -69,7 +69,6 @@ class CircleTool(ToolWidget):
                 )
             bbox = ellipse.bbox()
             if bbox is not None:
-
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
                 if (
                     abs(bbox[2] - bbox[0]) > 10 * pixel

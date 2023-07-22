@@ -3,8 +3,8 @@ from math import sqrt
 
 from meerk40t.core.node.mixins import Stroked
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length, Angle
-from meerk40t.svgelements import Matrix, Color
+from meerk40t.core.units import Angle, Length
+from meerk40t.svgelements import Color, Matrix
 from meerk40t.tools.geomstr import Geomstr, Scanbeam
 
 
@@ -26,7 +26,9 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_distance = None
         self.hatch_angle = None
         self.hatch_type = None
-        Node.__init__(self, type="effect hatch", id=id, label=label, lock=lock, **kwargs)
+        Node.__init__(
+            self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
+        )
         self._formatter = "{effect}{element_type} - {distance} {angle}"
         if self.matrix is None:
             self.matrix = Matrix()
@@ -175,7 +177,9 @@ class HatchEffectNode(Node, Stroked):
         if self._distance is None:
             self.recalculate()
         for p in range(self.passes):
-            path.append(Geomstr.hatch(outlines, distance=self._distance, angle=self._angle))
+            path.append(
+                Geomstr.hatch(outlines, distance=self._distance, angle=self._angle)
+            )
         return path
 
     def modified(self):

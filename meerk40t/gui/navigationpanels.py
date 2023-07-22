@@ -5,7 +5,6 @@ from time import time
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
@@ -48,6 +47,7 @@ from meerk40t.gui.icons import (
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.position import PositionPanel
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
+from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -2296,7 +2296,6 @@ class Navigation(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-
         kernel.register("wxpane/Navigation", register_panel_navigation)
         kernel.register(
             "button/preparation/Navigation",
