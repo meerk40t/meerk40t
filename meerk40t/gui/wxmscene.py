@@ -25,6 +25,7 @@ from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
+from meerk40t.gui.scenewidgets.nodeeditor import NodeEditor
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
@@ -137,6 +138,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Selection/Manipulation widget.
         self.selectionwidget = SelectionWidget(self.widget_scene)
         self.affinemover = None
+        self.node_editor = None
         self.widget_scene.add_scenewidget(self.selectionwidget)
 
         # Tool container - Widget to hold tools.
@@ -344,6 +346,30 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
             channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
+
+        @context.console_command("node-edit", hidden=True)
+        def nodeedit(channel, _, **kwgs):
+            """
+            Replaces the selection widget with the node-editor.
+            """
+            if self.node_editor is None:
+                self.node_editor = NodeEditor(self.widget_scene)
+                self.widget_scene.widget_root.scene_widget.remove_widget(
+                    self.selectionwidget
+                )
+                self.widget_scene.widget_root.scene_widget.add_widget(
+                    0, self.node_editor
+                )
+                channel(_("Node-Editor made selection widget."))
+            else:
+                self.widget_scene.widget_root.scene_widget.remove_widget(
+                    self.node_editor
+                )
+                self.widget_scene.widget_root.scene_widget.add_widget(
+                    0, self.selectionwidget
+                )
+                channel(_("Selection-Widget selection widget."))
+                self.node_editor = None
 
         @context.console_command("affinemover", hidden=True)
         def affinemover(channel, _, **kwgs):
