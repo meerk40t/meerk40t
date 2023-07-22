@@ -191,6 +191,7 @@ class Button:
         # TypeError: GetBitmap() got an unexpected keyword argument 'force_darkmode'
         # Well...
         from meerk40t.gui.icons import PyEmbeddedImage
+
         icon = PyEmbeddedImage(icon.data)
         self.bitmap_large = icon.GetBitmap(
             resize=resize_param,
@@ -198,24 +199,22 @@ class Button:
             force_darkmode=darkm,
         )
         self.bitmap_large_disabled = icon.GetBitmap(
-            resize=resize_param, color=Color("grey"),
-            noadjustment=True, force_darkmode=darkm
+            resize=resize_param,
+            color=Color("grey"),
+            noadjustment=True,
+            force_darkmode=darkm,
         )
         self.bitmap_small = icon.GetBitmap(
-            resize=small_resize, noadjustment=True,
-            force_darkmode=darkm
+            resize=small_resize, noadjustment=True, force_darkmode=darkm
         )
         self.bitmap_small_disabled = icon.GetBitmap(
-            resize=small_resize, color=Color("grey"),
-            noadjustment=True
+            resize=small_resize, color=Color("grey"), noadjustment=True
         )
         self.bitmap_tiny = icon.GetBitmap(
-            resize=tiny_resize, noadjustment=True,
-            force_darkmode=darkm
+            resize=tiny_resize, noadjustment=True, force_darkmode=darkm
         )
         self.bitmap_tiny_disabled = icon.GetBitmap(
-            resize=tiny_resize, color=Color("grey"),
-            noadjustment=True
+            resize=tiny_resize, color=Color("grey"), noadjustment=True
         )
         self.bitmap = self.bitmap_large
         self.bitmap_disabled = self.bitmap_large_disabled
@@ -570,6 +569,8 @@ class RibbonPanel:
         @param new_values: dictionary of button values to use.
         @return:
         """
+        # print (f"Setbuttons called for {self.label}")
+        self.modified()
         self.clear_buttons()
         button_descriptions = []
         for desc, name, sname in new_values:
@@ -688,6 +689,7 @@ class RibbonPage:
         self.panels = []
         self.position = None
         self.tab_position = None
+        self.visible = True
 
     def add_panel(self, panel, ref):
         """
@@ -727,9 +729,11 @@ class RibbonBarPanel(wx.Control):
         super().__init__(parent, id, **kwds)
         self.context = context
         self.pages = []
+        jobname = f"realize_ribbon_bar_{self.GetId()}"
+        #  print (f"Requesting job with name: '{jobname}'")
         self._redraw_job = Job(
             process=self._paint_main_on_buffer,
-            job_name="realize_ribbon_bar",
+            job_name=jobname,
             interval=0.1,
             times=1,
             run_main=True,
@@ -757,18 +761,34 @@ class RibbonBarPanel(wx.Control):
         self.Bind(wx.EVT_LEFT_DOWN, self.on_click)
         self.Bind(wx.EVT_RIGHT_UP, self.on_click_right)
 
+    # Preparation for individual page visibility
+    def visible_pages(self):
+        count = 0
+        for p in self.pages:
+            if p.visible:
+                count += 1
+        return count
+
+    def first_page(self):
+        # returns the first visible page
+        for p in self.pages:
+            if p.visible:
+                return p
+        return None
+
     def modified(self):
         """
         if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
         @return:
         """
+        # print (f"Modified called for RibbonBar with {self.visible_pages()} pages")
         self._paint_dirty = True
         self._layout_dirty = True
         self.context.schedule(self._redraw_job)
 
     def redrawn(self):
         """
-        if modified then we flag the layout and paint as dirty and call for a refresh of the ribbonbar.
+        if refresh needed then we flag the paint as dirty and call for a refresh of the ribbonbar.
         @return:
         """
         self._paint_dirty = True
@@ -841,6 +861,7 @@ class RibbonBarPanel(wx.Control):
 
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
+        # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
         buf = self._set_buffer()
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
@@ -879,7 +900,7 @@ class RibbonBarPanel(wx.Control):
 
     def _overflow_at_position(self, pos):
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 x, y = pos
@@ -902,7 +923,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -918,7 +939,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page.contains(pos):
+            if page.visible and page.contains(pos):
                 return page
         return None
 
@@ -974,7 +995,7 @@ class RibbonBarPanel(wx.Control):
         @return:
         """
         for page in self.pages:
-            if page is not self.art.current_page:
+            if page is not self.art.current_page or not page.visible:
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
@@ -1008,6 +1029,7 @@ class RibbonBarPanel(wx.Control):
         if self.art.current_page is None:
             self.art.current_page = page
         self.pages.append(page)
+        self._layout_dirty = True
         return page
 
     def add_panel(self, ref, parent: RibbonPage, id, label, icon):
@@ -1028,6 +1050,7 @@ class RibbonBarPanel(wx.Control):
             icon=icon,
         )
         parent.add_panel(panel, ref)
+        self._layout_dirty = True
         return panel
 
 
@@ -1053,10 +1076,22 @@ class Art:
         self.text_dropdown_buffer = 7
         self.show_labels = True
 
-        self.text_color = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT))
+        self._establish_colors()
+
+        self.current_page = None
+        self.hover_tab = None
+        self.hover_button = None
+        self.hover_dropdown = None
+
+    def _establish_colors(self):
+        self.text_color = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+        )
         self.text_color_inactive = copy.copy(self.text_color).ChangeLightness(50)
         self.text_color_disabled = wx.Colour("Dark Grey")
-        self.black_color = copy.copy(wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT))
+        self.black_color = copy.copy(
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
+        )
 
         self.button_face_hover = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
@@ -1104,10 +1139,6 @@ class Art:
         self.tiny_font = wx.Font(
             6, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
-        self.current_page = None
-        self.hover_tab = None
-        self.hover_button = None
-        self.hover_dropdown = None
 
     def paint_main(self, dc, ribbon):
         """
@@ -1115,19 +1146,23 @@ class Art:
         @return:
         """
         self._paint_background(dc)
-        if len(ribbon.pages) > 1:
+        if ribbon.visible_pages() > 1:
             for page in ribbon.pages:
-                self._paint_tab(dc, page)
+                if page.visible:
+                    self._paint_tab(dc, page)
         else:
-            self.current_page = ribbon.pages[0]
+            self.current_page = ribbon.first_page()
 
         for page in ribbon.pages:
-            if page is not self.current_page:
+            if page is not self.current_page or not page.visible:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
             dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
             for panel in page.panels:
+                # plen = len(panel.buttons)
+                # if plen == 0:
+                #     print (f"Paint for panel '{panel.label}' without buttons")
                 self._paint_panel(dc, panel)
                 for button in panel.buttons:
                     self._paint_button(dc, button)
@@ -1175,6 +1210,7 @@ class Art:
         @return:
         """
         if not panel.position:
+            # print(f"Panel position was not set for {panel.label}")
             return
         x, y, x1, y1 = panel.position
         dc.SetBrush(wx.Brush(self.button_face))
@@ -1387,8 +1423,10 @@ class Art:
         # print(f"ribbon: {dc.Size}")
 
         xpos = 0
-        has_page_header = len(ribbon.pages) > 1
+        has_page_header = ribbon.visible_pages() > 1
         for pn, page in enumerate(ribbon.pages):
+            if not page.visible:
+                continue
             # Set tab positioning.
             # Compute tabwidth according to be displayed label,
             # if bigger than default then extend width
@@ -1399,7 +1437,10 @@ class Art:
                 page.tab_position = (
                     pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer,
                     0,
-                    pn * self.tab_tab_buffer + xpos + tabwidth + self.tab_initial_buffer,
+                    pn * self.tab_tab_buffer
+                    + xpos
+                    + tabwidth
+                    + self.tab_initial_buffer,
                     self.tab_height * 2,
                 )
                 xpos += tabwidth
@@ -1445,8 +1486,12 @@ class Art:
         total_button_count = 0
         panel_count = 0
         for panel in page.panels:
-            total_button_count += len(panel.buttons)
-            panel_count += 1
+            plen = len(panel.buttons)
+            total_button_count += plen
+            if plen > 0:
+                panel_count += 1
+            # else:
+            #     print(f"No buttons for {panel.label} found during layout")
 
         # Calculate h/v counts for panels and buttons
         if self.horizontal:
@@ -1541,14 +1586,17 @@ class Art:
         x, y, max_x, max_y = panel.position
         panel_width = max_x - x
         panel_height = max_y - y
+        plen = len(panel.buttons)
+        # if plen == 0:
+        #     print(f"layout for panel '{panel.label}' without buttons!")
 
         distribute_evenly = False
         if self.horizontal:
-            button_horizontal = max(len(panel.buttons), 1)
+            button_horizontal = max(plen, 1)
             button_vertical = 1
         else:
             button_horizontal = 1
-            button_vertical = max(len(panel.buttons), 1)
+            button_vertical = max(plen, 1)
 
         all_button_width = (
             panel_width
