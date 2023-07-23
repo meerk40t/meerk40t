@@ -2932,6 +2932,25 @@ class Geomstr:
                 p2 = self.segments[p2][0]
         return abs(p1 - p2)
 
+    def near(self, p, distance):
+        """
+        Find the points in the geometry which are within distance units of p.
+
+        @param p:
+        @param distance:
+        @return:
+        """
+        geoms = self.segments[:self.index]
+        infos = geoms[:, 2]
+        a = np.real(infos).astype(int) & 0b1000 != 0
+        b = np.real(infos).astype(int) & 0b0100 != 0
+        c = np.real(infos).astype(int) | 0b1111 == 0  # False
+        d = np.real(infos).astype(int) & 0b0010 != 0
+        e = np.real(infos).astype(int) & 0b0001 != 0
+        v = np.dstack((a, b, c, d, e))[0]
+        q = abs(geoms - p) <= distance
+        return np.argwhere(q & v)
+
     #######################
     # Line-Like Functions
     #######################
