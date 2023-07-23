@@ -63,3 +63,5 @@ class ToolContainer(Widget):
         self.scene.context.signal("tool_changed", message)
 
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
+
+        self.scene.request_refresh()
