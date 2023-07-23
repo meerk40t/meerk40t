@@ -56,10 +56,6 @@ def process_event(
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
 
-    # Not during an edit !
-    if widget.scene.pane.active_tool.startswith("edit"):
-        return RESPONSE_CHAIN
-
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
     if event_type == "hover" and widget.hovering and not inside:
@@ -2575,9 +2571,6 @@ class SelectionWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         self.clear()  # Clearing children as we are generating them in a bit...
-        # Don't interfere during node editing
-        if self.scene.pane.active_tool.startswith("edit"):
-            return
         context = self.scene.context
         try:
             self.use_handle_rotate = context.enable_sel_rotate
