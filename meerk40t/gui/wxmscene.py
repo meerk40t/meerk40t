@@ -216,6 +216,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/linetext", LineTextTool)
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
+        context.register("tool/nodemove", NodeMoveTool)
 
         bsize_normal = STD_ICON_SIZE
 
