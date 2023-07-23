@@ -36,6 +36,7 @@ from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
+from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
