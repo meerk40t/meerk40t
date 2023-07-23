@@ -59,11 +59,11 @@ class NodeMoveTool(ToolWidget):
                 if not hasattr(node, "geometry"):
                     continue
                 geom = node.geometry
-                for idx, g in enumerate(geom.segments):
-                    if abs(pos - g[0]) < offset:
-                        points.append((g, idx, 0, node, geom))
-                    if abs(pos - g[-1]) < offset:
-                        points.append((g, idx, -1, node, geom))
+                for idx, segment in enumerate(geom.segments):
+                    if abs(pos - segment[0]) < offset:
+                        points.append((segment, idx, 0, node, geom))
+                    if abs(pos - segment[-1]) < offset:
+                        points.append((segment, idx, -1, node, geom))
             if not points:
                 return RESPONSE_DROP
             return RESPONSE_CONSUME
