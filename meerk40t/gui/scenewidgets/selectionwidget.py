@@ -2594,7 +2594,7 @@ class SelectionWidget(Widget):
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
         bounds = elements.selected_area()
-        matrix = self.parent.matrix
+        matrix = self.scene.widget_root.scene_widget.matrix
         if bounds is not None:
             try:
                 factor = math.sqrt(abs(matrix.determinant))
