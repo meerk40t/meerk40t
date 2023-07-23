@@ -47,13 +47,13 @@ class NodeMoveTool(ToolWidget):
         points = self.scene.context.elements.points
 
         if event_type == "leftdown":
-            offset = 5
-            try:
-                offset /= math.sqrt(
-                    abs(self.scene.widget_root.scene_widget.matrix.determinant)
-                )
-            except ZeroDivisionError:
-                pass
+            offset = 5000
+            # try:
+            #     offset /= math.sqrt(
+            #         abs(self.scene.widget_root.scene_widget.matrix.determinant)
+            #     )
+            # except ZeroDivisionError:
+            #     pass
             points.clear()
             for node in self.scene.context.elements.flat(emphasized=True):
                 if not hasattr(node, "geometry"):
