@@ -1029,6 +1029,23 @@ class TestGeomstr(unittest.TestCase):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
         self.assertEqual(gs.raw_length(), 400.0)
 
+    def test_geomstr_near(self):
+        """
+        Test geomstr near command to find number of segment points within a given range.
+        @return:
+        """
+        gs = Geomstr.circle(500, 0, 0)
+        q = gs.near(complex(0,0), 499)
+        self.assertEqual(len(q), 0)
+        q = gs.near(complex(500,0), 50)
+        self.assertEqual(len(q), 2)
+        gs.append(Geomstr.rect(0, 0, 10, 10))
+        gs.end()
+        gs.append(Geomstr.rect(5, 5, 10, 10))
+        q = gs.near(complex(0, 0), 499)
+        # 2 rectangles, 4 corners. 2 points each segment meeting at corners = 16
+        self.assertEqual(len(q), 16)
+
     def test_geomstr_area(self):
         gs = Geomstr.svg("M0,0 h100 v100 h-100 v-100 z")
         self.assertAlmostEqual(gs.area(), 100 * 100)
