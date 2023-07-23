@@ -70,9 +70,10 @@ class SceneToast:
         """
         self.countdown -= 1
         if self.countdown <= 20:
-            self.scene.request_refresh_for_animation()
+            self.scene.invalidate(self.left - 10, self.top - 10, self.right + 10, self.bottom + 10, animate=True)
         if self.countdown <= 0:
-            self.scene.request_refresh()
+            self.scene.invalidate(self.left - 10, self.top - 10, self.right + 10, self.bottom + 10, animate=False)
+            # self.scene.request_refresh()
             self.message = None
             self.token = None
         return self.countdown > 0
@@ -204,6 +205,8 @@ class Scene(Module, Job):
         self.colors = self.context.colors
 
         self.screen_refresh_is_requested = True
+        self.clip = wx.Rect(0,0,0,0)
+
         self.background_brush = wx.Brush(self.colors.color_background)
         self.has_background = False
         # If set this color will be used for the scene background (used during burn)
@@ -288,6 +291,13 @@ class Scene(Module, Job):
         except AttributeError:
             pass
 
+    def invalidate(self, min_x, min_y, max_x, max_y, animate=False):
+        self.clip.Union((min_x, min_y, max_x-min_x, max_y-min_y))
+        if animate:
+            self.request_refresh_for_animation()
+        else:
+            self.request_refresh()
+
     def animate(self, widget):
         with self._animate_lock:
             if widget not in self._adding_widgets:
@@ -351,6 +361,13 @@ class Scene(Module, Job):
             self.gui.set_buffer()
             buf = self.gui.scene_buffer
         dc = wx.MemoryDC()
+        if self.clip.width != 0 and self.clip.height != 0:
+            dc.SetClippingRegion(self.clip)
+            self.clip.SetX(0)
+            self.clip.SetY(0)
+            self.clip.SetWidth(0)
+            self.clip.SetHeight(0)
+
         dc.SelectObject(buf)
         if self.overrule_background is None:
             self.background_brush.SetColour(self.colors.color_background)
