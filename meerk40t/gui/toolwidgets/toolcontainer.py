@@ -1,7 +1,7 @@
 from meerk40t.gui.scene.sceneconst import HITCHAIN_DELEGATE_AND_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.affinemover import AffineMover
-from meerk40t.gui.scenewidgets.nodeeditor import NodeEditor
+from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
 
 
@@ -18,7 +18,7 @@ class ToolContainer(Widget):
         self.selection_widgets = {
             "selection": SelectionWidget(scene),
             "affine": AffineMover(scene),
-            "vertex_editor": NodeEditor(scene),
+            "vertex": NodeSelector(scene),
         }
         self.set_tool(None)
 
