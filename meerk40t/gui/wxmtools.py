@@ -38,8 +38,6 @@ def register_panel_tools(window, context):
         aui.AuiPaneInfo()
         .Name("tools")
         .Left()
-        .TopDockable(False)
-        .BottomDockable(False)
         .BestSize(minh, 300)
         .FloatingSize(minh, 640)
         .Caption(_("Tools"))
@@ -56,7 +54,7 @@ def register_panel_tools(window, context):
 class MKToolbarPanel(RibbonBarPanel):
     def __init__(self, parent, id, context=None, pane=None, **kwds):
         RibbonBarPanel.__init__(self, parent, id, context, **kwds)
-        self.art.horizontal = False
+        self.art.orientation = self.art.RIBBON_ORIENTATION_AUTO
         self.art.show_labels = False
         self.pane = pane
         # Define Ribbon.
