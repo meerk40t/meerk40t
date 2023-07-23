@@ -1,6 +1,6 @@
 from math import sqrt
 
-from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
+from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS, DRAW_MODE_EDIT
 from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
@@ -52,6 +52,8 @@ class ElementsWidget(Widget):
                 zoomscale=zoom_scale,
                 alpha=96,
             )
+        if self.scene.pane.tool_container.mode == "vertex":
+            draw_mode |= DRAW_MODE_EDIT
         self.renderer.render(
             context.elements.elems_nodes(),
             gc,
