@@ -1,14 +1,16 @@
 """
-Affinemover is a replacement for SelectionWidget. It performs the selected widget manipulations toggling itself in
-place of the selectionwidget when `affinemover` console command is called. It's generally unusable but performs all
-affine transformations on selected objects by moving three points either locked, mirrored, or anchored.
+Node editor is a selection tool with node moving capabilities.
 """
+
 import math
 
 import wx
 
 from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_DELEGATE, HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME, RESPONSE_DROP,
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
 )
 from meerk40t.gui.scene.widget import Widget
 
@@ -62,7 +64,9 @@ class NodeEditor(Widget):
         if event_type == "leftdown":
             offset = 5
             try:
-                offset /= math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+                offset /= math.sqrt(
+                    abs(self.scene.widget_root.scene_widget.matrix.determinant)
+                )
             except ZeroDivisionError:
                 pass
             self._select_points.clear()
@@ -71,9 +75,9 @@ class NodeEditor(Widget):
                     continue
                 geom = node.geometry
                 for idx, g in enumerate(geom.segments):
-                    if abs(pos-g[0]) < offset:
+                    if abs(pos - g[0]) < offset:
                         self._select_points.append((g, idx, 0, node, geom))
-                    if abs(pos-g[-1]) < offset:
+                    if abs(pos - g[-1]) < offset:
                         self._select_points.append((g, idx, -1, node, geom))
             if not self._select_points:
                 return RESPONSE_DROP
@@ -95,7 +99,9 @@ class NodeEditor(Widget):
             return
         offset = 5
         try:
-            offset /= math.sqrt(abs(self.scene.widget_root.scene_widget.matrix.determinant))
+            offset /= math.sqrt(
+                abs(self.scene.widget_root.scene_widget.matrix.determinant)
+            )
         except ZeroDivisionError:
             pass
 
