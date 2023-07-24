@@ -52,23 +52,35 @@ class NodeMoveTool(ToolWidget):
             offset = 5000
             points.clear()
             for node in self.scene.context.elements.flat(emphasized=True):
-                if not hasattr(node, "geometry"):
+                if not hasattr(node, "as_geometry"):
                     continue
                 geom_transformed = node.as_geometry()
-                geom_original = node.geometry
-                matrix = ~node.matrix
                 for index_line, index_pos in geom_transformed.near(pos, offset):
-                    points.append((index_line, index_pos, geom_transformed, geom_original, node, matrix))
+                    points.append([index_line, index_pos, geom_transformed, node])
             if not points:
                 return RESPONSE_DROP
             return RESPONSE_CONSUME
         if event_type == "move":
-            for index_line, index_pos, geom_t, geom_o, node, matrix in points:
-                pos_t = complex(
-                    pos.real * matrix.a + pos.imag * matrix.c + matrix.e,
-                    pos.real * matrix.b + pos.imag * matrix.d + matrix.f,
-                )
-                geom_o.segments[index_line][index_pos] = pos_t
+            for data in points:
+                index_line, index_pos, geom_t, node = data
+                if not hasattr(node, "geometry"):
+                    node = node.replace_node(
+                        keep_children=True,
+                        stroke=node.stroke,
+                        fill=node.fill,
+                        stroke_width=node.stroke_width,
+                        stroke_scale=node.stroke_scale,
+                        filrule=node.fillrule,
+                        id=node.id,
+                        label=node.label,
+                        lock=node.lock,
+                        type="elem path",
+                        geometry=geom_t,
+                    )
+                    data[3] = node
+                geom_t.segments[index_line][index_pos] = pos
+                node.geometry = geom_t
+                node.matrix.reset()
                 node.altered()
             return RESPONSE_CONSUME
         if event_type == "leftup":
