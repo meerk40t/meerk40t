@@ -64,7 +64,7 @@ class NodeMoveTool(ToolWidget):
             for data in points:
                 index_line, index_pos, geom_t, node = data
                 if not hasattr(node, "geometry"):
-                    node = node.replace_node(
+                    new_node = node.replace_node(
                         keep_children=True,
                         stroke=node.stroke,
                         fill=node.fill,
@@ -77,7 +77,10 @@ class NodeMoveTool(ToolWidget):
                         type="elem path",
                         geometry=geom_t,
                     )
-                    data[3] = node
+                    for p in points:
+                        if p[3] is node:
+                            p[3] = new_node
+                    node = new_node
                 geom_t.segments[index_line][index_pos] = pos
                 node.geometry = geom_t
                 node.matrix.reset()
