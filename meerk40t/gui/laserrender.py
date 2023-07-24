@@ -371,6 +371,8 @@ class LaserRender:
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
                     pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_ARC:
                     radius = Geomstr.arc_radius(None, line=e)
                     center = Geomstr.arc_center(None, line=e)
@@ -385,12 +387,16 @@ class LaserRender:
                         clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
                     )
                     pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
                     )
                     pts.append(c0)
                     pts.append(c1)
+                    pts.append(start)
+                    pts.append(end)
                 else:
                     print(f"Unknown seg_type: {seg_type}")
             if subpath.first_point == end:
