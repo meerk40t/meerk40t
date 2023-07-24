@@ -76,6 +76,82 @@ class RectSelectWidget(Widget):
 
     store_last_msg = ""
 
+    @property
+    def sector(self):
+        sx = self.start_location[0]
+        sy = self.start_location[1]
+        ex = self.end_location[0]
+        ey = self.end_location[1]
+        if sx <= ex:
+            if sy <= ey:
+                return 0
+            else:
+                return 1
+        else:
+            if sy <= ey:
+                return 3
+            else:
+                return 2
+
+    def rect_select(self, elements, sx, sy, ex, ey):
+        sector = self.sector
+        for node in elements.elems():
+            try:
+                q = node.bounds
+            except AttributeError:
+                continue  # This element has no bounds.
+            if q is None:
+                continue
+            if hasattr(node, "can_emphasize") and not node.can_emphasize:
+                continue
+            xmin = q[0]
+            ymin = q[1]
+            xmax = q[2]
+            ymax = q[3]
+            # no hit
+            cover = 0
+            # Check Hit
+            # The rectangles don't overlap if
+            # one rectangle's minimum in some dimension
+            # is greater than the other's maximum in
+            # that dimension.
+            if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
+                cover = self.SELECTION_TOUCH
+                # If selection rect is fully inside an object then ignore
+                if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
+                    cover = 0
+
+            # Check Cross
+            if (
+                    ((sx <= xmin) and (xmax <= ex))
+                    and not ((sy > ymax) or (ey < ymin))
+                    or ((sy <= ymin) and (ymax <= ey))
+                    and not ((sx > xmax) or (ex < xmin))
+            ):
+                cover = self.SELECTION_CROSS
+            # Check contain
+            if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
+                cover = self.SELECTION_ENCLOSE
+
+            if "shift" in self.modifiers:
+                # Add Selection
+                if cover >= self.selection_method[sector]:
+                    node.emphasized = True
+                    node.selected = True
+            elif "ctrl" in self.modifiers:
+                # Invert Selection
+                if cover >= self.selection_method[sector]:
+                    node.emphasized = not node.emphasized
+                    node.selected = node.emphasized
+            else:
+                # Replace Selection
+                if cover >= self.selection_method[sector]:
+                    node.emphasized = True
+                    node.selected = True
+                else:
+                    node.emphasized = False
+                    node.selected = False
+
     def update_statusmsg(self, value):
         if value != self.store_last_msg:
             self.store_last_msg = value
@@ -108,81 +184,11 @@ class RectSelectWidget(Widget):
             _ = self.scene.context._
             self.update_statusmsg(_("Status"))
             elements.validate_selected_area()
-            sx = self.start_location[0]
-            sy = self.start_location[1]
-            ex = self.end_location[0]
-            ey = self.end_location[1]
-            if sx <= ex:
-                if sy <= ey:
-                    sector = 0
-                else:
-                    sector = 1
-            else:
-                if sy <= ey:
-                    sector = 3
-                else:
-                    sector = 2
-
             sx = min(self.start_location[0], self.end_location[0])
             sy = min(self.start_location[1], self.end_location[1])
             ex = max(self.start_location[0], self.end_location[0])
             ey = max(self.start_location[1], self.end_location[1])
-            for node in elements.elems():
-                try:
-                    q = node.bounds
-                except AttributeError:
-                    continue  # This element has no bounds.
-                if q is None:
-                    continue
-                if hasattr(node, "can_emphasize") and not node.can_emphasize:
-                    continue
-                xmin = q[0]
-                ymin = q[1]
-                xmax = q[2]
-                ymax = q[3]
-                # no hit
-                cover = 0
-                # Check Hit
-                # The rectangles don't overlap if
-                # one rectangle's minimum in some dimension
-                # is greater than the other's maximum in
-                # that dimension.
-                if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
-                    cover = self.SELECTION_TOUCH
-                    # If selection rect is fully inside an object then ignore
-                    if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
-                        cover = 0
-
-                # Check Cross
-                if (
-                    ((sx <= xmin) and (xmax <= ex))
-                    and not ((sy > ymax) or (ey < ymin))
-                    or ((sy <= ymin) and (ymax <= ey))
-                    and not ((sx > xmax) or (ex < xmin))
-                ):
-                    cover = self.SELECTION_CROSS
-                # Check contain
-                if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
-                    cover = self.SELECTION_ENCLOSE
-
-                if "shift" in self.modifiers:
-                    # Add Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = True
-                        node.selected = True
-                elif "ctrl" in self.modifiers:
-                    # Invert Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = not node.emphasized
-                        node.selected = node.emphasized
-                else:
-                    # Replace Selection
-                    if cover >= self.selection_method[sector]:
-                        node.emphasized = True
-                        node.selected = True
-                    else:
-                        node.emphasized = False
-                        node.selected = False
+            self.rect_select(elements, sx, sy, ex, ey)
 
             self.scene.request_refresh()
             self.scene.context.signal("select_emphasized_tree", 0)
@@ -291,16 +297,7 @@ class RectSelectWidget(Widget):
             y0 = self.start_location[1]
             x1 = self.end_location[0]
             y1 = self.end_location[1]
-            if x0 <= x1:
-                if y0 <= y1:
-                    sector = 0
-                else:
-                    sector = 1
-            else:
-                if y0 <= y1:
-                    sector = 3
-                else:
-                    sector = 2
+            sector = self.sector
 
             _ = self.scene.context._
             statusmsg = _(self.selection_style[self.selection_method[sector] - 1][2])
