@@ -1339,6 +1339,11 @@ class ShadowTree:
             # Just for the optical impression (who understands what a "Rect: None" means),
             # lets replace some of the more obvious ones...
             mymap = node.default_map()
+            # We change power to either ppi or percent
+            if "power" in mymap and "ppi" in mymap and "percent" in mymap:
+                self.context.device.setting(bool, "use_percent_for_power_display", False)
+                if self.context.device.use_percent_for_power_display:
+                    mymap["power"] = mymap["percent"]
             for key in mymap:
                 if hasattr(node, key) and key in mymap and mymap[key] == "None":
                     if getattr(node, key) is None:
