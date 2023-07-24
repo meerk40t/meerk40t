@@ -106,6 +106,10 @@ class CutOpNode(Node, Parameters):
         default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["percent"] = "100%"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
+
         return default_map
 
     def drop(self, drag_node, modify=True):

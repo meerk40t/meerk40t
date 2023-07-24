@@ -58,7 +58,7 @@ class ImageOpNode(Node, Parameters):
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Image"
-        default_map["dpi"] = str(self.dpi)
+        default_map["dpi"] = str(int(self.dpi))
         default_map["danger"] = "❌" if self.dangerous else ""
         default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
@@ -95,6 +95,9 @@ class ImageOpNode(Node, Parameters):
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
         # print(self.dangerous, self.stopop, self.raster_direction)
+        default_map["percent"] = "100%"
+        if self.power is not None:
+            default_map["percent"] = f"{self.power / 10.0:.0f}%"
         return default_map
 
     def drop(self, drag_node, modify=True):
