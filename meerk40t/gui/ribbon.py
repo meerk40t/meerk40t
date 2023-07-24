@@ -51,6 +51,9 @@ from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
+SMALL_RESIZE_FACTOR = 2 / 3
+TINY_RESIZE_FACTOR = 0.5
+
 
 class DropDown:
     """
@@ -170,14 +173,14 @@ class Button:
             # so we set the minimum size
             siz = icon.GetBitmap().GetSize()
             wd = max(self.default_width, siz[0])
-            small_resize = int(2 / 3 * wd)
-            tiny_resize = int(0.5 * wd)
+            small_resize = int(SMALL_RESIZE_FACTOR * wd)
+            tiny_resize = int(TINY_RESIZE_FACTOR * wd)
             # print (f"No size parameter given for: {label}")
 
         else:
             self.default_width = resize_param
-            small_resize = int(2 / 3 * resize_param)
-            tiny_resize = int(0.5 * resize_param)
+            small_resize = int(SMALL_RESIZE_FACTOR * resize_param)
+            tiny_resize = int(TINY_RESIZE_FACTOR * resize_param)
 
         top = self.parent.parent.parent
         if top.art.dark_mode:
@@ -877,6 +880,14 @@ class RibbonBarPanel(wx.Control):
 
         self.Refresh()  # Paint buffer on screen.
 
+    def prefer_horizontal(self):
+        width, height = self.ClientSize
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+        return width >= height
+
     def _set_buffer(self):
         """
         Set the value for the self._Buffer bitmap equal to the panel's clientSize.
@@ -1056,8 +1067,11 @@ class RibbonBarPanel(wx.Control):
 
 class Art:
     def __init__(self, parent):
+        self.RIBBON_ORIENTATION_AUTO = 0
+        self.RIBBON_ORIENTATION_HORIZONTAL = 1
+        self.RIBBON_ORIENTATION_VERTICAL = 2
+        self.orientation = self.RIBBON_ORIENTATION_AUTO
         self.parent = parent
-        self.horizontal = True
         self.between_button_buffer = 3
         self.panel_button_buffer = 3
         self.page_panel_buffer = 3
@@ -1213,6 +1227,7 @@ class Art:
             # print(f"Panel position was not set for {panel.label}")
             return
         x, y, x1, y1 = panel.position
+        # print(f"Painting panel {panel.label}: {panel.position}")
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.Pen(self.black_color))
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
@@ -1450,12 +1465,13 @@ class Art:
                 continue
 
             page_width = ribbon_width - 2 * self.edge_page_buffer
-            page_height = ribbon_height - self.edge_page_buffer - self.tab_height
+            page_height = ribbon_height - self.edge_page_buffer
 
             # Page start position.
             x = self.edge_page_buffer
             if has_page_header:
                 y = self.tab_height
+                page_height -= self.tab_height
             else:
                 y = 0
             # Set page position.
@@ -1466,7 +1482,8 @@ class Art:
                 y + page_height,
             )
 
-            # print(f"page: {page.position}")
+            # if self.parent.visible_pages() == 1:
+            #     print(f"page: {page.position}")
             self.page_layout(dc, page)
 
     def page_layout(self, dc, page):
@@ -1481,7 +1498,10 @@ class Art:
         x, y, max_x, max_y = page.position
         page_width = max_x - x
         page_height = max_y - y
-
+        horizontal = self.parent.prefer_horizontal()
+        is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
+            horizontal and self.orientation == self.RIBBON_ORIENTATION_AUTO
+        )
         # Count buttons and panels
         total_button_count = 0
         panel_count = 0
@@ -1492,9 +1512,8 @@ class Art:
                 panel_count += 1
             # else:
             #     print(f"No buttons for {panel.label} found during layout")
-
         # Calculate h/v counts for panels and buttons
-        if self.horizontal:
+        if is_horizontal:
             all_button_horizontal = max(total_button_count, 1)
             all_button_vertical = 1
 
@@ -1523,20 +1542,20 @@ class Art:
         for p, panel in enumerate(page.panels):
             if p == 0:
                 # Remove high-and-low perpendicular panel_button_buffer
-                if self.horizontal:
+                if is_horizontal:
                     button_height_across_panels -= 2 * self.panel_button_buffer
                 else:
                     button_width_across_panels -= 2 * self.panel_button_buffer
             for b, button in enumerate(panel.buttons):
                 if b == 0:
                     # First and last buffers.
-                    if self.horizontal:
+                    if is_horizontal:
                         button_width_across_panels -= 2 * self.panel_button_buffer
                     else:
                         button_height_across_panels -= 2 * self.panel_button_buffer
                 else:
                     # Each gap between buttons
-                    if self.horizontal:
+                    if is_horizontal:
                         button_width_across_panels -= self.between_button_buffer
                     else:
                         button_height_across_panels -= self.between_button_buffer
@@ -1550,12 +1569,12 @@ class Art:
         for p, panel in enumerate(page.panels):
             if p != 0:
                 # Non-first move between panel gap.
-                if self.horizontal:
+                if is_horizontal:
                     x += self.between_panel_buffer
                 else:
                     y += self.between_panel_buffer
 
-            if self.horizontal:
+            if is_horizontal:
                 single_panel_horizontal = max(len(panel.buttons), 1)
                 single_panel_vertical = 1
             else:
@@ -1574,10 +1593,11 @@ class Art:
             )
 
             panel.position = x, y, x + panel_width, y + panel_height
-            # print(f"panel: {panel.position}")
+            # if self.parent.visible_pages() == 1:
+            #     print(f"panel: {panel.position}")
             self.panel_layout(dc, panel)
 
-            if self.horizontal:
+            if is_horizontal:
                 x += panel_width
             else:
                 y += panel_height
@@ -1586,12 +1606,17 @@ class Art:
         x, y, max_x, max_y = panel.position
         panel_width = max_x - x
         panel_height = max_y - y
+        # print(f"Panel: {panel.label}: {panel.position}")
+        horizontal = self.parent.prefer_horizontal()
+        is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
+            horizontal and self.orientation == self.RIBBON_ORIENTATION_AUTO
+        )
         plen = len(panel.buttons)
         # if plen == 0:
         #     print(f"layout for panel '{panel.label}' without buttons!")
 
         distribute_evenly = False
-        if self.horizontal:
+        if is_horizontal:
             button_horizontal = max(plen, 1)
             button_vertical = 1
         else:
@@ -1611,19 +1636,40 @@ class Art:
 
         button_width = all_button_width / button_horizontal
         button_height = all_button_height / button_vertical
-        button_width = max(18, button_width)
-        button_height = max(18, button_height)
+        # 'tiny'-size of a default 50x50 icon
+        minim_size = int(TINY_RESIZE_FACTOR * 50)
+        button_width = max(minim_size, button_width)
+        button_height = max(minim_size, button_height)
 
         x += self.panel_button_buffer
         y += self.panel_button_buffer
         panel._overflow.clear()
         panel._overflow_position = None
+        lastbutton = None
+        for b, button in enumerate(panel.buttons):
+            button.bitmapsize = "large"
+            bitmap_width, bitmap_height = button.bitmap_large.Size
+            if bitmap_height > button_height or bitmap_width > button_width:
+                button.bitmapsize = "small"
+                bitmap_width, bitmap_height = button.bitmap_small.Size
+                if bitmap_height > button_height or bitmap_width > button_width:
+                    button.bitmapsize = "tiny"
+            self.button_calc(dc, button)
+            if b == 0:
+                max_width = button.min_width
+                max_height = button.min_height
+            else:
+                max_width = max(max_width, button.min_width)
+                max_height = max(max_height, button.min_height)
 
+        target_height = button_height
+        target_width = button_width
+        # if self.parent.visible_pages() == 1:
+        #     print(f"Target: {target_width}x{target_height}")
         for b, button in enumerate(panel.buttons):
             button.overflow = False
-            self.button_calc(dc, button)
-            this_width = button_width
-            this_height = button_height
+            this_width = target_width
+            this_height = target_height
             local_width = 1.25 * button.min_width
             local_height = 1.25 * button.min_height
             if not distribute_evenly:
@@ -1633,44 +1679,114 @@ class Art:
                     this_height = min(this_height, local_height)
             if b != 0:
                 # Move across button gap if not first button.
-                if self.horizontal:
+                if is_horizontal:
                     x += self.between_button_buffer
                 else:
                     y += self.between_button_buffer
             button.position = x, y, x + this_width, y + this_height
-            if self.horizontal:
+            if is_horizontal:
+                is_overflow = False
                 if x + this_width > panel.position[2]:
+                    is_overflow = True
+                    # Let's establish whether there is place for another row of icons underneath
+                    # print(
+                    #     f"Horizontal Overflow: y={y}, b-height={max_height}, new max={y + 2 * max_height + self.panel_button_buffer}, panel: {panel.position[3]}"
+                    # )
+                    if (
+                        y + 2 + max_height + self.panel_button_buffer
+                        < panel.position[3]
+                    ):
+                        is_overflow = False
+                        target_height = max_height
+                        # Reset height of all previous buttons:
+                        for bb, bbutton in enumerate(panel.buttons):
+                            if bb >= b:
+                                break
+                            bbutton.position = (
+                                bbutton.position[0],
+                                bbutton.position[1],
+                                bbutton.position[2],
+                                bbutton.position[1] + max_height,
+                            )
+                        x = panel.position[0] + self.panel_button_buffer
+                        y += max_height + self.panel_button_buffer
+                        button.position = x, y, x + this_width, y + max_height
+                if is_overflow:
                     button.overflow = True
                     panel._overflow.append(button)
                     if panel._overflow_position is None:
                         ppx, ppy, ppx1, ppy1 = panel.position
                         panel._overflow_position = (ppx1 - 15, ppy, ppx1, ppy1)
+                        if (
+                            lastbutton is not None
+                            and lastbutton.position[2] >= ppx1 - 15
+                        ):
+                            # That overlaps, not good, so add this button
+                            # to the overflow area too
+                            lastbutton.overflow = True
+                            panel._overflow.insert(0, lastbutton)
             else:
+                is_overflow = False
                 if y + this_height > panel.position[3]:
+                    is_overflow = True
+                    # print(
+                    #     f"Vertical Overflow: x={x}, b-width={max_width}, new max={x + 2 * max_width + self.panel_button_buffer}, panel: {panel.position[2]}"
+                    # )
+                    # Let's establish whether there is place for another column of icons to the right
+                    if x + 2 * max_width + self.panel_button_buffer < panel.position[2]:
+                        is_overflow = False
+                        target_width = max_width
+                        # Reset width of all previous buttons:
+                        for bb, bbutton in enumerate(panel.buttons):
+                            if bb >= b:
+                                break
+                            bbutton.position = (
+                                bbutton.position[0],
+                                bbutton.position[1],
+                                bbutton.position[0] + max_width,
+                                bbutton.position[3],
+                            )
+                        y = panel.position[1] + self.panel_button_buffer
+                        x += max_width + self.panel_button_buffer
+                        button.position = x, y, x + max_width, y + this_height
+                if is_overflow:
                     button.overflow = True
                     panel._overflow.append(button)
                     if panel._overflow_position is None:
                         ppx, ppy, ppx1, ppy1 = panel.position
                         panel._overflow_position = (ppx, ppy1 - 15, ppx1, ppy1)
+                        if (
+                            lastbutton is not None
+                            and lastbutton.position[3] >= ppy1 - 15
+                        ):
+                            # That overlaps, not good, so add this button
+                            # to the overflow area too
+                            lastbutton.overflow = True
+                            panel._overflow.insert(0, lastbutton)
 
             # print(f"button: {button.position}")
             self.button_layout(dc, button)
 
-            if self.horizontal:
+            if is_horizontal:
                 x += this_width
             else:
                 y += this_height
+            lastbutton = button
 
     def button_calc(self, dc: wx.DC, button):
+        default_w = button.default_width
         if button.bitmapsize == "small":
+            default_w = int(SMALL_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_small
         elif button.bitmapsize == "tiny":
+            default_w = int(TINY_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_tiny
         else:
+            default_w = button.default_width
             bitmap = button.bitmap_large
         bitmap_width, bitmap_height = bitmap.Size
-        bitmap_height = max(bitmap_height, button.default_width)
-        bitmap_width = max(bitmap_width, button.default_width)
+        bitmap_height = max(bitmap_height, default_w)
+        bitmap_width = max(bitmap_width, default_w)
 
         # Calculate text height/width
         text_width = 0
@@ -1683,16 +1799,16 @@ class Art:
 
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
-        button_height = (
-            bitmap_height
-            # + dropdown_height
-            + self.panel_button_buffer
-        )
+        button_height = bitmap_height
         if button.label and self.show_labels:
-            button_height += self.bitmap_text_buffer + text_height
+            # button_height += + self.panel_button_buffer
+            button_height += (
+                +self.panel_button_buffer + self.bitmap_text_buffer + text_height
+            )
 
         button.min_width = button_width
         button.min_height = button_height
+        # print (f"layout for {button.label} ({button.bitmapsize}): {button.min_width}x{button.min_height}, icon={bitmap_width}x{bitmap_height}")
 
     def button_layout(self, dc: wx.DC, button):
         x, y, max_x, max_y = button.position
