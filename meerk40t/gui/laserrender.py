@@ -343,7 +343,10 @@ class LaserRender:
 
     def make_geomstr(self, gc, path, node=None):
         """
-        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
+
+        This also creates a point list of the relevant nodes and creates a ._cache_edit value to be used by node
+        editing view.
         """
         p = gc.CreatePath()
         pts = list()
@@ -393,10 +396,10 @@ class LaserRender:
             if subpath.first_point == end:
                 p.CloseSubpath()
         if node is not None:
-            p2 = gc.CreatePath()
+            graphics_path_2 = gc.CreatePath()
             for pt in pts:
-                p2.AddCircle(pt.real, pt.imag, 5000)
-            node._cache_edit = p2
+                graphics_path_2.AddCircle(pt.real, pt.imag, 5000)
+            node._cache_edit = graphics_path_2
 
         return p
 
