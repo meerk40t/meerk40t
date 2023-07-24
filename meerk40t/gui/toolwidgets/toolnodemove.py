@@ -42,32 +42,34 @@ class NodeMoveTool(ToolWidget):
         Returns:
             Indicator how to proceed with this event after its execution (consume, chain etc)
         """
-
-        pos = complex(*space_pos[:2])
+        try:
+            pos = complex(*space_pos[:2])
+        except TypeError:
+            return RESPONSE_CONSUME
         points = self.scene.context.elements.points
 
         if event_type == "leftdown":
             offset = 5000
-            # try:
-            #     offset /= math.sqrt(
-            #         abs(self.scene.widget_root.scene_widget.matrix.determinant)
-            #     )
-            # except ZeroDivisionError:
-            #     pass
             points.clear()
             for node in self.scene.context.elements.flat(emphasized=True):
                 if not hasattr(node, "geometry"):
                     continue
-                geom = node.geometry
-                for idx, s in geom.near(pos, offset):
-                    points.append((geom.segments[idx], idx, s, node, geom))
+                geom_transformed = node.as_geometry()
+                geom_original = node.geometry
+                matrix = ~node.matrix
+                for index_line, index_pos in geom_transformed.near(pos, offset):
+                    points.append((index_line, index_pos, geom_transformed, geom_original, node, matrix))
             if not points:
                 return RESPONSE_DROP
             return RESPONSE_CONSUME
         if event_type == "move":
-            for s, idx, n, s_node, s_geom in points:
-                s[n] = pos
-                s_node.altered()
+            for index_line, index_pos, geom_t, geom_o, node, matrix in points:
+                pos_t = complex(
+                    pos.real * matrix.a + pos.imag * matrix.c + matrix.e,
+                    pos.real * matrix.b + pos.imag * matrix.d + matrix.f,
+                )
+                geom_o.segments[index_line][index_pos] = pos_t
+                node.altered()
             return RESPONSE_CONSUME
         if event_type == "leftup":
             return RESPONSE_CONSUME
