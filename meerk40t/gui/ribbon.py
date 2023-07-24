@@ -1189,6 +1189,8 @@ class Art:
         @param page:
         @return:
         """
+        horizontal = self.parent.prefer_horizontal()
+
         dc.SetPen(wx.Pen(self.black_color))
         if page is not self.current_page:
             dc.SetBrush(wx.Brush(self.button_face))
@@ -1201,9 +1203,15 @@ class Art:
         x, y, x1, y1 = page.tab_position
         dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         dc.SetFont(self.default_font)
-        dc.DrawText(
-            page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
-        )
+        if horizontal:
+            dc.DrawText(
+                page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
+            )
+        else:
+            dc.DrawRotatedText(
+                page.label, int(x + self.tab_text_buffer), int(y1 - self.tab_text_buffer), 90
+            )
+
 
     def _paint_background(self, dc: wx.DC):
         """
@@ -1436,8 +1444,9 @@ class Art:
         """
         ribbon_width, ribbon_height = dc.Size
         # print(f"ribbon: {dc.Size}")
-
+        horizontal = self.parent.prefer_horizontal()
         xpos = 0
+        ypos = 0
         has_page_header = ribbon.visible_pages() > 1
         for pn, page in enumerate(ribbon.pages):
             if not page.visible:
@@ -1449,31 +1458,62 @@ class Art:
                 line_width, line_height = dc.GetTextExtent(page.label)
 
                 tabwidth = max(line_width + 2 * self.tab_tab_buffer, self.tab_width)
-                page.tab_position = (
-                    pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer,
-                    0,
-                    pn * self.tab_tab_buffer
-                    + xpos
-                    + tabwidth
-                    + self.tab_initial_buffer,
-                    self.tab_height * 2,
-                )
-                xpos += tabwidth
+                if horizontal:
+                    t_x = pn * self.tab_tab_buffer + xpos + self.tab_initial_buffer
+                    t_x1 = t_x + tabwidth
+                    t_y = ypos
+                    t_y1 = t_y + self.tab_height * 2
+                else:
+                    t_y = pn * self.tab_tab_buffer + ypos + self.tab_initial_buffer
+                    t_y1 = t_y + tabwidth
+                    t_x = xpos
+                    t_x1 = t_x + self.tab_height * 2
+                page.tab_position = (t_x, t_y, t_x1, t_y1)
+                if horizontal:
+                    xpos += tabwidth
+                else:
+                    ypos += tabwidth
             else:
                 page.tab_position = (0, 0, 0, 0)
             if page is not self.current_page:
                 continue
 
-            page_width = ribbon_width - 2 * self.edge_page_buffer
+            page_width = ribbon_width - self.edge_page_buffer
             page_height = ribbon_height - self.edge_page_buffer
+            if horizontal:
+                page_width -= self.edge_page_buffer
+                x = self.edge_page_buffer
+                if has_page_header:
+                    y = self.tab_height
+                    page_height -= self.tab_height
+                else:
+                    x = self.edge_page_buffer
+                    y = 0
+            else:
+                page_height -= self.edge_page_buffer
+                y = self.edge_page_buffer
+                if has_page_header:
+                    x = self.tab_height
+                    page_width -= self.tab_height
+                else:
+                    y = self.edge_page_buffer
+                    x = 0
 
             # Page start position.
-            x = self.edge_page_buffer
-            if has_page_header:
-                y = self.tab_height
-                page_height -= self.tab_height
+            if horizontal:
+                if has_page_header:
+                    y = self.tab_height
+                    page_height += self.edge_page_buffer
+                else:
+                    x = self.edge_page_buffer
+                    y = 0
             else:
-                y = 0
+                if has_page_header:
+                    x = self.tab_height
+                    page_width += self.edge_page_buffer
+                else:
+                    y = self.edge_page_buffer
+                    x = 0
             # Set page position.
             page.position = (
                 x,
