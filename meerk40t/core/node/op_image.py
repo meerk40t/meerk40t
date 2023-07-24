@@ -96,8 +96,10 @@ class ImageOpNode(Node, Parameters):
         default_map["overscan"] = f"±{self.overscan}"
         # print(self.dangerous, self.stopop, self.raster_direction)
         default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
         if self.power is not None:
             default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
         return default_map
 
     def drop(self, drag_node, modify=True):

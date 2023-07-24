@@ -107,8 +107,10 @@ class CutOpNode(Node, Parameters):
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["percent"] = "100%"
+        default_map["ppi"] = "default"
         if self.power is not None:
             default_map["percent"] = f"{self.power / 10.0:.0f}%"
+            default_map["ppi"] = f"{self.power:.0f}"
 
         return default_map
 
