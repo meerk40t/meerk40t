@@ -78,7 +78,20 @@ class FormatterPanel(wx.Panel):
                 # wasnt in list...
                 pass
 
-        choices = []
+        self.context.setting(bool, "use_percent_for_power_display", False)
+        choices = [
+            {
+                "attr": "use_percent_for_power_display",
+                "object": self.context,
+                "default": False,
+                "type": bool,
+                "label": _("Display power as a percentage"),
+                "tip": _("Active: Full power will be shown as 100%" + "\n" +
+                         "Inactive: Full power will be shown as 1000 ppi"),
+                "subsection": "_10_General",
+                "signals": ("rebuild_tree", "power_percent"),
+            },
+        ]
         for node in self.node_list:
             imgsize = 20
             if node in images:
