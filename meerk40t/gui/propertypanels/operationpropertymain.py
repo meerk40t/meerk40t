@@ -1,7 +1,7 @@
 import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel, StaticBoxSizer
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, lookup_listener
 
 from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Angle, Color, Matrix
@@ -435,6 +435,8 @@ class SpeedPpiPanel(wx.Panel):
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        self.use_percent = self.context.device.use_percent_for_power_display
         self.power_sizer = StaticBoxSizer(
             self, wx.ID_ANY, _("Power (ppi)"), wx.HORIZONTAL
         )
@@ -448,22 +450,11 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_power.set_range(0, 1000)
-        self.text_power.set_warn_level(power_min, power_max)
-        OPERATION_POWER_TOOLTIP = _(
-            _("Pulses Per Inch - This is software created laser power control.")
-            + "\n"
-            + _("1000 is always on, 500 is half power (fire every other step).")
-            + "\n"
-            + _(
-                'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
-            )
-        )
-        self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
+        self.trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
+        self.update_power_properties()
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
+        self.power_sizer.Add(self.trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=_("/1000"))
-        self.power_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         freq = self.context.device.lookup("frequency")
         if freq:
@@ -507,7 +498,70 @@ class SpeedPpiPanel(wx.Panel):
         pass
 
     def pane_show(self):
-        pass
+        self.update_power_properties()
+
+    def on_device_update(self):
+        self.update_power_properties()
+        self.set_widgets(self.operation)
+
+    def update_power_properties(self):
+        speed_min = None
+        speed_max = None
+        power_min = None
+        power_max = None
+
+        op = self.operation.type
+        if op.startswith("op "):  # Should, shouldn't it?
+            op = op[3:]
+        else:
+            op = ""
+        if op != "":
+            label = "dangerlevel_op_" + op
+            warning = [False, 0, False, 0, False, 0, False, 0]
+            if hasattr(self.context.device, label):
+                dummy = getattr(self.context.device, label)
+                if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
+                    warning = dummy
+            if warning[0]:
+                power_min = warning[1]
+            if warning[2]:
+                power_max = warning[3]
+            if warning[4]:
+                speed_min = warning[5]
+            if warning[6]:
+                speed_max = warning[7]
+        self.text_speed.set_warn_level(speed_min, speed_max)
+        self.use_percent = self.context.device.use_percent_for_power_display
+        if self.use_percent:
+            self.trailer_text.SetLabel("%")
+            self.text_power._check = "percent"
+            if power_min is not None:
+                power_min /= 10
+            if power_max is not None:
+                power_max /= 10
+            self.text_power.set_range(0, 100)
+            self.text_power.set_warn_level(power_min, power_max)
+            OPERATION_POWER_TOOLTIP = _(
+                "% of maximum power - This is a percentage of the maximum power of the laser."
+            )
+            self.power_sizer.SetLabel(_("Power"))
+        else:
+            self.trailer_text.SetLabel(_("/1000"))
+            self.text_power._check = "float"
+            self.text_power.set_range(0, 1000)
+            self.text_power.set_warn_level(power_min, power_max)
+            OPERATION_POWER_TOOLTIP = _(
+                _("Pulses Per Inch - This is software created laser power control.")
+                + "\n"
+                + _("1000 is always on, 500 is half power (fire every other step).")
+                + "\n"
+                + _(
+                    'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
+                )
+            )
+            self.power_sizer.SetLabel(_("Power (ppi)"))
+        self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
+
 
     def accepts(self, node):
         return node.type in (
@@ -527,7 +581,10 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.speed is not None:
             set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
-            set_ctrl_value(self.text_power, str(self.operation.power))
+            if self.use_percent:
+                set_ctrl_value(self.text_power, f"{self.operation.power / 10.0:.0f}")
+            else:
+                set_ctrl_value(self.text_power, f"{self.operation.power:.0f}")
             self.update_power_label()
         if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
@@ -560,6 +617,8 @@ class SpeedPpiPanel(wx.Panel):
         #     self.power_label.SetLabel(_("Power (ppi):") + "⚠️")
         # else:
         #     self.power_label.SetLabel(_("Power (ppi):"))
+        if self.use_percent:
+            return
         try:
             value = float(self.text_power.GetValue())
             self.power_sizer.SetLabel(_("Power (ppi)") + f" ({value/10:.1f}%)")
@@ -569,6 +628,8 @@ class SpeedPpiPanel(wx.Panel):
     def on_text_power(self):
         try:
             value = float(self.text_power.GetValue())
+            if self.use_percent:
+                value *= 10
             if self.operation.power != value:
                 self.operation.power = value
                 self.update_power_label()
@@ -1870,6 +1931,11 @@ class ParameterPanel(ScrolledPanel):
 
         self.Layout()
         # end wxGlade
+
+    @signal_listener("power_percent")
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        self.speedppi_panel.on_device_update()
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):

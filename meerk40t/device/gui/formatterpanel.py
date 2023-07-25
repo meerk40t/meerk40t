@@ -89,7 +89,7 @@ class FormatterPanel(wx.Panel):
                 "tip": _("Active: Full power will be shown as 100%" + "\n" +
                          "Inactive: Full power will be shown as 1000 ppi"),
                 "subsection": "_10_General",
-                "signals": "rebuild_tree",
+                "signals": ("rebuild_tree", "power_percent"),
             },
         ]
         for node in self.node_list:
