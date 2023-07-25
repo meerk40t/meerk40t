@@ -486,6 +486,8 @@ class NewlyDevice(Service, ViewPort):
             },
         ]
         self.register_choices("newly-global", choices)
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
 
         self.state = 0
 

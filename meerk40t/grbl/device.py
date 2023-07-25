@@ -201,6 +201,9 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("rotary", choices)
+        # This device prefers to display power level in percent
+        self.setting(bool, "use_percent_for_power_display", True)
+
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
         self.setting(
             list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
