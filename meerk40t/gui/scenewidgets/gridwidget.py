@@ -1,3 +1,7 @@
+"""
+Grid widget is primarily tasked with drawing the grid in the scene. This is the size and shape of the desired bedsize.
+"""
+
 from math import atan2, cos, sin, sqrt, tau
 from platform import system
 
@@ -10,7 +14,7 @@ from meerk40t.gui.scene.widget import Widget
 
 class GridWidget(Widget):
     """
-    Interface Widget
+    Scene Widget
     """
 
     def __init__(self, scene, name=None, suppress_labels=False):

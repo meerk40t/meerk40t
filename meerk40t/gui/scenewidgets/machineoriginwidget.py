@@ -1,3 +1,10 @@
+"""
+This widget draws the machine origin as well as the X and Y directions for the coordinate system being used.
+
+The machine origin is actually the position of the 0,0 location for the device being used, whereas the coordinate
+system is the user display space.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_ORIGIN

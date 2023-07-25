@@ -64,6 +64,7 @@ DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
 DRAW_MODE_ORIGIN = 0x4000000
+DRAW_MODE_EDIT = 0x8000000
 
 
 def swizzlecolor(c):
@@ -340,11 +341,15 @@ class LaserRender:
                     )
         return p
 
-    def make_geomstr(self, gc, path):
+    def make_geomstr(self, gc, path, node=None):
         """
-        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        Takes a Geomstr path and converts it to a GraphicsContext.Graphics path
+
+        This also creates a point list of the relevant nodes and creates a ._cache_edit value to be used by node
+        editing view.
         """
         p = gc.CreatePath()
+        pts = list()
         for subpath in path.as_subpaths():
             if len(subpath) == 0:
                 continue
@@ -361,8 +366,13 @@ class LaserRender:
 
                 if seg_type == TYPE_LINE:
                     p.AddLineToPoint(end.real, end.imag)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_QUAD:
                     p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_ARC:
                     radius = Geomstr.arc_radius(None, line=e)
                     center = Geomstr.arc_center(None, line=e)
@@ -376,14 +386,26 @@ class LaserRender:
                         end_t,
                         clockwise="ccw" != Geomstr.orientation(None, start, c0, end),
                     )
+                    pts.append(c0)
+                    pts.append(start)
+                    pts.append(end)
                 elif seg_type == TYPE_CUBIC:
                     p.AddCurveToPoint(
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
                     )
+                    pts.append(c0)
+                    pts.append(c1)
+                    pts.append(start)
+                    pts.append(end)
                 else:
                     print(f"Unknown seg_type: {seg_type}")
             if subpath.first_point == end:
                 p.CloseSubpath()
+        if node is not None:
+            graphics_path_2 = gc.CreatePath()
+            for pt in pts:
+                graphics_path_2.AddCircle(pt.real, pt.imag, 5000)
+            node._cache_edit = graphics_path_2
 
         return p
 
@@ -628,7 +650,7 @@ class LaserRender:
         matrix = node.matrix
         node._cache_matrix = copy(matrix)
         geom = node.as_geometry()
-        cache = self.make_geomstr(gc, geom)
+        cache = self.make_geomstr(gc, geom, node=node)
         node._cache = cache
 
     def draw_vector(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -658,10 +680,12 @@ class LaserRender:
             cache = None
         if cache is None:
             node.make_cache(node, gc)
+
         try:
             cache_matrix = node._cache_matrix
         except AttributeError:
             cache_matrix = None
+
         stroke_factor = 1
         if matrix != cache_matrix:
             # Calculate the relative change matrix and apply it to this shape.
@@ -690,6 +714,13 @@ class LaserRender:
             gc.FillPath(node._cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node._cache)
+
+        if node.emphasized and draw_mode & DRAW_MODE_EDIT:
+            try:
+                edit = node._cache_edit
+                gc.StrokePath(edit)
+            except AttributeError:
+                pass
         gc.PopState()
 
     def draw_placement_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):

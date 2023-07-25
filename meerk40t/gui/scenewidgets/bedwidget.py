@@ -1,7 +1,18 @@
+"""
+Bedwidget is entirely concerned with drawing the background bed object. This is usually white colored box.
+
+If a background is set, e.g. a camera image that is displayed instead. If there is a background image then, this widget
+also implements a right-click menu to remove said background image.
+"""
+
 import wx
 
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, swizzlecolor
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+    HITCHAIN_DELEGATE,
+)
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -19,6 +30,8 @@ class BedWidget(Widget):
         self.background = None
 
     def hit(self):
+        if self.background is None:
+            return HITCHAIN_DELEGATE
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):

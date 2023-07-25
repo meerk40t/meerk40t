@@ -1016,6 +1016,18 @@ class MeerK40t(MWindow):
                 "identifier": "none",
             },
         )
+        kernel.register(
+            "button/tools/Nodeeditor",
+            {
+                "label": _("Node Edit"),
+                "icon": icons8_node_edit_50,
+                "tip": _("Edit nodes of a polyline/path-object"),
+                "action": lambda v: kernel.elements("tool nodemove\n"),
+                "group": "tool",
+                "size": bsize_normal,
+                "identifier": "nodemove",
+            },
+        )
 
         kernel.register(
             "button/tools/Relocate",
@@ -1296,18 +1308,6 @@ class MeerK40t(MWindow):
                     break
             return result
 
-        kernel.register(
-            "button/modify/Nodeeditor",
-            {
-                "label": _("Node Edit"),
-                "icon": icons8_node_edit_50,
-                "tip": _("Edit nodes of a polyline/path-object"),
-                "action": lambda v: kernel.elements("tool edit\n"),
-                "size": bsize_normal,
-                "identifier": "nodeedit",
-                "rule_enabled": lambda cond: contains_a_path(),
-            },
-        )
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 

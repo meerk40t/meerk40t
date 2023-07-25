@@ -442,6 +442,11 @@ class Elemental(Service):
         self._tree = RootNode(self)
         self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
+        # Point / Segments selected.
+        # points in format: points.append((g, idx, 0, node, geom))
+        self.points = list()
+        self.segments = list()
+
         self.undo = Undo(self._tree)
         self.do_undo = True
         self.suppress_updates = False

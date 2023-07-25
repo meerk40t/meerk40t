@@ -1,3 +1,19 @@
+"""
+The selection widget deals with the manipulated of emphasized elements. It provides a series of related subwidgets:
+
+BorderWidget: Draws the border of the selected object.
+RotationWidget: Little arrow in the corner allowing the object to be rotated.
+CornerWidget: Square in corner that typically governs uniform or x/y scaling.
+SideWidget: Square at different sides that typically does x-scaling or y-scaling.
+SkewWidget: Tiny squares along the side that deal with X-skew or y-skew.
+MoveWidget: Center widget that moves the entire selected object.
+MoveRotationOriginWidget: Weird function of rotating based on the reference object or something.
+ReferenceWidget: Yellow-R widget that that makes this object the reference object.
+LockWidget: Widget to lock and unlock the given object.
+
+"""
+
+
 import math
 
 import wx
@@ -39,10 +55,6 @@ def process_event(
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
-
-    # Not during an edit !
-    if widget.scene.pane.active_tool.startswith("edit"):
-        return RESPONSE_CHAIN
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
@@ -2559,9 +2571,6 @@ class SelectionWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_SELECTION != 0:
             return
         self.clear()  # Clearing children as we are generating them in a bit...
-        # Don't interfere during node editing
-        if self.scene.pane.active_tool.startswith("edit"):
-            return
         context = self.scene.context
         try:
             self.use_handle_rotate = context.enable_sel_rotate
@@ -2578,7 +2587,7 @@ class SelectionWidget(Widget):
         draw_mode = context.draw_mode
         elements = self.scene.context.elements
         bounds = elements.selected_area()
-        matrix = self.parent.matrix
+        matrix = self.scene.widget_root.scene_widget.matrix
         if bounds is not None:
             try:
                 factor = math.sqrt(abs(matrix.determinant))

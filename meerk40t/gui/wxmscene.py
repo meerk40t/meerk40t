@@ -25,6 +25,7 @@ from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
 from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
+from meerk40t.gui.scenewidgets.nodeselector import NodeSelector
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
@@ -35,6 +36,7 @@ from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
 from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolnodeedit import EditTool
+from meerk40t.gui.toolwidgets.toolnodemove import NodeMoveTool
 from meerk40t.gui.toolwidgets.toolplacement import PlacementTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
@@ -131,24 +133,39 @@ class MeerK40tScenePanel(wx.Panel):
         self._last_snap_ts = 0
 
         context = self.context
+        # Add in snap-to-grid functionality.
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
-        self.selectionwidget = SelectionWidget(self.widget_scene)
-        self.affinemover = None
-        self.widget_scene.add_scenewidget(self.selectionwidget)
+
+        # Tool container - Widget to hold tools.
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
+
+        # Rectangular selection.
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
+
+        # Laser-Path blue-line drawer.
         self.laserpath_widget = LaserPathWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.laserpath_widget)
+
+        # Draw elements in scene.
         self.widget_scene.add_scenewidget(
             ElementsWidget(self.widget_scene, LaserRender(context))
         )
 
+        # Draw Machine Origin widget.
         self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
+
+        # Draw Grid.
         self.grid = GridWidget(self.widget_scene)
         self.widget_scene.add_scenewidget(self.grid)
+
+        # Draw Bed
         self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
+
+        # Draw Interface Guide.
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
+
+        # Draw Interface Laser-Position
         self.widget_scene.add_interfacewidget(ReticleWidget(self.widget_scene))
 
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
@@ -200,6 +217,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/linetext", LineTextTool)
         context.register("tool/edit", EditTool)
         context.register("tool/placement", PlacementTool)
+        context.register("tool/nodemove", NodeMoveTool)
 
         bsize_normal = STD_ICON_SIZE
 
@@ -324,30 +342,6 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
             channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
-
-        @context.console_command("affinemover", hidden=True)
-        def affinemover(channel, _, **kwgs):
-            """
-            Replaces the selection widget with the affine-mover.
-            """
-            if self.affinemover is None:
-                self.affinemover = AffineMover(self.widget_scene)
-                self.widget_scene.widget_root.scene_widget.remove_widget(
-                    self.selectionwidget
-                )
-                self.widget_scene.widget_root.scene_widget.add_widget(
-                    0, self.affinemover
-                )
-                channel(_("Affine-Mover made selection widget."))
-            else:
-                self.widget_scene.widget_root.scene_widget.remove_widget(
-                    self.affinemover
-                )
-                self.widget_scene.widget_root.scene_widget.add_widget(
-                    0, self.selectionwidget
-                )
-                channel(_("Selection-Widget selection widget."))
-                self.affinemover = None
 
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwgs):
