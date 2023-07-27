@@ -114,7 +114,7 @@ class PolylineNode(Node, Stroked):
     def shape(self, new_shape):
         self.geometry = Geomstr.svg(Path(new_shape))
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)
         return g

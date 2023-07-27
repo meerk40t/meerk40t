@@ -108,7 +108,7 @@ class EllipseNode(Node, Stroked):
         """
         return complex(self.cx + self.rx * cos(t), self.cy + self.ry * sin(t))
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         path = Geomstr.ellipse(self.rx, self.ry, self.cx, self.cy, 0, 12)
         path.transform(self.matrix)
         return path

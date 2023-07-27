@@ -166,7 +166,7 @@ class HatchEffectNode(Node, Stroked):
             self.set_dirty_bounds()
             self.altered()
 
-    def as_geometry(self):
+    def as_geometry(self, pass_index=0, **kws):
         outlines = Geomstr()
         if not self.effect:
             return outlines
