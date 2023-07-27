@@ -13,7 +13,7 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import signal_listener, lookup_listener
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
@@ -454,6 +454,10 @@ class TemplatePanel(wx.Panel):
         if self.callback is not None and idx >= 0:
             self.callback(self.default_op[idx])
 
+    def use_percent(self):
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        return self.context.device.use_percent_for_power_display
+
     def set_param_according_to_op(self, event):
         def preset_passes(node=None):
             # Will be called ahead of the modification of the passes variable
@@ -524,26 +528,30 @@ class TemplatePanel(wx.Panel):
             ("passes", preset_passes, _("Passes"), "x", False, True),
         ]
 
+        if self.use_percent():
+            ppi = "%"
+        else:
+            ppi = "ppi"
         if opidx == 0:
             # Cut
             # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("power", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("power", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("power", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
@@ -552,7 +560,7 @@ class TemplatePanel(wx.Panel):
             # Image
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("power", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
@@ -561,7 +569,7 @@ class TemplatePanel(wx.Panel):
             # Hatch
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("power", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), ppi, False, True),
                 ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
@@ -781,6 +789,12 @@ class TemplatePanel(wx.Panel):
 
         self.button_create.Enable(active)
 
+    def on_device_update(self):
+        self.current_op = None
+        self.set_param_according_to_op(None)
+        # self.on_combo_1(None)
+        # self.on_combo_2(None)
+
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2, aspect1, growing1, aspect2, growing2):
             if self._freecolor:
@@ -966,6 +980,8 @@ class TemplatePanel(wx.Panel):
                         value = str(p_value_1) + param_unit_1
                     else:
                         value = p_value_1
+                    if param_type_1 == "power" and self.use_percent():
+                        value *= 10.0
                     if hasattr(this_op, param_type_1):
                         # quick and dirty
                         if param_type_1 == "passes":
@@ -984,6 +1000,8 @@ class TemplatePanel(wx.Panel):
                         value = str(p_value_2) + param_unit_2
                     else:
                         value = p_value_2
+                    if param_type_2 == "power" and self.use_percent():
+                        value *= 10.0
                     if hasattr(this_op, param_type_2):
                         if param_type_2 == "passes":
                             value = int(value)
@@ -1108,6 +1126,9 @@ class TemplatePanel(wx.Panel):
         elif param_unit_1 == "ppi":
             min_value_1 = max(min_value_1, 0)
             max_value_1 = min(max_value_1, 1000)
+        elif param_unit_1 == "%":
+            min_value_1 = max(min_value_1, 0)
+            max_value_1 = min(max_value_1, 100)
         else:
             # > 0
             if param_positive_1:
@@ -1120,6 +1141,9 @@ class TemplatePanel(wx.Panel):
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
+        elif param_unit_1 == "%":
+            min_value_2 = max(min_value_2, 0)
+            max_value_2 = min(max_value_2, 100)
         else:
             # > 0
             if param_positive_2:
@@ -1388,6 +1412,11 @@ class TemplateTool(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
+
+    @signal_listener("power_percent")
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        self.panel_template.on_device_update()
 
     @staticmethod
     def submenu():

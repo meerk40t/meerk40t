@@ -5,6 +5,7 @@ to establish the correct kerf size of your laser
 
 import wx
 
+from meerk40t.kernel import signal_listener, lookup_listener
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
@@ -32,6 +33,8 @@ class KerfPanel(wx.Panel):
         self.text_speed.set_range(0, 1000)
         self.text_power = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_power.set_range(0, 1000)
+        self.label_power = wx.StaticText(self, wx.ID_ANY, "")
+        self.set_power_info()
 
         self.radio_pattern = wx.RadioBox(
             self,
@@ -67,7 +70,10 @@ class KerfPanel(wx.Panel):
         self.text_dim.SetValue("20mm")
         self.text_delta.SetValue("5mm")
         self.text_speed.SetValue("5")
-        self.text_power.SetValue("1000")
+        if self.use_percent():
+            self.text_power.SetValue("100")
+        else:
+            self.text_power.SetValue("1000")
         self.text_min.SetValue("0.05mm")
         self.text_max.SetValue("0.25mm")
 
@@ -95,6 +101,7 @@ class KerfPanel(wx.Panel):
         sizer_power = StaticBoxSizer(self, wx.ID_ANY, _("Power"), wx.HORIZONTAL)
         sizer_speed.Add(self.text_speed, 1, wx.EXPAND, 0)
         sizer_power.Add(self.text_power, 1, wx.EXPAND, 0)
+        sizer_power.Add(self.label_power, 0, wx.EXPAND, 0)
         sizer_cutop.Add(sizer_speed, 1, wx.EXPAND, 0)
         sizer_cutop.Add(sizer_power, 1, wx.EXPAND, 0)
 
@@ -162,7 +169,7 @@ class KerfPanel(wx.Panel):
         main_sizer.Add(self.button_create, 0, 0, 0)
         main_sizer.Add(sizer_info, 1, wx.EXPAND, 0)
         main_sizer.Layout()
-
+        self.text_speed.SetToolTip(_("Speed at which the head moves in mm/s."))
         self.text_min.SetToolTip(_("Minimum value for Kerf"))
         self.text_max.SetToolTip(_("Maximum value for Kerf"))
         self.text_dim.SetToolTip(_("Dimension of the to be created pattern"))
@@ -171,6 +178,27 @@ class KerfPanel(wx.Panel):
         self.button_create.SetToolTip(_("Create a test-pattern with your values"))
 
         self.SetSizer(main_sizer)
+
+    def use_percent(self):
+        self.context.device.setting(bool, "use_percent_for_power_display", False)
+        return self.context.device.use_percent_for_power_display
+
+    def set_power_info(self):
+        maxval = 1000
+        lbl = ""
+        ttip = _(
+            _("Pulses Per Inch - This is software created laser power control.")
+        )
+
+        if self.use_percent():
+            maxval = 100
+            lbl = "%"
+            ttip = _(
+                "% of maximum power - This is a percentage of the maximum power of the laser."
+            )
+        self.text_power.set_range(0, maxval)
+        self.label_power.SetLabel(lbl)
+        self.text_power.SetToolTip(ttip)
 
     def on_method(self, event):
         slider = bool(self.radio_pattern.GetSelection() == 2)
@@ -218,9 +246,13 @@ class KerfPanel(wx.Panel):
             is_valid = False
         if not valid_length(self.text_max):
             is_valid = False
-        if not valid_float(self.text_power, 0, 1000):
+        if self.use_percent():
+            maxval = 100
+        else:
+            maxval = 1000
+        if not valid_float(self.text_power, 0, maxval):
             is_valid = False
-        if not valid_float(self.text_speed, 0, 1000):
+        if not valid_float(self.text_speed, 0, maxval):
             is_valid = False
 
         if is_valid:
@@ -732,6 +764,8 @@ class KerfPanel(wx.Panel):
             maxv = float(Length(self.text_max.GetValue()))
             op_speed = float(self.text_speed.GetValue())
             op_power = float(self.text_power.GetValue())
+            if self.use_percent():
+                op_power *= 10.0
             gap_size = float(Length(self.text_delta.GetValue()))
             count = self.spin_count.GetValue()
             if count < 2:
@@ -774,7 +808,7 @@ class KerfPanel(wx.Panel):
         # self.context.signal("optimize", False)
 
     def pane_show(self):
-        return
+        self.set_power_info()
 
 
 class KerfTool(MWindow):
@@ -801,6 +835,11 @@ class KerfTool(MWindow):
 
     def window_close(self):
         pass
+
+    @signal_listener("power_percent")
+    @lookup_listener("service/device/active")
+    def on_device_update(self, *args):
+        self.panel_template.set_power_info()
 
     @staticmethod
     def submenu():
