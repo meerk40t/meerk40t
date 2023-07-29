@@ -67,7 +67,6 @@ class HatchPropertyPanel(ScrolledPanel):
         sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
         sizer_angle = StaticBoxSizer(self, wx.ID_ANY, _("Angle"), wx.HORIZONTAL)
-
         self.text_angle = TextCtrl(
             self,
             wx.ID_ANY,
@@ -77,10 +76,23 @@ class HatchPropertyPanel(ScrolledPanel):
             style=wx.TE_PROCESS_ENTER,
         )
         sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
-
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
         main_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
+
+        sizer_angle_delta = StaticBoxSizer(self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL)
+        self.text_angle_delta = TextCtrl(
+            self,
+            wx.ID_ANY,
+            str(node.hatch_angle_delta),
+            limited=True,
+            check="angle",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        sizer_angle_delta.Add(self.text_angle_delta, 1, wx.EXPAND, 0)
+        self.slider_angle_delta = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
+        sizer_angle_delta.Add(self.slider_angle_delta, 3, wx.EXPAND, 0)
+        main_sizer.Add(sizer_angle_delta, 1, wx.EXPAND, 0)
 
         self.check_classify = wx.CheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
@@ -92,8 +104,10 @@ class HatchPropertyPanel(ScrolledPanel):
 
         self.text_distance.SetActionRoutine(self.on_text_distance)
         self.text_angle.SetActionRoutine(self.on_text_angle)
+        self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
 
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
         self.Layout()
 
     def pane_hide(self):
@@ -169,3 +183,27 @@ class HatchPropertyPanel(ScrolledPanel):
         value = self.slider_angle.GetValue()
         self.text_angle.SetValue(f"{value}deg")
         self.on_text_angle()
+
+    def on_text_angle_delta(self):
+        try:
+            angle = f"{Angle.parse(self.text_angle_delta.GetValue()).as_degrees}deg"
+            if angle == self.node.hatch_angle_delta:
+                return
+            self.node.delta = angle
+            self.node.modified()
+        except ValueError:
+            return
+        try:
+            h_angle_delta = float(Angle.parse(self.node.hatch_angle_delta).as_degrees)
+            while h_angle_delta > self.slider_angle_delta.GetMax():
+                h_angle_delta -= 360
+            while h_angle_delta < self.slider_angle_delta.GetMin():
+                h_angle_delta += 360
+            self.slider_angle_delta.SetValue(int(h_angle_delta))
+        except ValueError:
+            pass
+
+    def on_slider_angle_delta(self, event):
+        value = self.slider_angle_delta.GetValue()
+        self.text_angle_delta.SetValue(f"{value}deg")
+        self.on_text_angle_delta()

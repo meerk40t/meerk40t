@@ -53,7 +53,7 @@ class HatchEffectNode(Node, Stroked):
         if self.hatch_angle is None:
             self.hatch_angle = "0deg"
         if self.hatch_angle_delta is None:
-            self.hatch_angle_delta = 0
+            self.hatch_angle_delta = "0deg"
         self.settings = kwargs
         self._operands = list()
         self._distance = None
@@ -195,6 +195,16 @@ class HatchEffectNode(Node, Stroked):
             self.altered()
 
     def as_geometry(self, pass_index=0, **kws):
+        """
+        Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
+        internal passes value is rotated each pass by the angle-delta.
+
+        pass_index is only called by an operation, and not by the drawing code.
+
+        @param pass_index:
+        @param kws:
+        @return:
+        """
         outlines = Geomstr()
         if not self.effect:
             return outlines
@@ -204,13 +214,14 @@ class HatchEffectNode(Node, Stroked):
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
-        path.append(
-            Geomstr.hatch(
-                outlines,
-                distance=self._distance,
-                angle=self._angle + pass_index * self._angle_delta,
+        for p in range(self.passes):
+            path.append(
+                Geomstr.hatch(
+                    outlines,
+                    distance=self._distance,
+                    angle=self._angle + p * self._angle_delta,
+                )
             )
-        )
         return path
 
     def modified(self):
