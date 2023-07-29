@@ -51,6 +51,20 @@ class HatchPropertyPanel(ScrolledPanel):
         )
         main_sizer.Add(panel_fill, 1, wx.EXPAND, 0)
 
+        sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes"), wx.HORIZONTAL)
+        self.text_passes = TextCtrl(
+            self,
+            wx.ID_ANY,
+            str(node.passes),
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
+        self.slider_passes = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
+        sizer_passes.Add(self.slider_passes, 3, wx.EXPAND, 0)
+        main_sizer.Add(sizer_passes, 1, wx.EXPAND, 0)
+
         sizer_distance = StaticBoxSizer(
             self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
         )
@@ -102,10 +116,12 @@ class HatchPropertyPanel(ScrolledPanel):
 
         self.SetSizer(main_sizer)
 
+        self.text_passes.SetActionRoutine(self.on_text_passes)
         self.text_distance.SetActionRoutine(self.on_text_distance)
         self.text_angle.SetActionRoutine(self.on_text_angle)
         self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
 
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_passes, self.slider_passes)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
         self.Layout()
@@ -152,6 +168,26 @@ class HatchPropertyPanel(ScrolledPanel):
             self.context.elements.signal("element_property_update", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
+
+    def on_text_passes(self):
+        try:
+            passes = int(self.text_passes.GetValue())
+            if passes == self.node.passes:
+                return
+            self.node.passes = passes
+            self.node.modified()
+        except ValueError:
+            return
+        try:
+            h_passes = int(self.node.passes)
+            self.slider_passes.SetValue(int(h_passes))
+        except ValueError:
+            pass
+
+    def on_slider_passes(self, event):
+        value = self.slider_passes.GetValue()
+        self.text_passes.SetValue(str(value))
+        self.on_text_passes()
 
     def on_text_distance(self):
         try:
