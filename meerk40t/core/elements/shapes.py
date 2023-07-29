@@ -231,12 +231,13 @@ def init_commands(kernel):
 
     @self.console_option("distance", "d", type=Length, default="1mm")
     @self.console_option("angle", "a", type=Angle.parse, default="0deg")
+    @self.console_option("angle_delta", "a", type=Angle.parse, default="0deg")
     @self.console_command(
         "effect-hatch",
         help=_("adds hatch-effect to scene"),
         input_type=(None, "elements"),
     )
-    def effect_hatch(command, data=None, angle=None, distance=None, **kwargs):
+    def effect_hatch(command, data=None, angle=None, angle_delta=None, distance=None, **kwargs):
         """
         Add an effect hatch object
         """
@@ -244,6 +245,7 @@ def init_commands(kernel):
             type="effect hatch",
             label="Hatch Effect",
             hatch_angle=angle.as_radians,
+            hatch_angle_delta=angle_delta.as_radians,
             hatch_distance=distance,
         )
         self.set_emphasis([node])
