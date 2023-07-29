@@ -64,13 +64,16 @@ class NodeMoveTool(ToolWidget):
             for data in points:
                 index_line, index_pos, geom_t, node = data
                 if not hasattr(node, "geometry"):
+                    fillrule = None
+                    if hasattr(node, "fillrule"):
+                        fillrule = node.fillrule
                     new_node = node.replace_node(
                         keep_children=True,
                         stroke=node.stroke,
                         fill=node.fill,
                         stroke_width=node.stroke_width,
                         stroke_scale=node.stroke_scale,
-                        filrule=node.fillrule,
+                        fillrule=fillrule,
                         id=node.id,
                         label=node.label,
                         lock=node.lock,

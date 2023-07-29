@@ -430,7 +430,7 @@ def init_tree(kernel):
 
     @tree_submenu(_("DPI"))
     @tree_radio(radio_match)
-    @tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
+    @tree_values("dpi", (100, 200, 250, 333.3, 500, 666.6, 750, 1000))
     @tree_operation(
         _("DPI {dpi}"),
         node_type=("op raster", "elem image"),
