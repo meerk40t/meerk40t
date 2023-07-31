@@ -677,7 +677,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.rapid_mode()
             start = plot.start
-            self.move_abs(start[0], start[1])
+            self._move_absolute(start[0], start[1])
             self.wait_finish()
             self.dwell(plot.dwell_time)
         elif isinstance(plot, WaitCut):
