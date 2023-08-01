@@ -891,8 +891,12 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
-        buf = self._set_buffer()
-        dc = wx.MemoryDC()
+        try:
+            buf = self._set_buffer()
+            dc = wx.MemoryDC()
+        except RuntimeError:
+            # Shutdown error
+            return
         dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
             if self._layout_dirty:
