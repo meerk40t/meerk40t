@@ -64,6 +64,13 @@ class ElementsWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
+        # Cover some unlikely crashes...
+        try:
+            elements = self.scene.context.elements
+            if elements is None:
+                return
+        except TypeError:
+            return
         if event_type == "rightdown" and not modifiers:
             if not self.scene.pane.tool_active:
                 if self.scene.pane.active_tool != "none":
@@ -78,7 +85,6 @@ class ElementsWidget(Widget):
                 return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
-            elements = self.scene.context.elements
             keep_old = "shift" in modifiers
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
