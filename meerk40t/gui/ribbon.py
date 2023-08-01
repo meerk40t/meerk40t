@@ -131,6 +131,32 @@ class Button:
         self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
+        self.sizes = {
+            "large_label": (0, 0),
+            "small_label": (0, 0),
+            "tiny_label": (0, 0),
+            "large": (0, 0),
+            "small": (0, 0),
+            "tiny": (0, 0),
+        }
+
+    def calc_sizes(self, dc):
+        def calc(bmap, uselabel):
+            w = 0
+            h = 0
+            return w, h
+        bw, bh = calc(self.bitmap_large, True)
+        self.sizes["large_label"] = (bw, bh)
+        bw, bh = calc(self.bitmap_large, False)
+        self.sizes["large"] = (bw, bh)
+        bw, bh = calc(self.bitmap_small, True)
+        self.sizes["small_label"] = (bw, bh)
+        bw, bh = calc(self.bitmap_small, False)
+        self.sizes["small"] = (bw, bh)
+        bw, bh = calc(self.bitmap_tiny, True)
+        self.sizes["tiny_label"] = (bw, bh)
+        bw, bh = calc(self.bitmap_tiny, False)
+        self.sizes["tiny"] = (bw, bh)
 
     def set_aspect(
         self,
@@ -1336,7 +1362,7 @@ class Art:
         h = int(round(y1 - y, 2))
 
         # Lets clip the output
-        dc.SetClippingRegion(x, y, w, h)
+        dc.SetClippingRegion(int(x), int(y), int(w), int(h))
 
         dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
         bitmap_width, bitmap_height = bitmap.Size
@@ -1526,15 +1552,23 @@ class Art:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
 
-    def page_layout(self, dc, page):
-        """
-        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
-        contains.
+    def preferred_button_size_for_panel(self, dc, panel):
+        # Provides
+        x, y, max_x, max_y = panel.position
+        panel_width = max_x - x
+        panel_height = max_y - y
+        button_sizes = []
+        for button in panel.buttons:
+            this_button_sizes = []
+            # We calculate the space requirement for regular,
+            # small and tiny buttons, both with and without
+            # labels
+            button_sizes.append(this_button_sizes)
+        button_width = 0
+        button_height = 0
+        return button_width, button_height
 
-        @param dc:
-        @param art:
-        @return:
-        """
+    def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
         page_width = max_x - x
         page_height = max_y - y
@@ -1566,7 +1600,7 @@ class Art:
             all_panel_horizontal = 1
             all_panel_vertical = max(panel_count, 1)
 
-        # Calculate width/height for just buttons.
+        # Calculate optimal width/height for just buttons.
         button_width_across_panels = page_width
         button_width_across_panels -= (
             all_panel_horizontal - 1
@@ -1604,6 +1638,22 @@ class Art:
         button_width = button_width_across_panels / all_button_horizontal
         button_height = button_height_across_panels / all_button_vertical
 
+        return button_width, button_height
+
+    def page_layout(self, dc, page):
+        """
+        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
+        contains.
+
+        @param dc:
+        @param art:
+        @return:
+        """
+        x, y, max_x, max_y = page.position
+        is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
+            self.parent.prefer_horizontal() and self.orientation == self.RIBBON_ORIENTATION_AUTO
+        )
+        button_width, button_height = self.preferred_button_size_for_page(dc, page)
         x += self.page_panel_buffer
         y += self.page_panel_buffer
         for p, panel in enumerate(page.panels):
