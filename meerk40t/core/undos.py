@@ -70,7 +70,12 @@ class Undo:
                 # Stack is entirely empty.
                 return False
             self._undo_index -= 1
-            undo = self._undo_stack[self._undo_index]
+            try:
+                undo = self._undo_stack[self._undo_index]
+            except IndexError:
+                # Invalid?! Reset to bottom of stack
+                self._undo_index = 0
+                return False
             self.tree.restore_tree(undo.state)
             try:
                 undo.state = self.tree.backup_tree()  # Get unused copy
