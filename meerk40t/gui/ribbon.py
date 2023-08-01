@@ -131,32 +131,32 @@ class Button:
         self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
-        self.sizes = {
-            "large_label": (0, 0),
-            "small_label": (0, 0),
-            "tiny_label": (0, 0),
-            "large": (0, 0),
-            "small": (0, 0),
-            "tiny": (0, 0),
-        }
+        # self.sizes = {
+        #     "large_label": (0, 0),
+        #     "small_label": (0, 0),
+        #     "tiny_label": (0, 0),
+        #     "large": (0, 0),
+        #     "small": (0, 0),
+        #     "tiny": (0, 0),
+        # }
 
-    def calc_sizes(self, dc):
-        def calc(bmap, uselabel):
-            w = 0
-            h = 0
-            return w, h
-        bw, bh = calc(self.bitmap_large, True)
-        self.sizes["large_label"] = (bw, bh)
-        bw, bh = calc(self.bitmap_large, False)
-        self.sizes["large"] = (bw, bh)
-        bw, bh = calc(self.bitmap_small, True)
-        self.sizes["small_label"] = (bw, bh)
-        bw, bh = calc(self.bitmap_small, False)
-        self.sizes["small"] = (bw, bh)
-        bw, bh = calc(self.bitmap_tiny, True)
-        self.sizes["tiny_label"] = (bw, bh)
-        bw, bh = calc(self.bitmap_tiny, False)
-        self.sizes["tiny"] = (bw, bh)
+    # def calc_sizes(self, dc):
+    #     def calc(bmap, uselabel):
+    #         w = 0
+    #         h = 0
+    #         return w, h
+    #     bw, bh = calc(self.bitmap_large, True)
+    #     self.sizes["large_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_large, False)
+    #     self.sizes["large"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_small, True)
+    #     self.sizes["small_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_small, False)
+    #     self.sizes["small"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_tiny, True)
+    #     self.sizes["tiny_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_tiny, False)
+    #     self.sizes["tiny"] = (bw, bh)
 
     def set_aspect(
         self,
@@ -1556,21 +1556,21 @@ class Art:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
 
-    def preferred_button_size_for_panel(self, dc, panel):
-        # Provides
-        x, y, max_x, max_y = panel.position
-        panel_width = max_x - x
-        panel_height = max_y - y
-        button_sizes = []
-        for button in panel.buttons:
-            this_button_sizes = []
-            # We calculate the space requirement for regular,
-            # small and tiny buttons, both with and without
-            # labels
-            button_sizes.append(this_button_sizes)
-        button_width = 0
-        button_height = 0
-        return button_width, button_height
+    # def preferred_button_size_for_panel(self, dc, panel):
+    #     # Provides
+    #     x, y, max_x, max_y = panel.position
+    #     panel_width = max_x - x
+    #     panel_height = max_y - y
+    #     button_sizes = []
+    #     for button in panel.buttons:
+    #         this_button_sizes = []
+    #         # We calculate the space requirement for regular,
+    #         # small and tiny buttons, both with and without
+    #         # labels
+    #         button_sizes.append(this_button_sizes)
+    #     button_width = 0
+    #     button_height = 0
+    #     return button_width, button_height
 
     def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
