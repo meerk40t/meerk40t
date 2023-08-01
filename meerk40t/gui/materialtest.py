@@ -530,19 +530,7 @@ class TemplatePanel(wx.Panel):
         self.setup_settings()
         self.combo_ops.SetSelection(0)
         self.restore_settings()
-        # Repopulate combos
-        self.set_param_according_to_op(None)
-        # And then setting it back to the defaults...
-        self.combo_param_1.SetSelection(
-            min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
-        )
-        # Make sure units appear properly
-        self.on_combo_1(None)
-        self.combo_param_2.SetSelection(
-            min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
-        )
-        # Make sure units appear properly
-        self.on_combo_2(None)
+        self.sync_fields()
 
     def shortened(self, value, digits):
         result = str(round(value, digits))
@@ -1471,6 +1459,21 @@ class TemplatePanel(wx.Panel):
         except (AttributeError, ValueError):
             pass
 
+    def sync_fields(self):
+        # Repopulate combos
+        self.set_param_according_to_op(None)
+        # And then setting it back to the defaults...
+        self.combo_param_1.SetSelection(
+            min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_1(None)
+        self.combo_param_2.SetSelection(
+            min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_2(None)
+
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.set_param_according_to_op(None)
@@ -1525,6 +1528,7 @@ class TemplateTool(MWindow):
         if command == "load":
             if param:
                 self.panel_template.restore_settings(param)
+                self.panel_template.sync_fields()
                 return True
         elif command == "save":
             if param:
