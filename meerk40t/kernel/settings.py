@@ -277,7 +277,7 @@ class Settings:
         @return:
         """
         try:
-            self._config_dict[section][key]
+            del self._config_dict[section][key]
         except KeyError:
             pass
 
