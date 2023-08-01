@@ -91,7 +91,11 @@ class Undo:
             if self._undo_index >= len(self._undo_stack) - 1:
                 return False
             self._undo_index += 1
-            redo = self._undo_stack[self._undo_index]
+            try:
+                redo = self._undo_stack[self._undo_index]
+            except IndexError:
+                self._undo_index = len(self._undo_stack)
+                return False
             self.tree.restore_tree(redo.state)
             try:
                 redo.state = self.tree.backup_tree()  # Get unused copy
