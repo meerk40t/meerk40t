@@ -16197,3 +16197,12 @@ msgstr "Größe der zu erzeugenden Testformen"
 
 msgid "Horizontal gap between patterns"
 msgstr "Horizontaler Abstand zwischen den Testformen"
+
+msgid "Every {dist}"
+msgstr "Alle {dist}"
+
+msgid "Create a test-pattern with your values"
+msgstr "Erzeuge ein Test-Muster mit den angegebenen Werten"
+
+msgid "There is more to see - click to display"
+msgstr "Es gibt mehr zu sehen - Anzeigen mit Click"
