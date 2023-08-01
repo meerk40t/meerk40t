@@ -10,7 +10,7 @@ from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.gui.icons import icons8_detective_50, icons8_hinges_50
+from meerk40t.gui.icons import icons8_detective_50, icon_kerf_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
 from meerk40t.svgelements import Color, Matrix, Polyline
@@ -825,7 +825,7 @@ class KerfTool(MWindow):
         )
         self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_hinges_50.GetBitmap())
+        _icon.CopyFromBitmap(icon_kerf_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Kerf-Test"))
         self.Layout()
