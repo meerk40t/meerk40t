@@ -3,3 +3,4 @@ Pillow
 pyusb
 pyserial
 numpy
+pyclipr
