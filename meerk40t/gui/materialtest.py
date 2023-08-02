@@ -60,7 +60,7 @@ class SaveLoadPanel(wx.Panel):
 
     def standardize(self, text):
         text = text.lower()
-        for invalid in (" ", ";", ":", "/", "-"):
+        for invalid in ("=", ":",):
             text = text.replace(invalid, "_")
         return text
 
