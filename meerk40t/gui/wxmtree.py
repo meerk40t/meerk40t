@@ -455,6 +455,7 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
+        self.update_warn_sign()
         self.elements.signal("modified")
 
     def node_detached(self, node, **kwargs):
@@ -819,6 +820,10 @@ class ShadowTree:
         self.wxtree._freeze = False
         self.wxtree.Expand(self.elements.get(type="branch elems")._item)
         self.wxtree.Expand(self.elements.get(type="branch reg")._item)
+        self.update_warn_sign()
+        self.context.elements.set_end_time("full_load", display=True, delete=True)
+
+    def update_warn_sign(self):
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
         self.wxtree.Expand(op_item)
@@ -829,7 +834,6 @@ class ShadowTree:
         else:
             self.wxtree.SetItemState(op_item, wx.TREE_ITEMSTATE_NONE)
             op_node._tooltip = ""
-        self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -964,10 +968,7 @@ class ShadowTree:
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
-        if self.elements.have_unassigned_elements():
-            self.wxtree.SetItemState(node_operations._item, self.iconstates["warning"])
-        else:
-            self.wxtree.SetItemState(node_operations._item, wx.TREE_ITEMSTATE_NONE)
+        self.update_warn_sign()
 
         # Restore emphasis
         for e in emphasized_list:
