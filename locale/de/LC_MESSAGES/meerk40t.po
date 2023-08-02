@@ -16206,3 +16206,6 @@ msgstr "Erzeuge ein Test-Muster mit den angegebenen Werten"
 
 msgid "There is more to see - click to display"
 msgstr "Es gibt mehr zu sehen - Anzeigen mit Click"
+
+msgid "Select an entry to reload"
+msgstr "Eintrag zum Wiederherstellen auswählen"

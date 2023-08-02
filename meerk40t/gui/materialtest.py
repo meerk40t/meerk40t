@@ -13,14 +13,134 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.kernel import signal_listener, lookup_listener
+from meerk40t.kernel import signal_listener, lookup_listener, Settings
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
+class SaveLoadPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.callback = None
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer_main)
+        sizer_name = wx.BoxSizer(wx.HORIZONTAL)
+        lbl_info = wx.StaticText(self, wx.ID_ANY, _("Template-Name"))
+        self.txt_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.btn_save = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.btn_load = wx.Button(self, wx.ID_ANY, _("Load"))
+        self.btn_delete = wx.Button(self, wx.ID_ANY, _("Delete"))
+        self.btn_load.Enable(False)
+        self.btn_save.Enable(False)
+        self.btn_delete.Enable(False)
+        sizer_name.Add(lbl_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.txt_name, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_name.Add(self.btn_save, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_load, 0, wx.EXPAND, 0)
+        sizer_name.Add(self.btn_delete, 0, wx.EXPAND, 0)
+
+        self.choices = []
+        self.list_slots = wx.ListBox(self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE)
+        self.list_slots.SetToolTip(_("Select an entry to reload"))
+        sizer_main.Add(sizer_name, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.list_slots, 1, wx.EXPAND, 0)
+        self.Layout()
+        self.Bind(wx.EVT_TEXT, self.on_text_change, self.txt_name)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_load, self.btn_load)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_save, self.btn_save)
+        self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
+        self.list_slots.Bind(wx.EVT_LISTBOX, self.on_listbox_click)
+        self.list_slots.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_double_click)
+
+    def set_callback(self, routine):
+        self.callback = routine
+        self.fill_choices("")
+
+    def standardize(self, text):
+        text = text.lower()
+        for invalid in ("=", ":",):
+            text = text.replace(invalid, "_")
+        return text
+
+    def fill_choices(self, txt):
+        self.choices = []
+        if self.callback is not None:
+            self.choices = self.callback("get", "")
+
+        self.list_slots.Clear()
+        self.list_slots.SetItems(self.choices)
+        if txt:
+            try:
+                idx = self.choices.index(txt)
+            except ValueError:
+                idx = -1
+            if idx >= 0:
+                self.list_slots.SetSelection(idx)
+        self.list_slots.Refresh()
+
+    def on_text_change(self, event):
+        info = self.txt_name.GetValue()
+        flag1 = False
+        flag2 = False
+        if info:
+            info = self.standardize(info)
+            flag2 = True
+            try:
+                idx = self.choices.index(info)
+            except ValueError:
+                idx = -1
+            flag1 = idx >= 0
+        self.btn_load.Enable(flag1)
+        self.btn_delete.Enable(flag1)
+        self.btn_save.Enable(flag2)
+
+    def on_btn_load(self, event):
+        info = self.txt_name.GetValue()
+        if self.callback is None or not info:
+            return
+        info = self.standardize(info)
+        result = self.callback("load", info)
+
+    def on_btn_delete(self, event):
+        info = self.txt_name.GetValue()
+        if self.callback is None or not info:
+            return
+        info = self.standardize(info)
+        result = self.callback("delete", info)
+        self.fill_choices("")
+
+    def on_btn_save(self, event):
+        info = self.txt_name.GetValue()
+        if self.callback is None or not info:
+            return
+        info = self.standardize(info)
+        result = self.callback("save", info)
+        self.fill_choices(info)
+        self.on_text_change(None)
+
+    def on_listbox_click(self, event):
+        info = ""
+        idx = self.list_slots.GetSelection()
+        # print (f"Click with {idx}")
+        if idx >= 0:
+            info = self.choices[idx]
+            self.txt_name.SetValue(info)
+        self.on_text_change(None)
+
+    def on_listbox_double_click(self, event):
+        info = ""
+        idx = self.list_slots.GetSelection()
+        # print (f"DClick with {idx}")
+        if idx >= 0:
+            info = self.choices[idx]
+            self.txt_name.SetValue(info)
+            self.on_btn_load(None)
+        self.on_text_change(None)
 
 class TemplatePanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
             ctrl.SetMaxSize(wx.Size(int(value), -1))
             ctrl.SetMinSize(wx.Size(int(value * 0.75), -1))
@@ -30,6 +150,7 @@ class TemplatePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.storage = storage
         self.callback = None
         self.current_op = None
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
@@ -409,19 +530,7 @@ class TemplatePanel(wx.Panel):
         self.setup_settings()
         self.combo_ops.SetSelection(0)
         self.restore_settings()
-        # Repopulate combos
-        self.set_param_according_to_op(None)
-        # And then setting it back to the defaults...
-        self.combo_param_1.SetSelection(
-            min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
-        )
-        # Make sure units appear properly
-        self.on_combo_1(None)
-        self.combo_param_2.SetSelection(
-            min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
-        )
-        # Make sure units appear properly
-        self.on_combo_2(None)
+        self.sync_fields()
 
     def shortened(self, value, digits):
         result = str(round(value, digits))
@@ -1233,7 +1342,63 @@ class TemplatePanel(wx.Panel):
         self.context.setting(bool, "template_coldir1", False)
         self.context.setting(bool, "template_coldir2", False)
 
-    def save_settings(self):
+    def _set_settings(self, templatename):
+        info_field = (
+            self.context.template_show_values,
+            self.context.template_show_labels,
+            self.context.template_optype,
+            self.context.template_param1,
+            self.context.template_param2,
+            self.context.template_min1,
+            self.context.template_max1,
+            self.context.template_min2,
+            self.context.template_max2,
+            self.context.template_count1,
+            self.context.template_count2,
+            self.context.template_dim_1,
+            self.context.template_dim_2,
+            self.context.template_gap_1,
+            self.context.template_gap_2,
+            self.context.template_color1,
+            self.context.template_color2,
+            self.context.template_coldir1,
+            self.context.template_coldir2,
+        )
+        # print (f"Save data to {templatename}, infofield-len={len(info_field)}")
+        key = f"{templatename}"
+        self.storage.write_persistent("materialtest", key, info_field)
+        self.storage.write_configuration()
+
+    def _get_settings(self, templatename):
+        key = f"{templatename}"
+        info_field = self.storage.read_persistent(tuple, "materialtest", key, None)
+        if (
+            info_field is not None and
+            isinstance(info_field, (tuple, list)) and
+            len(info_field) == 19
+        ):
+            # print (f"Load data from {templatename}")
+            self.context.template_show_values = info_field[0]
+            self.context.template_show_labels = info_field[1]
+            self.context.template_optype = info_field[2]
+            self.context.template_param1 = info_field[3]
+            self.context.template_param2 = info_field[4]
+            self.context.template_min1 = info_field[5]
+            self.context.template_max1 = info_field[6]
+            self.context.template_min2 = info_field[7]
+            self.context.template_max2 = info_field[8]
+            self.context.template_count1 = info_field[9]
+            self.context.template_count2 = info_field[10]
+            self.context.template_dim_1 = info_field[11]
+            self.context.template_dim_2 = info_field[12]
+            self.context.template_gap_1 = info_field[13]
+            self.context.template_gap_2 = info_field[14]
+            self.context.template_color1 = info_field[15]
+            self.context.template_color2 = info_field[16]
+            self.context.template_coldir1 = info_field[17]
+            self.context.template_coldir2 = info_field[18]
+
+    def save_settings(self, templatename=None):
         self.context.template_show_values = self.check_values.GetValue()
         self.context.template_show_labels = self.check_labels.GetValue()
         self.context.template_optype = self.combo_ops.GetSelection()
@@ -1253,8 +1418,14 @@ class TemplatePanel(wx.Panel):
         self.context.template_color2 = self.combo_color_2.GetSelection()
         self.context.template_coldir1 = self.check_color_direction_1.GetValue()
         self.context.template_coldir2 = self.check_color_direction_2.GetValue()
+        if templatename:
+            # let's try to restore the settings
+            self._set_settings(templatename)
 
-    def restore_settings(self):
+    def restore_settings(self, templatename=None):
+        if templatename:
+            # let's try to restore the settings
+            self._get_settings(templatename)
         try:
             self.check_color_direction_1.SetValue(self.context.template_coldir1)
             self.check_color_direction_2.SetValue(self.context.template_coldir2)
@@ -1288,6 +1459,21 @@ class TemplatePanel(wx.Panel):
         except (AttributeError, ValueError):
             pass
 
+    def sync_fields(self):
+        # Repopulate combos
+        self.set_param_according_to_op(None)
+        # And then setting it back to the defaults...
+        self.combo_param_1.SetSelection(
+            min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_1(None)
+        self.combo_param_2.SetSelection(
+            min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_2(None)
+
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.set_param_according_to_op(None)
@@ -1296,8 +1482,18 @@ class TemplatePanel(wx.Panel):
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(720, 750, submenu="Laser-Tools", *args, **kwds)
+
+        self.storage = Settings(self.context.kernel.name, "templates.cfg")
+        self.storage.read_configuration()
         self.panel_instances = list()
         self.panel_template = TemplatePanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            storage=self.storage,
+        )
+
+        self.panel_saveload = SaveLoadPanel(
             self,
             wx.ID_ANY,
             context=self.context,
@@ -1315,12 +1511,42 @@ class TemplateTool(MWindow):
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
 
         self.panel_template.set_callback(self.set_node)
-
         self.add_module_delegate(self.panel_template)
+
+        self.notebook_main.AddPage(self.panel_saveload, _("Templates"))
+        self.panel_saveload.set_callback(self.callback_templates)
+        self.add_module_delegate(self.panel_saveload)
+
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Parameter-Test"))
+
+    def callback_templates(self, command, param):
+        # print (f"callback called with {command}, {param}")
+        pattern = "template_name_"
+        if command == "load":
+            if param:
+                self.panel_template.restore_settings(param)
+                self.panel_template.sync_fields()
+                return True
+        elif command == "save":
+            if param:
+                self.panel_template.save_settings(param)
+                return True
+        elif command == "delete":
+            if param:
+                key = f"{param}"
+                self.storage.delete_persistent("materialtest", key)
+                self.storage.write_configuration()
+                return True
+        elif command == "get":
+            choices = []
+            for section in list(self.storage.keylist("materialtest")):
+                choices.append(section)
+            return choices
+
+        return None
 
     def set_node(self, node):
         def sort_priority(prop):
@@ -1359,7 +1585,7 @@ class TemplateTool(MWindow):
                     pages_in_node.append((property_sheet, snode))
                     found = True
 
-        pages_in_node.sort(key=sort_priority)
+        pages_in_node.sort(key=sort_priority, reverse=True)
         pages_to_instance.extend(pages_in_node)
 
         for p in self.panel_instances:
@@ -1369,8 +1595,8 @@ class TemplateTool(MWindow):
                 pass
             self.remove_module_delegate(p)
 
-        # Delete all but the first page...
-        while self.notebook_main.GetPageCount() > 1:
+        # Delete all but the first and last page...
+        while self.notebook_main.GetPageCount() > 2:
             self.notebook_main.DeletePage(1)
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
@@ -1381,7 +1607,7 @@ class TemplateTool(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
-            self.notebook_main.AddPage(page_panel, _(name))
+            self.notebook_main.InsertPage(1, page_panel, _(name))
             try:
                 page_panel.set_widgets(instance)
             except AttributeError:
