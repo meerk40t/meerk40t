@@ -13,12 +13,20 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import StaticBoxSizer, TextCtrl
-from meerk40t.kernel import signal_listener, lookup_listener, Settings
+from meerk40t.kernel import Settings, lookup_listener, signal_listener
 from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
+
 class SaveLoadPanel(wx.Panel):
+    """
+    Provides the scaffold for saving and loading of parameter sets.
+    Does not know a lot about the underlying structure of data as it
+    blindly interacts with the parent via the callback routine
+    (could hence work as a generic way to save / load data)
+    """
+
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -42,7 +50,9 @@ class SaveLoadPanel(wx.Panel):
         sizer_name.Add(self.btn_delete, 0, wx.EXPAND, 0)
 
         self.choices = []
-        self.list_slots = wx.ListBox(self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE)
+        self.list_slots = wx.ListBox(
+            self, wx.ID_ANY, choices=self.choices, style=wx.LB_SINGLE
+        )
         self.list_slots.SetToolTip(_("Select an entry to reload"))
         sizer_main.Add(sizer_name, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_slots, 1, wx.EXPAND, 0)
@@ -60,7 +70,10 @@ class SaveLoadPanel(wx.Panel):
 
     def standardize(self, text):
         text = text.lower()
-        for invalid in ("=", ":",):
+        for invalid in (
+            "=",
+            ":",
+        ):
             text = text.replace(invalid, "_")
         return text
 
@@ -101,14 +114,14 @@ class SaveLoadPanel(wx.Panel):
         if self.callback is None or not info:
             return
         info = self.standardize(info)
-        result = self.callback("load", info)
+        __ = self.callback("load", info)
 
     def on_btn_delete(self, event):
         info = self.txt_name.GetValue()
         if self.callback is None or not info:
             return
         info = self.standardize(info)
-        result = self.callback("delete", info)
+        __ = self.callback("delete", info)
         self.fill_choices("")
 
     def on_btn_save(self, event):
@@ -116,7 +129,7 @@ class SaveLoadPanel(wx.Panel):
         if self.callback is None or not info:
             return
         info = self.standardize(info)
-        result = self.callback("save", info)
+        __ = self.callback("save", info)
         self.fill_choices(info)
         self.on_text_change(None)
 
@@ -139,7 +152,15 @@ class SaveLoadPanel(wx.Panel):
             self.on_btn_load(None)
         self.on_text_change(None)
 
+
 class TemplatePanel(wx.Panel):
+    """
+    Responsible for the generation of testpatterns and the user interface
+    params:
+    context - the current context
+    storage - an instance of kernel.Settings to store/load parameter sets
+    """
+
     def __init__(self, *args, context=None, storage=None, **kwds):
         def size_it(ctrl, value):
             ctrl.SetMaxSize(wx.Size(int(value), -1))
@@ -1373,9 +1394,9 @@ class TemplatePanel(wx.Panel):
         key = f"{templatename}"
         info_field = self.storage.read_persistent(tuple, "materialtest", key, None)
         if (
-            info_field is not None and
-            isinstance(info_field, (tuple, list)) and
-            len(info_field) == 19
+            info_field is not None
+            and isinstance(info_field, (tuple, list))
+            and len(info_field) == 19
         ):
             # print (f"Load data from {templatename}")
             self.context.template_show_values = info_field[0]
@@ -1480,6 +1501,10 @@ class TemplatePanel(wx.Panel):
 
 
 class TemplateTool(MWindow):
+    """
+    Material-/Parameter Test routines
+    """
+
     def __init__(self, *args, **kwds):
         super().__init__(720, 750, submenu="Laser-Tools", *args, **kwds)
 
@@ -1524,7 +1549,6 @@ class TemplateTool(MWindow):
 
     def callback_templates(self, command, param):
         # print (f"callback called with {command}, {param}")
-        pattern = "template_name_"
         if command == "load":
             if param:
                 self.panel_template.restore_settings(param)
