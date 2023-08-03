@@ -303,6 +303,18 @@ class TestGeomstr(unittest.TestCase):
             )
             # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
 
+        q = np.array([complex(0, 0), complex(1, 1), complex(2, 2)])
+        path = Geomstr.lines(q)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        r = np.array([[0., 0.], [1., 1.], [2., 2.]])
+        path = Geomstr.lines(r)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
     def test_geomstr_copies(self):
         path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))
         path.copies(2)

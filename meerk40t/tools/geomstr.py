@@ -55,6 +55,7 @@ this is effectively a point.
 import math
 from copy import copy
 
+import numpy
 import numpy as np
 
 from meerk40t.svgelements import (
@@ -770,7 +771,10 @@ class Geomstr:
                 return path
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
-        if isinstance(first_point, (list, tuple)):
+        if isinstance(first_point, numpy.ndarray):
+            points = list(first_point)
+            first_point = points[0]
+        if isinstance(first_point, (list, tuple, numpy.ndarray)):
             points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
