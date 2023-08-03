@@ -705,7 +705,20 @@ def init_tree(kernel):
     #     self("plan0 clear copy-selected\n")
     #     self("window open ExecuteJob 0\n")
 
+    def selected_active_ops():
+        result = 0
+        for op in self.ops():
+            try:
+                if op.selected and op.output:
+                    result += 1
+            except AttributeError:
+                pass
+        return result
+
     @tree_separator_after()
+    @tree_conditional(
+        lambda cond: selected_active_ops() > 0
+    )
     @tree_operation(
         _("Simulate operation(s)"),
         node_type=op_nodes,
