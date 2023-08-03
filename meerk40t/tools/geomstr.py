@@ -55,6 +55,7 @@ this is effectively a point.
 import math
 from copy import copy
 
+import numpy
 import numpy as np
 
 from meerk40t.svgelements import (
@@ -770,7 +771,10 @@ class Geomstr:
                 return path
             points = list(zip(*[iter(points)] * 2))
             first_point = points[0]
-        if isinstance(first_point, (list, tuple)):
+        if isinstance(first_point, numpy.ndarray):
+            points = list(first_point)
+            first_point = points[0]
+        if isinstance(first_point, (list, tuple, numpy.ndarray)):
             points = [None if pts is None else pts[0] + pts[1] * 1j for pts in points]
             first_point = points[0]
         if isinstance(first_point, complex):
@@ -3087,6 +3091,28 @@ class Geomstr:
                 path.move(s)
                 path.closed()
         return path
+
+    def as_contiguous(self):
+        segments = self.segments
+        index = self.index
+        # infos = segments[:index, 2]
+
+        original = self.index
+        indexes0 = np.arange(0, original - 1)
+        indexes1 = indexes0 + 1
+
+        pen_ups = segments[indexes0, -1]
+        pen_downs = segments[indexes1, 0]
+
+        q = np.where(pen_ups != pen_downs)[0]
+        last = 0
+        for m in q:
+            if m != last:
+                yield Geomstr(self.segments[last:m+1])
+            last = m + 1
+        if last != self.index:
+            yield Geomstr(self.segments[last: self.index])
+
 
     def as_subpaths(self):
         """
