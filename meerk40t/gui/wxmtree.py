@@ -181,6 +181,11 @@ class TreePanel(wx.Panel):
     def pane_hide(self):
         pass
 
+    @signal_listener("warn_state_update")
+    def on_warn_state_update(self, origin, *args):
+        # Updates the warning state, using signal to avoid unnecessary calls
+        self.shadow_tree.update_warn_sign()
+
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
         self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
@@ -355,6 +360,7 @@ class ShadowTree:
         self._freeze = False
         self.iconsize = 20
         self.iconstates = {}
+        self.last_call = 0
         fact = get_default_scale_factor()
         if fact > 1.0:
             self.iconsize = int(self.iconsize * fact)
@@ -453,8 +459,8 @@ class ShadowTree:
         """
         if self._freeze or self.context.elements.suppress_updates:
             return
-        self.update_warn_sign()
         self.elements.signal("modified")
+        self.elements.signal("warn_state_update")
 
     def node_detached(self, node, **kwargs):
         """
@@ -822,6 +828,10 @@ class ShadowTree:
         self.context.elements.set_end_time("full_load", display=True, delete=True)
 
     def update_warn_sign(self):
+        # from time import perf_counter
+        # this_call =  perf_counter()
+        # print (f"Update warn was called, time since last: {this_call-self.last_call:.3f}sec")
+        # self.last_call = this_call
         op_node = self.elements.get(type="branch ops")
         op_item = op_node._item
         self.wxtree.Expand(op_item)
@@ -966,7 +976,8 @@ class ShadowTree:
         self.wxtree.Expand(node_operations._item)
         self.wxtree.Expand(node_elements._item)
         self.wxtree.Expand(node_registration._item)
-        self.update_warn_sign()
+        self.elements.signal("warn_state_update")
+
 
         # Restore emphasis
         for e in emphasized_list:
