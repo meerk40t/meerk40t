@@ -3092,6 +3092,28 @@ class Geomstr:
                 path.closed()
         return path
 
+    def as_contiguous(self):
+        segments = self.segments
+        index = self.index
+        # infos = segments[:index, 2]
+
+        original = self.index
+        indexes0 = np.arange(0, original - 1)
+        indexes1 = indexes0 + 1
+
+        pen_ups = segments[indexes0, -1]
+        pen_downs = segments[indexes1, 0]
+
+        q = np.where(pen_ups != pen_downs)[0]
+        last = 0
+        for m in q:
+            if m != last:
+                yield Geomstr(self.segments[last:m+1])
+            last = m + 1
+        if last != self.index:
+            yield Geomstr(self.segments[last: self.index])
+
+
     def as_subpaths(self):
         """
         Generate individual subpaths.

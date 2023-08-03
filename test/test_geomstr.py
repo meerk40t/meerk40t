@@ -217,6 +217,40 @@ class TestGeomstr(unittest.TestCase):
         numpath.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
+            print(subpath.segments)
+            for seg in subpath.segments:
+                self.assertEqual(seg[2].real, TYPE_LINE)
+        self.assertEqual(len(subpaths[0]), 4)
+        self.assertEqual(len(subpaths[1]), 4)
+
+    def test_geomstr_contiguous(self):
+        numpath = Geomstr()
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.close()
+        numpath.end()
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
+        numpath.uscale(10000)
+        numpath.rotate(tau * 0.25)
+        subpaths = list(numpath.as_contiguous())
+        print("")
+        for subpath in subpaths:
+            print(subpath.segments)
             for seg in subpath.segments:
                 self.assertEqual(seg[2].real, TYPE_LINE)
         self.assertEqual(len(subpaths[0]), 4)
