@@ -8,6 +8,7 @@ from time import perf_counter
 from meerk40t.core.node.node import Linejoin
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.tools.geomstr import Geomstr
+import numpy as np
 import pyclipr
 
 """
@@ -79,13 +80,6 @@ def init_commands(kernel):
         "radial", "r", action="store_true", type=bool, help=_("radial connector")
     )
     @self.console_option(
-        "native",
-        "n",
-        action="store_true",
-        type=bool,
-        help=_("native path offset (use at you own risk)"),
-    )
-    @self.console_option(
         "interpolation", "i", type=int, help=_("interpolation points per segment")
     )
     @self.console_command(
@@ -100,21 +94,35 @@ def init_commands(kernel):
         _,
         offset=None,
         radial=None,
-        native=False,
         interpolation=None,
         data=None,
         post=None,
         **kwargs,
     ):
+
+        # def testroutine():
+        #     # Tuple definition of a path
+        #     path = [(0.0, 0.), (100, 0), (100, 100), (0, 100), (0, 0)]
+        #     # Create an offsetting object
+        #     po = pyclipr.ClipperOffset()
+        #     # Set the scale factor to convert to internal integer representation
+        #     po.scaleFactor = int(1000)
+        #     # add the path - ensuring to use Polygon for the endType argument
+        #     npp = np.array(path)
+        #     po.addPath(npp, pyclipr.Miter, pyclipr.Polygon)
+        #     # Apply the offsetting operation using a delta.
+        #     offsetSquare = po.execute(10.0)
+        #     print ("test...")
+        #     print (npp)
+        #     print (offsetSquare)
+        #     print ("done...")
+
+        # testroutine()
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No elements selected"))
             return "elements", data
-        if native:
-            linearize = False
-        else:
-            linearize = True
         if interpolation is None:
             interpolation = 500
         if offset is None:
@@ -122,40 +130,95 @@ def init_commands(kernel):
         else:
             try:
                 ll = Length(offset)
-                # Invert for right behaviour
-                offset = -1.0 * float(ll)
+                offset = float(ll)
             except ValueError:
                 offset = 0
         if radial is None:
             radial = False
+
+        # Create an offsetting object
+        clipr_offset = pyclipr.ClipperOffset()
+        # Set the scale factor to convert to internal integer representation
+        # As mks internal variable representation is already based on tats
+        # that should not be necessary
+        clipr_offset.scaleFactor = int(1000)
+
         data_out = list()
         for node in data:
-            if hasattr(node, "as_path"):
-                p = abs(node.as_path())
+            clipr_offset.clear()
+            if hasattr(node, "as_geometry"):
+                # Let's get list of points with the
+                # required interpolation density
+                g = node.as_geometry()
+                node_points = list(g.as_interpolated_points(interpolation))
             else:
                 bb = node.bounds
                 if bb is None:
                     # Node has no bounds or space, therefore no offset outline.
                     return "elements", data_out
-                p = Geomstr.rect(
-                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
-                ).as_path()
+                node_points = (
+                    bb[0] + bb[1]* 1j,
+                    bb[0] + bb[3]* 1j,
+                    bb[2] + bb[3]* 1j,
+                    bb[2] + bb[1]* 1j,
+                    bb[0] + bb[1]* 1j,
+                )
 
-            node_path = offset_path(
-                p,
-                offset,
-                radial_connector=radial,
-                linearize=linearize,
-                interpolation=interpolation,
-            )
-            node_path.validate_connections()
-            newnode = self.elem_branch.add(
-                path=node_path, type="elem path", stroke=node.stroke
-            )
-            newnode.stroke_width = UNITS_PER_PIXEL
-            newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
-            data_out.append(newnode)
+            # There may be a smarter way to do this, but geomstr
+            # provides an array of complex numbers. pyclipr on the other
+            # hand would like to have points as (x, y) and not as (x + y * 1j)
+            complex_array = np.array(node_points)
+            np_points = np.column_stack((complex_array.real, complex_array.imag))
+            # np_points = np.array(node_points, np.cdouble)
+
+            # add the path - ensuring to use Polygon for the endType argument
+            if radial:
+                clipr_offset.addPath(np_points, pyclipr.Round, pyclipr.Polygon)
+            else:
+                clipr_offset.addPath(np_points, pyclipr.Miter, pyclipr.Polygon)
+
+            # Apply the offsetting operation using a delta.
+            newpath = clipr_offset.execute(offset)
+            if len(newpath) == 0:
+                channel(f"Collapsed outline for {node.type}:{node.label}")
+                continue
+            # print (f"Apply offset: {offset}")
+            for subp in newpath:
+                #  print (f"Type: {type(subp).__name__}")
+                result_list = []
+                for pt in subp:
+                    result_list.append(pt[0])
+                    result_list.append(pt[1])
+                if len(result_list) == 0:
+                    channel(f"Collapsed outline for {node.type}:{node.label}")
+                    continue
+                # print (np_points)
+                # print ("---")
+                # print (subp)
+                # print (result_list)
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 1E-3 or dy > 1E-3:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+                except IndexError:
+                    channel(f"Invalid outline for {node.type}:{node.label}")
+                    continue
+
+                geom = Geomstr.lines(*result_list)
+                # print (geom)
+                newnode = self.elem_branch.add(
+                    geometry=geom, type="elem polyline", stroke=node.stroke
+                )
+                newnode.stroke_width = UNITS_PER_PIXEL
+                newnode.linejoin = Linejoin.JOIN_ROUND
+                newnode.label = f"Offset of {node.id if node.label is None else node.label}"
+                data_out.append(newnode)
 
         # Newly created! Classification needed?
         if len(data_out) > 0:
