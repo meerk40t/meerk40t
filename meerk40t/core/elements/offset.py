@@ -5,11 +5,12 @@ from copy import copy
 from math import atan2, tau
 from time import perf_counter
 
-from meerk40t.core.node.node import Linejoin
-from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.tools.geomstr import Geomstr
 import numpy as np
 import pyclipr
+
+from meerk40t.core.node.node import Linejoin, Node
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.tools.geomstr import Geomstr
 
 """
 The following routines deal with the offset of an SVG path at a given distance D.
@@ -45,6 +46,7 @@ generating a new offseted segement
 c) Finally it stitches those segments together, treating for the simplifaction
 """
 
+
 def offset_path(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
@@ -52,7 +54,7 @@ def offset_path(
     time_start = perf_counter()
     results = []
     time_end = perf_counter()
-    print (f"Done, execution time: {time_end - time_start:.2f}s")
+    print(f"Done, execution time: {time_end - time_start:.2f}s")
     return results
 
 
@@ -141,41 +143,72 @@ def init_commands(kernel):
         # Set the scale factor to convert to internal integer representation
         # As mks internal variable representation is already based on tats
         # that should not be necessary
-        clipr_offset.scaleFactor = int(1000)
+        bounds = Node.union_bounds(data)
+        factor = int(1000)
+        if bounds[2] > 100000 or bounds[3] > 100000:
+            factor = int(1)
+        elif bounds[2] > 10000 or bounds[3] > 10000:
+            factor = int(10)
+        elif bounds[2] > 1000 or bounds[3] > 1000:
+            factor = int(100)
+
+        clipr_offset.scaleFactor = factor
 
         data_out = list()
         for node in data:
-            clipr_offset.clear()
+            np_list = []
             if hasattr(node, "as_geometry"):
                 # Let's get list of points with the
                 # required interpolation density
                 g = node.as_geometry()
-                node_points = list(g.as_interpolated_points(interpolation))
+                idx = 0
+                for subg in g.as_subpaths():
+                    node_points = list(subg.as_interpolated_points(interpolation))
+                    np_list.append(node_points)
+                    mp = max(np_list)
             else:
                 bb = node.bounds
                 if bb is None:
                     # Node has no bounds or space, therefore no offset outline.
                     return "elements", data_out
                 node_points = (
-                    bb[0] + bb[1]* 1j,
-                    bb[0] + bb[3]* 1j,
-                    bb[2] + bb[3]* 1j,
-                    bb[2] + bb[1]* 1j,
-                    bb[0] + bb[1]* 1j,
+                    bb[0] + bb[1] * 1j,
+                    bb[0] + bb[3] * 1j,
+                    bb[2] + bb[3] * 1j,
+                    bb[2] + bb[1] * 1j,
+                    bb[0] + bb[1] * 1j,
                 )
+                np_list.append(node_points)
 
-            # There may be a smarter way to do this, but geomstr
-            # provides an array of complex numbers. pyclipr on the other
-            # hand would like to have points as (x, y) and not as (x + y * 1j)
-            complex_array = np.array(node_points)
-            np_points = np.column_stack((complex_array.real, complex_array.imag))
-            # np_points = np.array(node_points, np.cdouble)
+            clipr_offset.clear()
+            for node_points in np_list:
+                # There may be a smarter way to do this, but geomstr
+                # provides an array of complex numbers. pyclipr on the other
+                # hand would like to have points as (x, y) and not as (x + y * 1j)
+                complex_array = np.array(node_points)
+                np_points = np.column_stack((complex_array.real, complex_array.imag))
+                # np_points = np.array(node_points, np.cdouble)
+                lastx = 0
+                lasty = 0
+                for idx, p in enumerate(np_points):
+                    if p is None:
+                        print (f"There was an invalid point at #{idx}")
+                    elif p[0] is None:
+                        print (f"X was invalid at #{idx}: {p}")
+                    elif p[1] is None:
+                        print (f"Y was invalid at #{idx}: {p}")
+                    else:
+                        lastx = p[0]
+                        lasty = p[1]
+                        continue
+                    np_points[idx, 0] = lastx
+                    np_points[idx, 1] = lasty
 
-            # add the path - ensuring to use Polygon for the endType argument
-            if radial:
-                clipr_offset.addPath(np_points, pyclipr.Round, pyclipr.Polygon)
-            else:
-                clipr_offset.addPath(np_points, pyclipr.Miter, pyclipr.Polygon)
+                # add the path - ensuring to use Polygon for the endType argument
+                if radial:
+                    clipr_offset.addPath(np_points, pyclipr.Round, pyclipr.Polygon)
+                else:
+                    clipr_offset.addPath(np_points, pyclipr.Miter, pyclipr.Polygon)
 
             # Apply the offsetting operation using a delta.
             newpath = clipr_offset.execute(offset)
@@ -203,7 +236,7 @@ def init_commands(kernel):
                     p2y = result_list[-1]
                     dx = abs(p1x - p2x)
                     dy = abs(p1y - p2y)
-                    if dx > 1E-3 or dy > 1E-3:
+                    if dx > 1e-3 or dy > 1e-3:
                         result_list.append(p1x)
                         result_list.append(p1y)
                 except IndexError:
@@ -217,7 +250,9 @@ def init_commands(kernel):
                 )
                 newnode.stroke_width = UNITS_PER_PIXEL
                 newnode.linejoin = Linejoin.JOIN_ROUND
-                newnode.label = f"Offset of {node.id if node.label is None else node.label}"
+                newnode.label = (
+                    f"Offset of {node.id if node.label is None else node.label}"
+                )
                 data_out.append(newnode)
 
         # Newly created! Classification needed?
