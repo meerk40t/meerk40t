@@ -115,17 +115,30 @@ def init_commands(kernel):
         #     po.scaleFactor = int(1000)
         #     # add the path - ensuring to use Polygon for the endType argument
         #     npp = np.array(path)
-        #     po.addPath(npp, pyclipr.Miter, pyclipr.Polygon)
+        #     po.addPath(npp, pyclipr.JoinType.Miter, pyclipr.EndType.Polygon)
         #     # Apply the offsetting operation using a delta.
         #     offsetSquare = po.execute(10.0)
-        #     print ("test...")
+        #     print ("test for polygon...")
+        #     print (npp)
+        #     print (offsetSquare)
+        #     print ("done...")
+        #     po.clear()
+        #     path=[ (100, 100), (1500, 100), (100, 1500), (1500, 1500) ]
+        #     path = [(25801,  51602), (129005,  51602), (25801, 129005), (129005, 129005)]
+        #     po.scaleFactor = int(1000)
+        #     # add the path - ensuring to use Polygon for the endType argument
+        #     npp = np.array(path)
+        #     po.addPath(npp, pyclipr.JoinType.Miter, pyclipr.EndType.Square)
+        #     # Apply the offsetting operation using a delta.
+        #     offsetSquare = po.execute(10.0)
+        #     print ("test for polyline...")
         #     print (npp)
         #     print (offsetSquare)
         #     print ("done...")
 
         def examine_and_add():
             if len(newpath) == 0:
-                channel(f"Collapsed outline for {node.type}:{node.label}")
+                print(f"Collapsed outline for {node.type}:{node.label}\n{np_points}")
                 return
             # print (f"Apply offset: {offset}")
             idx = 0
@@ -165,19 +178,20 @@ def init_commands(kernel):
                 # print ("---")
                 # print (subp)
                 # print (result_list)
-                try:
-                    p1x = result_list[0]
-                    p1y = result_list[1]
-                    p2x = result_list[-2]
-                    p2y = result_list[-1]
-                    dx = abs(p1x - p2x)
-                    dy = abs(p1y - p2y)
-                    if dx > 10 or dy > 10:
-                        result_list.append(p1x)
-                        result_list.append(p1y)
-                except IndexError:
-                    channel(f"Invalid outline for {node.type}:{node.label}")
-                    continue
+                if is_polygon:
+                    try:
+                        p1x = result_list[0]
+                        p1y = result_list[1]
+                        p2x = result_list[-2]
+                        p2y = result_list[-1]
+                        dx = abs(p1x - p2x)
+                        dy = abs(p1y - p2y)
+                        if dx > 10 or dy > 10:
+                            result_list.append(p1x)
+                            result_list.append(p1y)
+                    except IndexError:
+                        channel(f"Invalid outline for {node.type}:{node.label}")
+                        continue
 
                 geom = Geomstr.lines(*result_list)
                 # print (geom)
@@ -232,16 +246,20 @@ def init_commands(kernel):
         data_out = list()
         for node in data:
             np_list = []
+            polygon_list = []
             if hasattr(node, "as_geometry"):
                 # Let's get list of points with the
                 # required interpolation density
                 g = node.as_geometry()
-                # idx = 0
+                idx = 0
                 for subg in g.as_contiguous():
                     node_points = list(subg.as_interpolated_points(interpolation))
+                    flag = subg.is_closed()
+                    # print (node_points, flag)
                     np_list.append(node_points)
-                    # print (f"Adding structure #{idx}")
-                    # idx += 1
+                    polygon_list.append(flag)
+                    print (f"Adding structure #{idx}")
+                    idx += 1
             else:
                 bb = node.bounds
                 if bb is None:
@@ -255,14 +273,18 @@ def init_commands(kernel):
                     bb[0] + bb[1] * 1j,
                 )
                 np_list.append(node_points)
+                polygon_list.append(True)
 
             clipr_offset.clear()
-            for node_points in np_list:
+            for node_points, is_polygon in zip(np_list, polygon_list):
+                # print (f"Add {'polygon' if is_polygon else 'polyline'}: {node_points}")
+
                 # There may be a smarter way to do this, but geomstr
                 # provides an array of complex numbers. pyclipr on the other
                 # hand would like to have points as (x, y) and not as (x + y * 1j)
                 complex_array = np.array(node_points)
-                np_points = np.column_stack((complex_array.real, complex_array.imag))
+                temp = np.column_stack((complex_array.real, complex_array.imag))
+                np_points = temp.astype(int)
                 # np_points = np.array(node_points, np.cdouble)
                 # lastx = 0
                 # lasty = 0
@@ -282,20 +304,38 @@ def init_commands(kernel):
 
                 # add the path - ensuring to use Polygon for the endType argument
                 if jointype.startswith("r"): # round
-                    clipr_offset.addPath(np_points, pyclipr.JoinType.Round, pyclipr.EndType.Polygon)
+                    pyc_jointype = pyclipr.JoinType.Round
+                    # endtype = pyclipr.EndType.Round
                 elif jointype.startswith("s"): # square
-                    clipr_offset.addPath(np_points, pyclipr.JoinType.Square, pyclipr.EndType.Polygon)
+                    pyc_jointype = pyclipr.JoinType.Square
+                    # endtype = pyclipr.EndType.Square
                 else:
-                    clipr_offset.addPath(np_points, pyclipr.JoinType.Miter, pyclipr.EndType.Polygon)
+                    pyc_jointype = pyclipr.JoinType.Miter
+                    # endtype = pyclipr.EndType.Miter
+
+
+                if is_polygon:
+                    pyc_endtype = pyclipr.EndType.Polygon
+                else:
+                    pyc_endtype = pyclipr.EndType.Square
+
+                # print ("add path:")
+                # print (np_points)
+                clipr_offset.addPath(np_points, pyc_jointype, pyc_endtype)
+
                 if separate:
                     # Apply the offsetting operation using a delta.
                     newpath = clipr_offset.execute(offset)
+                    # print ("result 1:")
+                    # print (newpath)
                     examine_and_add()
                     clipr_offset.clear()
 
             if not separate:
                 # Apply the offsetting operation using a delta.
                 newpath = clipr_offset.execute(offset)
+                # print ("result 2:")
+                # print (newpath)
                 examine_and_add()
 
         # Newly created! Classification needed?
