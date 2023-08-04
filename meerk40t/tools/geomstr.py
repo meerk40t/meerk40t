@@ -1278,9 +1278,10 @@ class Geomstr:
             self.line(end_segment, start_segment, settings=settings)
 
     def is_closed(self):
-        if self.index != 0:
+        if self.index == 0:
+            # Empty path ?
             return True
-        return abs(self.segments[0][0] - self.segments[self.index][-1]) < 1e-5
+        return abs(self.segments[0][0] - self.segments[self.index - 1][-1]) < 1e-5
 
     #######################
     # Geometric Helpers
