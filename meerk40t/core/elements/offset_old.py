@@ -496,11 +496,11 @@ def offset_path(
         while (idx < len(p)) and not isinstance(
             p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
         ):
-            print (f"Skipped at {idx}: {type(p._segments[idx]).__name__}")
+            # print (f"Skipped at {idx}: {type(p._segments[idx]).__name__}")
             idx += 1
         if idx >= len(p._segments):
-            print (f"Skipped segment #{idx} as it contains no valid data")
-            print (p)
+            # print (f"Skipped segment #{idx} as it contains no valid data")
+            # print (p)
             continue
         firstp_start = Point(p._segments[idx].start)
         firstp_end = Point(p._segments[idx].end)

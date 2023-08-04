@@ -13,37 +13,10 @@ from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.tools.geomstr import Geomstr
 
 """
-The following routines deal with the offset of an SVG path at a given distance D.
-An offset or parallel curve can easily be established:
-    - for a line segment by another line parallel and in distance D:
-        Establish the two normals with length D on the end points and
-        create the two new endpoints
-    - for an arc segment: elongate rx and ry by D
-To establish an offset for a quadratic or cubic bezier by another cubic bezier
-is not possible so this requires approximation.
-An acceptable approximation is proposed by Tiller and Hanson:
-    P1 start point
-    P2 end point
-    C1 control point 1
-    C2 control point 2
-    You create the offset version of these 3 lines and look for their intersections:
-        - offset to (P1 C1)  -> helper 1
-        - offset to (C1 C2)  -> helper 2
-        - offset to (P2 C2)  -> helper 3
-        we establish P1-new
-        the intersections between helper 1 and helper 2 is our new control point C1-new
-        the intersections between helper 2 and helper 3 is our new control point C2-new
-
-
-
-A good visual representation can be seen here:
-https://feirell.github.io/offset-bezier/
-
-The algorithm deals with the challenge as follows:
-a) It walks through the subpaths of a given path so that we have a continuous curve
-b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+Minimal integration of the Clipper2 library by Angus Johnson
+    https://github.com/AngusJohnson/Clipper2
+via the pyclipr library of Luke Parry
+    https://github.com/drlukeparry/pyclipr
 """
 
 
@@ -143,7 +116,12 @@ def init_commands(kernel):
             # print (f"Apply offset: {offset}")
             idx = 0
             for subp in newpath:
-                #  print (f"Type: {type(subp).__name__}")
+                # Simplifypath is not peroperly exposed?!
+                # if overall_polygon:
+                #     ct_before = len(subp)
+                #     pyclipr.simplifyPaths(subp, 0.05, False)
+                #     ct_after = len(subp)
+                #     print (f"Simplify provided: {ct_after} vs {ct_before}")
                 result_list = []
                 # Sometimes we get artifacts: a small array
                 # with very small structures.
@@ -277,8 +255,11 @@ def init_commands(kernel):
                 polygon_list.append(True)
 
             clipr_offset.clear()
+            overall_polygon = True
             for node_points, is_polygon in zip(np_list, polygon_list):
                 # print (f"Add {'polygon' if is_polygon else 'polyline'}: {node_points}")
+                if not is_polygon:
+                    overall_polygon = False
 
                 # There may be a smarter way to do this, but geomstr
                 # provides an array of complex numbers. pyclipr on the other
@@ -314,7 +295,6 @@ def init_commands(kernel):
                     pyc_jointype = pyclipr.JoinType.Miter
                     # endtype = pyclipr.EndType.Miter
 
-
                 if is_polygon:
                     pyc_endtype = pyclipr.EndType.Polygon
                 else:
@@ -344,5 +324,276 @@ def init_commands(kernel):
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
         return "elements", data_out
+
+    # ---- Let's add some CAG commands....
+    @self.console_argument(
+        "method",
+        type=str,
+        help=_(
+            "method to use (one of union, difference, intersection, xor)"
+        ),
+    )
+    @self.console_option(
+        "filltype", "d",
+        type=str,
+        help=_(
+            "filltype to use (one of evenodd, nonzero, negative, positive)"
+        ),
+    )
+    @self.console_option(
+        "interpolation", "i", type=int, help=_("interpolation points per segment")
+    )
+    @self.console_option(
+        "keep", "k", action="store_true", type=bool, help=_("keep the original elements, will be removed by default")
+    )
+    @self.console_command(
+        "clipper",
+        help=_("create a logical combination of of the given elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_clipper(
+        command,
+        channel,
+        _,
+        method=None,
+        filltype=None,
+        interpolation=None,
+        keep=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+
+        def examine_and_add():
+            if len(newpath) == 0:
+                # print(f"Collapsed clipline for {node.type}:{node.label}\n{np_points}")
+                return
+            idx = 0
+            allgeom = None
+            for subp in newpath:
+                result_list = []
+                pt_count = len(subp)
+                # print (f"{idx}#: {pt_count} pts")
+                idx += 1
+                if pt_count < 2:
+                    continue
+                # Sometimes we get artifacts: a small array
+                # with very small structures.
+                # We try to identify and to discard them
+                tolerance = 500 * 500 # Structures below 500 tats sidelength are ignored...
+                maxd = 0
+                lastpt = None
+                for pt in subp:
+                    if lastpt is not None:
+                        dx = abs(lastpt[0] - pt[0])
+                        dy = abs(lastpt[1] - pt[1])
+                        maxd += dx*dx + dy*dy
+                    lastpt = pt
+                    if maxd > tolerance:
+                        break
+
+                if maxd < tolerance:
+                    # print (f"Artifact ignored: {maxd:.3f}")
+                    continue
+
+                for pt in subp:
+                    result_list.append(pt[0])
+                    result_list.append(pt[1])
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 10 or dy > 10:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+                except IndexError:
+                    # channel(f"Invalid clipline for {node.type}:{node.label}")
+                    continue
+                geom = Geomstr.lines(*result_list)
+                if allgeom is None:
+                    allgeom = geom
+                else:
+                    # Add a end marker
+                    allgeom.end()
+                    allgeom.append(geom)
+            # print (geom)
+            if allgeom is not None:
+                newnode = self.elem_branch.add(
+                    geometry=allgeom, type="elem polyline", stroke=firstnode.stroke
+                )
+                newnode.stroke_width = UNITS_PER_PIXEL
+                newnode.linejoin = Linejoin.JOIN_ROUND
+                newnode.label = (
+                    f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.label}"
+                )
+                data_out.append(newnode)
+
+        # def testroutine():
+        #     # Tuple definition of a path
+        #     path1 = [(0.0, 0.), (0, 105.1234), (100, 105.1234), (100, 0), (0, 0)]
+        #     path2 = [(0, 0), (0, 50), (100, 50), (100, 0), (0,0)]
+
+        #     # Create a clipping object
+        #     pc = pyclipr.Clipper()
+        #     pc.scaleFactor = int(1000)
+
+        #     # Add the paths to the clipping object. Ensure the subject and clip arguments are set to differentiate
+        #     # the paths during the Boolean operation. The final argument specifies if the path is
+        #     # open.
+        #     pc.addPath(np.array(path1), pyclipr.PathType.Subject)
+        #     pc.addPath(np.array(path2), pyclipr.PathType.Clip)
+
+        #     """ Test Polygon Clipping """
+        #     # Below returns paths
+        #     out1 = pc.execute(pyclipr.ClipType.Intersection, pyclipr.FillType.EvenOdd)
+        #     out2 = pc.execute(pyclipr.ClipType.Union, pyclipr.FillType.EvenOdd)
+        #     out3 = pc.execute(pyclipr.ClipType.Difference, pyclipr.FillType.EvenOdd)
+        #     out4 = pc.execute(pyclipr.ClipType.Xor, pyclipr.FillType.EvenOdd)
+        #     print("In:")
+        #     print (path1)
+        #     print (path2)
+        #     print ("intersect")
+        #     print (out1)
+        #     print ("union")
+        #     print (out2)
+        #     print ("difference")
+        #     print (out3)
+        #     print ("xor")
+        #     print (out4)
+
+
+        #  testroutine()
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No elements selected"))
+            return "elements", data
+        # Sort data according to selection data so that first selected element becomes the master
+        data.sort(key=lambda n: n.emphasized_time)
+
+        if interpolation is None:
+            interpolation = 500
+        if method is None:
+            method = "union"
+        method = method.lower()
+        if filltype is None:
+            filltype = "evenodd"
+        filltype = filltype.lower()
+        if keep is None:
+            keep = False
+
+        # Create a clipper object
+        clipr_clipper = pyclipr.Clipper()
+        # Set the scale factor to convert to internal integer representation
+        # As mks internal variable representation is already based on tats
+        # that should not be necessary
+        bounds = Node.union_bounds(data)
+        factor = int(1000)
+        if bounds[2] > 100000 or bounds[3] > 100000:
+            factor = int(1)
+        elif bounds[2] > 10000 or bounds[3] > 10000:
+            factor = int(10)
+        elif bounds[2] > 1000 or bounds[3] > 1000:
+            factor = int(100)
+
+        clipr_clipper.scaleFactor = factor
+
+        data_out = list()
+        firstnode = None
+        np_list = []
+        polygon_list = []
+        for node in data:
+            # print (f"Looking at {node.type} - {node.label}")
+            if firstnode is None:
+                firstnode = node
+            if hasattr(node, "as_geometry"):
+                # Let's get list of points with the
+                # required interpolation density
+                g = node.as_geometry()
+                idx = 0
+                for subg in g.as_contiguous():
+                    node_points = list(subg.as_interpolated_points(interpolation))
+                    flag = subg.is_closed()
+                    # print (node_points, flag)
+                    np_list.append(node_points)
+                    polygon_list.append(flag)
+                    # print (f"Adding structure #{idx} with {len(node_points)} pts")
+                    idx += 1
+            else:
+                bb = node.bounds
+                if bb is None:
+                    # Node has no bounds or space, therefore no clipline.
+                    return "elements", data_out
+                node_points = (
+                    bb[0] + bb[1] * 1j,
+                    bb[0] + bb[3] * 1j,
+                    bb[2] + bb[3] * 1j,
+                    bb[2] + bb[1] * 1j,
+                    bb[0] + bb[1] * 1j,
+                )
+                np_list.append(node_points)
+                polygon_list.append(True)
+
+        clipr_clipper.clear()
+        first = True
+        for node_points, is_polygon in zip(np_list, polygon_list):
+            # print (f"Add {'polygon' if is_polygon else 'polyline'}: {node_points}")
+
+            # There may be a smarter way to do this, but geomstr
+            # provides an array of complex numbers. pyclipr on the other
+            # hand would like to have points as (x, y) and not as (x + y * 1j)
+            complex_array = np.array(node_points)
+            temp = np.column_stack((complex_array.real, complex_array.imag))
+            np_points = temp.astype(int)
+
+            if first:
+                first = False
+                pyc_pathtype = pyclipr.PathType.Subject
+            else:
+                pyc_pathtype = pyclipr.PathType.Clip
+
+            # print (f"Add path {pyc_pathtype} with {is_polygon}: {len(np_points)} pts")
+            clipr_clipper.addPath(np_points, pyc_pathtype, not is_polygon)
+
+        if method.startswith("d"):
+            pyc_method = pyclipr.ClipType.Difference
+            long_method = "Difference"
+        elif method.startswith("i"):
+            pyc_method = pyclipr.ClipType.Intersection
+            long_method = "Intersection"
+        elif method.startswith("x"):
+            pyc_method = pyclipr.ClipType.Xor
+            long_method = "Xor"
+        else:
+            pyc_method = pyclipr.ClipType.Union
+            long_method = "Union"
+
+        if filltype.startswith("no") or filltype.startswith("z"):
+            pyc_filltype = pyclipr.FillType.NonZero
+        elif filltype.startswith("p") or filltype.startswith("+"):
+            pyc_filltype = pyclipr.FillType.Positive
+        elif filltype.startswith("ne") or filltype.startswith("-"):
+            pyc_filltype = pyclipr.FillType.Negative
+        else:
+            pyc_filltype = pyclipr.FillType.EvenOdd
+
+        # print (f"Method={method} - {pyc_method}, filltype={filltype} - {pyc_filltype}")
+        # Perform the clip operation
+        newpath = clipr_clipper.execute(pyc_method, pyc_filltype)
+        examine_and_add()
+
+        # Newly created! Classification needed?
+        if len(data_out) > 0:
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
+            if not keep:
+                self.remove_nodes(data)
+
+        return "elements", data_out
+
 
     # --------------------------- END COMMANDS ------------------------------
