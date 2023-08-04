@@ -1279,9 +1279,8 @@ class Geomstr:
 
     def is_closed(self):
         if self.index == 0:
-            # Empty path ?
             return True
-        return abs(self.segments[0][0] - self.segments[self.index - 1][-1]) < 1e-5
+        return abs(self.segments[0][0] - self.segments[self.index -1][-1]) < 1e-5
 
     #######################
     # Geometric Helpers
@@ -3093,26 +3092,46 @@ class Geomstr:
                 path.closed()
         return path
 
+    # def as_contiguous_org(self):
+    #     segments = self.segments
+    #     index = self.index
+    #     # infos = segments[:index, 2]
+    #
+    #     original = self.index
+    #     indexes0 = np.arange(0, original - 1)
+    #     indexes1 = indexes0 + 1
+    #
+    #     pen_ups = segments[indexes0, -1]
+    #     pen_downs = segments[indexes1, 0]
+    #
+    #     q = np.where(pen_ups != pen_downs)[0]
+    #     last = 0
+    #     for m in q:
+    #         if m != last:
+    #             yield Geomstr(self.segments[last:m+1])
+    #         last = m + 1
+    #     if last != self.index:
+    #         yield Geomstr(self.segments[last: self.index])
+
     def as_contiguous(self):
-        segments = self.segments
-        index = self.index
-        # infos = segments[:index, 2]
+        """
+        Generate individual subpaths of contiguous segments
 
-        original = self.index
-        indexes0 = np.arange(0, original - 1)
-        indexes1 = indexes0 + 1
-
-        pen_ups = segments[indexes0, -1]
-        pen_downs = segments[indexes1, 0]
-
-        q = np.where(pen_ups != pen_downs)[0]
+        @return:
+        """
         last = 0
-        for m in q:
-            if m != last:
-                yield Geomstr(self.segments[last:m+1])
-            last = m + 1
+        for idx, seg in enumerate(self.segments):
+            segtype = int(seg[2].real)
+            if segtype == TYPE_END:
+                yield Geomstr(self.segments[last:idx])
+                last = idx + 1
+            elif idx > 0:
+                # are the start and endpositions different?
+                if self.segments[idx, 0] != self.segments[idx - 1, -1]:
+                    yield Geomstr(self.segments[last:idx])
+                    last = idx
         if last != self.index:
-            yield Geomstr(self.segments[last: self.index])
+            yield Geomstr(self.segments[last : self.index])
 
 
     def as_subpaths(self):
