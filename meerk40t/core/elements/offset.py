@@ -79,7 +79,10 @@ def init_commands(kernel):
         ),
     )
     @self.console_option(
-        "radial", "r", action="store_true", type=bool, help=_("radial connector")
+        "jointype", "j", type=str, help=_("join type: round, miter, square")
+    )
+    @self.console_option(
+        "separate", "s", action="store_true", type=bool, help=_("deal with subpaths separately")
     )
     @self.console_option(
         "interpolation", "i", type=int, help=_("interpolation points per segment")
@@ -95,7 +98,8 @@ def init_commands(kernel):
         channel,
         _,
         offset=None,
-        radial=None,
+        jointype=None,
+        separate=None,
         interpolation=None,
         data=None,
         post=None,
@@ -119,6 +123,74 @@ def init_commands(kernel):
         #     print (offsetSquare)
         #     print ("done...")
 
+        def examine_and_add():
+            if len(newpath) == 0:
+                channel(f"Collapsed outline for {node.type}:{node.label}")
+                return
+            # print (f"Apply offset: {offset}")
+            idx = 0
+            for subp in newpath:
+                #  print (f"Type: {type(subp).__name__}")
+                result_list = []
+                # Sometimes we get artifacts: a small array
+                # with very small structures.
+                # We try to identify and to discard them
+                pt_count = len(subp)
+                # 1 tat = 1/65535 of an inch
+                print (f"Subresult #{idx}: {pt_count} pts")
+                idx += 1
+                if pt_count < 2:
+                    #  channel(f"Collapsed outline for {node.type}:{node.label}")
+                    continue
+                tolerance = 500 * 500 # Structures below 500 tats sidelength are ignored...
+                maxd = 0
+                lastpt = None
+                for pt in subp:
+                    if lastpt is not None:
+                        dx = abs(lastpt[0] - pt[0])
+                        dy = abs(lastpt[1] - pt[1])
+                        maxd += dx*dx + dy*dy
+                    lastpt = pt
+                    if maxd > tolerance:
+                        break
+                print (f"Square-len with {pt_count} pts = {maxd}")
+                if maxd < tolerance:
+                    print ("Ignored...")
+                    continue
+
+                for pt in subp:
+                    result_list.append(pt[0])
+                    result_list.append(pt[1])
+                # print (np_points)
+                # print ("---")
+                # print (subp)
+                # print (result_list)
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 10 or dy > 10:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+                except IndexError:
+                    channel(f"Invalid outline for {node.type}:{node.label}")
+                    continue
+
+                geom = Geomstr.lines(*result_list)
+                # print (geom)
+                newnode = self.elem_branch.add(
+                    geometry=geom, type="elem polyline", stroke=node.stroke
+                )
+                newnode.stroke_width = UNITS_PER_PIXEL
+                newnode.linejoin = Linejoin.JOIN_ROUND
+                newnode.label = (
+                    f"Offset of {node.id if node.label is None else node.label}"
+                )
+                data_out.append(newnode)
+
         # testroutine()
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -127,6 +199,8 @@ def init_commands(kernel):
             return "elements", data
         if interpolation is None:
             interpolation = 500
+        if separate is None:
+            separate = False
         if offset is None:
             offset = 0
         else:
@@ -135,8 +209,9 @@ def init_commands(kernel):
                 offset = float(ll)
             except ValueError:
                 offset = 0
-        if radial is None:
-            radial = False
+        if jointype is None:
+            jointype = "miter"
+        jointype = jointype.lower()
 
         # Create an offsetting object
         clipr_offset = pyclipr.ClipperOffset()
@@ -161,11 +236,12 @@ def init_commands(kernel):
                 # Let's get list of points with the
                 # required interpolation density
                 g = node.as_geometry()
-                idx = 0
-                for subg in g.as_subpaths():
+                # idx = 0
+                for subg in g.as_contiguous():
                     node_points = list(subg.as_interpolated_points(interpolation))
                     np_list.append(node_points)
-                    mp = max(np_list)
+                    # print (f"Adding structure #{idx}")
+                    # idx += 1
             else:
                 bb = node.bounds
                 if bb is None:
@@ -188,72 +264,39 @@ def init_commands(kernel):
                 complex_array = np.array(node_points)
                 np_points = np.column_stack((complex_array.real, complex_array.imag))
                 # np_points = np.array(node_points, np.cdouble)
-                lastx = 0
-                lasty = 0
-                for idx, p in enumerate(np_points):
-                    if p is None:
-                        print (f"There was an invalid point at #{idx}")
-                    elif p[0] is None:
-                        print (f"X was invalid at #{idx}: {p}")
-                    elif p[1] is None:
-                        print (f"Y was invalid at #{idx}: {p}")
-                    else:
-                        lastx = p[0]
-                        lasty = p[1]
-                        continue
-                    np_points[idx, 0] = lastx
-                    np_points[idx, 1] = lasty
+                # lastx = 0
+                # lasty = 0
+                # for idx, p in enumerate(np_points):
+                #     if p is None:
+                #         print (f"There was an invalid point at #{idx}")
+                #     elif p[0] is None:
+                #         print (f"X was invalid at #{idx}: {p}")
+                #     elif p[1] is None:
+                #         print (f"Y was invalid at #{idx}: {p}")
+                #     else:
+                #         lastx = p[0]
+                #         lasty = p[1]
+                #         continue
+                #     np_points[idx, 0] = lastx
+                #     np_points[idx, 1] = lasty
 
                 # add the path - ensuring to use Polygon for the endType argument
-                if radial:
-                    clipr_offset.addPath(np_points, pyclipr.Round, pyclipr.Polygon)
+                if jointype.startswith("r"): # round
+                    clipr_offset.addPath(np_points, pyclipr.JoinType.Round, pyclipr.EndType.Polygon)
+                elif jointype.startswith("s"): # square
+                    clipr_offset.addPath(np_points, pyclipr.JoinType.Square, pyclipr.EndType.Polygon)
                 else:
-                    clipr_offset.addPath(np_points, pyclipr.Miter, pyclipr.Polygon)
+                    clipr_offset.addPath(np_points, pyclipr.JoinType.Miter, pyclipr.EndType.Polygon)
+                if separate:
+                    # Apply the offsetting operation using a delta.
+                    newpath = clipr_offset.execute(offset)
+                    examine_and_add()
+                    clipr_offset.clear()
 
-            # Apply the offsetting operation using a delta.
-            newpath = clipr_offset.execute(offset)
-            if len(newpath) == 0:
-                channel(f"Collapsed outline for {node.type}:{node.label}")
-                continue
-            # print (f"Apply offset: {offset}")
-            for subp in newpath:
-                #  print (f"Type: {type(subp).__name__}")
-                result_list = []
-                for pt in subp:
-                    result_list.append(pt[0])
-                    result_list.append(pt[1])
-                if len(result_list) == 0:
-                    channel(f"Collapsed outline for {node.type}:{node.label}")
-                    continue
-                # print (np_points)
-                # print ("---")
-                # print (subp)
-                # print (result_list)
-                try:
-                    p1x = result_list[0]
-                    p1y = result_list[1]
-                    p2x = result_list[-2]
-                    p2y = result_list[-1]
-                    dx = abs(p1x - p2x)
-                    dy = abs(p1y - p2y)
-                    if dx > 1e-3 or dy > 1e-3:
-                        result_list.append(p1x)
-                        result_list.append(p1y)
-                except IndexError:
-                    channel(f"Invalid outline for {node.type}:{node.label}")
-                    continue
-
-                geom = Geomstr.lines(*result_list)
-                # print (geom)
-                newnode = self.elem_branch.add(
-                    geometry=geom, type="elem polyline", stroke=node.stroke
-                )
-                newnode.stroke_width = UNITS_PER_PIXEL
-                newnode.linejoin = Linejoin.JOIN_ROUND
-                newnode.label = (
-                    f"Offset of {node.id if node.label is None else node.label}"
-                )
-                data_out.append(newnode)
+            if not separate:
+                # Apply the offsetting operation using a delta.
+                newpath = clipr_offset.execute(offset)
+                examine_and_add()
 
         # Newly created! Classification needed?
         if len(data_out) > 0:

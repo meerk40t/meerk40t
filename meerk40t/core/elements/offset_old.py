@@ -3,7 +3,6 @@ This adds console commands that deal with the creation of an offset
 """
 from copy import copy
 from math import atan2, tau
-from time import perf_counter
 
 from meerk40t.core.node.node import Linejoin
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
@@ -472,7 +471,6 @@ def offset_path(
             pass
         return
 
-    time_start = perf_counter()
     results = []
     # This needs to be a continuous path
     for subpath in path.as_subpaths():
@@ -610,8 +608,6 @@ def offset_path(
     result = results[0]
     for idx in range(1, len(results)):
         result += results[idx]
-    time_end = perf_counter()
-    print (f"Done, execution time: {time_end - time_start:.2f}s")
     return result
 
 
@@ -649,8 +645,8 @@ def init_commands(kernel):
         "interpolation", "i", type=int, help=_("interpolation points per segment")
     )
     @self.console_command(
-        "offset",
-        help=_("create an offset path for any of the given elements"),
+        "offset2",
+        help=_("create an offset path for any of the given elements, old algorithm"),
         input_type=(None, "elements"),
         output_type="elements",
     )
