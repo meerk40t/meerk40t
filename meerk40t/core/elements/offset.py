@@ -52,10 +52,10 @@ def offset_path(
 ):
 
     time_start = perf_counter()
-    results = []
+    newpath = copy(path)
     time_end = perf_counter()
     print(f"Done, execution time: {time_end - time_start:.2f}s")
-    return results
+    return newpath
 
 
 def plugin(kernel, lifecycle=None):
@@ -138,7 +138,7 @@ def init_commands(kernel):
 
         def examine_and_add():
             if len(newpath) == 0:
-                print(f"Collapsed outline for {node.type}:{node.label}\n{np_points}")
+                # print(f"Collapsed outline for {node.type}:{node.label}\n{np_points}")
                 return
             # print (f"Apply offset: {offset}")
             idx = 0
@@ -150,7 +150,7 @@ def init_commands(kernel):
                 # We try to identify and to discard them
                 pt_count = len(subp)
                 # 1 tat = 1/65535 of an inch
-                print (f"Subresult #{idx}: {pt_count} pts")
+                # print (f"Subresult #{idx}: {pt_count} pts")
                 idx += 1
                 if pt_count < 2:
                     #  channel(f"Collapsed outline for {node.type}:{node.label}")
@@ -166,9 +166,9 @@ def init_commands(kernel):
                     lastpt = pt
                     if maxd > tolerance:
                         break
-                print (f"Square-len with {pt_count} pts = {maxd}")
+
                 if maxd < tolerance:
-                    print ("Ignored...")
+                    # print (f"Square-len with {pt_count} pts = {maxd}, Ignored...")
                     continue
 
                 for pt in subp:
@@ -178,20 +178,21 @@ def init_commands(kernel):
                 # print ("---")
                 # print (subp)
                 # print (result_list)
-                if is_polygon:
-                    try:
-                        p1x = result_list[0]
-                        p1y = result_list[1]
-                        p2x = result_list[-2]
-                        p2y = result_list[-1]
-                        dx = abs(p1x - p2x)
-                        dy = abs(p1y - p2y)
-                        if dx > 10 or dy > 10:
-                            result_list.append(p1x)
-                            result_list.append(p1y)
-                    except IndexError:
-                        channel(f"Invalid outline for {node.type}:{node.label}")
-                        continue
+                # We do closing of the path ourselves...
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 10 or dy > 10:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+
+                except IndexError:
+                    channel(f"Invalid outline for {node.type}:{node.label}")
+                    continue
 
                 geom = Geomstr.lines(*result_list)
                 # print (geom)
@@ -258,7 +259,7 @@ def init_commands(kernel):
                     # print (node_points, flag)
                     np_list.append(node_points)
                     polygon_list.append(flag)
-                    print (f"Adding structure #{idx}")
+                    # print (f"Adding structure #{idx}")
                     idx += 1
             else:
                 bb = node.bounds
