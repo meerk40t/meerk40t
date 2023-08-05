@@ -21,7 +21,6 @@ class CutOpNode(Node, Parameters):
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.kerf = 0
-        self.offset_routine = None
         self._device_factor = 1.0
 
         if len(args) == 1:
@@ -63,9 +62,13 @@ class CutOpNode(Node, Parameters):
         return "CutOpNode()"
 
     def __copy__(self):
-        p = CutOpNode(self)
-        p.offset_routine = self.offset_routine
-        return p
+        return CutOpNode(self)
+
+    def offset_routine(self, path, offset_value=0):
+        # This is a placeholder that will be overloaded by plugin routines
+        # at runtime. It will return a new path with an offset to a given path
+        # As we don't have any logic, we just return the original path
+        return path
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False

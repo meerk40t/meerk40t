@@ -13,7 +13,7 @@ def plugin(kernel, lifecycle=None):
         try:
             import pyclipr
         except ImportError:
-            kernel.message("Clipper plugin could not load because pyclipr is not installed.")
+            # print ("Clipper plugin could not load because pyclipr is not installed.")
             return True
 
     if lifecycle == "postboot":
@@ -550,7 +550,10 @@ def init_commands(kernel):
             yield allgeom
 
 
-    def offset_path(path, offset_value=0):
+    def offset_path(self, path, offset_value=0):
+        # As this oveloading a regular method in a class
+        # it needs to have the very same definition (including the class
+        # reference self)
         offs = ClipperOffset(interpolation=500)
         offs.add_path(path)
         offs.process_data(offset_value, jointype="round", separate=False)
@@ -564,7 +567,9 @@ def init_commands(kernel):
         return p
 
     classify_new = self.post_classify
-    kernel.register("render-op/offset_path", offset_path)
+    # We are pathing the class in general, so that it can use the new functionality
+    from meerk40t.core.node.op_cut import CutOpNode
+    CutOpNode.offset_routine = offset_path
 
     @self.console_argument(
         "offset",
