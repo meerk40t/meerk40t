@@ -335,9 +335,13 @@ class Scene(Module, Job):
         if not self.screen_refresh_is_requested:
             return
         if self.scene_lock.acquire(timeout=0.2):
-            self._update_buffer_ui_thread()  # May hit runtime error.
-            self.gui.Refresh()
-            self.gui.Update()
+            try:
+                self._update_buffer_ui_thread()
+                self.gui.Refresh()
+                self.gui.Update()
+            except RuntimeError:
+                # May hit runtime error.
+                pass
             self.screen_refresh_is_requested = False
             self.scene_lock.release()
         else:
