@@ -7,6 +7,7 @@ via the pyclipr library of Luke Parry
     https://github.com/drlukeparry/pyclipr
 """
 
+
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "invalidate":
@@ -19,6 +20,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "postboot":
         init_commands(kernel)
 
+
 def init_commands(kernel):
     import numpy as np
     import pyclipr
@@ -26,6 +28,7 @@ def init_commands(kernel):
     from meerk40t.core.node.node import Linejoin, Node
     from meerk40t.core.units import UNITS_PER_PIXEL, Length
     from meerk40t.tools.geomstr import Geomstr
+
     self = kernel.elements
 
     _ = kernel.translation
@@ -148,7 +151,9 @@ def init_commands(kernel):
                     if bb is None:
                         # Node has no bounds or space, therefore no clipline.
                         continue
-                    g = Geomstr.rect(bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1], rx=0, ry=0)
+                    g = Geomstr.rect(
+                        bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1], rx=0, ry=0
+                    )
                     geom_list.append(g)
             self.add_geometries(geom_list)
 
@@ -279,7 +284,6 @@ def init_commands(kernel):
                     geom = Geomstr.lines(*result_list)
                     yield geom
 
-
     class ClipperCAG:
         """
         Wraps around the pyclpr interface to clipper to run clip operations:
@@ -309,7 +313,6 @@ def init_commands(kernel):
             self.newpath = None
             self._factor = 1000
             self.factor = self._factor
-
 
             # @staticmethod
             # def testroutine():
@@ -398,7 +401,9 @@ def init_commands(kernel):
                     g = node.as_geometry()
                     idx = 0
                     for subg in g.as_contiguous():
-                        node_points = list(subg.as_interpolated_points(self.interpolation))
+                        node_points = list(
+                            subg.as_interpolated_points(self.interpolation)
+                        )
                         flag = subg.is_closed()
                         # print (node_points, flag)
                         self.np_list.append(node_points)
@@ -549,7 +554,6 @@ def init_commands(kernel):
                 # print (geom)
             yield allgeom
 
-
     def offset_path(self, path, offset_value=0):
         # As this oveloading a regular method in a class
         # it needs to have the very same definition (including the class
@@ -567,8 +571,12 @@ def init_commands(kernel):
         return p
 
     classify_new = self.post_classify
-    # We are pathing the class in general, so that it can use the new functionality
+
+    # We are patching the class responsible for Cut nodes in general,
+    # so that any new instance of this class will be able to use the
+    # new functionality.
     from meerk40t.core.node.op_cut import CutOpNode
+
     CutOpNode.offset_routine = offset_path
 
     @self.console_argument(
@@ -647,8 +655,8 @@ def init_commands(kernel):
         for geom in c_off.result_geometry():
             if geom is not None:
                 newnode = self.elem_branch.add(
-                    geometry=geom, type="elem polyline",
-                    stroke=default_stroke)
+                    geometry=geom, type="elem polyline", stroke=default_stroke
+                )
                 newnode.stroke_width = UNITS_PER_PIXEL
                 newnode.linejoin = Linejoin.JOIN_ROUND
                 newnode.label = f"Offset: {Length(offset).length_mm}"
