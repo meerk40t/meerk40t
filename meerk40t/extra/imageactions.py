@@ -58,7 +58,7 @@ def plugin(kernel, lifecycle):
                 xmin, ymin, xmax, ymax = data_bounds
                 if isinf(xmin):
                     # No bounds for selected elements."))
-                    return None
+                    return None, None
                 width = xmax - xmin
                 height = ymax - ymin
 
