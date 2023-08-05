@@ -7,4 +7,3 @@ ezdxf
 opencv-python-headless
 pytest
 flake8
-pyclipr
