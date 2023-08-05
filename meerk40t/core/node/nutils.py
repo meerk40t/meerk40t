@@ -22,13 +22,10 @@ def path_to_cutobjects(
     if kerf != 0:
         source = offset_path(
             abs(path),
-            -1 * kerf,
-            radial_connector=True,
-            linearize=True,
-            interpolation=500,
+            kerf,
         )
-        source.validate_connections()
-        source.approximate_arcs_with_cubics()
+        # source.validate_connections()
+        # source.approximate_arcs_with_cubics()
         # Just a test to see if it works, replace path by it bounding box
         # bb = sp.bbox(transformed=True)
         # sp = Path(Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]))

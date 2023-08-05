@@ -1278,9 +1278,9 @@ class Geomstr:
             self.line(end_segment, start_segment, settings=settings)
 
     def is_closed(self):
-        if self.index != 0:
+        if self.index == 0:
             return True
-        return abs(self.segments[0][0] - self.segments[self.index][-1]) < 1e-5
+        return abs(self.segments[0][0] - self.segments[self.index -1][-1]) < 1e-5
 
     #######################
     # Geometric Helpers
@@ -3092,27 +3092,75 @@ class Geomstr:
                 path.closed()
         return path
 
+    # def as_contiguous_org(self):
+    #     segments = self.segments
+    #     index = self.index
+    #     # infos = segments[:index, 2]
+    #
+    #     original = self.index
+    #     indexes0 = np.arange(0, original - 1)
+    #     indexes1 = indexes0 + 1
+    #
+    #     pen_ups = segments[indexes0, -1]
+    #     pen_downs = segments[indexes1, 0]
+    #
+    #     q = np.where(pen_ups != pen_downs)[0]
+    #     last = 0
+    #     for m in q:
+    #         if m != last:
+    #             yield Geomstr(self.segments[last:m+1])
+    #         last = m + 1
+    #     if last != self.index:
+    #         yield Geomstr(self.segments[last: self.index])
+
     def as_contiguous(self):
-        segments = self.segments
-        index = self.index
-        # infos = segments[:index, 2]
+        """
+        Generate individual subpaths of contiguous segments
 
-        original = self.index
-        indexes0 = np.arange(0, original - 1)
-        indexes1 = indexes0 + 1
-
-        pen_ups = segments[indexes0, -1]
-        pen_downs = segments[indexes1, 0]
-
-        q = np.where(pen_ups != pen_downs)[0]
+        @return:
+        """
         last = 0
-        for m in q:
-            if m != last:
-                yield Geomstr(self.segments[last:m+1])
-            last = m + 1
+        for idx, seg in enumerate(self.segments):
+            segtype = int(seg[2].real)
+            if segtype == TYPE_END:
+                yield Geomstr(self.segments[last:idx])
+                last = idx + 1
+            elif idx > 0:
+                # are the start and endpositions different?
+                if self.segments[idx, 0] != self.segments[idx - 1, -1]:
+                    yield Geomstr(self.segments[last:idx])
+                    last = idx
         if last != self.index:
-            yield Geomstr(self.segments[last: self.index])
+            yield Geomstr(self.segments[last : self.index])
 
+    def ensure_proper_subpaths(self):
+        """
+        Will look at interrupted segments that don't have an 'end' between them
+        and inserts one if necessary
+        """
+        last = 0
+        idx = 1
+        while idx < self.index:
+            seg1 = self.segments[idx]
+            segtype1 = int(seg1[2].real)
+            seg2 = self.segments[idx - 1]
+            segtype2 = int(seg2[2].real)
+            if (
+                segtype1 != TYPE_END and
+                segtype2 != TYPE_END and
+                seg1[0] != seg2[-1]
+            ):
+                # This is a non-contiguous segment
+                end_segment = ((
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_END, 0),
+                    np.nan,
+                    np.nan,
+                ))
+                # print (f"inserted an end at #{idx}")
+                self.insert(idx, end_segment)
+            idx += 1
 
     def as_subpaths(self):
         """

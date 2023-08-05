@@ -38,6 +38,7 @@ def plugin(kernel, lifecycle=None):
             materials,
             notes,
             offset,
+            offset_old,
             placements,
             render,
             shapes,
@@ -64,6 +65,7 @@ def plugin(kernel, lifecycle=None):
             notes.plugin,
             placements.plugin,
             offset.plugin,
+            offset_old.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(

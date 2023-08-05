@@ -2,613 +2,555 @@
 This adds console commands that deal with the creation of an offset
 """
 from copy import copy
-from math import atan2, tau
+from time import perf_counter
 
-from meerk40t.core.node.node import Linejoin
+import numpy as np
+import pyclipr
+
+from meerk40t.core.node.node import Linejoin, Node
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
-from meerk40t.svgelements import (
-    Arc,
-    Close,
-    CubicBezier,
-    Line,
-    Move,
-    Path,
-    Point,
-    QuadraticBezier,
-)
 from meerk40t.tools.geomstr import Geomstr
 
 """
-The following routines deal with the offset of an SVG path at a given distance D.
-An offset or parallel curve can easily be established:
-    - for a line segment by another line parallel and in distance D:
-        Establish the two normals with length D on the end points and
-        create the two new endpoints
-    - for an arc segment: elongate rx and ry by D
-To establish an offset for a quadratic or cubic bezier by another cubic bezier
-is not possible so this requires approximation.
-An acceptable approximation is proposed by Tiller and Hanson:
-    P1 start point
-    P2 end point
-    C1 control point 1
-    C2 control point 2
-    You create the offset version of these 3 lines and look for their intersections:
-        - offset to (P1 C1)  -> helper 1
-        - offset to (C1 C2)  -> helper 2
-        - offset to (P2 C2)  -> helper 3
-        we establish P1-new
-        the intersections between helper 1 and helper 2 is our new control point C1-new
-        the intersections between helper 2 and helper 3 is our new control point C2-new
-
-
-
-A good visual representation can be seen here:
-https://feirell.github.io/offset-bezier/
-
-The algorithm deals with the challenge as follows:
-a) It walks through the subpaths of a given path so that we have a continuous curve
-b) It looks at the different segment typs and deals with them,
-generating a new offseted segement
-c) Finally it stitches those segments together, treating for the simplifaction
+Minimal integration of the Clipper2 library by Angus Johnson
+    https://github.com/AngusJohnson/Clipper2
+via the pyclipr library of Luke Parry
+    https://github.com/drlukeparry/pyclipr
 """
 
 
-def norm_vector(p1, p2, target_len):
-    line_vector = p2 - p1
-    # if line_vector.x == 0 and line_vector.y == 0:
-    #     return Point(target_len, 0)
-    factor = target_len
-    normal_vector = Point(-1 * line_vector.y, line_vector.x)
-    normlen = abs(normal_vector)
-    if normlen != 0:
-        factor = target_len / normlen
-    normal_vector *= factor
-    return normal_vector
+class ClipperOffset:
+    """
+    Wraps around the pyclpr interface to clipper offset (inflate paths).
 
+    Typical invocation:
+        data = (node1, node2,)
+        offs = ClipperOffset(interpolation=500)
+        offs.add_nodes(data)
+        offset = float(Length("2mm"))
+        offs.process_data(offset, jointype="round", separate=False)
+        for geom in offs.result_geometry():
+            newnode = self.elem_branch.add(geometry=geom, type="elem polyline")
 
-def is_clockwise(path):
-    def poly_clockwise(poly):
-        """
-        returns True if the polygon is clockwise ordered, false if not
-        """
+    """
 
-        total = (
-            poly[-1].x * poly[0].y - poly[0].x * poly[-1].y
-        )  # last point to first point
-        for i in range(len(poly) - 1):
-            total += poly[i].x * poly[i + 1].y - poly[i + 1].x * poly[i].y
+    def __init__(self, interpolation=None):
+        self.np_list = []
+        self.polygon_list = []
+        self._interpolation = None
+        self.interpolation = interpolation
+        self.any_open = False
+        # Create a clipper object
+        self.clipr_offset = pyclipr.ClipperOffset()
+        self.newpath = None
+        self._factor = 1000
+        self.factor = self._factor
 
-        if total <= 0:
-            return True
-        else:
-            return False
+        # @staticmethod
+        # def testroutine():
+        #     # Tuple definition of a path
+        #     path = [(0.0, 0.), (100, 0), (100, 100), (0, 100), (0, 0)]
+        #     # Create an offsetting object
+        #     po = pyclipr.ClipperOffset()
+        #     # Set the scale factor to convert to internal integer representation
+        #     po.scaleFactor = int(1000)
+        #     # add the path - ensuring to use Polygon for the endType argument
+        #     npp = np.array(path)
+        #     po.addPath(npp, pyclipr.JoinType.Miter, pyclipr.EndType.Polygon)
+        #     # Apply the offsetting operation using a delta.
+        #     offsetSquare = po.execute(10.0)
+        #     print ("test for polygon...")
+        #     print (npp)
+        #     print (offsetSquare)
+        #     print ("done...")
+        #     po.clear()
+        #     path=[ (100, 100), (1500, 100), (100, 1500), (1500, 1500) ]
+        #     path = [(25801,  51602), (129005,  51602), (25801, 129005), (129005, 129005)]
+        #     po.scaleFactor = int(1000)
+        #     # add the path - ensuring to use Polygon for the endType argument
+        #     npp = np.array(path)
+        #     po.addPath(npp, pyclipr.JoinType.Miter, pyclipr.EndType.Square)
+        #     # Apply the offsetting operation using a delta.
+        #     offsetSquare = po.execute(10.0)
+        #     print ("test for polyline...")
+        #     print (npp)
+        #     print (offsetSquare)
+        #     print ("done...")
 
-    poly = []
-    for seg in path._segments:
-        if isinstance(seg, (Arc, Line, QuadraticBezier, CubicBezier)):
-            if len(poly) == 0:
-                poly.append(seg.start)
-            poly.append(seg.end)
-    res = poly_clockwise(poly)
-    return res
+    @property
+    def interpolation(self):
+        return self._interpolation
 
+    @interpolation.setter
+    def interpolation(self, value):
+        if value is None:
+            value = 500
+        self._interpolation = 500
 
-def linearize_segment(segment, interpolation=500, reduce=True):
-    slope_tolerance = 0.001
-    s = []
-    delta = 1.0 / interpolation
-    lastpt = None
-    t = 0
-    last_slope = None
-    while t <= 1:
-        appendit = True
-        np = segment.point(t)
-        if lastpt is not None:
-            dx = lastpt.x - np.x
-            dy = lastpt.y - np.y
-            if abs(dx) < 1e-6 and abs(dy) < 1e-6:
-                appendit = False
-                # identical points!
+    @property
+    def factor(self):
+        return self._factor
+
+    @factor.setter
+    def factor(self, value):
+        self._factor = value
+        self.clipr_offset.scaleFactor = self._factor
+
+    def clear(self):
+        self.np_list = []
+        self.polygon_list = []
+
+    def add_geometries(self, geomlist):
+        for g in geomlist:
+            for subg in g.as_contiguous():
+                node_points = list(subg.as_interpolated_points(self.interpolation))
+                flag = subg.is_closed()
+                # print (node_points, flag)
+                self.np_list.append(node_points)
+                self.polygon_list.append(flag)
+
+    def add_nodes(self, nodelist):
+        # breaks down the path to a list of subgeometries.
+        self.clear()
+        # Set the scale factor to convert to internal integer representation
+        # As mks internal variable representation is already based on tats
+        # that should not be necessary
+        bounds = Node.union_bounds(nodelist)
+        factor = int(1000)
+        if bounds[2] > 100000 or bounds[3] > 100000:
+            factor = int(1)
+        elif bounds[2] > 10000 or bounds[3] > 10000:
+            factor = int(10)
+        elif bounds[2] > 1000 or bounds[3] > 1000:
+            factor = int(100)
+        self.factor = factor
+        geom_list = []
+        for node in nodelist:
+            # print (f"Looking at {node.type} - {node.label}")
+            if hasattr(node, "as_geometry"):
+                # Let's get list of points with the
+                # required interpolation density
+                g = node.as_geometry()
+                geom_list.append(g)
             else:
-                this_slope = atan2(dy, dx)
-                if last_slope is not None:
-                    if abs(last_slope - this_slope) < slope_tolerance:
-                        # Combine segments, ie get rid of mid point
-                        this_slope = last_slope
-                        appendit = False
-                last_slope = this_slope
+                bb = node.bounds
+                if bb is None:
+                    # Node has no bounds or space, therefore no clipline.
+                    continue
+                g = Geomstr.rect(bb[0], bb[1], bb[2] - bb[0], bb[3] - bb[1], rx=0, ry=0)
+                geom_list.append(g)
+        self.add_geometries(geom_list)
 
-        if appendit or not reduce:
-            s.append(np)
+    def add_path(self, path):
+        # breaks down the path to a list of subgeometries.
+        self.clear()
+        # Set the scale factor to convert to internal integer representation
+        # As mks internal variable representation is already based on tats
+        # that should not be necessary
+        bounds = path.bbox(transformed=True)
+        factor = int(1000)
+        if bounds[2] > 100000 or bounds[3] > 100000:
+            factor = int(1)
+        elif bounds[2] > 10000 or bounds[3] > 10000:
+            factor = int(10)
+        elif bounds[2] > 1000 or bounds[3] > 1000:
+            factor = int(100)
+        self.factor = factor
+        geom_list = []
+        g = Geomstr.svg(path)
+        geom_list.append(g)
+        self.add_geometries(geom_list)
+
+    def process_data(self, offset, jointype="round", separate=False):
+        self.clipr_offset.clear()
+        self.newpath = None
+        if jointype.startswith("r"):  # round
+            pyc_jointype = pyclipr.JoinType.Round
+        elif jointype.startswith("s"):  # square
+            pyc_jointype = pyclipr.JoinType.Square
         else:
-            s[-1] = np
-        t += delta
-        lastpt = np
-    return s
+            pyc_jointype = pyclipr.JoinType.Miter
+        for node_points, is_polygon in zip(self.np_list, self.polygon_list):
+            # There may be a smarter way to do this, but geomstr
+            # provides an array of complex numbers. pyclipr on the other
+            # hand would like to have points as (x, y) and not as (x + y * 1j)
+            complex_array = np.array(node_points)
+            temp = np.column_stack((complex_array.real, complex_array.imag))
+            np_points = temp.astype(int)
 
+            # add the path - ensuring to use Polygon for the endType argument
 
-def offset_point_array(points, offset):
-    result = list()
-    p0 = None
-    for idx, p1 in enumerate(points):
-        if idx > 0:
-            nv = norm_vector(p0, p1, offset)
-            result.append(p0 + nv)
-            result.append(p1 + nv)
-        p0 = Point(p1)
-    for idx in range(3, len(result)):
-        w = result[idx - 3]
-        z = result[idx - 2]
-        x = result[idx - 1]
-        y = result[idx]
-        p_i, s, t = intersect_line_segments(w, z, x, y)
-        if p_i is None:
-            continue
-        result[idx - 2] = Point(p_i)
-        result[idx - 1] = Point(p_i)
-    return result
-
-
-def offset_arc(segment, offset=0, linearize=False, interpolation=500):
-    if not isinstance(segment, Arc):
-        return None
-    newsegments = list()
-    if linearize:
-        s = linearize_segment(segment, interpolation=interpolation, reduce=True)
-        s = offset_point_array(s, offset)
-        for idx in range(1, len(s)):
-            seg = Line(
-                start=Point(s[idx - 1][0], s[idx - 1][1]),
-                end=Point(s[idx][0], s[idx][1]),
-            )
-            newsegments.append(seg)
-    else:
-        centerpt = Point(segment.center)
-        startpt = centerpt.polar_to(
-            angle=centerpt.angle_to(segment.start),
-            distance=centerpt.distance_to(segment.start) + offset,
-        )
-        endpt = centerpt.polar_to(
-            angle=centerpt.angle_to(segment.end),
-            distance=centerpt.distance_to(segment.end) + offset,
-        )
-        newseg = Arc(
-            startpt,
-            endpt,
-            centerpt,
-            #         ccw=ccw,
-        )
-        newsegments.append(newseg)
-    return newsegments
-
-
-def offset_line(segment, offset=0):
-    if not isinstance(segment, Line):
-        return None
-    newseg = copy(segment)
-    normal_vector = norm_vector(segment.start, segment.end, offset)
-    newseg.start += normal_vector
-    newseg.end += normal_vector
-    # print (f"Old= ({segment.start.x:.0f}, {segment.start.y:.0f})-({segment.end.x:.0f}, {segment.end.y:.0f})")
-    # print (f"New= ({newsegment.start.x:.0f}, {newsegment.start.y:.0f})-({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
-    return [newseg]
-
-
-def offset_quad(segment, offset=0, linearize=False, interpolation=500):
-    if not isinstance(segment, QuadraticBezier):
-        return None
-    cubic = CubicBezier(
-        start=segment.start,
-        control1=segment.control,
-        control2=segment.control,
-        end=segment.end,
-    )
-    newsegments = offset_cubic(cubic, offset, linearize, interpolation)
-
-    return newsegments
-
-
-def offset_cubic(segment, offset=0, linearize=False, interpolation=500):
-    """
-    To establish an offset for a quadratic or cubic bezier by another cubic bezier
-    is not possible so this requires approximation.
-    An acceptable approximation is proposed by Tiller and Hanson:
-        P1 start point
-        P2 end point
-        C1 control point 1
-        C2 control point 2
-        You create the offset version of these 3 lines and look for their intersections:
-        - offset to (P1 C1)  -> helper 1
-        - offset to (C1 C2)  -> helper 2
-        - offset to (P2 C2)  -> helper 3
-        we establish P1-new
-        the intersections between helper 1 and helper 2 is our new control point C1-new
-        the intersections between helper 2 and helper 3 is our new control point C2-new
-
-        Beware, this has limitations! It's not dealing well with curves that have cusps
-    """
-
-    if not isinstance(segment, CubicBezier):
-        return None
-    newsegments = list()
-    if linearize:
-        s = linearize_segment(segment, interpolation=interpolation, reduce=True)
-        s = offset_point_array(s, offset)
-        for idx in range(1, len(s)):
-            seg = Line(
-                start=Point(s[idx - 1][0], s[idx - 1][1]),
-                end=Point(s[idx][0], s[idx][1]),
-            )
-            newsegments.append(seg)
-    else:
-        newseg = copy(segment)
-        if segment.control1 == segment.start:
-            p1 = segment.control2
-        else:
-            p1 = segment.control1
-        normal_vector1 = norm_vector(segment.start, p1, offset)
-        if segment.control2 == segment.end:
-            p1 = segment.control1
-        else:
-            p1 = segment.control2
-        normal_vector2 = norm_vector(p1, segment.end, offset)
-        normal_vector3 = norm_vector(segment.control1, segment.control2, offset)
-
-        newseg.start += normal_vector1
-        newseg.end += normal_vector2
-
-        v = segment.start + normal_vector1
-        w = segment.control1 + normal_vector1
-        x = segment.control1 + normal_vector3
-        y = segment.control2 + normal_vector3
-        intersect, s, t = intersect_line_segments(v, w, x, y)
-        if intersect is None:
-            # Fallback
-            intersect = segment.control1 + 0.5 * (normal_vector1 + normal_vector3)
-        newseg.control1 = intersect
-
-        x = segment.control2 + normal_vector2
-        y = segment.end + normal_vector2
-        v = segment.control1 + normal_vector3
-        w = segment.control2 + normal_vector3
-        intersect, s, t = intersect_line_segments(v, w, x, y)
-        if intersect is None:
-            # Fallback
-            intersect = segment.control2 + 0.5 * (normal_vector2 + normal_vector3)
-        newseg.control2 = intersect
-        # print (f"Old: start=({segment.start.x:.0f}, {segment.start.y:.0f}), c1=({segment.control1.x:.0f}, {segment.control1.y:.0f}), c2=({segment.control2.x:.0f}, {segment.control2.y:.0f}), end=({segment.end.x:.0f}, {segment.end.y:.0f})")
-        # print (f"New: start=({newsegment.start.x:.0f}, {newsegment.start.y:.0f}), c1=({newsegment.control1.x:.0f}, {newsegment.control1.y:.0f}), c2=({newsegment.control2.x:.0f}, {newsegment.control2.y:.0f}), end=({newsegment.end.x:.0f}, {newsegment.end.y:.0f})")
-        newsegments.append(newseg)
-    return newsegments
-
-
-def intersect_line_segments(w, z, x, y):
-    """
-    We establish the intersection between two lines given by
-    line1 = (w, z), line2 = (x, y)
-    We define the first line by the equation w + s * (z - w)
-    We define the second line by the equation x + t * (y - x)
-    We give back the intersection and the values for s and t
-    out of these two equations at the intersection point.
-    Notabene: if the intersection is on the two line segments
-    then s and t need to be between 0 and 1.
-
-    Args:
-        w (Point): Start point of the first line segment
-        z (Point): End point of the second line segment
-        x (Point): Start point of the first line segment
-        y (Point): End point of the second line segment
-    Returns three values: P, s, t
-        P: Point of intersection, None if the two lines have no intersection
-        S: Value for s in P = w + s * (z - w)
-        T: Value for t in P = x + t * (y - x)
-
-        ( w1 )     ( z1 - w1 )    ( x1 )     ( y1 - x1 )
-        (    ) + t (         )  = (    ) + s (         )
-        ( w2 )     ( z2 - w2 )    ( y1 )     ( y2 - x2 )
-
-        ( w1 - x1 )     ( y1 - x1 )     ( z1 - w1 )
-        (         ) = s (         ) - t (         )
-        ( w2 - x2 )     ( y2 - x2 )     ( z2 - w2 )
-
-        ( w1 - x1 )    ( y1 - x1   -z1 + w1 ) ( s )
-        (         ) =  (                    ) (   )
-        ( w2 - x2 )    ( y2 - x2   -z2 + w2 ) ( t )
-
-    """
-    a = y.x - x.x
-    b = -z.x + w.x
-    c = y.y - x.y
-    d = -z.y + w.y
-    """
-    The inverse matrix of
-    (a  b)        1       (d  -b)
-            = -------- *  (     )
-    (c  d)     ad - bc    (-c  a)
-    """
-    deter = a * d - b * c
-    if abs(deter) < 1.0e-8:
-        # They don't have an interference
-        return None, None, None
-
-    s = 1 / deter * (d * (w.x - x.x) + -b * (w.y - x.y))
-    t = 1 / deter * (-c * (w.x - x.x) + a * (w.y - x.y))
-    p1 = w + t * (z - w)
-    p2 = x + s * (y - x)
-    # print (f"p1 = ({p1.x:.3f}, {p1.y:.3f})")
-    # print (f"p2 = ({p2.x:.3f}, {p2.y:.3f})")
-    p = p1
-    return p, s, t
-
-
-def offset_path(
-    path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
-):
-    def stitch_segments_at_index(
-        offset, stitchpath, seg1_end, orgintersect, radial=False, closed=False
-    ):
-        left_end = seg1_end
-        lp = len(stitchpath)
-        right_start = left_end + 1
-        if right_start >= lp:
-            if not closed:
-                return
-            # Look for the first segment
-            right_start = right_start % lp
-            while not isinstance(
-                stitchpath._segments[right_start],
-                (Arc, Line, QuadraticBezier, CubicBezier),
-            ):
-                right_start += 1
-        seg1 = stitchpath._segments[left_end]
-        seg2 = stitchpath._segments[right_start]
-
-        #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
-        needs_connector = False
-        if isinstance(seg1, Close):
-            # Close will be dealt with differently...
-            return
-        if isinstance(seg1, Move):
-            seg1.end = Point(seg2.start)
-            return
-
-        if isinstance(seg1, Line):
-            needs_connector = True
-            if isinstance(seg2, Line):
-                p, s, t = intersect_line_segments(
-                    Point(seg1.start),
-                    Point(seg1.end),
-                    Point(seg2.start),
-                    Point(seg2.end),
-                )
-                if p is not None:
-                    # We have an intersection
-                    if 0 <= s <= 1 and 0 <= t <= 1:
-                        # We shorten the segments accordingly.
-                        seg1.end = Point(p)
-                        seg2.start = Point(p)
-                        if right_start > 0 and isinstance(
-                            stitchpath._segments[right_start - 1], Move
-                        ):
-                            stitchpath._segments[right_start - 1].end = Point(p)
-                        needs_connector = False
-                        # print ("Used interal intersect")
-                    else:
-                        if not radial:
-                            seg1.end = Point(p)
-                            seg2.start = Point(p)
-                            if right_start > 0 and isinstance(
-                                stitchpath._segments[right_start - 1], Move
-                            ):
-                                stitchpath._segments[right_start - 1].end = Point(p)
-                            needs_connector = False
-                            # print ("Used external intersect")
-            elif isinstance(seg1, Move):
-                needs_connector = False
-        else:  # Arc, Quad and Cubic Bezier
-            needs_connector = True
-            if isinstance(seg2, Line):
-                needs_connector = True
-            elif isinstance(seg2, Move):
-                needs_connector = False
-
-        if needs_connector and seg1.end != seg2.start:
-            """
-            There is a fundamental challenge to this naiive implementation:
-            if the offset gets bigger you will get intersections of previous segments
-            which will effectively defeat it. You will end up with connection lines
-            reaching back creating a loop. Right now there's no real good way
-            to deal with it:
-            a) if it would be just the effort to create an offset of your path you
-            can apply an intersection algorithm like Bentley-Ottman to identify
-            intersections and remove them (or even simpler just use the
-            Point.convex_hull method in svgelements).
-            *BUT*
-            b) this might defeat the initial purpose of the routine to get some kerf
-            compensation. So you are effectively eliminating cutlines from your design
-            which may not be what you want.
-
-            So we try to avoid that by just looking at two consecutive path segments
-            as these were by definition continuous.
-            """
-
-            if radial:
-                # print ("Inserted an arc")
-                # Let's check whether the distance of these points is smaller
-                # than the radius
-
-                angle = seg1.end.angle_to(seg1.start) - seg1.end.angle_to(seg2.start)
-                while angle < 0:
-                    angle += tau
-                while angle > tau:
-                    angle -= tau
-                # print (f"Angle: {angle:.2f} ({angle / tau * 360.0:.1f})")
-                startpt = Point(seg1.end)
-                endpt = Point(seg2.start)
-
-                if angle >= tau / 2:
-                    ccw = True
-                else:
-                    ccw = False
-                # print ("Generate connect-arc")
-                connect_seg = Arc(
-                    start=startpt, end=endpt, center=Point(orgintersect), ccw=ccw
-                )
-                clen = connect_seg.length()
-                # print (f"Ratio: {clen / abs(tau * offset):.2f}")
-                if clen > abs(tau * offset / 2):
-                    # That seems strange...
-                    connect_seg = Line(startpt, endpt)
+            if is_polygon:
+                pyc_endtype = pyclipr.EndType.Polygon
             else:
-                # print ("Inserted a Line")
-                connect_seg = Line(Point(seg1.end), Point(seg2.start))
-            stitchpath._segments.insert(left_end + 1, connect_seg)
-        elif needs_connector:
-            # print ("Need connector but end points were identical")
-            pass
-        else:
-            # print ("No connector needed")
-            pass
-        return
+                pyc_endtype = pyclipr.EndType.Square
 
-    results = []
-    # This needs to be a continuous path
-    for subpath in path.as_subpaths():
-        p = Path(subpath)
-        if not linearize:
-            p.approximate_arcs_with_cubics()
-        offset = offset_value
-        # # No offset bigger than half the path size, otherwise stuff will get crazy
-        # if offset > 0:
-        #     bb = p.bbox()
-        #     offset = min(offset, bb[2] - bb[0])
-        #     offset = min(offset, bb[3] - bb[1])
-        is_closed = False
-        is_closed_by_pts = False
-        remember = False
-        remember_helper = None
-        # Let's check the first and last valid point. If they are identical
-        # we consider this to be a closed path even if it has no closed indicator.
-        firstp_start = None
-        firstp_end = None
-        lastp = None
+            self.clipr_offset.addPath(np_points, pyc_jointype, pyc_endtype)
+            if separate:
+                # Apply the offsetting operation using a delta.
+                newp = self.clipr_offset.execute(offset)
+                if self.newpath is None:
+                    self.newpath = list()
+                self.newpath.append(newp)
+                self.clipr_offset.clear()
+
+        if not separate:
+            # Apply the offsetting operation using a delta.
+            self.newpath = self.clipr_offset.execute(offset)
+
+    def result_geometry(self):
+        if len(self.newpath) == 0:
+            # print(f"Collapsed clipline for {node.type}:{node.label}\n{np_points}")
+            return None
+        if isinstance(self.newpath[0], (tuple, list)):
+            # Can execute directly
+            target = self.newpath
+        else:
+            # Create a temporary list
+            target = (self.newpath,)
+
         idx = 0
-        while (idx < len(p)) and not isinstance(
-            p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
-        ):
-            idx += 1
-        firstp_start = Point(p._segments[idx].start)
-        firstp_end = Point(p._segments[idx].end)
-        idx = len(p._segments) - 1
-        while idx >= 0 and not isinstance(
-            p._segments[idx], (Arc, Line, QuadraticBezier, CubicBezier)
-        ):
-            idx -= 1
-        lastp = Point(p._segments[idx].end)
-        if firstp_start.distance_to(lastp) < 1e-3:
-            remember = True
-            remember_helper = Point(lastp)
-            is_closed = True
-            is_closed_by_pts = True
-        # We need to establish if this is a closed path and if the first segment goes counterclockwise
-        cw = False
-        if not is_closed:
-            for idx in range(len(p._segments) - 1, -1, -1):
-                if isinstance(p._segments[idx], Close):
-                    is_closed = True
-                    break
-        if is_closed:
-            cw = is_clockwise(p)
-            if cw:
-                offset = -1 * offset
-        # print (f"Subpath: closed={is_closed}, clockwise={cw}")
-        # Remember the complete subshape (could be multiple segements due to linearization)
-
-        for idx in range(len(p._segments) - 1, -1, -1):
-            segment = p._segments[idx]
-            if isinstance(segment, Close):
-                if is_closed_by_pts:
-                    # it was already closed with the last and the first point, so we just skip it...
-                    p._segments.pop(idx)
-                    remember = False
-                    remember_helper = None
+        for newp in target:
+            # print (f"Type of newp: {type(newp).__name__}")
+            # print(newp)
+            for subp in newp:
+                # print (f"Type of subp: {type(subp).__name__}")
+                # print (subp)
+                result_list = []
+                pt_count = len(subp)
+                # print (f"{idx}#: {pt_count} pts")
+                idx += 1
+                if pt_count < 2:
                     continue
-                remember = True
-                # Let's add a line and replace the closed segment by this new segment
-                idx1 = idx
-                while (idx1 >= 0) and not isinstance(
-                    p._segments[idx1], (Arc, Line, QuadraticBezier, CubicBezier)
-                ):
-                    idx1 -= 1
-                idx2 = 0
-                while (idx2 < len(p)) and not isinstance(
-                    p._segments[idx2], (Arc, Line, QuadraticBezier, CubicBezier)
-                ):
-                    idx2 += 1
-                # We replace the close by a line
-                segment = Line(
-                    Point(p._segments[idx1].end), Point(p._segments[idx2].start)
+                # Sometimes we get artifacts: a small array
+                # with very small structures.
+                # We try to identify and to discard them
+                tolerance = int(
+                    0.5 * self.factor * 0.5 * self.factor
+                )  # Structures below 500 tats sidelength are ignored...
+                maxd = 0
+                lastpt = None
+                had_error = False
+                for pt in subp:
+                    if lastpt is not None:
+                        try:
+                            dx = abs(lastpt[0] - pt[0])
+                            dy = abs(lastpt[1] - pt[1])
+                        except IndexError:
+                            # Invalid structure! Ignore
+                            had_error = True
+                            break
+                        maxd += dx * dx + dy * dy
+                    lastpt = pt
+                    if maxd > tolerance:
+                        break
+
+                if had_error or maxd < tolerance:
+                    # print (f"Artifact ignored: {maxd:.3f}")
+                    continue
+
+                for pt in subp:
+                    result_list.append(pt[0])
+                    result_list.append(pt[1])
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 10 or dy > 10:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+                except IndexError:
+                    # channel(f"Invalid clipline for {node.type}:{node.label}")
+                    continue
+                geom = Geomstr.lines(*result_list)
+                yield geom
+
+
+class ClipperCAG:
+    """
+    Wraps around the pyclpr interface to clipper to run clip operations:
+    supported:
+    method: Union, Difference, Intersect, Xor
+    filltype: EvenOdd, Positive, Negative, NonZero
+
+    Typical invocation:
+        data = (node1, node2,)
+        cag = ClipperCAG(interpolation=500)
+        cag.add_nodes(data)
+        cag.process_data(method="union", filltype="EvenOdd")
+        geom = cag.result_geometry()
+        newnode = self.elem_branch.add(geometry=geom, type="elem polyline")
+
+    """
+
+    def __init__(self, interpolation=None):
+        # Create a clipper object
+        self.clipr_clipper = pyclipr.Clipper()
+
+        self.np_list = []
+        self.polygon_list = []
+        self._interpolation = None
+        self.interpolation = interpolation
+        self.any_open = False
+        self.newpath = None
+        self._factor = 1000
+        self.factor = self._factor
+
+
+        # @staticmethod
+        # def testroutine():
+        #     # Tuple definition of a path
+        #     path_clip = [(0.0, 0.), (0, 105.1234), (100, 105.1234), (100, 0), (0, 0)]
+        #     open1 = False
+        #     # path_subject = [(0, 0), (0, 50), (100, 50), (100, 0), (0,0)]
+        #     path_subject = [(0, 0), (300, 300)]
+        #     open2 = True
+
+        #     # Create a clipping object
+        #     pc = pyclipr.Clipper()
+        #     pc.scaleFactor = int(1000)
+
+        #     # Add the paths to the clipping object. Ensure the subject and clip arguments are set to differentiate
+        #     # the paths during the Boolean operation. The final argument specifies if the path is
+        #     # open.
+        #     pc.addPath(np.array(path_subject), pyclipr.PathType.Subject, open2)
+        #     pc.addPath(np.array(path_clip), pyclipr.PathType.Clip, open1)
+
+        #     """ Test Polygon Clipping """
+        #     # Below returns paths
+        #     out1 = pc.execute(pyclipr.ClipType.Intersection, pyclipr.FillType.EvenOdd)
+        #     out2 = pc.execute(pyclipr.ClipType.Union, pyclipr.FillType.EvenOdd)
+        #     out3 = pc.execute(pyclipr.ClipType.Difference, pyclipr.FillType.EvenOdd)
+        #     out4 = pc.execute(pyclipr.ClipType.Xor, pyclipr.FillType.EvenOdd)
+        #     # Return open paths...
+        #     out5 = pc.execute(pyclipr.ClipType.Union, pyclipr.FillType.EvenOdd, returnOpenPaths=True)
+        #     print("In:")
+        #     print (path_clip)
+        #     print (path_subject)
+        #     print ("intersect")
+        #     print (out1)
+        #     print ("union")
+        #     print (out2)
+        #     print ("difference")
+        #     print (out3)
+        #     print ("xor")
+        #     print (out4)
+        #     print ("union with open paths")
+        #     print (out5)
+
+    @property
+    def interpolation(self):
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, value):
+        if value is None:
+            value = 500
+        self._interpolation = 500
+
+    @property
+    def factor(self):
+        return self._factor
+
+    @factor.setter
+    def factor(self, value):
+        self._factor = value
+        self.clipr_clipper.scaleFactor = self._factor
+
+    def clear(self):
+        self.np_list = []
+        self.polygon_list = []
+
+    def add_nodes(self, nodelist):
+        # breaks down the path to a list of subgeometries.
+        self.clear()
+        # Set the scale factor to convert to internal integer representation
+        # As mks internal variable representation is already based on tats
+        # that should not be necessary
+        bounds = Node.union_bounds(nodelist)
+        factor = int(1000)
+        if bounds[2] > 100000 or bounds[3] > 100000:
+            factor = int(1)
+        elif bounds[2] > 10000 or bounds[3] > 10000:
+            factor = int(10)
+        elif bounds[2] > 1000 or bounds[3] > 1000:
+            factor = int(100)
+        self.factor = factor
+        for node in nodelist:
+            # print (f"Looking at {node.type} - {node.label}")
+            if hasattr(node, "as_geometry"):
+                # Let's get list of points with the
+                # required interpolation density
+                g = node.as_geometry()
+                idx = 0
+                for subg in g.as_contiguous():
+                    node_points = list(subg.as_interpolated_points(self.interpolation))
+                    flag = subg.is_closed()
+                    # print (node_points, flag)
+                    self.np_list.append(node_points)
+                    self.polygon_list.append(flag)
+                    # print (f"Adding structure #{idx} with {len(node_points)} pts")
+                    idx += 1
+            else:
+                bb = node.bounds
+                if bb is None:
+                    # Node has no bounds or space, therefore no clipline.
+                    continue
+                node_points = (
+                    bb[0] + bb[1] * 1j,
+                    bb[0] + bb[3] * 1j,
+                    bb[2] + bb[3] * 1j,
+                    bb[2] + bb[1] * 1j,
+                    bb[0] + bb[1] * 1j,
                 )
-                p._segments[idx] = segment
-                remember_helper = Point(p._segments[idx2].start)
+                self.np_list.append(node_points)
+                self.polygon_list.append(True)
 
-            helper = Point(p._segments[idx].end)
-            left_end = idx
-            if isinstance(segment, Arc):
-                arclinearize = linearize
-                # Arc is not working, so we always linearize
-                arclinearize = True
-                newsegment = offset_arc(segment, offset, arclinearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
-            elif isinstance(segment, QuadraticBezier):
-                newsegment = offset_quad(segment, offset, linearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
-            elif isinstance(segment, CubicBezier):
-                newsegment = offset_cubic(segment, offset, linearize, interpolation)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[
-                    0
-                ]  # TODO: indexError as newsegment can return an empty list
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
-            elif isinstance(segment, Line):
-                newsegment = offset_line(segment, offset)
-                if newsegment is None or len(newsegment) == 0:
-                    continue
-                left_end = idx - 1 + len(newsegment)
-                p._segments[idx] = newsegment[0]
-                for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
-                    p._segments.insert(idx + 1, newsegment[nidx])
-            stitch_segments_at_index(
-                offset, p, left_end, helper, radial=radial_connector
-            )
-        if remember:
-            helper = remember_helper
-            left_end = len(p._segments) - 1
-            stitch_segments_at_index(
-                offset, p, left_end, helper, radial=radial_connector, closed=True
-            )
-        results.append(p)
+    def _add_data(self):
+        self.clipr_clipper.clear()
+        first = True
+        self.any_open = False
+        for node_points, is_polygon in zip(self.np_list, self.polygon_list):
+            # print (f"Add {'polygon' if is_polygon else 'polyline'}: {node_points}")
 
-    if len(results) == 0:
-        # Strange, should never happen
-        return path
-    result = results[0]
-    for idx in range(1, len(results)):
-        result += results[idx]
-    return result
+            # There may be a smarter way to do this, but geomstr
+            # provides an array of complex numbers. pyclipr on the other
+            # hand would like to have points as (x, y) and not as (x + y * 1j)
+            complex_array = np.array(node_points)
+            temp = np.column_stack((complex_array.real, complex_array.imag))
+            np_points = temp.astype(int)
+
+            if first:
+                first = False
+                pyc_pathtype = pyclipr.PathType.Subject
+            else:
+                pyc_pathtype = pyclipr.PathType.Clip
+
+            # print (f"Add path {pyc_pathtype} with {is_polygon}: {len(np_points)} pts")
+            if not is_polygon:
+                self.any_open = True
+            self.clipr_clipper.addPath(np_points, pyc_pathtype, not is_polygon)
+
+    def process_data(self, method, filltype):
+        self._add_data()
+        if method.startswith("d"):
+            pyc_method = pyclipr.ClipType.Difference
+        elif method.startswith("i"):
+            pyc_method = pyclipr.ClipType.Intersection
+        elif method.startswith("x"):
+            pyc_method = pyclipr.ClipType.Xor
+        else:
+            pyc_method = pyclipr.ClipType.Union
+        if filltype.startswith("no") or filltype.startswith("z"):
+            pyc_filltype = pyclipr.FillType.NonZero
+        elif filltype.startswith("p") or filltype.startswith("+"):
+            pyc_filltype = pyclipr.FillType.Positive
+        elif filltype.startswith("ne") or filltype.startswith("-"):
+            pyc_filltype = pyclipr.FillType.Negative
+        else:
+            pyc_filltype = pyclipr.FillType.EvenOdd
+
+        if self.any_open and pyc_method in (pyclipr.ClipType.Union,):
+            self.newpath = self.clipr_clipper.execute(
+                pyc_method, pyc_filltype, returnOpenPaths=True
+            )
+        else:
+            self.newpath = self.clipr_clipper.execute(pyc_method, pyc_filltype)
+
+    def result_geometry(self):
+        if len(self.newpath) == 0:
+            # print(f"Collapsed clipline for {node.type}:{node.label}\n{np_points}")
+            return None
+        if isinstance(self.newpath[0], (tuple, list)):
+            # Can execute directly
+            target = self.newpath
+        else:
+            # Create a temporary list
+            target = (self.newpath,)
+
+        idx = 0
+        allgeom = None
+        for newp in target:
+            # print (f"Type of newp: {type(newp).__name__}")
+            # print(newp)
+            for subp in newp:
+                # print (f"Type of subp: {type(subp).__name__}")
+                # print (subp)
+                result_list = []
+                pt_count = len(subp)
+                # print (f"{idx}#: {pt_count} pts")
+                idx += 1
+                if pt_count < 2:
+                    continue
+                # Sometimes we get artifacts: a small array
+                # with very small structures.
+                # We try to identify and to discard them
+                tolerance = (
+                    0.5 * self.factor * 0.5 * self.factor
+                )  # Structures below 500 tats sidelength are ignored...
+                maxd = 0
+                lastpt = None
+                had_error = False
+                for pt in subp:
+                    if lastpt is not None:
+                        try:
+                            dx = abs(lastpt[0] - pt[0])
+                            dy = abs(lastpt[1] - pt[1])
+                        except IndexError:
+                            # Invalid structure! Ignore
+                            had_error = True
+                            break
+                        maxd += dx * dx + dy * dy
+                    lastpt = pt
+                    if maxd > tolerance:
+                        break
+
+                if had_error or maxd < tolerance:
+                    # print (f"Artifact ignored: {maxd:.3f}")
+                    continue
+
+                for pt in subp:
+                    result_list.append(pt[0])
+                    result_list.append(pt[1])
+                try:
+                    p1x = result_list[0]
+                    p1y = result_list[1]
+                    p2x = result_list[-2]
+                    p2y = result_list[-1]
+                    dx = abs(p1x - p2x)
+                    dy = abs(p1y - p2y)
+                    if dx > 10 or dy > 10:
+                        result_list.append(p1x)
+                        result_list.append(p1y)
+                except IndexError:
+                    # channel(f"Invalid clipline for {node.type}:{node.label}")
+                    continue
+                geom = Geomstr.lines(*result_list)
+                if allgeom is None:
+                    allgeom = geom
+                else:
+                    # Add a end marker
+                    allgeom.end()
+                    allgeom.append(geom)
+            # print (geom)
+        yield allgeom
+
+
+def offset_path(path, offset_value=0):
+    offs = ClipperOffset(interpolation=500)
+    offs.add_path(path)
+    offs.process_data(offset_value, jointype="round", separate=False)
+    p = None
+    for g in offs.result_geometry():
+        if g is not None:
+            p = g.as_path()
+            break
+    if p is None:
+        p = path
+    return p
 
 
 def plugin(kernel, lifecycle=None):
@@ -632,14 +574,14 @@ def init_commands(kernel):
         ),
     )
     @self.console_option(
-        "radial", "r", action="store_true", type=bool, help=_("radial connector")
+        "jointype", "j", type=str, help=_("join type: round, miter, square")
     )
     @self.console_option(
-        "native",
-        "n",
+        "separate",
+        "s",
         action="store_true",
         type=bool,
-        help=_("native path offset (use at you own risk)"),
+        help=_("deal with subpaths separately"),
     )
     @self.console_option(
         "interpolation", "i", type=int, help=_("interpolation points per segment")
@@ -655,68 +597,169 @@ def init_commands(kernel):
         channel,
         _,
         offset=None,
-        radial=None,
-        native=False,
+        jointype=None,
+        separate=None,
         interpolation=None,
         data=None,
         post=None,
         **kwargs,
     ):
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if len(data) == 0:
             channel(_("No elements selected"))
             return "elements", data
-        if native:
-            linearize = False
-        else:
-            linearize = True
         if interpolation is None:
             interpolation = 500
+        if separate is None:
+            separate = False
         if offset is None:
             offset = 0
         else:
             try:
                 ll = Length(offset)
-                # Invert for right behaviour
-                offset = -1.0 * float(ll)
+                offset = float(ll)
             except ValueError:
                 offset = 0
-        if radial is None:
-            radial = False
-        data_out = list()
+        if offset == 0.0:
+            channel("Invalid offset, nothing to do")
+            return
+        if jointype is None:
+            jointype = "miter"
+        jointype = jointype.lower()
+        default_stroke = None
         for node in data:
-            if hasattr(node, "as_path"):
-                p = abs(node.as_path())
-            else:
-                bb = node.bounds
-                if bb is None:
-                    # Node has no bounds or space, therefore no offset outline.
-                    return "elements", data_out
-                p = Geomstr.rect(
-                    x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
-                ).as_path()
-
-            node_path = offset_path(
-                p,
-                offset,
-                radial_connector=radial,
-                linearize=linearize,
-                interpolation=interpolation,
-            )
-            node_path.validate_connections()
-            newnode = self.elem_branch.add(
-                path=node_path, type="elem path", stroke=node.stroke
-            )
-            newnode.stroke_width = UNITS_PER_PIXEL
-            newnode.linejoin = Linejoin.JOIN_ROUND
-            newnode.label = f"Offset of {node.id if node.label is None else node.label}"
-            data_out.append(newnode)
+            if hasattr(node, "stroke"):
+                default_stroke = node.stroke
+                break
+        if default_stroke is None:
+            default_stroke = self._default_stroke
+        data_out = []
+        c_off = ClipperOffset(interpolation=interpolation)
+        c_off.add_nodes(data)
+        c_off.process_data(offset, jointype=jointype, separate=separate)
+        for geom in c_off.result_geometry():
+            if geom is not None:
+                newnode = self.elem_branch.add(
+                    geometry=geom, type="elem polyline",
+                    stroke=default_stroke)
+                newnode.stroke_width = UNITS_PER_PIXEL
+                newnode.linejoin = Linejoin.JOIN_ROUND
+                newnode.label = f"Offset: {Length(offset).length_mm}"
+                data_out.append(newnode)
 
         # Newly created! Classification needed?
         if len(data_out) > 0:
             post.append(classify_new(data_out))
             self.signal("refresh_scene", "Scene")
+        return "elements", data_out
+
+    # ---- Let's add some CAG commands....
+    @self.console_argument(
+        "method",
+        type=str,
+        help=_("method to use (one of union, difference, intersection, xor)"),
+    )
+    @self.console_option(
+        "filltype",
+        "f",
+        type=str,
+        help=_("filltype to use (one of evenodd, nonzero, negative, positive)"),
+    )
+    @self.console_option(
+        "interpolation", "i", type=int, help=_("interpolation points per segment")
+    )
+    @self.console_option(
+        "keep",
+        "k",
+        action="store_true",
+        type=bool,
+        help=_("keep the original elements, will be removed by default"),
+    )
+    @self.console_command(
+        "clipper",
+        help=_("create a logical combination of the given elements"),
+        input_type=(None, "elements"),
+        output_type="elements",
+    )
+    def element_clipper(
+        command,
+        channel,
+        _,
+        method=None,
+        filltype=None,
+        interpolation=None,
+        keep=None,
+        data=None,
+        post=None,
+        **kwargs,
+    ):
+
+        if data is None:
+            data = list(self.elems(emphasized=True))
+        if len(data) == 0:
+            channel(_("No elements selected"))
+            return "elements", data
+        # Sort data according to selection data so that first selected element becomes the master
+        data.sort(key=lambda n: n.emphasized_time)
+        firstnode = data[0]
+
+        if interpolation is None:
+            interpolation = 500
+        if method is None:
+            method = "union"
+        method = method.lower()
+        if filltype is None:
+            filltype = "evenodd"
+        filltype = filltype.lower()
+        if keep is None:
+            keep = False
+
+        if method.startswith("d"):
+            long_method = "Difference"
+        elif method.startswith("i"):
+            long_method = "Intersection"
+        elif method.startswith("x"):
+            long_method = "Xor"
+        else:
+            long_method = "Union"
+
+        if filltype.startswith("no") or filltype.startswith("z"):
+            long_filltype = "NonZero"
+        elif filltype.startswith("p") or filltype.startswith("+"):
+            long_filltype = "Positive"
+        elif filltype.startswith("ne") or filltype.startswith("-"):
+            long_filltype = "Negative"
+        else:
+            long_filltype = "EvenOdd"
+
+        channel(f"Method={long_method}, filltype={long_filltype}")
+
+        data_out = list()
+
+        # Create a clipper object
+        clipper = ClipperCAG(interpolation=interpolation)
+        clipper.add_nodes(data)
+        # Perform the clip operation
+        clipper.process_data(method=method, filltype=filltype)
+        for geom in clipper.result_geometry():
+            if geom is not None:
+                newnode = self.elem_branch.add(
+                    geometry=geom, type="elem polyline", stroke=firstnode.stroke
+                )
+                newnode.stroke_width = UNITS_PER_PIXEL
+                newnode.linejoin = Linejoin.JOIN_ROUND
+                newnode.label = f"{long_method} of {firstnode.id if firstnode.label is None else firstnode.label}"
+                data_out.append(newnode)
+
+        # Newly created! Classification needed?
+        if len(data_out) > 0:
+            post.append(classify_new(data_out))
+            self.signal("refresh_scene", "Scene")
+            if not keep:
+                self.remove_nodes(data)
+
         return "elements", data_out
 
     # --------------------------- END COMMANDS ------------------------------
