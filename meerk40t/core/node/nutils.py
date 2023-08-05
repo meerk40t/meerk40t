@@ -6,9 +6,7 @@ from meerk40t.core.cutcode.cubiccut import CubicCut
 from meerk40t.core.cutcode.cutgroup import CutGroup
 from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
-from meerk40t.core.elements.offset import offset_path
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
-
 
 def path_to_cutobjects(
     path,
@@ -18,9 +16,11 @@ def path_to_cutobjects(
     original_op=None,
     color=None,
     kerf=0,
+    offset_routine=None
 ):
-    if kerf != 0:
-        source = offset_path(
+    source = path
+    if kerf != 0 and offset_routine is not None:
+        source = offset_routine(
             abs(path),
             kerf,
         )
@@ -29,8 +29,6 @@ def path_to_cutobjects(
         # Just a test to see if it works, replace path by it bounding box
         # bb = sp.bbox(transformed=True)
         # sp = Path(Rect(x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]))
-    else:
-        source = path
     for subpath in source.as_subpaths():
         sp = Path(subpath)
         if len(sp) == 0:

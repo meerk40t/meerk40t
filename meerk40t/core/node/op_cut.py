@@ -21,6 +21,7 @@ class CutOpNode(Node, Parameters):
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.kerf = 0
+        self.offset_routine = None
         self._device_factor = 1.0
 
         if len(args) == 1:
@@ -62,7 +63,9 @@ class CutOpNode(Node, Parameters):
         return "CutOpNode()"
 
     def __copy__(self):
-        return CutOpNode(self)
+        p = CutOpNode(self)
+        p.offset_routine = self.offset_routine
+        return p
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -341,4 +344,5 @@ class CutOpNode(Node, Parameters):
                 original_op=self.type,
                 color=stroke,
                 kerf=self.kerf * self._device_factor,
+                offset_routine=self.offset_routine,
             )

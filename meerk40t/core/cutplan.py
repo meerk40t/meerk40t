@@ -124,6 +124,14 @@ class CutPlan:
         device = self.context.device
 
         scene_to_device_matrix = device.scene_to_device_matrix()
+        # Ugly hack, we look at all opnodes and establish if they have an
+        # attribute "offset_routine" and replace it with a lookup value
+        # Accomodates the need to have a flexible option to inject a
+        # plugin routine to deal with offset_paths
+        make_offset = self.context.kernel.lookup("render-op/offset_path")
+        for op in self.plan:
+            if hasattr(op, "offset_routine"):
+                op.offset_routine = make_offset
 
         # ==========
         # Determine the jobs bounds.
