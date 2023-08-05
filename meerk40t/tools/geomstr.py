@@ -3133,6 +3133,34 @@ class Geomstr:
         if last != self.index:
             yield Geomstr(self.segments[last : self.index])
 
+    def ensure_proper_subpaths(self):
+        """
+        Will look at interrupted segments that don't have an 'end' between them
+        and inserts one if necessary
+        """
+        last = 0
+        idx = 1
+        while idx < self.index:
+            seg1 = self.segments[idx]
+            segtype1 = int(seg1[2].real)
+            seg2 = self.segments[idx - 1]
+            segtype2 = int(seg2[2].real)
+            if (
+                segtype1 != TYPE_END and
+                segtype2 != TYPE_END and
+                seg1[0] != seg2[-1]
+            ):
+                # This is a non-contiguous segment
+                end_segment = ((
+                    np.nan,
+                    np.nan,
+                    complex(TYPE_END, 0),
+                    np.nan,
+                    np.nan,
+                ))
+                # print (f"inserted an end at #{idx}")
+                self.insert(idx, end_segment)
+            idx += 1
 
     def as_subpaths(self):
         """
