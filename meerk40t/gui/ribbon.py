@@ -1137,9 +1137,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        ).ChangeLightness(50)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
+        ) # .ChangeLightness(25)
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
