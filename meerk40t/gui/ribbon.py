@@ -1113,6 +1113,7 @@ class Art:
         self.tab_initial_buffer = 30
         self.tab_text_buffer = 5
         self.edge_page_buffer = 4
+        self.rounded_radius = 3
 
         self.bitmap_text_buffer = 10
         self.dropdown_height = 20
@@ -1205,7 +1206,7 @@ class Art:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
             for panel in page.panels:
                 # plen = len(panel.buttons)
                 # if plen == 0:
@@ -1244,7 +1245,7 @@ class Art:
             show_rect = True
         x, y, x1, y1 = page.tab_position
         if show_rect:
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         dc.SetFont(self.default_font)
         text_width, text_height = dc.GetTextExtent(page.label)
         tpx = int(x + (x1 - x - text_width) / 2)
@@ -1282,7 +1283,7 @@ class Art:
         # print(f"Painting panel {panel.label}: {panel.position}")
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         """
         Paint the overflow of buttons that cannot be stored within the required width.
 
@@ -1294,7 +1295,7 @@ class Art:
         x, y, x1, y1 = panel._overflow_position
         dc.SetBrush(wx.Brush(self.highlight))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1325,7 +1326,7 @@ class Art:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.TRANSPARENT_PEN)
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((x1 - x) / 2, (y1 - y) / 2)
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1382,7 +1383,7 @@ class Art:
         # Lets clip the output
         dc.SetClippingRegion(int(x), int(y), int(w), int(h))
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
         font = self.default_font
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
@@ -1675,6 +1676,8 @@ class Art:
         x += self.page_panel_buffer
         y += self.page_panel_buffer
         for p, panel in enumerate(page.panels):
+            if len(panel.buttons) == 0:
+                continue
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
