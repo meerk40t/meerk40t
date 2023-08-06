@@ -34,14 +34,7 @@ from .ribbon import RibbonBarPanel
 
 _ = wx.GetTranslation
 
-ID_PAGE_MAIN = 10
-ID_PAGE_DESIGN = 20
-ID_PAGE_MODIFY = 30
-ID_PAGE_CONFIG = 40
-ID_PAGE_TOGGLE = 99
-
 BUFFER = 5
-
 
 def register_panel_ribbon(window, context):
     iconsize = get_default_icon_size()
@@ -77,6 +70,7 @@ def register_panel_ribbon(window, context):
             "section": "Appearance",
         },
     ]
+
     context.kernel.register_choices("preferences", choices)
 
 
@@ -88,8 +82,115 @@ class MKRibbonBarPanel(RibbonBarPanel):
         # Layout properties.
         self.toggle_show_labels(context.setting(bool, "ribbon_show_labels", True))
 
+        self._pages = []
+        self.set_default_pages()
         # Define Ribbon.
         self.__set_ribbonbar()
+
+    def set_default_pages(self):
+        self._pages = [
+            {
+                "id": "home",          # identifier
+                "label": "Project",    # Label
+                "panels": [            # Panels to include
+                    {
+                        "id": "project",
+                        "label": "Project",
+                        "seq": 1,
+                    },
+                    {
+                        "id": "basicediting",
+                        "label": "Edit",
+                        "seq": 2,
+                    },
+                    {
+                        "id": "undo",
+                        "label": "Undo",
+                        "seq": 3,
+                    },
+                    {
+                        "id": "preparation",
+                        "label": "Prepare",
+                        "seq": 4,
+                    },
+                    {
+                        "id": "control",
+                        "label": "Control",
+                        "seq": 5,
+                    },
+                    {
+                        "id": "jobstart",
+                        "label": "Execute",
+                        "seq": 5,
+                    },
+                ],
+                "seq": 1,              # Sequence
+            },
+            {
+                "id": "modify",
+                "label": "Modify",
+                "panels": [
+                    {
+                        "id": "undo",
+                        "label": "Undo",
+                        "seq": 1,
+                    },
+                    {
+                        "id": "modify",
+                        "label": "Modification",
+                        "seq": 2,
+                    },
+                    {
+                        "id": "geometry",
+                        "label": "Geometry",
+                        "seq": 3,
+                    },
+                    {
+                        "id": "align",
+                        "label": "Alignment",
+                        "seq": 4,
+                    },
+                ],
+                "seq": 2,
+            },
+            {
+                "id": "config",
+                "label": "Config",
+                "panels": [            # Panels to include
+                    {
+                        "id": "config",
+                        "label": "Configuration",
+                        "seq": 1,
+                    },
+                    {
+                        "id": "device",
+                        "label": "Devices",
+                        "seq": 1,
+                    },
+                ],
+                "seq": 3,
+            },
+        ]
+
+
+    def set_panel_buttons(self, key, new_values):
+        found = 0
+        for page_entry in self._pages:
+            if "_object" not in page_entry:
+                continue
+            if "panels" not in page_entry:
+                continue
+            pageobj = page_entry["_object"]
+            for panel_entry in page_entry["panels"]:
+                if "_object" not in panel_entry:
+                    continue
+                panelobj = panel_entry["_object"]
+                if panel_entry["id"].lower() == key.lower():
+                    # print (key, page_entry["id"], panel_entry)
+                    panelobj.set_buttons(new_values)
+                    found += 1
+        # if found == 0:
+        #     print (f"Did not find a panel for {key}")
 
     @signal_listener("ribbon_show_labels")
     def on_show_labels_change(self, origin, value, *args):
@@ -97,43 +198,59 @@ class MKRibbonBarPanel(RibbonBarPanel):
 
     @lookup_listener("button/basicediting")
     def set_editing_buttons(self, new_values, old_values):
-        self.home.edit.set_buttons(new_values)
+        self.set_panel_buttons("basicediting", new_values)
+
+    @lookup_listener("button/undo")
+    def set_undo_buttons(self, new_values, old_values):
+        self.set_panel_buttons("undo", new_values)
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
-        self.home.project.set_buttons(new_values)
+        self.set_panel_buttons("project", new_values)
 
     @lookup_listener("button/modify")
     def set_modify_buttons(self, new_values, old_values):
-        self.modify.modify.set_buttons(new_values)
+        self.set_panel_buttons("modify", new_values)
 
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
-        self.modify.geometry.set_buttons(new_values)
+        self.set_panel_buttons("geometry", new_values)
 
     @lookup_listener("button/preparation")
     def set_preparation_buttons(self, new_values, old_values):
-        self.home.prep.set_buttons(new_values)
+        self.set_panel_buttons("preparation", new_values)
 
     @lookup_listener("button/jobstart")
     def set_jobstart_buttons(self, new_values, old_values):
-        self.home.job.set_buttons(new_values)
+        self.set_panel_buttons("jobstart", new_values)
 
     @lookup_listener("button/control")
     def set_control_buttons(self, new_values, old_values):
-        self.home.control.set_buttons(new_values)
+        self.set_panel_buttons("control", new_values)
 
     @lookup_listener("button/device")
     def set_device_buttons(self, new_values, old_values):
-        self.config.device.set_buttons(new_values)
+        self.set_panel_buttons("device", new_values)
 
     @lookup_listener("button/config")
     def set_config_buttons(self, new_values, old_values):
-        self.config.config.set_buttons(new_values)
+        self.set_panel_buttons("config", new_values)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
-        self.modify.align.set_buttons(new_values)
+        self.set_panel_buttons("align", new_values)
+
+    @lookup_listener("button/tool")
+    def set_tool_buttons(self, new_values, old_values):
+        self.set_panel_buttons("tool", new_values)
+
+    @lookup_listener("button/extended_tools")
+    def set_tool_extended_buttons(self, new_values, old_values):
+        self.set_panel_buttons("extended_tools", new_values)
+
+    @lookup_listener("button/group")
+    def set_group_buttons(self, new_values, old_values):
+        self.set_panel_buttons("group", new_values)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -175,107 +292,29 @@ class MKRibbonBarPanel(RibbonBarPanel):
         GUI Specific creation of ribbonbar.
         @return:
         """
+        for entry in sorted(self._pages, key=lambda d: d["seq"]):
+            name_id = entry["id"]
+            label =_(entry["label"])
+            panel_list = entry["panels"]
+            page = self.add_page(
+                name_id,
+                wx.ID_ANY,
+                label,
+                icons8_opened_folder_50.GetBitmap(resize=16),
+            )
+            entry["_object"] = page
+            for pentry in sorted(panel_list, key=lambda d: d["seq"]):
+                p_name_id = pentry["id"]
+                p_label =_(pentry["label"])
+                panel = self.add_panel(
+                    p_name_id,
+                    parent=page,
+                    id=wx.ID_ANY,
+                    label=p_label,
+                    icon=icons8_opened_folder_50.GetBitmap(),
+                )
+                pentry["_object"] = panel
 
-        self.add_page(
-            "home",
-            ID_PAGE_MAIN,
-            _("Project"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-
-        self.add_page(
-            "modify",
-            ID_PAGE_MODIFY,
-            _("Modify"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-
-        self.add_page(
-            "config",
-            ID_PAGE_CONFIG,
-            _("Config"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
-        )
-
-        self.add_panel(
-            "project",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Project"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "edit",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Edit"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "prep",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Prepare"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "control",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Control"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "job",
-            parent=self.home,
-            id=wx.ID_ANY,
-            label=_("Execute"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "config",
-            parent=self.config,
-            id=wx.ID_ANY,
-            label=_("Configuration"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "device",
-            parent=self.config,
-            id=wx.ID_ANY,
-            label=_("Devices"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "modify",
-            parent=self.modify,
-            id=wx.ID_ANY,
-            label=_("Modification"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "geometry",
-            parent=self.modify,
-            id=wx.ID_ANY,
-            label=_("Geometry"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
-
-        self.add_panel(
-            "align",
-            parent=self.modify,
-            id=wx.ID_ANY,
-            label=_("Alignment"),
-            icon=icons8_opened_folder_50.GetBitmap(),
-        )
         self.modified()
 
     def pane_show(self):
