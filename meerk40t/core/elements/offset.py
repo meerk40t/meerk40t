@@ -44,7 +44,7 @@ def init_commands(kernel):
             offset = float(Length("2mm"))
             offs.process_data(offset, jointype="round", separate=False)
             for geom in offs.result_geometry():
-                newnode = self.elem_branch.add(geometry=geom, type="elem polyline")
+                newnode = self.elem_branch.add(geometry=geom, type="elem path")
 
         """
 
@@ -297,7 +297,7 @@ def init_commands(kernel):
             cag.add_nodes(data)
             cag.process_data(method="union", filltype="EvenOdd")
             geom = cag.result_geometry()
-            newnode = self.elem_branch.add(geometry=geom, type="elem polyline")
+            newnode = self.elem_branch.add(geometry=geom, type="elem path")
 
         """
 
@@ -655,7 +655,7 @@ def init_commands(kernel):
         for geom in c_off.result_geometry():
             if geom is not None:
                 newnode = self.elem_branch.add(
-                    geometry=geom, type="elem polyline", stroke=default_stroke
+                    geometry=geom, type="elem path", stroke=default_stroke
                 )
                 newnode.stroke_width = UNITS_PER_PIXEL
                 newnode.linejoin = Linejoin.JOIN_ROUND
@@ -759,7 +759,7 @@ def init_commands(kernel):
         for geom in clipper.result_geometry():
             if geom is not None:
                 newnode = self.elem_branch.add(
-                    geometry=geom, type="elem polyline", stroke=firstnode.stroke
+                    geometry=geom, type="elem path", stroke=firstnode.stroke
                 )
                 newnode.stroke_width = UNITS_PER_PIXEL
                 newnode.linejoin = Linejoin.JOIN_ROUND
