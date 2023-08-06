@@ -577,7 +577,8 @@ def init_commands(kernel):
     # new functionality.
     from meerk40t.core.node.op_cut import CutOpNode
 
-    CutOpNode.offset_routine = offset_path
+    # CutOpNode.offset_routine = offset_path
+    print ("CutopNode redefined by offset")
 
     @self.console_argument(
         "offset",

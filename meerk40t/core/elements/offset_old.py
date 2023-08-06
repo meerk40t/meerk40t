@@ -340,8 +340,16 @@ def intersect_line_segments(w, z, x, y):
     p = p1
     return p, s, t
 
+def offset_path(self, path, offset_value=0):
+    # As this oveloading a regular method in a class
+    # it needs to have the very same definition (including the class
+    # reference self)
+    p = path_offset(path, offset_value=-offset_value, radial_connector=True, linearize=True, interpolation=500)
+    if p is None:
+        p = path
+    return p
 
-def offset_path(
+def path_offset(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
 ):
     def stitch_segments_at_index(
@@ -628,6 +636,15 @@ def init_commands(kernel):
     _ = kernel.translation
 
     classify_new = self.post_classify
+    # We are patching the class responsible for Cut nodes in general,
+    # so that any new instance of this class will be able to use the
+    # new functionality.
+    # Notabene: this may be overloaded by another routine (like from pyclipr)
+    # at a later time.
+    from meerk40t.core.node.op_cut import CutOpNode
+
+    CutOpNode.offset_routine = offset_path
+    print ("CutopNode redefined by offset_old")
 
     @self.console_argument(
         "offset",
@@ -702,13 +719,15 @@ def init_commands(kernel):
                     x=bb[0], y=bb[1], width=bb[2] - bb[0], height=bb[3] - bb[1]
                 ).as_path()
 
-            node_path = offset_path(
+            node_path = path_offset(
                 p,
                 offset,
                 radial_connector=radial,
                 linearize=linearize,
                 interpolation=interpolation,
             )
+            if node_path is None or len(node_path)==0:
+                continue
             node_path.validate_connections()
             newnode = self.elem_branch.add(
                 path=node_path, type="elem path", stroke=node.stroke

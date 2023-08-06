@@ -27,6 +27,8 @@ from .element_types import *
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
+    # The order of offset_old before offset is relevant,
+    # as offset could and should redefine something later
     if lifecycle == "plugins":
         from . import (
             align,
@@ -37,8 +39,8 @@ def plugin(kernel, lifecycle=None):
             grid,
             materials,
             notes,
-            offset,
             offset_old,
+            offset,
             placements,
             render,
             shapes,
@@ -64,8 +66,8 @@ def plugin(kernel, lifecycle=None):
             render.plugin,
             notes.plugin,
             placements.plugin,
-            offset.plugin,
             offset_old.plugin,
+            offset.plugin,
         ]
     elif lifecycle == "preregister":
         kernel.register(
