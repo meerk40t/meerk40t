@@ -978,7 +978,6 @@ class ShadowTree:
         self.wxtree.Expand(node_registration._item)
         self.elements.signal("warn_state_update")
 
-
         # Restore emphasis
         for e in emphasized_list:
             e.emphasized = True
