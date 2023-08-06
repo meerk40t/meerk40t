@@ -1175,13 +1175,13 @@ class Art:
             self.inactive_background = wx.BLACK
 
         self.default_font = wx.Font(
-            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.small_font = wx.Font(
-            8, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.tiny_font = wx.Font(
-            6, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
     def paint_main(self, dc, ribbon):
@@ -1220,27 +1220,38 @@ class Art:
         @return:
         """
         horizontal = self.parent.prefer_horizontal()
+        highlight_via_color = False
+
 
         dc.SetPen(wx.Pen(self.black_color))
+        show_rect = True
         if page is not self.current_page:
             dc.SetBrush(wx.Brush(self.button_face))
             dc.SetTextForeground(self.text_color_inactive)
+            if not highlight_via_color:
+                show_rect = False
         else:
             dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetBrush(wx.Brush(self.highlight))
             dc.SetTextForeground(self.text_color)
+            if not highlight_via_color:
+                dc.SetBrush(wx.Brush(self.button_face))
         if page is self.hover_tab and self.hover_button is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
+            show_rect = True
         x, y, x1, y1 = page.tab_position
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        if show_rect:
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
         dc.SetFont(self.default_font)
+        text_width, text_height = dc.GetTextExtent(page.label)
+        tpx = int(x + (x1 - x - text_width) / 2)
+        tpy = int(y + self.tab_text_buffer)
         if horizontal:
-            dc.DrawText(
-                page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
-            )
+            dc.DrawText(page.label, tpx, tpy)
         else:
-            dc.DrawRotatedText(
-                page.label, int(x + self.tab_text_buffer), int(y1 - self.tab_text_buffer), 90
-            )
+            tpx = int(x + self.tab_text_buffer)
+            tpy = int(y1 - (y1 - y - text_width) / 2)
+            dc.DrawRotatedText(page.label, tpx, tpy, 90)
 
 
     def _paint_background(self, dc: wx.DC):
