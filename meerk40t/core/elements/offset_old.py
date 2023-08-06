@@ -644,7 +644,6 @@ def init_commands(kernel):
     from meerk40t.core.node.op_cut import CutOpNode
 
     CutOpNode.offset_routine = offset_path
-    print ("CutopNode redefined by offset_old")
 
     @self.console_argument(
         "offset",
