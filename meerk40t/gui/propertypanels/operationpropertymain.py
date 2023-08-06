@@ -71,7 +71,7 @@ class LayerSettingPanel(wx.Panel):
             self.has_fill = self.operation.has_color_attribute("fill")
             self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
-                _("Look at the stroke color to restrict classification.")
+                _("Look at the fill color to restrict classification.")
                 + rastertooltip
             )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
