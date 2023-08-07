@@ -713,10 +713,6 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Ribbon", register_panel_ribbon)
 
-        from meerk40t.gui.wxmtools import register_panel_tools
-
-        kernel.register("wxpane/Tools", register_panel_tools)
-
         from meerk40t.gui.wxmscene import register_panel_scene
 
         kernel.register("wxpane/ScenePane", register_panel_scene)
