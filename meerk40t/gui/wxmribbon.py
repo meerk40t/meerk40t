@@ -26,19 +26,17 @@ import threading
 import wx
 from wx import aui
 
-from meerk40t.kernel import Settings, lookup_listener, signal_listener
-
 from meerk40t.gui.icons import (
     get_default_icon_size,
-    icons8_opened_folder_50,
-    icons8_up_50,
-    icons8_down_50,
-    icons8_remove_25,
     icons8_add_new_25,
+    icons8_down_50,
+    icons8_opened_folder_50,
+    icons8_remove_25,
+    icons8_up_50,
 )
-
 from meerk40t.gui.ribbon import RibbonBarPanel
 from meerk40t.gui.wxutils import StaticBoxSizer
+from meerk40t.kernel import Settings, lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 
@@ -873,7 +871,9 @@ class RibbonEditor(wx.Panel):
                 continue
             panel_list = page["panels"]
             newconfig = []
-            for p_idx, panel_entry in enumerate(sorted(panel_list, key=lambda d: d["seq"])):
+            for p_idx, panel_entry in enumerate(
+                sorted(panel_list, key=lambda d: d["seq"])
+            ):
                 if panel_entry["id"] == panelid and p_idx > 0:
                     newconfig.insert(p_idx - 1, panel_entry)
                 else:

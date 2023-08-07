@@ -8,8 +8,9 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
-from .wxutils import StaticBoxSizer, TextCtrl
 from .wxmribbon import RibbonEditor
+from .wxutils import StaticBoxSizer, TextCtrl
+
 _ = wx.GetTranslation
 
 
