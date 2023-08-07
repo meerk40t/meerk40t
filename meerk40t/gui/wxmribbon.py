@@ -161,7 +161,7 @@ class MKRibbonBarPanel(RibbonBarPanel):
                             "seq": 1,
                         },
                         {
-                            "id": "extendedtools",
+                            "id": "extended_tools",
                             "label": "group",
                             "seq": 2,
                         },
