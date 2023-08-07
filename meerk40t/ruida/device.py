@@ -122,7 +122,7 @@ class RuidaDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -132,7 +132,7 @@ class RuidaDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -196,6 +196,11 @@ class RuidaDevice(Service, ViewPort):
             self.bedheight,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
+            rotary_active=self.rotary_active,
+            rotary_scale_x=self.rotary_scale_x,
+            rotary_scale_y=self.rotary_scale_y,
+            rotary_flip_x=self.rotary_flip_x,
+            rotary_flip_y=self.rotary_flip_y,
         )
         self.state = 0
 
