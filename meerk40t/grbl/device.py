@@ -180,7 +180,7 @@ class GRBLDevice(Service, ViewPort):
                 "conditional": (self, "rotary_active"),
             },
             {
-                "attr": "rotary_mirror_x",
+                "attr": "rotary_flip_x",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -190,7 +190,7 @@ class GRBLDevice(Service, ViewPort):
                 "subsection": _("Mirror Output"),
             },
             {
-                "attr": "rotary_mirror_y",
+                "attr": "rotary_flip_y",
                 "object": self,
                 "default": False,
                 "type": bool,
@@ -233,6 +233,11 @@ class GRBLDevice(Service, ViewPort):
             swap_xy=self.swap_xy,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
+            rotary_active=self.rotary_active,
+            rotary_scale_x=self.rotary_scale_x,
+            rotary_scale_y=self.rotary_scale_y,
+            rotary_flip_x=self.rotary_flip_x,
+            rotary_flip_y=self.rotary_flip_y,
         )
 
         self.settings = dict()
