@@ -58,6 +58,7 @@ def init_commands(kernel):
             self.clipr_offset = pyclipr.ClipperOffset()
             self.newpath = None
             self._factor = 1000
+            self.tolerance = 0.25
             self.factor = self._factor
 
             # @staticmethod
@@ -130,14 +131,21 @@ def init_commands(kernel):
             # As mks internal variable representation is already based on tats
             # that should not be necessary
             bounds = Node.union_bounds(nodelist)
-            factor = int(1000)
+            factor1 = 1000
+            factor2 = 1
+            # Structures below 500 tats sidelength are ignored...
             if bounds[2] > 100000 or bounds[3] > 100000:
-                factor = int(1)
+                factor1 = 1
+                factor2 = 1000
             elif bounds[2] > 10000 or bounds[3] > 10000:
-                factor = int(10)
+                factor1 = 10
+                factor2 = 100
             elif bounds[2] > 1000 or bounds[3] > 1000:
-                factor = int(100)
-            self.factor = factor
+                factor1 = 100
+                factor2 = 10
+            self.factor = factor1
+            self.tolerance = 0.5 * factor2 * 0.5 * factor2
+
             geom_list = []
             for node in nodelist:
                 # print (f"Looking at {node.type} - {node.label}")
@@ -164,14 +172,16 @@ def init_commands(kernel):
             # As mks internal variable representation is already based on tats
             # that should not be necessary
             bounds = path.bbox(transformed=True)
-            factor = int(1000)
+            factor1 = 1000
             if bounds[2] > 100000 or bounds[3] > 100000:
-                factor = int(1)
+                factor1 = 1
             elif bounds[2] > 10000 or bounds[3] > 10000:
-                factor = int(10)
+                factor1 = 10
             elif bounds[2] > 1000 or bounds[3] > 1000:
-                factor = int(100)
-            self.factor = factor
+                factor1 = 100
+            factor2 = 1000 / factor1
+            self.factor = factor1
+            self.tolerance = 0.5 * factor2 * 0.5 * factor2
             geom_list = []
             g = Geomstr.svg(path)
             geom_list.append(g)
@@ -241,9 +251,7 @@ def init_commands(kernel):
                     # Sometimes we get artifacts: a small array
                     # with very small structures.
                     # We try to identify and to discard them
-                    tolerance = int(
-                        0.5 * self.factor * 0.5 * self.factor
-                    )  # Structures below 500 tats sidelength are ignored...
+                    # Structures below 500 tats sidelength are ignored...
                     maxd = 0
                     lastpt = None
                     had_error = False
@@ -258,10 +266,11 @@ def init_commands(kernel):
                                 break
                             maxd += dx * dx + dy * dy
                         lastpt = pt
-                        if maxd > tolerance:
+                        if maxd > self.tolerance:
                             break
 
-                    if had_error or maxd < tolerance:
+                    # print (f"Substructure: {maxd:.3f} ({self.tolerance:.3f})")
+                    if had_error or maxd < self.tolerance:
                         # print (f"Artifact ignored: {maxd:.3f}")
                         continue
 
@@ -312,7 +321,9 @@ def init_commands(kernel):
             self.any_open = False
             self.newpath = None
             self._factor = 1000
+
             self.factor = self._factor
+            self.tolerance = 0.5 * 0.5
 
             # @staticmethod
             # def testroutine():
@@ -385,14 +396,16 @@ def init_commands(kernel):
             # As mks internal variable representation is already based on tats
             # that should not be necessary
             bounds = Node.union_bounds(nodelist)
-            factor = int(1000)
+            factor1 = int(1000)
             if bounds[2] > 100000 or bounds[3] > 100000:
-                factor = int(1)
+                factor1 = int(1)
             elif bounds[2] > 10000 or bounds[3] > 10000:
-                factor = int(10)
+                factor1 = int(10)
             elif bounds[2] > 1000 or bounds[3] > 1000:
-                factor = int(100)
-            self.factor = factor
+                factor1 = int(100)
+            factor2 = 1000 / factor1
+            self.factor = factor1
+            self.tolerance = 0.5 * factor2 * 0.5 * factor2
             for node in nodelist:
                 # print (f"Looking at {node.type} - {node.label}")
                 if hasattr(node, "as_geometry"):
@@ -504,9 +517,7 @@ def init_commands(kernel):
                     # Sometimes we get artifacts: a small array
                     # with very small structures.
                     # We try to identify and to discard them
-                    tolerance = (
-                        0.5 * self.factor * 0.5 * self.factor
-                    )  # Structures below 500 tats sidelength are ignored...
+                    # 500 x 500
                     maxd = 0
                     lastpt = None
                     had_error = False
