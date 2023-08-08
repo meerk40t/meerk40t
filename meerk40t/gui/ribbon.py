@@ -854,9 +854,11 @@ class RibbonBarPanel(wx.Control):
         hover = self._button_at_position(pos)
         if hover is not None:
             self._check_hover_dropdown(hover.dropdown, pos)
-        if hover is self.art.hover_button:
+        if hover is not None and hover is self.art.hover_button:
             return
         self.art.hover_button = hover
+        if hover is None:
+            hover = self._button_at_position(pos, use_all=True)
         if hover is not None:
             self.SetToolTip(hover.tip)
         else:
@@ -956,7 +958,7 @@ class RibbonBarPanel(wx.Control):
                     return panel
         return None
 
-    def _button_at_position(self, pos):
+    def _button_at_position(self, pos, use_all=False):
         """
         Find the button at the given position, so long as that button is enabled.
 
@@ -968,7 +970,7 @@ class RibbonBarPanel(wx.Control):
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
-                    if button.contains(pos) and button.enabled and not button.overflow:
+                    if button.contains(pos) and (button.enabled or use_all) and not button.overflow:
                         return button
         return None
 
@@ -1115,7 +1117,7 @@ class Art:
         self.edge_page_buffer = 4
         self.rounded_radius = 3
 
-        self.bitmap_text_buffer = 10
+        self.bitmap_text_buffer = 5
         self.dropdown_height = 20
         self.overflow_width = 20
         self.text_dropdown_buffer = 7
@@ -1410,37 +1412,63 @@ class Art:
         if button.label and self.show_labels:
             show_text = True
             label_text = list(button.label.split(" "))
-            test_y = y + self.bitmap_text_buffer
-            dc.SetFont(font)
-            for idx, word in enumerate(label_text):
-                test_word = word
-                while True:
-                    text_width, text_height = dc.GetTextExtent(test_word)
-                    if text_width <= w:
+            # We try to establish whether this would fit properly.
+            # We allow a small oversize of 25% to the button,
+            # before we try to reduce the fontsize
+            font_candidates = [self.default_font, self.small_font, self.tiny_font, ]
+            if button.bitmapsize == "tiny":
+                font_candidates = font_candidates[2:]
+            elif button.bitmapsize == "small":
+                font_candidates = font_candidates[1:]
+            wouldfit = False
+            for testfont in font_candidates:
+                test_y = y + self.bitmap_text_buffer
+                dc.SetFont(testfont)
+                wouldfit = True
+                for word in label_text:
+                    text_width, text_height = dc.GetTextExtent(word)
+                    if text_width > w:
+                        wouldfit = False
                         break
-                    if test_word.endswith("..."):
-                        test_word = test_word[:-4]
-                    else:
-                        test_word = word[:-2]
-                    if len(test_word) > 0:
-                        test_word += "..."
-                    else:
-                        show_text = False
-                        break
-                if len(test_word) > 0:
-                    if test_word.endswith("..."):
-                        label_text[idx] = test_word
-                        label_text = label_text[: idx + 1]
-                        break
-                else:
-                    if idx == 0:
-                        show_text = False
-                    else:
-                        label_text = label_text[:idx]
-
+                if wouldfit:
+                    font = testfont
                     break
+            if not wouldfit:
+                show_text = False
+                label_text = list()
 
-                test_y += text_height
+            # Previous algorithm with abbreviated text
+            # test_y = y + self.bitmap_text_buffer
+            # dc.SetFont(font)
+            # for idx, word in enumerate(label_text):
+            #     test_word = word
+            #     while True:
+            #         text_width, text_height = dc.GetTextExtent(test_word)
+            #         if text_width <= w:
+            #             break
+            #         if test_word.endswith("..."):
+            #             test_word = test_word[:-4]
+            #         else:
+            #             test_word = word[:-2]
+            #         if len(test_word) > 0:
+            #             test_word += "..."
+            #         else:
+            #             show_text = False
+            #             break
+            #     if len(test_word) > 0:
+            #         if test_word.endswith("..."):
+            #             label_text[idx] = test_word
+            #             label_text = label_text[: idx + 1]
+            #             break
+            #     else:
+            #         if idx == 0:
+            #             show_text = False
+            #         else:
+            #             label_text = label_text[:idx]
+
+            #         break
+
+            #     test_y += text_height
 
         else:
             show_text = False
@@ -1475,7 +1503,6 @@ class Art:
                 y += text_height
                 i += 1
         if button.dropdown is not None and button.dropdown.position is not None:
-            y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
         dc.DestroyClippingRegion()
 
@@ -1889,12 +1916,15 @@ class Art:
         if button.bitmapsize == "small":
             default_w = int(SMALL_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_small
+            dc.SetFont(self.small_font)
         elif button.bitmapsize == "tiny":
             default_w = int(TINY_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_tiny
+            dc.SetFont(self.tiny_font)
         else:
             default_w = button.default_width
             bitmap = button.bitmap_large
+            dc.SetFont(self.default_font)
         bitmap_width, bitmap_height = bitmap.Size
         bitmap_height = max(bitmap_height, default_w)
         bitmap_width = max(bitmap_width, default_w)
@@ -1911,10 +1941,12 @@ class Art:
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
         button_height = bitmap_height
+        button_height += 2 * self.panel_button_buffer
+        button_width += 2 * self.panel_button_buffer
         if button.label and self.show_labels:
             # button_height += + self.panel_button_buffer
             button_height += (
-                +self.panel_button_buffer + self.bitmap_text_buffer + text_height
+                self.bitmap_text_buffer + text_height
             )
 
         button.min_width = button_width
@@ -1941,11 +1973,12 @@ class Art:
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
+            gap = 5
             button.dropdown.position = (
                 extx - sizx,
-                exty - sizy,
+                exty - sizy - gap,
                 extx,
-                exty,
+                exty - gap,
             )
             # button.dropdown.position = (
             #     x + bitmap_width / 2,
