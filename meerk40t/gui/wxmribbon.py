@@ -647,19 +647,25 @@ class RibbonEditor(wx.Panel):
         self.button_reset.SetToolTip(
             _("Reset the ribbon appearance to the default configuration")
         )
+
+        self.button_add_page.SetToolTip(
+            _("Add an additional page to the ribbon")
+        )
         self.button_del_page.SetToolTip(_("Remove the selected page from the list"))
-        self.button_del_panel.SetToolTip(_("Remove the selected panel from the list"))
         self.button_down_page.SetToolTip(
             _("Decrease the position of the selected page")
         )
         self.button_up_page.SetToolTip(_("Increase the position of the selected page"))
+        self.text_param_page.SetToolTip(_("Modify the label of the selected page"))
+
+        self.button_del_panel.SetToolTip(_("Remove the selected panel from the list"))
         self.button_down_panel.SetToolTip(
             _("Decrease the position of the selected panel")
         )
         self.button_up_panel.SetToolTip(
             _("Increase the position of the selected panel")
         )
-        self.text_param_page.SetToolTip(_("Modify the label of the selected page"))
+        self.check_labels.SetToolTip(_("Allow/suppress the display of labels beneath the icons in the ribbon"))
 
         self.fill_options()
         self.SetSizer(sizer_main)

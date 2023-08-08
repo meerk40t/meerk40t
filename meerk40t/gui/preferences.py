@@ -142,7 +142,7 @@ class PreferencesSavingPanel(wx.Panel):
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
         self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
         self.button_export.SetToolTip(
-            _("Export the the current settings to a different location")
+            _("Export the current settings to a different location")
         )
         self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
