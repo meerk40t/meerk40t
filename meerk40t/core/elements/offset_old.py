@@ -124,6 +124,12 @@ def linearize_segment(segment, interpolation=500, reduce=True):
             s[-1] = np
         t += delta
         lastpt = np
+    if s[-1] != segment.end:
+        np = Point(segment.end)
+        s.append(np)
+    # print (f"linearize: {type(segment).__name__}")
+    # print (f"Start: ({segment.start.x:.0f}, {segment.start.y:.0f}) - ({s[0].x:.0f}, {s[0].y:.0f})")
+    # print (f"End: ({segment.end.x:.0f}, {segment.end.y:.0f}) - ({s[-1].x:.0f}, {s[-1].y:.0f})")
     return s
 
 
@@ -340,14 +346,22 @@ def intersect_line_segments(w, z, x, y):
     p = p1
     return p, s, t
 
+
 def offset_path(self, path, offset_value=0):
     # As this oveloading a regular method in a class
     # it needs to have the very same definition (including the class
     # reference self)
-    p = path_offset(path, offset_value=-offset_value, radial_connector=True, linearize=True, interpolation=500)
+    p = path_offset(
+        path,
+        offset_value=-offset_value,
+        radial_connector=True,
+        linearize=True,
+        interpolation=500,
+    )
     if p is None:
         p = path
     return p
+
 
 def path_offset(
     path, offset_value=0, radial_connector=False, linearize=True, interpolation=500
@@ -370,14 +384,20 @@ def path_offset(
                 right_start += 1
         seg1 = stitchpath._segments[left_end]
         seg2 = stitchpath._segments[right_start]
-
-        #  print (f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - max={len(stitchpath._segments)}")
+        segdistance = seg1.end.distance_to(seg2.start)
+        # print(
+        #     f"Stitch {left_end}: {type(seg1).__name__}, {right_start}: {type(seg2).__name__} - distance={segdistance:.2f}"
+        # )
         needs_connector = False
         if isinstance(seg1, Close):
             # Close will be dealt with differently...
             return
         if isinstance(seg1, Move):
             seg1.end = Point(seg2.start)
+            return
+        if segdistance < 250:
+            newseg = Line(start=seg1.end, end=seg2.start)
+            stitchpath._segments.insert(right_start, newseg)
             return
 
         if isinstance(seg1, Line):
@@ -389,9 +409,11 @@ def path_offset(
                     Point(seg2.start),
                     Point(seg2.end),
                 )
+                # print (f"l1: {dis(seg1.start)}-{dis(seg1.end)} l2:{dis(seg2.start)}-{dis(seg2.end)}")
+                # print (f"p={dis(p)}, s={s:.3f}, t={t:.3f}")
                 if p is not None:
                     # We have an intersection
-                    if 0 <= s <= 1 and 0 <= t <= 1:
+                    if 0 <= abs(s) <= 1 and 0 <= abs(t) <= 1:
                         # We shorten the segments accordingly.
                         seg1.end = Point(p)
                         seg2.start = Point(p)
@@ -400,17 +422,28 @@ def path_offset(
                         ):
                             stitchpath._segments[right_start - 1].end = Point(p)
                         needs_connector = False
-                        # print ("Used interal intersect")
+                        # print ("Used internal intersect")
                     else:
                         if not radial:
-                            seg1.end = Point(p)
-                            seg2.start = Point(p)
-                            if right_start > 0 and isinstance(
-                                stitchpath._segments[right_start - 1], Move
-                            ):
-                                stitchpath._segments[right_start - 1].end = Point(p)
-                            needs_connector = False
-                            # print ("Used external intersect")
+                            # is the intersect too far away for our purposes?
+                            if orgintersect.distance_to(p) > abs(offset):
+                                angle = orgintersect.angle_to(p)
+                                p = orgintersect.polar_to(angle, abs(offset))
+                                newseg1 = Line(seg1.end, p)
+                                newseg2 = Line(p, seg2.start)
+                                stitchpath._segments.insert(left_end + 1, newseg2)
+                                stitchpath._segments.insert(left_end + 1, newseg1)
+                                needs_connector = False
+                                # print ("Used shortened external intersect")
+                            else:
+                                seg1.end = Point(p)
+                                seg2.start = Point(p)
+                                if right_start > 0 and isinstance(
+                                    stitchpath._segments[right_start - 1], Move
+                                ):
+                                    stitchpath._segments[right_start - 1].end = Point(p)
+                                needs_connector = False
+                                # print ("Used external intersect")
             elif isinstance(seg1, Move):
                 needs_connector = False
         else:  # Arc, Quad and Cubic Bezier
@@ -479,6 +512,12 @@ def path_offset(
             pass
         return
 
+    def dis(pt):
+        if pt is None:
+            return "None"
+        else:
+            return f"({pt.x:.0f}, {pt.y:.0f})"
+
     results = []
     # This needs to be a continuous path
     for subpath in path.as_subpaths():
@@ -539,6 +578,7 @@ def path_offset(
 
         for idx in range(len(p._segments) - 1, -1, -1):
             segment = p._segments[idx]
+            # print(f"Looking at segment {idx}: {type(segment).__name__}")
             if isinstance(segment, Close):
                 if is_closed_by_pts:
                     # it was already closed with the last and the first point, so we just skip it...
@@ -572,6 +612,7 @@ def path_offset(
                 # Arc is not working, so we always linearize
                 arclinearize = True
                 newsegment = offset_arc(segment, offset, arclinearize, interpolation)
+                # print (f"Arc, old: {dis(segment.start)}-{dis(segment.end)} - new: {dis(newsegment[0].start)}-{dis(newsegment[-1].end)}")
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
@@ -580,6 +621,7 @@ def path_offset(
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, QuadraticBezier):
                 newsegment = offset_quad(segment, offset, linearize, interpolation)
+                # print (f"Quad, old: {dis(segment.start)}-{dis(segment.end)} - new: {dis(newsegment[0].start)}-{dis(newsegment[-1].end)}")
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
@@ -588,6 +630,7 @@ def path_offset(
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, CubicBezier):
                 newsegment = offset_cubic(segment, offset, linearize, interpolation)
+                # print (f"Cubic, old: {dis(segment.start)}-{dis(segment.end)} - new: {dis(newsegment[0].start)}-{dis(newsegment[-1].end)}")
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
@@ -598,6 +641,7 @@ def path_offset(
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
                 newsegment = offset_line(segment, offset)
+                # print (f"Line, old: {dis(segment.start)}-{dis(segment.end)} - new: {dis(newsegment[0].start)}-{dis(newsegment[-1].end)}")
                 if newsegment is None or len(newsegment) == 0:
                     continue
                 left_end = idx - 1 + len(newsegment)
@@ -725,7 +769,7 @@ def init_commands(kernel):
                 linearize=linearize,
                 interpolation=interpolation,
             )
-            if node_path is None or len(node_path)==0:
+            if node_path is None or len(node_path) == 0:
                 continue
             node_path.validate_connections()
             newnode = self.elem_branch.add(
