@@ -14907,6 +14907,72 @@ msgstr "Barcode-Typ"
 msgid "The code to process"
 msgstr "Der Text, aus dem der Barcode erzeugt werden soll"
 
+msgid "Width/Height:"
+msgstr "Größe:"
+
+msgid "The barcode/qrcode will be based on this content."
+msgstr "Der in einen Barcode/QR-Code umzuwandelnde Text."
+
+msgid "Generate Pattern"
+msgstr "Erzeugen"
+
+msgid "What kind of encryption does the network use?"
+msgstr "Verwendete Verschlüsselung im Netzwerk"
+
+msgid "Hidden"
+msgstr "Verborgen"
+
+msgid "Is the network hidden?"
+msgstr "Ist dies ein verborgenes Netzwerk?"
+
+msgid "VCard"
+msgstr ""
+
+msgid "Provide your name as lastname,firstname"
+msgstr ""
+"Für den Namen bitte dieses Format nutzen:\n"
+"nachname,vorname"
+
+msgid "Name:"
+msgstr "Name:"
+
+msgid ""
+"Provide your address as:\n"
+"PO box, room number, house number, city, prefecture, zip code and country"
+msgstr ""
+"Für die Addresse bitte dieses Format nutzen:\n"
+"Postfach, Raumnr, Hausnr, Stadt, Bezirk, PLZ und Land"
+
+msgid "Address:"
+msgstr "Adresse:"
+
+msgid "Provide your phone-number"
+msgstr "Bitte Telefon-Nummer angeben"
+
+msgid "Phone:"
+msgstr "Telefon:"
+
+msgid "Provide your email-Address"
+msgstr "Bitte email-Adresse angeben"
+
+msgid "email:"
+msgstr "Email:"
+
+msgid "Provide a valid URL"
+msgstr "Bitte eine gültige URL angeben"
+
+msgid "URL:"
+msgstr "URL:"
+
+msgid "SSID:"
+msgstr "SSID:"
+
+msgid "Key:"
+msgstr "Key:"
+
+msgid "Encryption:"
+msgstr "Verschlüsselung:"
+
 msgid "Barcode"
 msgstr "Barcode"
 
@@ -14938,7 +15004,7 @@ msgid "Options:"
 msgstr "Optionen:"
 
 msgid "How wide/high will the resulting qr-code be?"
-msgstr "Welceh Größe soll der QR-Code haben?"
+msgstr "Welche Größe soll der QR-Code haben?"
 
 msgid "Resolution:"
 msgstr "Auflösung:"
@@ -16317,4 +16383,3 @@ msgstr "Import"
 
 msgid "Import a previously saved setting file"
 msgstr "Importiere die Einstellungen aus einer zuvor gesicherten Version"
-
