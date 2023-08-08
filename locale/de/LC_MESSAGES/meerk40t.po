@@ -10792,7 +10792,10 @@ msgstr "Umriss"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:132
 #: meerk40t/gui/propertypanels/operationpropertymain.py:145
 msgid "Look at the stroke color to restrict classification."
-msgstr "Beschränkt Klassifzierung auf Elemente mit dieser Umriss-Farbe."
+msgstr "Beschränkt Klassifizierung auf Elemente mit dieser Umriss-Farbe."
+
+msgid "Look at the fill color to restrict classification."
+msgstr "Beschränkt Klassifizierung auf Elemente mit dieser Füll-Farbe."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:143
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:172

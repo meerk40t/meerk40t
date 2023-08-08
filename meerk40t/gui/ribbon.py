@@ -1113,6 +1113,7 @@ class Art:
         self.tab_initial_buffer = 30
         self.tab_text_buffer = 5
         self.edge_page_buffer = 4
+        self.rounded_radius = 3
 
         self.bitmap_text_buffer = 10
         self.dropdown_height = 20
@@ -1137,9 +1138,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        ).ChangeLightness(50)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
+        ) # .ChangeLightness(25)
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1175,13 +1179,13 @@ class Art:
             self.inactive_background = wx.BLACK
 
         self.default_font = wx.Font(
-            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.small_font = wx.Font(
-            8, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.tiny_font = wx.Font(
-            6, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
     def paint_main(self, dc, ribbon):
@@ -1202,7 +1206,7 @@ class Art:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
             for panel in page.panels:
                 # plen = len(panel.buttons)
                 # if plen == 0:
@@ -1220,27 +1224,38 @@ class Art:
         @return:
         """
         horizontal = self.parent.prefer_horizontal()
+        highlight_via_color = False
+
 
         dc.SetPen(wx.Pen(self.black_color))
+        show_rect = True
         if page is not self.current_page:
             dc.SetBrush(wx.Brush(self.button_face))
             dc.SetTextForeground(self.text_color_inactive)
+            if not highlight_via_color:
+                show_rect = False
         else:
             dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetBrush(wx.Brush(self.highlight))
             dc.SetTextForeground(self.text_color)
+            if not highlight_via_color:
+                dc.SetBrush(wx.Brush(self.button_face))
         if page is self.hover_tab and self.hover_button is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
+            show_rect = True
         x, y, x1, y1 = page.tab_position
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        if show_rect:
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         dc.SetFont(self.default_font)
+        text_width, text_height = dc.GetTextExtent(page.label)
+        tpx = int(x + (x1 - x - text_width) / 2)
+        tpy = int(y + self.tab_text_buffer)
         if horizontal:
-            dc.DrawText(
-                page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
-            )
+            dc.DrawText(page.label, tpx, tpy)
         else:
-            dc.DrawRotatedText(
-                page.label, int(x + self.tab_text_buffer), int(y1 - self.tab_text_buffer), 90
-            )
+            tpx = int(x + self.tab_text_buffer)
+            tpy = int(y1 - (y1 - y - text_width) / 2)
+            dc.DrawRotatedText(page.label, tpx, tpy, 90)
 
 
     def _paint_background(self, dc: wx.DC):
@@ -1268,7 +1283,7 @@ class Art:
         # print(f"Painting panel {panel.label}: {panel.position}")
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         """
         Paint the overflow of buttons that cannot be stored within the required width.
 
@@ -1280,7 +1295,7 @@ class Art:
         x, y, x1, y1 = panel._overflow_position
         dc.SetBrush(wx.Brush(self.highlight))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1311,7 +1326,7 @@ class Art:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.TRANSPARENT_PEN)
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((x1 - x) / 2, (y1 - y) / 2)
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1368,7 +1383,7 @@ class Art:
         # Lets clip the output
         dc.SetClippingRegion(int(x), int(y), int(w), int(h))
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
         font = self.default_font
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
@@ -1661,6 +1676,8 @@ class Art:
         x += self.page_panel_buffer
         y += self.page_panel_buffer
         for p, panel in enumerate(page.panels):
+            if len(panel.buttons) == 0:
+                continue
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
