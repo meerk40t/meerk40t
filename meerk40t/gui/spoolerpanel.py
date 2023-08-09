@@ -332,10 +332,13 @@ class SpoolerPanel(wx.Panel):
         else:
             to_remove = list(self.context.logging.matching_events("job"))
         for key, event in to_remove:
-            if older_than is not None:
+            if event is not None and older_than is not None:
                 if not "start_time" in event:
                     continue
-                if event["start_time"] >= older_than:
+                if (
+                    event["start_time"] is not None
+                    and event["start_time"] >= older_than
+                ):
                     continue
             del self.context.logging.logs[key]
         self.refresh_history()

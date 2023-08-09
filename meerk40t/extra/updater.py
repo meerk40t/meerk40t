@@ -132,9 +132,13 @@ def plugin(kernel, lifecycle):
                 sub_ref = [0, 0, 0]
                 sub_cand = [0, 0, 0]
                 # python can compare lists
-                if candidate_version is not None:
+                if candidate_version is not None and isinstance(
+                    candidate_version, (list, tuple)
+                ):
                     sub_cand = candidate_version[0:3]
-                if reference_version is not None:
+                if reference_version is not None and isinstance(
+                    reference_version, (list, tuple)
+                ):
                     sub_ref = reference_version[0:3]
                 # print (sub_cand, sub_ref, bool(sub_cand > sub_ref))
                 if sub_cand > sub_ref:
@@ -318,6 +322,8 @@ def plugin(kernel, lifecycle):
                                     import webbrowser
 
                                     webbrowser.open(url_newest, new=0, autoraise=True)
+                            elif verbosity > 0:
+                                channel(message)
                         else:
                             if verbosity > 0:
                                 channel(ERROR_MESSAGE)
