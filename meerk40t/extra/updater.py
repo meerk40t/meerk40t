@@ -295,7 +295,9 @@ def plugin(kernel, lifecycle):
                             if kernel.yesno(
                                 newest_message
                                 + "\n"
-                                + _("Do you want to go the download page?")
+                                + _("Do you want to go the download page?"),
+                                option_yes=_("Yes"),
+                                option_no=_("No"),
                             ):
                                 import webbrowser
 
@@ -315,7 +317,9 @@ def plugin(kernel, lifecycle):
                                 if kernel.yesno(
                                     message
                                     + "\n"
-                                    + _("Do you want to look for yourself?")
+                                    + _("Do you want to look for yourself?"),
+                                    option_yes=_("Yes"),
+                                    option_no=_("No"),
                                 ):
                                     import webbrowser
 

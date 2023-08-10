@@ -215,30 +215,39 @@ and a wxpython version <= 4.1.1."""
             """
             import wx
 
-            if option_yes is None:
+            if option_no is None and option_yes is None:
+                # This is a plain info message
+                question = False
+                styletype = wx.OK | wx.ICON_WARNING
                 option_yes = _("Yes")
-            if option_no is None:
-                option_no = _("No")
+            else:
+                question = True
+                styletype = wx.YES_NO | wx.ICON_QUESTION,
+                if option_yes is None:
+                    option_yes = _("Yes")
+                if option_no is None:
+                    option_no = _("No")
             if caption is None:
                 caption = _("Question")
             dlg = wx.MessageDialog(
                 None,
                 message=prompt,
                 caption=caption,
-                style=wx.YES_NO | wx.ICON_QUESTION,
+                style=styletype,
             )
-            if dlg.SetYesNoLabels(option_yes, option_no):
-                dlg.SetMessage(prompt)
-            else:
-                dlg.SetMessage(
-                    prompt
-                    + "\n"
-                    + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
-                )
+            if question:
+                if dlg.SetYesNoLabels(option_yes, option_no):
+                    dlg.SetMessage(prompt)
+                else:
+                    dlg.SetMessage(
+                        prompt
+                        + "\n"
+                        + _("(Yes={yes}, No={no})").format(yes=option_yes, no=option_no)
+                    )
 
             response = dlg.ShowModal()
             dlg.Destroy()
-            return bool(response == wx.ID_YES)
+            return bool(response in (wx.ID_YES, wx.ID_OK))
 
         kernel.yesno = yesno_popup
 
