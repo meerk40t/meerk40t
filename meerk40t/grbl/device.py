@@ -223,6 +223,8 @@ class GRBLDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        self.setting (str, "coolant", None)
+
         ViewPort.__init__(
             self,
             self.bedwidth,

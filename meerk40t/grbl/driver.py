@@ -498,7 +498,27 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        self.service.signal(signal, *args)
+        if signal=="coolant":
+            onoff = args[0]
+            coolid = None
+            if hasattr(self.service, "coolant"):
+                coolid = self.service.coolant
+            if not coolid:
+                return
+            routine = None
+            try:
+                cool = self.service.context.kernel.root.coolant
+                routine = cool.claim_coolant(self.driver, coolid)
+            except AttributeError:
+                routine = None
+            if routine:
+                try:
+                    routine(self.driver, onoff)
+                except RuntimeError:
+                    pass
+
+        else:
+            self.service.signal(signal, *args)
 
     def pause(self, *args):
         """

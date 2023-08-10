@@ -45,6 +45,7 @@ class MoshiDevice(Service, ViewPort):
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
         self.setting(int, "rapid_speed", 40)
+        self.setting (str, "coolant", None)
 
         _ = self._
         choices = [

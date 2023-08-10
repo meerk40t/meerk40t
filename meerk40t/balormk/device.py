@@ -86,6 +86,7 @@ class BalorDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        self.setting (str, "coolant", None)
         choices = [
             {
                 "attr": "label",
