@@ -128,6 +128,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(splitterplugin)
 
+        from .extra.coolant import plugin as coolantplugin
+
+        plugins.append(coolantplugin)
+
         return plugins
 
     if lifecycle == "invalidate":
