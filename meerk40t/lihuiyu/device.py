@@ -84,6 +84,7 @@ class LihuiyuDevice(Service, ViewPort):
                 "subsection": _("User Scale Factor"),
                 "nonzero": True,
             },
+
         ]
         self.register_choices("bed_dim", choices)
 
@@ -170,6 +171,18 @@ class LihuiyuDevice(Service, ViewPort):
                 "section": "_10_" + _("Configuration"),
                 "subsection": "_10_" + _("Axis corrections"),
                 "signals": "bedsize",
+            },
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper,
+                "signals": "coolant_changed"
             },
         ]
         self.register_choices("bed_orientation", choices)
@@ -408,7 +421,7 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.setting (str, "coolant", None)
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         ViewPort.__init__(
             self,

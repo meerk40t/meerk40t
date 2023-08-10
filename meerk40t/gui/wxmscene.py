@@ -1120,6 +1120,15 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
+    @signal_listener("coolant_changed")
+    def on_coolant_changed(self, origin, *args):
+        if hasattr(self.context.device, "coolant"):
+            coolid = self.context.device.coolant
+            if coolid == "":
+                coolid = None
+            cool = self.context.kernel.root.coolant
+            cool.claim_coolant(self.context.device, coolid)
+
     @signal_listener("bedsize")
     def on_bedsize_simple(self, origin, nocmd=None, *args):
         # The next two are more or less the same, so we remove the direct invocation...

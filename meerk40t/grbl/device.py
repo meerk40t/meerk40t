@@ -223,7 +223,6 @@ class GRBLDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.setting (str, "coolant", None)
 
         ViewPort.__init__(
             self,
@@ -410,6 +409,18 @@ class GRBLDevice(Service, ViewPort):
                 "conditional": (self, "limit_buffer"),
                 "section": "_30_Controller Buffer",
             },
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper,
+                "signals": "coolant_changed"
+            },
         ]
         self.register_choices("grbl-connection", choices)
 
@@ -501,6 +512,8 @@ class GRBLDevice(Service, ViewPort):
         self.add_service_delegate(self.driver)
 
         self.viewbuffer = ""
+
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         _ = self.kernel.translation
 

@@ -14,7 +14,7 @@ class Coolants():
         #     "devices": [],
         # }
 
-    def register_coolant_method(self, cool_id, cool_function, config_function):
+    def register_coolant_method(self, cool_id, cool_function, config_function=None, label=None):
         cool_id = cool_id.lower()
         if cool_id in (v["id"] for v in self._coolants):
             print (f"A coolant method with Id '{cool_id}' has already been registered")
@@ -25,6 +25,7 @@ class Coolants():
                 "function": cool_function,
                 "config": config_function,
                 "devices": [],
+                "label": label,
             }
         )
         return True
@@ -37,6 +38,9 @@ class Coolants():
 
     def claim_coolant(self, device, coolant):
         found = None
+        if coolant is None:
+            coolant = ""
+        # print (f"Claim: {device.label}: {coolant}")
         for cool in self._coolants:
             if cool["id"] == coolant.lower():
                 found = cool["function"]
@@ -74,6 +78,25 @@ class Coolants():
 
         return dev_str
 
+    def coolant_choice_helper(self, choice_dict):
+        """
+        Sets the choices and display of the coolant values dynamically
+        @param choice_dict:
+        @return:
+        """
+        choices = list()
+        display = list()
+        choices.append("")
+        display.append("Nothing")
+        for cool in self._coolants:
+            choices.append(cool["id"])
+            if cool["label"]:
+                display.append(cool["label"])
+            else:
+                display.append(cool["id"])
+        choice_dict["choices"] = choices
+        choice_dict["display"] = display
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -92,7 +115,7 @@ def plugin(kernel, lifecycle):
             context.kernel.yesno(msg, caption=_("Air-Assist"))
 
 
-        context.coolant.register_coolant_method("popup", base_coolant_popup, None)
+        context.coolant.register_coolant_method("popup", base_coolant_popup, config_function=None, label=_("Warnmessage"))
 
         @context.console_command("coolants", help=_("displays registered coolant methods"))
         def display_coolant(command, channel, _, **kwargs):
@@ -103,7 +126,10 @@ def plugin(kernel, lifecycle):
                 channel (_("Registered coolant-interfaces:"))
                 for cool_instance in cool:
                     c_name = cool_instance["id"]
+                    c_label = cool_instance["label"]
                     claimed = coolant.get_devices_using(c_name)
+                    if c_label:
+                        c_name += " - " + c_label
                     if claimed == "":
                         claimed = _("Not used")
 

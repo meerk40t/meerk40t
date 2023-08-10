@@ -86,7 +86,7 @@ class BalorDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
-        self.setting (str, "coolant", None)
+
         choices = [
             {
                 "attr": "label",
@@ -259,6 +259,18 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("What pin is your redlight hooked to on the GPIO"),
                 "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
+            },
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper,
+                "signals": "coolant_changed"
             },
         ]
         self.register_choices("balor", choices)
@@ -737,6 +749,8 @@ class BalorDevice(Service, ViewPort):
             },
         ]
         self.register_choices("rotary", choices)
+
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
 
         self.state = 0
 

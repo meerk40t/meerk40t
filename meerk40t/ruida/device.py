@@ -81,6 +81,18 @@ class RuidaDevice(Service, ViewPort):
                 "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
+            {
+                "attr": "coolant",
+                "object": self,
+                "default": "",
+                "type": str,
+                "style": "option",
+                "label": _("Coolant"),
+                "tip": _("Does this device has a method to turn on / off a coolant associated to it?"),
+                "section": "_99_" + _("Coolant Support"),
+                "dynamic": self.kernel.root.coolant.coolant_choice_helper,
+                "signals": "coolant_changed"
+            },
         ]
         self.register_choices("bed_dim", choices)
         choices = [
@@ -190,6 +202,7 @@ class RuidaDevice(Service, ViewPort):
         self.setting(
             list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
         )
+        self.kernel.root.coolant.claim_coolant(self, self.coolant)
         ViewPort.__init__(
             self,
             self.bedwidth,
