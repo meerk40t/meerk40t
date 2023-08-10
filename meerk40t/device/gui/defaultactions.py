@@ -13,6 +13,7 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
+    icons8_air_50,
 )
 from meerk40t.gui.wxutils import StaticBoxSizer
 
@@ -38,6 +39,8 @@ class DefaultActionPanel(wx.Panel):
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),
+            ("Coolant on", "util console", "coolant_on"),
+            ("Coolant off", "util console", "coolant_off"),
         )
         self.default_images = [
             ["console home -f", icons8_home_20],
@@ -51,6 +54,8 @@ class DefaultActionPanel(wx.Panel):
             ["util output", icons8_output_20],
             ["util input", icons8_input_20],
             ["util console", icons8_system_task_20],
+            ["console coolant_on", icons8_air_50],
+            ["console coolant_off", icons8_air_50],
         ]
         self.prepend_ops = []
         self.append_ops = []
