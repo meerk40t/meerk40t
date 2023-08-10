@@ -16383,3 +16383,30 @@ msgstr "Import"
 
 msgid "Import a previously saved setting file"
 msgstr "Importiere die Einstellungen aus einer zuvor gesicherten Version"
+
+msgid "Turns the coolant for the active device on"
+msgstr "Schaltet die Kühlung für den aktiven Laser an"
+
+msgid "Turns the coolant for the active device off"
+msgstr "Schaltet die Kühlung für den aktiven Laser aus"
+
+msgid "No coolant method found."
+msgstr "Keine Kühl-Methode gefunden."
+
+msgid "Coolant activated for device {device.label}"
+msgstr "Kühlung für {device.label} eingeschaltet"
+
+msgid "Coolant deactivated for device {device.label}"
+msgstr "Kühlung für {device.label} ausgeschaltet"
+
+msgid "Registered coolant-interfaces:"
+msgstr "Registrierte Kühl-Methoden:"
+
+msgid "Configure"
+msgstr "Konfiguration"
+
+msgid "Coolant on"
+msgstr "Kühlung an"
+
+msgid "Coolant off"
+msgstr "Kühlung aus"
