@@ -26,7 +26,7 @@ class HatchEffectNode(Node, Stroked):
         self.hatch_angle = None
         self.hatch_angle_delta = None
         self.hatch_type = None
-        self.passes = None
+        self.loops = None
         Node.__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
@@ -46,8 +46,8 @@ class HatchEffectNode(Node, Stroked):
 
         if self.hatch_type is None:
             self.hatch_type = "scanline"
-        if self.passes is None:
-            self.passes = 1
+        if self.loops is None:
+            self.loops = 1
         if self.hatch_distance is None:
             self.hatch_distance = "1mm"
         if self.hatch_angle is None:
@@ -163,8 +163,8 @@ class HatchEffectNode(Node, Stroked):
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["effect"] = "+" if self.effect else "-"
-        default_map["pass"] = (
-            f"{self.passes}X " if self.passes and self.passes != 1 else ""
+        default_map["loop"] = (
+            f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
@@ -194,14 +194,11 @@ class HatchEffectNode(Node, Stroked):
             self.set_dirty_bounds()
             self.altered()
 
-    def as_geometry(self, pass_index=0, **kws):
+    def as_geometry(self, **kws):
         """
         Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
-        internal passes value is rotated each pass by the angle-delta.
+        internal loops value is rotated each pass by the angle-delta.
 
-        pass_index is only called by an operation, and not by the drawing code.
-
-        @param pass_index:
         @param kws:
         @return:
         """
@@ -209,12 +206,12 @@ class HatchEffectNode(Node, Stroked):
         if not self.effect:
             return outlines
         for node in self._operands:
-            outlines.append(node.as_geometry(pass_index=pass_index))
+            outlines.append(node.as_geometry(**kws))
         outlines.transform(self.matrix)
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
-        for p in range(self.passes):
+        for p in range(self.loops):
             path.append(
                 Geomstr.hatch(
                     outlines,
