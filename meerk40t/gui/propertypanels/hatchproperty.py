@@ -51,19 +51,19 @@ class HatchPropertyPanel(ScrolledPanel):
         )
         main_sizer.Add(panel_fill, 1, wx.EXPAND, 0)
 
-        sizer_passes = StaticBoxSizer(self, wx.ID_ANY, _("Passes"), wx.HORIZONTAL)
-        self.text_passes = TextCtrl(
+        sizer_loops = StaticBoxSizer(self, wx.ID_ANY, _("Loops"), wx.HORIZONTAL)
+        self.text_loops = TextCtrl(
             self,
             wx.ID_ANY,
-            str(node.passes),
+            str(node.loops),
             limited=True,
             check="int",
             style=wx.TE_PROCESS_ENTER,
         )
-        sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
-        self.slider_passes = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
-        sizer_passes.Add(self.slider_passes, 3, wx.EXPAND, 0)
-        main_sizer.Add(sizer_passes, 1, wx.EXPAND, 0)
+        sizer_loops.Add(self.text_loops, 1, wx.EXPAND, 0)
+        self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
+        sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
+        main_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
 
         sizer_distance = StaticBoxSizer(
             self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
@@ -116,12 +116,12 @@ class HatchPropertyPanel(ScrolledPanel):
 
         self.SetSizer(main_sizer)
 
-        self.text_passes.SetActionRoutine(self.on_text_passes)
+        self.text_loops.SetActionRoutine(self.on_text_loops)
         self.text_distance.SetActionRoutine(self.on_text_distance)
         self.text_angle.SetActionRoutine(self.on_text_angle)
         self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
 
-        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_passes, self.slider_passes)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
         self.Layout()
@@ -169,25 +169,25 @@ class HatchPropertyPanel(ScrolledPanel):
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
 
-    def on_text_passes(self):
+    def on_text_loops(self):
         try:
-            passes = int(self.text_passes.GetValue())
-            if passes == self.node.passes:
+            loops = int(self.text_loops.GetValue())
+            if loops == self.node.loops:
                 return
-            self.node.passes = passes
+            self.node.loops = loops
             self.node.modified()
         except ValueError:
             return
         try:
-            h_passes = int(self.node.passes)
-            self.slider_passes.SetValue(int(h_passes))
+            h_loops = int(self.node.loops)
+            self.slider_loops.SetValue(int(h_loops))
         except ValueError:
             pass
 
-    def on_slider_passes(self, event):
-        value = self.slider_passes.GetValue()
-        self.text_passes.SetValue(str(value))
-        self.on_text_passes()
+    def on_slider_loops(self, event):
+        value = self.slider_loops.GetValue()
+        self.text_loops.SetValue(str(value))
+        self.on_text_loops()
 
     def on_text_distance(self):
         try:
