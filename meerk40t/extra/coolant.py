@@ -9,26 +9,78 @@ class Coolants():
         self.kernel = kernel
         self._coolants = []
         # {
-        #     "id": "coolant_id",
-        #     "function": coolant_function,
+        #     "id": cool_id,
+        #     "label": label,
+        #     "function": cool_function,
+        #     "config": config_function,
         #     "devices": [],
+        #     "constraints": constraints,
         # }
 
-    def register_coolant_method(self, cool_id, cool_function, config_function=None, label=None):
+    def register_coolant_method(self, cool_id, cool_function, config_function=None, label=None, constraints=None):
+        """
+        Announces the availability of a new coolant method.
+        Mainly used from plugins.
+
+        Args:
+            cool_id ([str]): unique identifier for the method. There are two predefined
+                methods generated from within meerk40t:
+                a) 'popup' which just popups an instruction message
+                    to turn on / off the airassist
+                b) 'grbl' which uses the internal M7 / M9 commands ofa grbl compatible
+                    device. So it has a 'grbl' constraint (see below)
+            cool_function ([function]): The routine to call when coolant needs
+                to be activated / deactivated. This routine expects two parameters:
+                    def coolant_method (device, flag)
+                        device: device that uses the routine
+                        flag: indicator to turn it on (True) or off (False)
+            config_function ([function], optional): The routine to call, if you want
+                to edit parameters for this method. It expects one
+                Defaults to None, indicating it has no such function.
+            label ([str], optional): A description of the method.
+                Defaults to None which will use the cool_id as label
+            constraints ([str], optional): [description].
+                Defaults to None, so available to all devices.
+
+        Returns:
+            [type]: [description]
+        """
         cool_id = cool_id.lower()
-        if cool_id in (v["id"] for v in self._coolants):
-            print (f"A coolant method with Id '{cool_id}' has already been registered")
-            return False
+
+        for cool in self._coolants:
+            # A coolant method with that id had already been registered
+            # so we just update it. Honestly this should not happen.
+            if cool_id == cool[id]:
+                cool["label"] = label
+                cool["function"] = cool_function
+                cool["config"] = config_function
+                cool["constraints"] = constraints
+                return True
         self._coolants.append(
             {
                 "id": cool_id,
+                "label": label,
                 "function": cool_function,
                 "config": config_function,
                 "devices": [],
-                "label": label,
+                "constraints": constraints,
             }
         )
         return True
+
+    def coolant_on(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                routine = cool["function"]
+                routine(device, True)
+                break
+
+    def coolant_off(self, device):
+        for cool in self._coolants:
+            if device in cool["devices"]:
+                routine = cool["function"]
+                routine(device, False)
+                break
 
     def registered_coolants(self):
         """
@@ -40,8 +92,20 @@ class Coolants():
         found = None
         if coolant is None:
             coolant = ""
-        # print (f"Claim: {device.label}: {coolant}")
+        devname = device.name.lower()
+        # print (f"Claim: {device.label} ({devname}): {coolant}")
         for cool in self._coolants:
+            relevant = True
+            if cool["constraints"]:
+                relevant = False
+                allowed = cool["constraints"].split(",")
+                for candidate in allowed:
+                    if candidate.lower() in devname:
+                        relevant = True
+                        break
+            if not relevant:
+                # Skipped as not relevant...
+                continue
             if cool["id"] == coolant.lower():
                 found = cool["function"]
                 if device not in cool["devices"]:
@@ -55,12 +119,17 @@ class Coolants():
 
         return found
 
-    def get_device_coolant(self, device, coolant):
+    def get_device_coolant(self, device, coolant=None):
         found = None
         for cool in self._coolants:
-            if cool["id"] == coolant.lower():
-                found = cool["function"]
-                break
+            if coolant is None:
+                if device in cool["devices"]:
+                    found = cool["function"]
+                    break
+            else:
+                if cool["id"] == coolant.lower():
+                    found = cool["function"]
+                    break
 
         return found
 
@@ -78,24 +147,38 @@ class Coolants():
 
         return dev_str
 
-    def coolant_choice_helper(self, choice_dict):
+    def coolant_choice_helper(self, device):
         """
         Sets the choices and display of the coolant values dynamically
         @param choice_dict:
         @return:
         """
-        choices = list()
-        display = list()
-        choices.append("")
-        display.append("Nothing")
-        for cool in self._coolants:
-            choices.append(cool["id"])
-            if cool["label"]:
-                display.append(cool["label"])
-            else:
-                display.append(cool["id"])
-        choice_dict["choices"] = choices
-        choice_dict["display"] = display
+        def update(choice_dict):
+            devname = device.name.lower()
+            choices = list()
+            display = list()
+            choices.append("")
+            display.append("Nothing")
+            for cool in self._coolants:
+                relevant = True
+                if cool["constraints"]:
+                    relevant = False
+                    allowed = cool["constraints"].split(",")
+                    for candidate in allowed:
+                        if candidate.lower() in devname:
+                            relevant = True
+                            break
+                if not relevant:
+                    continue
+                choices.append(cool["id"])
+                if cool["label"]:
+                    display.append(cool["label"])
+                else:
+                    display.append(cool["id"])
+            choice_dict["choices"] = choices
+            choice_dict["display"] = display
+
+        return update
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -114,8 +197,14 @@ def plugin(kernel, lifecycle):
                 msg = _("Please switch the airassist for {laser} off").format(laser=lasername)
             context.kernel.yesno(msg, caption=_("Air-Assist"))
 
+        def base_coolant_grbl(context, mode):
+            if mode:
+                context("gcode M7\n")
+            else:
+                context("gcode M9\n")
 
         context.coolant.register_coolant_method("popup", base_coolant_popup, config_function=None, label=_("Warnmessage"))
+        context.coolant.register_coolant_method("gcode", base_coolant_grbl, config_function=None, label=_("GCode M7/M9"), constraints="grbl")
 
         @context.console_command("coolants", help=_("displays registered coolant methods"))
         def display_coolant(command, channel, _, **kwargs):
@@ -147,8 +236,6 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-            # For testpurposes, bind the current device to the basic logic
-            coolant.claim_coolant(device, "popup")
 
             cool = coolant.registered_coolants()
             found = False
@@ -173,7 +260,6 @@ def plugin(kernel, lifecycle):
                 return
 
             coolant = kernel.root.coolant
-            coolant.claim_coolant(device, "popup")
 
             cool = coolant.registered_coolants()
             found = False
