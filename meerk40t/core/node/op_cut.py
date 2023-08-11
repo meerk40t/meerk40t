@@ -64,6 +64,12 @@ class CutOpNode(Node, Parameters):
     def __copy__(self):
         return CutOpNode(self)
 
+    def offset_routine(self, path, offset_value=0):
+        # This is a placeholder that will be overloaded by plugin routines
+        # at runtime. It will return a new path with an offset to a given path
+        # As we don't have any logic, we just return the original path
+        return path
+
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:
@@ -341,4 +347,5 @@ class CutOpNode(Node, Parameters):
                 original_op=self.type,
                 color=stroke,
                 kerf=self.kerf * self._device_factor,
+                offset_routine=self.offset_routine,
             )

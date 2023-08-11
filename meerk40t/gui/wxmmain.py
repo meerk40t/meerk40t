@@ -1261,7 +1261,7 @@ class MeerK40t(MWindow):
         #     },
         # )
         kernel.register(
-            "button/basicediting/Undo",
+            "button/undo/Undo",
             {
                 "label": _("Undo"),
                 "icon": icons8_undo_50,
@@ -1273,7 +1273,7 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/basicediting/Redo",
+            "button/undo/Redo",
             {
                 "label": _("Redo"),
                 "icon": icons8_redo_50,

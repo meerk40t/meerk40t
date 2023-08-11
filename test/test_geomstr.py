@@ -191,7 +191,11 @@ class TestGeomstr(unittest.TestCase):
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
 
-    def test_geomstr_close(self):
+    def test_geomstr_subpath(self):
+        """
+        Adds two shapes and tests whether they are detected as subshapes with an `end` between them.
+        @return:
+        """
         numpath = Geomstr()
         numpath.polyline(
             (
@@ -217,10 +221,76 @@ class TestGeomstr(unittest.TestCase):
         numpath.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
+            print(subpath.segments)
             for seg in subpath.segments:
                 self.assertEqual(seg[2].real, TYPE_LINE)
         self.assertEqual(len(subpaths[0]), 4)
         self.assertEqual(len(subpaths[1]), 4)
+
+    def test_geomstr_contiguous(self):
+        """
+        Tests two disconnected polylines without marked ends between them and determines whether two
+        shapes are correctly detected.
+        @return:
+        """
+        numpath = Geomstr()
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
+        numpath.uscale(10000)
+        numpath.rotate(tau * 0.25)
+        subpaths = list(numpath.as_contiguous())
+        print("")
+        for subpath in subpaths:
+            print(subpath.segments)
+            for seg in subpath.segments:
+                self.assertEqual(seg[2].real, TYPE_LINE)
+        self.assertEqual(len(subpaths[0]), 4)
+        self.assertEqual(len(subpaths[1]), 4)
+
+    def test_geomstr_subpath_contiguous(self):
+        """
+        Create a 2-contour path within a single subpath geomstr
+        @return:
+        """
+        numpath = Geomstr()
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
+        subpaths = list(numpath.as_subpaths())
+        self.assertEqual(len(subpaths), 1)
+        contigs = list(numpath.as_contiguous())
+        self.assertEqual(len(contigs), 2)
 
     def test_geomstr_scanline(self):
         w = 10000
@@ -302,6 +372,18 @@ class TestGeomstr(unittest.TestCase):
                 i, 100 + 100j, radius=50, radius_inner=30, alt_seq=1, density=5
             )
             # draw(path.segments[:path.index], 200, 200, filename=f"test{i}.png")
+
+        q = np.array([complex(0, 0), complex(1, 1), complex(2, 2)])
+        path = Geomstr.lines(q)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
+
+        r = np.array([[0., 0.], [1., 1.], [2., 2.]])
+        path = Geomstr.lines(r)
+        self.assertEqual(len(path), 2)
+        self.assertEqual(path.length(0), math.sqrt(2))
+        self.assertEqual(path.length(1), math.sqrt(2))
 
     def test_geomstr_copies(self):
         path = Geomstr.lines(complex(0, 0), complex(1, 1), complex(2, 2))

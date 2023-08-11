@@ -8,6 +8,7 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
+from .wxmribbon import RibbonEditor
 from .wxutils import StaticBoxSizer, TextCtrl
 
 _ = wx.GetTranslation
@@ -141,7 +142,7 @@ class PreferencesSavingPanel(wx.Panel):
         self.button_save.SetToolTip(_("Immediately save the settings to disk"))
         self.button_export = wx.Button(self, wx.ID_ANY, _("Export"))
         self.button_export.SetToolTip(
-            _("Export the the current settings to a different location")
+            _("Export the current settings to a different location")
         )
         self.button_import = wx.Button(self, wx.ID_ANY, _("Import"))
         self.button_import.SetToolTip(_("Import a previously saved setting file"))
@@ -538,8 +539,12 @@ class Preferences(MWindow):
             self.panel_scene,
             self.panel_color,
         ]
+        self.panel_ribbon = RibbonEditor(self, wx.ID_ANY, context=self.context)
+        self.notebook_main.AddPage(self.panel_ribbon, _("Ribbon"))
+        self.panels.append(self.panel_ribbon)
         self.context.setting(bool, "developer_mode", False)
         if self.context.developer_mode:
+
             panel_space = ChoicePropertyPanel(
                 self, wx.ID_ANY, context=self.context, choices="space"
             )
@@ -592,11 +597,6 @@ class Preferences(MWindow):
 
     def delegates(self):
         yield from self.panels
-        # yield self.panel_main
-        # yield self.panel_classification
-        # yield self.panel_gui
-        # yield self.panel_scene
-        # yield self.panel_color
 
     @staticmethod
     def sub_register(kernel):

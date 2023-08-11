@@ -131,6 +131,32 @@ class Button:
         self.default_width = 50
         self.set_aspect(**description)
         self.apply_enable_rules()
+        # self.sizes = {
+        #     "large_label": (0, 0),
+        #     "small_label": (0, 0),
+        #     "tiny_label": (0, 0),
+        #     "large": (0, 0),
+        #     "small": (0, 0),
+        #     "tiny": (0, 0),
+        # }
+
+    # def calc_sizes(self, dc):
+    #     def calc(bmap, uselabel):
+    #         w = 0
+    #         h = 0
+    #         return w, h
+    #     bw, bh = calc(self.bitmap_large, True)
+    #     self.sizes["large_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_large, False)
+    #     self.sizes["large"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_small, True)
+    #     self.sizes["small_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_small, False)
+    #     self.sizes["small"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_tiny, True)
+    #     self.sizes["tiny_label"] = (bw, bh)
+    #     bw, bh = calc(self.bitmap_tiny, False)
+    #     self.sizes["tiny"] = (bw, bh)
 
     def set_aspect(
         self,
@@ -828,9 +854,11 @@ class RibbonBarPanel(wx.Control):
         hover = self._button_at_position(pos)
         if hover is not None:
             self._check_hover_dropdown(hover.dropdown, pos)
-        if hover is self.art.hover_button:
+        if hover is not None and hover is self.art.hover_button:
             return
         self.art.hover_button = hover
+        if hover is None:
+            hover = self._button_at_position(pos, use_all=True)
         if hover is not None:
             self.SetToolTip(hover.tip)
         else:
@@ -865,8 +893,12 @@ class RibbonBarPanel(wx.Control):
     def _paint_main_on_buffer(self):
         """Performs redrawing of the data in the UI thread."""
         # print (f"Redraw job started for RibbonBar with {self.visible_pages()} pages")
-        buf = self._set_buffer()
-        dc = wx.MemoryDC()
+        try:
+            buf = self._set_buffer()
+            dc = wx.MemoryDC()
+        except RuntimeError:
+            # Shutdown error
+            return
         dc.SelectObject(buf)
         if self._redraw_lock.acquire(timeout=0.2):
             if self._layout_dirty:
@@ -926,7 +958,7 @@ class RibbonBarPanel(wx.Control):
                     return panel
         return None
 
-    def _button_at_position(self, pos):
+    def _button_at_position(self, pos, use_all=False):
         """
         Find the button at the given position, so long as that button is enabled.
 
@@ -938,7 +970,7 @@ class RibbonBarPanel(wx.Control):
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
-                    if button.contains(pos) and button.enabled and not button.overflow:
+                    if button.contains(pos) and (button.enabled or use_all) and not button.overflow:
                         return button
         return None
 
@@ -1083,8 +1115,9 @@ class Art:
         self.tab_initial_buffer = 30
         self.tab_text_buffer = 5
         self.edge_page_buffer = 4
+        self.rounded_radius = 3
 
-        self.bitmap_text_buffer = 10
+        self.bitmap_text_buffer = 5
         self.dropdown_height = 20
         self.overflow_width = 20
         self.text_dropdown_buffer = 7
@@ -1107,9 +1140,12 @@ class Art:
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNTEXT)
         )
 
+        # self.button_face_hover = copy.copy(
+        #     wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
-            wx.SystemSettings().GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-        ).ChangeLightness(50)
+            wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
+        ) # .ChangeLightness(25)
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1145,13 +1181,13 @@ class Art:
             self.inactive_background = wx.BLACK
 
         self.default_font = wx.Font(
-            10, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.small_font = wx.Font(
-            8, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            8, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
         self.tiny_font = wx.Font(
-            6, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+            6, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
 
     def paint_main(self, dc, ribbon):
@@ -1172,7 +1208,7 @@ class Art:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
             for panel in page.panels:
                 # plen = len(panel.buttons)
                 # if plen == 0:
@@ -1190,27 +1226,38 @@ class Art:
         @return:
         """
         horizontal = self.parent.prefer_horizontal()
+        highlight_via_color = False
+
 
         dc.SetPen(wx.Pen(self.black_color))
+        show_rect = True
         if page is not self.current_page:
             dc.SetBrush(wx.Brush(self.button_face))
             dc.SetTextForeground(self.text_color_inactive)
+            if not highlight_via_color:
+                show_rect = False
         else:
             dc.SetBrush(wx.Brush(self.highlight))
+            dc.SetBrush(wx.Brush(self.highlight))
             dc.SetTextForeground(self.text_color)
+            if not highlight_via_color:
+                dc.SetBrush(wx.Brush(self.button_face))
         if page is self.hover_tab and self.hover_button is None:
             dc.SetBrush(wx.Brush(self.button_face_hover))
+            show_rect = True
         x, y, x1, y1 = page.tab_position
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        if show_rect:
+            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         dc.SetFont(self.default_font)
+        text_width, text_height = dc.GetTextExtent(page.label)
+        tpx = int(x + (x1 - x - text_width) / 2)
+        tpy = int(y + self.tab_text_buffer)
         if horizontal:
-            dc.DrawText(
-                page.label, int(x + self.tab_text_buffer), int(y + self.tab_text_buffer)
-            )
+            dc.DrawText(page.label, tpx, tpy)
         else:
-            dc.DrawRotatedText(
-                page.label, int(x + self.tab_text_buffer), int(y1 - self.tab_text_buffer), 90
-            )
+            tpx = int(x + self.tab_text_buffer)
+            tpy = int(y1 - (y1 - y - text_width) / 2)
+            dc.DrawRotatedText(page.label, tpx, tpy, 90)
 
 
     def _paint_background(self, dc: wx.DC):
@@ -1238,7 +1285,7 @@ class Art:
         # print(f"Painting panel {panel.label}: {panel.position}")
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         """
         Paint the overflow of buttons that cannot be stored within the required width.
 
@@ -1250,7 +1297,7 @@ class Art:
         x, y, x1, y1 = panel._overflow_position
         dc.SetBrush(wx.Brush(self.highlight))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1281,7 +1328,7 @@ class Art:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.TRANSPARENT_PEN)
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
         r = min((x1 - x) / 2, (y1 - y) / 2)
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1336,9 +1383,9 @@ class Art:
         h = int(round(y1 - y, 2))
 
         # Lets clip the output
-        dc.SetClippingRegion(x, y, w, h)
+        dc.SetClippingRegion(int(x), int(y), int(w), int(h))
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), 5)
+        dc.DrawRoundedRectangle(int(x), int(y), int(w), int(h), self.rounded_radius)
         bitmap_width, bitmap_height = bitmap.Size
         font = self.default_font
         # if button.label in  ("Circle", "Ellipse", "Wordlist", "Property Window"):
@@ -1365,37 +1412,63 @@ class Art:
         if button.label and self.show_labels:
             show_text = True
             label_text = list(button.label.split(" "))
-            test_y = y + self.bitmap_text_buffer
-            dc.SetFont(font)
-            for idx, word in enumerate(label_text):
-                test_word = word
-                while True:
-                    text_width, text_height = dc.GetTextExtent(test_word)
-                    if text_width <= w:
+            # We try to establish whether this would fit properly.
+            # We allow a small oversize of 25% to the button,
+            # before we try to reduce the fontsize
+            font_candidates = [self.default_font, self.small_font, self.tiny_font, ]
+            if button.bitmapsize == "tiny":
+                font_candidates = font_candidates[2:]
+            elif button.bitmapsize == "small":
+                font_candidates = font_candidates[1:]
+            wouldfit = False
+            for testfont in font_candidates:
+                test_y = y + self.bitmap_text_buffer
+                dc.SetFont(testfont)
+                wouldfit = True
+                for word in label_text:
+                    text_width, text_height = dc.GetTextExtent(word)
+                    if text_width > w:
+                        wouldfit = False
                         break
-                    if test_word.endswith("..."):
-                        test_word = test_word[:-4]
-                    else:
-                        test_word = word[:-2]
-                    if len(test_word) > 0:
-                        test_word += "..."
-                    else:
-                        show_text = False
-                        break
-                if len(test_word) > 0:
-                    if test_word.endswith("..."):
-                        label_text[idx] = test_word
-                        label_text = label_text[: idx + 1]
-                        break
-                else:
-                    if idx == 0:
-                        show_text = False
-                    else:
-                        label_text = label_text[:idx]
-
+                if wouldfit:
+                    font = testfont
                     break
+            if not wouldfit:
+                show_text = False
+                label_text = list()
 
-                test_y += text_height
+            # Previous algorithm with abbreviated text
+            # test_y = y + self.bitmap_text_buffer
+            # dc.SetFont(font)
+            # for idx, word in enumerate(label_text):
+            #     test_word = word
+            #     while True:
+            #         text_width, text_height = dc.GetTextExtent(test_word)
+            #         if text_width <= w:
+            #             break
+            #         if test_word.endswith("..."):
+            #             test_word = test_word[:-4]
+            #         else:
+            #             test_word = word[:-2]
+            #         if len(test_word) > 0:
+            #             test_word += "..."
+            #         else:
+            #             show_text = False
+            #             break
+            #     if len(test_word) > 0:
+            #         if test_word.endswith("..."):
+            #             label_text[idx] = test_word
+            #             label_text = label_text[: idx + 1]
+            #             break
+            #     else:
+            #         if idx == 0:
+            #             show_text = False
+            #         else:
+            #             label_text = label_text[:idx]
+
+            #         break
+
+            #     test_y += text_height
 
         else:
             show_text = False
@@ -1430,7 +1503,6 @@ class Art:
                 y += text_height
                 i += 1
         if button.dropdown is not None and button.dropdown.position is not None:
-            y += self.text_dropdown_buffer
             self._paint_dropdown(dc, button.dropdown)
         dc.DestroyClippingRegion()
 
@@ -1526,15 +1598,23 @@ class Art:
             #     print(f"page: {page.position}")
             self.page_layout(dc, page)
 
-    def page_layout(self, dc, page):
-        """
-        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
-        contains.
+    # def preferred_button_size_for_panel(self, dc, panel):
+    #     # Provides
+    #     x, y, max_x, max_y = panel.position
+    #     panel_width = max_x - x
+    #     panel_height = max_y - y
+    #     button_sizes = []
+    #     for button in panel.buttons:
+    #         this_button_sizes = []
+    #         # We calculate the space requirement for regular,
+    #         # small and tiny buttons, both with and without
+    #         # labels
+    #         button_sizes.append(this_button_sizes)
+    #     button_width = 0
+    #     button_height = 0
+    #     return button_width, button_height
 
-        @param dc:
-        @param art:
-        @return:
-        """
+    def preferred_button_size_for_page(self, dc, page):
         x, y, max_x, max_y = page.position
         page_width = max_x - x
         page_height = max_y - y
@@ -1566,7 +1646,7 @@ class Art:
             all_panel_horizontal = 1
             all_panel_vertical = max(panel_count, 1)
 
-        # Calculate width/height for just buttons.
+        # Calculate optimal width/height for just buttons.
         button_width_across_panels = page_width
         button_width_across_panels -= (
             all_panel_horizontal - 1
@@ -1604,9 +1684,27 @@ class Art:
         button_width = button_width_across_panels / all_button_horizontal
         button_height = button_height_across_panels / all_button_vertical
 
+        return button_width, button_height
+
+    def page_layout(self, dc, page):
+        """
+        Determine the layout of the page. This calls for each panel to be set relative to the number of buttons it
+        contains.
+
+        @param dc:
+        @param art:
+        @return:
+        """
+        x, y, max_x, max_y = page.position
+        is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
+            self.parent.prefer_horizontal() and self.orientation == self.RIBBON_ORIENTATION_AUTO
+        )
+        button_width, button_height = self.preferred_button_size_for_page(dc, page)
         x += self.page_panel_buffer
         y += self.page_panel_buffer
         for p, panel in enumerate(page.panels):
+            if len(panel.buttons) == 0:
+                continue
             if p != 0:
                 # Non-first move between panel gap.
                 if is_horizontal:
@@ -1818,12 +1916,15 @@ class Art:
         if button.bitmapsize == "small":
             default_w = int(SMALL_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_small
+            dc.SetFont(self.small_font)
         elif button.bitmapsize == "tiny":
             default_w = int(TINY_RESIZE_FACTOR * button.default_width)
             bitmap = button.bitmap_tiny
+            dc.SetFont(self.tiny_font)
         else:
             default_w = button.default_width
             bitmap = button.bitmap_large
+            dc.SetFont(self.default_font)
         bitmap_width, bitmap_height = bitmap.Size
         bitmap_height = max(bitmap_height, default_w)
         bitmap_width = max(bitmap_width, default_w)
@@ -1840,10 +1941,12 @@ class Art:
         # Calculate button_width/button_height
         button_width = max(bitmap_width, text_width)
         button_height = bitmap_height
+        button_height += 2 * self.panel_button_buffer
+        button_width += 2 * self.panel_button_buffer
         if button.label and self.show_labels:
             # button_height += + self.panel_button_buffer
             button_height += (
-                +self.panel_button_buffer + self.bitmap_text_buffer + text_height
+                self.bitmap_text_buffer + text_height
             )
 
         button.min_width = button_width
@@ -1870,11 +1973,12 @@ class Art:
             exty = y + bitmap_height + sizy - 1
             extx = max(x - sizx, min(extx, max_x - 1))
             exty = max(y + sizy, min(exty, max_y - 1))
+            gap = 5
             button.dropdown.position = (
                 extx - sizx,
-                exty - sizy,
+                exty - sizy - gap,
                 extx,
-                exty,
+                exty - gap,
             )
             # button.dropdown.position = (
             #     x + bitmap_width / 2,

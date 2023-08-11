@@ -656,7 +656,6 @@ class PanelFontManager(wx.Panel):
             parent=None,
             style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
         )
-
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
             destfile = os.path.join(self.context.font_directory, basename)
@@ -679,7 +678,7 @@ class PanelFontManager(wx.Panel):
                 keepgoing = progress.Update(
                     idx + 1, progress_string.format(count=idx + 1)
                 )
-                if not keepgoing:
+                if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
@@ -758,7 +757,6 @@ class PanelFontManager(wx.Panel):
             parent=None,
             style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
         )
-
         for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
             destfile = os.path.join(self.context.font_directory, basename)
@@ -783,7 +781,7 @@ class PanelFontManager(wx.Panel):
                 keepgoing = progress.Update(
                     idx + 1, progress_string.format(count=idx + 1)
                 )
-                if not keepgoing:
+                if progress.WasCancelled():
                     break
             except (OSError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1

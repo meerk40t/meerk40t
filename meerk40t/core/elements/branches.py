@@ -1489,6 +1489,7 @@ def init_commands(kernel):
 
             try:
                 geometry = node.as_geometry()
+                geometry.ensure_proper_subpaths()
             except AttributeError:
                 continue
 

@@ -10792,7 +10792,10 @@ msgstr "Umriss"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:132
 #: meerk40t/gui/propertypanels/operationpropertymain.py:145
 msgid "Look at the stroke color to restrict classification."
-msgstr "Beschränkt Klassifzierung auf Elemente mit dieser Umriss-Farbe."
+msgstr "Beschränkt Klassifizierung auf Elemente mit dieser Umriss-Farbe."
+
+msgid "Look at the fill color to restrict classification."
+msgstr "Beschränkt Klassifizierung auf Elemente mit dieser Füll-Farbe."
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:143
 #: meerk40t/gui/statusbarwidgets/shapepropwidget.py:172
@@ -14904,6 +14907,72 @@ msgstr "Barcode-Typ"
 msgid "The code to process"
 msgstr "Der Text, aus dem der Barcode erzeugt werden soll"
 
+msgid "Width/Height:"
+msgstr "Größe:"
+
+msgid "The barcode/qrcode will be based on this content."
+msgstr "Der in einen Barcode/QR-Code umzuwandelnde Text."
+
+msgid "Generate Pattern"
+msgstr "Erzeugen"
+
+msgid "What kind of encryption does the network use?"
+msgstr "Verwendete Verschlüsselung im Netzwerk"
+
+msgid "Hidden"
+msgstr "Verborgen"
+
+msgid "Is the network hidden?"
+msgstr "Ist dies ein verborgenes Netzwerk?"
+
+msgid "VCard"
+msgstr ""
+
+msgid "Provide your name as lastname,firstname"
+msgstr ""
+"Für den Namen bitte dieses Format nutzen:\n"
+"nachname,vorname"
+
+msgid "Name:"
+msgstr "Name:"
+
+msgid ""
+"Provide your address as:\n"
+"PO box, room number, house number, city, prefecture, zip code and country"
+msgstr ""
+"Für die Addresse bitte dieses Format nutzen:\n"
+"Postfach, Raumnr, Hausnr, Stadt, Bezirk, PLZ und Land"
+
+msgid "Address:"
+msgstr "Adresse:"
+
+msgid "Provide your phone-number"
+msgstr "Bitte Telefon-Nummer angeben"
+
+msgid "Phone:"
+msgstr "Telefon:"
+
+msgid "Provide your email-Address"
+msgstr "Bitte email-Adresse angeben"
+
+msgid "email:"
+msgstr "Email:"
+
+msgid "Provide a valid URL"
+msgstr "Bitte eine gültige URL angeben"
+
+msgid "URL:"
+msgstr "URL:"
+
+msgid "SSID:"
+msgstr "SSID:"
+
+msgid "Key:"
+msgstr "Key:"
+
+msgid "Encryption:"
+msgstr "Verschlüsselung:"
+
 msgid "Barcode"
 msgstr "Barcode"
 
@@ -14935,7 +15004,7 @@ msgid "Options:"
 msgstr "Optionen:"
 
 msgid "How wide/high will the resulting qr-code be?"
-msgstr "Welceh Größe soll der QR-Code haben?"
+msgstr "Welche Größe soll der QR-Code haben?"
 
 msgid "Resolution:"
 msgstr "Auflösung:"
@@ -15986,10 +16055,10 @@ msgstr "Aktueller Wert: {value} Pixel"
 msgid "Magnetlines"
 msgstr "Magnet-Linien"
 
-msgid "Clear magnets on File - New"
+msgid "Clear magnets on File/New"
 msgstr "Magnetlinien bei 'Datei - Neu' löschen"
 
-msgid "File - New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
+msgid "File/New can remove all defined magnetlines (active)\nor leave them in place (inactive)"
 msgstr ""
 "Aktiv: Datei-Neu setzt existierende Magnet-Linien zurück\n"
 "Inaktiv: Existierende Magnetlinien werden beibehalten"
@@ -16197,3 +16266,120 @@ msgstr "Größe der zu erzeugenden Testformen"
 
 msgid "Horizontal gap between patterns"
 msgstr "Horizontaler Abstand zwischen den Testformen"
+
+msgid "Every {dist}"
+msgstr "Alle {dist}"
+
+msgid "Create a test-pattern with your values"
+msgstr "Erzeuge ein Test-Muster mit den angegebenen Werten"
+
+msgid "There is more to see - click to display"
+msgstr "Es gibt mehr zu sehen - Anzeigen mit Click"
+
+msgid "Select an entry to reload"
+msgstr "Eintrag zum Wiederherstellen auswählen"
+
+msgid "Ribbons"
+msgstr "Symbolleisten"
+
+msgid "Panels"
+msgstr "Panel"
+
+msgid "Available Panels"
+msgstr "Verfügbare Panel"
+
+msgid "Add to page"
+msgstr "Zu Seite hinzufügen"
+
+msgid "Reset to Default"
+msgstr "Auf Standard zurücksetzen"
+
+msgid "Add the selected panel to the selected page"
+msgstr "Füge das ausgewählte Panel zur aktiven Seite hinzu"
+
+msgid "Reset the ribbon appearance to the default configuration"
+msgstr "Setze das Aussehen der Symbolleiste auf die Standardwerte zurück"
+
+msgid "Add an additional page to the ribbon"
+msgstr "Füge eine zusätzliche Seite zur Symbolleiste hinzu"
+
+msgid "Remove the selected page from the list"
+msgstr "Entferne die selektierte Seite von der Liste"
+
+msgid "Decrease the position of the selected page"
+msgstr "Bewege die selektierte Seite nach unten"
+
+msgid "Increase the position of the selected page"
+msgstr "Bewege die selektierte Seite nach oben"
+
+msgid "Modify the label of the selected page"
+msgstr "Aktualisere die Beschriftung der Seite"
+
+msgid "Remove the selected panel from the list"
+msgstr "Entferne das selektierte Panel von der Liste"
+
+msgid "Decrease the position of the selected panel"
+msgstr "Bewege das selektierte Panel nach unten"
+
+msgid "Increase the position of the selected panel"
+msgstr "Bewege das selektierte Panel nach oben"
+
+msgid "Apply the configuration"
+msgstr "Wende die Konfiguration an"
+
+msgid "Allow/suppress the display of labels beneath the icons in the ribbon"
+msgstr "Sollen Beschriftungen unter den Icons in der Symbolleiste angezeigt werden"
+
+msgid "Coordinate Space"
+msgstr "Koordinatenraum"
+
+msgid "Origin X"
+msgstr "X-Ursprung"
+
+msgid "Value between 0-1 for the location of the origin x parameter"
+msgstr "Ursprung der Y-Koordinate als Wert zwischen 0 und 1"
+
+msgid "Origin Y"
+msgstr "Y-Ursprung"
+
+msgid "Value between 0-1 for the location of the origin y parameter"
+msgstr "Ursprung der X-Koordinate als Wert zwischen 0 und 1"
+
+msgid "Right Positive"
+msgstr "Positive Werte Rechts"
+
+msgid "Are positive values to the right?"
+msgstr "Zeigen die positiven Werte nach rechts?"
+
+msgid "Bottom Positive"
+msgstr "Positive Werten Unten"
+
+msgid "Are positive values towards the bottom?"
+msgstr "Zeigen die positiven Werte nach unten?"
+
+msgid "XY coordinates are swapped"
+msgstr "X- und Y-Koordinaten sind vertauscht"
+
+msgid "Rotation in degrees"
+msgstr "Rotation in Grad"
+
+msgid "Preferred Units"
+msgstr "Bevorzugte Einheiten"
+
+msgid "Set default units for positions"
+msgstr "Setze die Standard-Einheit für Koordinaten"
+
+msgid "Immediately save the settings to disk"
+msgstr "Sichere die aktuellen Einstellungen"
+
+msgid "Export"
+msgstr "Export"
+
+msgid "Export the current settings to a different location"
+msgstr "Exportiere die aktuellen Einstellungen in ein Sicherungsverzeichnis"
+
+msgid "Import"
+msgstr "Import"
+
+msgid "Import a previously saved setting file"
+msgstr "Importiere die Einstellungen aus einer zuvor gesicherten Version"

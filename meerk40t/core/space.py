@@ -31,7 +31,7 @@ class CoordinateSystem(Service):
                 "type": float,
                 "label": _("Origin Y"),
                 "tip": _(
-                    "Value between 0-1 for the location of the origin x parameter"
+                    "Value between 0-1 for the location of the origin y parameter"
                 ),
             },
             {

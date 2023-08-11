@@ -363,26 +363,26 @@ class LihuiyuDevice(Service, ViewPort):
                 "tip": _("Ignore Home-Command"),
                 "conditional": (self, "rotary_active"),
             },
-            # {
-            #     "attr": "rotary_mirror_x",
-            #     "object": self,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("Mirror X"),
-            #     "tip": _("Mirror the elements on the X-Axis"),
-            #     "conditional": (self, "rotary_active"),
-            #     "subsection": _("Mirror Output"),
-            # },
-            # {
-            #     "attr": "rotary_mirror_y",
-            #     "object": self,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("Mirror Y"),
-            #     "tip": _("Mirror the elements on the Y-Axis"),
-            #     "conditional": (self, "rotary_active"),
-            #     "subsection": _("Mirror Output"),
-            # },
+            {
+                "attr": "rotary_flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror X"),
+                "tip": _("Mirror the elements on the X-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
+            {
+                "attr": "rotary_flip_y",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Mirror Y"),
+                "tip": _("Mirror the elements on the Y-Axis"),
+                "conditional": (self, "rotary_active"),
+                "subsection": _("Mirror Output"),
+            },
         ]
         self.register_choices("rotary", choices)
 
@@ -421,6 +421,11 @@ class LihuiyuDevice(Service, ViewPort):
             flip_x=self.flip_x,
             flip_y=self.flip_y,
             swap_xy=self.swap_xy,
+            rotary_active=self.rotary_active,
+            rotary_scale_x=self.rotary_scale_x,
+            rotary_scale_y=self.rotary_scale_y,
+            rotary_flip_x=self.rotary_flip_x,
+            rotary_flip_y=self.rotary_flip_y,
         )
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)

@@ -4606,7 +4606,7 @@ msgid "Export"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:144
-msgid "Export the the current settings to a different location"
+msgid "Export the current settings to a different location"
 msgstr ""
 
 #: meerk40t/gui/preferences.py:147
