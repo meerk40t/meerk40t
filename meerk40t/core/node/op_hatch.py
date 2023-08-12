@@ -17,7 +17,8 @@ class HatchOpNode(Node, Parameters):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+    def __init__(self, *args, id=None, label=None, lock=False, loops=1, **kwargs):
+        self.loops = loops
         Node.__init__(self, type="op hatch", id=id, label=label, lock=lock)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
@@ -64,14 +65,6 @@ class HatchOpNode(Node, Parameters):
     def __copy__(self):
         return HatchOpNode(self)
 
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
@@ -85,10 +78,14 @@ class HatchOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
+        default_map["loop"] = (
+            f"{self.loops}X " if self.loops != 1 else ""
+        )
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
         default_map["hatch_angle"] = "default"
+        default_map["hatch_angle_delta"] = "default"
         default_map["hatch_distance"] = "default"
         ct = 0
         t = ""

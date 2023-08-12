@@ -53,6 +53,7 @@ STRING_PARAMETERS = (
     "overscan",
     "hatch_distance",
     "hatch_angle",
+    "hatch_angle_delta",
     "hatch_type",
     "penbox_value",
     "penbox_pass",
@@ -407,6 +408,14 @@ class Parameters:
     @hatch_angle.setter
     def hatch_angle(self, value):
         self.settings["hatch_angle"] = value
+
+    @property
+    def hatch_angle_delta(self):
+        return self.settings.get("hatch_angle_delta", "0deg")
+
+    @hatch_angle_delta.setter
+    def hatch_angle_delta(self, value):
+        self.settings["hatch_angle_delta"] = value
 
     @property
     def hatch_distance(self):
