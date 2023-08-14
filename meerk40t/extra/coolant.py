@@ -50,7 +50,7 @@ class Coolants():
         for cool in self._coolants:
             # A coolant method with that id had already been registered
             # so we just update it. Honestly this should not happen.
-            if cool_id == cool[id]:
+            if cool_id == cool["id"]:
                 cool["label"] = label
                 cool["function"] = cool_function
                 cool["config"] = config_function
