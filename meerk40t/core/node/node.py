@@ -103,6 +103,8 @@ class Node:
                     pass
             self.__dict__[k] = v
 
+        if self.id is not None:
+            self.id = str(self.id)
         self._children = list()
         self._root = None
         self._parent = None
