@@ -324,7 +324,7 @@ class SpoolerPanel(wx.Panel):
         except (PermissionError, OSError, FileNotFoundError):
             pass
 
-    def clear_history(self, older_than=None):
+    def clear_history(self, older_than=None, job_type=None):
         if self.filter_device:
             to_remove = list(
                 self.context.logging.matching_events("job", device=self.filter_device)
@@ -337,11 +337,16 @@ class SpoolerPanel(wx.Panel):
                     continue
                 if event["start_time"] is not None and event["start_time"] >= older_than:
                     continue
+            if event is not None and job_type is not None:
+                if not "status" in event:
+                    continue
+                if event["status"] is not None and event["status"] != job_type:
+                    continue
             del self.context.logging.logs[key]
         self.refresh_history()
 
     def on_button_clear_history(self, event):
-        self.clear_history(None)
+        self.clear_history(older_than=None, job_type=None)
 
     def on_right_mouse_history(self, event):
         listid = self.list_job_history.GetFirstSelected()
@@ -360,12 +365,13 @@ class SpoolerPanel(wx.Panel):
 
             return check
 
-        def on_menu_time(cutoff):
+        def on_menu_time(cutoff, jobtype):
             def check(event):
-                self.clear_history(dcutoff)
+                self.clear_history(older_than=dcutoff, job_type=djobtype)
 
             # Store value locally
             dcutoff = cutoff
+            djobtype = jobtype
             return check
 
         def toggle_1(event):
@@ -381,10 +387,11 @@ class SpoolerPanel(wx.Panel):
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
-        options = [(_("All entries"), None)]
+        options = [(_("All entries"), None, None)]
         for week in range(1, 5):
             cutoff_time = now - week * week_seconds
-            options.append((_("Older than {week} week").format(week=week), cutoff_time))
+            options.append((_("Older than {week} week").format(week=week), cutoff_time, None))
+        options.append((_("All incomplete jobs"), None, "stopped"))
         menu = wx.Menu()
         if idx >= 0:
             menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
@@ -402,7 +409,7 @@ class SpoolerPanel(wx.Panel):
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
             self.Bind(
                 wx.EVT_MENU,
-                on_menu_time(item[1]),
+                on_menu_time(item[1], item[2]),
                 id=menuitem.GetId(),
             )
 
@@ -749,7 +756,9 @@ class SpoolerPanel(wx.Panel):
                 events = self.context.logging.matching_events("job", important=True)
             else:
                 events = self.context.logging.matching_events("job")
+        has_data = False
         for idx, event_and_key in enumerate(reversed(list(events))):
+            has_data = True
             key, info = event_and_key
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx}"
@@ -812,6 +821,8 @@ class SpoolerPanel(wx.Panel):
                 f"{info.get('steps_done',0)}/{info.get('steps_total',0)}",
             )
             self.list_job_history.SetItemData(list_id, idx)
+        if has_data:
+            self.list_job_history.Select(0)
 
     def before_history_update(self, event):
         list_id = event.GetIndex()  # Get the current row
