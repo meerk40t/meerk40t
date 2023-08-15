@@ -9,21 +9,22 @@ msgstr ""
 "Project-Id-Version: MeerK40t Translation Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 23-04-21 17:45UTC\n"
-"PO-Revision-Date: 23-04-21 17:45UTC\n"
+"PO-Revision-Date: 2023-08-15 15:58+0800\n"
 "Last-Translator: tatarize\n"
 "Language: zh\n"
 "Language-Team: Chinese\n"
-"Plural-Forms: nplurals=1; plural=0\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Poboy 0.0.1\n"
+"X-Generator: Poedit 2.4.1\n"
 
 #: meerk40t/balormk/device.py:93 meerk40t/grbl/device.py:259
 #: meerk40t/gui/propertypanels/attributes.py:247 meerk40t/moshi/device.py:57
 #: meerk40t/newly/device.py:110
 msgid "Label"
-msgstr ""
+msgstr "标签"
 
 #: meerk40t/balormk/device.py:94 meerk40t/grbl/device.py:260
 #: meerk40t/moshi/device.py:58 meerk40t/newly/device.py:111
@@ -43,8 +44,7 @@ msgstr "这个设备叫什么名字。"
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:845
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:876
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:903
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:15
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:20
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:15 meerk40t/lihuiyu/gui/lhyaccelgui.py:20
 #: meerk40t/lihuiyu/gui/lhyaccelgui.py:25
 msgid "Enable"
 msgstr "启用"
@@ -97,6 +97,7 @@ msgstr "缩放X轴"
 #: meerk40t/balormk/device.py:172
 msgid "Scale the Y axis"
 msgstr "缩放Y轴"
+
 #: meerk40t/balormk/device.py:181 meerk40t/grbl/device.py:90
 #: meerk40t/lihuiyu/device.py:128 meerk40t/moshi/device.py:115
 #: meerk40t/newly/device.py:162
@@ -143,8 +144,7 @@ msgstr "运行模拟USB后端"
 #: meerk40t/balormk/device.py:223 meerk40t/grbl/device.py:337
 #: meerk40t/moshi/device.py:186 meerk40t/newly/device.py:204
 msgid ""
-"This starts connects to fake software laser rather than real one for "
-"debugging."
+"This starts connects to fake software laser rather than real one for debugging."
 msgstr "这将连接到虚拟的软件激光，而不是真正的激光，用于调试。"
 
 #: meerk40t/balormk/device.py:234 meerk40t/newly/device.py:215
@@ -198,6 +198,7 @@ msgstr "在y轴上通过此量偏移红光位置"
 #: meerk40t/balormk/device.py:295
 msgid "Angle Offset"
 msgstr "角度偏移"
+
 #: meerk40t/balormk/device.py:296
 msgid "Offset the redlight positions by this angle, curving around center"
 msgstr "通过这个角度偏移红光位置，围绕中心弯曲"
@@ -207,9 +208,7 @@ msgid "Prefer redlight on"
 msgstr "优先使用红光"
 
 #: meerk40t/balormk/device.py:307
-msgid ""
-"Redlight preference will turn toggleable redlights on after a job "
-"completes."
+msgid "Redlight preference will turn toggleable redlights on after a job completes."
 msgstr "红光首选项将在作业完成后打开可切换的红光。"
 
 #: meerk40t/balormk/device.py:321
@@ -236,13 +235,11 @@ msgstr "Q开关频率"
 msgid "QSwitch Frequency value"
 msgstr "Q开关频率值"
 
-#: meerk40t/balormk/device.py:348
-#: meerk40t/balormk/gui/baloroperationproperties.py:39
+#: meerk40t/balormk/device.py:348 meerk40t/balormk/gui/baloroperationproperties.py:39
 msgid "Travel Speed"
 msgstr "移动速度"
 
-#: meerk40t/balormk/device.py:350
-#: meerk40t/balormk/gui/baloroperationproperties.py:40
+#: meerk40t/balormk/device.py:350 meerk40t/balormk/gui/baloroperationproperties.py:40
 msgid "How fast do we travel when not cutting?"
 msgstr "我们在不切割时移动有多快？"
 
@@ -250,13 +247,11 @@ msgstr "我们在不切割时移动有多快？"
 msgid "Enable using Pulse Width (MOPA)"
 msgstr "启用使用脉冲宽度（MOPA）"
 
-#: meerk40t/balormk/device.py:386
-#: meerk40t/balormk/gui/baloroperationproperties.py:57
+#: meerk40t/balormk/device.py:386 meerk40t/balormk/gui/baloroperationproperties.py:57
 msgid "Set Pulse Width (ns)"
 msgstr "设置脉冲宽度（纳秒）"
 
-#: meerk40t/balormk/device.py:388
-#: meerk40t/balormk/gui/baloroperationproperties.py:58
+#: meerk40t/balormk/device.py:388 meerk40t/balormk/gui/baloroperationproperties.py:58
 msgid "Set the MOPA pulse width setting"
 msgstr "设置MOPA脉冲宽度设置"
 
@@ -276,14 +271,12 @@ msgstr "激光关"
 msgid "The delay time of the laser shutting down after marking finished"
 msgstr "标记完成后激光关闭的延迟时间"
 
-#: meerk40t/balormk/device.py:428
-#: meerk40t/balormk/gui/baloroperationproperties.py:92
+#: meerk40t/balormk/device.py:428 meerk40t/balormk/gui/baloroperationproperties.py:92
 #: meerk40t/gui/materialtest.py:557
 msgid "Polygon Delay"
 msgstr "多边形延迟"
 
-#: meerk40t/balormk/device.py:430
-#: meerk40t/balormk/gui/baloroperationproperties.py:93
+#: meerk40t/balormk/device.py:430 meerk40t/balormk/gui/baloroperationproperties.py:93
 msgid "Delay amount between different points in the path travel."
 msgstr "路径移动中不同点之间的延迟量。"
 
@@ -406,6 +399,7 @@ msgstr "参数3"
 #: meerk40t/balormk/device.py:653
 msgid "Param 4"
 msgstr "参数4"
+
 #: meerk40t/balormk/device.py:662
 msgid "Input Signal Hold"
 msgstr "输入信号保持"
@@ -450,10 +444,10 @@ msgstr "需要应用于X轴的缩放"
 #: meerk40t/core/elements/element_treeops.py:2168 meerk40t/grbl/device.py:160
 #: meerk40t/grbl/device.py:170 meerk40t/gui/navigationpanels.py:1711
 #: meerk40t/gui/propertypanels/attributes.py:464
-#: meerk40t/gui/statusbarwidgets/strokewidget.py:167
-#: meerk40t/lihuiyu/device.py:351 meerk40t/lihuiyu/device.py:361
-#: meerk40t/moshi/device.py:210 meerk40t/moshi/device.py:220
-#: meerk40t/ruida/device.py:94 meerk40t/ruida/device.py:104
+#: meerk40t/gui/statusbarwidgets/strokewidget.py:167 meerk40t/lihuiyu/device.py:351
+#: meerk40t/lihuiyu/device.py:361 meerk40t/moshi/device.py:210
+#: meerk40t/moshi/device.py:220 meerk40t/ruida/device.py:94
+#: meerk40t/ruida/device.py:104
 msgid "Scale"
 msgstr "缩放"
 
@@ -506,6 +500,7 @@ msgstr "镜像输出"
 #: meerk40t/ruida/device.py:130
 msgid "Mirror Y"
 msgstr "镜像Y"
+
 #: meerk40t/balormk/device.py:731 meerk40t/grbl/device.py:197
 #: meerk40t/lihuiyu/device.py:388 meerk40t/moshi/device.py:247
 #: meerk40t/ruida/device.py:131
@@ -606,6 +601,7 @@ msgstr "允许默认列表命令在原始命令中保持"
 #: meerk40t/balormk/device.py:999
 msgid "Data is explicitly little-ended hex from a data capture"
 msgstr "数据明确来自数据捕获的小端十六进制数据"
+
 #: meerk40t/balormk/device.py:1006
 msgid "Read data is explicitly in binary"
 msgstr "读取的数据明确为二进制"
@@ -705,6 +701,7 @@ msgstr "输入要等待的二进制。使用 'x' 表示任何位。"
 #: meerk40t/balormk/device.py:1521
 msgid "Checks the read_port"
 msgstr "检查读取端口。"
+
 #: meerk40t/balormk/device.py:1534
 msgid "Checks the input_port"
 msgstr "检查输入端口"
@@ -772,7 +769,6 @@ msgstr "模拟器已连接。"
 
 #: meerk40t/balormk/mock_connection.py:43 meerk40t/newly/mock_connection.py:43
 #: meerk40t/ruida/mock_connection.py:43
-#, fuzzy
 msgid "Attempting disconnection from Mock."
 msgstr "尝试与模拟器断开连接。"
 
@@ -788,13 +784,14 @@ msgstr "光纤激光（JCZ控制器）（非MOPA）"
 #: meerk40t/balormk/plugin.py:30 meerk40t/balormk/plugin.py:53
 #: meerk40t/balormk/plugin.py:82 meerk40t/balormk/plugin.py:109
 msgid ""
-"The JCZ Controller is a type of Galvo Laser Controller for several "
-"different sources compatible with the EZCad2™ software."
+"The JCZ Controller is a type of Galvo Laser Controller for several different "
+"sources compatible with the EZCad2™ software."
 msgstr "JCZ控制器是一种伽利略激光控制器，适用于多种不同来源，与EZCad2™软件兼容。"
 
 #: meerk40t/balormk/plugin.py:34 meerk40t/balormk/plugin.py:59
 msgid "Fibre-Laser"
 msgstr "光纤激光"
+
 #: meerk40t/balormk/plugin.py:52
 msgid "Fibre-Laser (JCZ-Controller) (MOPA)"
 msgstr "光纤激光（JCZ控制器）（MOPA）"
@@ -808,11 +805,8 @@ msgid "CO2 (JCZ-Controller)"
 msgstr "CO2激光（JCZ控制器）"
 
 #: meerk40t/balormk/plugin.py:86
-msgid ""
-"With specific settings for the CO2 source. (No specific settings are "
-"known)."
-msgstr ""
-"为CO2源设置特定的设置。（未知特定设置）。"
+msgid "With specific settings for the CO2 source. (No specific settings are known)."
+msgstr "为CO2源设置特定的设置。（未知特定设置）。"
 
 #: meerk40t/balormk/plugin.py:90 meerk40t/grbl/plugin.py:58
 #: meerk40t/lihuiyu/plugin.py:37 meerk40t/lihuiyu/plugin.py:68
@@ -825,31 +819,26 @@ msgid "UV (JCZ-Controller)"
 msgstr "紫外激光（JCZ控制器）"
 
 #: meerk40t/balormk/plugin.py:113
-msgid ""
-"With specific settings for the UV source. (No specific settings are "
-"known)."
-msgstr ""
-"为紫外源设置特定的设置。（未知特定设置）。"
+msgid "With specific settings for the UV source. (No specific settings are known)."
+msgstr "为紫外源设置特定的设置。（未知特定设置）。"
 
 #: meerk40t/balormk/plugin.py:117
 msgid "UV-Laser"
 msgstr "紫外激光"
 
 #: meerk40t/balormk/usb_connection.py:36 meerk40t/ch341/libusb.py:477
-#: meerk40t/device/ch341/ch341libusbdriver.py:66
-#: meerk40t/device/ch341/libusb.py:30 meerk40t/newly/usb_connection.py:33
+#: meerk40t/device/ch341/ch341libusbdriver.py:66 meerk40t/device/ch341/libusb.py:30
+#: meerk40t/newly/usb_connection.py:33
 msgid "Using LibUSB to connect."
 msgstr "使用LibUSB进行连接。"
 
 #: meerk40t/balormk/usb_connection.py:37 meerk40t/ch341/libusb.py:68
-#: meerk40t/device/ch341/ch341libusbdriver.py:67
-#: meerk40t/newly/usb_connection.py:34
+#: meerk40t/device/ch341/ch341libusbdriver.py:67 meerk40t/newly/usb_connection.py:34
 msgid "Finding devices."
 msgstr "查找设备。"
 
 #: meerk40t/balormk/usb_connection.py:50 meerk40t/ch341/libusb.py:89
-#: meerk40t/device/ch341/ch341libusbdriver.py:80
-#: meerk40t/newly/usb_connection.py:47
+#: meerk40t/device/ch341/ch341libusbdriver.py:80 meerk40t/newly/usb_connection.py:47
 msgid "Devices Not Found."
 msgstr "找不到设备。"
 
@@ -858,8 +847,7 @@ msgid "Galvo device detected:"
 msgstr "检测到伽利略设备："
 
 #: meerk40t/balormk/usb_connection.py:61 meerk40t/ch341/libusb.py:79
-#: meerk40t/device/ch341/ch341libusbdriver.py:91
-#: meerk40t/newly/usb_connection.py:58
+#: meerk40t/device/ch341/ch341libusbdriver.py:91 meerk40t/newly/usb_connection.py:58
 msgid "Your OS does not give you permissions to access USB."
 msgstr "您的操作系统不允许您访问USB。"
 
@@ -869,66 +857,56 @@ msgstr "找到伽利略设备。但是其他设备连接到它们上面。"
 
 #: meerk40t/balormk/usb_connection.py:71
 msgid ""
-"Galvo devices were found but they were rejected by device criteria in "
-"Controller."
+"Galvo devices were found but they were rejected by device criteria in Controller."
 msgstr "找到伽利略设备，但它们被控制器中的设备条件拒绝。"
 
 #: meerk40t/balormk/usb_connection.py:84 meerk40t/ch341/libusb.py:110
-#: meerk40t/device/ch341/ch341libusbdriver.py:114
-#: meerk40t/newly/usb_connection.py:74
+#: meerk40t/device/ch341/ch341libusbdriver.py:114 meerk40t/newly/usb_connection.py:74
 msgid "Attempting to detach kernel."
 msgstr "尝试分离内核。"
 
 #: meerk40t/balormk/usb_connection.py:86 meerk40t/ch341/libusb.py:112
-#: meerk40t/device/ch341/ch341libusbdriver.py:116
-#: meerk40t/newly/usb_connection.py:76
+#: meerk40t/device/ch341/ch341libusbdriver.py:116 meerk40t/newly/usb_connection.py:76
 msgid "Kernel detach: Success."
 msgstr "内核分离：成功。"
 
 #: meerk40t/balormk/usb_connection.py:91 meerk40t/ch341/libusb.py:117
-#: meerk40t/device/ch341/ch341libusbdriver.py:121
-#: meerk40t/newly/usb_connection.py:81
+#: meerk40t/device/ch341/ch341libusbdriver.py:121 meerk40t/newly/usb_connection.py:81
 msgid "Kernel detach: Failed."
 msgstr "内核分离：失败。"
 
 #: meerk40t/balormk/usb_connection.py:95 meerk40t/ch341/libusb.py:121
-#: meerk40t/device/ch341/ch341libusbdriver.py:125
-#: meerk40t/newly/usb_connection.py:85
+#: meerk40t/device/ch341/ch341libusbdriver.py:125 meerk40t/newly/usb_connection.py:85
 msgid "Kernel detach: Not Implemented."
 msgstr "内核分离：未实现。"
 
 #: meerk40t/balormk/usb_connection.py:101 meerk40t/ch341/libusb.py:127
-#: meerk40t/device/ch341/ch341libusbdriver.py:131
-#: meerk40t/newly/usb_connection.py:91
+#: meerk40t/device/ch341/ch341libusbdriver.py:131 meerk40t/newly/usb_connection.py:91
 msgid "Getting Active Config"
 msgstr "获取活动配置"
+
 #: meerk40t/balormk/usb_connection.py:104 meerk40t/ch341/libusb.py:130
-#: meerk40t/device/ch341/ch341libusbdriver.py:134
-#: meerk40t/newly/usb_connection.py:94
+#: meerk40t/device/ch341/ch341libusbdriver.py:134 meerk40t/newly/usb_connection.py:94
 msgid "Active Config: Success."
 msgstr "激活配置：成功。"
 
 #: meerk40t/balormk/usb_connection.py:110 meerk40t/ch341/libusb.py:136
-#: meerk40t/device/ch341/ch341libusbdriver.py:140
-#: meerk40t/newly/usb_connection.py:100
+#: meerk40t/device/ch341/ch341libusbdriver.py:140 meerk40t/newly/usb_connection.py:100
 msgid "Active Config: Failed."
 msgstr "激活配置：失败。"
 
 #: meerk40t/balormk/usb_connection.py:115 meerk40t/ch341/libusb.py:141
-#: meerk40t/device/ch341/ch341libusbdriver.py:145
-#: meerk40t/newly/usb_connection.py:105
+#: meerk40t/device/ch341/ch341libusbdriver.py:145 meerk40t/newly/usb_connection.py:105
 msgid "Config Set"
 msgstr "配置设置"
 
 #: meerk40t/balormk/usb_connection.py:118 meerk40t/ch341/libusb.py:144
-#: meerk40t/device/ch341/ch341libusbdriver.py:148
-#: meerk40t/newly/usb_connection.py:108
+#: meerk40t/device/ch341/ch341libusbdriver.py:148 meerk40t/newly/usb_connection.py:108
 msgid "Config Set: Success"
 msgstr "配置设置：成功"
 
 #: meerk40t/balormk/usb_connection.py:124 meerk40t/ch341/libusb.py:150
-#: meerk40t/device/ch341/ch341libusbdriver.py:154
-#: meerk40t/newly/usb_connection.py:114
+#: meerk40t/device/ch341/ch341libusbdriver.py:154 meerk40t/newly/usb_connection.py:114
 msgid ""
 "Config Set: Fail\n"
 "(Hint: may recover if you change where the USB is plugged in.)"
@@ -937,81 +915,70 @@ msgstr ""
 "（提示：如果更改USB连接位置可能会恢复。）"
 
 #: meerk40t/balormk/usb_connection.py:133 meerk40t/ch341/libusb.py:165
-#: meerk40t/device/ch341/ch341libusbdriver.py:163
-#: meerk40t/newly/usb_connection.py:123
+#: meerk40t/device/ch341/ch341libusbdriver.py:163 meerk40t/newly/usb_connection.py:123
 msgid "Attempting to claim interface."
 msgstr "尝试声明接口。"
 
 #: meerk40t/balormk/usb_connection.py:135 meerk40t/ch341/libusb.py:167
-#: meerk40t/device/ch341/ch341libusbdriver.py:165
-#: meerk40t/newly/usb_connection.py:125
+#: meerk40t/device/ch341/ch341libusbdriver.py:165 meerk40t/newly/usb_connection.py:125
 msgid "Interface claim: Success"
 msgstr "接口声明：成功"
 
 #: meerk40t/balormk/usb_connection.py:140 meerk40t/ch341/libusb.py:172
-#: meerk40t/device/ch341/ch341libusbdriver.py:170
-#: meerk40t/newly/usb_connection.py:130
+#: meerk40t/device/ch341/ch341libusbdriver.py:170 meerk40t/newly/usb_connection.py:130
 msgid "Interface claim: Failed. (Interface is in use.)"
 msgstr "接口声明：失败。（接口正在使用中。）"
 
 #: meerk40t/balormk/usb_connection.py:147 meerk40t/ch341/libusb.py:179
-#: meerk40t/device/ch341/ch341libusbdriver.py:177
-#: meerk40t/newly/usb_connection.py:137
+#: meerk40t/device/ch341/ch341libusbdriver.py:177 meerk40t/newly/usb_connection.py:137
 msgid "Attempting kernel attach"
 msgstr "尝试内核附加"
 
 #: meerk40t/balormk/usb_connection.py:149 meerk40t/ch341/libusb.py:181
-#: meerk40t/device/ch341/ch341libusbdriver.py:179
-#: meerk40t/newly/usb_connection.py:139
+#: meerk40t/device/ch341/ch341libusbdriver.py:179 meerk40t/newly/usb_connection.py:139
 msgid "Kernel attach: Success."
 msgstr "内核附加：成功。"
 
-#: meerk40t/balormk/usb_connection.py:154
-#: meerk40t/balormk/usb_connection.py:157 meerk40t/ch341/libusb.py:186
-#: meerk40t/ch341/libusb.py:189 meerk40t/device/ch341/ch341libusbdriver.py:184
-#: meerk40t/device/ch341/ch341libusbdriver.py:187
-#: meerk40t/newly/usb_connection.py:144 meerk40t/newly/usb_connection.py:147
+#: meerk40t/balormk/usb_connection.py:154 meerk40t/balormk/usb_connection.py:157
+#: meerk40t/ch341/libusb.py:186 meerk40t/ch341/libusb.py:189
+#: meerk40t/device/ch341/ch341libusbdriver.py:184
+#: meerk40t/device/ch341/ch341libusbdriver.py:187 meerk40t/newly/usb_connection.py:144
+#: meerk40t/newly/usb_connection.py:147
 msgid "Kernel attach: Fail."
 msgstr "内核附加：失败。"
 
 #: meerk40t/balormk/usb_connection.py:162 meerk40t/ch341/libusb.py:194
-#: meerk40t/device/ch341/ch341libusbdriver.py:192
-#: meerk40t/newly/usb_connection.py:152
+#: meerk40t/device/ch341/ch341libusbdriver.py:192 meerk40t/newly/usb_connection.py:152
 msgid "Attempting to release interface."
 msgstr "尝试释放接口。"
 
 #: meerk40t/balormk/usb_connection.py:164 meerk40t/ch341/libusb.py:196
-#: meerk40t/device/ch341/ch341libusbdriver.py:194
-#: meerk40t/newly/usb_connection.py:154
+#: meerk40t/device/ch341/ch341libusbdriver.py:194 meerk40t/newly/usb_connection.py:154
 msgid "Interface released."
 msgstr "接口已释放。"
 
 #: meerk40t/balormk/usb_connection.py:169 meerk40t/ch341/libusb.py:201
-#: meerk40t/device/ch341/ch341libusbdriver.py:199
-#: meerk40t/newly/usb_connection.py:159
+#: meerk40t/device/ch341/ch341libusbdriver.py:199 meerk40t/newly/usb_connection.py:159
 msgid "Interface did not exist."
 msgstr "接口不存在。"
 
 #: meerk40t/balormk/usb_connection.py:174 meerk40t/ch341/libusb.py:206
-#: meerk40t/device/ch341/ch341libusbdriver.py:204
-#: meerk40t/newly/usb_connection.py:164
+#: meerk40t/device/ch341/ch341libusbdriver.py:204 meerk40t/newly/usb_connection.py:164
 msgid "Attempting to dispose resources."
 msgstr "尝试释放资源。"
+
 #: meerk40t/balormk/usb_connection.py:176 meerk40t/ch341/libusb.py:208
-#: meerk40t/device/ch341/ch341libusbdriver.py:206
-#: meerk40t/newly/usb_connection.py:166
+#: meerk40t/device/ch341/ch341libusbdriver.py:206 meerk40t/newly/usb_connection.py:166
 msgid "Dispose Resources: Success"
 msgstr "释放资源：成功"
 
 #: meerk40t/balormk/usb_connection.py:181 meerk40t/ch341/libusb.py:213
-#: meerk40t/device/ch341/ch341libusbdriver.py:211
-#: meerk40t/newly/usb_connection.py:171
+#: meerk40t/device/ch341/ch341libusbdriver.py:211 meerk40t/newly/usb_connection.py:171
 msgid "Dispose Resources: Fail"
 msgstr "释放资源：失败"
 
 #: meerk40t/balormk/usb_connection.py:186 meerk40t/ch341/libusb.py:218
-#: meerk40t/device/ch341/ch341libusbdriver.py:216
-#: meerk40t/newly/usb_connection.py:176
+#: meerk40t/device/ch341/ch341libusbdriver.py:216 meerk40t/newly/usb_connection.py:176
 msgid "Attempting USB reset."
 msgstr "尝试USB重置。"
 
@@ -1022,9 +989,8 @@ msgid "USB connection reset."
 msgstr "USB连接重置。"
 
 #: meerk40t/balormk/usb_connection.py:193 meerk40t/ch341/libusb.py:225
-#: meerk40t/ch341/libusb.py:520 meerk40t/ch341/libusb.py:526
-#: meerk40t/ch341/mock.py:76 meerk40t/ch341/windll.py:85
-#: meerk40t/device/ch341/ch341libusbdriver.py:223
+#: meerk40t/ch341/libusb.py:520 meerk40t/ch341/libusb.py:526 meerk40t/ch341/mock.py:76
+#: meerk40t/ch341/windll.py:85 meerk40t/device/ch341/ch341libusbdriver.py:223
 #: meerk40t/device/ch341/libusb.py:76 meerk40t/device/ch341/mock.py:70
 #: meerk40t/device/ch341/windll.py:66 meerk40t/newly/usb_connection.py:183
 msgid "USB connection did not exist."
@@ -1032,9 +998,9 @@ msgstr "USB连接不存在。"
 
 #: meerk40t/balormk/usb_connection.py:213 meerk40t/ch341/libusb.py:478
 #: meerk40t/ch341/mock.py:49 meerk40t/ch341/windll.py:50
-#: meerk40t/device/ch341/ch341libusbdriver.py:234
-#: meerk40t/device/ch341/libusb.py:31 meerk40t/device/ch341/mock.py:41
-#: meerk40t/device/ch341/windll.py:31 meerk40t/newly/usb_connection.py:203
+#: meerk40t/device/ch341/ch341libusbdriver.py:234 meerk40t/device/ch341/libusb.py:31
+#: meerk40t/device/ch341/mock.py:41 meerk40t/device/ch341/windll.py:31
+#: meerk40t/newly/usb_connection.py:203
 msgid "Attempting connection to USB."
 msgstr "尝试连接到USB。"
 
@@ -1044,15 +1010,14 @@ msgstr "在分离和声明期间设备失败"
 
 #: meerk40t/balormk/usb_connection.py:230 meerk40t/ch341/libusb.py:494
 #: meerk40t/ch341/mock.py:54 meerk40t/ch341/windll.py:63
-#: meerk40t/device/ch341/ch341libusbdriver.py:249
-#: meerk40t/device/ch341/libusb.py:44 meerk40t/device/ch341/mock.py:49
-#: meerk40t/device/ch341/windll.py:44 meerk40t/newly/usb_connection.py:220
+#: meerk40t/device/ch341/ch341libusbdriver.py:249 meerk40t/device/ch341/libusb.py:44
+#: meerk40t/device/ch341/mock.py:49 meerk40t/device/ch341/windll.py:44
+#: meerk40t/newly/usb_connection.py:220
 msgid "USB Connected."
 msgstr "USB已连接。"
 
 #: meerk40t/balormk/usb_connection.py:234 meerk40t/ch341/libusb.py:484
-#: meerk40t/device/ch341/ch341libusbdriver.py:253
-#: meerk40t/newly/usb_connection.py:224
+#: meerk40t/device/ch341/ch341libusbdriver.py:253 meerk40t/newly/usb_connection.py:224
 msgid "PyUsb detected no backend LibUSB driver."
 msgstr "PyUsb未检测到后端LibUSB驱动程序。"
 
@@ -1065,17 +1030,17 @@ msgstr "连接到USB失败。\n"
 
 #: meerk40t/balormk/usb_connection.py:244 meerk40t/ch341/libusb.py:524
 #: meerk40t/ch341/mock.py:74 meerk40t/ch341/windll.py:83
-#: meerk40t/device/ch341/ch341libusbdriver.py:264
-#: meerk40t/device/ch341/libusb.py:74 meerk40t/device/ch341/mock.py:68
-#: meerk40t/device/ch341/windll.py:64 meerk40t/newly/usb_connection.py:234
+#: meerk40t/device/ch341/ch341libusbdriver.py:264 meerk40t/device/ch341/libusb.py:74
+#: meerk40t/device/ch341/mock.py:68 meerk40t/device/ch341/windll.py:64
+#: meerk40t/newly/usb_connection.py:234
 msgid "Attempting disconnection from USB."
 msgstr "尝试断开与USB的连接。"
 
 #: meerk40t/balormk/usb_connection.py:253 meerk40t/ch341/libusb.py:530
 #: meerk40t/ch341/mock.py:80 meerk40t/ch341/windll.py:89
-#: meerk40t/device/ch341/ch341libusbdriver.py:271
-#: meerk40t/device/ch341/libusb.py:80 meerk40t/device/ch341/mock.py:78
-#: meerk40t/device/ch341/windll.py:72 meerk40t/newly/usb_connection.py:243
+#: meerk40t/device/ch341/ch341libusbdriver.py:271 meerk40t/device/ch341/libusb.py:80
+#: meerk40t/device/ch341/mock.py:78 meerk40t/device/ch341/windll.py:72
+#: meerk40t/newly/usb_connection.py:243
 msgid "USB Disconnection Successful.\n"
 msgstr "USB断开连接成功。\n"
 
@@ -1094,6 +1059,7 @@ msgstr "条件不良的矩阵。请继续尝试。"
 #: meerk40t/camera/camera.py:148
 msgid "Matrix."
 msgstr "矩阵。"
+
 #: meerk40t/camera/camera.py:153
 msgid "Success. {count} images so far."
 msgstr "成功。目前已有 {count} 张图像。"
@@ -1138,29 +1104,28 @@ msgstr ""
 "配置设置：失败\n"
 "在此平台上未实现配置设置。通过。"
 
-#: meerk40t/ch341/libusb.py:496 meerk40t/ch341/mock.py:55
-#: meerk40t/ch341/windll.py:64 meerk40t/device/ch341/libusb.py:46
-#: meerk40t/device/ch341/mock.py:50 meerk40t/device/ch341/windll.py:45
+#: meerk40t/ch341/libusb.py:496 meerk40t/ch341/mock.py:55 meerk40t/ch341/windll.py:64
+#: meerk40t/device/ch341/libusb.py:46 meerk40t/device/ch341/mock.py:50
+#: meerk40t/device/ch341/windll.py:45
 msgid "Sending CH341 mode change to EPP1.9."
 msgstr "发送CH341模式更改到EPP1.9。"
 
-#: meerk40t/ch341/libusb.py:501 meerk40t/ch341/mock.py:58
-#: meerk40t/ch341/windll.py:69 meerk40t/device/ch341/libusb.py:51
-#: meerk40t/device/ch341/mock.py:53 meerk40t/device/ch341/windll.py:53
+#: meerk40t/ch341/libusb.py:501 meerk40t/ch341/mock.py:58 meerk40t/ch341/windll.py:69
+#: meerk40t/device/ch341/libusb.py:51 meerk40t/device/ch341/mock.py:53
+#: meerk40t/device/ch341/windll.py:53
 msgid "CH341 mode change to EPP1.9: Success."
 msgstr "CH341模式更改为EPP1.9：成功。"
 
-#: meerk40t/ch341/libusb.py:503 meerk40t/ch341/mock.py:61
-#: meerk40t/ch341/windll.py:72 meerk40t/device/ch341/libusb.py:53
-#: meerk40t/device/ch341/mock.py:56 meerk40t/device/ch341/windll.py:55
+#: meerk40t/ch341/libusb.py:503 meerk40t/ch341/mock.py:61 meerk40t/ch341/windll.py:72
+#: meerk40t/device/ch341/libusb.py:53 meerk40t/device/ch341/mock.py:56
+#: meerk40t/device/ch341/windll.py:55
 msgid "CH341 mode change to EPP1.9: Fail."
 msgstr "CH341模式更改为EPP1.9：失败。"
 
-#: meerk40t/ch341/libusb.py:506 meerk40t/ch341/libusb.py:515
-#: meerk40t/ch341/mock.py:65 meerk40t/ch341/windll.py:74
-#: meerk40t/device/ch341/ch341.py:181 meerk40t/device/ch341/libusb.py:56
-#: meerk40t/device/ch341/libusb.py:68 meerk40t/device/ch341/mock.py:59
-#: meerk40t/device/ch341/windll.py:55
+#: meerk40t/ch341/libusb.py:506 meerk40t/ch341/libusb.py:515 meerk40t/ch341/mock.py:65
+#: meerk40t/ch341/windll.py:74 meerk40t/device/ch341/ch341.py:181
+#: meerk40t/device/ch341/libusb.py:56 meerk40t/device/ch341/libusb.py:68
+#: meerk40t/device/ch341/mock.py:59 meerk40t/device/ch341/windll.py:55
 msgid "Device Connected.\n"
 msgstr "设备已连接。\n"
 
@@ -1197,6 +1162,7 @@ msgstr "没有Windll接口。跳过。"
 #: meerk40t/core/bindalias.py:264
 msgid "bind <key> <console command>"
 msgstr "绑定 <键> <控制台命令>"
+
 #: meerk40t/core/bindalias.py:270
 msgid "Binds:"
 msgstr "绑定："
@@ -1259,27 +1225,28 @@ msgstr "减少移动时间"
 
 #: meerk40t/core/planner.py:56
 msgid ""
-"Using this option can significantly reduce the time spent moving between "
-"elements with the laser off by optimizing the sequence that elements are "
-"burned. "
+"Using this option can significantly reduce the time spent moving between elements "
+"with the laser off by optimizing the sequence that elements are burned. "
 msgstr ""
 "使用此选项可以通过优化元素烧录的顺序，显著减少关闭激光器时移动元素之间的时间。"
 
 #: meerk40t/core/planner.py:62
 msgid ""
-"When this option is NOT checked, elements are burned strictly in the "
-"order they appear in the Operation tree, and the Merge options will have "
-"no effect on the burn time. "
+"When this option is NOT checked, elements are burned strictly in the order they "
+"appear in the Operation tree, and the Merge options will have no effect on the burn "
+"time. "
 msgstr ""
-"当未选中此选项时，元素将按照它们在操作树中出现的顺序严格烧录，并且合并选项不会对烧录时间产生影响。"
+"当未选中此选项时，元素将按照它们在操作树中出现的顺序严格烧录，并且合并选项不会对烧录"
+"时间产生影响。"
 
 #: meerk40t/core/planner.py:68
 msgid ""
-"When this option IS checked, Meerk40t will burn each subpath and then "
-"move to the nearest remaining subpath instead, reducing the time taken "
-"moving between burn items."
+"When this option IS checked, Meerk40t will burn each subpath and then move to the "
+"nearest remaining subpath instead, reducing the time taken moving between burn "
+"items."
 msgstr ""
-"当选中此选项时，Meerk40t将首先烧录每个子路径，然后移动到最近的剩余子路径，从而减少在烧录项目之间移动所需的时间。"
+"当选中此选项时，软件将首先烧录每个子路径，然后移动到最近的剩余子路径，从而减少在烧录"
+"项目之间移动所需的时间。"
 
 #: meerk40t/core/planner.py:81
 msgid "Burn Complete Subpaths"
@@ -1287,22 +1254,26 @@ msgstr "烧录完整子路径"
 
 #: meerk40t/core/planner.py:82
 msgid ""
-"By default Reduce Travel Time optimises using SVG individual path "
-"segments, which means that non-closed subpaths can be burned in several "
-"shorter separate burns rather than one continuous burn from start to end."
-" "
+"By default Reduce Travel Time optimises using SVG individual path segments, which "
+"means that non-closed subpaths can be burned in several shorter separate burns "
+"rather than one continuous burn from start to end. "
 msgstr ""
-"默认情况下，减少移动时间是通过优化SVG各个路径段来实现的，这意味着非闭合的子路径可以在多次较短的分离烧录中烧录，而不是一次从开始到结束的连续烧录。"
+"默认情况下，减少移动时间是通过优化SVG各个路径段来实现的，这意味着非闭合的子路径可以"
+"在多次较短的分离烧录中烧录，而不是一次从开始到结束的连续烧录。"
+
 #: meerk40t/core/planner.py:88
 msgid ""
-"This option only affects non-closed paths. When this option is checked, "
-"non-closed subpaths are always burned in one continuous burn from start "
-"to end rather than having burns start in the middle. While this may "
-"create a longer travel move to the end of the subpath, it also avoids "
-"later travel moves to or from the intermediate point. The total travel "
-"time may therefore be shorter or longer. It may also avoid minor "
-"differences in total burn depth at the point the burns join."
+"This option only affects non-closed paths. When this option is checked, non-closed "
+"subpaths are always burned in one continuous burn from start to end rather than "
+"having burns start in the middle. While this may create a longer travel move to the "
+"end of the subpath, it also avoids later travel moves to or from the intermediate "
+"point. The total travel time may therefore be shorter or longer. It may also avoid "
+"minor differences in total burn depth at the point the burns join."
 msgstr ""
+"该选项仅影响非闭合路径。 选中此选项后，非闭合子路径始终从头到尾在一次连续刻录中刻"
+"录，而不是从中间开始刻录。 虽然这可能会产生到子路径末端的较长行进移动，但它也避免了"
+"稍后往返于中间点的行进移动。 因此，总行程时间可能会更短或更长。 它还可以避免烧伤连接"
+"点处总烧伤深度的微小差异。"
 
 #: meerk40t/core/planner.py:107
 msgid "Merge Passes"
@@ -1310,26 +1281,30 @@ msgstr "合并多次烧录"
 
 #: meerk40t/core/planner.py:108
 msgid ""
-"Combine multiple passes into the same optimization. This will typically "
-"result in each subpath being burned multiple times in succession, burning"
-" closed paths round-and-round and non-closed paths back-and-forth, before"
-" Meerk40t moves to the next path."
+"Combine multiple passes into the same optimization. This will typically result in "
+"each subpath being burned multiple times in succession, burning closed paths round-"
+"and-round and non-closed paths back-and-forth, before Meerk40t moves to the next "
+"path."
 msgstr ""
+"将多个通道合并到同一个优化中。 这通常会导致每个子路径被连续燃烧多次，在机器移动到下"
+"一个路径之前，会来回燃烧封闭路径和来回燃烧非封闭路径。"
 
 #: meerk40t/core/planner.py:116
 msgid ""
-"If you have a complex design with many paths and are burning with "
-"multiple passes, using this option can significantly REDUCE the "
-"optimization time."
+"If you have a complex design with many paths and are burning with multiple passes, "
+"using this option can significantly REDUCE the optimization time."
 msgstr ""
+"如果您有一个包含许多路径的复杂设计，并且需要多次刻录，则使用此选项可以显着减少优化时"
+"间。"
 
 #: meerk40t/core/planner.py:121
 msgid ""
-"NOTE: Where you burn very short paths multiple times in quick succession,"
-" this does not allow time for the material to cool down between burns, "
-"and this can result in greater charring or even an increased risk of the "
-"material catching fire."
+"NOTE: Where you burn very short paths multiple times in quick succession, this does "
+"not allow time for the material to cool down between burns, and this can result in "
+"greater charring or even an increased risk of the material catching fire."
 msgstr ""
+"注意：如果您连续多次燃烧非常短的路径，则材料在燃烧之间没有时间冷却，这可能会导致更大"
+"的炭化，甚至增加材料着火的风险。"
 
 #: meerk40t/core/planner.py:136
 msgid "Merge Operations"
@@ -1337,24 +1312,29 @@ msgstr "合并操作"
 
 #: meerk40t/core/planner.py:137
 msgid ""
-"Combine multiple consecutive burn operations and optimize across them "
-"globally. Operations of different types will be optimized together to "
-"reduce travel time, so vector and raster burns will be mixed."
+"Combine multiple consecutive burn operations and optimize across them globally. "
+"Operations of different types will be optimized together to reduce travel time, so "
+"vector and raster burns will be mixed."
 msgstr ""
+"组合多个连续的刻录操作并在全局范围内进行优化。 不同类型的操作将一起优化以减少行进时"
+"间，因此矢量和光栅刻录将被混合。"
 
 #: meerk40t/core/planner.py:143
 msgid ""
-"If Merge Passes is not checked, Operations with >1 passes will only have "
-"the same passes merged. If Merge Passes is also checked, then all burns "
-"will be optimized globally."
+"If Merge Passes is not checked, Operations with >1 passes will only have the same "
+"passes merged. If Merge Passes is also checked, then all burns will be optimized "
+"globally."
 msgstr ""
+"如果未选中“合并通道”，则具有 >1 个通道的操作将仅合并相同的通道。 如果还选中了合并通"
+"道，则所有刻录都将进行全局优化。"
 
 #: meerk40t/core/planner.py:148
 msgid ""
-"If you have a complex design with many paths across multiple consecutive "
-"burn operations, using this option can significantly INCREASE the "
-"optimization time."
+"If you have a complex design with many paths across multiple consecutive burn "
+"operations, using this option can significantly INCREASE the optimization time."
 msgstr ""
+"如果您有一个复杂的设计，其中有多个路径跨越多个连续的刻录操作，则使用此选项可以显着增"
+"加优化时间。"
 
 #: meerk40t/core/planner.py:161
 msgid "Burn Inner First"
@@ -1362,30 +1342,34 @@ msgstr "优先烧录内部"
 
 #: meerk40t/core/planner.py:162
 msgid ""
-"Ensure that inside burns are done before an outside cut in order to "
-"ensure that burns inside a cut-out piece are done before the cut piece "
-"shifts or drops out of the material."
+"Ensure that inside burns are done before an outside cut in order to ensure that "
+"burns inside a cut-out piece are done before the cut piece shifts or drops out of "
+"the material."
 msgstr ""
+"确保在外部切割之前完成内部燃烧，以确保在切割件移动或从材料中掉落之前完成切割件内部的"
+"燃烧。"
 
 #: meerk40t/core/planner.py:167
 msgid ""
-"If you find that using this option significantly increases the "
-"optimization time, alternatives are:\n"
-"* Deselecting Cut Inner First if you are not cutting fully through your "
-"material\n"
-"* Putting the inner paths into separate earlier operation(s) and not "
-"using Merge Operations or Cut Inner First\n"
+"If you find that using this option significantly increases the optimization time, "
+"alternatives are:\n"
+"* Deselecting Cut Inner First if you are not cutting fully through your material\n"
+"* Putting the inner paths into separate earlier operation(s) and not using Merge "
+"Operations or Cut Inner First\n"
 "* If you are using multiple passes, check Merge Passes"
 msgstr ""
+"如果您发现使用此选项会显着增加优化时间，替代方案是：\n"
+"* 如果您没有完全切割材料，请取消选择首先切割内部\n"
+"* 将内部路径放入单独的早期操作中，并且不使用合并操作或首先剪切内部\n"
+"* 如果您使用多个通行证，请选中合并通行证"
 
-#: meerk40t/core/planner.py:182
-#: meerk40t/gui/propertypanels/imageproperty.py:731
+#: meerk40t/core/planner.py:182 meerk40t/gui/propertypanels/imageproperty.py:731
 msgid "Tolerance"
 msgstr "公差"
 
 #: meerk40t/core/planner.py:183
 msgid "Tolerance to decide if a shape is truly inside another one."
-msgstr ""
+msgstr "确定一个形状是否真正位于另一个形状内部的公差。"
 
 #: meerk40t/core/planner.py:193
 msgid "Group Inner Burns"
@@ -1393,26 +1377,32 @@ msgstr "分组内部烧录"
 
 #: meerk40t/core/planner.py:194
 msgid ""
-"Try to complete a set of inner burns and the associated outer cut before "
-"moving onto other elements. This option only does something if Burn Inner "
-"First is also selected. If your design has multiple separate pieces, "
-"this should mostly cause each piece to be burned entirely before moving "
-"on to burn another piece. This can reduce the risk of, for example, a "
-"shift ruining an entire piece of material by ensuring that one piece is "
-"finished before starting on another."
+"Try to complete a set of inner burns and the associated outer cut before moving "
+"onto other elements. This option only does something if Burn Inner First is also "
+"selected. If your design has multiple separate pieces, this should mostly cause "
+"each piece to be burned entirely before moving on to burn another piece. This can "
+"reduce the risk of, for example, a shift ruining an entire piece of material by "
+"ensuring that one piece is finished before starting on another."
 msgstr ""
+"在转向其他元素之前，尝试完成一组内部烧伤和相关的外部切割。 仅当也选择了“首先刻录内"
+"部”时，此选项才会起作用。 如果您的设计有多个单独的部分，这通常会导致每个部分在继续燃"
+"烧另一部分之前被完全燃烧。 例如，通过确保一件材料在开始另一件材料之前完成，可以降低"
+"轮班损坏整件材料的风险。"
+
 #: meerk40t/core/planner.py:204
 msgid ""
-"This optimization works best with Merge Operations also checked though "
-"this is not a requirement."
-msgstr ""
+"This optimization works best with Merge Operations also checked though this is not "
+"a requirement."
+msgstr "此优化最适合同时检查合并操作，尽管这不是必需的。"
 
 #: meerk40t/core/planner.py:208
 msgid ""
-"Because this optimization is done once rasters have been turned into "
-"images, inner elements may span multiple design pieces. In this case, "
-"they may be optimized together."
+"Because this optimization is done once rasters have been turned into images, inner "
+"elements may span multiple design pieces. In this case, they may be optimized "
+"together."
 msgstr ""
+"由于此优化是在光栅转换为图像后完成的，因此内部元素可能跨越多个设计片段。 在这种情况"
+"下，它们可以一起优化。"
 
 #: meerk40t/core/planner.py:222
 msgid "Closed Distance"
@@ -1420,13 +1410,13 @@ msgstr "闭合距离"
 
 #: meerk40t/core/planner.py:223
 msgid ""
-"How close in device-specific natural units do endpoints need to be to "
-"count as closed?"
-msgstr ""
+"How close in device-specific natural units do endpoints need to be to count as "
+"closed?"
+msgstr "端点需要在特定于设备的自然单位中有多接近才能算作闭合？"
 
 #: meerk40t/core/planner.py:293
 msgid "plan<?> <command>"
-msgstr ""
+msgstr "计划？"
 
 #: meerk40t/core/planner.py:323 meerk40t/core/planner.py:327
 #: meerk40t/core/planner.py:334 meerk40t/core/spoolers.py:55
@@ -1450,55 +1440,56 @@ msgstr ""
 
 #: meerk40t/core/planner.py:324
 msgid "Plan:"
-msgstr ""
+msgstr "计划："
 
 #: meerk40t/core/planner.py:328
 msgid "Plan {plan}:"
-msgstr ""
+msgstr "计划："
 
 #: meerk40t/core/planner.py:331
 msgid "Commands {plan}:"
-msgstr ""
+msgstr "命令{计划}："
 
 #: meerk40t/core/planner.py:340
 msgid "plan(-selected)<?> copy"
-msgstr ""
+msgstr "计划（-选定）<?> 复制"
 
 #: meerk40t/core/planner.py:521
 msgid "Copied Operations."
-msgstr ""
+msgstr "复制操作。"
 
 #: meerk40t/core/planner.py:526
 msgid "index of location to insert command"
-msgstr ""
+msgstr "插入命令的位置索引"
 
 #: meerk40t/core/planner.py:528
 msgid "console command to append"
-msgstr ""
+msgstr "要附加的控制台命令"
 
 #: meerk40t/core/planner.py:531
 msgid "plan<?> command"
-msgstr ""
+msgstr "计划<?> 命令"
 
 #: meerk40t/core/planner.py:548
 msgid "plan console... requires a console command to inject into the current plan"
-msgstr ""
+msgstr "计划控制台...需要控制台命令才能注入当前计划"
 
 #: meerk40t/core/planner.py:560
 msgid "Invalid index for command insert."
-msgstr ""
+msgstr "命令插入的索引无效。"
 
 #: meerk40t/core/planner.py:566
 msgid "plan<?> preprocess"
-msgstr ""
+msgstr "计划<?> 预处理"
 
 #: meerk40t/core/planner.py:577
 msgid "plan<?> validate"
-msgstr ""
+msgstr "计划<?> 验证"
 
 #: meerk40t/core/planner.py:593
 msgid "plan<?> blob"
-msgstr ""
+msgstr "计划<?> 斑点"
+
 #: meerk40t/core/planner.py:604
 msgid "plan<?> preopt"
 msgstr "计划<?> 预优化"
@@ -1599,6 +1590,7 @@ msgstr "X轴变化"
 #: meerk40t/lihuiyu/device.py:513
 msgid "change in y"
 msgstr "Y轴变化"
+
 #: meerk40t/core/spoolers.py:217 meerk40t/core/spoolers.py:241
 msgid "move <x> <y>: move to position."
 msgstr "移动 <x> <y>: 移动到位置。"
@@ -1634,8 +1626,8 @@ msgstr "SVG视口为床"
 #: meerk40t/core/svg_io.py:104
 msgid ""
 "SVG files can be saved without real physical units.\n"
-"This setting uses the SVG viewport dimensions to scale the rest of the "
-"elements in the file."
+"This setting uses the SVG viewport dimensions to scale the rest of the elements in "
+"the file."
 msgstr ""
 "SVG文件可以保存为没有实际物理单位的格式。\n"
 "此设置使用SVG视口尺寸来缩放文件中的其余元素。"
@@ -1702,6 +1694,7 @@ msgstr "激光床的高度。"
 #: meerk40t/ruida/device.py:60
 msgid "X Scale Factor"
 msgstr "X轴缩放因子"
+
 #: meerk40t/device/dummydevice.py:86 meerk40t/lihuiyu/device.py:85
 #: meerk40t/ruida/device.py:70
 msgid "Y Scale Factor"
@@ -1804,6 +1797,7 @@ msgstr "反转图像的掩模"
 #: meerk40t/extra/imageactions.py:157
 msgid "add outline of keyhole shape"
 msgstr "添加钥匙孔形状的轮廓"
+
 #: meerk40t/extra/imageactions.py:161
 msgid "render_keyhole <columns> <rows> <dpi>"
 msgstr "渲染钥匙孔 <列数> <行数> <dpi>"
@@ -1896,6 +1890,7 @@ msgstr "位于 \"{path}\" 的 Inkscape 可执行文件是：{version}"
 #: meerk40t/extra/inkscape.py:338
 msgid "Optional: location of inkscape executable"
 msgstr "可选：Inkscape 可执行文件的位置"
+
 #: meerk40t/extra/inkscape.py:342
 msgid "inkscape locate    - set the path to inkscape on your computer"
 msgstr "inkscape locate    - 设置在您的计算机上 Inkscape 的路径"
@@ -1914,9 +1909,8 @@ msgstr "调用 Inkscape 转换元素"
 
 #: meerk40t/extra/inkscape.py:422
 msgid ""
-"This file contains certain features that might not be fully supported by "
-"MeerK40t"
-msgstr "此档案包含某些可能不被 MeerK40t 完全支持的特性"
+"This file contains certain features that might not be fully supported by MeerK40t"
+msgstr "此档案包含某些可能不被 设备 完全支持的特性"
 
 #: meerk40t/extra/inkscape.py:429
 msgid "The complete design would be rendered into a single graphic."
@@ -1928,8 +1922,8 @@ msgstr "文本元素将被转换为路径对象。"
 
 #: meerk40t/extra/inkscape.py:437
 msgid ""
-"Do you want to convert the file via inkscape or do you want load the "
-"unmodified file?"
+"Do you want to convert the file via inkscape or do you want load the unmodified "
+"file?"
 msgstr "您要通过 Inkscape 转换档案还是要加载未经修改的档案？"
 
 #: meerk40t/extra/inkscape.py:444
@@ -1946,22 +1940,19 @@ msgstr "SVG 转换"
 
 #: meerk40t/extra/inkscape.py:537
 msgid "Meerk40t does not support all svg-features, so you might want"
-msgstr "Meerk40t 不支持所有 SVG 特性，因此您可能想要"
+msgstr "设备不支持所有 SVG 特性，因此您可能想要"
 
 #: meerk40t/extra/inkscape.py:539
 msgid "to preprocess the file to get a proper representation of the design."
 msgstr "为了获得正确的设计表示，您可能需要预处理档案。"
 
 #: meerk40t/extra/inkscape.py:541
-msgid ""
-" - Certain subvariants of Fonts - single element will be converted to a "
-"path"
+msgid " - Certain subvariants of Fonts - single element will be converted to a path"
 msgstr " - 某些字体的子变体 - 单个元素将被转换为路径"
 
 #: meerk40t/extra/inkscape.py:545
 msgid ""
-" - Gradient fills / patterns - the whole design will be rendered into a "
-"graphic"
+" - Gradient fills / patterns - the whole design will be rendered into a graphic"
 msgstr " - 渐变填充 / 图案 - 整个设计将被渲染为图形"
 
 #: meerk40t/extra/inkscape.py:549
@@ -1974,10 +1965,9 @@ msgstr "Inkscape"
 
 #: meerk40t/extra/inkscape.py:571
 msgid ""
-"Path to inkscape-executable. Leave empty to let Meerk40t establish "
-"standard locations"
-msgstr ""
-"Inkscape 可执行文件的路径。留空以让 Meerk40t 建立标准位置"
+"Path to inkscape-executable. Leave empty to let Meerk40t establish standard "
+"locations"
+msgstr "Inkscape 可执行文件的路径。留空以让设备建立标准位置"
 
 #: meerk40t/extra/inkscape.py:583
 msgid "Unsupported elements"
@@ -1985,7 +1975,7 @@ msgstr "不受支持的元素"
 
 #: meerk40t/extra/inkscape.py:586
 msgid "Always load into meerk40t"
-msgstr "始终加载到 Meerk40t"
+msgstr "始终加载到软件"
 
 #: meerk40t/extra/inkscape.py:587
 msgid "Convert with inkscape"
@@ -1998,6 +1988,7 @@ msgstr "在加载时询问"
 #: meerk40t/extra/pathoptimize.py:10
 msgid "optimize <type>"
 msgstr "优化 <类型>"
+
 #: meerk40t/core/elements/shapes.py:278 meerk40t/core/elements/shapes.py:307
 #: meerk40t/core/elements/shapes.py:367 meerk40t/core/elements/shapes.py:906
 #: meerk40t/core/elements/shapes.py:938 meerk40t/core/elements/shapes.py:1494
@@ -2105,9 +2096,10 @@ msgstr "在 github 上找不到任何发布信息"
 #: meerk40t/extra/updater.py:36
 msgid "Check for betas"
 msgstr "检查测试版"
+
 #: meerk40t/extra/updater.py:41 meerk40t/gui/wxmmain.py:3145
 msgid "Check whether a newer version of Meerk40t is available"
-msgstr "检查是否有更新版本的 Meerk40t 可用"
+msgstr "检查是否有更新版本的软件可用"
 
 #: meerk40t/extra/updater.py:257
 msgid "Do you want to go the download page?"
@@ -2172,7 +2164,6 @@ msgstr "右侧原点"
 
 #: meerk40t/grbl/device.py:137 meerk40t/moshi/device.py:166
 #: meerk40t/newly/device.py:153
-#, fuzzy
 msgid "Indicates the device Home is at the right side"
 msgstr "指示设备原点在右侧"
 
@@ -2194,10 +2185,10 @@ msgstr "发送协议"
 
 #: meerk40t/grbl/device.py:294
 msgid ""
-"Buffered sends data as long as the planning buffer permits it being sent."
-" Sync requires an 'ok' between each line sent."
-msgstr ""
-"缓冲发送数据，只要计划缓冲区允许发送。同步模式需要在每行发送之间使用 'ok'。"
+"Buffered sends data as long as the planning buffer permits it being sent. Sync "
+"requires an 'ok' between each line sent."
+msgstr "缓冲发送数据，只要计划缓冲区允许发送。同步模式需要在每行发送之间使用 'ok'。"
+
 #: meerk40t/grbl/device.py:305
 msgid "Planning Buffer Size"
 msgstr "计划缓冲区大小"
@@ -2232,8 +2223,8 @@ msgstr "设备有终点开关"
 
 #: meerk40t/grbl/device.py:361
 msgid ""
-"If the device has endstops, then the laser can home itself to this "
-"position = physical home ($H)"
+"If the device has endstops, then the laser can home itself to this position = "
+"physical home ($H)"
 msgstr "如果设备有终点开关，则激光可以回到此位置（物理原点，$H）"
 
 #: meerk40t/grbl/device.py:370
@@ -2242,10 +2233,12 @@ msgstr "模拟红点"
 
 #: meerk40t/grbl/device.py:371
 msgid ""
-"If active then you can turn on the laser at a very low power to get a "
-"visual representation of the current position to help with focusing and "
-"positioning. Use with care!"
-msgstr "如果启用，则可以以非常低的功率打开激光，以获得当前位置的可视化表示，以帮助对焦和定位。请谨慎使用！"
+"If active then you can turn on the laser at a very low power to get a visual "
+"representation of the current position to help with focusing and positioning. Use "
+"with care!"
+msgstr ""
+"如果启用，则可以以非常低的功率打开激光，以获得当前位置的可视化表示，以帮助对焦和定"
+"位。请谨慎使用！"
 
 #: meerk40t/grbl/device.py:385
 msgid "Reddot Laser strength"
@@ -2253,8 +2246,8 @@ msgstr "红点激光强度"
 
 #: meerk40t/grbl/device.py:387
 msgid ""
-"Provide the power level of the red dot indicator, needs to be under the "
-"critical laser strength to not burn the material"
+"Provide the power level of the red dot indicator, needs to be under the critical "
+"laser strength to not burn the material"
 msgstr "提供红点指示器的功率级别，必须低于临界激光功率，以防止材料烧焦"
 
 #: meerk40t/grbl/device.py:413
@@ -2300,6 +2293,7 @@ msgstr "激活 grbl 解释器。"
 #: meerk40t/grbl/device.py:615
 msgid "Grbl Interpreter attached to {device}"
 msgstr "已连接至 {device} 的 Grbl 解释器。"
+
 #: meerk40t/grbl/device.py:618
 msgid "Interpreter cannot be attached to any device."
 msgstr "解释器无法附加到任何设备。"
@@ -2372,43 +2366,35 @@ msgstr "* Alois Zingl 为他出色的 Bresenham 曲线绘制算法。\n"
 
 #: meerk40t/gui/about.py:98
 msgid ""
-"* @joerlane for his hardware investigation wizardry into how the M2-Nano "
-"works.\n"
-msgstr ""
-"* @joerlane 为他的硬件调查技能，了解 M2-Nano 如何工作。\n"
+"* @joerlane for his hardware investigation wizardry into how the M2-Nano works.\n"
+msgstr "* @joerlane 为他的硬件调查技能，了解 M2-Nano 如何工作。\n"
 
 #: meerk40t/gui/about.py:101
 msgid "* All the MeerKittens, {developer}. \n"
-msgstr "* 所有的 MeerKittens，{developer}。\n"
+msgstr "* 所有的开发者，{developer}。\n"
 
 #: meerk40t/gui/about.py:104
-msgid ""
-"* Beta testers and anyone who reported issues that helped us improve "
-"things.\n"
+msgid "* Beta testers and anyone who reported issues that helped us improve things.\n"
 msgstr "* 测试版测试人员和所有帮助我们改进问题的人。\n"
 
 #: meerk40t/gui/about.py:107
 msgid "* Translators who helped internationalise MeerK40t for worldwide use.\n"
-msgstr "* 帮助国际化 MeerK40t 以供全球使用的翻译人员。\n"
+msgstr "* 帮助国际化（聊城钟镭激光）以供全球使用的翻译人员。\n"
 
 #: meerk40t/gui/about.py:110
 msgid ""
-"* Users who have added to or edited the Wiki documentation to help other "
-"users.\n"
+"* Users who have added to or edited the Wiki documentation to help other users.\n"
 msgstr "* 添加或编辑 Wiki 文档来帮助其他用户的用户们。\n"
 
 #: meerk40t/gui/about.py:114
 msgid ""
-"* Icons8 (https://icons8.com/) for their great icons used throughout the "
-"project.\n"
-msgstr ""
-"* Icons8 (https://icons8.com/) 为他们在整个项目中使用的出色图标。\n"
+"* Icons8 (https://icons8.com/) for their great icons used throughout the project.\n"
+msgstr "* Icons8 (https://icons8.com/) 为他们在整个项目中使用的出色图标。\n"
+
 #: meerk40t/gui/about.py:117
 msgid ""
-"* The countless developers who created other software that we use "
-"internally.\n"
-msgstr ""
-"* 为我们内部使用的其他软件创造的无数开发人员。\n"
+"* The countless developers who created other software that we use internally.\n"
+msgstr "* 为我们内部使用的其他软件创造的无数开发人员。\n"
 
 #: meerk40t/gui/about.py:120
 msgid "* Regebro for his svg.path module which inspired svgelements.\n"
@@ -2420,7 +2406,7 @@ msgstr "* SVG 工作组。\n"
 
 #: meerk40t/gui/about.py:122
 msgid "* Hackers and tinkerers."
-msgstr "* 黑客和改造者。\n"
+msgstr "* 黑客和改造者。"
 
 #: meerk40t/gui/about.py:153
 msgid "Copy to Clipboard"
@@ -2434,8 +2420,7 @@ msgstr "检查更新"
 msgid "Configuration-Path"
 msgstr "配置路径"
 
-#: meerk40t/gui/about.py:293 meerk40t/gui/about.py:301
-#: meerk40t/gui/wxmmain.py:1813
+#: meerk40t/gui/about.py:293 meerk40t/gui/about.py:301 meerk40t/gui/wxmmain.py:1813
 msgid "About"
 msgstr "关于"
 
@@ -2494,44 +2479,39 @@ msgstr "参考对象"
 
 #: meerk40t/gui/alignment.py:190 meerk40t/gui/alignment.py:191
 #: meerk40t/gui/alignment.py:394 meerk40t/gui/alignment.py:395
-#: meerk40t/gui/opassignment.py:57
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:31
+#: meerk40t/gui/opassignment.py:57 meerk40t/gui/statusbarwidgets/opassignwidget.py:31
 msgid "Leave"
 msgstr "离开"
 
 #: meerk40t/gui/alignment.py:190 meerk40t/gui/alignment.py:394
-#: meerk40t/gui/alignment.py:1140
-#: meerk40t/gui/propertypanels/imageproperty.py:151
+#: meerk40t/gui/alignment.py:1140 meerk40t/gui/propertypanels/imageproperty.py:151
 #: meerk40t/gui/propertypanels/textproperty.py:377 meerk40t/gui/wxmmain.py:1196
 msgid "Left"
 msgstr "左"
+
 #: meerk40t/balormk/gui/gui.py:123 meerk40t/gui/alignment.py:190
 #: meerk40t/gui/alignment.py:191 meerk40t/gui/alignment.py:394
 #: meerk40t/gui/alignment.py:395 meerk40t/gui/alignment.py:1140
-#: meerk40t/gui/alignment.py:1141
-#: meerk40t/gui/propertypanels/placementproperty.py:117
+#: meerk40t/gui/alignment.py:1141 meerk40t/gui/propertypanels/placementproperty.py:117
 #: meerk40t/gui/propertypanels/textproperty.py:377
 #: meerk40t/gui/scenewidgets/guidewidget.py:325
 msgid "Center"
 msgstr "中心"
 
 #: meerk40t/gui/alignment.py:190 meerk40t/gui/alignment.py:394
-#: meerk40t/gui/alignment.py:1140
-#: meerk40t/gui/propertypanels/imageproperty.py:153
+#: meerk40t/gui/alignment.py:1140 meerk40t/gui/propertypanels/imageproperty.py:153
 #: meerk40t/gui/propertypanels/textproperty.py:377 meerk40t/gui/wxmmain.py:1258
 msgid "Right"
 msgstr "右"
 
 #: meerk40t/gui/alignment.py:191 meerk40t/gui/alignment.py:395
-#: meerk40t/gui/alignment.py:1141
-#: meerk40t/gui/propertypanels/imageproperty.py:157
+#: meerk40t/gui/alignment.py:1141 meerk40t/gui/propertypanels/imageproperty.py:157
 #: meerk40t/gui/wxmmain.py:1275
 msgid "Top"
 msgstr "顶部"
 
 #: meerk40t/gui/alignment.py:191 meerk40t/gui/alignment.py:395
-#: meerk40t/gui/alignment.py:1141
-#: meerk40t/gui/propertypanels/imageproperty.py:155
+#: meerk40t/gui/alignment.py:1141 meerk40t/gui/propertypanels/imageproperty.py:155
 #: meerk40t/gui/wxmmain.py:1292
 msgid "Bottom"
 msgstr "底部"
@@ -2542,10 +2522,9 @@ msgstr "相对于 X 轴的对齐方式："
 
 #: meerk40t/gui/alignment.py:205 meerk40t/gui/alignment.py:418
 msgid ""
-"Align object at the left side, centered or to the right side in relation "
-"to the target point"
-msgstr ""
-"将对象对齐到目标点的左侧、居中或右侧"
+"Align object at the left side, centered or to the right side in relation to the "
+"target point"
+msgstr "将对象对齐到目标点的左侧、居中或右侧"
 
 #: meerk40t/gui/alignment.py:213 meerk40t/gui/alignment.py:1157
 msgid "Alignment relative to Y-Axis:"
@@ -2553,10 +2532,8 @@ msgstr "相对于 Y 轴的对齐方式："
 
 #: meerk40t/gui/alignment.py:220 meerk40t/gui/alignment.py:433
 msgid ""
-"Align object to the top, centered or to the bottom in relation to the "
-"target point"
-msgstr ""
-"将对象对齐到目标点的顶部、居中或底部"
+"Align object to the top, centered or to the bottom in relation to the target point"
+msgstr "将对象对齐到目标点的顶部、居中或底部"
 
 #: meerk40t/gui/alignment.py:228
 msgid "Relative to:"
@@ -2589,8 +2566,7 @@ msgstr "空间"
 msgid "Shape"
 msgstr "形状"
 
-#: meerk40t/gui/alignment.py:399
-#: meerk40t/gui/propertypanels/pathproperty.py:299
+#: meerk40t/gui/alignment.py:399 meerk40t/gui/propertypanels/pathproperty.py:299
 msgid "Points"
 msgstr "点"
 
@@ -2601,6 +2577,7 @@ msgstr "参考对象"
 #: meerk40t/gui/alignment.py:411
 msgid "Position of element relative to point for X-Axis:"
 msgstr "元素相对于 X 轴的位置："
+
 #: meerk40t/gui/alignment.py:426
 msgid "Position of element relative to point for Y-Axis:"
 msgstr "元素相对于 Y 轴的位置："
@@ -2611,10 +2588,9 @@ msgstr "保持第一个和最后一个在内部"
 
 #: meerk40t/gui/alignment.py:443
 msgid ""
-"Keep the first and last element inside the target area, effectively "
-"ignoring the X- and Y-settings"
-msgstr ""
-"保持第一个和最后一个元素位于目标区域内，实际上忽略 X 和 Y 设置"
+"Keep the first and last element inside the target area, effectively ignoring the X- "
+"and Y-settings"
+msgstr "保持第一个和最后一个元素位于目标区域内，实际上忽略 X 和 Y 设置"
 
 #: meerk40t/core/elements/element_treeops.py:2188 meerk40t/gui/alignment.py:448
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:25
@@ -2638,8 +2614,7 @@ msgid "Defines the area / the shape on which the selection will be distributed:"
 msgstr "定义选择将分布的区域/形状："
 
 #: meerk40t/gui/alignment.py:478
-msgid "- Position: along the boundaries of the surrounding rectangle of the "
-"selection"
+msgid "- Position: along the boundaries of the surrounding rectangle of the selection"
 msgstr "- 位置：沿着选择的外接矩形边界"
 
 #: meerk40t/gui/alignment.py:482
@@ -2701,6 +2676,7 @@ msgstr "X 轴："
 #: meerk40t/gui/alignment.py:1213 meerk40t/gui/imagesplitter.py:178
 msgid "Y-Axis:"
 msgstr "Y 轴："
+
 #: meerk40t/gui/alignment.py:1224 meerk40t/gui/navigationpanels.py:1706
 #: meerk40t/gui/propertypanels/attributes.py:924
 #: meerk40t/gui/propertypanels/placementproperty.py:57
@@ -2725,14 +2701,12 @@ msgstr "重新排列所有选定的元素"
 
 #: meerk40t/gui/alignment.py:1258
 msgid ""
-"Set if all columns need to have the same size (i.e., maximum width over all "
-"columns)"
+"Set if all columns need to have the same size (i.e., maximum width over all columns)"
 msgstr "设置是否所有列需要具有相同的大小（即所有列的最大宽度）"
 
 #: meerk40t/gui/alignment.py:1263
 msgid ""
-"Set if all rows need to have the same size (i.e., maximum height over all "
-"rows)"
+"Set if all rows need to have the same size (i.e., maximum height over all rows)"
 msgstr "设置是否所有行需要具有相同的大小（即所有行的最大高度）"
 
 #: meerk40t/gui/alignment.py:1271
@@ -2802,6 +2776,7 @@ msgstr "打开控制台窗口"
 #: meerk40t/gui/wxmribbon.py:1109
 msgid "Devices"
 msgstr "设备"
+
 #: meerk40t/gui/devicepanel.py:40
 msgid "Select Device"
 msgstr "选择设备"
@@ -2903,6 +2878,7 @@ msgstr "选择要发送当前作业的设备"
 #: meerk40t/gui/executejob.py:72
 msgid "Operations being added to the current job"
 msgstr "操作正在添加到当前作业"
+
 #: meerk40t/gui/executejob.py:73
 msgid "Commands being applied to the current job"
 msgstr "正在应用到当前作业的命令"
@@ -3020,6 +2996,7 @@ msgstr "减小字体大小"
 #: meerk40t/gui/hersheymanager.py:139 meerk40t/gui/hersheymanager.py:291
 msgid "Fonts (double-click to use)"
 msgstr "字体（双击使用）"
+
 #: meerk40t/gui/hersheymanager.py:145 meerk40t/gui/hersheymanager.py:297
 msgid "Select to preview the font, double-click to apply it"
 msgstr "选择以预览字体，双击以应用"
@@ -3034,13 +3011,13 @@ msgstr "字体选择"
 
 #: meerk40t/gui/hersheymanager.py:448
 msgid ""
-"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts"
-" designed to be rendered purely with vectors.\n"
-"They can be scaled, burned like any other vector shape and are therefore "
-"very versatile.\n"
+"MeerK40t can use True-Type-Fonts, Hershey-Fonts or Autocad-86 shape fonts designed "
+"to be rendered purely with vectors.\n"
+"They can be scaled, burned like any other vector shape and are therefore very "
+"versatile.\n"
 "See more: https://en.wikipedia.org/wiki/Hershey_fonts "
 msgstr ""
-"MeerK40t可以使用TrueType字体、赫尔希字体或专为矢量渲染而设计的Autocad-86形状字体。\n"
+"可以使用TrueType字体、赫尔希字体或专为矢量渲染而设计的Autocad-86形状字体。\n"
 "它们可以像其他矢量形状一样进行缩放、刻录，因此非常灵活。\n"
 "了解更多：https://en.wikipedia.org/wiki/Hershey_fonts"
 
@@ -3061,11 +3038,10 @@ msgstr "字体"
 msgid "Import"
 msgstr "导入"
 
-#: meerk40t/core/elements/element_treeops.py:1376
-#: meerk40t/gui/hersheymanager.py:489
+#: meerk40t/core/elements/element_treeops.py:1376 meerk40t/gui/hersheymanager.py:489
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:174
-#: meerk40t/gui/toolwidgets/toolnodeedit.py:404
-#: meerk40t/gui/wordlisteditor.py:281 meerk40t/gui/wxmmain.py:2575
+#: meerk40t/gui/toolwidgets/toolnodeedit.py:404 meerk40t/gui/wordlisteditor.py:281
+#: meerk40t/gui/wxmmain.py:2575
 msgid "Delete"
 msgstr "删除"
 
@@ -3121,6 +3097,7 @@ msgstr ""
 #: meerk40t/gui/preferences.py:211
 msgid "Import completed"
 msgstr "导入完成"
+
 #: meerk40t/gui/hersheymanager.py:704
 msgid "Do you really want to delete this font: {font}"
 msgstr "确定要删除此字体吗：{font}"
@@ -3131,8 +3108,7 @@ msgstr "确认"
 
 #: meerk40t/gui/hersheymanager.py:723
 msgid ""
-"You will be led now to a source in the web, where you can download free "
-"fonts.\n"
+"You will be led now to a source in the web, where you can download free fonts.\n"
 "Please respect individual property rights!\n"
 "Destination: {url}\n"
 msgstr ""
@@ -3142,10 +3118,9 @@ msgstr ""
 
 #: meerk40t/gui/hersheymanager.py:727
 msgid ""
-"Unpack the downloaded archive after the download and select the extracted"
-" files with help of the 'Import'-Button."
-msgstr ""
-"下载后解压缩下载的存档，并使用“导入”按钮选择提取的文件。"
+"Unpack the downloaded archive after the download and select the extracted files "
+"with help of the 'Import'-Button."
+msgstr "下载后解压缩下载的存档，并使用“导入”按钮选择提取的文件。"
 
 #: meerk40t/gui/hersheymanager.py:818 meerk40t/gui/hersheymanager.py:841
 #: meerk40t/gui/wxmmain.py:2627
@@ -3227,6 +3202,7 @@ msgstr "标准"
 #: meerk40t/camera/gui/camerapanel.py:994 meerk40t/gui/keymap.py:98
 msgid "Remove {name}"
 msgstr "删除 {name}"
+
 #: meerk40t/gui/keymap.py:109
 msgid "Remove {count} entries"
 msgstr "删除 {count} 项"
@@ -3341,6 +3317,7 @@ msgstr "追踪作业轮廓"
 #: meerk40t/gui/laserpanel.py:167 meerk40t/gui/simulation.py:2150
 msgid "Simulate"
 msgstr "模拟"
+
 #: meerk40t/gui/laserpanel.py:168
 msgid "Simulate the Design"
 msgstr "模拟设计"
@@ -3426,9 +3403,8 @@ msgid "Update the Plan"
 msgstr "更新计划"
 
 #: meerk40t/core/elements/element_treeops.py:1363
-#: meerk40t/core/elements/element_treeops.py:1370
-#: meerk40t/gui/laserpanel.py:489 meerk40t/gui/preferences.py:140
-#: meerk40t/gui/wxmmain.py:672
+#: meerk40t/core/elements/element_treeops.py:1370 meerk40t/gui/laserpanel.py:489
+#: meerk40t/gui/preferences.py:140 meerk40t/gui/wxmmain.py:672
 msgid "Save"
 msgstr "保存"
 
@@ -3455,6 +3431,7 @@ msgstr "保存项目"
 #: meerk40t/gui/laserpanel.py:558
 msgid "Updating Plan..."
 msgstr "更新计划中..."
+
 #: meerk40t/gui/lasertoolpanel.py:39
 msgid "Find center"
 msgstr "查找中心"
@@ -3481,8 +3458,7 @@ msgstr "将激光放置在所需的点上并单击..."
 #: meerk40t/gui/lasertoolpanel.py:91 meerk40t/gui/lasertoolpanel.py:150
 #: meerk40t/gui/lasertoolpanel.py:165 meerk40t/gui/lasertoolpanel.py:218
 #: meerk40t/gui/lasertoolpanel.py:234 meerk40t/gui/lasertoolpanel.py:250
-#: meerk40t/gui/lasertoolpanel.py:352
-#: meerk40t/gui/propertypanels/textproperty.py:82
+#: meerk40t/gui/lasertoolpanel.py:352 meerk40t/gui/propertypanels/textproperty.py:82
 msgid "<empty>"
 msgstr "<空>"
 
@@ -3496,11 +3472,10 @@ msgstr "C"
 
 #: meerk40t/gui/lasertoolpanel.py:97
 msgid ""
-"Instruction: place the laser on three points on the circumference of the "
-"circle on the bed and confirm the position by clicking on the buttons "
-"below.\n"
-"MK will find the center for you and place the laser above it or will "
-"recreate the circle for further processing."
+"Instruction: place the laser on three points on the circumference of the circle on "
+"the bed and confirm the position by clicking on the buttons below.\n"
+"MK will find the center for you and place the laser above it or will recreate the "
+"circle for further processing."
 msgstr ""
 "说明：将激光放置在床上圆的周长上的三个点上，并通过单击下方的按钮确认位置。\n"
 "MK 将为您找到中心并将激光放置在其上，或将重新创建该圆以供进一步处理。"
@@ -3536,12 +3511,13 @@ msgstr "角2"
 
 #: meerk40t/gui/lasertoolpanel.py:171
 msgid ""
-"Instruction: place the laser on one corner of the encompassing rectangle "
-"and confirm the position by clicking on the buttons below. Then choose "
-"the opposing corner.\n"
+"Instruction: place the laser on one corner of the encompassing rectangle and "
+"confirm the position by clicking on the buttons below. Then choose the opposing "
+"corner.\n"
 "MK will create a rectangle for you for further processing."
 msgstr ""
-"说明：将激光放置在外接矩形的一个角上，并通过单击下方的按钮确认位置。然后选择相对的角。\n"
+"说明：将激光放置在外接矩形的一个角上，并通过单击下方的按钮确认位置。然后选择相对的"
+"角。\n"
 "MK 将为您创建一个矩形，供进一步处理。"
 
 #: meerk40t/gui/lasertoolpanel.py:188
@@ -3567,18 +3543,20 @@ msgstr "边 B"
 #: meerk40t/gui/lasertoolpanel.py:256 meerk40t/tools/livinghinges.py:247
 msgid "Dimension"
 msgstr "尺寸"
+
 #: meerk40t/gui/lasertoolpanel.py:260
 msgid "Extension of the square to create"
 msgstr "要创建的正方形的扩展"
 
 #: meerk40t/gui/lasertoolpanel.py:267
 msgid ""
-"Instruction: place the laser on two points of one side of a square on the"
-" bed and confirm the position by clicking on the buttons below. Then "
-"choose one point on the other side of the corner.\n"
+"Instruction: place the laser on two points of one side of a square on the bed and "
+"confirm the position by clicking on the buttons below. Then choose one point on the "
+"other side of the corner.\n"
 "MK will create a square for you for further processing."
 msgstr ""
-"说明：将激光放置在床上正方形的一侧的两个点上，并通过单击下方的按钮确认位置。然后选择另一侧的一个点。\n"
+"说明：将激光放置在床上正方形的一侧的两个点上，并通过单击下方的按钮确认位置。然后选择"
+"另一侧的一个点。\n"
 "MK 将为您创建一个正方形，供进一步处理。"
 
 #: meerk40t/gui/lasertoolpanel.py:279
@@ -3630,8 +3608,7 @@ msgstr "栅格"
 #: meerk40t/core/elements/element_treeops.py:2404
 #: meerk40t/core/elements/element_treeops.py:2410
 #: meerk40t/core/elements/element_treeops.py:2415
-#: meerk40t/core/elements/element_treeops.py:2422
-#: meerk40t/gui/materialtest.py:32
+#: meerk40t/core/elements/element_treeops.py:2422 meerk40t/gui/materialtest.py:32
 msgid "Image"
 msgstr "图片"
 
@@ -3639,18 +3616,15 @@ msgstr "图片"
 msgid "Hatch"
 msgstr "填充"
 
-#: meerk40t/gui/materialtest.py:54
-#: meerk40t/gui/propertypanels/imageproperty.py:1230
+#: meerk40t/gui/materialtest.py:54 meerk40t/gui/propertypanels/imageproperty.py:1230
 msgid "Red"
 msgstr "红色"
 
-#: meerk40t/gui/materialtest.py:54
-#: meerk40t/gui/propertypanels/imageproperty.py:1228
+#: meerk40t/gui/materialtest.py:54 meerk40t/gui/propertypanels/imageproperty.py:1228
 msgid "Green"
 msgstr "绿色"
 
-#: meerk40t/gui/materialtest.py:54
-#: meerk40t/gui/propertypanels/imageproperty.py:1226
+#: meerk40t/gui/materialtest.py:54 meerk40t/gui/propertypanels/imageproperty.py:1226
 msgid "Blue"
 msgstr "蓝色"
 
@@ -3660,8 +3634,7 @@ msgstr "选择图片..."
 
 #: meerk40t/gui/materialtest.py:84
 msgid ""
-"Choose from one of the existing images on your canvas to use as the test "
-"template"
+"Choose from one of the existing images on your canvas to use as the test template"
 msgstr "从画布上的现有图片中选择一个作为测试模板"
 
 #: meerk40t/gui/materialtest.py:89
@@ -3714,8 +3687,7 @@ msgstr "最大值："
 
 #: meerk40t/gui/materialtest.py:185 meerk40t/gui/navigationpanels.py:1266
 #: meerk40t/gui/position.py:150 meerk40t/gui/propertypanels/attributes.py:448
-#: meerk40t/gui/propertypanels/attributes.py:653
-#: meerk40t/tools/livinghinges.py:268
+#: meerk40t/gui/propertypanels/attributes.py:653 meerk40t/tools/livinghinges.py:268
 msgid "Width:"
 msgstr "宽度："
 
@@ -3771,7 +3743,7 @@ msgstr "对于给定的功率，以减少烧痕或减少执行时间。"
 
 #: meerk40t/gui/materialtest.py:291
 msgid "Meerk40t simplifies this task to find out the optimal settings"
-msgstr "Meerk40t 简化了找出最佳设置的任务"
+msgstr "软件简化了找出最佳设置的任务"
 
 #: meerk40t/gui/materialtest.py:294
 msgid "by creating a test pattern that varies two different parameters."
@@ -3787,10 +3759,10 @@ msgstr "将生成测试模式的操作类型"
 
 #: meerk40t/gui/materialtest.py:307
 msgid ""
-"You can define the common parameters for this operation in the other tabs"
-" on top of this window"
-msgstr ""
-"您可以在此窗口顶部的其他选项卡中定义此操作的常见参数"
+"You can define the common parameters for this operation in the other tabs on top of "
+"this window"
+msgstr "您可以在此窗口顶部的其他选项卡中定义此操作的常见参数"
+
 #: meerk40t/gui/materialtest.py:312
 msgid "Choose the first parameter that you want to be tested"
 msgstr "选择要测试的第一个参数"
@@ -3801,22 +3773,18 @@ msgstr "选择要测试的第二个参数"
 
 #: meerk40t/gui/materialtest.py:318 meerk40t/gui/materialtest.py:323
 msgid ""
-"Choose the color aspect for the second parameter. NB: the colors for both"
-" parameters will be combined"
-msgstr ""
-"选择第二个参数的颜色方面。注意：两个参数的颜色将会被组合"
+"Choose the color aspect for the second parameter. NB: the colors for both "
+"parameters will be combined"
+msgstr "选择第二个参数的颜色方面。注意：两个参数的颜色将会被组合"
 
 #: meerk40t/gui/materialtest.py:328 meerk40t/gui/materialtest.py:333
 msgid ""
-"If checked, then the color aspect will grow from min to max values, if "
-"not then shrink"
-msgstr ""
-"如果勾选，则颜色方面将从最小值增长到最大值，如果没有勾选，则缩小"
+"If checked, then the color aspect will grow from min to max values, if not then "
+"shrink"
+msgstr "如果勾选，则颜色方面将从最小值增长到最大值，如果没有勾选，则缩小"
 
 #: meerk40t/gui/materialtest.py:338 meerk40t/gui/materialtest.py:343
-msgid ""
-"Define how many values you want to test in the interval between min and "
-"max"
+msgid "Define how many values you want to test in the interval between min and max"
 msgstr "定义您希望在最小值和最大值之间测试多少个值"
 
 #: meerk40t/gui/materialtest.py:348
@@ -3860,17 +3828,17 @@ msgid "Vertical gap between patterns"
 msgstr "模式之间的垂直间隙"
 
 #: meerk40t/core/elements/element_treeops.py:1594
-#: meerk40t/core/elements/element_treeops.py:1604
-#: meerk40t/gui/materialtest.py:481 meerk40t/gui/materialtest.py:490
-#: meerk40t/gui/materialtest.py:497 meerk40t/gui/materialtest.py:504
-#: meerk40t/gui/materialtest.py:513 meerk40t/gui/materialtest.py:522
+#: meerk40t/core/elements/element_treeops.py:1604 meerk40t/gui/materialtest.py:481
+#: meerk40t/gui/materialtest.py:490 meerk40t/gui/materialtest.py:497
+#: meerk40t/gui/materialtest.py:504 meerk40t/gui/materialtest.py:513
+#: meerk40t/gui/materialtest.py:522
 #: meerk40t/gui/propertypanels/operationpropertymain.py:583
 #: meerk40t/gui/spoolerpanel.py:197 meerk40t/gui/spoolerpanel.py:233
 msgid "Passes"
 msgstr "通道"
 
-#: meerk40t/core/elements/element_treeops.py:428
-#: meerk40t/gui/materialtest.py:505 meerk40t/gui/materialtest.py:514
+#: meerk40t/core/elements/element_treeops.py:428 meerk40t/gui/materialtest.py:505
+#: meerk40t/gui/materialtest.py:514
 msgid "DPI"
 msgstr "DPI"
 
@@ -3907,6 +3875,7 @@ msgstr "激光关闭延迟"
 #: meerk40t/gui/materialtest.py:565
 msgid "Wobble Radius"
 msgstr "摆动半径"
+
 #: meerk40t/gui/materialtest.py:573
 msgid "Wobble Interval"
 msgstr "摆动间隔"
@@ -4020,6 +3989,7 @@ msgstr "将激光对准选区的右上角"
 #: meerk40t/gui/navigationpanels.py:382
 msgid "Move the selection and laser position leftwards"
 msgstr "将选择和激光位置向左移动"
+
 #: meerk40t/gui/navigationpanels.py:386
 msgid "Align laser with the center of the selection"
 msgstr "将激光对准选区的中心"
@@ -4139,6 +4109,7 @@ msgstr "设置“移至”的X值"
 #: meerk40t/gui/navigationpanels.py:1025
 msgid "Set Y value for the Move To"
 msgstr "设置“移至”的Y值"
+
 #: meerk40t/gui/navigationpanels.py:1026
 msgid "Current laserhead position. Double-click to use."
 msgstr "当前激光头位置。双击以使用。"
@@ -4179,8 +4150,7 @@ msgstr "定义所选对象的宽度"
 msgid "Define height of selected object"
 msgstr "定义所选对象的高度"
 
-#: meerk40t/gui/navigationpanels.py:1311
-#: meerk40t/gui/propertypanels/attributes.py:665
+#: meerk40t/gui/navigationpanels.py:1311 meerk40t/gui/propertypanels/attributes.py:665
 msgid "Lock the ratio of width / height to the original values"
 msgstr "锁定宽度/高度的比例为原始值"
 
@@ -4225,34 +4195,39 @@ msgstr "左键单击顺时针旋转5° / 90°，右键单击"
 #: meerk40t/gui/navigationpanels.py:1643
 #, python-format
 msgid ""
-"Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 "
-"means 200% of the original scale. You may enter either this factor "
-"directly or state the scale as a %-value, so 0.5 or 50% will both cut the"
-" scale in half."
+"Scale X - scales the element by this factor in the X-Direction, i.e. 2.0 means "
+"200% of the original scale. You may enter either this factor directly or state the "
+"scale as a %-value, so 0.5 or 50% will both cut the scale in half."
 msgstr ""
+"缩放 X - 在 X 方向上按此因子缩放元素，即 2.0 表示原始缩放的 200%。 您可以直接输入此"
+"系数，也可以将比例指定为 % 值，因此 0.5 或 50% 都会将比例减半。"
 
 #: meerk40t/gui/navigationpanels.py:1650
 #, python-format
 msgid ""
-"Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 "
-"means 200% of the original scale. You may enter either this factor "
-"directly or state the scale as a %-value, so 0.5 or 50% will both cut the"
-" scale in half."
+"Scale Y - scales the element by this factor in the Y-Direction, i.e. 2.0 means "
+"200% of the original scale. You may enter either this factor directly or state the "
+"scale as a %-value, so 0.5 or 50% will both cut the scale in half."
 msgstr ""
+"缩放 X - 在 X 方向上按此因子缩放元素，即 2.0 表示原始缩放的 200%。 您可以直接输入此"
+"系数，也可以将比例指定为 % 值，因此 0.5 或 50% 都会将比例减半。"
 
 #: meerk40t/gui/navigationpanels.py:1657
 msgid ""
 "Skew X - to skew the element in X-direction by alpha° you need either \n"
-"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and "
-"so on...\n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
 "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
 "In any case this value will then be represented as tan(alpha)"
 msgstr ""
+"Skew X - 要将元素在 X 方向倾斜 alpha°，您需要\n"
+"- 提供 tan(alpha)，即 15° = 0.2679、30° = 0.5774、45° = 1.0 等等...\n"
+"- 或提供 15 度、0.25 圈的角度（与所有其他角度一样）\n"
+"在任何情况下，该值都将表示为 tan(alpha)"
+
 #: meerk40t/gui/navigationpanels.py:1666
 msgid ""
 "Skew Y - to skew the element in Y-direction by alpha° you need either \n"
-"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and "
-"so on...\n"
+"- to provide tan(alpha), i.e. 15° = 0.2679, 30° = 0.5774, 45° = 1.0 and so on...\n"
 "- or provide the angle as 15deg, 0.25turn, (like all other angles)\n"
 "In any case this value will then be represented as tan(alpha)"
 msgstr ""
@@ -4263,21 +4238,19 @@ msgstr ""
 
 #: meerk40t/gui/navigationpanels.py:1675 meerk40t/gui/navigationpanels.py:1784
 msgid ""
-"Translate X - moves the element by this amount of mils in the "
-"X-direction; you may use 'real' distances when modifying this factor, "
-"i.e. 2in, 3cm, 50mm"
+"Translate X - moves the element by this amount of mils in the X-direction; you may "
+"use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr ""
-"平移 X - 在 X 轴上将元素移动这么多 mils；在修改此因子时，您可以使用 '实际' 距离，"
-"例如 2 英寸、3 厘米、50 毫米"
+"平移 X - 在 X 轴上将元素移动这么多 mils；在修改此因子时，您可以使用 '实际' 距离，例"
+"如 2 英寸、3 厘米、50 毫米"
 
 #: meerk40t/gui/navigationpanels.py:1682 meerk40t/gui/navigationpanels.py:1789
 msgid ""
-"Translate Y - moves the element by this amount of mils in the "
-"Y-direction; you may use 'real' distances when modifying this factor, "
-"i.e. 2in, 3cm, 50mm"
+"Translate Y - moves the element by this amount of mils in the Y-direction; you may "
+"use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
 msgstr ""
-"平移 Y - 在 Y 轴上将元素移动这么多 mils；在修改此因子时，您可以使用 '实际' 距离，"
-"例如 2 英寸、3 厘米、50 毫米"
+"平移 Y - 在 Y 轴上将元素移动这么多 mils；在修改此因子时，您可以使用 '实际' 距离，例"
+"如 2 英寸、3 厘米、50 毫米"
 
 #: meerk40t/gui/navigationpanels.py:1716
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:26
@@ -4328,41 +4301,31 @@ msgstr "打开笔记窗口"
 msgid "Operations"
 msgstr "操作"
 
-#: meerk40t/gui/opassignment.py:58
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:32
+#: meerk40t/gui/opassignment.py:58 meerk40t/gui/statusbarwidgets/opassignwidget.py:32
 msgid "-> OP"
 msgstr "-> 操作"
 
-#: meerk40t/gui/opassignment.py:59
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:33
+#: meerk40t/gui/opassignment.py:59 meerk40t/gui/statusbarwidgets/opassignwidget.py:33
 msgid "-> Elem"
 msgstr "-> 元素"
 
-#: meerk40t/gui/opassignment.py:68
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:42
+#: meerk40t/gui/opassignment.py:68 meerk40t/gui/statusbarwidgets/opassignwidget.py:42
 msgid "Similar"
 msgstr "相似"
 
-#: meerk40t/gui/opassignment.py:69
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:43
+#: meerk40t/gui/opassignment.py:69 meerk40t/gui/statusbarwidgets/opassignwidget.py:43
 msgid "Exclusive"
 msgstr "专属"
 
-#: meerk40t/gui/opassignment.py:71
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:45
-msgid ""
-"Leave - neither the color of the operation nor of the elements will be "
-"changed"
-msgstr ""
-"保持不变 - 操作和元素的颜色都不会改变"
+#: meerk40t/gui/opassignment.py:71 meerk40t/gui/statusbarwidgets/opassignwidget.py:45
+msgid "Leave - neither the color of the operation nor of the elements will be changed"
+msgstr "保持不变 - 操作和元素的颜色都不会改变"
 
-#: meerk40t/gui/opassignment.py:75
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:49
+#: meerk40t/gui/opassignment.py:75 meerk40t/gui/statusbarwidgets/opassignwidget.py:49
 msgid "-> OP - the assigned operation will adopt the color of the element"
 msgstr "-> 操作 - 分配的操作将采用元素的颜色"
 
-#: meerk40t/gui/opassignment.py:77
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:51
+#: meerk40t/gui/opassignment.py:77 meerk40t/gui/statusbarwidgets/opassignwidget.py:51
 msgid "-> Elem - the elements will adopt the color of the assigned operation"
 msgstr "-> 元素 - 元素将采用分配的操作的颜色"
 
@@ -4374,13 +4337,11 @@ msgstr "同时将所有具有相同描边颜色的其他元素分配为"
 msgid "respectively with the same fill-color if you right-click the button"
 msgstr "如果单击右键，将使用相同的填充颜色"
 
-#: meerk40t/gui/opassignment.py:85
-#: meerk40t/gui/statusbarwidgets/opassignwidget.py:59
+#: meerk40t/gui/opassignment.py:85 meerk40t/gui/statusbarwidgets/opassignwidget.py:59
 msgid ""
-"When assigning to an operation remove all assignments of the elements to "
-"other operations"
-msgstr ""
-"将元素分配给操作时，请删除元素到其他操作的所有分配"
+"When assigning to an operation remove all assignments of the elements to other "
+"operations"
+msgstr "将元素分配给操作时，请删除元素到其他操作的所有分配"
 
 #: meerk40t/gui/opassignment.py:227
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:299
@@ -4392,8 +4353,7 @@ msgstr "将所选元素分配给操作。"
 msgid "Left click: consider stroke as main color, right click: use fill"
 msgstr "左键单击：将描边视为主要颜色，右键单击：使用填充"
 
-#: meerk40t/gui/operation_info.py:30
-#: meerk40t/gui/propertypanels/imageproperty.py:411
+#: meerk40t/gui/operation_info.py:30 meerk40t/gui/propertypanels/imageproperty.py:411
 #: meerk40t/gui/spoolerpanel.py:175 meerk40t/gui/spoolerpanel.py:209
 msgid "#"
 msgstr "#"
@@ -4467,8 +4427,7 @@ msgstr "取消设置：鼠标滚轮 = 缩放。Shift + 鼠标滚轮 = 水平平�
 
 #: meerk40t/gui/plugin.py:122
 msgid ""
-"Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. "
-"Shift+MouseWheel=Horizontal pan."
+"Set: MouseWheel=Vertical pan. Ctrl+MouseWheel=Zoom. Shift+MouseWheel=Horizontal pan."
 msgstr ""
 "设置：鼠标滚轮 = 垂直平移。Ctrl + 鼠标滚轮 = 缩放。Shift + 鼠标滚轮 = 水平平移。"
 
@@ -4491,6 +4450,7 @@ msgstr "反转鼠标滚轮的缩放方向"
 #: meerk40t/gui/plugin.py:157
 msgid "Disable ToolTips"
 msgstr "禁用工具提示"
+
 #: meerk40t/gui/plugin.py:160
 msgid "If you do not want to see tooltips like this one, check this box."
 msgstr "如果您不想看到像这样的工具提示，请勾选此框。"
@@ -4501,7 +4461,7 @@ msgstr "如果您使用触摸屏，这将特别有用。"
 
 #: meerk40t/gui/plugin.py:164
 msgid "Note: You will need to restart MeerK40t for any change to take effect."
-msgstr "注意：您需要重新启动 MeerK40t 才能使任何更改生效。"
+msgstr "注意：您需要重新启动软件才能使任何更改生效。"
 
 #: meerk40t/gui/plugin.py:177
 msgid "Disable tooltips over tree"
@@ -4581,8 +4541,8 @@ msgstr "将更改应用于场景中的所有强调元素"
 
 #: meerk40t/gui/position.py:135
 msgid ""
-"If checked then each element will get the new value of the current field,"
-" if unchecked then the new values apply to the selection-dimensions"
+"If checked then each element will get the new value of the current field, if "
+"unchecked then the new values apply to the selection-dimensions"
 msgstr ""
 "如果勾选，则每个元素都会获得当前字段的新值，如果取消勾选，则新值将应用于选择的尺寸"
 
@@ -4597,6 +4557,7 @@ msgstr "为导线设置默认单位"
 #: meerk40t/gui/preferences.py:98
 msgid "Language"
 msgstr "语言"
+
 #: meerk40t/gui/preferences.py:109
 msgid "Select the desired language to use (requires a restart to take effect)."
 msgstr "选择要使用的语言（需要重新启动以生效）。"
@@ -4639,19 +4600,15 @@ msgid "This will import a previosuly saved configuration file!"
 msgstr "这将导入以前保存的配置文件！"
 
 #: meerk40t/gui/preferences.py:179
-msgid ""
-"This may make MeerK40t unworkable if the file does not have the right "
-"format!"
-msgstr ""
-"如果文件格式不正确，可能会导致 MeerK40t 无法使用！"
+msgid "This may make MeerK40t unworkable if the file does not have the right format!"
+msgstr "如果文件格式不正确，可能会导致软件无法使用！"
 
 #: meerk40t/gui/preferences.py:184
 msgid "You do this at you own risk - are you realy sure?"
 msgstr "您自行承担风险 - 您确定吗？"
 
-#: meerk40t/balormk/gui/balorconfig.py:53
-#: meerk40t/grbl/gui/grblconfiguration.py:84 meerk40t/gui/preferences.py:185
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:426
+#: meerk40t/balormk/gui/balorconfig.py:53 meerk40t/grbl/gui/grblconfiguration.py:84
+#: meerk40t/gui/preferences.py:185 meerk40t/lihuiyu/gui/lhydrivergui.py:426
 #: meerk40t/moshi/gui/moshidrivergui.py:87 meerk40t/newly/gui/newlyconfig.py:55
 #: meerk40t/ruida/gui/ruidaconfig.py:45
 msgid "Warning"
@@ -4707,9 +4664,9 @@ msgstr "设置完全手动控制选项"
 
 #: meerk40t/gui/preferences.py:423
 msgid ""
-"Classification is the (automatic) process of assigning an element to an "
-"operation."
+"Classification is the (automatic) process of assigning an element to an operation."
 msgstr "分类是将元素自动分配给操作的过程。"
+
 #: meerk40t/gui/preferences.py:427
 msgid "That link between element and operation is called an assignment."
 msgstr "元素和操作之间的链接称为分配。"
@@ -4735,8 +4692,7 @@ msgstr "图形用户界面"
 msgid "Scene"
 msgstr "场景"
 
-#: meerk40t/gui/preferences.py:530
-#: meerk40t/gui/propertypanels/textproperty.py:484
+#: meerk40t/gui/preferences.py:530 meerk40t/gui/propertypanels/textproperty.py:484
 msgid "Colors"
 msgstr "颜色"
 
@@ -4824,6 +4780,7 @@ msgstr "删除最后一个所选之后的所有切割"
 #: meerk40t/gui/simulation.py:895
 msgid "Show/Hide optimization options for this job."
 msgstr "显示/隐藏此任务的优化选项。"
+
 #: meerk40t/gui/simulation.py:920
 msgid "Optimizations"
 msgstr "优化"
@@ -4838,7 +4795,6 @@ msgstr "重新计算"
 
 #: meerk40t/gui/simulation.py:973 meerk40t/gui/spoolerpanel.py:194
 #: meerk40t/gui/spoolerpanel.py:230
-#, fuzzy
 msgid "Steps"
 msgstr "步数"
 
@@ -4852,10 +4808,8 @@ msgstr "时间（分钟）"
 
 #: meerk40t/gui/simulation.py:977
 msgid ""
-"Cut operations Playback-Mode: play will jump from one completed "
-"operations to next"
-msgstr ""
-"切割操作播放模式：播放将从一个已完成的操作跳转到下一个"
+"Cut operations Playback-Mode: play will jump from one completed operations to next"
+msgstr "切割操作播放模式：播放将从一个已完成的操作跳转到下一个"
 
 #: meerk40t/gui/simulation.py:982
 msgid "Timed Playback-Mode: play will jump from one second to next"
@@ -4940,6 +4894,7 @@ msgstr "在模拟中删除当前位置之前的所有切割"
 #: meerk40t/gui/simulation.py:1360
 msgid "Delete all cuts after the current position in Simulation"
 msgstr "在模拟中删除当前位置之后的所有切割"
+
 #: meerk40t/gui/simulation.py:1366 meerk40t/gui/wxmscene.py:941
 msgid "Show Background"
 msgstr "显示背景"
@@ -5011,9 +4966,7 @@ msgid "Shall the cursor snap to the next element point?"
 msgstr "光标是否应该吸附到下一个元素点？"
 
 #: meerk40t/gui/snapoptions.py:54 meerk40t/gui/wxmmain.py:555
-msgid ""
-"Set the distance inside which the cursor will snap to the next element "
-"point"
+msgid "Set the distance inside which the cursor will snap to the next element point"
 msgstr "设置光标在其中吸附到下一个元素点的距离"
 
 #: meerk40t/gui/snapoptions.py:59 meerk40t/gui/wxmmain.py:567
@@ -5026,8 +4979,7 @@ msgstr "光标是否应该吸附到下一个网格交点？"
 
 #: meerk40t/gui/snapoptions.py:67 meerk40t/gui/wxmmain.py:583
 msgid ""
-"Set the distance inside which the cursor will snap to the next grid "
-"intersection"
+"Set the distance inside which the cursor will snap to the next grid intersection"
 msgstr "设置光标在其中吸附到下一个网格交点的距离"
 
 #: meerk40t/gui/snapoptions.py:75
@@ -5058,6 +5010,7 @@ msgstr "已完成的作业："
 #: meerk40t/gui/spoolerpanel.py:120
 msgid "Clear History"
 msgstr "清除历史"
+
 #: meerk40t/gui/spoolerpanel.py:173
 msgid "Select the device"
 msgstr "选择设备"
@@ -5066,11 +5019,9 @@ msgstr "选择设备"
 msgid "List and modify the queued operations"
 msgstr "列出并修改排队的操作"
 
-#: meerk40t/grbl/gui/grblserialcontroller.py:58
-#: meerk40t/grbl/gui/tcpcontroller.py:89
-#: meerk40t/gui/scenewidgets/rectselectwidget.py:104
-#: meerk40t/gui/spoolerpanel.py:188 meerk40t/gui/spoolerpanel.py:236
-#: meerk40t/lihuiyu/gui/tcpcontroller.py:92
+#: meerk40t/grbl/gui/grblserialcontroller.py:58 meerk40t/grbl/gui/tcpcontroller.py:89
+#: meerk40t/gui/scenewidgets/rectselectwidget.py:104 meerk40t/gui/spoolerpanel.py:188
+#: meerk40t/gui/spoolerpanel.py:236 meerk40t/lihuiyu/gui/tcpcontroller.py:92
 msgid "Status"
 msgstr "状态"
 
@@ -5139,11 +5090,9 @@ msgstr "USB连接"
 msgid "Wordlist"
 msgstr "词汇列表"
 
-#: meerk40t/camera/gui/camerapanel.py:1001
-#: meerk40t/camera/gui/camerapanel.py:1031
-#: meerk40t/core/elements/element_treeops.py:79
-#: meerk40t/gui/wordlisteditor.py:47 meerk40t/gui/wxmmain.py:2656
-#: meerk40t/gui/wxmribbon.py:1146
+#: meerk40t/camera/gui/camerapanel.py:1001 meerk40t/camera/gui/camerapanel.py:1031
+#: meerk40t/core/elements/element_treeops.py:79 meerk40t/gui/wordlisteditor.py:47
+#: meerk40t/gui/wxmmain.py:2656 meerk40t/gui/wxmribbon.py:1146
 msgid "Edit"
 msgstr "编辑"
 
@@ -5168,6 +5117,7 @@ msgstr "上一个"
 #: meerk40t/gui/wordlisteditor.py:60
 msgid "Wordlist: go to previous page (right-click to previous entry)"
 msgstr "词汇列表：转到上一页（右键单击到上一个条目）"
+
 #: meerk40t/gui/wordlisteditor.py:156
 msgid "Start Index for CSV-based data:"
 msgstr "基于 CSV 数据的起始索引："
@@ -5194,10 +5144,8 @@ msgstr "编辑活动变量的当前条目"
 
 #: meerk40t/gui/wordlisteditor.py:232
 msgid ""
-"Paste the clipboard as new entries for the active variable, any line as "
-"new entry"
-msgstr ""
-"将剪贴板粘贴为活动变量的新条目，将任何行作为新条目"
+"Paste the clipboard as new entries for the active variable, any line as new entry"
+msgstr "将剪贴板粘贴为活动变量的新条目，将任何行作为新条目"
 
 #: meerk40t/gui/wordlisteditor.py:253
 msgid "Start Index for field:"
@@ -5278,6 +5226,7 @@ msgstr "更新失败"
 #: meerk40t/gui/wordlisteditor.py:665
 msgid "Loaded from "
 msgstr "从加载"
+
 #: meerk40t/gui/wordlisteditor.py:684 meerk40t/gui/wordlisteditor.py:698
 msgid "Import CSV"
 msgstr "导入 CSV"
@@ -5385,6 +5334,7 @@ msgstr "为当前打开的窗口提供显示信息"
 #: meerk40t/gui/wxmeerk40t.py:455
 msgid "Multi window flag for launching multiple copies of this window."
 msgstr "用于启动此窗口的多个副本的多窗口标志。"
+
 #: meerk40t/gui/wxmeerk40t.py:457
 msgid "window to be opened"
 msgstr "要打开的窗口"
@@ -5431,7 +5381,7 @@ msgstr "重置提供的窗口，或 '*' 表示所有窗口"
 
 #: meerk40t/gui/wxmeerk40t.py:560
 msgid "Refresh the main wxMeerK40 window"
-msgstr "刷新主要的 wxMeerK40 窗口"
+msgstr "刷新主要的软件窗口"
 
 #: meerk40t/gui/wxmeerk40t.py:565
 msgid "Refreshed."
@@ -5461,7 +5411,7 @@ msgstr ""
 
 #: meerk40t/gui/wxmeerk40t.py:928
 msgid "Meerk40t has encountered a crash."
-msgstr "Meerk40t 遇到了崩溃问题。"
+msgstr "软件遇到了崩溃问题。"
 
 #: meerk40t/gui/wxmeerk40t.py:929
 msgid ""
@@ -5469,48 +5419,59 @@ msgid ""
 "from a branch '{branch}' which is not 'main',\n"
 "and that you are therefore running a development version of Meerk40t.\n"
 "\n"
-"To avoid reporting crashes during development, automated submission of "
-"this crash has\n"
-"been disabled. If this is a crash which is unrelated to any development "
-"work that you are\n"
-"undertaking, please recreate this crash under main or if you are certain "
-"that this is not\n"
-"caused by any code changes you have made, then you can manually create a "
-"new Github\n"
-"issue indicating the branch you are running from and using the traceback "
-"below which can\n"
+"To avoid reporting crashes during development, automated submission of this crash "
+"has\n"
+"been disabled. If this is a crash which is unrelated to any development work that "
+"you are\n"
+"undertaking, please recreate this crash under main or if you are certain that this "
+"is not\n"
+"caused by any code changes you have made, then you can manually create a new "
+"Github\n"
+"issue indicating the branch you are running from and using the traceback below "
+"which can\n"
 "be found in \"{filename}\".\n"
 "\n"
 msgstr ""
+"看来您正在从 Git 管理的源运行软件，\n"
+"来自不是“main”的分支“{branch}”，\n"
+"因此您正在运行软件的开发版本。\n"
+"\n"
+"为了避免在开发过程中报告崩溃，自动提交了此崩溃\n"
+"已被禁用。 如果这是与您正在进行的任何开发工作无关的崩溃\n"
+"承诺，请在 main 下重新创建此崩溃，或者如果您确定这不是\n"
+"由您所做的任何代码更改引起的，那么您可以手动创建一个新的 Github\n"
+"指示您正在运行的分支并使用下面的回溯的问题可以\n"
+"可以在“{filename}”中找到。\n"
 
 #: meerk40t/gui/wxmeerk40t.py:946
 msgid "Crash Detected!"
 msgstr "检测到崩溃！"
+
 #: meerk40t/gui/wxmeerk40t.py:949
 msgid ""
-"The bad news is that MeerK40t encountered a crash, and the developers "
-"apologise for this bug!\n"
+"The bad news is that MeerK40t encountered a crash, and the developers apologise for "
+"this bug!\n"
 "\n"
-"The good news is that you can help us fix this bug by anonymously sending"
-" us the crash details."
+"The good news is that you can help us fix this bug by anonymously sending us the "
+"crash details."
 msgstr ""
-"不好的消息是 MeerK40t 遇到了崩溃问题，开发人员为此错误道歉！\n"
+"不好的消息是软件遇到了崩溃问题，开发人员为此错误道歉！\n"
 "\n"
 "好的消息是，您可以通过匿名发送崩溃详情来帮助我们修复此错误。"
 
 #: meerk40t/gui/wxmeerk40t.py:954
 msgid ""
-"Only the crash details below are sent. No data from your MeerK40t project"
-" is sent. No\n"
+"Only the crash details below are sent. No data from your MeerK40t project is sent. "
+"No\n"
 "personal information is sent either.\n"
 "\n"
 "Send the following data to the MeerK40t team?\n"
 "------\n"
 msgstr ""
-"只发送下面的崩溃详情。不会发送来自您的 MeerK40t 项目的数据。也不会发送个人信息。\n"
+"只发送下面的崩溃详情。不会发送来自您的软件项目的数据。也不会发送个人信息。\n"
 "\n"
 "将以下数据发送给 MeerK40t 团队？\n"
-"------"
+"------\n"
 
 #: meerk40t/gui/wxmeerk40t.py:962
 msgid "Crash Detected! Send Log?"
@@ -5542,8 +5503,7 @@ msgstr "默认缩放边距："
 
 #: meerk40t/gui/wxmmain.py:412
 msgid ""
-"Default zoom margin when zoom focused on a location (automatically or via"
-" Ctrl-B)"
+"Default zoom margin when zoom focused on a location (automatically or via Ctrl-B)"
 msgstr "当缩放聚焦于位置时的默认缩放边距（自动或通过 Ctrl-B）"
 
 #: meerk40t/gui/wxmmain.py:424
@@ -5576,9 +5536,9 @@ msgstr "在场景中选择最小的元素"
 
 #: meerk40t/gui/wxmmain.py:465
 msgid ""
-"Active: Single click selects the smallest element under cursor "
-"(ctrl+click selects the largest) / Inactive: Single click selects the "
-"largest element  (ctrl+click the smallest)."
+"Active: Single click selects the smallest element under cursor (ctrl+click selects "
+"the largest) / Inactive: Single click selects the largest element  (ctrl+click the "
+"smallest)."
 msgstr ""
 "活动中：单击选择光标下的最小元素\n"
 "(Ctrl+单击选择最大元素) / 非活动中：单击选择最大元素 (Ctrl+单击选择最小元素)。"
@@ -5588,9 +5548,7 @@ msgid "Auto-select element after creation"
 msgstr "创建后自动选择元素"
 
 #: meerk40t/gui/wxmmain.py:477
-msgid ""
-"Active: selects a newly created element (via one of the tools in the "
-"toolbar)"
+msgid "Active: selects a newly created element (via one of the tools in the toolbar)"
 msgstr "活动中：选择新创建的元素（通过工具栏中的工具之一）"
 
 #: meerk40t/gui/wxmmain.py:492
@@ -5607,14 +5565,14 @@ msgstr "在边界框外绘制选择手柄"
 
 #: meerk40t/gui/wxmmain.py:509
 msgid ""
-"Active: draw handles outside of / Inactive: Draw them on the bounding box"
-" of the selection."
-msgstr ""
-"活动中：在边界框外绘制手柄 / 非活动中：在选择的边界框上绘制。"
+"Active: draw handles outside of / Inactive: Draw them on the bounding box of the "
+"selection."
+msgstr "活动中：在边界框外绘制手柄 / 非活动中：在选择的边界框上绘制。"
 
 #: meerk40t/gui/wxmmain.py:527
 msgid "Display-Distance"
 msgstr "显示距离"
+
 #: meerk40t/gui/wxmmain.py:554 meerk40t/gui/wxmmain.py:582
 msgid "Point-Snap-Threshold"
 msgstr "点捕捉阈值"
@@ -5739,6 +5697,7 @@ msgstr ""
 #: meerk40t/gui/wxmmain.py:795
 msgid "Rectangle"
 msgstr "矩形"
+
 #: meerk40t/gui/wxmmain.py:797
 msgid "Add a rectangular element"
 msgstr "添加矩形元素"
@@ -5864,6 +5823,7 @@ msgstr "将所选元素逆时针旋转90度"
 #: meerk40t/gui/wxmmain.py:1040
 msgid "Union"
 msgstr "合并"
+
 #: meerk40t/gui/wxmmain.py:1042
 msgid "Create a union of the selected elements"
 msgstr "创建所选元素的并集"
@@ -5975,14 +5935,15 @@ msgstr "右键单击：相等中心"
 #: meerk40t/gui/wxmmain.py:1362
 msgid "Distr. Vert."
 msgstr "垂直分布"
+
 #: meerk40t/gui/wxmmain.py:1364
 msgid "Distribute Space Vertically"
 msgstr "垂直等距分布"
 
 #: meerk40t/gui/wxmmain.py:1390
 msgid ""
-"Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, "
-"translate, etc..."
+"Enter SVG Transform Instruction e.g. 'scale(1.49, 1, $x, $y)', rotate, translate, "
+"etc..."
 msgstr "输入 SVG 变换指令，例如 'scale(1.49, 1, $x, $y)', rotate, translate 等..."
 
 #: meerk40t/gui/wxmmain.py:1393
@@ -6090,6 +6051,7 @@ msgstr "面板已恢复。"
 #: meerk40t/gui/wxmmain.py:1777
 msgid "Panes hidden."
 msgstr "面板已隐藏。"
+
 #: meerk40t/gui/wxmmain.py:1782
 msgid "reset all panes restoring the default perspective"
 msgstr "重置所有面板，恢复默认视角"
@@ -6180,7 +6142,7 @@ msgstr "关闭窗口\tCtrl-W"
 
 #: meerk40t/gui/wxmmain.py:2401 meerk40t/gui/wxmmain.py:2405
 msgid "Close Meerk40t"
-msgstr "关闭 Meerk40t"
+msgstr "关闭软件"
 
 #: meerk40t/gui/wxmmain.py:2405
 msgid "E&xit"
@@ -6201,6 +6163,7 @@ msgstr "重做\tCtrl-Shift-Z"
 #: meerk40t/gui/wxmmain.py:2496
 msgid "Revert last undo"
 msgstr "还原上一个撤销"
+
 #: meerk40t/gui/wxmmain.py:2508
 msgid "C&ut\tCtrl-X"
 msgstr "剪切\tCtrl-X"
@@ -6252,8 +6215,8 @@ msgstr "删除所选元素"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:45
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1741
 #: meerk40t/gui/propertypanels/placementproperty.py:319
-#: meerk40t/gui/propertypanels/propertywindow.py:19
-#: meerk40t/gui/wxmmain.py:2588 meerk40t/gui/wxmribbon.py:1181
+#: meerk40t/gui/propertypanels/propertywindow.py:19 meerk40t/gui/wxmmain.py:2588
+#: meerk40t/gui/wxmribbon.py:1181
 msgid "Properties"
 msgstr "属性"
 
@@ -6308,6 +6271,7 @@ msgstr "放大\tCtrl-+"
 #: meerk40t/gui/wxmmain.py:2712
 msgid "Make the scene larger"
 msgstr "放大场景"
+
 #: meerk40t/gui/wxmmain.py:2719
 msgid "Zoom to &Selected\tCtrl-Shift-B"
 msgstr "缩放到所选元素\tCtrl-Shift-B"
@@ -6420,10 +6384,10 @@ msgstr "不进行动画"
 msgid "Don't use animations when zooming"
 msgstr "缩放时不使用动画"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:1075
-#: meerk40t/gui/wxmmain.py:2865
+#: meerk40t/gui/propertypanels/imageproperty.py:1075 meerk40t/gui/wxmmain.py:2865
 msgid "Invert"
 msgstr "倒置"
+
 #: meerk40t/gui/wxmmain.py:2866
 msgid "Show a negative image of the scene by inverting colours"
 msgstr "通过反转颜色显示场景的负像"
@@ -6522,11 +6486,11 @@ msgstr "文件未找到"
 
 #: meerk40t/gui/wxmmain.py:3049
 msgid "&MeerK40t Help"
-msgstr "MeerK40t帮助(&M)"
+msgstr "软件帮助(&M)"
 
 #: meerk40t/gui/wxmmain.py:3049
 msgid "Open the MeerK40t Mac help file"
-msgstr "打开MeerK40t Mac帮助文件"
+msgstr "打开软件Mac帮助文件"
 
 #: meerk40t/gui/wxmmain.py:3053
 msgid "&Online Help"
@@ -6534,14 +6498,15 @@ msgstr "在线帮助(&O)"
 
 #: meerk40t/gui/wxmmain.py:3053
 msgid "Open the Meerk40t online wiki"
-msgstr "打开Meerk40t在线维基"
+msgstr "打开软件在线维基"
 
 #: meerk40t/gui/wxmmain.py:3063
 msgid "&Help"
 msgstr "帮助(&H)"
+
 #: meerk40t/gui/wxmmain.py:3064 meerk40t/gui/wxmmain.py:3075
 msgid "Open the Meerk40t online wiki Beginners page"
-msgstr "打开Meerk40t在线维基的初学者页面"
+msgstr "打开软件在线维基的初学者页面"
 
 #: meerk40t/gui/wxmmain.py:3074
 msgid "&Beginners' Help"
@@ -6549,11 +6514,11 @@ msgstr "初学者帮助(&B)"
 
 #: meerk40t/gui/wxmmain.py:3083
 msgid "&Github"
-msgstr "Github(&G)"
+msgstr "无"
 
 #: meerk40t/gui/wxmmain.py:3083
 msgid "Visit Meerk40t's Github homepage"
-msgstr "访问Meerk40t的Github主页"
+msgstr "访问软件的主页"
 
 #: meerk40t/gui/wxmmain.py:3092
 msgid "&Releases"
@@ -6561,23 +6526,23 @@ msgstr "发布(&R)"
 
 #: meerk40t/gui/wxmmain.py:3093
 msgid "Check for a new release on Meerk40t's Github releases page"
-msgstr "在Meerk40t的Github发布页面上检查新版本"
+msgstr "在软件的发布页面上检查新版本"
 
 #: meerk40t/gui/wxmmain.py:3102
 msgid "&Facebook"
-msgstr "Facebook(&F)"
+msgstr "无"
 
 #: meerk40t/gui/wxmmain.py:3103
 msgid "Get help from the K40 Meerk40t Facebook group"
-msgstr "从K40 Meerk40t Facebook小组获取帮助"
+msgstr "感谢帮助"
 
 #: meerk40t/gui/wxmmain.py:3112
 msgid "&Discord"
-msgstr "Discord(&D)"
+msgstr "无"
 
 #: meerk40t/gui/wxmmain.py:3113
 msgid "Chat with developers to get help on the Meerk40t Discord server"
-msgstr "在Meerk40t Discord服务器上与开发者聊天以获取帮助"
+msgstr "在软件 Discord服务器上与开发者聊天以获取帮助"
 
 #: meerk40t/gui/wxmmain.py:3122
 msgid "&Makers Forum"
@@ -6585,7 +6550,7 @@ msgstr "制造者论坛(&M)"
 
 #: meerk40t/gui/wxmmain.py:3123
 msgid "Get help from the Meerk40t page on the Makers Forum"
-msgstr "从制造者论坛上的Meerk40t页面获取帮助"
+msgstr "从制造者论坛上的软件页面获取帮助"
 
 #: meerk40t/gui/wxmmain.py:3133
 msgid "Feature request/feedback"
@@ -6597,13 +6562,12 @@ msgstr "您感觉缺少某些内容或者可以改进吗？请告诉我们..."
 
 #: meerk40t/gui/wxmmain.py:3154
 msgid "&About MeerK40t"
-msgstr "关于MeerK40t(&A)"
+msgstr "关于软件"
 
 #: meerk40t/gui/wxmmain.py:3155
 msgid ""
-"Toggle the About window acknowledging those who contributed to creating "
-"Meerk40t"
-msgstr "切换关于窗口，以感谢为创造Meerk40t作出贡献的人员"
+"Toggle the About window acknowledging those who contributed to creating Meerk40t"
+msgstr "切换关于窗口，以感谢为创造软件作出贡献的人员"
 
 #: meerk40t/gui/wxmmain.py:3165
 msgid "Help"
@@ -6658,6 +6622,7 @@ msgstr "切割计划失败，原因：{error}"
 #: meerk40t/gui/wxmmain.py:3302
 msgid "Cut Planning Failed"
 msgstr "切割计划失败"
+
 #: meerk40t/gui/wxmmain.py:3324
 msgid "Usb: {index}"
 msgstr "USB: {index}"
@@ -6686,8 +6651,7 @@ msgstr "删除最近项目列表"
 msgid "Cleaning up..."
 msgstr "正在清理..."
 
-#: meerk40t/core/elements/elements.py:378
-#: meerk40t/core/elements/elements.py:3026
+#: meerk40t/core/elements/elements.py:378 meerk40t/core/elements/elements.py:3026
 #: meerk40t/core/elements/elements.py:3028 meerk40t/gui/wxmmain.py:3565
 msgid "File is Malformed"
 msgstr "文件格式错误"
@@ -6748,8 +6712,7 @@ msgstr "配置"
 msgid "Extended Tools"
 msgstr "扩展工具"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:380
-#: meerk40t/gui/wxmribbon.py:1193
+#: meerk40t/gui/propertypanels/imageproperty.py:380 meerk40t/gui/wxmribbon.py:1193
 msgid "Modification"
 msgstr "修改"
 
@@ -6776,6 +6739,7 @@ msgstr "切换参考对象状态"
 #: meerk40t/gui/wxmscene.py:229
 msgid "Enter FPS Limit"
 msgstr "输入FPS限制"
+
 #: meerk40t/gui/wxmscene.py:229
 msgid "FPS Limit Entry"
 msgstr "FPS 限制输入"
@@ -6830,9 +6794,11 @@ msgstr "当前页面：{page}"
 
 #: meerk40t/gui/wxmscene.py:417
 msgid ""
-"No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. "
-"#FF000080 for semitransparent red)"
-msgstr "未提供颜色！请提供一个类似 'green'、'#RRBBGGAA'（例如 #FF000080 代表半透明红色）的颜色。"
+"No color given! Please provide one like 'green', '#RRBBGGAA' (i.e. #FF000080 for "
+"semitransparent red)"
+msgstr ""
+"未提供颜色！请提供一个类似 'green'、'#RRBBGGAA'（例如 #FF000080 代表半透明红色）的颜"
+"色。"
 
 #: meerk40t/gui/wxmscene.py:425
 msgid "Scene aspect color is set."
@@ -6893,6 +6859,7 @@ msgstr "已开启次要网格已关闭次要网格"
 #: meerk40t/gui/wxmscene.py:673
 msgid "Turned circular grid onTurned circular grid off"
 msgstr "已开启圆形网格已关闭圆形网格"
+
 #: meerk40t/gui/wxmscene.py:683
 msgid "Target needs to be one of primary, secondary, circular"
 msgstr "目标必须是主要、次要或圆形之一"
@@ -6969,8 +6936,7 @@ msgstr ""
 msgid ""
 "This is an operation that will engrave a vector shape\n"
 "filled with a set of vector-patterns like lines"
-msgstr ""
-"这是一种将刻录填充有一组矢量图案（如线条）的矢量形状的操作"
+msgstr "这是一种将刻录填充有一组矢量图案（如线条）的矢量形状的操作"
 
 #: meerk40t/gui/wxmtree.py:1645
 msgid ""
@@ -6985,8 +6951,7 @@ msgid ""
 "This will render all contained elements\n"
 "into an intermediary image which then will be\n"
 "engraved pixel by pixel."
-msgstr ""
-"这将将所有包含的元素呈现为中间图像，然后将逐像素刻录。"
+msgstr "这将将所有包含的元素呈现为中间图像，然后将逐像素刻录。"
 
 #: meerk40t/gui/wxmtree.py:1656
 msgid "This will engrave a single point for a given period of time"
@@ -7005,11 +6970,8 @@ msgid "This will send the laser back to its physical start position"
 msgstr "这将将激光器发送回其物理起始位置"
 
 #: meerk40t/gui/wxmtree.py:1672
-msgid ""
-"This will wait for active IO bits on the laser (mainly fibre laser for "
-"now)"
-msgstr ""
-"这将等待激光器上的活动 IO 位（目前主要是光纤激光器）"
+msgid "This will wait for active IO bits on the laser (mainly fibre laser for now)"
+msgstr "这将等待激光器上的活动 IO 位（目前主要是光纤激光器）"
 
 #: meerk40t/gui/wxmtree.py:1676
 msgid "This will set some IO bits on the laser (mainly fibre laser for now)"
@@ -7018,6 +6980,7 @@ msgstr "这将在激光器上设置一些 IO 位（目前主要是光纤激光�
 #: meerk40t/gui/wxmtree.py:1680
 msgid "This will pause the engrave process for a given period"
 msgstr "这将暂停刻录过程一段时间"
+
 #: meerk40t/gui/wxmtree.py:1684
 msgid ""
 "The elements under this section will not be engraved,\n"
@@ -7056,8 +7019,7 @@ msgstr "未设置：将图像视为每英寸 1000 像素。"
 
 #: meerk40t/image/imagetools.py:39
 msgid ""
-"Set: Use the DPI setting saved in the image to scale the image to the "
-"correct size."
+"Set: Use the DPI setting saved in the image to scale the image to the correct size."
 msgstr "已设置：使用图像中保存的 DPI 设置将图像按比例缩放至正确大小。"
 
 #: meerk40t/image/imagetools.py:52
@@ -7132,6 +7094,7 @@ msgstr "无法修改已锁定的图像：{name}"
 #: meerk40t/image/imagetools.py:182
 msgid "Disabled raster script."
 msgstr "已禁用光栅脚本。"
+
 #: meerk40t/image/imagetools.py:189
 msgid "unlock manipulations"
 msgstr "解锁操作"
@@ -7247,6 +7210,7 @@ msgstr "图像颜色因子：{factor}"
 #: meerk40t/image/imagetools.py:537
 msgid "image color <factor>"
 msgstr "图像颜色 <factor>"
+
 #: meerk40t/image/imagetools.py:541
 msgid "sharpness factor"
 msgstr "锐度因子"
@@ -7362,6 +7326,7 @@ msgstr "图像已反转。"
 #: meerk40t/image/imagetools.py:819
 msgid "Image type cannot be converted. {mode}"
 msgstr "无法转换图像类型：{mode}"
+
 #: meerk40t/image/imagetools.py:825
 msgid "flip image"
 msgstr "翻转图像"
@@ -7477,6 +7442,7 @@ msgstr "已保存：{filename}"
 #: meerk40t/image/imagetools.py:1160
 msgid "No file given."
 msgstr "未指定文件。"
+
 #: meerk40t/image/imagetools.py:1162
 msgid "File could not be written / created."
 msgstr "无法写入/创建文件。"
@@ -7592,6 +7558,7 @@ msgstr "线程：{name} 已存在。正在等待..."
 #: meerk40t/kernel/kernel.py:1693
 msgid "Thread: {name}, Initialized"
 msgstr "线程：{name}，已初始化"
+
 #: meerk40t/kernel/kernel.py:1698
 msgid "Thread: {name}, Set"
 msgstr "线程：{name}，设置"
@@ -7636,8 +7603,7 @@ msgstr "忙"
 msgid "Waiting"
 msgstr "等待中"
 
-#: meerk40t/gui/propertypanels/imageproperty.py:416
-#: meerk40t/kernel/kernel.py:1747
+#: meerk40t/gui/propertypanels/imageproperty.py:416 meerk40t/kernel/kernel.py:1747
 msgid "Active"
 msgstr "活跃"
 
@@ -7658,11 +7624,8 @@ msgid "{command} is not a registered command in this context: {context}"
 msgstr "{command} 不是此上下文中注册的命令：{context}"
 
 #: meerk40t/kernel/kernel.py:2244
-msgid ""
-"Command: {command} terminated. Cannot chain remaining commands: "
-"{remainder}"
-msgstr ""
-"命令：{command} 已终止。无法链接剩余的命令：{remainder}"
+msgid "Command: {command} terminated. Cannot chain remaining commands: {remainder}"
+msgstr "命令：{command} 已终止。无法链接剩余的命令：{remainder}"
 
 #: meerk40t/kernel/kernel.py:2302
 msgid "Print Shutdown"
@@ -7707,6 +7670,7 @@ msgstr "--- {category} 命令 ---"
 #: meerk40t/kernel/kernel.py:2415
 msgid "find <substr>"
 msgstr "查找 <子串>"
+
 #: meerk40t/kernel/kernel.py:2470
 msgid "No commands found that contained: [red]{string}[normal]"
 msgstr "未找到包含以下内容的命令：[red]{string}[normal]"
@@ -7822,6 +7786,7 @@ msgstr "执行蜂鸣声"
 #: meerk40t/kernel/kernel.py:2672
 msgid "Wait time in seconds"
 msgstr "等待时间（秒）"
+
 #: meerk40t/kernel/kernel.py:2675
 msgid "Wait for given amount of time."
 msgstr "等待指定的时间。"
@@ -7937,6 +7902,7 @@ msgstr "执行位于特定索引位置的行"
 #: meerk40t/kernel/kernel.py:3019
 msgid "disable/enable the command at the particular index"
 msgstr "在特定索引处禁用/启用命令"
+
 #: meerk40t/kernel/kernel.py:3036
 msgid "channel (open|close|save|list|print) <channel_name>"
 msgstr "通道 (open|close|save|list|print) <channel_name>"
@@ -8059,11 +8025,8 @@ msgid "Restore a previously saved configuration file"
 msgstr "恢复之前保存的配置文件"
 
 #: meerk40t/kernel/kernel.py:3275
-msgid ""
-"You need to provide a valid config-file to restore: setting_import "
-"<filename>"
-msgstr ""
-"您需要提供一个有效的配置文件来恢复：setting_import <filename>"
+msgid "You need to provide a valid config-file to restore: setting_import <filename>"
+msgstr "您需要提供一个有效的配置文件来恢复：setting_import <filename>"
 
 #: meerk40t/kernel/kernel.py:3281
 msgid "The file does not exist"
@@ -8158,6 +8121,7 @@ msgstr "用于此设备的内部标签"
 #: meerk40t/lihuiyu/device.py:113
 msgid "Board"
 msgstr "板"
+
 #: meerk40t/lihuiyu/device.py:116
 msgid "Select the board to use. This has an effects the speedcodes used."
 msgstr "选择要使用的板。这会影响使用的速度代码。"
@@ -8203,49 +8167,42 @@ msgstr "操作完成后锁定轨道。"
 msgid "General Options"
 msgstr "常规选项"
 
-#: meerk40t/lihuiyu/device.py:198
-#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:124
+#: meerk40t/lihuiyu/device.py:198 meerk40t/lihuiyu/gui/lhyoperationproperties.py:124
 msgid "Pulse Grouping"
 msgstr "脉冲分组"
 
-#: meerk40t/lihuiyu/device.py:201
-#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:126
+#: meerk40t/lihuiyu/device.py:201 meerk40t/lihuiyu/gui/lhyoperationproperties.py:126
 msgid ""
-"Pulse Grouping is an alternative means of reducing the incidence of "
-"stuttering, allowing you potentially to burn at higher speeds."
-msgstr ""
-"脉冲分组是减少卡顿的替代方法，可以让您在更高的速度下进行刻录。"
+"Pulse Grouping is an alternative means of reducing the incidence of stuttering, "
+"allowing you potentially to burn at higher speeds."
+msgstr "脉冲分组是减少卡顿的替代方法，可以让您在更高的速度下进行刻录。"
 
-#: meerk40t/lihuiyu/device.py:205
-#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:131
+#: meerk40t/lihuiyu/device.py:205 meerk40t/lihuiyu/gui/lhyoperationproperties.py:131
 msgid ""
-"It works by swapping adjacent on or off bits to group on and off together"
-" and reduce the number of switches."
-msgstr ""
-"它通过交换相邻的开或关位来将开和关分组在一起，从而减少开关的次数。"
+"It works by swapping adjacent on or off bits to group on and off together and "
+"reduce the number of switches."
+msgstr "它通过交换相邻的开或关位来将开和关分组在一起，从而减少开关的次数。"
 
-#: meerk40t/lihuiyu/device.py:209
-#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:136
+#: meerk40t/lihuiyu/device.py:209 meerk40t/lihuiyu/gui/lhyoperationproperties.py:136
 msgid ""
-"As an example, instead of X_X_ it will burn XX__ - because the laser beam"
-" is overlapping, and because a bit is only moved at most 1/1000\", the "
-"difference should not be visible even under magnification."
+"As an example, instead of X_X_ it will burn XX__ - because the laser beam is "
+"overlapping, and because a bit is only moved at most 1/1000\", the difference "
+"should not be visible even under magnification."
 msgstr ""
-"例如，不是 X_X_，而是会刻录为 XX__ - 因为激光束重叠，而且由于位移最多只有1/1000英寸，"
-"在放大时甚至不应该能看到差异。"
+"例如，不是 X_X_，而是会刻录为 XX__ - 因为激光束重叠，而且由于位移最多只有1/1000英"
+"寸，在放大时甚至不应该能看到差异。"
 
 #: meerk40t/lihuiyu/device.py:212
 msgid ""
-"Whilst the Pulse Grouping option in Operations are set for that operation"
-" before the job is spooled, and cannot be changed on the fly, this global"
-" Pulse Grouping option is checked as instructions are sent to the laser "
-"and can turned on and off during the burn process. Because the changes "
-"are believed to be small enough to be undetectable, you may wish to leave"
-" this permanently checked."
+"Whilst the Pulse Grouping option in Operations are set for that operation before "
+"the job is spooled, and cannot be changed on the fly, this global Pulse Grouping "
+"option is checked as instructions are sent to the laser and can turned on and off "
+"during the burn process. Because the changes are believed to be small enough to be "
+"undetectable, you may wish to leave this permanently checked."
 msgstr ""
-"尽管操作中的脉冲分组选项在作业排队之前就已设置好，无法在进行过程中更改，但全局脉冲分组选项"
-" 在发送给激光器的指令时被检查，并且可以在刻录过程中开启和关闭。因为这些更改被认为足够小，"
-"不会被察觉，所以您可能希望永久保持这个选项处于选中状态。"
+"尽管操作中的脉冲分组选项在作业排队之前就已设置好，无法在进行过程中更改，但全局脉冲分"
+"组选项 在发送给激光器的指令时被检查，并且可以在刻录过程中开启和关闭。因为这些更改被"
+"认为足够小，不会被察觉，所以您可能希望永久保持这个选项处于选中状态。"
 
 #: meerk40t/lihuiyu/device.py:224
 msgid "Strict"
@@ -8253,10 +8210,9 @@ msgstr "严格"
 
 #: meerk40t/lihuiyu/device.py:225
 msgid ""
-"Forces the device to enter and exit programmed speed mode from the same "
-"direction.\n"
-"This may prevent devices like the M2-V4 and earlier from having issues. "
-"Not typically needed."
+"Forces the device to enter and exit programmed speed mode from the same direction.\n"
+"This may prevent devices like the M2-V4 and earlier from having issues. Not "
+"typically needed."
 msgstr ""
 "强制设备从相同的方向进入和退出编程速度模式。\n"
 "这可能会防止M2-V4等早期设备出现问题。通常情况下不需要。"
@@ -8267,16 +8223,15 @@ msgstr "抽搐矢量"
 
 #: meerk40t/lihuiyu/device.py:236
 msgid ""
-"Twitching is an unnecessary move in an unneeded direction at the start "
-"and end of travel moves between vector burns. It is most noticeable when "
-"you are doing a number of small burns (e.g. stitch holes in leather). A "
-"twitchless mode is now default in 0.7.6+ or later which results in a "
-"noticeable faster travel time. This option allows you to turn on the "
-"previous mode if you experience problems."
+"Twitching is an unnecessary move in an unneeded direction at the start and end of "
+"travel moves between vector burns. It is most noticeable when you are doing a "
+"number of small burns (e.g. stitch holes in leather). A twitchless mode is now "
+"default in 0.7.6+ or later which results in a noticeable faster travel time. This "
+"option allows you to turn on the previous mode if you experience problems."
 msgstr ""
-"抽搐是在矢量刻录之间的出行移动的开始和结束处的不必要的移动，它在进行一系列小刻录时（例如皮革上的针孔）"
-"最为明显。0.7.6版或更高版本现在默认启用了无抽搐模式，这将导致明显更快的出行时间。此选项允许您在遇到问题时"
-"启用先前的模式。"
+"抽搐是在矢量刻录之间的出行移动的开始和结束处的不必要的移动，它在进行一系列小刻录时"
+"（例如皮革上的针孔）最为明显。0.7.6版或更高版本现在默认启用了无抽搐模式，这将导致明"
+"显更快的出行时间。此选项允许您在遇到问题时启用先前的模式。"
 
 #: meerk40t/lihuiyu/device.py:253
 msgid "Rapid Moves Between Objects"
@@ -8285,6 +8240,7 @@ msgstr "对象之间的快速移动"
 #: meerk40t/lihuiyu/device.py:254 meerk40t/lihuiyu/device.py:291
 msgid "Perform rapid moves between the objects"
 msgstr "在对象之间进行快速移动"
+
 #: meerk40t/lihuiyu/device.py:255 meerk40t/lihuiyu/device.py:266
 #: meerk40t/lihuiyu/device.py:279
 msgid "Rapid Jog"
@@ -8324,8 +8280,8 @@ msgstr "完成"
 
 #: meerk40t/lihuiyu/device.py:276
 msgid ""
-"Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs."
-" Finished are @FNSE jogs followed by a wait."
+"Changes the method of jogging. Default are NSE jogs. Reset are @NSE jogs. Finished "
+"are @FNSE jogs followed by a wait."
 msgstr ""
 "更改移动方式。默认是 NSE 移动。重置是 @NSE 移动。完成是 @FNSE 移动，然后是等待。"
 
@@ -8353,10 +8309,9 @@ msgstr "将额定速度修正为实际速度"
 #: meerk40t/lihuiyu/device.py:326
 #, python-format
 msgid ""
-"Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the "
-"correctly rated speed"
-msgstr ""
-"更正速度的无效性。力辉宇工作室的速度是额定速度的92%"
+"Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated "
+"speed"
+msgstr "更正速度的无效性。LHY工作室的速度是额定速度的92%。"
 
 #: meerk40t/lihuiyu/device.py:511
 msgid "Set the movement speed"
@@ -8366,8 +8321,8 @@ msgstr "设置移动速度"
 msgid "move_at_speed <speed> <dx> <dy>"
 msgstr "以指定速度移动 <速度> <dx> <dy>"
 
-#: meerk40t/core/elements/branches.py:718
-#: meerk40t/core/elements/branches.py:856 meerk40t/lihuiyu/device.py:542
+#: meerk40t/core/elements/branches.py:718 meerk40t/core/elements/branches.py:856
+#: meerk40t/lihuiyu/device.py:542
 msgid "Change speed by this amount."
 msgstr "更改速度这么多。"
 
@@ -8402,6 +8357,7 @@ msgstr "设置驱动功率"
 #: meerk40t/lihuiyu/device.py:588
 msgid "Power is not set."
 msgstr "功率未设置。"
+
 #: meerk40t/lihuiyu/device.py:591
 msgid "Power set at: {power} pulses per inch"
 msgstr "功率设置为：{power} 脉冲每英寸"
@@ -8516,6 +8472,7 @@ msgstr "恢复控制器"
 #: meerk40t/lihuiyu/device.py:845
 msgid "Lihuiyu Channel Resumed."
 msgstr "Lihuiyu 通道已恢复。"
+
 #: meerk40t/lihuiyu/device.py:847
 msgid "Connects USB"
 msgstr "连接 USB"
@@ -8575,7 +8532,7 @@ msgstr "激活 lhyserver。"
 
 #: meerk40t/lihuiyu/device.py:924
 msgid "TCP Server for lihuiyu on port: {port}"
-msgstr "lihuiyu 的 TCP 服务器端口：{port}"
+msgstr "LHY 的 TCP 服务器端口：{port}"
 
 #: meerk40t/lihuiyu/device.py:930
 msgid "Watching Channel: {channel}"
@@ -8607,13 +8564,13 @@ msgstr "K40-CO2-激光 (m2nano-主板) (绿色/蓝色)"
 
 #: meerk40t/lihuiyu/plugin.py:30
 msgid ""
-"The M2 Nano is the stock card in most K40 machines. Produced by Lihuiyu "
-"Studios Labs, the typically small green card states: Designed for Laser "
-"Machines. Assembled in China-Hangzhou. The most recent and popular "
-"revision version is 6C6879-LASER-M2:9."
+"The M2 Nano is the stock card in most K40 machines. Produced by Lihuiyu Studios "
+"Labs, the typically small green card states: Designed for Laser Machines. Assembled "
+"in China-Hangzhou. The most recent and popular revision version is 6C6879-LASER-"
+"M2:9."
 msgstr ""
-"M2 Nano 是大多数 K40 机器的标准卡。由利辉宇工作室制造，通常是小型绿色卡，"
-"上面写着：为激光机设计。在中国杭州组装。最近和最流行的版本是 6C6879-LASER-M2:9。"
+"M2 Nano 是大多数 K40 机器的标准卡。由利辉宇工作室制造，通常是小型绿色卡，上面写着："
+"为激光机设计。在中国杭州组装。最近和最流行的版本是 6C6879-LASER-M2:9。"
 
 #: meerk40t/lihuiyu/plugin.py:60
 msgid "K40-CO2-Laser (m3nano-Board) (Purple/Blue)"
@@ -8621,16 +8578,16 @@ msgstr "K40-CO2-激光 (m3nano-主板) (紫色/蓝色)"
 
 #: meerk40t/lihuiyu/plugin.py:61
 msgid ""
-"The M3 Nano is a newer stock variation of the Lihuiyu Studios Labs board."
-" The board is mostly purple. The most recent and popular revision version"
-" 10, 6C6879-LASER-M3:10. Unlike previous boards the M3 Nano has a "
-"hardware pause multi-plexing button and PWM control. The M3Nano Plus "
-"variation replaces the A4988 stepper motor chips with TMC stepper motor "
-"chips."
+"The M3 Nano is a newer stock variation of the Lihuiyu Studios Labs board. The board "
+"is mostly purple. The most recent and popular revision version 10, 6C6879-LASER-"
+"M3:10. Unlike previous boards the M3 Nano has a hardware pause multi-plexing button "
+"and PWM control. The M3Nano Plus variation replaces the A4988 stepper motor chips "
+"with TMC stepper motor chips."
 msgstr ""
-"M3 Nano 是 Lihuiyu Studios Labs 板的较新的股票变种。该板主要为紫色。"
-"最近和最流行的修订版本为 10，6C6879-LASER-M3:10。与以前的板不同，M3 Nano"
-" 带有一个硬件暂停多路复用按钮和 PWM 控制。M3Nano Plus 变种将 A4988 步进电机芯片替换为 TMC 步进电机芯片。"
+"M3 Nano 是 Lihuiyu Studios Labs 板的较新的股票变种。该板主要为紫色。最近和最流行的修"
+"订版本为 10，6C6879-LASER-M3:10。与以前的板不同，M3 Nano 带有一个硬件暂停多路复用按"
+"钮和 PWM 控制。M3Nano Plus 变种将 A4988 步进电机芯片替换为 TMC 步进电机芯片。"
+
 #: meerk40t/moshi/device.py:301
 msgid "Connect USB"
 msgstr "连接 USB"
@@ -8665,14 +8622,13 @@ msgstr "CO2-激光 (Moshi-主板)"
 
 #: meerk40t/moshi/plugin.py:24
 msgid ""
-"Moshiboards MS10105 (V.4.XX) were popular around 2013, these communicate "
-"over USB via a CH341 Universal Interface Chip (same chip as M2-Nano). The"
-" boards are usually red and sport two large black heatsinks for their "
-"stepper motor chips."
+"Moshiboards MS10105 (V.4.XX) were popular around 2013, these communicate over USB "
+"via a CH341 Universal Interface Chip (same chip as M2-Nano). The boards are usually "
+"red and sport two large black heatsinks for their stepper motor chips."
 msgstr ""
-"2013 年左右，Moshiboards MS10105 (V.4.XX) 主板很受欢迎，这些主板通过 USB 与"
-" CH341 通用接口芯片 (与 M2-Nano 使用相同的芯片) 进行通信。这些主板通常是红色的，"
-"上面安装了两个黑色的大型散热器，用于散热步进电机芯片。"
+"2013 年左右，Moshiboards MS10105 (V.4.XX) 主板很受欢迎，这些主板通过 USB 与 CH341 通"
+"用接口芯片 (与 M2-Nano 使用相同的芯片) 进行通信。这些主板通常是红色的，上面安装了两"
+"个黑色的大型散热器，用于散热步进电机芯片。"
 
 #: meerk40t/network/console_server.py:13
 msgid "do not watch server channels"
@@ -8749,6 +8705,7 @@ msgstr "拐角速度"
 #: meerk40t/newly/device.py:98
 msgid "Speed Chart"
 msgstr "速度图表"
+
 #: meerk40t/newly/device.py:99
 msgid "Raster speed to chart."
 msgstr "将光栅速度绘制成图表。"
@@ -8767,10 +8724,9 @@ msgstr "输出文件"
 
 #: meerk40t/newly/device.py:229
 msgid ""
-"File0 is default and instantly executes. The remaining files need to be "
-"sent and told to start"
-msgstr ""
-"File0 是默认文件，会立即执行。其余文件需要发送并告知开始执行。"
+"File0 is default and instantly executes. The remaining files need to be sent and "
+"told to start"
+msgstr "File0 是默认文件，会立即执行。其余文件需要发送并告知开始执行。"
 
 #: meerk40t/newly/device.py:239
 msgid "Automatically Start"
@@ -8778,10 +8734,9 @@ msgstr "自动开始"
 
 #: meerk40t/newly/device.py:240
 msgid ""
-"Automatically start the job when the output file is sent. You can send "
-"without execution if this is unchecked."
-msgstr ""
-"在输出文件发送时自动开始作业。如果取消勾选此项，可以发送而不执行。"
+"Automatically start the job when the output file is sent. You can send without "
+"execution if this is unchecked."
+msgstr "在输出文件发送时自动开始作业。如果取消勾选此项，可以发送而不执行。"
 
 #: meerk40t/newly/device.py:254
 msgid "Horizontal DPI"
@@ -8866,6 +8821,7 @@ msgstr "激光开启延迟？"
 #: meerk40t/newly/device.py:390
 msgid "Off Delay"
 msgstr "关闭延迟"
+
 #: meerk40t/newly/device.py:391
 msgid "Delay for laser off?"
 msgstr "激光关闭延迟？"
@@ -8985,6 +8941,7 @@ msgstr "旧的 CO2 激光器运行 NewlyDraw 软件"
 #: meerk40t/newly/plugin.py:1215
 msgid "Older CO2-Laser"
 msgstr "旧的 CO2 激光器"
+
 #: meerk40t/newly/plugin.py:89
 msgid "Beijing SZTaiming"
 msgstr "北京SZ泰明"
@@ -9100,6 +9057,7 @@ msgstr "武汉金利 - JL 圆柱"
 #: meerk40t/newly/plugin.py:1136
 msgid "DongGuan EverTech - ETL3525 Laser"
 msgstr "东莞恒科 - ETL3525 激光"
+
 #: meerk40t/newly/plugin.py:1170
 msgid "Wuhan Anwei - AW-U"
 msgstr "武汉安为 - AW-U"
@@ -9185,8 +9143,7 @@ msgid "Generate"
 msgstr "生成"
 
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:246
-#: meerk40t/gui/utilitywidgets/togglewidget.py:78
-#: meerk40t/tools/livinghinges.py:151
+#: meerk40t/gui/utilitywidgets/togglewidget.py:78 meerk40t/tools/livinghinges.py:151
 msgid "Close"
 msgstr "关闭"
 
@@ -9213,8 +9170,8 @@ msgstr "铰链区域的宽度"
 #: meerk40t/tools/livinghinges.py:275
 msgid "Height of the hinge area"
 msgstr "铰链区域的高度"
-#: meerk40t/gui/propertypanels/imageproperty.py:645
-#: meerk40t/tools/livinghinges.py:281
+
+#: meerk40t/gui/propertypanels/imageproperty.py:645 meerk40t/tools/livinghinges.py:281
 msgid "Options"
 msgstr "选项"
 
@@ -9271,8 +9228,7 @@ msgid "Generates the hinge"
 msgstr "生成铰链"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:766
-#: meerk40t/gui/propertypanels/imageproperty.py:770
-#: meerk40t/tools/livinghinges.py:386
+#: meerk40t/gui/propertypanels/imageproperty.py:770 meerk40t/tools/livinghinges.py:386
 msgid "Preview"
 msgstr "预览"
 
@@ -9296,41 +9252,34 @@ msgstr "用活动铰链图案填充区域"
 msgid "Balor-Configuration"
 msgstr "Balor 配置"
 
-#: meerk40t/balormk/gui/balorconfig.py:57
-#: meerk40t/grbl/gui/grblconfiguration.py:85
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:427
-#: meerk40t/moshi/gui/moshidrivergui.py:88 meerk40t/newly/gui/newlyconfig.py:59
-#: meerk40t/ruida/gui/ruidaconfig.py:49
+#: meerk40t/balormk/gui/balorconfig.py:57 meerk40t/grbl/gui/grblconfiguration.py:85
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:427 meerk40t/moshi/gui/moshidrivergui.py:88
+#: meerk40t/newly/gui/newlyconfig.py:59 meerk40t/ruida/gui/ruidaconfig.py:49
 msgid "Default Actions"
 msgstr "默认操作"
 
-#: meerk40t/balormk/gui/balorconfig.py:61
-#: meerk40t/grbl/gui/grblconfiguration.py:86
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:428
-#: meerk40t/moshi/gui/moshidrivergui.py:89 meerk40t/newly/gui/newlyconfig.py:63
-#: meerk40t/ruida/gui/ruidaconfig.py:53
+#: meerk40t/balormk/gui/balorconfig.py:61 meerk40t/grbl/gui/grblconfiguration.py:86
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:428 meerk40t/moshi/gui/moshidrivergui.py:89
+#: meerk40t/newly/gui/newlyconfig.py:63 meerk40t/ruida/gui/ruidaconfig.py:53
 msgid "Display Options"
 msgstr "显示选项"
 
 #: meerk40t/balormk/gui/balorcontroller.py:24
 #: meerk40t/grbl/gui/grblconfiguration.py:80
-#: meerk40t/grbl/gui/grblserialcontroller.py:25
-#: meerk40t/grbl/gui/tcpcontroller.py:13
+#: meerk40t/grbl/gui/grblserialcontroller.py:25 meerk40t/grbl/gui/tcpcontroller.py:13
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:43
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:14
 #: meerk40t/moshi/gui/moshicontrollergui.py:23
-#: meerk40t/newly/gui/newlycontroller.py:24
-#: meerk40t/ruida/gui/ruidacontroller.py:24
+#: meerk40t/newly/gui/newlycontroller.py:24 meerk40t/ruida/gui/ruidacontroller.py:24
 msgid "Connection"
 msgstr "连接"
+
 #: meerk40t/balormk/gui/balorcontroller.py:57
-#: meerk40t/grbl/gui/grblserialcontroller.py:38
-#: meerk40t/grbl/gui/tcpcontroller.py:64
+#: meerk40t/grbl/gui/grblserialcontroller.py:38 meerk40t/grbl/gui/tcpcontroller.py:64
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:115
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:67
 #: meerk40t/moshi/gui/moshicontrollergui.py:110
-#: meerk40t/newly/gui/newlycontroller.py:57
-#: meerk40t/ruida/gui/ruidacontroller.py:57
+#: meerk40t/newly/gui/newlycontroller.py:57 meerk40t/ruida/gui/ruidacontroller.py:57
 msgid "Force connection/disconnection from the device."
 msgstr "强制从设备连接/断开连接。"
 
@@ -9439,7 +9388,8 @@ msgstr "在选择上运行轮廓"
 
 #: meerk40t/balormk/gui/gui.py:67
 msgid "Live Bounds"
-msgstr ""
+msgstr "活界"
+
 #: meerk40t/balormk/gui/gui.py:72
 msgid "Live Full"
 msgstr "实时全图"
@@ -9485,10 +9435,8 @@ msgid "Center selection on laserbed"
 msgstr "将选择区域居中显示在激光床上"
 
 #: meerk40t/camera/gui/camerapanel.py:39 meerk40t/camera/gui/camerapanel.py:809
-#: meerk40t/camera/gui/camerapanel.py:815
-#: meerk40t/camera/gui/camerapanel.py:821
-#: meerk40t/camera/gui/camerapanel.py:827
-#: meerk40t/camera/gui/camerapanel.py:833
+#: meerk40t/camera/gui/camerapanel.py:815 meerk40t/camera/gui/camerapanel.py:821
+#: meerk40t/camera/gui/camerapanel.py:827 meerk40t/camera/gui/camerapanel.py:833
 msgid "Camera {index}"
 msgstr "相机 {index}"
 
@@ -9509,13 +9457,11 @@ msgstr "矫正透视"
 msgid "Update Image"
 msgstr "更新图像"
 
-#: meerk40t/camera/gui/camerapanel.py:120
-#: meerk40t/camera/gui/camerapanel.py:462
+#: meerk40t/camera/gui/camerapanel.py:120 meerk40t/camera/gui/camerapanel.py:462
 msgid "Export Snapshot"
 msgstr "导出快照"
 
-#: meerk40t/camera/gui/camerapanel.py:122
-#: meerk40t/camera/gui/camerapanel.py:469
+#: meerk40t/camera/gui/camerapanel.py:122 meerk40t/camera/gui/camerapanel.py:469
 msgid "Reconnect Camera"
 msgstr "重新连接相机"
 
@@ -9530,9 +9476,7 @@ msgstr ""
 "它应该是平的并且在相机中可见。"
 
 #: meerk40t/camera/gui/camerapanel.py:133
-msgid ""
-"Set the camera frames per second. A value of 0 means a frame every 5 "
-"seconds."
+msgid "Set the camera frames per second. A value of 0 means a frame every 5 seconds."
 msgstr "设置相机每秒的帧数。值为0表示每5秒一帧。"
 
 #: meerk40t/camera/gui/camerapanel.py:138
@@ -9541,19 +9485,22 @@ msgstr "矫正鱼眼镜头畸变，必须使用棋盘图像进行训练。"
 
 #: meerk40t/camera/gui/camerapanel.py:141
 msgid ""
-"The four marker locations (in scene when unchecked) are transformed into "
-"corners of a regular square shape."
+"The four marker locations (in scene when unchecked) are transformed into corners of "
+"a regular square shape."
 msgstr "四个标记位置（未选中时在场景中）会被转换成正方形的四个角。"
 
 #: meerk40t/camera/gui/camerapanel.py:378
 msgid ""
 "Camera backend failure...\n"
 "Cannot attempt camera connection."
-msgstr "相机后端失败...\n无法尝试连接相机。"
+msgstr ""
+"相机后端失败...\n"
+"无法尝试连接相机。"
 
 #: meerk40t/camera/gui/camerapanel.py:384
 msgid "Fetching URI:{uri} Frame..."
 msgstr "获取 URI:{uri} 帧..."
+
 #: meerk40t/camera/gui/camerapanel.py:422
 msgid "Update Background"
 msgstr "更新背景"
@@ -9578,18 +9525,15 @@ msgstr "宽高比"
 msgid "Preserve: {aspect}"
 msgstr "保留: {aspect}"
 
-#: meerk40t/camera/gui/camerapanel.py:545
-#: meerk40t/camera/gui/camerapanel.py:738
+#: meerk40t/camera/gui/camerapanel.py:545 meerk40t/camera/gui/camerapanel.py:738
 msgid "Reset Perspective"
 msgstr "重置透视"
 
-#: meerk40t/camera/gui/camerapanel.py:553
-#: meerk40t/camera/gui/camerapanel.py:736
+#: meerk40t/camera/gui/camerapanel.py:553 meerk40t/camera/gui/camerapanel.py:736
 msgid "Reset Fisheye"
 msgstr "重置鱼眼"
 
-#: meerk40t/camera/gui/camerapanel.py:562
-#: meerk40t/camera/gui/camerapanel.py:742
+#: meerk40t/camera/gui/camerapanel.py:562 meerk40t/camera/gui/camerapanel.py:742
 #: meerk40t/camera/gui/camerapanel.py:1076
 msgid "URI Manager"
 msgstr "URI 管理器"
@@ -9598,12 +9542,9 @@ msgstr "URI 管理器"
 msgid "URI: {uri}"
 msgstr "URI: {uri}"
 
-#: meerk40t/camera/gui/camerapanel.py:580
-#: meerk40t/camera/gui/camerapanel.py:584
-#: meerk40t/camera/gui/camerapanel.py:588
-#: meerk40t/camera/gui/camerapanel.py:592
-#: meerk40t/camera/gui/camerapanel.py:596
-#: meerk40t/camera/gui/camerapanel.py:764
+#: meerk40t/camera/gui/camerapanel.py:580 meerk40t/camera/gui/camerapanel.py:584
+#: meerk40t/camera/gui/camerapanel.py:588 meerk40t/camera/gui/camerapanel.py:592
+#: meerk40t/camera/gui/camerapanel.py:596 meerk40t/camera/gui/camerapanel.py:764
 msgid "USB {usb_index}"
 msgstr "USB {usb_index}"
 
@@ -9623,8 +9564,7 @@ msgstr "URI: {usb_index}"
 msgid "Detected USB {usb_index}"
 msgstr "检测到 USB {usb_index}"
 
-#: meerk40t/camera/gui/camerapanel.py:768
-#: meerk40t/camera/gui/camerapanel.py:839
+#: meerk40t/camera/gui/camerapanel.py:768 meerk40t/camera/gui/camerapanel.py:839
 msgid "Identify cameras"
 msgstr "识别相机"
 
@@ -9667,6 +9607,7 @@ msgstr "添加新的 URL"
 #: meerk40t/camera/gui/camerapanel.py:999
 msgid "Duplicate"
 msgstr "重复"
+
 #: meerk40t/camera/gui/camerapanel.py:1032
 msgid "Camera URI"
 msgstr "相机 URI"
@@ -9779,6 +9720,7 @@ msgstr "在水平方向上在中心对齐元素"
 #: meerk40t/core/elements/align.py:405
 msgid "align elements at center vertically"
 msgstr "在垂直方向上在中心对齐元素"
+
 #: meerk40t/core/elements/align.py:467 meerk40t/core/elements/align.py:488
 msgid "distribute elements across horizontal space"
 msgstr "在水平空间上分布元素"
@@ -9836,40 +9778,36 @@ msgstr "operation*: 所有操作"
 
 #: meerk40t/core/elements/branches.py:85
 msgid "operation~: non selected operations."
-msgstr "operation~: 未选择的操作"
+msgstr "行动~: 未选择的操作"
 
 #: meerk40t/core/elements/branches.py:92
 msgid "operation: selected operations."
-msgstr "operation: 已选择的操作"
+msgstr "行动: 已选择的操作"
 
 #: meerk40t/core/elements/branches.py:99
 msgid "operation0,2: operation #0 and #2"
 msgstr "operation0,2: 操作 #0 和 #2"
 
-#: meerk40t/core/elements/branches.py:115
-#: meerk40t/core/elements/branches.py:1264 meerk40t/core/elements/shapes.py:979
-#: meerk40t/core/elements/shapes.py:1056 meerk40t/core/elements/shapes.py:1141
-#: meerk40t/core/elements/shapes.py:1220 meerk40t/core/elements/shapes.py:1321
+#: meerk40t/core/elements/branches.py:115 meerk40t/core/elements/branches.py:1264
+#: meerk40t/core/elements/shapes.py:979 meerk40t/core/elements/shapes.py:1056
+#: meerk40t/core/elements/shapes.py:1141 meerk40t/core/elements/shapes.py:1220
+#: meerk40t/core/elements/shapes.py:1321
 msgid "index {index} out of range"
 msgstr "索引 {index} 超出范围"
 
-#: meerk40t/core/elements/branches.py:120
-#: meerk40t/core/elements/branches.py:1356
+#: meerk40t/core/elements/branches.py:120 meerk40t/core/elements/branches.py:1356
 msgid "Set these values as the selection."
 msgstr "将这些值设置为所选内容。"
 
-#: meerk40t/core/elements/branches.py:130
-#: meerk40t/core/elements/branches.py:1366
+#: meerk40t/core/elements/branches.py:130 meerk40t/core/elements/branches.py:1366
 msgid "Add the input to the selection"
 msgstr "将输入添加到所选内容"
 
-#: meerk40t/core/elements/branches.py:142
-#: meerk40t/core/elements/branches.py:1378
+#: meerk40t/core/elements/branches.py:142 meerk40t/core/elements/branches.py:1378
 msgid "Remove the input data from the selection"
 msgstr "从所选内容中移除输入数据"
 
-#: meerk40t/core/elements/branches.py:158
-#: meerk40t/core/elements/branches.py:1394
+#: meerk40t/core/elements/branches.py:158 meerk40t/core/elements/branches.py:1394
 msgid "Toggle the input data in the selection"
 msgstr "在所选内容中切换输入数据"
 
@@ -9882,13 +9820,13 @@ msgid "end"
 msgstr "结束"
 
 #: meerk40t/core/elements/branches.py:174
-#, fuzzy
 msgid "step"
-msgstr "steps"
+msgstr "步"
 
 #: meerk40t/core/elements/branches.py:177
 msgid "Subset existing selection by begin and end indices and step"
 msgstr "通过起始索引和结束索引以及步长对现有的选择进行子集化"
+
 #: meerk40t/core/elements/branches.py:193
 msgid "Filter to apply"
 msgstr "要应用的过滤器"
@@ -9917,8 +9855,7 @@ msgstr "ID 值："
 msgid "{index}: {name} - id = {id}"
 msgstr "{index}：{name} - ID = {id}"
 
-#: meerk40t/core/elements/branches.py:399
-#: meerk40t/core/elements/branches.py:437
+#: meerk40t/core/elements/branches.py:399 meerk40t/core/elements/branches.py:437
 msgid "No selected nodes"
 msgstr "没有选择的节点"
 
@@ -9938,8 +9875,7 @@ msgstr "标签值："
 msgid "{index}: {name} - label = {label}"
 msgstr "{index}：{name} - 标签 = {label}"
 
-#: meerk40t/core/elements/branches.py:447
-#: meerk40t/core/elements/branches.py:1410
+#: meerk40t/core/elements/branches.py:447 meerk40t/core/elements/branches.py:1410
 msgid "Show information about the chained data"
 msgstr "显示链接数据的信息"
 
@@ -9953,24 +9889,20 @@ msgstr "为每个给定的元素创建新操作"
 
 #: meerk40t/core/elements/branches.py:496
 msgid ""
-"Set the operation color based on the stroke if the first stroked item "
-"added to this operation"
-msgstr ""
-"如果第一个描边项添加到此操作，则基于描边设置操作颜色"
+"Set the operation color based on the stroke if the first stroked item added to this "
+"operation"
+msgstr "如果第一个描边项添加到此操作，则基于描边设置操作颜色"
 
 #: meerk40t/core/elements/branches.py:505
 msgid ""
-"Set the operation color based on the fill if the first filled item added "
-"to this operation"
-msgstr ""
-"如果第一个填充项添加到此操作，则基于填充设置操作颜色"
+"Set the operation color based on the fill if the first filled item added to this "
+"operation"
+msgstr "如果第一个填充项添加到此操作，则基于填充设置操作颜色"
 
 #: meerk40t/core/elements/branches.py:511
 msgid ""
-"<cut/engrave/raster/imageop/dots/hatch> - group the elements into this "
-"operation"
-msgstr ""
-"<cut/engrave/raster/imageop/dots/hatch> - 将元素分组到此操作中"
+"<cut/engrave/raster/imageop/dots/hatch> - group the elements into this operation"
+msgstr "<切割/雕刻/光栅/图像操作/点/剖面线> - 将元素分组到此操作中"
 
 #: meerk40t/core/elements/branches.py:627
 msgid "Time for the given wait operation."
@@ -9990,11 +9922,11 @@ msgstr "二进制输入/输出值"
 
 #: meerk40t/core/elements/branches.py:657
 msgid "<outputop, inputop> - Create new utility operation"
-msgstr "<outputop, inputop> - 创建新的实用操作"
+msgstr "<输出操作、输入操作> - 创建新的实用操作"
 
 #: meerk40t/core/elements/branches.py:679
 msgid "<consoleop> - Create new utility operation"
-msgstr "<consoleop> - 创建新的实用操作"
+msgstr "<控制台操作> - 创建新的实用操作"
 
 #: meerk40t/core/elements/branches.py:690
 msgid "raster dpi"
@@ -10002,17 +9934,17 @@ msgstr "光栅 DPI"
 
 #: meerk40t/core/elements/branches.py:691
 msgid "dpi <raster-dpi>"
-msgstr "DPI <raster-dpi>"
+msgstr "DPI <光栅-dpi>"
 
 #: meerk40t/core/elements/branches.py:699
 msgid "Step for {name} is currently: {dpi}"
 msgstr "当前 {name} 的步长为：{dpi}"
+
 #: meerk40t/core/elements/branches.py:705
 msgid "No raster operations selected."
 msgstr "没有选择光栅操作。"
 
-#: meerk40t/core/elements/branches.py:725
-#: meerk40t/core/elements/branches.py:863
+#: meerk40t/core/elements/branches.py:725 meerk40t/core/elements/branches.py:863
 msgid "Change speed for each item in order"
 msgstr "按顺序更改每个项的速度"
 
@@ -10093,13 +10025,11 @@ msgstr "'{name}' 的传递次数已更新 {old_passes} -> {passes}"
 msgid "Set hatch-distance of operations"
 msgstr "设置操作的填充间距"
 
-#: meerk40t/core/elements/branches.py:943
-#: meerk40t/core/elements/branches.py:1006
+#: meerk40t/core/elements/branches.py:943 meerk40t/core/elements/branches.py:1006
 msgid "Change hatch-distance by this amount."
 msgstr "按此数量更改填充间距。"
 
-#: meerk40t/core/elements/branches.py:950
-#: meerk40t/core/elements/branches.py:1013
+#: meerk40t/core/elements/branches.py:950 meerk40t/core/elements/branches.py:1013
 msgid "Change hatch-distance for each item in order"
 msgstr "按顺序更改每个项的填充间距"
 
@@ -10118,6 +10048,7 @@ msgstr "'{name}' 的填充间距已更新 {old_distance} -> {distance}"
 #: meerk40t/core/elements/branches.py:999
 msgid "Set hatch-angle of operations"
 msgstr "设置操作的填充角度"
+
 #: meerk40t/core/elements/branches.py:1017
 msgid "hatch-angle <angle>"
 msgstr "填充角度 <angle>"
@@ -10233,6 +10164,7 @@ msgstr "拆分元素"
 #: meerk40t/core/elements/clipboard.py:30
 msgid "clipboard"
 msgstr "剪贴板"
+
 #: meerk40t/core/elements/clipboard.py:51
 msgid "clipboard copy"
 msgstr "剪贴板复制"
@@ -10249,8 +10181,7 @@ msgstr "粘贴偏移 y"
 msgid "clipboard paste"
 msgstr "剪贴板粘贴"
 
-#: meerk40t/core/elements/clipboard.py:107
-#: meerk40t/core/elements/clipboard.py:110
+#: meerk40t/core/elements/clipboard.py:107 meerk40t/core/elements/clipboard.py:110
 msgid "Error: Clipboard Empty"
 msgstr "错误：剪贴板为空"
 
@@ -10288,8 +10219,8 @@ msgstr "反向分类"
 
 #: meerk40t/core/elements/elements.py:145
 msgid ""
-"Classify elements into operations in reverse order e.g. to match "
-"Inkscape's Object List"
+"Classify elements into operations in reverse order e.g. to match Inkscape's Object "
+"List"
 msgstr "将元素反向分类到操作中，例如以匹配 Inkscape 的对象列表"
 
 #: meerk40t/core/elements/elements.py:169
@@ -10298,14 +10229,12 @@ msgstr "在创建后对元素进行分类"
 
 #: meerk40t/core/elements/elements.py:170
 msgid ""
-"MK will immediately try to classify (automatically assign) an element as "
-"soon as it is created,"
+"MK will immediately try to classify (automatically assign) an element as soon as it "
+"is created,"
 msgstr "MK 将会在元素创建后立即尝试对其进行分类（自动分配操作），"
 
 #: meerk40t/core/elements/elements.py:174
-msgid ""
-"if you want to defer this to apply manual assignment, then untick this "
-"option."
+msgid "if you want to defer this to apply manual assignment, then untick this option."
 msgstr "如果您想推迟此操作以进行手动分配，则取消选中此选项。"
 
 #: meerk40t/core/elements/elements.py:185
@@ -10349,13 +10278,12 @@ msgstr "取消选中：分类将为黑色元素分配到雕刻操作"
 #: meerk40t/core/elements/elements.py:242
 msgid "Assign to default operations"
 msgstr "分配给默认操作"
-#: meerk40t/core/elements/elements.py:243
-#: meerk40t/core/elements/elements.py:257
+
+#: meerk40t/core/elements/elements.py:243 meerk40t/core/elements/elements.py:257
 msgid "If classification did not find a match,"
 msgstr "如果分类未找到匹配，"
 
-#: meerk40t/core/elements/elements.py:245
-#: meerk40t/core/elements/elements.py:259
+#: meerk40t/core/elements/elements.py:245 meerk40t/core/elements/elements.py:259
 msgid "either with color matching (exact or fuzzy, see above)"
 msgstr "要么使用颜色匹配（精确或模糊，请参见上文）"
 
@@ -10373,7 +10301,7 @@ msgstr "或通过分配给默认操作（见上文），"
 
 #: meerk40t/core/elements/elements.py:263
 msgid "then MeerK40t can create a matching operation for you."
-msgstr "那么 MeerK40t 可以为您创建一个匹配的操作。"
+msgstr "那么软件可以为您创建一个匹配的操作。"
 
 #: meerk40t/core/elements/elements.py:296
 msgid "Classify after color-change"
@@ -10397,8 +10325,8 @@ msgstr "锁定的元素可以移动"
 
 #: meerk40t/core/elements/elements.py:313
 msgid ""
-"Locked elements cannot be modified, but can still be moved if this option"
-" is checked."
+"Locked elements cannot be modified, but can still be moved if this option is "
+"checked."
 msgstr "锁定的元素不能被修改，但如果选中此选项，仍然可以移动。"
 
 #: meerk40t/core/elements/elements.py:324
@@ -10407,8 +10335,7 @@ msgstr "显示未更改的值为 'default'"
 
 #: meerk40t/core/elements/elements.py:325
 msgid ""
-"Ticked: For power and speed display a 'default' string if default values "
-"in place."
+"Ticked: For power and speed display a 'default' string if default values in place."
 msgstr "已选中：对于功率和速度，如果默认值已设置，则显示 'default' 字符串。"
 
 #: meerk40t/core/elements/elements.py:329
@@ -10421,14 +10348,12 @@ msgstr "同时为描边和填充自动生成"
 
 #: meerk40t/core/elements/elements.py:343
 msgid ""
-"Active: for both stroke and fill we look for a corresponding hit, if none"
-" was found we generate a matching operation"
+"Active: for both stroke and fill we look for a corresponding hit, if none was found "
+"we generate a matching operation"
 msgstr "启用：对于描边和填充，我们会查找相应的匹配，如果找不到，则会生成匹配的操作"
 
 #: meerk40t/core/elements/elements.py:347
-msgid ""
-"Inactive: one hit of either stroke or fill is enough to prevent "
-"autogeneration"
+msgid "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
 msgstr "停用：描边或填充的一个匹配足以阻止自动生成"
 
 #: meerk40t/core/elements/elements.py:361
@@ -10437,10 +10362,11 @@ msgstr "复制将增加 {variable} 引用"
 
 #: meerk40t/core/elements/elements.py:362
 msgid ""
-"Active: if you copy a text-element containing a wordlist-reference, this "
-"will be increased (effectively referencing the next entry in the "
-"wordlist)"
-msgstr "启用：如果您复制包含 wordlist 引用的文本元素，则此引用将增加（实际上引用了 wordlist 中的下一个条目）"
+"Active: if you copy a text-element containing a wordlist-reference, this will be "
+"increased (effectively referencing the next entry in the wordlist)"
+msgstr ""
+"启用：如果您复制包含 wordlist 引用的文本元素，则此引用将增加（实际上引用了 wordlist "
+"中的下一个条目）"
 
 #: meerk40t/core/elements/elements.py:3039
 msgid "All valid types"
@@ -10465,6 +10391,7 @@ msgstr "文本属性"
 #: meerk40t/core/elements/element_treeops.py:118
 msgid "Image properties"
 msgstr "图像属性"
+
 #: meerk40t/core/elements/element_treeops.py:149
 msgid "Simplify group"
 msgstr "简化群组"
@@ -10569,6 +10496,7 @@ msgstr "{speed}mm/s"
 #: meerk40t/core/elements/element_treeops.py:386
 msgid "Speed for Vector-Operation"
 msgstr "矢量操作的速度"
+
 #: meerk40t/core/elements/element_treeops.py:411
 msgid "{power}ppi ({power_10}%)"
 msgstr "{power}ppi ({power_10}%)"
@@ -10683,6 +10611,7 @@ msgstr "切换所有操作的启用状态"
 #: meerk40t/core/elements/element_treeops.py:762
 msgid "Remove {ecount} selected items from operations"
 msgstr "从操作中删除 {ecount} 个选定项目"
+
 #: meerk40t/core/elements/element_treeops.py:844
 msgid "Delete element '{name}' fully"
 msgstr "完全删除元素 '{name}'"
@@ -10794,6 +10723,7 @@ msgstr "制作 {copies} 个副本"
 #: meerk40t/core/elements/element_treeops.py:1243
 msgid "Reverse subitems order"
 msgstr "反转子项目顺序"
+
 #: meerk40t/core/elements/element_treeops.py:1256
 msgid "Reverse the items within this subitem"
 msgstr "颠倒此子项中的项目"
@@ -11020,6 +10950,7 @@ msgstr "从操作中删除所有分配"
 #: meerk40t/core/elements/element_treeops.py:1563
 msgid "Any existing assignment of elements to operations will be removed"
 msgstr "将删除任何现有的元素分配到操作的分配"
+
 #: meerk40t/core/elements/element_treeops.py:1573
 msgid "Duplicate operation(s)"
 msgstr "复制操作"
@@ -11131,6 +11062,7 @@ msgstr "添加输出"
 #: meerk40t/core/elements/element_treeops.py:1772
 msgid "Add Input"
 msgstr "添加输入"
+
 #: meerk40t/core/elements/element_treeops.py:1777
 msgid "Add Home/Beep/Interrupt"
 msgstr "添加归位/蜂鸣/中断"
@@ -11168,9 +11100,7 @@ msgid "Exclusive assignment"
 msgstr "独占性分配"
 
 #: meerk40t/core/elements/element_treeops.py:1895
-msgid ""
-"An assignment will remove all other classifications of this element if "
-"checked"
+msgid "An assignment will remove all other classifications of this element if checked"
 msgstr "如果选中，分配将删除此元素的所有其他分类"
 
 #: meerk40t/core/elements/element_treeops.py:1909
@@ -11245,6 +11175,7 @@ msgstr "垂直翻转"
 #: meerk40t/core/elements/element_treeops.py:2156
 msgid "Flip Vertically"
 msgstr "垂直翻转"
+
 #: meerk40t/core/elements/element_treeops.py:2172
 msgid "Scale {scale_percent}%"
 msgstr "缩放 {scale_percent}%"
@@ -11352,6 +11283,7 @@ msgstr "将处理后的图像保存为 output.png"
 #: meerk40t/core/elements/element_treeops.py:2432
 msgid "Expand all children"
 msgstr "展开所有子项"
+
 #: meerk40t/core/elements/element_treeops.py:2447
 msgid "Expand all children of this given node."
 msgstr "展开此节点的所有子项。"
@@ -11453,8 +11385,7 @@ msgstr "多边形是否应与内切圆相切？"
 
 #: meerk40t/core/elements/grid.py:373
 msgid ""
-"Do you want to treat the length value for radius as the length of one "
-"edge instead?"
+"Do you want to treat the length value for radius as the length of one edge instead?"
 msgstr "您是否要将半径的长度值视为一条边的长度？"
 
 #: meerk40t/core/elements/grid.py:381
@@ -11463,8 +11394,8 @@ msgstr "每隔一个顶点的交替半径"
 
 #: meerk40t/core/elements/grid.py:387
 msgid ""
-"Length of alternating sequence (1 for starlike figures, >=2 for more "
-"gear-like patterns)"
+"Length of alternating sequence (1 for starlike figures, >=2 for more gear-like "
+"patterns)"
 msgstr "交替序列的长度（星形图案为 1，齿轮状图案为 >=2）"
 
 #: meerk40t/core/elements/grid.py:391
@@ -11472,24 +11403,18 @@ msgid "Amount of vertices to skip"
 msgstr "要跳过的顶点数量"
 
 #: meerk40t/core/elements/grid.py:394
-msgid ""
-"shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> "
-"<r>"
-msgstr ""
-"形状 <角/顶点数量> <x> <y> <r> <起始角度> <内接> 或 形状 <角/顶点数量> <r>"
+msgid "shape <corners> <x> <y> <r> <startangle> <inscribed> or shape <corners> <r>"
+msgstr "形状 <角/顶点数量> <x> <y> <r> <起始角度> <内接> 或 形状 <角/顶点数量> <r>"
 
 #: meerk40t/core/elements/grid.py:424
-msgid ""
-"Please provide at least one additional value (which will act as radius "
-"then)"
+msgid "Please provide at least one additional value (which will act as radius then)"
 msgstr "请至少提供一个附加值（将作为半径）"
 
 #: meerk40t/core/elements/grid.py:485
 msgid ""
-"You have as well provided the --side_length parameter, this takes "
-"precedence, so --inscribed is ignored"
-msgstr ""
-"您还提供了 --side_length 参数，这将优先考虑，因此忽略了 --inscribed 参数"
+"You have as well provided the --side_length parameter, this takes precedence, so --"
+"inscribed is ignored"
+msgstr "您还提供了 --side_length 参数，这将优先考虑，因此忽略了 --inscribed 参数"
 
 #: meerk40t/core/elements/grid.py:544
 msgid "Just for info: we have missed {count} vertices..."
@@ -11580,6 +11505,7 @@ msgstr "将笔添加到所选的笔盒中"
 #: meerk40t/core/elements/penbox.py:134
 msgid "delete pens to the chosen penbox"
 msgstr "从所选的笔盒中删除笔"
+
 #: meerk40t/core/elements/penbox.py:154
 msgid "Penbox index"
 msgstr "笔盒索引"
@@ -11696,6 +11622,7 @@ msgstr "矩形左上角的 x 坐标。"
 #: meerk40t/core/elements/shapes.py:141
 msgid "y position for top left corner of rectangle."
 msgstr "矩形左上角的 y 坐标。"
+
 #: meerk40t/core/elements/shapes.py:144
 msgid "width of the rectangle."
 msgstr "矩形的宽度。"
@@ -11812,6 +11739,7 @@ msgstr "无法为 {field} 设置 '{val}'。"
 #: meerk40t/core/elements/shapes.py:431
 msgid "Element can not be moved: {name}"
 msgstr "无法移动元素：{name}"
+
 #: meerk40t/core/elements/shapes.py:447 meerk40t/core/elements/shapes.py:474
 msgid "Element has no matrix to modify: {name}"
 msgstr "元素没有矩阵可以修改：{name}"
@@ -11919,9 +11847,7 @@ msgid "{index}: linecap = {linecap} - {name}"
 msgstr "{index}: 线端样式 = {linecap} - {name}"
 
 #: meerk40t/core/elements/shapes.py:1029
-msgid ""
-"jointype to apply to the path (one of arcs, bevel, miter, miter-clip, "
-"round)"
+msgid "jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)"
 msgstr "应用于路径的连接类型（可选择 arcs、bevel、miter、miter-clip、round 之一）"
 
 #: meerk40t/core/elements/shapes.py:1035
@@ -11931,6 +11857,7 @@ msgstr "连接类型 <join>"
 #: meerk40t/core/elements/shapes.py:1059
 msgid "Linejoins:"
 msgstr "连接类型："
+
 #: meerk40t/core/elements/shapes.py:1077
 msgid "{index}: linejoin = {linejoin} - {name}"
 msgstr "{index}: 连接类型 = {linejoin} - {name}"
@@ -12042,6 +11969,7 @@ msgstr "y 缩放原点"
 #: meerk40t/core/elements/shapes.py:1541
 msgid "scale to absolute size"
 msgstr "缩放至绝对大小"
+
 #: meerk40t/core/elements/shapes.py:1545
 msgid "scale <scale> [<scale-y>]?"
 msgstr "缩放 <比例> [<比例-y>]?"
@@ -12153,6 +12081,7 @@ msgstr "调整大小：无法调整大小为点"
 #: meerk40t/core/elements/shapes.py:1906
 msgid "resize: cannot resize a locked element"
 msgstr "调整大小：无法调整大小为锁定的元素"
+
 #: meerk40t/core/elements/shapes.py:1920
 msgid "skew_x value"
 msgstr "x 方向倾斜值"
@@ -12266,6 +12195,7 @@ msgstr "访问和更改树元素"
 #: meerk40t/core/elements/tree_commands.py:32
 msgid "view tree bounds"
 msgstr "查看树边界"
+
 #: meerk40t/core/elements/tree_commands.py:50
 #: meerk40t/core/elements/tree_commands.py:83
 msgid "Tree:"
@@ -12304,8 +12234,8 @@ msgstr "没有要删除的内容"
 
 #: meerk40t/core/elements/tree_commands.py:349
 msgid ""
-"There were nodes across operations ({c1}), assignments ({c2}), elements "
-"({c3}) and regmarks ({c4})."
+"There were nodes across operations ({c1}), assignments ({c2}), elements ({c3}) and "
+"regmarks ({c4})."
 msgstr "在操作（{c1}）、分配（{c2}）、元素（{c3}）和注册标记（{c4}）之间存在节点。"
 
 #: meerk40t/core/elements/tree_commands.py:358
@@ -12314,8 +12244,8 @@ msgstr "仅删除了 {nodetype} 类型的节点。"
 
 #: meerk40t/core/elements/tree_commands.py:362
 msgid ""
-"If you want to remove all nodes regardless of their type, consider: 'tree"
-" selected remove'"
+"If you want to remove all nodes regardless of their type, consider: 'tree selected "
+"remove'"
 msgstr "如果要删除所有类型的节点，请考虑：'tree selected remove'"
 
 #: meerk40t/core/elements/tree_commands.py:377
@@ -12327,10 +12257,8 @@ msgid "Wordlist base operation"
 msgstr "词库基本操作"
 
 #: meerk40t/core/elements/wordlist.py:71 meerk40t/core/elements/wordlist.py:86
-#: meerk40t/core/elements/wordlist.py:106
-#: meerk40t/core/elements/wordlist.py:123
-#: meerk40t/core/elements/wordlist.py:124
-#: meerk40t/core/elements/wordlist.py:190
+#: meerk40t/core/elements/wordlist.py:106 meerk40t/core/elements/wordlist.py:123
+#: meerk40t/core/elements/wordlist.py:124 meerk40t/core/elements/wordlist.py:190
 msgid "Wordlist value"
 msgstr "词库值"
 
@@ -12342,8 +12270,7 @@ msgstr "向词库中添加值"
 msgid "add numeric counter to wordlist"
 msgstr "向词库中添加数字计数器"
 
-#: meerk40t/core/elements/wordlist.py:107
-#: meerk40t/core/elements/wordlist.py:125
+#: meerk40t/core/elements/wordlist.py:107 meerk40t/core/elements/wordlist.py:125
 msgid "index to use"
 msgstr "要使用的索引"
 
@@ -12375,14 +12302,14 @@ msgstr "要使用的索引，或者使用 +2 以增加 2"
 msgid "sets index in wordlist"
 msgstr "在词库中设置索引"
 
-#: meerk40t/core/elements/wordlist.py:155
-#: meerk40t/core/elements/wordlist.py:174
+#: meerk40t/core/elements/wordlist.py:155 meerk40t/core/elements/wordlist.py:174
 msgid "Wordlist file (if empty use mk40-default)"
 msgstr "词库文件（如果为空，则使用 mk40-default）"
 
 #: meerk40t/core/elements/wordlist.py:159
 msgid "Loads a previously saved wordlist"
 msgstr "加载以前保存的词库"
+
 #: meerk40t/core/elements/wordlist.py:178
 msgid "Saves the current wordlist"
 msgstr "保存当前词库"
@@ -12429,10 +12356,8 @@ msgstr "检测到驱动程序：{name}"
 
 #: meerk40t/device/ch341/ch341libusbdriver.py:101
 msgid ""
-"K40 devices were found but they were rejected by device criteria in "
-"Controller."
-msgstr ""
-"找到 K40 设备，但它们被控制器中的设备条件拒绝。"
+"K40 devices were found but they were rejected by device criteria in Controller."
+msgstr "找到 K40 设备，但它们被控制器中的设备条件拒绝。"
 
 #: meerk40t/device/gui/defaultactions.py:62
 msgid "At job start"
@@ -12462,18 +12387,15 @@ msgstr "将所选操作添加到默认的“作业开始”列表"
 msgid "Add the selected operation to the default 'Job End' list"
 msgstr "将所选操作添加到默认的“作业结束”列表"
 
-#: meerk40t/device/gui/defaultactions.py:143
-#: meerk40t/device/gui/defaultactions.py:146
+#: meerk40t/device/gui/defaultactions.py:143 meerk40t/device/gui/defaultactions.py:146
 msgid "Remove the selected operation from the list"
 msgstr "从列表中删除所选操作"
 
-#: meerk40t/device/gui/defaultactions.py:149
-#: meerk40t/device/gui/defaultactions.py:155
+#: meerk40t/device/gui/defaultactions.py:149 meerk40t/device/gui/defaultactions.py:155
 msgid "Decrease the position of the selected operation"
 msgstr "减小所选操作的位置"
 
-#: meerk40t/device/gui/defaultactions.py:152
-#: meerk40t/device/gui/defaultactions.py:158
+#: meerk40t/device/gui/defaultactions.py:152 meerk40t/device/gui/defaultactions.py:158
 msgid "Increase the position of the selected operation"
 msgstr "增加所选操作的位置"
 
@@ -12481,8 +12403,7 @@ msgstr "增加所选操作的位置"
 msgid "Modify the default parameter of the operation to be added"
 msgstr "修改要添加的操作的默认参数"
 
-#: meerk40t/device/gui/defaultactions.py:164
-#: meerk40t/device/gui/defaultactions.py:167
+#: meerk40t/device/gui/defaultactions.py:164 meerk40t/device/gui/defaultactions.py:167
 msgid "Modify the parameter of the selected operation"
 msgstr "修改所选操作的参数"
 
@@ -12493,18 +12414,17 @@ msgstr "是否要使用专门的格式化程序？"
 #: meerk40t/device/gui/formatterpanel.py:128
 msgid "Bespoke formatter for this node-type"
 msgstr "此节点类型的专用格式化程序"
+
 #: meerk40t/device/gui/warningpanel.py:69
 msgid "op"
-msgstr ""
+msgstr "OP"
 
-#: meerk40t/device/gui/warningpanel.py:73
-#: meerk40t/device/gui/warningpanel.py:90
+#: meerk40t/device/gui/warningpanel.py:73 meerk40t/device/gui/warningpanel.py:90
 #: meerk40t/device/gui/warningpanel.py:111
 msgid "attr"
-msgstr ""
+msgstr "属性"
 
-#: meerk40t/device/gui/warningpanel.py:78
-#: meerk40t/device/gui/warningpanel.py:99
+#: meerk40t/device/gui/warningpanel.py:78 meerk40t/device/gui/warningpanel.py:99
 msgid "Enable/Disable the warning level"
 msgstr "启用/禁用警告级别"
 
@@ -12518,7 +12438,7 @@ msgstr "最大 {unit} 的警告级别"
 
 #: meerk40t/device/gui/warningpanel.py:135
 msgid "Meerk40t can warn you if it believes the values for"
-msgstr "如果 Meerk40t 认为功率和速度的值过于雄心勃勃，它会发出警告："
+msgstr "如果设备认为功率和速度的值过于高，它会发出警告："
 
 #: meerk40t/device/gui/warningpanel.py:137
 msgid "power and speed are too ambitious for your machine."
@@ -12548,8 +12468,7 @@ msgstr "连接激光器并尝试建立一些属性"
 msgid "Dimensions"
 msgstr "尺寸"
 
-#: meerk40t/grbl/gui/grblconfiguration.py:83
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:425
+#: meerk40t/grbl/gui/grblconfiguration.py:83 meerk40t/lihuiyu/gui/lhydrivergui.py:425
 #: meerk40t/moshi/gui/moshidrivergui.py:86 meerk40t/rotary/gui/gui.py:23
 msgid "Rotary"
 msgstr "旋转"
@@ -12620,8 +12539,7 @@ msgstr "输入 Gcode 命令并发送到激光器"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:147
 #: meerk40t/grbl/gui/grblserialcontroller.py:167
-#: meerk40t/grbl/gui/tcpcontroller.py:129
-#: meerk40t/lihuiyu/gui/lhycontrollergui.py:376
+#: meerk40t/grbl/gui/tcpcontroller.py:129 meerk40t/lihuiyu/gui/lhycontrollergui.py:376
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:143
 #: meerk40t/moshi/gui/moshicontrollergui.py:327
 msgid "Connect"
@@ -12629,8 +12547,7 @@ msgstr "连接"
 
 #: meerk40t/grbl/gui/grblserialcontroller.py:154
 #: meerk40t/grbl/gui/grblserialcontroller.py:174
-#: meerk40t/grbl/gui/tcpcontroller.py:136
-#: meerk40t/lihuiyu/gui/lhycontrollergui.py:390
+#: meerk40t/grbl/gui/tcpcontroller.py:136 meerk40t/lihuiyu/gui/lhycontrollergui.py:390
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:150
 #: meerk40t/moshi/gui/moshicontrollergui.py:341
 msgid "Disconnect"
@@ -12666,62 +12583,54 @@ msgstr "清除警报"
 msgid "Send a GRBL Clear Alarm command"
 msgstr "发送 GRBL 清除警报命令"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:47
-#: meerk40t/lihuiyu/gui/tcpcontroller.py:50
+#: meerk40t/grbl/gui/tcpcontroller.py:47 meerk40t/lihuiyu/gui/tcpcontroller.py:50
 msgid "TCP-Controller"
 msgstr "TCP 控制器"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:69
-#: meerk40t/lihuiyu/gui/lhycontrollergui.py:117
+#: meerk40t/grbl/gui/tcpcontroller.py:69 meerk40t/lihuiyu/gui/lhycontrollergui.py:117
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:72
 #: meerk40t/moshi/gui/moshicontrollergui.py:112
 msgid "Connection status"
 msgstr "连接状态"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:70
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:228
+#: meerk40t/grbl/gui/tcpcontroller.py:70 meerk40t/lihuiyu/gui/lhydrivergui.py:228
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:73
 msgid "IP/Host if the server computer"
 msgstr "服务器计算机的 IP/主机"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:71
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:242
+#: meerk40t/grbl/gui/tcpcontroller.py:71 meerk40t/lihuiyu/gui/lhydrivergui.py:242
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:74
 msgid "Port for tcp connection on the server computer"
 msgstr "服务器计算机的 TCP 连接端口"
 
 #: meerk40t/grbl/gui/tcpcontroller.py:74 meerk40t/grbl/gui/tcpcontroller.py:78
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:112
-#: meerk40t/lihuiyu/gui/tcpcontroller.py:77
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:112 meerk40t/lihuiyu/gui/tcpcontroller.py:77
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:81
 msgid "Current number of bytes in the write buffer."
 msgstr "写缓冲区中的当前字节数。"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:92
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:223
+#: meerk40t/grbl/gui/tcpcontroller.py:92 meerk40t/lihuiyu/gui/lhydrivergui.py:223
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:93
 msgid "Address"
 msgstr "地址"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:96
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:231
+#: meerk40t/grbl/gui/tcpcontroller.py:96 meerk40t/lihuiyu/gui/lhydrivergui.py:231
 #: meerk40t/lihuiyu/gui/tcpcontroller.py:94
 msgid "Port"
 msgstr "端口"
 
-#: meerk40t/grbl/gui/tcpcontroller.py:105
-#: meerk40t/lihuiyu/gui/tcpcontroller.py:111
+#: meerk40t/grbl/gui/tcpcontroller.py:105 meerk40t/lihuiyu/gui/tcpcontroller.py:111
 msgid "Buffer Size: "
 msgstr "缓冲区大小："
 
-#: meerk40t/grbl/gui/tcpcontroller.py:109
-#: meerk40t/lihuiyu/gui/tcpcontroller.py:115
+#: meerk40t/grbl/gui/tcpcontroller.py:109 meerk40t/lihuiyu/gui/tcpcontroller.py:115
 msgid "Max Buffer Size:"
 msgstr "最大缓冲区大小："
 
 #: meerk40t/gui/propertypanels/attributes.py:245
 msgid "Id"
 msgstr "标识"
+
 #: meerk40t/gui/propertypanels/attributes.py:326
 msgid "Butt"
 msgstr "平头"
@@ -12833,6 +12742,7 @@ msgstr "Blob 属性"
 #: meerk40t/gui/propertypanels/consoleproperty.py:19
 msgid "Console Properties"
 msgstr "控制台属性"
+
 #: meerk40t/gui/propertypanels/groupproperties.py:30
 msgid "Elements:"
 msgstr "元素："
@@ -12948,23 +12858,24 @@ msgstr "将此操作附加到列表末尾"
 #: meerk40t/gui/propertypanels/imageproperty.py:613
 msgid "Vectorisation"
 msgstr "矢量化"
+
 #: meerk40t/gui/propertypanels/imageproperty.py:651
 msgid "Turnpolicy"
 msgstr "转向策略"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:670
 msgid ""
-"This parameter determines how to resolve ambiguities during decomposition"
-" of bitmaps into paths.\n"
+"This parameter determines how to resolve ambiguities during decomposition of "
+"bitmaps into paths.\n"
 "\n"
 "BLACK: prefers to connect black (foreground) components.\n"
 "WHITE: prefers to connect white (background) components.\n"
 "LEFT: always take a left turn.\n"
 "RIGHT: always take a right turn.\n"
-"MINORITY: prefers to connect the color (black or white) that occurs least"
-" frequently in a local neighborhood of the current position.\n"
-"MAJORITY: prefers to connect the color (black or white) that occurs most "
+"MINORITY: prefers to connect the color (black or white) that occurs least "
 "frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently "
+"in a local neighborhood of the current position.\n"
 "RANDOM: choose randomly."
 msgstr ""
 "此参数确定在将位图分解为路径时如何解决歧义。\n"
@@ -12991,10 +12902,9 @@ msgstr "角点"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:706
 msgid ""
-"This parameter is a threshold for the detection of corners. It controls "
-"the smoothness of the traced curve."
-msgstr ""
-"此参数是检测角点的阈值。它控制描绘曲线的平滑程度。"
+"This parameter is a threshold for the detection of corners. It controls the "
+"smoothness of the traced curve."
+msgstr "此参数是检测角点的阈值。它控制描绘曲线的平滑程度。"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:715
 msgid "Simplify"
@@ -13002,15 +12912,14 @@ msgstr "简化"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:721
 msgid ""
-"Try to 'simplify' the final curve by reducing the number of Bezier curve "
-"segments."
+"Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
 msgstr "尝试通过减少贝塞尔曲线段的数量来“简化”最终曲线。"
 
 #: meerk40t/gui/propertypanels/imageproperty.py:737
 msgid ""
 "This defines the amount of error allowed in this simplification.\n"
-"Larger values tend to decrease the number of segments, at the expense of "
-"less accuracy."
+"Larger values tend to decrease the number of segments, at the expense of less "
+"accuracy."
 msgstr ""
 "这定义了此简化中允许的误差量。\n"
 "较大的值倾向于减少线段数量，但准确性降低。"
@@ -13071,6 +12980,7 @@ msgstr "绿色分量控制"
 #: meerk40t/gui/propertypanels/imageproperty.py:1185
 msgid "Green Factor"
 msgstr "绿色因子"
+
 #: meerk40t/gui/propertypanels/imageproperty.py:1186
 msgid "Blue component control"
 msgstr "蓝色分量控制"
@@ -13147,11 +13057,9 @@ msgstr "图层："
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:35
 msgid ""
-"Change/View color of this layer. When Meerk40t classifies elements to "
-"operations,"
+"Change/View color of this layer. When Meerk40t classifies elements to operations,"
 msgstr ""
-"更改/查看此图层的颜色。当 Meerk40t 将元素分类到操作时，"
-"此确切颜色用于匹配元素到此操作。"
+"更改/查看此图层的颜色。当机器将元素分类到操作时，此确切颜色用于匹配元素到此操作。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:37
 msgid "this exact color is used to match elements to this operation."
@@ -13190,6 +13098,7 @@ msgstr "如果启用，则此操作将阻止进一步分类"
 #: meerk40t/gui/propertypanels/operationpropertymain.py:87
 msgid "from other ops if it could classify an element by itself."
 msgstr "如果它本身可以将元素分类，则会阻止其他操作。"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:118
 #: meerk40t/gui/propertypanels/placementproperty.py:32
 msgid "Enable this operation for inclusion in Execute Job."
@@ -13204,11 +13113,8 @@ msgid "Hide all contained elements on scene if not set."
 msgstr "如果未设置，则在场景上隐藏所有包含的元素。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:133
-msgid ""
-"When classifying elements, Default operations gain all appropriate "
-"elements "
-msgstr ""
-"在分类元素时，默认操作会获取所有适当的元素 "
+msgid "When classifying elements, Default operations gain all appropriate elements "
+msgstr "在分类元素时，默认操作会获取所有适当的元素 "
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:136
 msgid "not matched to an existing operation of the same colour, "
@@ -13236,19 +13142,16 @@ msgstr "头部移动的速度，以毫米/秒为单位。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:417
 msgid ""
-"For Cut/Engrave vector operations, this is the speed of the head "
-"regardless of direction i.e. the separate x/y speeds vary according to "
-"the direction."
+"For Cut/Engrave vector operations, this is the speed of the head regardless of "
+"direction i.e. the separate x/y speeds vary according to the direction."
 msgstr ""
-"对于切割/雕刻矢量操作，这是头部的速度，无论方向如何，"
-"独立的 x/y 速度根据方向而变化。"
+"对于切割/雕刻矢量操作，这是头部的速度，无论方向如何，独立的 x/y 速度根据方向而变化。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:421
 msgid ""
-"For Raster/Image operations, this is the speed of the head as it sweeps "
-"backwards and forwards."
-msgstr ""
-"对于光栅/图像操作，这是头部来回扫描时的速度。"
+"For Raster/Image operations, this is the speed of the head as it sweeps backwards "
+"and forwards."
+msgstr "对于光栅/图像操作，这是头部来回扫描时的速度。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:430
 #: meerk40t/gui/propertypanels/operationpropertymain.py:553
@@ -13265,10 +13168,9 @@ msgstr "1000 表示始终开启，500 表示半功率（每隔一个步骤触发
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:449
 msgid ""
-"Values of 100 or have pulses > 1/10\" and are generally used only for "
-"dotted or perforated lines."
-msgstr ""
-"值为 100 或脉冲 > 1/10\"，通常仅用于虚线或穿孔线条。"
+"Values of 100 or have pulses > 1/10\" and are generally used only for dotted or "
+"perforated lines."
+msgstr "值为 100 或脉冲 > 1/10\"，通常仅用于虚线或穿孔线条。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:459
 msgid "Frequency (kHz)"
@@ -13296,15 +13198,14 @@ msgstr "要重复执行此操作多少次？"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:593
 msgid ""
-"Setting e.g. passes to 2 is essentially equivalent to Duplicating the "
-"operation, "
+"Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, "
 msgstr "例如，将重复次数设置为 2 与复制操作基本等效，"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:596
 msgid ""
-"creating a second identical operation with the same settings and same "
-"elements."
+"creating a second identical operation with the same settings and same elements."
 msgstr "创建一个具有相同设置和元素的第二个相同操作。"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:600
 msgid "The number of Operation Passes can be changed extremely easily, "
 msgstr "操作重复次数可以非常容易地更改，"
@@ -13367,10 +13268,8 @@ msgstr "光栅："
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1156
 msgid ""
-"In a raster engrave, the step size is the distance between raster lines "
-"in 1/1000\" "
-msgstr ""
-"在光栅雕刻中，步进大小是光栅线之间的距离，以 1/1000\" 为单位。"
+"In a raster engrave, the step size is the distance between raster lines in 1/1000\" "
+msgstr "在光栅雕刻中，步进大小是光栅线之间的距离，以 1/1000\" 为单位。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1159
 msgid "and also the number of raster dots that get combined together."
@@ -13378,44 +13277,44 @@ msgstr "同时也是组合在一起的光栅点的数量。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1161
 msgid ""
-"Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster "
-"lines overlap a lot, "
-msgstr ""
-"因为激光点的直径 >> 1/1000\"，在步骤 1 中，光栅线重叠很多，"
+"Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines "
+"overlap a lot, "
+msgstr "因为激光点的直径 >> 1/1000\"，在步骤 1 中，光栅线重叠很多，"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1164
 msgid ""
-"and consequently you can raster with steps > 1 without leaving gaps "
-"between the lines."
+"and consequently you can raster with steps > 1 without leaving gaps between the "
+"lines."
 msgstr "因此，您可以使用大于 1 的步进进行光栅处理，而不会在线之间留下间隙。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1168
 msgid ""
-"The step size before you get gaps will depend on your focus and the size "
-"of your laser dot."
+"The step size before you get gaps will depend on your focus and the size of your "
+"laser dot."
 msgstr "在出现间隙之前的步进大小将取决于您的焦点和激光点的大小。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1172
 msgid ""
-"Step size > 1 reduces the laser energy delivered by the same factor, so "
-"you may need to increase "
+"Step size > 1 reduces the laser energy delivered by the same factor, so you may "
+"need to increase "
 msgstr "步进大小 > 1 会将传递的激光能量降低相同的因数，因此您可能需要增加"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1175
 msgid ""
-"power equivalently with a higher front-panel power, a higher PPI or by "
-"rastering at a slower speed."
+"power equivalently with a higher front-panel power, a higher PPI or by rastering at "
+"a slower speed."
 msgstr "等效地提高前面板功率，提高 PPI 或以较慢的速度进行光栅处理。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1179
 msgid ""
-"Step size > 1 also turns the laser on and off fewer times, and combined "
-"with a slower speed"
+"Step size > 1 also turns the laser on and off fewer times, and combined with a "
+"slower speed"
 msgstr "步进大小 > 1 也会减少激光的开启和关闭次数，并与较慢的速度相结合"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1182
 msgid "this can prevent your laser from stuttering."
 msgstr "这可以防止您的激光器出现卡顿。"
+
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1187
 msgid "Overscan:"
 msgstr "过扫描："
@@ -13434,50 +13333,42 @@ msgstr "执行光栅的方向"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1221
 msgid ""
-"Normally you would raster in an X-direction and select Top-to-Bottom "
-"(T2B) or Bottom-to-Top (B2T)."
-msgstr ""
-"通常，您会在 X 方向上进行光栅处理，并选择自上而下（T2B）或自下而上（B2T）。"
+"Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or "
+"Bottom-to-Top (B2T)."
+msgstr "通常，您会在 X 方向上进行光栅处理，并选择自上而下（T2B）或自下而上（B2T）。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1225
 msgid ""
-"This is because rastering in the X-direction involve moving only the "
-"laser head which is relatively low mass."
-msgstr ""
-"这是因为在 X 方向上进行光栅处理仅涉及移动相对质量较低的激光头。"
+"This is because rastering in the X-direction involve moving only the laser head "
+"which is relatively low mass."
+msgstr "这是因为在 X 方向上进行光栅处理仅涉及移动相对质量较低的激光头。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1229
 msgid ""
-"Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves "
-"moving not only the laser head "
-msgstr ""
-"在 Y 方向上进行光栅处理（从左到右或从右到左）不仅涉及移动激光头，"
+"Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not "
+"only the laser head "
+msgstr "在 Y 方向上进行光栅处理（从左到右或从右到左）不仅涉及移动激光头，"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1232
 msgid ""
-"but additionally the entire x-axis gantry assembly including the stepper "
-"motor, mirror and the gantry itself."
-msgstr ""
-"还涉及整个 x 轴门架组件，包括步进电机、镜子和门架本身。"
+"but additionally the entire x-axis gantry assembly including the stepper motor, "
+"mirror and the gantry itself."
+msgstr "还涉及整个 x 轴门架组件，包括步进电机、镜子和门架本身。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1236
 msgid ""
-"This total mass is much greater, acceleration therefore needs to be much "
-"slower, "
-msgstr ""
-"因此，这总质量要大得多，因此加速度必须慢得多，"
+"This total mass is much greater, acceleration therefore needs to be much slower, "
+msgstr "因此，这总质量要大得多，因此加速度必须慢得多，"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1239
 msgid ""
-"and allow for space at each end of the raster to reverse direction the "
-"speed has to be much slower."
-msgstr ""
-"并且在光栅的每一端留出空间以反转方向，速度必须慢得多。"
+"and allow for space at each end of the raster to reverse direction the speed has to "
+"be much slower."
+msgstr "并且在光栅的每一端留出空间以反转方向，速度必须慢得多。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1251
-#, fuzzy
 msgid "Directional Raster:"
-msgstr "Directional Raster"
+msgstr "定向光栅"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1257
 msgid "Raster on forward and backswing or only forward swing?"
@@ -13485,14 +13376,14 @@ msgstr "正向和反向摆动上进行光栅处理，还是仅进行正向摆动
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1259
 msgid ""
-"Rastering only on forward swings will double the time required to "
-"complete the raster."
+"Rastering only on forward swings will double the time required to complete the "
+"raster."
 msgstr "仅在正向摆动上进行光栅处理将使完成光栅处理所需的时间增加一倍。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1263
 msgid ""
-"It seems doubtful that there will be significant quality benefits from "
-"rastering in one direction."
+"It seems doubtful that there will be significant quality benefits from rastering in "
+"one direction."
 msgstr "似乎怀疑在一个方向上进行光栅处理是否会有显著的质量优势。"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:1379
@@ -13535,6 +13426,7 @@ msgstr "给定值的输入位"
 #: meerk40t/gui/propertypanels/pathproperty.py:95
 msgid "Retrieve"
 msgstr "检索"
+
 #: meerk40t/gui/propertypanels/pathproperty.py:97
 #: meerk40t/gui/propertypanels/pointproperty.py:51
 msgid "Immediately classify after colour change"
@@ -13648,6 +13540,7 @@ msgstr "对比度量"
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:87
 msgid "Contrast the lights and darks by how much?"
 msgstr "将亮色和暗色的对比度调整到多少？"
+
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:89
 msgid "Brightness amount"
 msgstr "亮度量"
@@ -13765,6 +13658,7 @@ msgstr "阈值控制要锐化的最小亮度变化。"
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:613
 msgid "Sharpen Threshold Amount"
 msgstr "锐化阈值量"
+
 #: meerk40t/gui/propertypanels/rasterwizardpanels.py:620
 msgid "Threshold"
 msgstr "阈值"
@@ -13872,6 +13766,7 @@ msgstr "切换删除线"
 #: meerk40t/gui/propertypanels/textproperty.py:389
 msgid "Define where to place the origin (i.e. current mouse position)"
 msgstr "定义放置原点的位置（即当前鼠标位置）"
+
 #: meerk40t/gui/propertypanels/textproperty.py:485
 msgid "Text-Variables"
 msgstr "文本变量"
@@ -13893,11 +13788,8 @@ msgid "Set the wait time for pausing the laser execution."
 msgstr "设置等待时间以暂停激光执行。"
 
 #: meerk40t/gui/scenewidgets/guidewidget.py:127
-msgid ""
-"You will create more than {:,.0f} magnet-lines! Are you really, really "
-"sure?"
-msgstr ""
-"您将创建超过 {:,.0f} 条磁线！您真的非常确定吗？"
+msgid "You will create more than {:,.0f} magnet-lines! Are you really, really sure?"
+msgstr "您将创建超过 {:,.0f} 条磁线！您真的非常确定吗？"
 
 #: meerk40t/gui/scenewidgets/guidewidget.py:130
 msgid "Huge amount of magnet lines"
@@ -13982,6 +13874,7 @@ msgstr "将所选内容与参考对象的左上角对齐"
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2036
 msgid "Align the selection to the left side of the reference object"
 msgstr "将所选内容与参考对象的左侧对齐"
+
 #: meerk40t/gui/scenewidgets/selectionwidget.py:2042
 msgid "Align the selection to the bottom left corner of the reference object"
 msgstr "将所选内容与参考对象的左下角对齐"
@@ -14076,14 +13969,14 @@ msgstr "任务：{steps}/{steptotal}，{elapsed} [{remaining}]"
 
 #: meerk40t/gui/statusbarwidgets/opassignwidget.py:54
 msgid ""
-"Assign as well all other elements with the same stroke-color (fill-color "
-"if right-click"
-msgstr ""
-"同时将所有其他带有相同描边颜色的元素分配（右键单击填充颜色）"
+"Assign as well all other elements with the same stroke-color (fill-color if right-"
+"click"
+msgstr "同时将所有其他带有相同描边颜色的元素分配（右键单击填充颜色）"
 
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:24
 msgid "Resize"
 msgstr "调整大小"
+
 #: meerk40t/gui/statusbarwidgets/selectionwidget.py:70
 msgid "Toggle visibility of Move-indicator"
 msgstr "切换移动指示器的可见性"
@@ -14155,8 +14048,7 @@ msgid "Stroke:"
 msgstr "描边："
 
 #: meerk40t/gui/toolwidgets/toolcircle.py:102
-#: meerk40t/gui/toolwidgets/toolellipse.py:91
-#: meerk40t/gui/toolwidgets/toolrect.py:88
+#: meerk40t/gui/toolwidgets/toolellipse.py:91 meerk40t/gui/toolwidgets/toolrect.py:88
 msgid " (Press Alt-Key to draw from center)"
 msgstr "（按下 Alt 键以从中心绘制）"
 
@@ -14197,6 +14089,7 @@ msgstr "删除点"
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:181
 msgid "Make segment a line"
 msgstr "将线段变成直线"
+
 #: meerk40t/gui/toolwidgets/toolnodeedit.py:183
 msgid "> Line"
 msgstr "> 直线"
@@ -14306,6 +14199,7 @@ msgstr "水平"
 #: meerk40t/gui/utilitywidgets/togglewidget.py:81
 msgid "Vertical"
 msgstr "垂直"
+
 #: meerk40t/gui/utilitywidgets/togglewidget.py:83
 msgid "Autohide"
 msgstr "自动隐藏"
@@ -14318,8 +14212,7 @@ msgstr "打开USB控制器"
 msgid "Opens Network-Controller"
 msgstr "打开网络控制器"
 
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:19
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:24
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:19 meerk40t/lihuiyu/gui/lhyaccelgui.py:24
 #: meerk40t/lihuiyu/gui/lhyaccelgui.py:29
 msgid "infinity"
 msgstr "无限大"
@@ -14328,18 +14221,12 @@ msgstr "无限大"
 msgid "Enable defined acceleration chart for vectors"
 msgstr "启用定义的矢量加速度图表"
 
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:107
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:112
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:117
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:122
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:130
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:135
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:140
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:145
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:153
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:158
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:163
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:168
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:107 meerk40t/lihuiyu/gui/lhyaccelgui.py:112
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:117 meerk40t/lihuiyu/gui/lhyaccelgui.py:122
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:130 meerk40t/lihuiyu/gui/lhyaccelgui.py:135
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:140 meerk40t/lihuiyu/gui/lhyaccelgui.py:145
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:153 meerk40t/lihuiyu/gui/lhyaccelgui.py:158
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:163 meerk40t/lihuiyu/gui/lhyaccelgui.py:168
 msgid "Upper limit for accel level {acceleration}"
 msgstr "加速度级别上限 {acceleration}"
 
@@ -14359,16 +14246,11 @@ msgstr "水平光栅"
 msgid "Vertical Raster"
 msgstr "垂直光栅"
 
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:201
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:207
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:213
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:219
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:234
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:240
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:246
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:252
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:267
-#: meerk40t/lihuiyu/gui/lhyaccelgui.py:273
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:201 meerk40t/lihuiyu/gui/lhyaccelgui.py:207
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:213 meerk40t/lihuiyu/gui/lhyaccelgui.py:219
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:234 meerk40t/lihuiyu/gui/lhyaccelgui.py:240
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:246 meerk40t/lihuiyu/gui/lhyaccelgui.py:252
+#: meerk40t/lihuiyu/gui/lhyaccelgui.py:267 meerk40t/lihuiyu/gui/lhyaccelgui.py:273
 #: meerk40t/lihuiyu/gui/lhyaccelgui.py:279
 msgid "mm/s"
 msgstr "毫米/秒"
@@ -14415,6 +14297,7 @@ msgstr "字节1的含义"
 #: meerk40t/moshi/gui/moshicontrollergui.py:166
 msgid "Packet Info"
 msgstr "封包信息"
+
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:167
 #: meerk40t/moshi/gui/moshicontrollergui.py:168
 msgid "Byte Data Status"
@@ -14529,6 +14412,7 @@ msgstr "连接被拒绝。请查看 USB 日志以获取详细信息。"
 #: meerk40t/moshi/gui/moshicontrollergui.py:371
 msgid "Manual Connection"
 msgstr "手动连接"
+
 #: meerk40t/lihuiyu/gui/lhycontrollergui.py:460
 msgid "LOCKED"
 msgstr "已锁定"
@@ -14592,22 +14476,19 @@ msgstr "限制多激光"
 msgid "CH341 Version"
 msgstr "CH341 版本"
 
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:49
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:66
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:49 meerk40t/lihuiyu/gui/lhydrivergui.py:66
 #: meerk40t/moshi/gui/moshicontrollergui.py:121
 #: meerk40t/moshi/gui/moshicontrollergui.py:129
 #: meerk40t/moshi/gui/moshicontrollergui.py:137
 #: meerk40t/moshi/gui/moshicontrollergui.py:145
 msgid ""
-"Optional: Distinguish between different lasers using the match criteria "
-"below.\n"
+"Optional: Distinguish between different lasers using the match criteria below.\n"
 "-1 match anything. 0+ match exactly that value."
 msgstr ""
 "可选：使用以下匹配条件区分不同的激光。\n"
 "-1 匹配任何内容。0+ 仅匹配该值。"
 
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:73
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:77
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:73 meerk40t/lihuiyu/gui/lhydrivergui.py:77
 msgid "Serial Number"
 msgstr "序列号"
 
@@ -14617,8 +14498,8 @@ msgstr "要求此板的序列号匹配"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:88
 msgid ""
-"Board Serial Number to be used to identify a specific laser. If the "
-"device fails to match the serial number it will be disconnected."
+"Board Serial Number to be used to identify a specific laser. If the device fails to "
+"match the serial number it will be disconnected."
 msgstr "用于标识特定激光的板序列号。如果设备未能匹配序列号，将会断开连接。"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:94
@@ -14631,8 +14512,7 @@ msgstr "限制写缓冲区"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:101
 msgid ""
-"Limit the write buffer to a certain amount. Permits on-the-fly command "
-"production."
+"Limit the write buffer to a certain amount. Permits on-the-fly command production."
 msgstr "将写缓冲区限制在一定数量内。允许动态生成命令。"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:122
@@ -14643,18 +14523,18 @@ msgstr "当前最大写缓冲区限制。"
 msgid "TCP Settings"
 msgstr "TCP 设置"
 
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:280
-#: meerk40t/lihuiyu/gui/lhydrivergui.py:423
+#: meerk40t/lihuiyu/gui/lhydrivergui.py:280 meerk40t/lihuiyu/gui/lhydrivergui.py:423
 msgid "Interface"
 msgstr "接口"
+
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:286
 msgid "USB"
 msgstr "USB"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:289
 msgid ""
-"Select this if you have an m2-nano controller physically connected to "
-"this computer using a USB cable."
+"Select this if you have an m2-nano controller physically connected to this computer "
+"using a USB cable."
 msgstr "如果您在此计算机上使用 USB 数据线物理连接了 m2-nano 控制器，请选择此项。"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:295
@@ -14663,9 +14543,9 @@ msgstr "网络"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:297
 msgid ""
-"Select this to connect this instance of Meerk40t to another instance of "
-"Meerk40t running as a remote server."
-msgstr "选择此项以将此 Meerk40t 实例连接到另一个运行为远程服务器的 Meerk40t 实例。"
+"Select this to connect this instance of Meerk40t to another instance of Meerk40t "
+"running as a remote server."
+msgstr "选择此项以将此 软件 实例连接到另一个运行为远程服务器的 软件 实例。"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:303
 msgid "Mock"
@@ -14673,12 +14553,11 @@ msgstr "模拟"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:305
 msgid ""
-"Select this only for debugging without a physical laser available. "
-"Execute a burn as if there was an m2-nano controller physically connected"
-" by USB."
+"Select this only for debugging without a physical laser available. Execute a burn "
+"as if there was an m2-nano controller physically connected by USB."
 msgstr ""
-"仅在没有可用物理激光的情况下用于调试。以仿佛通过 USB 连接了 m2-nano 控制器"
-"的方式执行刻录。"
+"仅在没有可用物理激光的情况下用于调试。以仿佛通过 USB 连接了 m2-nano 控制器的方式执行"
+"刻录。"
 
 #: meerk40t/lihuiyu/gui/lhydrivergui.py:378
 msgid "Lihuiyu-Configuration"
@@ -14702,9 +14581,11 @@ msgstr "启用修改对角线比例的能力。"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:42
 msgid ""
-"Diagonal ratio is the ratio of additional time needed to perform a "
-"diagonal step rather than an orthogonal step. (0.261 default)"
-msgstr "对角线比例是进行对角线步骤所需的额外时间与进行正交步骤所需时间的比例。 (默认为 0.261)"
+"Diagonal ratio is the ratio of additional time needed to perform a diagonal step "
+"rather than an orthogonal step. (0.261 default)"
+msgstr ""
+"对角线比例是进行对角线步骤所需的额外时间与进行正交步骤所需时间的比例。 (默认为 "
+"0.261)"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:53
 msgid "Acceleration"
@@ -14716,15 +14597,13 @@ msgstr "启用加速度覆盖"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:61
 msgid ""
-"The m2-nano controller has four acceleration settings, and automatically "
-"selects the appropriate setting for the Cut or Raster speed."
-msgstr ""
-"m2-nano 控制器有四个加速度设置，并自动为切割或光栅速度选择适当的设置。"
+"The m2-nano controller has four acceleration settings, and automatically selects "
+"the appropriate setting for the Cut or Raster speed."
+msgstr "m2-nano 控制器有四个加速度设置，并自动为切割或光栅速度选择适当的设置。"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:66
 msgid ""
-"This setting allows you to override the automatic selection and specify "
-"your own."
+"This setting allows you to override the automatic selection and specify your own."
 msgstr "此设置允许您覆盖自动选择并指定您自己的设置。"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:74
@@ -14741,45 +14620,42 @@ msgstr "启用点长度"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:91
 msgid ""
-"For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
-"length for the laser to be on in order to change a continuous lower power"
-" burn into a series of dashes."
+"For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for "
+"the laser to be on in order to change a continuous lower power burn into a series "
+"of dashes."
 msgstr ""
-"对于切割/雕刻操作，在使用 PPI 时，点长度设置激光器保持开启的最小时间，"
-"以便将连续的低功率刻录转变为一系列虚线。"
+"对于切割/雕刻操作，在使用 PPI 时，点长度设置激光器保持开启的最小时间，以便将连续的低"
+"功率刻录转变为一系列虚线。"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:97
 msgid ""
-"When this is set, the PPI effectively becomes the ratio of dashes to "
-"gaps. For example:"
-msgstr ""
-"设置此选项后，PPI 实际上变为虚线与间隔的比例。例如："
+"When this is set, the PPI effectively becomes the ratio of dashes to gaps. For "
+"example:"
+msgstr "设置此选项后，PPI 实际上变为虚线与间隔的比例。例如："
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:102
 msgid ""
-"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" "
-"dashes and 1/2\" gaps."
+"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" dashes and "
+"1/2\" gaps."
 msgstr ""
-"如果将点长度设置为 500 = 1/2 英寸，PPI 为 500，则会产生 1/2 英寸的虚线和"
-"1/2 英寸的间隔。"
+"如果将点长度设置为 500 = 1/2 英寸，PPI 为 500，则会产生 1/2 英寸的虚线和1/2 英寸的间"
+"隔。"
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:107
 msgid ""
-"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" "
-"dashes and 3/4\" gaps."
+"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and "
+"3/4\" gaps."
 msgstr ""
-"如果将点长度设置为 250 = 1/4 英寸，PPI 为 250，则会产生 1/4 英寸的虚线和"
-"3/4 英寸的间隔。"
+"如果将点长度设置为 250 = 1/4 英寸，PPI 为 250，则会产生 1/4 英寸的虚线和3/4 英寸的间"
+"隔。"
 
 #: meerk40t/moshi/gui/moshicontrollergui.py:28
 msgid "Mock USB Connection Mode"
 msgstr "模拟 USB 连接模式"
+
 #: meerk40t/moshi/gui/moshicontrollergui.py:114
-msgid ""
-"DEBUG. Without a K40 connected continue to process things as if there was"
-" one."
-msgstr ""
-"调试。如果没有连接 K40，将继续处理事物，就好像有一个连接了一样。"
+msgid "DEBUG. Without a K40 connected continue to process things as if there was one."
+msgstr "调试。如果没有连接 K40，将继续处理事物，就好像有一个连接了一样。"
 
 #: meerk40t/moshi/gui/moshicontrollergui.py:430
 msgid "Moshiboard-Controller"
