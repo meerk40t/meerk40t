@@ -335,7 +335,10 @@ class SpoolerPanel(wx.Panel):
             if event is not None and older_than is not None:
                 if not "start_time" in event:
                     continue
-                if event["start_time"] is not None and event["start_time"] >= older_than:
+                if (
+                    event["start_time"] is not None
+                    and event["start_time"] >= older_than
+                ):
                     continue
             if event is not None and job_type is not None:
                 if not "status" in event:
@@ -390,7 +393,9 @@ class SpoolerPanel(wx.Panel):
         options = [(_("All entries"), None, None)]
         for week in range(1, 5):
             cutoff_time = now - week * week_seconds
-            options.append((_("Older than {week} week").format(week=week), cutoff_time, None))
+            options.append(
+                (_("Older than {week} week").format(week=week), cutoff_time, None)
+            )
         options.append((_("All incomplete jobs"), None, "stopped"))
         menu = wx.Menu()
         if idx >= 0:
@@ -744,10 +749,11 @@ class SpoolerPanel(wx.Panel):
             pattern = pattern.replace("08", "{mm}")
             pattern = pattern.replace("8", "{mm}")
         # Deal with years seperately
-        pattern = pattern.replace("{y}", str(syear).zfill(2)) 
-        pattern = pattern.replace("{yy}", str(lyear).zfill(2)) 
+        pattern = pattern.replace("{y}", str(syear).zfill(2))
+        pattern = pattern.replace("{yy}", str(lyear).zfill(2))
         result = pattern.format(
-            dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), 
+            dd=str(lday).zfill(2),
+            mm=str(lmonth).zfill(2),
         )
         # Just to show the bug...
         # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
