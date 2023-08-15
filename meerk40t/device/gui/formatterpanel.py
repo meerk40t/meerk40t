@@ -86,8 +86,11 @@ class FormatterPanel(wx.Panel):
                 "default": False,
                 "type": bool,
                 "label": _("Display power as a percentage"),
-                "tip": _("Active: Full power will be shown as 100%" + "\n" +
-                         "Inactive: Full power will be shown as 1000 ppi"),
+                "tip": _(
+                    "Active: Full power will be shown as 100%"
+                    + "\n"
+                    + "Inactive: Full power will be shown as 1000 ppi"
+                ),
                 "subsection": "_10_General",
                 "signals": ("rebuild_tree", "power_percent"),
             },

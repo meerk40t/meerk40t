@@ -71,8 +71,7 @@ class LayerSettingPanel(wx.Panel):
             self.has_fill = self.operation.has_color_attribute("fill")
             self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
-                _("Look at the fill color to restrict classification.")
-                + rastertooltip
+                _("Look at the fill color to restrict classification.") + rastertooltip
             )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
             h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
@@ -455,7 +454,6 @@ class SpeedPpiPanel(wx.Panel):
         self.power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
         self.power_sizer.Add(self.trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-
         freq = self.context.device.lookup("frequency")
         if freq:
             frequency_sizer = StaticBoxSizer(
@@ -561,7 +559,6 @@ class SpeedPpiPanel(wx.Panel):
             )
             self.power_sizer.SetLabel(_("Power (ppi)"))
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
-
 
     def accepts(self, node):
         return node.type in (

@@ -970,7 +970,11 @@ class RibbonBarPanel(wx.Control):
                 continue
             for panel in page.panels:
                 for button in panel.buttons:
-                    if button.contains(pos) and (button.enabled or use_all) and not button.overflow:
+                    if (
+                        button.contains(pos)
+                        and (button.enabled or use_all)
+                        and not button.overflow
+                    ):
                         return button
         return None
 
@@ -1145,7 +1149,7 @@ class Art:
         # ).ChangeLightness(50)
         self.button_face_hover = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_BTNHILIGHT)
-        ) # .ChangeLightness(25)
+        )  # .ChangeLightness(25)
         self.inactive_background = copy.copy(
             wx.SystemSettings().GetColour(wx.SYS_COLOUR_INACTIVECAPTION)
         )
@@ -1208,7 +1212,9 @@ class Art:
                 continue
             dc.SetBrush(wx.Brush(self.button_face))
             x, y, x1, y1 = page.position
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
+            dc.DrawRoundedRectangle(
+                int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
+            )
             for panel in page.panels:
                 # plen = len(panel.buttons)
                 # if plen == 0:
@@ -1228,7 +1234,6 @@ class Art:
         horizontal = self.parent.prefer_horizontal()
         highlight_via_color = False
 
-
         dc.SetPen(wx.Pen(self.black_color))
         show_rect = True
         if page is not self.current_page:
@@ -1247,7 +1252,9 @@ class Art:
             show_rect = True
         x, y, x1, y1 = page.tab_position
         if show_rect:
-            dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
+            dc.DrawRoundedRectangle(
+                int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
+            )
         dc.SetFont(self.default_font)
         text_width, text_height = dc.GetTextExtent(page.label)
         tpx = int(x + (x1 - x - text_width) / 2)
@@ -1258,7 +1265,6 @@ class Art:
             tpx = int(x + self.tab_text_buffer)
             tpy = int(y1 - (y1 - y - text_width) / 2)
             dc.DrawRotatedText(page.label, tpx, tpy, 90)
-
 
     def _paint_background(self, dc: wx.DC):
         """
@@ -1285,7 +1291,9 @@ class Art:
         # print(f"Painting panel {panel.label}: {panel.position}")
         dc.SetBrush(wx.Brush(self.button_face))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
+        dc.DrawRoundedRectangle(
+            int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
+        )
         """
         Paint the overflow of buttons that cannot be stored within the required width.
 
@@ -1297,7 +1305,9 @@ class Art:
         x, y, x1, y1 = panel._overflow_position
         dc.SetBrush(wx.Brush(self.highlight))
         dc.SetPen(wx.Pen(self.black_color))
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
+        dc.DrawRoundedRectangle(
+            int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
+        )
         r = min((y1 - y) / 2, (x1 - x) / 2) - 2
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1328,7 +1338,9 @@ class Art:
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetPen(wx.TRANSPARENT_PEN)
 
-        dc.DrawRoundedRectangle(int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius)
+        dc.DrawRoundedRectangle(
+            int(x), int(y), int(x1 - x), int(y1 - y), self.rounded_radius
+        )
         r = min((x1 - x) / 2, (y1 - y) / 2)
         cx = (x + x1) / 2
         cy = -r / 2 + (y + y1) / 2
@@ -1415,7 +1427,11 @@ class Art:
             # We try to establish whether this would fit properly.
             # We allow a small oversize of 25% to the button,
             # before we try to reduce the fontsize
-            font_candidates = [self.default_font, self.small_font, self.tiny_font, ]
+            font_candidates = [
+                self.default_font,
+                self.small_font,
+                self.tiny_font,
+            ]
             if button.bitmapsize == "tiny":
                 font_candidates = font_candidates[2:]
             elif button.bitmapsize == "small":
@@ -1697,7 +1713,8 @@ class Art:
         """
         x, y, max_x, max_y = page.position
         is_horizontal = (self.orientation == self.RIBBON_ORIENTATION_HORIZONTAL) or (
-            self.parent.prefer_horizontal() and self.orientation == self.RIBBON_ORIENTATION_AUTO
+            self.parent.prefer_horizontal()
+            and self.orientation == self.RIBBON_ORIENTATION_AUTO
         )
         button_width, button_height = self.preferred_button_size_for_page(dc, page)
         x += self.page_panel_buffer
@@ -1945,9 +1962,7 @@ class Art:
         button_width += 2 * self.panel_button_buffer
         if button.label and self.show_labels:
             # button_height += + self.panel_button_buffer
-            button_height += (
-                self.bitmap_text_buffer + text_height
-            )
+            button_height += self.bitmap_text_buffer + text_height
 
         button.min_width = button_width
         button.min_height = button_height

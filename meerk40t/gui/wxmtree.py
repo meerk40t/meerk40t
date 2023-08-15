@@ -1353,7 +1353,9 @@ class ShadowTree:
             mymap = node.default_map()
             # We change power to either ppi or percent
             if "power" in mymap and "ppi" in mymap and "percent" in mymap:
-                self.context.device.setting(bool, "use_percent_for_power_display", False)
+                self.context.device.setting(
+                    bool, "use_percent_for_power_display", False
+                )
                 if self.context.device.use_percent_for_power_display:
                     mymap["power"] = mymap["percent"]
             for key in mymap:

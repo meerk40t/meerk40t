@@ -186,9 +186,7 @@ class KerfPanel(wx.Panel):
     def set_power_info(self):
         maxval = 1000
         lbl = ""
-        ttip = _(
-            _("Pulses Per Inch - This is software created laser power control.")
-        )
+        ttip = _(_("Pulses Per Inch - This is software created laser power control."))
 
         if self.use_percent():
             maxval = 100

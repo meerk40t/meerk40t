@@ -123,10 +123,10 @@ class RectSelectWidget(Widget):
 
             # Check Cross
             if (
-                    ((sx <= xmin) and (xmax <= ex))
-                    and not ((sy > ymax) or (ey < ymin))
-                    or ((sy <= ymin) and (ymax <= ey))
-                    and not ((sx > xmax) or (ex < xmin))
+                ((sx <= xmin) and (xmax <= ex))
+                and not ((sy > ymax) or (ey < ymin))
+                or ((sy <= ymin) and (ymax <= ey))
+                and not ((sx > xmax) or (ex < xmin))
             ):
                 cover = self.SELECTION_CROSS
             # Check contain

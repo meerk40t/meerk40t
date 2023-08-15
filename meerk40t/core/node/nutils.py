@@ -8,6 +8,7 @@ from meerk40t.core.cutcode.linecut import LineCut
 from meerk40t.core.cutcode.quadcut import QuadCut
 from meerk40t.svgelements import Close, CubicBezier, Line, Move, Path, QuadraticBezier
 
+
 def path_to_cutobjects(
     path,
     settings,
@@ -16,7 +17,7 @@ def path_to_cutobjects(
     original_op=None,
     color=None,
     kerf=0,
-    offset_routine=None
+    offset_routine=None,
 ):
     source = path
     if kerf != 0 and offset_routine is not None:
