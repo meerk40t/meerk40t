@@ -640,6 +640,10 @@ def path_offset(
                 for nidx in range(len(newsegment) - 1, 0, -1):  # All but the first
                     p._segments.insert(idx + 1, newsegment[nidx])
             elif isinstance(segment, Line):
+                if segment.start.distance_to(segment.end) < 50:
+                    # This is an invalid-useless line, so we drop it...
+                    p._segments.pop(idx)
+                    continue
                 newsegment = offset_line(segment, offset)
                 # print (f"Line, old: {dis(segment.start)}-{dis(segment.end)} - new: {dis(newsegment[0].start)}-{dis(newsegment[-1].end)}")
                 if newsegment is None or len(newsegment) == 0:
