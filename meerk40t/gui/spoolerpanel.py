@@ -728,6 +728,7 @@ class SpoolerPanel(wx.Panel):
         if pattern is not None:
             pattern = pattern.replace("%d", "{dd}")
             pattern = pattern.replace("%m", "{mm}")
+            pattern = pattern.replace("%y", "{yy}")
             pattern = pattern.replace("%Y", "{yy}")
         if pattern is None:
             wxdt = wx.DateTime(31, 7, 2022)
