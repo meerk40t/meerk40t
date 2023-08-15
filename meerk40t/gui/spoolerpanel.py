@@ -694,6 +694,7 @@ class SpoolerPanel(wx.Panel):
         else:
             hours, remainder = divmod(t, 3600)
             minutes, seconds = divmod(remainder, 60)
+        # Military time display
         result = (
             f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
         )
@@ -717,17 +718,29 @@ class SpoolerPanel(wx.Panel):
         # wx.DateTime(31,01,1999)
         # Arbitrary but with different figures
         # Alas this is the only simple method to get locale relevant dateformat...
-        wxdt = wx.DateTime(31, 7, 2022)
-        pattern = wxdt.FormatDate()
-        pattern = pattern.replace("2022", "{yy}")
-        pattern = pattern.replace("22", "{yy}")
-        pattern = pattern.replace("31", "{dd}")
-        # That would be the right thing, so if the bug is ever fixed, that will work
-        pattern = pattern.replace("07", "{mm}")
-        pattern = pattern.replace("7", "{mm}")
-        # And this is needed to deal with the bug...
-        pattern = pattern.replace("08", "{mm}")
-        pattern = pattern.replace("8", "{mm}")
+        pattern = None
+        try:
+            loc = wx.Locale()
+            pattern = loc.GetOSInfo(wx.LOCALE_SHORT_DATE_FMT, wx.LOCALE_CAT_DEFAULT)
+        except AttributeError:
+            # That's not available, so we use the other algorithm instead...
+            pass
+        if pattern is not None:
+            pattern = pattern.replace("%d", "{dd}")
+            pattern = pattern.replace("%m", "{mm}")
+            pattern = pattern.replace("%Y", "{yy}")
+        if pattern is None:
+            wxdt = wx.DateTime(31, 7, 2022)
+            pattern = wxdt.FormatDate()
+            pattern = pattern.replace("2022", "{yy}")
+            pattern = pattern.replace("22", "{yy}")
+            pattern = pattern.replace("31", "{dd}")
+            # That would be the right thing, so if the bug is ever fixed, that will work
+            pattern = pattern.replace("07", "{mm}")
+            pattern = pattern.replace("7", "{mm}")
+            # And this is needed to deal with the bug...
+            pattern = pattern.replace("08", "{mm}")
+            pattern = pattern.replace("8", "{mm}")
         result = pattern.format(
             dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2)
         )
