@@ -708,6 +708,7 @@ class SpoolerPanel(wx.Panel):
             return t
         localt = time.localtime(t)
         lyear = localt[0]
+        syear = lyear % 100
         lmonth = int(localt[1])
         lday = localt[2]
         lhour = localt[3]
@@ -728,13 +729,13 @@ class SpoolerPanel(wx.Panel):
         if pattern is not None:
             pattern = pattern.replace("%d", "{dd}")
             pattern = pattern.replace("%m", "{mm}")
-            pattern = pattern.replace("%y", "{yy}")
+            pattern = pattern.replace("%y", "{y}")
             pattern = pattern.replace("%Y", "{yy}")
         if pattern is None:
             wxdt = wx.DateTime(31, 7, 2022)
             pattern = wxdt.FormatDate()
             pattern = pattern.replace("2022", "{yy}")
-            pattern = pattern.replace("22", "{yy}")
+            pattern = pattern.replace("22", "{y}")
             pattern = pattern.replace("31", "{dd}")
             # That would be the right thing, so if the bug is ever fixed, that will work
             pattern = pattern.replace("07", "{mm}")
@@ -742,8 +743,11 @@ class SpoolerPanel(wx.Panel):
             # And this is needed to deal with the bug...
             pattern = pattern.replace("08", "{mm}")
             pattern = pattern.replace("8", "{mm}")
+        # Deal with years seperately
+        pattern = pattern.replace("{y}", str(syear).zfill(2)) 
+        pattern = pattern.replace("{yy}", str(lyear).zfill(2)) 
         result = pattern.format(
-            dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2)
+            dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), 
         )
         # Just to show the bug...
         # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
