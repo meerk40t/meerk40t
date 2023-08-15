@@ -485,14 +485,21 @@ class ConsolePanel(wx.ScrolledWindow):
         fname, fexists = self.history_filename()
         if fexists:
             result = []
+        if fexists:
+            result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, limit).decode("utf-8").splitlines()
+                    result = tail(f, 3 * limit).decode("utf-8").splitlines()
             except (PermissionError, OSError):
                 # Could not load
                 pass
             for entry in result:
+                if len(self.command_log) and entry == self.command_log[-1]:
+                    # print (f"ignored duplicate {entry}")
+                    continue
                 self.command_log.append(entry)
+            if len(self.command_log) > limit:
+                self.command_log = self.command_log[-limit:]
 
 
 class Console(MWindow):
