@@ -716,9 +716,7 @@ def init_tree(kernel):
         return result
 
     @tree_separator_after()
-    @tree_conditional(
-        lambda cond: selected_active_ops() > 0
-    )
+    @tree_conditional(lambda cond: selected_active_ops() > 0)
     @tree_operation(
         _("Simulate operation(s)"),
         node_type=op_nodes,

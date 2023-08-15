@@ -5,11 +5,11 @@ import wx
 from wx import aui
 
 from meerk40t.kernel import get_safe_path, signal_listener
-
-try:
-    from wx import richtext
-except ImportError:
-    print("import of wx.richtext for console failed, using default console window")
+#
+# try:
+#     from wx import richtext
+# except ImportError:
+#     print("import of wx.richtext for console failed, using default console window")
 
 from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console_50
 from meerk40t.gui.mwindow import MWindow

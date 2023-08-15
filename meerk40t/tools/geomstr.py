@@ -1280,7 +1280,7 @@ class Geomstr:
     def is_closed(self):
         if self.index == 0:
             return True
-        return abs(self.segments[0][0] - self.segments[self.index -1][-1]) < 1e-5
+        return abs(self.segments[0][0] - self.segments[self.index - 1][-1]) < 1e-5
 
     #######################
     # Geometric Helpers
@@ -2944,7 +2944,7 @@ class Geomstr:
         @param distance:
         @return:
         """
-        geoms = self.segments[:self.index]
+        geoms = self.segments[: self.index]
         infos = geoms[:, 2]
         a = np.real(infos).astype(int) & 0b1000 != 0
         b = np.real(infos).astype(int) & 0b0100 != 0
@@ -3145,19 +3145,15 @@ class Geomstr:
             segtype1 = int(seg1[2].real)
             seg2 = self.segments[idx - 1]
             segtype2 = int(seg2[2].real)
-            if (
-                segtype1 != TYPE_END and
-                segtype2 != TYPE_END and
-                seg1[0] != seg2[-1]
-            ):
+            if segtype1 != TYPE_END and segtype2 != TYPE_END and seg1[0] != seg2[-1]:
                 # This is a non-contiguous segment
-                end_segment = ((
+                end_segment = (
                     np.nan,
                     np.nan,
                     complex(TYPE_END, 0),
                     np.nan,
                     np.nan,
-                ))
+                )
                 # print (f"inserted an end at #{idx}")
                 self.insert(idx, end_segment)
             idx += 1
