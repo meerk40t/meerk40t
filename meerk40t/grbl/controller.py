@@ -222,6 +222,7 @@ class GrblController:
 
         self._paused = False
         self._watchers = []
+        self._estopped = False
 
     def __repr__(self):
         return f"GRBLController('{self.service.location()}')"
@@ -340,6 +341,8 @@ class GrblController:
         @param data:
         @return:
         """
+        if self._estopped:
+            raise PermissionError("Cannot write new data during an estop until the estop is cleared.")
         self.start()
         self.service.signal("grbl;write", data)
         with self._sending_lock:
@@ -365,6 +368,9 @@ class GrblController:
         if "\x18" in data:
             with self._sending_lock:
                 self._sending_queue.clear()
+                self._estopped = True
+        if "$X" in data:
+            self._estopped = False
         self.service.signal(
             "grbl;buffer", len(self._sending_queue) + len(self._realtime_queue)
         )
