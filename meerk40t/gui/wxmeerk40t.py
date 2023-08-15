@@ -14,14 +14,14 @@ from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 from .simpleui import SimpleUI
 
-try:
-    # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
-    # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
-    # so, we are doing it here even though we do not refer to it in this file
-    # richtext is used for the Console panel.
-    from wx import richtext
-except ImportError:
-    pass
+# try:
+#     # According to https://docs.wxpython.org/wx.richtext.1moduleindex.html
+#     # richtext needs to be imported before wx.App i.e. wxMeerK40t is instantiated
+#     # so, we are doing it here even though we do not refer to it in this file
+#     # richtext is used for the Console panel.
+#     from wx import richtext
+# except ImportError:
+#     pass
 from meerk40t.gui.consolepanel import Console
 from meerk40t.gui.navigationpanels import Navigation
 from meerk40t.gui.spoolerpanel import JobSpooler
