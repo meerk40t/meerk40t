@@ -8,6 +8,7 @@ INT_PARAMETERS = (
     "acceleration",
     "dot_length",
     "passes",
+    "loops",
     "jog_distance",
     "raster_direction",
     "raster_preference_top",
@@ -360,6 +361,14 @@ class Parameters:
         if not self.passes_custom:
             return 1
         return self.passes
+
+    @property
+    def loops(self):
+        return self.settings.get("loops", 1)
+
+    @loops.setter
+    def loops(self, value):
+        self.settings["loops"] = value
 
     @property
     def raster_direction(self):
