@@ -965,23 +965,6 @@ class SVGProcessor:
                 node._points_dirty = False
             e_list.append(node)
         elif isinstance(element, SVGImage):
-            # Inkscape 1.3 puts some lf (\n) in the data string for
-            # readability, this causes an error in svgelements, so lets
-            #  fix this until svgelements get fixed
-            if element.url is not None:
-                element.url = element.url.replace("\n", " ")
-                match = REGEX_DATA_URL.match(element.url)
-                if match:
-                    # Data URL
-                    element.media_type = match.group(1).split(";")
-                    element.data = match.group(2)
-                    if "base64" in element.media_type:
-                        from base64 import b64decode
-                        element.data = b64decode(element.data)
-                    else:
-                        from urllib.parse import unquote_to_bytes
-                        element.data = unquote_to_bytes(element.data)
-
             try:
                 element.load(os.path.dirname(self.pathname))
                 try:
@@ -1067,8 +1050,8 @@ class SVGProcessor:
                         lock=_lock,
                     )
                     e_list.append(node)
-            except OSError:
-                pass
+            except OSError as e:
+                raise e
         elif isinstance(element, SVG):
             # SVG is type of group, must go first
             if self.reverse:
