@@ -199,7 +199,7 @@ PATTERN_TRANSFORM_UNITS = (
 )
 
 REGEX_IRI = re.compile(r"url\(#?(.*)\)")
-REGEX_DATA_URL = re.compile(r"^data:([^,]*),(.*)")
+REGEX_DATA_URL = re.compile(r"^data:([^,]*),")
 REGEX_FLOAT = re.compile(PATTERN_FLOAT)
 REGEX_COORD_PAIR = re.compile(
     "(%s)%s(%s)" % (PATTERN_FLOAT, PATTERN_COMMA, PATTERN_FLOAT)
@@ -4254,6 +4254,7 @@ class PathSegment:
         tb_hit = qb[hits] / denom[hits]
 
         for i, hit in enumerate(where_hit):
+
             at = ta[0] + float(hit[1]) * step_a  # Zoomed min+segment intersected.
             bt = tb[0] + float(hit[0]) * step_b
             a_fractional = (
@@ -6031,8 +6032,7 @@ class Path(Shape, MutableSequence):
     @property
     def first_point(self):
         """First point along the Path. This is the start point of the first segment unless it starts
-        with a Move command with a None start in which case first point is that Move's destination.
-        """
+        with a Move command with a None start in which case first point is that Move's destination."""
         if len(self._segments) == 0:
             return None
         if self._segments[0].start is not None:
@@ -8531,7 +8531,7 @@ class Image(SVGElement, GraphicObject, Transformable):
             if match:
                 # Data URL
                 self.media_type = match.group(1).split(";")
-                self.data = match.group(2)
+                self.data = self.url[match.end(1) + 1 :]
                 if "base64" in self.media_type:
                     from base64 import b64decode
 
