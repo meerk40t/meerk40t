@@ -39,7 +39,7 @@ class PointNode(Node):
         nd["fill"] = copy(self.fill)
         return PointNode(**nd)
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         path = Geomstr()
         path.point(complex(self.x, self.y))
         path.transform(self.matrix)

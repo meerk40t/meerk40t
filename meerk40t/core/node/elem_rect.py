@@ -108,7 +108,7 @@ class RectNode(Node, Stroked):
             stroke_width=self.stroke_width,
         )
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         x = self.x
         y = self.y
         width = self.width

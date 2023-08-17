@@ -89,7 +89,7 @@ class PathNode(Node, Stroked):
     def path(self, new_path):
         self.geometry = Geomstr.svg(new_path)
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
         g = Geomstr(self.geometry)
         g.transform(self.matrix)
         return g

@@ -1511,6 +1511,20 @@ class HatchSettingsPanel(wx.Panel):
 
         raster_sizer = StaticBoxSizer(self, wx.ID_ANY, _("Hatch:"), wx.VERTICAL)
 
+        sizer_loops = StaticBoxSizer(self, wx.ID_ANY, _("Loops"), wx.HORIZONTAL)
+        self.text_loops = TextCtrl(
+            self,
+            wx.ID_ANY,
+            str(node.loops),
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        sizer_loops.Add(self.text_loops, 1, wx.EXPAND, 0)
+        self.slider_loops = wx.Slider(self, wx.ID_ANY, 0, 0, 100)
+        sizer_loops.Add(self.slider_loops, 3, wx.EXPAND, 0)
+        raster_sizer.Add(sizer_loops, 1, wx.EXPAND, 0)
+
         sizer_distance = StaticBoxSizer(
             self, wx.ID_ANY, _("Hatch Distance:"), wx.HORIZONTAL
         )
@@ -1542,6 +1556,20 @@ class HatchSettingsPanel(wx.Panel):
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
 
+        sizer_angle_delta = StaticBoxSizer(self, wx.ID_ANY, _("Angle Delta"), wx.HORIZONTAL)
+        self.text_angle_delta = TextCtrl(
+            self,
+            wx.ID_ANY,
+            str(node.hatch_angle_delta),
+            limited=True,
+            check="angle",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        sizer_angle_delta.Add(self.text_angle_delta, 1, wx.EXPAND, 0)
+        self.slider_angle_delta = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
+        sizer_angle_delta.Add(self.slider_angle_delta, 3, wx.EXPAND, 0)
+        raster_sizer.Add(sizer_angle_delta, 1, wx.EXPAND, 0)
+
         sizer_fill = StaticBoxSizer(self, wx.ID_ANY, _("Fill Style"), wx.VERTICAL)
         raster_sizer.Add(sizer_fill, 6, wx.EXPAND, 0)
 
@@ -1560,6 +1588,12 @@ class HatchSettingsPanel(wx.Panel):
 
         self.text_distance.SetActionRoutine(self.on_text_distance)
         self.text_angle.SetActionRoutine(self.on_text_angle)
+
+        self.text_loops.SetActionRoutine(self.on_text_loops)
+        self.text_angle_delta.SetActionRoutine(self.on_text_angle_delta)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_loops, self.slider_loops)
+        self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle_delta, self.slider_angle_delta)
+
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
@@ -1653,6 +1687,54 @@ class HatchSettingsPanel(wx.Panel):
         self.hatch_lines = None
         self.travel_lines = None
         self.refresh_display()
+
+    def on_text_angle_delta(self):
+        try:
+            angle = f"{Angle.parse(self.text_angle_delta.GetValue()).as_degrees}deg"
+            if angle == self.operation.hatch_angle_delta:
+                return
+            self.operation.hatch_angle_delta = angle
+        except ValueError:
+            return
+        try:
+            h_angle_delta = float(Angle.parse(self.operation.hatch_angle_delta).as_degrees)
+            while h_angle_delta > self.slider_angle_delta.GetMax():
+                h_angle_delta -= 360
+            while h_angle_delta < self.slider_angle_delta.GetMin():
+                h_angle_delta += 360
+            self.slider_angle_delta.SetValue(int(h_angle_delta))
+        except ValueError:
+            pass
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def on_slider_angle_delta(self, event):
+        value = self.slider_angle_delta.GetValue()
+        self.text_angle_delta.SetValue(f"{value}deg")
+        self.on_text_angle_delta()
+
+    def on_text_loops(self):
+        try:
+            loops = int(self.text_loops.GetValue())
+            if loops == self.operation.loops:
+                return
+            self.operation.loops = loops
+        except ValueError:
+            return
+        try:
+            h_loops = int(self.operation.loops)
+            self.slider_loops.SetValue(int(h_loops))
+        except ValueError:
+            pass
+        self.hatch_lines = None
+        self.travel_lines = None
+        self.refresh_display()
+
+    def on_slider_loops(self, event):
+        value = self.slider_loops.GetValue()
+        self.text_loops.SetValue(str(value))
+        self.on_text_loops()
 
     def on_combo_fill(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         hatch_type = self.fills[int(self.combo_fill_style.GetSelection())]

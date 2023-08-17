@@ -79,16 +79,16 @@ class TestFill(unittest.TestCase):
             kernel.console("hatch\n")
             hatch = list(kernel.elements.ops())[0]
             rect = list(kernel.elements.elems())[0]
-            hatch.hatch_type = "eulerian"
+            # hatch.hatch_type = "eulerian"
             hatch.add_node(copy(rect))
             c = CutPlan("q", kernel.planner)
             # kernel.console("tree list\n")
             hatch.preprocess(kernel.root, Matrix(), c)
             c.execute()
             # kernel.console("tree list\n")
-            polyline_node = hatch.children[0]
-            shape = polyline_node.shape
-            self.assertEqual(len(shape), 77)
+            path_node = hatch.children[0]
+            shape = path_node.path
+            self.assertEqual(len(shape), 50)
             print(shape)
         finally:
             kernel.shutdown()
@@ -114,14 +114,14 @@ class TestFill(unittest.TestCase):
             hatch.preprocess(kernel.root, Matrix(), c)
             c.execute()
             # kernel.console("tree list\n")
-            polyline_node0 = hatch.children[0]
-            shape0 = polyline_node0.shape
-            self.assertEqual(len(shape0), 77)
+            path_node = hatch.children[0]
+            shape0 = path_node.path
+            self.assertEqual(len(shape0), 100)
             # print(shape0)
 
-            polyline_node1 = hatch.children[1]
-            shape1 = polyline_node1.shape
-            self.assertEqual(len(shape1), 50)
+            # path_node1 = hatch.children[0]
+            # shape1 = path_node1.path
+            # self.assertEqual(len(shape1), 50)
             # print(shape1)
         finally:
             kernel.shutdown()

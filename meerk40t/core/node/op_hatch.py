@@ -1,13 +1,13 @@
 from copy import copy
 from math import isnan
 
-from meerk40t.core.cutcode.plotcut import PlotCut
 from meerk40t.core.elements.element_types import *
-from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
+from meerk40t.core.node.nutils import path_to_cutobjects
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM
-from meerk40t.svgelements import Color, Path, Polyline
+from meerk40t.core.units import UNITS_PER_MM, Angle, Length
+from meerk40t.svgelements import Color
+from meerk40t.tools.geomstr import Geomstr
 
 
 class HatchOpNode(Node, Parameters):
@@ -64,14 +64,6 @@ class HatchOpNode(Node, Parameters):
     def __copy__(self):
         return HatchOpNode(self)
 
-    # def is_dangerous(self, minpower, maxspeed):
-    #     result = False
-    #     if maxspeed is not None and self.speed > maxspeed:
-    #         result = True
-    #     if minpower is not None and self.power < minpower:
-    #         result = True
-    #     self.dangerous = result
-
     def default_map(self, default_map=None):
         default_map = super().default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
@@ -85,10 +77,14 @@ class HatchOpNode(Node, Parameters):
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
+        default_map["loop"] = (
+            f"{self.loops}X " if self.loops != 1 else ""
+        )
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
         default_map["hatch_angle"] = "default"
+        default_map["hatch_angle_delta"] = "default"
         default_map["hatch_distance"] = "default"
         ct = 0
         t = ""
@@ -294,68 +290,24 @@ class HatchOpNode(Node, Parameters):
         self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
         def hatch():
-            settings = self.settings
-            outlines = list()
+            outlines = Geomstr()
             for node in self.children:
-                try:
-                    path = node.as_geometry()
-                except AttributeError:
-                    continue
-                outlines.extend(path.as_interpolated_points(interpolate=100))
-                outlines.append(None)
+                outlines.append(node.as_geometry())
             self.remove_all_children()
-            fills = list(context.match("hatch", suffix=True))
-            penbox_pass = self.settings.get("penbox_pass")
-            if penbox_pass is not None:
-                try:
-                    penbox_pass = context.penbox.pens[penbox_pass]
-                except KeyError:
-                    penbox_pass = None
-            hatch_cache = dict()
             for p in range(self.implicit_passes):
-                chain_settings = dict(settings)
+                chain_settings = dict(self.settings)
                 if "type" in chain_settings:
                     del chain_settings["type"]
-                if penbox_pass is not None:
-                    try:
-                        chain_settings.update(penbox_pass[p])
-                    except IndexError:
-                        pass
-
-                # Create cache key.
-                h_dist = chain_settings.get("hatch_distance", "1mm")
-                h_angle = chain_settings.get("hatch_angle", "0deg")
-                if isinstance(h_angle, float):
-                    h_angle = str(h_angle)
-                hatch_type = chain_settings.get("hatch_type")
-                if hatch_type not in fills:
-                    hatch_type = fills[0]
-                key = f"{hatch_type};{h_angle},{h_dist}"
-
-                if key in hatch_cache:
-                    hatches = hatch_cache[key]
-                else:
-                    # Create new hatch.
-                    algorithm = context.lookup(f"hatch/{hatch_type}")
-                    hatches = list(
-                        algorithm(
-                            settings=chain_settings, outlines=outlines, matrix=matrix
+                path = Geomstr()
+                for loop in range(self.loops):
+                    path.append(
+                        Geomstr.hatch(
+                            outlines,
+                            distance=float(Length(self.hatch_distance)),
+                            angle=Angle(self.hatch_angle).radians + loop * Angle(self.hatch_angle_delta).radians,
                         )
                     )
-                    hatch_cache[key] = hatches
-                if (
-                    "line_color" not in chain_settings
-                    or chain_settings["line_color"] is None
-                    or chain_settings["line_color"].value is None
-                ):
-                    chain_settings["line_color"] = Color(
-                        chain_settings.get("color", "black")
-                    )
-                for polyline in HatchOpNode.split(hatches):
-                    node = PolylineNode(shape=Polyline(*polyline), **chain_settings)
-                    node.settings = chain_settings
-                    self.add_node(node)
-
+                self.add(type="elem path", geometry=path, **chain_settings)
         if self.children:
             commands = plan.commands
             commands.append(hatch)
@@ -363,13 +315,15 @@ class HatchOpNode(Node, Parameters):
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""
         for node in self.children:
-            if node.type != "elem polyline":
+            if node.type != "elem path":
                 continue
-            settings = node.settings
-            plot = PlotCut(settings=settings, color=node.stroke)
-            for p in node.shape:
-                x, y = p
-                if not plot:
-                    plot.plot_init(int(round(x)), int(round(y)))
-                plot.plot_append(int(round(x)), int(round(y)), 1)
-            yield plot
+            path = abs(node.path)
+            path.approximate_arcs_with_cubics()
+            yield from path_to_cutobjects(
+                path,
+                settings=self.settings,
+                closed_distance=closed_distance,
+                passes=passes,
+                original_op=self.type,
+                color=node.stroke,
+            )

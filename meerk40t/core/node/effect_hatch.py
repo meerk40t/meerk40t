@@ -10,9 +10,8 @@ from meerk40t.tools.geomstr import Geomstr, Scanbeam
 
 class HatchEffectNode(Node, Stroked):
     """
-    Default object defining any operation done on the laser.
-
-    This is a Node of type "hatch op".
+    Effect node performing a hatch. Effects are themselves a sort of geometry node that contains other geometry and
+    the required data to produce additional geometry.
     """
 
     def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
@@ -25,11 +24,14 @@ class HatchEffectNode(Node, Stroked):
         self.output = True
         self.hatch_distance = None
         self.hatch_angle = None
+        self.hatch_angle_delta = None
         self.hatch_type = None
+        self.loops = None
         Node.__init__(
             self, type="effect hatch", id=id, label=label, lock=lock, **kwargs
         )
         self._formatter = "{effect}{element_type} - {distance} {angle}"
+
         if self.matrix is None:
             self.matrix = Matrix()
 
@@ -41,17 +43,22 @@ class HatchEffectNode(Node, Stroked):
             self.label = "Hatch"
         else:
             self.label = label
+
         if self.hatch_type is None:
             self.hatch_type = "scanline"
-        self.passes = 1
+        if self.loops is None:
+            self.loops = 1
         if self.hatch_distance is None:
             self.hatch_distance = "1mm"
         if self.hatch_angle is None:
             self.hatch_angle = "0deg"
+        if self.hatch_angle_delta is None:
+            self.hatch_angle_delta = "0deg"
         self.settings = kwargs
         self._operands = list()
         self._distance = None
         self._angle = None
+        self._angle_delta = 0
         self._effect = True
         self.recalculate()
         for c in kwargs.get("operands", []):
@@ -81,6 +88,15 @@ class HatchEffectNode(Node, Stroked):
         self.recalculate()
 
     @property
+    def delta(self):
+        return self.hatch_angle_delta
+
+    @delta.setter
+    def delta(self, value):
+        self.hatch_angle_delta = value
+        self.recalculate()
+
+    @property
     def distance(self):
         return self.hatch_angle
 
@@ -90,13 +106,25 @@ class HatchEffectNode(Node, Stroked):
         self.recalculate()
 
     def recalculate(self):
+        """
+        Ensure that the properties for distance, angle and angle_delta are in usable units.
+        @return:
+        """
         h_dist = self.hatch_distance
         h_angle = self.hatch_angle
+        h_angle_delta = self.hatch_angle_delta
         distance_y = float(Length(h_dist))
+
         if isinstance(h_angle, float):
             self._angle = h_angle
         else:
             self._angle = Angle(h_angle).radians
+
+        if isinstance(h_angle_delta, float):
+            self._angle_delta = h_angle_delta
+        else:
+            self._angle_delta = Angle(h_angle_delta).radians
+
         transformed_vector = self.matrix.transform_vector([0, distance_y])
         self._distance = abs(complex(transformed_vector[0], transformed_vector[1]))
 
@@ -135,8 +163,8 @@ class HatchEffectNode(Node, Stroked):
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["effect"] = "+" if self.effect else "-"
-        default_map["pass"] = (
-            f"{self.passes}X " if self.passes and self.passes != 1 else ""
+        default_map["loop"] = (
+            f"{self.loops}X " if self.loops and self.loops != 1 else ""
         )
         default_map["angle"] = str(self.hatch_angle)
         default_map["distance"] = str(self.hatch_distance)
@@ -166,19 +194,30 @@ class HatchEffectNode(Node, Stroked):
             self.set_dirty_bounds()
             self.altered()
 
-    def as_geometry(self):
+    def as_geometry(self, **kws):
+        """
+        Calculates the hatch effect geometry. The pass index is the number of copies of this geometry whereas the
+        internal loops value is rotated each pass by the angle-delta.
+
+        @param kws:
+        @return:
+        """
         outlines = Geomstr()
         if not self.effect:
             return outlines
         for node in self._operands:
-            outlines.append(node.as_geometry())
+            outlines.append(node.as_geometry(**kws))
         outlines.transform(self.matrix)
         path = Geomstr()
         if self._distance is None:
             self.recalculate()
-        for p in range(self.passes):
+        for p in range(self.loops):
             path.append(
-                Geomstr.hatch(outlines, distance=self._distance, angle=self._angle)
+                Geomstr.hatch(
+                    outlines,
+                    distance=self._distance,
+                    angle=self._angle + p * self._angle_delta,
+                )
             )
         return path
 
