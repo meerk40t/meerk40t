@@ -136,9 +136,8 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.plot_planner.force_shift = service.plot_shift
-        self.plot_planner.phase_type = service.plot_phase_type
-        self.plot_planner.phase_value = service.plot_phase_value
+        self.plot_attribute_update()
+
         self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
@@ -189,6 +188,11 @@ class LihuiyuDriver(Parameters):
 
     def __call__(self, e):
         self.out_pipe.write(e)
+
+    def plot_attribute_update(self):
+        self.plot_planner.force_shift = self.service.plot_shift
+        self.plot_planner.phase_type = self.service.plot_phase_type
+        self.plot_planner.phase_value = self.service.plot_phase_value
 
     def hold_work(self, priority):
         """

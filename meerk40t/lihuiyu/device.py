@@ -978,6 +978,12 @@ class LihuiyuDevice(Service, ViewPort):
     def service_attach(self, *args, **kwargs):
         self.realize()
 
+    @signal_listener("plot_shift")
+    @signal_listener("plot_phase_type")
+    @signal_listener("plot_phase_value")
+    def plot_attributes_update(self, origin=None, *args):
+        self.driver.plot_attribute_update()
+
     @signal_listener("rotary_scale_x")
     @signal_listener("rotary_scale_y")
     @signal_listener("rotary_active")
