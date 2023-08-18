@@ -543,6 +543,12 @@ class GRBLDriver(Parameters):
         self.queue.clear()
         self.plot_planner.clear()
         self(f"\x18{self.line_end}", real=True)
+        self.power_dirty = True
+        self.speed_dirty = True
+        self.absolute_dirty = True
+        self.feedrate_dirty = True
+        self.units_dirty = True
+
         self.paused = False
 
     def clear_alarm(self):
