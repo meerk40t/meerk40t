@@ -139,6 +139,49 @@ def plugin(kernel, lifecycle=None):
                 ],
             },
         )
+        kernel.register(
+            "dev_info/grbl-ortur",
+            {
+                "provider": "provider/device/grbl",
+                "friendly_name": _("Ortur Laser Master 2 (GRBL)"),
+                "extended_info": _(
+                    "Ortur-branded self-assembled grbl diode lasers"
+                ),
+                "priority": 21,
+                "family": _("Diode-Laser"),
+                "family_priority": 50,
+                "choices": [
+                    {
+                        "attr": "label",
+                        "default": "Ortur-LM2",
+                    },
+                    {
+                        "attr": "has_endstops",
+                        "default": True,
+                    },
+                    {
+                        "attr": "source",
+                        "default": "diode",
+                    },
+                    {
+                        "attr": "bedheight",
+                        "default": "430mm"
+                    },
+                    {
+                        "attr": "bedwidth",
+                        "default": "400mm"
+                    },
+                    {
+                        "attr": "home_bottom",
+                        "default": True,
+                    },
+                    {
+                        "attr": "home_right",
+                        "default": False,
+                    },
+                ],
+            },
+        )
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("spoolerjob/grbl", GcodeJob)
         kernel.register("interpreter/grbl", GRBLInterpreter)
