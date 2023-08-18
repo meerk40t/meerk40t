@@ -446,11 +446,11 @@ class GrblController:
             self._paused = True
         if "~" in line:
             self._paused = False
+        if line is not None:
+            self._send(line)
         if "\x18" in line:
             with self._forward_lock:
                 self._forward_buffer.clear()
-        if line is not None:
-            self._send(line)
 
     def _sending_single_line(self):
         """
