@@ -190,6 +190,8 @@ class LihuiyuDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Phase Type"),
+                "style": "radio",
+                "choices": [_("Sequential"), _("Random"), _("Progressive"), _("Static")],
                 "tip": "",
                 "section": "_00_" + _("General Options"),
             },
@@ -198,9 +200,10 @@ class LihuiyuDevice(Service, ViewPort):
                 "object": self,
                 "default": 0,
                 "type": int,
-                "label": _("Phase Type"),
+                "label": _("Phase Value"),
                 "tip": "",
                 "section": "_00_" + _("General Options"),
+                "trailer": _("/1000")
             },
             {
                 "attr": "plot_shift",
