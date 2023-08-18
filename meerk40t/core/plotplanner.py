@@ -1,3 +1,5 @@
+import random
+
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..device.basedevice import (
@@ -53,6 +55,8 @@ class PlotPlanner(Parameters):
         self.abort = False
         self.force_shift = False
         self.group_enabled = True  # Grouped Output Required for Lhymicro-gl.
+        self.phase_type = 0  # Sequential, random, progressive, static.
+        self.phase_value = 0
 
         self.queue = []
 

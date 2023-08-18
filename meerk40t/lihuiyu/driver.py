@@ -137,6 +137,8 @@ class LihuiyuDriver(Parameters):
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
+        self.plot_planner.phase_type = service.plot_phase_type
+        self.plot_planner.phase_value = service.plot_phase_value
         self.plot_data = None
 
         self.state = DRIVER_STATE_RAPID
