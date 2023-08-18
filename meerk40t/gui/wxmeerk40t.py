@@ -324,6 +324,11 @@ class wxMeerK40t(wx.App, Module):
         import sys
 
         if sys.platform.startswith("win") and sys.version_info > (3, 8):
+            # This hack is needed to deal with  a new Python 3.8 behaviour to
+            # set the locale at runtime. wxpython assumes it can do with the
+            # locale objects whatever it wants, so we need to bring it back to
+            # a defined default
+
             import locale
 
             locale.setlocale(locale.LC_ALL, "C")
