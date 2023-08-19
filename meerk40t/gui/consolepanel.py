@@ -271,8 +271,11 @@ class ConsolePanel(wx.ScrolledWindow):
         text = ""
         ansi_text = ""
         ansi = False
-        if not self.text_main.IsEmpty():
-            self.text_main.AppendText("\n")
+        try:
+            if not self.text_main.IsEmpty():
+                self.text_main.AppendText("\n")
+        except RuntimeError:
+            return
         for c in lines:
             b = ord(c)
             if c == "\n":
