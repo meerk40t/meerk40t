@@ -52,7 +52,7 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self._g94_feedrate()  # G93 DEFAULT, mm mode
+        self._g94_feedrate()  # G94 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
@@ -543,6 +543,10 @@ class GRBLDriver(Parameters):
         self.queue.clear()
         self.plot_planner.clear()
         self(f"\x18{self.line_end}", real=True)
+        self._g94_feedrate()
+        self._g21_units_mm()
+        self._g90_absolute()
+
         self.power_dirty = True
         self.speed_dirty = True
         self.absolute_dirty = True
